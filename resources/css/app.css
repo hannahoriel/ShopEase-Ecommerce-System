@@ -15,3 +15,136 @@
     --color-peach: #f7cdbb;
     --color-peach-dark: #f3a98c;
 }
+
+/* ==========================================
+   SIDEBAR RELOAD UX
+   ========================================== */
+
+/* Logo */
+.sidebar-logo-reload {
+    opacity: 0;
+    transform: translateY(-15px);
+    animation: sidebarLogoEnter 0.6s ease-out forwards;
+}
+
+/* Menu items */
+.sidebar-menu-item {
+    opacity: 0;
+    transform: translateX(-15px);
+    animation: sidebarMenuEnter 0.45s ease-out forwards;
+}
+
+/* Staggered menu animation */
+.sidebar-menu-item:nth-child(1) {
+    animation-delay: 0.10s;
+}
+
+.sidebar-menu-item:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.sidebar-menu-item:nth-child(3) {
+    animation-delay: 0.20s;
+}
+
+.sidebar-menu-item:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.sidebar-menu-item:nth-child(5) {
+    animation-delay: 0.30s;
+}
+
+.sidebar-menu-item:nth-child(6) {
+    animation-delay: 0.35s;
+}
+
+.sidebar-menu-item:nth-child(7) {
+    animation-delay: 0.40s;
+}
+
+.sidebar-menu-item:nth-child(8) {
+    animation-delay: 0.45s;
+}
+
+.sidebar-menu-item:nth-child(9) {
+    animation-delay: 0.50s;
+}
+
+.sidebar-menu-item:nth-child(10) {
+    animation-delay: 0.55s;
+}
+
+
+/* Logout */
+.sidebar-logout-reload {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: sidebarLogoutEnter 0.5s ease-out 0.65s forwards;
+}
+
+
+/* ==========================================
+   KEYFRAMES
+   ========================================== */
+
+@keyframes sidebarLogoEnter {
+
+    from {
+        opacity: 0;
+        transform: translateY(-15px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+}
+
+
+@keyframes sidebarMenuEnter {
+
+    from {
+        opacity: 0;
+        transform: translateX(-15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+}
+
+
+@keyframes sidebarLogoutEnter {
+
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
+
+/* ==========================================
+   REDUCED MOTION
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .sidebar-logo-reload,
+    .sidebar-menu-item,
+    .sidebar-logout-reload {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+}
