@@ -402,58 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // ==========================================
-    // SIDEBAR ACTIVE MENU
-    // ==========================================
-
-    const sidebarLinks =
-        document.querySelectorAll('.sidebar-link');
-
-    sidebarLinks.forEach(link => {
-
-        link.addEventListener('click', function (event) {
-
-            event.preventDefault();
-
-            // Since Dashboard is currently the only
-            // available page, keep it active.
-
-            if (
-                this.querySelector('.sidebar-label') &&
-                this.querySelector('.sidebar-label').textContent.trim()
-                === 'Dashboard'
-            ) {
-
-                sidebarLinks.forEach(item => {
-
-                    item.classList.remove(
-                        'bg-maroon-700/60',
-                        'bg-maroon-700'
-                    );
-
-                });
-
-
-                if (collapsed) {
-
-                    this.classList.add(
-                        'bg-maroon-700'
-                    );
-
-                } else {
-
-                    this.classList.add(
-                        'bg-maroon-700/60'
-                    );
-
-                }
-
-            }
-
-        });
-
-    });
-
 
 
     // ==========================================
