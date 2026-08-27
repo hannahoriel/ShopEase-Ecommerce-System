@@ -247,51 +247,44 @@
 
             </div>
 
-            <div class="space-y-4 text-[15px]">
+            <div class="space-y-4 text-[15px] mt-7">
 
-                <div class="flex items-center gap-3">
-                    <img
-                        src="{{ asset('icons/admin/dashboard/body/seller.png') }}"
-                        class="w-5 h-5"
-                        alt=""
-                    >
+    <!-- Sellers -->
+    <div class="flex items-center gap-3">
 
-                    <span>Sellers</span>
+        <img
+            src="{{ asset('icons/admin/dashboard/body/seller.png') }}"
+            class="w-5 h-5"
+            alt=""
+        >
 
-                    <span class="ml-auto font-semibold">
-                        12
-                    </span>
-                </div>
+        <span>Sellers</span>
 
-                <div class="flex items-center gap-3">
-                    <img
-                        src="{{ asset('icons/admin/dashboard/body/courier.png') }}"
-                        class="w-5 h-5"
-                        alt=""
-                    >
+        <span class="ml-auto font-semibold">
+            12
+        </span>
 
-                    <span>Couriers</span>
+    </div>
 
-                    <span class="ml-auto font-semibold">
-                        8
-                    </span>
-                </div>
 
-                <div class="flex items-center gap-3">
-                    <img
-                        src="{{ asset('icons/admin/dashboard/body/buyer.png') }}"
-                        class="w-5 h-5"
-                        alt=""
-                    >
+    <!-- Buyers -->
+    <div class="flex items-center gap-3">
 
-                    <span>Buyers</span>
+        <img
+            src="{{ asset('icons/admin/dashboard/body/buyer.png') }}"
+            class="w-5 h-5"
+            alt=""
+        >
 
-                    <span class="ml-auto font-semibold">
-                        15
-                    </span>
-                </div>
+        <span>Buyers</span>
 
-            </div>
+        <span class="ml-auto font-semibold">
+            15
+        </span>
+
+    </div>
+
+</div>
 
         </div>
 
