@@ -1,0 +1,234 @@
+:root{
+  --maroon-dark:#511313;
+  --maroon:#611616;
+  --maroon-mid:#7c2828;
+  --maroon-soft:#9c4040;
+  --btn-maroon:#7a1a1a;
+  --btn-maroon-hover:#621313;
+  --accent:#e37f60;
+  --accent-light:#f3c3ac;
+  --cream:#fdf8f3;
+  --text-dark:#201212;
+  --text-muted:#9c9088;
+  --border:#ece3da;
+  --placeholder:#b7aba1;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Poppins', Arial, sans-serif;
+  background:#eeeeee;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+}
+.card{
+  display:flex;
+  width:100%;
+  max-width:938px;
+  min-height:600px;
+  background:var(--cream);
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 25px 60px -20px rgba(60,10,10,0.3);
+}
+/* LEFT PANEL */
+.left{
+  position:relative;
+  flex:0 0 47%;
+  background:var(--maroon-dark);
+  color:#fff;
+  padding:44px 42px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+}
+.circle{
+  position:absolute;
+  border-radius:50%;
+}
+.c1{ width:280px; height:280px; top:-70px; right:-90px; background:var(--maroon-mid); opacity:0.9; }
+.c2{ width:210px; height:210px; top:60px; right:-70px; background:var(--maroon-soft); opacity:0.55; }
+.c3{ width:190px; height:190px; bottom:-30px; right:60px; background:var(--maroon-mid); opacity:0.5; }
+
+.brand{position:relative; z-index:2;}
+.brand-logo{
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:10px;
+}
+.hamburger{
+  display:flex; flex-direction:column; gap:4px;
+}
+.hamburger span{
+  width:20px; height:2.5px; background:#f0e6df; border-radius:2px; display:block;
+}
+.bag-icon{
+  width:32px; height:32px;
+  background:var(--accent);
+  border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+}
+.brand-name{
+  font-size:27px; font-weight:800; letter-spacing:0.2px;
+  color:#fff;
+}
+.brand-name span{color:var(--accent);}
+.tagline{
+  position:relative; z-index:2;
+  font-size:26px; font-weight:700; line-height:1.3;
+  margin-top:auto;
+  color:#fff;
+}
+.tagline em{
+  display:block; font-style:normal; color:var(--accent);
+  font-weight:800;
+}
+.subtext{
+  position:relative; z-index:2;
+  margin-top:14px;
+  font-size:13.5px; line-height:1.65;
+  color:rgba(255,255,255,0.72);
+  max-width:270px;
+  font-weight:400;
+}
+
+/* RIGHT PANEL */
+.right{
+  flex:1;
+  padding:46px 54px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+h1{font-size:29px; font-weight:700; color:var(--text-dark); letter-spacing:-0.3px;}
+.subhead{color:var(--text-muted); font-size:14px; margin-top:6px; margin-bottom:28px; font-weight:400;}
+
+.field-group{margin-bottom:20px;}
+label{
+  display:block;
+  font-size:13.5px;
+  font-weight:600;
+  color:var(--text-dark);
+  margin-bottom:8px;
+}
+.input-wrap{position:relative;}
+.input-wrap svg{
+  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  width:16px; height:16px; color:#a89b93; pointer-events:none;
+}
+input[type=email], input[type=password], input[type=text]{
+  width:100%;
+  padding:13px 16px 13px 40px;
+  border:1.5px solid var(--border);
+  border-radius:9px;
+  font-size:14px;
+  font-family:'Poppins', sans-serif;
+  background:#fff;
+  color:var(--text-dark);
+  outline:none;
+  transition:border-color 0.2s;
+}
+input::placeholder{color:var(--placeholder); font-weight:400;}
+input:focus{border-color:#7fa8d9; box-shadow:0 0 0 3px rgba(90,140,220,0.12);}
+input[type=password]::-ms-reveal,
+input[type=password]::-ms-clear{
+  display:none;
+}
+
+.toggle-eye{
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  cursor:pointer; color:#a89b93; background:none; border:none; padding:0; display:flex;
+  opacity:0; pointer-events:none; transition:opacity 0.15s;
+}
+.toggle-eye.show{
+  opacity:1; pointer-events:auto;
+}
+.row-between{display:flex; justify-content:flex-end; margin-top:8px;}
+.link{color:var(--btn-maroon); font-size:13px; text-decoration:none; font-weight:600;}
+.link:hover{text-decoration:underline;}
+
+.btn-primary{
+  width:100%;
+  padding:14px;
+  background:var(--btn-maroon);
+  color:#fff;
+  border:none;
+  border-radius:9px;
+  font-size:15px;
+  font-weight:600;
+  font-family:'Poppins', sans-serif;
+  cursor:pointer;
+  margin-top:10px;
+  transition:background 0.2s, transform 0.1s;
+}
+.btn-primary:hover{background:var(--btn-maroon-hover);}
+.btn-primary:active{transform:scale(0.99);}
+
+.foot-note{
+  text-align:center;
+  font-size:13.5px;
+  color:var(--text-muted);
+  margin-top:22px;
+  font-weight:400;
+}
+
+/* Role select (signup) */
+.role-label{font-size:14.5px; font-weight:600; color:var(--text-dark); margin-bottom:14px;}
+.roles{
+  display:flex; gap:16px; margin-bottom:28px;
+}
+.role-card{
+  flex:1;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:20px 14px 18px;
+  text-align:center;
+  cursor:pointer;
+  position:relative;
+  transition:border-color 0.2s, background 0.2s;
+}
+.role-card.selected{
+  border-color:var(--btn-maroon);
+  background:#fdf6f3;
+}
+.role-radio{
+  position:absolute; top:12px; left:12px;
+  width:15px; height:15px;
+  border:2px solid var(--border);
+  border-radius:50%;
+}
+.role-card.selected .role-radio{
+  border-color:var(--btn-maroon);
+}
+.role-card.selected .role-radio::after{
+  content:"";
+  display:block;
+  width:7px; height:7px;
+  background:var(--btn-maroon);
+  border-radius:50%;
+  margin:2px auto;
+}
+.role-icon{
+  width:48px; height:48px;
+  margin:4px auto 12px;
+  background:var(--accent-light);
+  color:var(--btn-maroon);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
+.role-icon svg{width:22px; height:22px;}
+.role-title{font-weight:700; font-size:15px; color:var(--text-dark); margin-bottom:5px;}
+.role-desc{font-size:11.5px; color:var(--text-muted); line-height:1.45; font-weight:400;}
+
+.view{display:none;}
+.view.active{display:block;}
+
+@media (max-width:760px){
+  .card{flex-direction:column; min-height:auto;}
+  .left{flex:none; padding:36px 30px;}
+  .tagline{font-size:22px; margin-top:24px;}
+  .right{padding:36px 28px;}
+  .roles{flex-direction:column;}
+}
