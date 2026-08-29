@@ -59,7 +59,7 @@
                     [
                         'label' => 'User Management',
                         'icon' => 'user-management.png',
-                        'route' => null
+                        'route' => 'admin.user.management'
                     ],
 
                     [
