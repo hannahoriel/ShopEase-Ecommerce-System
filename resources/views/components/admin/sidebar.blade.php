@@ -272,53 +272,52 @@
 
     <!-- ==================== LOGOUT ==================== -->
 
-    <a
-    href="#"
-    class="
-        sidebar-logout
-        sidebar-logout-reload
-        shrink-0
-        flex items-center justify-center
-        gap-2
-        border border-white/40
-        rounded-full
-        py-3
-        text-[15px]
-        font-medium
-        hover:bg-white/10
-        transition-all duration-300
-        w-full
-    "
->
-
-        <span
+    <form action="{{ route('logout') }}" method="POST" class="w-full">
+        @csrf
+        <button
+            type="submit"
             class="
-                sidebar-icon-wrapper
-                flex items-center justify-center
+                sidebar-logout
+                sidebar-logout-reload
                 shrink-0
-                w-5 h-5
+                flex items-center justify-center
+                gap-2
+                border border-white/40
+                rounded-full
+                py-3
+                text-[15px]
+                font-medium
+                hover:bg-white/10
+                transition-all duration-300
+                w-full
+                cursor-pointer
             "
         >
-
-            <img
-                src="{{ asset('icons/admin/dashboard/sidebar&navbar/log-out.png') }}"
+            <span
                 class="
-                    sidebar-icon
-                    w-4 h-4
-                    object-contain
+                    sidebar-icon-wrapper
+                    flex items-center justify-center
                     shrink-0
+                    w-5 h-5
                 "
-                alt=""
             >
+                <img
+                    src="{{ asset('icons/admin/dashboard/sidebar&navbar/log-out.png') }}"
+                    class="
+                        sidebar-icon
+                        w-4 h-4
+                        object-contain
+                        shrink-0
+                    "
+                    alt=""
+                >
+            </span>
 
-        </span>
-
-
-        <span class="sidebar-label">
-            Log Out
-        </span>
-
-    </a>
+            <span class="sidebar-label">
+                Log Out
+            </span>
+        </button>
+    </form>
 
 </aside>
 
