@@ -15,73 +15,84 @@
 
 
     <!-- ==================== STAT CARDS ==================== -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
 
-        @php
-            $stats = [
-                [
-                    'icon' => 'pending.png',
-                    'value' => '236',
-                    'label' => 'Pending Registrations',
-                    'change' => '12%'
-                ],
-                [
-                    'icon' => 'active-users.png',
-                    'value' => '1,245',
-                    'label' => 'Active Users',
-                    'change' => '8%'
-                ],
-                [
-                    'icon' => 'active-sellers.png',
-                    'value' => '352',
-                    'label' => 'Active Sellers',
-                    'change' => '5%'
-                ],
-                [
-                    'icon' => 'total-commision.png',
-                    'value' => '₱45,680.00',
-                    'label' => 'Total Commission',
-                    'change' => '5%'
-                ],
-            ];
-        @endphp
+    @php
+        $stats = [
+            [
+                'icon' => 'pending.png',
+                'value' => '236',
+                'label' => 'Pending Registrations',
+                'change' => '12%'
+            ],
+            [
+                'icon' => 'active-users.png',
+                'value' => '1,245',
+                'label' => 'Active Users',
+                'change' => '8%'
+            ],
+            [
+                'icon' => 'active-sellers.png',
+                'value' => '352',
+                'label' => 'Active Sellers',
+                'change' => '5%'
+            ],
+            [
+                'icon' => 'total-commision.png',
+                'value' => '₱45,680.00',
+                'label' => 'Total Commission',
+                'change' => '5%'
+            ],
+        ];
+    @endphp
 
-        @foreach ($stats as $stat)
+    @foreach ($stats as $stat)
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm">
+        <div
+            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
+                   min-h-[132px] relative
+                   flex flex-col justify-between
+                   transition-all duration-300
+                   hover:-translate-y-1 hover:shadow-md"
+        >
 
+            <!-- TOP CONTENT -->
             <div class="flex items-center gap-4">
 
                 <!-- ICON -->
-                <img
-                    src="{{ asset('icons/admin/dashboard/body/' . $stat['icon']) }}"
-                    class="w-12 h-12 object-contain shrink-0"
-                    alt=""
-                >
+                <div class="w-14 h-14 shrink-0 flex items-center justify-center">
+                    <img
+                        src="{{ asset('icons/admin/dashboard/body/' . $stat['icon']) }}"
+                        class="w-14 h-14 object-contain"
+                        alt="{{ $stat['label'] }}"
+                    >
+                </div>
 
-                <!-- TEXT -->
-                <div>
-                    <p class="text-[25px] font-bold text-gray-800 leading-tight">
+                <!-- VALUE + LABEL -->
+                <div class="min-w-0">
+                    <p class="text-[26px] font-bold text-gray-900 leading-none">
                         {{ $stat['value'] }}
                     </p>
 
-                    <p class="text-[15px] text-gray-400">
+                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
                         {{ $stat['label'] }}
-                    </p>
-
-                    <p class="text-[13px] text-green-600 mt-1">
-                        ↑ {{ $stat['change'] }} from yesterday
                     </p>
                 </div>
 
             </div>
 
+            <!-- BOTTOM CHANGE -->
+            <p class="mt-3 ml-[72px] text-[13px] text-green-600">
+                <span class="text-[18px] align-middle">↑</span>
+                <span class="font-semibold">{{ $stat['change'] }}</span>
+                <span class="text-gray-400"> from yesterday</span>
+            </p>
+
         </div>
 
-        @endforeach
+    @endforeach
 
-    </div>
-
+</div>
 
     <!-- ==================== PLATFORM OVERVIEW + SALES ==================== -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-6">

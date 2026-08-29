@@ -9,3 +9,7 @@ Route::get('/admin/dashboard', function () {
 Route::get('/admin/registrations', function () {
     return view('pages.admin.registrations');
 })->name('admin.registrations');
+
+Route::get('/admin/user-management', function () {
+    return view('pages.admin.user-management');
+})->name('admin.user.management');
