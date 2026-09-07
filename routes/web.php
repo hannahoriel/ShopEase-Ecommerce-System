@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\RegistrationController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AuthController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -40,11 +43,25 @@ Route::get('/dashboard', function () {
     };
 })->middleware('auth')->name('dashboard');
 
-Route::get('/admin/dashboard', function () {
-    abort_unless(Auth::user()->role === User::ROLE_ADMIN, 403);
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/dashboard', function () {
+        abort_unless(Auth::user()->role === User::ROLE_ADMIN, 403);
 
-    return view('pages.admin.dashboard');
-})->middleware('auth')->name('admin.dashboard');
+        return app(DashboardController::class)->index();
+    })->name('admin.dashboard');
+
+    Route::get('/admin/registrations', [RegistrationController::class, 'index'])
+        ->name('admin.registrations');
+
+    Route::get('/admin/registrations/{registration}', [RegistrationController::class, 'show'])
+        ->name('admin.registrations.show');
+
+    Route::post('/admin/registrations/{registration}/approve', [RegistrationController::class, 'approve'])
+        ->name('admin.registrations.approve');
+
+    Route::post('/admin/registrations/{registration}/reject', [RegistrationController::class, 'reject'])
+        ->name('admin.registrations.reject');
+});
 
 foreach ([
     'buyer' => User::ROLE_BUYER,
@@ -58,11 +75,13 @@ foreach ([
     })->middleware('auth')->name("$dashboard.dashboard");
 }
 
-Route::get('/admin/registrations', function () {
-    return view('pages.admin.registrations');
-})->name('admin.registrations');
-
-
-Route::get('/admin/user-management', function () {
-    return view('pages.admin.user-management');
-})->name('admin.user.management');
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/user-management', [UserManagementController::class, 'index'])
+        ->name('admin.user.management');
+    Route::get('/admin/user-management/list', [UserManagementController::class, 'list'])
+        ->name('admin.user.management.list');
+    Route::get('/admin/user-management/{user}', [UserManagementController::class, 'show'])
+        ->name('admin.user.management.show');
+    Route::patch('/admin/user-management/{user}/status', [UserManagementController::class, 'updateStatus'])
+        ->name('admin.user.management.status');
+});

@@ -63,11 +63,6 @@
                 </div>
             </div>
 
-            <p class="absolute left-[92px] bottom-5 text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
         </div>
 
         <!-- Sellers -->
@@ -97,11 +92,6 @@
                 </div>
             </div>
 
-            <p class="absolute left-[92px] bottom-5 text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
         </div>
 
         <!-- Suspended -->
@@ -159,11 +149,6 @@
                 </div>
             </div>
 
-            <p class="absolute left-[92px] bottom-5 text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
         </div>
 
     </div>
@@ -774,7 +759,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const users = [
+    const users = @json($users);
+    const counts = @json($counts);
+    const statusUrl = @json(route('admin.user.management.status', ['user' => '__USER__']));
+    const detailUrl = @json(route('admin.user.management.show', ['user' => '__USER__']));
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    /*
         {id:1,name:'Juan Dela Cruz',type:'seller',email:'juan.delacruz@gmail.com',phone:'0917 123 4567',date:'2026-05-31',dateLabel:'May 31, 2026',status:'active',suspensionDays:0},
         {id:2,name:'Maria Santos',type:'buyer',email:'maria.santos@gmail.com',phone:'0928 765 4321',date:'2026-05-31',dateLabel:'May 31, 2026',status:'active',suspensionDays:0},
         {id:3,name:'Jose Ramirez',type:'seller',email:'jose.ramirez@gmail.com',phone:'0906 555 7890',date:'2026-05-30',dateLabel:'May 30, 2026',status:'active',suspensionDays:0},
@@ -805,7 +795,7 @@ document.addEventListener('DOMContentLoaded', function () {
         {id:28,name:'Paolo Mendoza',type:'buyer',email:'paolo.mendoza@gmail.com',phone:'0917 642 1305',date:'2026-05-18',dateLabel:'May 18, 2026',status:'active',suspensionDays:0},
         {id:29,name:'Diana Lopez',type:'seller',email:'diana.lopez@gmail.com',phone:'0927 345 6677',date:'2026-05-18',dateLabel:'May 18, 2026',status:'active',suspensionDays:0},
         {id:30,name:'Ramon Navarro',type:'buyer',email:'ramon.navarro@gmail.com',phone:'0908 517 4423',date:'2026-05-17',dateLabel:'May 17, 2026',status:'suspended',suspensionDays:7}
-    ];
+    ]; */
 
     const state = { page:1, itemsPerPage:10, filtered:[...users] };
 
@@ -943,10 +933,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const sellers = users.filter(u => u.type === 'seller').length;
         const suspended = users.filter(u => u.status === 'suspended').length;
 
-        document.getElementById('buyers-count-card').textContent = 328 + (buyers - 15);
-        document.getElementById('sellers-count-card').textContent = 412 + (sellers - 15);
-        document.getElementById('suspended-count-card').textContent = 153 + (suspended - 3);
-        document.getElementById('total-users-count-card').textContent = (1245 + total - 30).toLocaleString();
+        document.getElementById('buyers-count-card').textContent = counts.buyers;
+        document.getElementById('sellers-count-card').textContent = counts.sellers;
+        document.getElementById('suspended-count-card').textContent = counts.suspended;
+        document.getElementById('total-users-count-card').textContent = counts.total.toLocaleString();
     }
 
     function renderModalActions(user) {
@@ -1095,6 +1085,38 @@ document.addEventListener('DOMContentLoaded', function () {
         return selected ? selected.value : '';
     }
 
+    async function loadUserDetails(user) {
+        const response = await fetch(detailUrl.replace('__USER__', user.id), {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!response.ok || selectedUser?.id !== user.id) return;
+
+        const details = (await response.json()).details || {};
+        const fields = {
+            'user-modal-last-name': details.last_name,
+            'user-modal-first-name': details.first_name,
+            'user-modal-middle-name': details.middle_initial,
+            'user-modal-sex': details.sex,
+            'user-modal-birthday': details.birthday,
+            'user-modal-age': details.age,
+            'user-modal-province': details.province,
+            'user-modal-municipality': details.municipality,
+            'user-modal-barangay': details.barangay,
+            'user-modal-street': details.street,
+            'user-modal-house': details.house_number,
+            'user-modal-business-name': details.business_name,
+            'user-modal-business-category': details.line_of_business,
+            'user-modal-business-permit': details.upload_business_permit,
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                document.getElementById(id).textContent = value;
+            }
+        });
+    }
+
     function openModal(user) {
         selectedUser = user;
 
@@ -1112,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', function () {
         profileStatus.innerHTML = statusBadge(user.status);
 
         document.getElementById('user-profile-date').textContent = user.dateLabel;
-        document.getElementById('user-profile-time').textContent = '10:30 AM';
+        document.getElementById('user-profile-time').textContent = user.timeLabel || '';
 
         document.getElementById('user-modal-last-name').textContent = isSeller ? 'Dela Cruz' : names.lastName;
         document.getElementById('user-modal-first-name').textContent = isSeller ? 'Juan' : names.firstName;
@@ -1151,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.add('flex');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('overflow-hidden');
+        loadUserDetails(user);
     }
 
     function closeModal() {
@@ -1161,19 +1184,32 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedUser = null;
     }
 
-    function updateSelectedStatus(newStatus, notifyUser = false) {
+    async function updateSelectedStatus(newStatus, notifyUser = false, action = {}) {
         if (!selectedUser) return;
 
         const user = users.find(u => u.id === selectedUser.id);
         if (!user) return;
 
-        user.status = newStatus;
+        const response = await fetch(statusUrl.replace('__USER__', user.id), {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ status: newStatus, ...action })
+        });
 
-        if (newStatus === 'suspended') {
-            user.suspensionDays = Number(user.suspensionDays || 7);
-        } else {
-            user.suspensionDays = 0;
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            alert(error.message || 'Unable to update this account.');
+            return;
         }
+
+        const result = await response.json();
+        Object.assign(user, result.user);
+        Object.assign(counts, result.counts);
 
         selectedUser = user;
 
@@ -1320,7 +1356,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         user.suspensionDays = duration;
         closeSuspendAccountModal();
-        updateSelectedStatus('suspended', true);
+        updateSelectedStatus('suspended', true, {
+            reason,
+            duration,
+            details: document.getElementById('suspend-additional-details').value
+        });
     });
 
     document.getElementById('confirm-deactivate-account').addEventListener('click', function () {
@@ -1333,7 +1373,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         closeDeactivateAccountModal();
-        updateSelectedStatus('deactivated', true);
+        updateSelectedStatus('deactivated', true, {
+            reason,
+            details: document.getElementById('deactivate-additional-details').value
+        });
     });
 
     document.addEventListener('keydown', event => {

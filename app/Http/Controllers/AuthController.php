@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Buyer;
+use App\Models\Logistics;
+use App\Models\Rider;
+use App\Models\Seller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +20,7 @@ class AuthController extends Controller
     /**
      * Handle an authentication attempt.
      */
-    public function login(Request $request): RedirectResponse
+    public function login(Request $request): RedirectResponse|JsonResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
@@ -30,13 +35,21 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'message' => 'Login successful.',
+                'token' => $request->user()->createToken('api')->plainTextToken,
+                'user' => $request->user(),
+            ]);
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 
     /**
      * Register a new user and hold the account pending admin approval.
      */
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request): RedirectResponse|JsonResponse
     {
         $role = $request->input('role', User::ROLE_BUYER);
 
@@ -79,7 +92,7 @@ class AuthController extends Controller
 
         $birthday = $request->date('birthday');
 
-        $profile = [
+        $user = User::create([
             'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
@@ -97,40 +110,76 @@ class AuthController extends Controller
             'role' => $validated['role'],
             'password' => Hash::make($validated['password']),
             'registration_status' => 'pending',
+        ]);
+
+        $profileData = [
+            'user_id' => $user->id,
+            'last_name' => $validated['last_name'],
+            'first_name' => $validated['first_name'],
+            'middle_initial' => $validated['middle_initial'] ?? null,
+            'sex' => $validated['sex'],
+            'contact_no' => $validated['contact_no'],
+            'birthday' => $validated['birthday'],
+            'age' => $this->calculateAge($birthday),
+            'province' => $validated['province'],
+            'municipality' => $validated['municipality'],
+            'barangay' => $validated['barangay'],
+            'street' => $validated['street'],
+            'house_number' => $validated['house_number'],
+            'registration_status' => 'pending',
         ];
 
+        if ($role === User::ROLE_BUYER) {
+            $profileData['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
+            Buyer::create($profileData);
+        }
+
         if ($role === User::ROLE_SELLER) {
-            $profile['business_name'] = $validated['business_name'];
-            $profile['line_of_business'] = $validated['line_of_business'];
+            $profileData['business_name'] = $validated['business_name'];
+            $profileData['line_of_business'] = $validated['line_of_business'];
+            $profileData['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
+            $profileData['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
+            Seller::create($profileData);
         }
 
         if ($role === User::ROLE_RIDER) {
-            $profile['vehicle'] = $validated['vehicle'];
-            $profile['plate_number'] = $validated['plate_number'];
+            $profileData['vehicle'] = $validated['vehicle'];
+            $profileData['plate_number'] = $validated['plate_number'];
+            $profileData['upload_or_cr'] = $this->storeRegistrationFile($request, 'upload_or_cr');
+            $profileData['upload_id_license'] = $this->storeRegistrationFile($request, 'upload_id_license');
+            Rider::create($profileData);
         }
 
-        $profile['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
-        $profile['upload_id_license'] = $this->storeRegistrationFile($request, 'upload_id_license');
-
-        if ($role === User::ROLE_SELLER) {
-            $profile['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
+        if ($role === User::ROLE_LOGISTICS) {
+            $profileData['business_name'] = $validated['business_name'] ?? null;
+            $profileData['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
+            $profileData['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
+            Logistics::create($profileData);
         }
 
-        if ($role === User::ROLE_RIDER) {
-            $profile['upload_or_cr'] = $this->storeRegistrationFile($request, 'upload_or_cr');
+        $message = 'Your registration has been submitted and is awaiting administrator approval.';
+
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'user' => $user,
+            ], 201);
         }
 
-        User::create($profile);
-
-        return redirect()->route('login')->with('status', 'Your registration has been submitted and is awaiting administrator approval.');
+        return redirect()->route('login')->with('status', $message);
     }
 
     /**
      * Log the user out of the application.
      */
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request): RedirectResponse|JsonResponse
     {
+        $request->user()?->currentAccessToken()?->delete();
         Auth::logout();
+
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json(['message' => 'Logout successful.']);
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

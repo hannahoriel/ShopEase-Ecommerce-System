@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -35,6 +36,10 @@ class AuthRegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'buyer.reg@example.com',
             'role' => User::ROLE_BUYER,
+        ]);
+
+        $this->assertDatabaseHas('buyers', [
+            'user_id' => User::where('email', 'buyer.reg@example.com')->value('id'),
             'last_name' => 'Dela Cruz',
             'first_name' => 'Maria',
             'middle_initial' => 'A',
@@ -45,6 +50,7 @@ class AuthRegistrationTest extends TestCase
             'barangay' => 'Diliman',
             'street' => 'Mabini Street',
             'house_number' => '123',
+            'registration_status' => 'pending',
         ]);
 
         $user = User::where('email', 'buyer.reg@example.com')->first();
@@ -78,8 +84,13 @@ class AuthRegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'seller.reg@example.com',
             'role' => User::ROLE_SELLER,
+        ]);
+
+        $this->assertDatabaseHas('sellers', [
+            'user_id' => User::where('email', 'seller.reg@example.com')->value('id'),
             'business_name' => 'Liza Craft Store',
             'line_of_business' => 'Handcrafted Goods',
+            'registration_status' => 'pending',
         ]);
     }
 
@@ -109,8 +120,52 @@ class AuthRegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'rider.reg@example.com',
             'role' => User::ROLE_RIDER,
+        ]);
+
+        $this->assertDatabaseHas('riders', [
+            'user_id' => User::where('email', 'rider.reg@example.com')->value('id'),
             'vehicle' => 'motorcycle',
             'plate_number' => 'ABC 1234',
+            'registration_status' => 'pending',
         ]);
+    }
+
+    public function test_admin_can_view_pending_registrations_page_and_display_data(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+            'email' => 'admin.reg@example.com',
+        ]);
+
+        Registration::create([
+            'user_type' => 'buyer',
+            'last_name' => 'Dela Cruz',
+            'first_name' => 'Maria',
+            'middle_name' => 'A',
+            'sex' => 'female',
+            'birthdate' => '2000-01-15',
+            'email' => 'maria.pending@example.com',
+            'phone' => '09171234567',
+            'password' => bcrypt('Password123!'),
+            'province' => 'Metro Manila',
+            'municipality' => 'Quezon City',
+            'barangay' => 'Diliman',
+            'street' => 'Mabini Street',
+            'house_no' => '123',
+            'zip_code' => '1101',
+            'valid_id_path' => 'ids/maria.jpg',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.registrations'));
+
+        $response->assertOk()
+            ->assertSee('Account Registrations')
+            ->assertSee('Pending Requests')
+            ->assertSee('Approved Users')
+            ->assertSee('Rejected Users')
+            ->assertSee('Maria A Dela Cruz')
+            ->assertSee('maria.pending@example.com')
+            ->assertSee('registration-search');
     }
 }

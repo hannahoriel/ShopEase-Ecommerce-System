@@ -17,35 +17,6 @@
     <!-- ==================== STAT CARDS ==================== -->
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
 
-    @php
-        $stats = [
-            [
-                'icon' => 'pending.png',
-                'value' => '236',
-                'label' => 'Pending Registrations',
-                'change' => '12%'
-            ],
-            [
-                'icon' => 'active-users.png',
-                'value' => '1,245',
-                'label' => 'Active Users',
-                'change' => '8%'
-            ],
-            [
-                'icon' => 'active-sellers.png',
-                'value' => '352',
-                'label' => 'Active Sellers',
-                'change' => '5%'
-            ],
-            [
-                'icon' => 'total-commision.png',
-                'value' => '₱45,680.00',
-                'label' => 'Total Commission',
-                'change' => '5%'
-            ],
-        ];
-    @endphp
-
     @foreach ($stats as $stat)
 
         <div
@@ -83,8 +54,8 @@
 
             <!-- BOTTOM CHANGE -->
             <p class="mt-3 ml-[72px] text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">{{ $stat['change'] }}</span>
+                <span class="text-[18px] align-middle">{{ $stat['change']['direction'] === 'up' ? '↑' : '↓' }}</span>
+                <span class="font-semibold">{{ $stat['change']['value'] }}</span>
                 <span class="text-gray-400"> from yesterday</span>
             </p>
 
@@ -131,7 +102,7 @@
                         </span>
 
                         <span class="font-semibold text-right">
-                            ₱145,560,000.00
+                            {{ $salesSummary['gross_sales'] }}
                         </span>
                     </div>
 
@@ -141,7 +112,7 @@
                         </span>
 
                         <span class="font-semibold">
-                            1,256
+                            {{ $salesSummary['total_orders'] }}
                         </span>
                     </div>
 
@@ -151,7 +122,7 @@
                         </span>
 
                         <span class="font-semibold">
-                            ₱145.00
+                            {{ $salesSummary['average_order_value'] }}
                         </span>
                     </div>
 
@@ -161,7 +132,7 @@
                         </span>
 
                         <span class="font-semibold">
-                            1,256
+                            {{ $salesSummary['completed_orders'] }}
                         </span>
                     </div>
 
@@ -171,7 +142,7 @@
                         </span>
 
                         <span class="font-semibold">
-                            25
+                            {{ $salesSummary['returns_refunds'] }}
                         </span>
                     </div>
 
@@ -221,19 +192,19 @@
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-maroon-900"></span>
                         <span>Open</span>
-                        <span class="ml-auto font-semibold">20</span>
+                        <span class="ml-auto font-semibold">{{ $complaints['open'] }}</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-red-500"></span>
                         <span>In Progress</span>
-                        <span class="ml-auto font-semibold">10</span>
+                        <span class="ml-auto font-semibold">{{ $complaints['in_progress'] }}</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-peach-dark"></span>
                         <span>Resolved</span>
-                        <span class="ml-auto font-semibold">45</span>
+                        <span class="ml-auto font-semibold">{{ $complaints['resolved'] }}</span>
                     </div>
 
                 </div>
@@ -271,8 +242,8 @@
 
         <span>Sellers</span>
 
-        <span class="ml-auto font-semibold">
-            12
+            <span class="ml-auto font-semibold">
+                {{ $pendingBreakdown['sellers'] }}
         </span>
 
     </div>
@@ -289,8 +260,8 @@
 
         <span>Buyers</span>
 
-        <span class="ml-auto font-semibold">
-            15
+            <span class="ml-auto font-semibold">
+                {{ $pendingBreakdown['buyers'] }}
         </span>
 
     </div>
@@ -324,17 +295,17 @@
                     </p>
 
                     <span class="text-[13px] bg-white/10 px-3 py-1 rounded-full">
-                        August
+                        {{ $announcementMonth }}
                     </span>
 
                 </div>
 
                 <h3 class="text-[21px] font-bold mb-2">
-                    Augzu Sale 2026!
+                    {{ $announcement?->title }}
                 </h3>
 
                 <p class="text-[15px] text-white/75 leading-relaxed max-w-[230px]">
-                    Abangan ang mga katangahan ngayong August
+                    {{ $announcement?->body }}
                 </p>
 
 
@@ -370,21 +341,13 @@ new Chart(document.getElementById('overviewChart'), {
 
     data: {
 
-        labels: [
-            'May 1',
-            'May 6',
-            'May 11',
-            'May 16',
-            'May 21',
-            'May 26',
-            'May 31'
-        ],
+        labels: @json($overviewChart['labels']),
 
         datasets: [
 
             {
                 label: 'Registrations',
-                data: [80,120,90,150,110,140,300],
+                data: @json($overviewChart['registrations']),
 
                 borderColor: '#5c1414',
                 backgroundColor: 'rgba(92,20,20,0.15)',
@@ -406,7 +369,7 @@ new Chart(document.getElementById('overviewChart'), {
 
             {
                 label: 'Active Users',
-                data: [60,90,70,180,130,160,380],
+                data: @json($overviewChart['active_users']),
 
                 borderColor: '#e63946',
                 backgroundColor: 'rgba(230,57,70,0.10)',
@@ -428,7 +391,7 @@ new Chart(document.getElementById('overviewChart'), {
 
             {
                 label: 'Active Sellers',
-                data: [100,150,120,200,160,190,350],
+                data: @json($overviewChart['active_sellers']),
 
                 borderColor: '#f3a341',
                 backgroundColor: 'rgba(243,163,65,0.15)',
@@ -589,7 +552,7 @@ new Chart(document.getElementById('complaintsChart'), {
 
         datasets: [{
 
-            data: [20, 10, 45],
+            data: @json(array_values($complaints)),
 
             backgroundColor: [
                 '#5c1414',
