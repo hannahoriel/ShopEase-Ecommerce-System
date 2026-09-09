@@ -15,6 +15,7 @@
 >
 
     <div class="flex-1 min-h-0">
+
         <!-- ==================== LOGO ==================== -->
 
         <div
@@ -81,10 +82,10 @@
                     ],
 
                     [
-    'label' => 'Logistics Management',
-    'icon' => 'logistic-management.png',
-    'route' => null
-],
+                        'label' => 'Logistics Management',
+                        'icon' => 'logistic-management.png',
+                        'route' => null
+                    ],
 
                     [
                         'label' => 'Reports',
@@ -119,12 +120,6 @@
 
                 @php
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Check if current page is active
-                    |--------------------------------------------------------------------------
-                    */
-
                     $isActive = $item['route']
                         ? request()->routeIs($item['route'])
                         : false;
@@ -134,7 +129,7 @@
 
                 @if ($item['route'])
 
-                    <!-- ==================== ACTIVE / AVAILABLE PAGE ==================== -->
+                    <!-- ==================== AVAILABLE PAGE ==================== -->
 
                     <a
                         href="{{ route($item['route']) }}"
@@ -150,9 +145,10 @@
                             duration-300
                             w-full
 
-                            {{ $isActive
-                                ? 'bg-maroon-700/60'
-                                : 'hover:bg-maroon-800/50 hover:translate-x-1'
+                            {{
+                                $isActive
+                                    ? 'bg-maroon-700/60'
+                                    : 'hover:bg-maroon-800/50 hover:translate-x-1'
                             }}
                         "
                     >
@@ -272,8 +268,15 @@
 
     <!-- ==================== LOGOUT ==================== -->
 
-    <form action="{{ route('logout') }}" method="POST" class="w-full">
+    <form
+        action="{{ route('logout') }}"
+        method="POST"
+        class="w-full"
+        id="logoutForm"
+    >
+
         @csrf
+
         <button
             type="submit"
             class="
@@ -293,6 +296,7 @@
                 cursor-pointer
             "
         >
+
             <span
                 class="
                     sidebar-icon-wrapper
@@ -301,6 +305,7 @@
                     w-5 h-5
                 "
             >
+
                 <img
                     src="{{ asset('icons/admin/dashboard/sidebar&navbar/log-out.png') }}"
                     class="
@@ -311,42 +316,68 @@
                     "
                     alt=""
                 >
+
             </span>
+
 
             <span class="sidebar-label">
                 Log Out
             </span>
+
         </button>
+
     </form>
 
 </aside>
 
+
 <style>
+
     /* =========================================================
        SIDEBAR RELOAD UX
-       Animates menu items from LEFT to RIGHT
-       while keeping TOP-TO-BOTTOM order
     ========================================================== */
 
     @keyframes sidebarMenuReload {
+
         from {
+
             opacity: 0;
-            transform: translateX(-20px);
+
+            transform:
+                translateX(-20px);
+
         }
 
         to {
+
             opacity: 1;
-            transform: translateX(0);
+
+            transform:
+                translateX(0);
+
         }
+
     }
 
+
     .sidebar-menu-item {
+
         opacity: 0;
-        animation-name: sidebarMenuReload;
-        animation-duration: 0.35s;
-        animation-timing-function: ease-out;
-        animation-fill-mode: both;
+
+        animation-name:
+            sidebarMenuReload;
+
+        animation-duration:
+            0.35s;
+
+        animation-timing-function:
+            ease-out;
+
+        animation-fill-mode:
+            both;
+
     }
+
 
     /* =========================================================
        STRICT TOP-TO-BOTTOM ORDER
@@ -395,4 +426,145 @@
     .sidebar-menu-item:nth-child(11) {
         animation-delay: 0.55s;
     }
+
+
+    /* =========================================================
+       LOGOUT ANIMATION
+    ========================================================== */
+
+    @keyframes sidebarLogoutReload {
+
+        from {
+
+            opacity: 0;
+
+            transform:
+                translateY(12px);
+
+        }
+
+        to {
+
+            opacity: 1;
+
+            transform:
+                translateY(0);
+
+        }
+
+    }
+
+
+    .sidebar-logout-reload {
+
+        opacity: 0;
+
+        animation:
+            sidebarLogoutReload
+            0.45s
+            ease-out
+            0.6s
+            forwards;
+
+    }
+
+
+    /* =========================================================
+       REDUCED MOTION
+    ========================================================== */
+
+    @media (prefers-reduced-motion: reduce) {
+
+        .sidebar-menu-item,
+        .sidebar-logout-reload {
+
+            animation: none;
+
+            opacity: 1;
+
+            transform: none;
+
+        }
+
+    }
+
 </style>
+
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const logoutForm =
+            document.getElementById(
+                'logoutForm'
+            );
+
+
+        if (!logoutForm) {
+
+            return;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOGOUT
+        |--------------------------------------------------------------------------
+        |
+        | The form first submits normally to:
+        |
+        | POST /auth/logout
+        |
+        | Your web.php logout route then destroys the session
+        | and redirects the user to:
+        |
+        | /
+        |
+        */
+
+        logoutForm.addEventListener(
+            'submit',
+            function () {
+
+                const button =
+                    logoutForm.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                if (button) {
+
+                    button.disabled =
+                        true;
+
+                    button.classList.add(
+                        'opacity-70'
+                    );
+
+
+                    const label =
+                        button.querySelector(
+                            '.sidebar-label'
+                        );
+
+
+                    if (label) {
+
+                        label.textContent =
+                            'Logging Out...';
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>

@@ -11,15 +11,21 @@ use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
-| HOME
+| HOME / LANDING PAGE
 |--------------------------------------------------------------------------
+|
+| This is the first page users see when they visit:
+| http://127.0.0.1:8000/
+|
 */
 
 Route::get('/', function () {
 
-    return redirect()->route('login');
+    return view(
+        'pages.landing-page'
+    );
 
-});
+})->name('landing.page');
 
 
 /*
@@ -28,13 +34,28 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN PAGE
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/auth/login', function () {
 
-    return view('auth.login');
+    return view(
+        'auth.login'
+    );
 
 })->middleware('guest')
   ->name('login');
 
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN SUBMIT
+|--------------------------------------------------------------------------
+*/
 
 Route::post('/auth/login', [
     AuthController::class,
@@ -44,13 +65,27 @@ Route::post('/auth/login', [
     ->name('login.attempt');
 
 
+/*
+|--------------------------------------------------------------------------
+| REGISTER PAGE
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/auth/register', function () {
 
-    return view('auth.register');
+    return view(
+        'auth.register'
+    );
 
 })->middleware('guest')
   ->name('register');
 
+
+/*
+|--------------------------------------------------------------------------
+| REGISTER SUBMIT
+|--------------------------------------------------------------------------
+*/
 
 Route::post('/auth/register', [
     AuthController::class,
@@ -60,18 +95,70 @@ Route::post('/auth/register', [
     ->name('register.attempt');
 
 
-Route::post('/auth/logout', [
-    AuthController::class,
-    'logout'
-])
-    ->middleware('auth')
-    ->name('logout');
+/*
+|--------------------------------------------------------------------------
+| LOGOUT
+|--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| After logout, the user is ALWAYS returned to the
+| ShopEase landing page.
+|
+*/
+
+Route::post('/auth/logout', function (
+    Request $request
+) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logout User
+    |--------------------------------------------------------------------------
+    */
+
+    Auth::logout();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Invalidate Current Session
+    |--------------------------------------------------------------------------
+    */
+
+    $request->session()->invalidate();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Regenerate CSRF Token
+    |--------------------------------------------------------------------------
+    */
+
+    $request->session()->regenerateToken();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN TO LANDING PAGE
+    |--------------------------------------------------------------------------
+    */
+
+    return redirect()->route(
+        'landing.page'
+    );
+
+})->middleware('auth')
+  ->name('logout');
 
 
 /*
 |--------------------------------------------------------------------------
 | DASHBOARD REDIRECT
 |--------------------------------------------------------------------------
+|
+| After successful login, the user is sent to the dashboard
+| based on their role.
+|
 */
 
 Route::get('/dashboard', function () {
@@ -179,6 +266,13 @@ foreach ([
 |--------------------------------------------------------------------------
 */
 
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN REGISTRATIONS
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/admin/registrations', function () {
 
     abort_unless(
@@ -193,6 +287,12 @@ Route::get('/admin/registrations', function () {
 })->middleware('auth')
   ->name('admin.registrations');
 
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN USER MANAGEMENT
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/admin/user-management', function () {
 
@@ -225,8 +325,7 @@ Route::get('/admin/user-management', function () {
 
 /*
 |--------------------------------------------------------------------------
-| SELLER STEP 1
-| GET
+| SELLER STEP 1 - GET
 |--------------------------------------------------------------------------
 */
 
@@ -248,14 +347,19 @@ Route::get('/seller/register', function () {
 
 /*
 |--------------------------------------------------------------------------
-| SELLER STEP 1
-| POST
+| SELLER STEP 1 - POST
 |--------------------------------------------------------------------------
 */
 
 Route::post('/seller/register', function (
     Request $request
 ) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Seller Session
+    |--------------------------------------------------------------------------
+    */
 
     $sellerData = session(
         'seller_registration',
@@ -272,6 +376,7 @@ Route::post('/seller/register', function (
     $draftId =
         $sellerData['draft_id']
         ?? (string) Str::uuid();
+
 
     $sellerData['draft_id'] =
         $draftId;
@@ -299,11 +404,21 @@ Route::post('/seller/register', function (
 
     /*
     |--------------------------------------------------------------------------
-    | Valid ID
+    | Valid ID Upload
     |--------------------------------------------------------------------------
     */
 
-    if ($request->hasFile('valid_id')) {
+    if (
+        $request->hasFile(
+            'valid_id'
+        )
+    ) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Delete Previous Valid ID
+        |--------------------------------------------------------------------------
+        */
 
         if (
             !empty(
@@ -312,11 +427,19 @@ Route::post('/seller/register', function (
         ) {
 
             Storage::disk('public')->delete(
-                $sellerData['valid_id_path']
+                $sellerData[
+                    'valid_id_path'
+                ]
             );
 
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store New Valid ID
+        |--------------------------------------------------------------------------
+        */
 
         $file =
             $request->file(
@@ -331,13 +454,27 @@ Route::post('/seller/register', function (
             );
 
 
-        $sellerData['valid_id_path'] =
+        /*
+        |--------------------------------------------------------------------------
+        | Save File Details
+        |--------------------------------------------------------------------------
+        */
+
+        $sellerData[
+            'valid_id_path'
+        ] =
             $path;
 
-        $sellerData['valid_id_original_name'] =
+
+        $sellerData[
+            'valid_id_original_name'
+        ] =
             $file->getClientOriginalName();
 
-        $sellerData['valid_id_mime'] =
+
+        $sellerData[
+            'valid_id_mime'
+        ] =
             $file->getMimeType();
 
     }
@@ -345,7 +482,7 @@ Route::post('/seller/register', function (
 
     /*
     |--------------------------------------------------------------------------
-    | Save Session
+    | Save Seller Session
     |--------------------------------------------------------------------------
     */
 
@@ -357,7 +494,7 @@ Route::post('/seller/register', function (
 
     /*
     |--------------------------------------------------------------------------
-    | Go To Step 2
+    | Continue To Step 2
     |--------------------------------------------------------------------------
     */
 
@@ -371,8 +508,7 @@ Route::post('/seller/register', function (
 
 /*
 |--------------------------------------------------------------------------
-| SELLER STEP 2
-| GET
+| SELLER STEP 2 - GET
 |--------------------------------------------------------------------------
 */
 
@@ -394,14 +530,19 @@ Route::get('/seller/register/business', function () {
 
 /*
 |--------------------------------------------------------------------------
-| SELLER STEP 2
-| POST
+| SELLER STEP 2 - POST
 |--------------------------------------------------------------------------
 */
 
 Route::post(
     '/seller/register/business',
     function (Request $request) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Existing Seller Session
+        |--------------------------------------------------------------------------
+        */
 
         $sellerData = session(
             'seller_registration',
@@ -419,13 +560,14 @@ Route::post(
             $sellerData['draft_id']
             ?? (string) Str::uuid();
 
+
         $sellerData['draft_id'] =
             $draftId;
 
 
         /*
         |--------------------------------------------------------------------------
-        | Business Information
+        | Business Data
         |--------------------------------------------------------------------------
         */
 
@@ -457,7 +599,7 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Merge Data
+        | Merge Seller Data
         |--------------------------------------------------------------------------
         */
 
@@ -480,6 +622,12 @@ Route::post(
             )
         ) {
 
+            /*
+            |--------------------------------------------------------------------------
+            | Delete Previous Permit
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 !empty(
                     $sellerData[
@@ -497,6 +645,12 @@ Route::post(
             }
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Store Permit
+            |--------------------------------------------------------------------------
+            */
+
             $file =
                 $request->file(
                     'business_permit'
@@ -509,6 +663,12 @@ Route::post(
                     'public'
                 );
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Save Permit Details
+            |--------------------------------------------------------------------------
+            */
 
             $sellerData[
                 'business_permit_path'
@@ -544,7 +704,7 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Go To Step 3
+        | Continue To Step 3
         |--------------------------------------------------------------------------
         */
 
@@ -563,14 +723,20 @@ Route::post(
 | SELLER STEP 2 COMPATIBILITY ROUTE
 |--------------------------------------------------------------------------
 |
-| Some Blade versions may submit to:
-| seller.review.submit
+| Some versions of the seller business Blade page
+| may still submit to seller.review.submit.
 |
 */
 
 Route::post(
     '/seller/register/review',
     function (Request $request) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Existing Seller Session
+        |--------------------------------------------------------------------------
+        */
 
         $sellerData = session(
             'seller_registration',
@@ -587,6 +753,7 @@ Route::post(
         $draftId =
             $sellerData['draft_id']
             ?? (string) Str::uuid();
+
 
         $sellerData['draft_id'] =
             $draftId;
@@ -711,6 +878,12 @@ Route::post(
         ]);
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Continue To Review
+        |--------------------------------------------------------------------------
+        */
+
         return redirect()->route(
             'seller.review.register'
         );
@@ -723,12 +896,17 @@ Route::post(
 
 /*
 |--------------------------------------------------------------------------
-| SELLER STEP 3
-| GET
+| SELLER STEP 3 - REVIEW GET
 |--------------------------------------------------------------------------
 */
 
 Route::get('/seller/register/review', function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seller Registration Data
+    |--------------------------------------------------------------------------
+    */
 
     $sellerData = session(
         'seller_registration',
@@ -788,6 +966,12 @@ Route::get('/seller/register/review', function () {
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Review Page
+    |--------------------------------------------------------------------------
+    */
+
     return view(
         'auth.seller-signup.seller-review-register',
         [
@@ -809,13 +993,18 @@ Route::get('/seller/register/review', function () {
 /*
 |--------------------------------------------------------------------------
 | SELLER FINAL SUBMIT
-| POST
 |--------------------------------------------------------------------------
 */
 
 Route::post(
     '/seller/register/complete',
     function (Request $request) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Existing Registration Data
+        |--------------------------------------------------------------------------
+        */
 
         $sellerData = session(
             'seller_registration',
@@ -825,11 +1014,13 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Make sure registration exists
+        | Check Registration
         |--------------------------------------------------------------------------
         */
 
-        if (empty($sellerData)) {
+        if (
+            empty($sellerData)
+        ) {
 
             return redirect()
                 ->route(
@@ -885,12 +1076,12 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Return Login
+        | RETURN TO LANDING PAGE
         |--------------------------------------------------------------------------
         */
 
         return redirect()
-            ->route('login')
+            ->route('landing.page')
             ->with(
                 'success',
                 'Seller registration submitted successfully.'
@@ -909,6 +1100,12 @@ Route::post(
 */
 
 Route::get('/seller/register/exit', function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Seller Registration
+    |--------------------------------------------------------------------------
+    */
 
     $sellerData = session(
         'seller_registration',
@@ -981,7 +1178,7 @@ Route::get('/seller/register/exit', function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Clear Session
+    | Clear Seller Session
     |--------------------------------------------------------------------------
     */
 
@@ -990,8 +1187,14 @@ Route::get('/seller/register/exit', function () {
     );
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN TO LANDING PAGE
+    |--------------------------------------------------------------------------
+    */
+
     return redirect()->route(
-        'login'
+        'landing.page'
     );
 
 })->middleware('guest')
@@ -1013,8 +1216,7 @@ Route::get('/seller/register/exit', function () {
 
 /*
 |--------------------------------------------------------------------------
-| BUYER STEP 1
-| GET
+| BUYER STEP 1 - GET
 |--------------------------------------------------------------------------
 */
 
@@ -1036,14 +1238,19 @@ Route::get('/buyer/register', function () {
 
 /*
 |--------------------------------------------------------------------------
-| BUYER STEP 1
-| POST
+| BUYER STEP 1 - POST
 |--------------------------------------------------------------------------
 */
 
 Route::post('/buyer/register', function (
     Request $request
 ) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Buyer Session
+    |--------------------------------------------------------------------------
+    */
 
     $buyerData = session(
         'buyer_registration',
@@ -1060,6 +1267,7 @@ Route::post('/buyer/register', function (
     $draftId =
         $buyerData['draft_id']
         ?? (string) Str::uuid();
+
 
     $buyerData['draft_id'] =
         $draftId;
@@ -1097,9 +1305,17 @@ Route::post('/buyer/register', function (
         )
     ) {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Delete Previous Valid ID
+        |--------------------------------------------------------------------------
+        */
+
         if (
             !empty(
-                $buyerData['valid_id_path']
+                $buyerData[
+                    'valid_id_path'
+                ]
             )
         ) {
 
@@ -1111,6 +1327,12 @@ Route::post('/buyer/register', function (
 
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store Valid ID
+        |--------------------------------------------------------------------------
+        */
 
         $file =
             $request->file(
@@ -1124,6 +1346,12 @@ Route::post('/buyer/register', function (
                 'public'
             );
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | File Information
+        |--------------------------------------------------------------------------
+        */
 
         $buyerData[
             'valid_id_path'
@@ -1159,7 +1387,7 @@ Route::post('/buyer/register', function (
 
     /*
     |--------------------------------------------------------------------------
-    | Go To Buyer Review
+    | Continue To Buyer Review
     |--------------------------------------------------------------------------
     */
 
@@ -1173,12 +1401,17 @@ Route::post('/buyer/register', function (
 
 /*
 |--------------------------------------------------------------------------
-| BUYER STEP 2
-| GET
+| BUYER STEP 2 - REVIEW GET
 |--------------------------------------------------------------------------
 */
 
 Route::get('/buyer/register/review', function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Buyer Registration Data
+    |--------------------------------------------------------------------------
+    */
 
     $buyerData = session(
         'buyer_registration',
@@ -1197,7 +1430,9 @@ Route::get('/buyer/register/review', function () {
 
     if (
         !empty(
-            $buyerData['valid_id_path']
+            $buyerData[
+                'valid_id_path'
+            ]
         )
     ) {
 
@@ -1210,6 +1445,12 @@ Route::get('/buyer/register/review', function () {
 
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Review Page
+    |--------------------------------------------------------------------------
+    */
 
     return view(
         'auth.buyer-signup.buyer-review-register',
@@ -1229,13 +1470,18 @@ Route::get('/buyer/register/review', function () {
 /*
 |--------------------------------------------------------------------------
 | BUYER FINAL SUBMIT
-| POST
 |--------------------------------------------------------------------------
 */
 
 Route::post(
     '/buyer/register/complete',
     function (Request $request) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Existing Buyer Registration
+        |--------------------------------------------------------------------------
+        */
 
         $buyerData = session(
             'buyer_registration',
@@ -1245,11 +1491,13 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Make sure registration exists
+        | Check Registration
         |--------------------------------------------------------------------------
         */
 
-        if (empty($buyerData)) {
+        if (
+            empty($buyerData)
+        ) {
 
             return redirect()
                 ->route(
@@ -1265,7 +1513,7 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Final Submitted Data
+        | Final Data
         |--------------------------------------------------------------------------
         */
 
@@ -1293,7 +1541,7 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Clear Buyer Session
+        | Clear Session
         |--------------------------------------------------------------------------
         */
 
@@ -1304,12 +1552,12 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | Return To Login
+        | RETURN TO LANDING PAGE
         |--------------------------------------------------------------------------
         */
 
         return redirect()
-            ->route('login')
+            ->route('landing.page')
             ->with(
                 'success',
                 'Buyer registration submitted successfully.'
@@ -1329,6 +1577,12 @@ Route::post(
 
 Route::get('/buyer/register/exit', function () {
 
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Buyer Registration
+    |--------------------------------------------------------------------------
+    */
+
     $buyerData = session(
         'buyer_registration',
         []
@@ -1343,7 +1597,9 @@ Route::get('/buyer/register/exit', function () {
 
     if (
         !empty(
-            $buyerData['valid_id_path']
+            $buyerData[
+                'valid_id_path'
+            ]
         )
     ) {
 
@@ -1364,7 +1620,9 @@ Route::get('/buyer/register/exit', function () {
 
     if (
         !empty(
-            $buyerData['draft_id']
+            $buyerData[
+                'draft_id'
+            ]
         )
     ) {
 
@@ -1377,7 +1635,7 @@ Route::get('/buyer/register/exit', function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Clear Session
+    | Clear Buyer Session
     |--------------------------------------------------------------------------
     */
 
@@ -1388,12 +1646,12 @@ Route::get('/buyer/register/exit', function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Return To Login
+    | RETURN TO LANDING PAGE
     |--------------------------------------------------------------------------
     */
 
     return redirect()->route(
-        'login'
+        'landing.page'
     );
 
 })->middleware('guest')

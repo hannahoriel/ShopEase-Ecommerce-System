@@ -43,131 +43,44 @@
 
 /* =========================================================
    BODY
-   SOFT PEACH / PINK GRADIENT BACKGROUND
-   WITH LARGE BLENDED CIRCLES
+   TRANSPARENT FOR MODAL
 ========================================================= */
 
+html {
+    background: transparent;
+}
+
+
 body {
-    font-family: 'Poppins', Arial, sans-serif;
 
-    min-height: 100vh;
+    font-family:
+        'Poppins',
+        Arial,
+        sans-serif;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    min-height:
+        100vh;
 
-    padding: 40px 20px;
+    display:
+        flex;
 
-    position: relative;
+    align-items:
+        center;
 
-    overflow: hidden;
+    justify-content:
+        center;
 
-    /*
-       MAIN BACKGROUND
+    padding:
+        0;
 
-       Soft peach base with several large
-       dark-pink / coral / peach circles.
+    position:
+        relative;
 
-       The circles use multiple radial gradients
-       with transparent edges so they blend naturally
-       instead of looking like hard shapes.
-    */
+    overflow:
+        hidden;
 
     background:
-
-        /* TOP LEFT — soft dark pink glow */
-        radial-gradient(
-            circle at 8% 8%,
-            rgba(221, 75, 76, 0.20) 0%,
-            rgba(221, 75, 76, 0.12) 18%,
-            rgba(221, 75, 76, 0.04) 32%,
-            transparent 50%
-        ),
-
-        /* TOP LEFT — peach glow */
-        radial-gradient(
-            circle at 22% 3%,
-            rgba(255, 163, 112, 0.22) 0%,
-            rgba(255, 163, 112, 0.10) 20%,
-            transparent 43%
-        ),
-
-        /* TOP CENTER — soft coral */
-        radial-gradient(
-            circle at 48% -5%,
-            rgba(221, 75, 76, 0.12) 0%,
-            rgba(221, 75, 76, 0.06) 22%,
-            transparent 45%
-        ),
-
-        /* TOP RIGHT — peach circle */
-        radial-gradient(
-            circle at 91% 10%,
-            rgba(255, 163, 112, 0.24) 0%,
-            rgba(255, 163, 112, 0.12) 20%,
-            rgba(255, 163, 112, 0.04) 34%,
-            transparent 50%
-        ),
-
-        /* RIGHT CENTER — dark pink blended circle */
-        radial-gradient(
-            circle at 96% 45%,
-            rgba(221, 75, 76, 0.15) 0%,
-            rgba(221, 75, 76, 0.08) 20%,
-            rgba(221, 75, 76, 0.03) 35%,
-            transparent 52%
-        ),
-
-        /* BOTTOM RIGHT — stronger peach */
-        radial-gradient(
-            circle at 91% 92%,
-            rgba(255, 163, 112, 0.28) 0%,
-            rgba(255, 163, 112, 0.15) 20%,
-            rgba(255, 163, 112, 0.05) 36%,
-            transparent 55%
-        ),
-
-        /* BOTTOM LEFT — soft coral */
-        radial-gradient(
-            circle at 4% 88%,
-            rgba(221, 75, 76, 0.14) 0%,
-            rgba(221, 75, 76, 0.07) 22%,
-            transparent 48%
-        ),
-
-        /* LOWER CENTER — peach glow */
-        radial-gradient(
-            circle at 38% 105%,
-            rgba(255, 163, 112, 0.18) 0%,
-            rgba(255, 163, 112, 0.08) 22%,
-            transparent 48%
-        ),
-
-        /* MID LEFT — very subtle pink */
-        radial-gradient(
-            circle at -5% 48%,
-            rgba(221, 75, 76, 0.10) 0%,
-            rgba(221, 75, 76, 0.05) 25%,
-            transparent 50%
-        ),
-
-        /* MID RIGHT — very subtle peach */
-        radial-gradient(
-            circle at 108% 68%,
-            rgba(255, 163, 112, 0.16) 0%,
-            rgba(255, 163, 112, 0.07) 25%,
-            transparent 52%
-        ),
-
-        /* BASE GRADIENT */
-        linear-gradient(
-            135deg,
-            #F9E1DD 0%,
-            #FBE8E2 22%,
-            #FFF3ED 48%,
-            #FFE9DE 70%,
-            #FFD9CA 100%
-        );
+        transparent;
 }
 
 
@@ -176,30 +89,51 @@ body {
 ========================================================= */
 
 .card {
-    display: flex;
 
-    width: 100%;
-    max-width: 938px;
+    display:
+        flex;
 
-    min-height: 600px;
+    width:
+        100%;
 
-    background: var(--cream);
+    max-width:
+        938px;
 
-    border-radius: 20px;
+    min-height:
+        600px;
 
-    overflow: hidden;
+    background:
+        var(--cream);
 
-    position: relative;
+    border-radius:
+        20px;
 
-    z-index: 5;
+    overflow:
+        hidden;
 
-    /*
-       Soft elevated shadow.
-    */
+    position:
+        relative;
+
+    z-index:
+        5;
 
     box-shadow:
-        0 28px 70px rgba(82, 7, 11, 0.18),
-        0 8px 25px rgba(82, 7, 11, 0.08);
+
+        0 28px 70px
+        rgba(
+            82,
+            7,
+            11,
+            0.18
+        ),
+
+        0 8px 25px
+        rgba(
+            82,
+            7,
+            11,
+            0.08
+        );
 }
 
 
@@ -208,9 +142,12 @@ body {
 ========================================================= */
 
 .left {
-    position: relative;
 
-    flex: 0 0 47%;
+    position:
+        relative;
+
+    flex:
+        0 0 47%;
 
     background:
         linear-gradient(
@@ -220,26 +157,29 @@ body {
             #7C1115 100%
         );
 
-    color: #fff;
+    color:
+        #fff;
 
-    padding: 40px 42px;
+    padding:
+        40px 42px;
 
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    display:
+        flex;
 
-    overflow: hidden;
+    flex-direction:
+        column;
 
-    /*
-       Curved RIGHT EDGE
+    justify-content:
+        space-between;
 
-       Keeps the upper-right and lower-right
-       corners of the sidebar rounded.
-    */
+    overflow:
+        hidden;
 
-    border-radius: 0 70px 0px 0;
+    border-radius:
+        0 70px 0 0;
 
-    z-index: 2;
+    z-index:
+        2;
 }
 
 
@@ -248,11 +188,15 @@ body {
 ========================================================= */
 
 .circle {
-    position: absolute;
 
-    border-radius: 50%;
+    position:
+        absolute;
 
-    pointer-events: none;
+    border-radius:
+        50%;
+
+    pointer-events:
+        none;
 }
 
 
@@ -261,21 +205,34 @@ body {
 ========================================================= */
 
 .c1 {
-    width: 280px;
-    height: 280px;
 
-    top: -70px;
-    right: -90px;
+    width:
+        280px;
+
+    height:
+        280px;
+
+    top:
+        -70px;
+
+    right:
+        -90px;
 
     background:
         radial-gradient(
             circle,
             #A52D2C 0%,
             #8B201A 62%,
-            rgba(139, 32, 26, 0.2) 100%
+            rgba(
+                139,
+                32,
+                26,
+                0.20
+            ) 100%
         );
 
-    opacity: 0.85;
+    opacity:
+        0.85;
 }
 
 
@@ -284,21 +241,34 @@ body {
 ========================================================= */
 
 .c2 {
-    width: 210px;
-    height: 210px;
 
-    top: 60px;
-    right: -70px;
+    width:
+        210px;
+
+    height:
+        210px;
+
+    top:
+        60px;
+
+    right:
+        -70px;
 
     background:
         radial-gradient(
             circle,
             #B83A38 0%,
             #A52D2C 58%,
-            rgba(165, 45, 44, 0.15) 100%
+            rgba(
+                165,
+                45,
+                44,
+                0.15
+            ) 100%
         );
 
-    opacity: 0.55;
+    opacity:
+        0.55;
 }
 
 
@@ -307,89 +277,146 @@ body {
 ========================================================= */
 
 .c3 {
-    width: 190px;
-    height: 190px;
 
-    bottom: -30px;
-    right: 60px;
+    width:
+        190px;
+
+    height:
+        190px;
+
+    bottom:
+        -30px;
+
+    right:
+        60px;
 
     background:
         radial-gradient(
             circle,
             #8B201A 0%,
             #741613 58%,
-            rgba(116, 22, 19, 0.12) 100%
+            rgba(
+                116,
+                22,
+                19,
+                0.12
+            ) 100%
         );
 
-    opacity: 0.65;
+    opacity:
+        0.65;
 }
 
 
 /* =========================================================
    LEFT PANEL — MINI DOT DETAILS
-   RETAINED BUT SUBTLE
 ========================================================= */
 
 .left::before {
-    content: "";
 
-    position: absolute;
+    content:
+        "";
 
-    width: 150px;
-    height: 105px;
+    position:
+        absolute;
 
-    top: 18px;
-    left: 18px;
+    width:
+        150px;
+
+    height:
+        105px;
+
+    top:
+        18px;
+
+    left:
+        18px;
 
     background-image:
         radial-gradient(
             circle,
-            rgba(255, 163, 112, 0.42) 0,
-            rgba(255, 163, 112, 0.42) 1.6px,
+            rgba(
+                255,
+                163,
+                112,
+                0.42
+            ) 0,
+            rgba(
+                255,
+                163,
+                112,
+                0.42
+            ) 1.6px,
             transparent 2px
         );
 
-    background-size: 13px 13px;
+    background-size:
+        13px 13px;
 
-    opacity: 0.65;
+    opacity:
+        0.65;
 
-    pointer-events: none;
+    pointer-events:
+        none;
 
-    z-index: 1;
+    z-index:
+        1;
 }
 
 
 /* =========================================================
    LEFT PANEL — BOTTOM DOT DETAILS
-   RETAINED BUT SUBTLE
 ========================================================= */
 
 .left::after {
-    content: "";
 
-    position: absolute;
+    content:
+        "";
 
-    width: 175px;
-    height: 125px;
+    position:
+        absolute;
 
-    bottom: 0;
-    right: 0;
+    width:
+        175px;
+
+    height:
+        125px;
+
+    bottom:
+        0;
+
+    right:
+        0;
 
     background-image:
         radial-gradient(
             circle,
-            rgba(255, 152, 118, 0.46) 0,
-            rgba(255, 152, 118, 0.46) 1.6px,
+            rgba(
+                255,
+                152,
+                118,
+                0.46
+            ) 0,
+            rgba(
+                255,
+                152,
+                118,
+                0.46
+            ) 1.6px,
             transparent 2px
         );
 
-    background-size: 14px 14px;
+    background-size:
+        14px 14px;
 
-    opacity: 0.60;
+    opacity:
+        0.60;
 
-    pointer-events: none;
+    pointer-events:
+        none;
 
-    z-index: 1;
+    z-index:
+        1;
 }
 
 
@@ -398,29 +425,43 @@ body {
 ========================================================= */
 
 .brand {
-    position: relative;
 
-    z-index: 2;
+    position:
+        relative;
 
-    display: flex;
+    z-index:
+        2;
 
-    align-items: center;
-    justify-content: center;
+    display:
+        flex;
 
-    width: 100%;
+    align-items:
+        center;
 
-    transform: translateY(-35px);
+    justify-content:
+        center;
+
+    width:
+        100%;
+
+    transform:
+        translateY(-35px);
 }
 
 
 .login-logo {
-    width: 350px;
 
-    height: auto;
+    width:
+        350px;
 
-    display: block;
+    height:
+        auto;
 
-    object-fit: contain;
+    display:
+        block;
+
+    object-fit:
+        contain;
 }
 
 
@@ -430,66 +471,98 @@ body {
 ========================================================= */
 
 .brand-logo {
-    display: flex;
 
-    align-items: center;
+    display:
+        flex;
 
-    gap: 8px;
+    align-items:
+        center;
 
-    margin-bottom: 10px;
+    gap:
+        8px;
+
+    margin-bottom:
+        10px;
 }
 
 
 .hamburger {
-    display: flex;
 
-    flex-direction: column;
+    display:
+        flex;
 
-    gap: 4px;
+    flex-direction:
+        column;
+
+    gap:
+        4px;
 }
 
 
 .hamburger span {
-    width: 20px;
 
-    height: 2.5px;
+    width:
+        20px;
 
-    background: #F0E6DF;
+    height:
+        2.5px;
 
-    border-radius: 2px;
+    background:
+        #F0E6DF;
 
-    display: block;
+    border-radius:
+        2px;
+
+    display:
+        block;
 }
 
 
 .bag-icon {
-    width: 32px;
-    height: 32px;
 
-    background: var(--accent-light);
+    width:
+        32px;
 
-    border-radius: 9px;
+    height:
+        32px;
 
-    display: flex;
+    background:
+        var(--accent-light);
 
-    align-items: center;
-    justify-content: center;
+    border-radius:
+        9px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
 }
 
 
 .brand-name {
-    font-size: 27px;
 
-    font-weight: 800;
+    font-size:
+        27px;
 
-    letter-spacing: 0.2px;
+    font-weight:
+        800;
 
-    color: #fff;
+    letter-spacing:
+        0.2px;
+
+    color:
+        #fff;
 }
 
 
 .brand-name span {
-    color: var(--accent-light);
+
+    color:
+        var(--accent-light);
 }
 
 
@@ -498,30 +571,43 @@ body {
 ========================================================= */
 
 .tagline {
-    position: relative;
 
-    z-index: 2;
+    position:
+        relative;
 
-    font-size: 26px;
+    z-index:
+        2;
 
-    font-weight: 700;
+    font-size:
+        26px;
 
-    line-height: 1.3;
+    font-weight:
+        700;
 
-    margin-top: auto;
+    line-height:
+        1.3;
 
-    color: #fff;
+    margin-top:
+        auto;
+
+    color:
+        #fff;
 }
 
 
 .tagline em {
-    display: block;
 
-    font-style: normal;
+    display:
+        block;
 
-    color: var(--accent-light);
+    font-style:
+        normal;
 
-    font-weight: 800;
+    color:
+        var(--accent-light);
+
+    font-weight:
+        800;
 }
 
 
@@ -530,21 +616,35 @@ body {
 ========================================================= */
 
 .subtext {
-    position: relative;
 
-    z-index: 2;
+    position:
+        relative;
 
-    margin-top: 14px;
+    z-index:
+        2;
 
-    font-size: 13.5px;
+    margin-top:
+        14px;
 
-    line-height: 1.65;
+    font-size:
+        13.5px;
 
-    color: rgba(255, 255, 255, 0.72);
+    line-height:
+        1.65;
 
-    max-width: 270px;
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.72
+        );
 
-    font-weight: 400;
+    max-width:
+        270px;
+
+    font-weight:
+        400;
 }
 
 
@@ -553,15 +653,21 @@ body {
 ========================================================= */
 
 .right {
-    flex: 1;
 
-    padding: 46px 54px;
+    flex:
+        1;
 
-    display: flex;
+    padding:
+        46px 54px;
 
-    flex-direction: column;
+    display:
+        flex;
 
-    justify-content: center;
+    flex-direction:
+        column;
+
+    justify-content:
+        center;
 
     background:
         linear-gradient(
@@ -577,32 +683,46 @@ body {
 ========================================================= */
 
 h1 {
-    font-size: 29px;
 
-    font-weight: 700;
+    font-size:
+        29px;
 
-    color: var(--text-dark);
+    font-weight:
+        700;
 
-    letter-spacing: -0.3px;
+    color:
+        var(--text-dark);
 
-    text-align: center;
+    letter-spacing:
+        -0.3px;
 
-    margin-top: -14px;
+    text-align:
+        center;
+
+    margin-top:
+        -14px;
 }
 
 
 .subhead {
-    color: var(--text-muted);
 
-    font-size: 14px;
+    color:
+        var(--text-muted);
 
-    margin-top: 2px;
+    font-size:
+        14px;
 
-    margin-bottom: 38px;
+    margin-top:
+        2px;
 
-    font-weight: 400;
+    margin-bottom:
+        38px;
 
-    text-align: center;
+    font-weight:
+        400;
+
+    text-align:
+        center;
 }
 
 
@@ -611,44 +731,67 @@ h1 {
 ========================================================= */
 
 .field-group {
-    margin-bottom: 20px;
+
+    margin-bottom:
+        20px;
 }
 
 
 label {
-    display: block;
 
-    font-size: 13.5px;
+    display:
+        block;
 
-    font-weight: 600;
+    font-size:
+        13.5px;
 
-    color: var(--text-dark);
+    font-weight:
+        600;
 
-    margin-bottom: 8px;
+    color:
+        var(--text-dark);
+
+    margin-bottom:
+        8px;
 }
 
 
+/* =========================================================
+   INPUT WRAPPER
+========================================================= */
+
 .input-wrap {
-    position: relative;
+
+    position:
+        relative;
 }
 
 
 .input-wrap svg {
-    position: absolute;
 
-    left: 14px;
+    position:
+        absolute;
 
-    top: 50%;
+    left:
+        14px;
 
-    transform: translateY(-50%);
+    top:
+        50%;
 
-    width: 16px;
+    transform:
+        translateY(-50%);
 
-    height: 16px;
+    width:
+        16px;
 
-    color: #A89B93;
+    height:
+        16px;
 
-    pointer-events: none;
+    color:
+        #A89B93;
+
+    pointer-events:
+        none;
 }
 
 
@@ -659,35 +802,56 @@ label {
 input[type="email"],
 input[type="password"],
 input[type="text"] {
-    width: 100%;
 
-    padding: 13px 16px 13px 40px;
+    width:
+        100%;
 
-    border: 1.5px solid var(--border);
+    padding:
+        13px 16px 13px 40px;
 
-    border-radius: 9px;
+    border:
+        1.5px solid
+        var(--border);
 
-    font-size: 14px;
+    border-radius:
+        9px;
 
-    font-family: 'Poppins', sans-serif;
+    font-size:
+        14px;
 
-    background: #fff;
+    font-family:
+        'Poppins',
+        sans-serif;
 
-    color: var(--text-dark);
+    background:
+        #fff;
 
-    outline: none;
+    color:
+        var(--text-dark);
+
+    outline:
+        none;
 
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        background 0.2s ease;
+
+        border-color
+        0.2s ease,
+
+        box-shadow
+        0.2s ease,
+
+        background
+        0.2s ease;
 }
 
 
 input::placeholder {
-    color: var(--placeholder);
 
-    font-weight: 400;
+    color:
+        var(--placeholder);
+
+    font-weight:
+        400;
 }
 
 
@@ -695,21 +859,19 @@ input::placeholder {
    GRAY FOCUS INDICATION
 ========================================================= */
 
-/*
-   No bright pink focus border.
-   Email + Password use soft gray.
-*/
-
 input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="text"]:focus {
 
-    border-color: var(--focus-gray);
+    border-color:
+        var(--focus-gray);
 
     box-shadow:
-        0 0 0 3px var(--focus-gray-shadow);
+        0 0 0 3px
+        var(--focus-gray-shadow);
 
-    background: #fff;
+    background:
+        #fff;
 }
 
 
@@ -722,7 +884,8 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
 
-    -webkit-text-fill-color: var(--text-dark);
+    -webkit-text-fill-color:
+        var(--text-dark);
 
     -webkit-box-shadow:
         0 0 0 1000px #fff inset;
@@ -731,7 +894,10 @@ input:-webkit-autofill:active {
         0 0 0 1000px #fff inset;
 
     transition:
-        background-color 5000s ease-in-out 0s;
+        background-color
+        5000s
+        ease-in-out
+        0s;
 }
 
 
@@ -743,7 +909,8 @@ input[type="email"]:-webkit-autofill:focus,
 input[type="password"]:-webkit-autofill:focus,
 input[type="text"]:-webkit-autofill:focus {
 
-    border-color: var(--focus-gray);
+    border-color:
+        var(--focus-gray);
 
     -webkit-box-shadow:
         0 0 0 1000px #fff inset,
@@ -761,7 +928,9 @@ input[type="text"]:-webkit-autofill:focus {
 
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
-    display: none;
+
+    display:
+        none;
 }
 
 
@@ -770,38 +939,56 @@ input[type="password"]::-ms-clear {
 ========================================================= */
 
 .toggle-eye {
-    position: absolute;
 
-    right: 14px;
+    position:
+        absolute;
 
-    top: 50%;
+    right:
+        14px;
 
-    transform: translateY(-50%);
+    top:
+        50%;
 
-    cursor: pointer;
+    transform:
+        translateY(-50%);
 
-    color: #A89B93;
+    cursor:
+        pointer;
 
-    background: none;
+    color:
+        #A89B93;
 
-    border: none;
+    background:
+        none;
 
-    padding: 0;
+    border:
+        none;
 
-    display: flex;
+    padding:
+        0;
 
-    opacity: 0;
+    display:
+        flex;
 
-    pointer-events: none;
+    opacity:
+        0;
 
-    transition: opacity 0.15s;
+    pointer-events:
+        none;
+
+    transition:
+        opacity
+        0.15s;
 }
 
 
 .toggle-eye.show {
-    opacity: 1;
 
-    pointer-events: auto;
+    opacity:
+        1;
+
+    pointer-events:
+        auto;
 }
 
 
@@ -810,29 +997,41 @@ input[type="password"]::-ms-clear {
 ========================================================= */
 
 .row-between {
-    display: flex;
 
-    justify-content: flex-end;
+    display:
+        flex;
 
-    margin-top: 8px;
+    justify-content:
+        flex-end;
+
+    margin-top:
+        8px;
 }
 
 
 .link {
-    color: var(--btn-maroon);
 
-    font-size: 13px;
+    color:
+        var(--btn-maroon);
 
-    text-decoration: none;
+    font-size:
+        13px;
 
-    font-weight: 600;
+    text-decoration:
+        none;
+
+    font-weight:
+        600;
 }
 
 
 .link:hover {
-    color: var(--accent);
 
-    text-decoration: underline;
+    color:
+        var(--accent);
+
+    text-decoration:
+        underline;
 }
 
 
@@ -841,9 +1040,12 @@ input[type="password"]::-ms-clear {
 ========================================================= */
 
 .btn-primary {
-    width: 100%;
 
-    padding: 14px;
+    width:
+        100%;
+
+    padding:
+        14px;
 
     background:
         linear-gradient(
@@ -852,30 +1054,46 @@ input[type="password"]::-ms-clear {
             #A52D2C 100%
         );
 
-    color: #fff;
+    color:
+        #fff;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 9px;
+    border-radius:
+        9px;
 
-    font-size: 15px;
+    font-size:
+        15px;
 
-    font-weight: 600;
+    font-weight:
+        600;
 
-    font-family: 'Poppins', sans-serif;
+    font-family:
+        'Poppins',
+        sans-serif;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
-    margin-top: 10px;
+    margin-top:
+        10px;
 
     transition:
-        background 0.2s ease,
-        transform 0.1s ease,
-        box-shadow 0.2s ease;
+
+        background
+        0.2s ease,
+
+        transform
+        0.1s ease,
+
+        box-shadow
+        0.2s ease;
 }
 
 
 .btn-primary:hover {
+
     background:
         linear-gradient(
             135deg,
@@ -884,12 +1102,20 @@ input[type="password"]::-ms-clear {
         );
 
     box-shadow:
-        0 7px 18px rgba(139, 32, 26, 0.20);
+        0 7px 18px
+        rgba(
+            139,
+            32,
+            26,
+            0.20
+        );
 }
 
 
 .btn-primary:active {
-    transform: scale(0.99);
+
+    transform:
+        scale(0.99);
 }
 
 
@@ -898,15 +1124,21 @@ input[type="password"]::-ms-clear {
 ========================================================= */
 
 .foot-note {
-    text-align: center;
 
-    font-size: 13.5px;
+    text-align:
+        center;
 
-    color: var(--text-muted);
+    font-size:
+        13.5px;
 
-    margin-top: 22px;
+    color:
+        var(--text-muted);
 
-    font-weight: 400;
+    margin-top:
+        22px;
+
+    font-weight:
+        400;
 }
 
 
@@ -915,141 +1147,224 @@ input[type="password"]::-ms-clear {
 ========================================================= */
 
 .role-label {
-    font-size: 14.5px;
 
-    font-weight: 600;
+    font-size:
+        14.5px;
 
-    color: var(--text-dark);
+    font-weight:
+        600;
 
-    margin-bottom: 14px;
+    color:
+        var(--text-dark);
+
+    margin-bottom:
+        14px;
 }
 
 
 .roles {
-    display: flex;
 
-    gap: 16px;
+    display:
+        flex;
 
-    margin-bottom: 28px;
+    gap:
+        16px;
+
+    margin-bottom:
+        28px;
 }
 
 
 .role-card {
-    flex: 1;
 
-    border: 1.5px solid var(--border);
+    flex:
+        1;
 
-    border-radius: 12px;
+    border:
+        1.5px solid
+        var(--border);
 
-    padding: 20px 14px 18px;
+    border-radius:
+        12px;
 
-    text-align: center;
+    padding:
+        20px 14px 18px;
 
-    cursor: pointer;
+    text-align:
+        center;
 
-    position: relative;
+    cursor:
+        pointer;
+
+    position:
+        relative;
 
     transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        transform 0.15s ease;
+
+        border-color
+        0.2s ease,
+
+        background
+        0.2s ease,
+
+        transform
+        0.15s ease;
 }
 
 
 .role-card:hover {
-    transform: translateY(-1px);
 
-    border-color: rgba(139, 32, 26, 0.30);
+    transform:
+        translateY(-1px);
+
+    border-color:
+        rgba(
+            139,
+            32,
+            26,
+            0.30
+        );
 }
 
 
 .role-card.selected {
-    border-color: var(--btn-maroon);
 
-    background: #FFF5F2;
+    border-color:
+        var(--btn-maroon);
+
+    background:
+        #FFF5F2;
 }
 
 
 .role-radio {
-    position: absolute;
 
-    top: 12px;
-    left: 12px;
+    position:
+        absolute;
 
-    width: 15px;
-    height: 15px;
+    top:
+        12px;
 
-    border: 2px solid var(--border);
+    left:
+        12px;
 
-    border-radius: 50%;
+    width:
+        15px;
+
+    height:
+        15px;
+
+    border:
+        2px solid
+        var(--border);
+
+    border-radius:
+        50%;
 }
 
 
 .role-card.selected .role-radio {
-    border-color: var(--btn-maroon);
+
+    border-color:
+        var(--btn-maroon);
 }
 
 
 .role-card.selected .role-radio::after {
-    content: "";
 
-    display: block;
+    content:
+        "";
 
-    width: 7px;
-    height: 7px;
+    display:
+        block;
 
-    background: var(--btn-maroon);
+    width:
+        7px;
 
-    border-radius: 50%;
+    height:
+        7px;
 
-    margin: 2px auto;
+    background:
+        var(--btn-maroon);
+
+    border-radius:
+        50%;
+
+    margin:
+        2px auto;
 }
 
 
 .role-icon {
-    width: 48px;
-    height: 48px;
 
-    margin: 4px auto 12px;
+    width:
+        48px;
 
-    background: #FFE0D2;
+    height:
+        48px;
 
-    color: var(--btn-maroon);
+    margin:
+        4px auto 12px;
 
-    border-radius: 50%;
+    background:
+        #FFE0D2;
 
-    display: flex;
+    color:
+        var(--btn-maroon);
 
-    align-items: center;
-    justify-content: center;
+    border-radius:
+        50%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
 }
 
 
 .role-icon svg {
-    width: 22px;
-    height: 22px;
+
+    width:
+        22px;
+
+    height:
+        22px;
 }
 
 
 .role-title {
-    font-weight: 700;
 
-    font-size: 15px;
+    font-weight:
+        700;
 
-    color: var(--text-dark);
+    font-size:
+        15px;
 
-    margin-bottom: 5px;
+    color:
+        var(--text-dark);
+
+    margin-bottom:
+        5px;
 }
 
 
 .role-desc {
-    font-size: 11.5px;
 
-    color: var(--text-muted);
+    font-size:
+        11.5px;
 
-    line-height: 1.45;
+    color:
+        var(--text-muted);
 
-    font-weight: 400;
+    line-height:
+        1.45;
+
+    font-weight:
+        400;
 }
 
 
@@ -1058,12 +1373,16 @@ input[type="password"]::-ms-clear {
 ========================================================= */
 
 .view {
-    display: none;
+
+    display:
+        none;
 }
 
 
 .view.active {
-    display: block;
+
+    display:
+        block;
 }
 
 
@@ -1074,81 +1393,72 @@ input[type="password"]::-ms-clear {
 @media (max-width: 760px) {
 
     body {
-        padding: 20px;
 
-        /*
-           Keep the soft gradient visible on mobile.
-        */
+        padding:
+            0;
 
         background:
-            radial-gradient(
-                circle at 5% 5%,
-                rgba(221, 75, 76, 0.16) 0%,
-                rgba(221, 75, 76, 0.06) 28%,
-                transparent 50%
-            ),
-
-            radial-gradient(
-                circle at 95% 95%,
-                rgba(255, 163, 112, 0.22) 0%,
-                rgba(255, 163, 112, 0.08) 28%,
-                transparent 52%
-            ),
-
-            radial-gradient(
-                circle at 95% 20%,
-                rgba(221, 75, 76, 0.10) 0%,
-                transparent 45%
-            ),
-
-            linear-gradient(
-                135deg,
-                #F9E1DD 0%,
-                #FBE8E2 25%,
-                #FFF3ED 52%,
-                #FFE9DE 75%,
-                #FFD9CA 100%
-            );
+            transparent;
     }
 
 
     .card {
-        flex-direction: column;
 
-        min-height: auto;
+        flex-direction:
+            column;
+
+        min-height:
+            auto;
+
+        width:
+            100%;
     }
 
 
     .left {
-        flex: none;
 
-        padding: 36px 30px;
+        flex:
+            none;
 
-        min-height: 380px;
+        padding:
+            36px 30px;
 
-        border-radius: 0 55px 55px 0;
+        min-height:
+            380px;
+
+        border-radius:
+            0 55px 55px 0;
     }
 
 
     .login-logo {
-        width: 140px;
+
+        width:
+            140px;
     }
 
 
     .tagline {
-        font-size: 22px;
 
-        margin-top: 24px;
+        font-size:
+            22px;
+
+        margin-top:
+            24px;
     }
 
 
     .right {
-        padding: 36px 28px;
+
+        padding:
+            36px 28px;
     }
 
 
     .roles {
-        flex-direction: column;
+
+        flex-direction:
+            column;
     }
 }
 
@@ -1160,74 +1470,79 @@ input[type="password"]::-ms-clear {
 @media (max-width: 480px) {
 
     body {
-        padding: 12px;
+
+        padding:
+            0;
 
         background:
-            radial-gradient(
-                circle at 0% 0%,
-                rgba(221, 75, 76, 0.14) 0%,
-                transparent 48%
-            ),
-
-            radial-gradient(
-                circle at 100% 100%,
-                rgba(255, 163, 112, 0.18) 0%,
-                transparent 50%
-            ),
-
-            linear-gradient(
-                135deg,
-                #F9E1DD 0%,
-                #FFF0EA 50%,
-                #FFDCD0 100%
-            );
+            transparent;
     }
 
 
     .card {
-        border-radius: 16px;
+
+        border-radius:
+            16px;
     }
 
 
     .left {
-        min-height: 330px;
 
-        padding: 30px 24px;
+        min-height:
+            330px;
 
-        border-radius: 0 45px 45px 0;
+        padding:
+            30px 24px;
+
+        border-radius:
+            0 45px 45px 0;
     }
 
 
     .login-logo {
-        width: 125px;
+
+        width:
+            125px;
     }
 
 
     .tagline {
-        font-size: 20px;
+
+        font-size:
+            20px;
     }
 
 
     .subtext {
-        font-size: 12px;
 
-        max-width: 230px;
+        font-size:
+            12px;
+
+        max-width:
+            230px;
     }
 
 
     .right {
-        padding: 32px 22px;
+
+        padding:
+            32px 22px;
     }
 
 
     h1 {
-        font-size: 25px;
+
+        font-size:
+            25px;
     }
 
 
     .subhead {
-        font-size: 13px;
 
-        margin-bottom: 28px;
+        font-size:
+            13px;
+
+        margin-bottom:
+            28px;
     }
 }
