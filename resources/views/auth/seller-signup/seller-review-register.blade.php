@@ -2757,11 +2757,11 @@
     <header class="registration-header">
 
         <a
-            href="{{ route('seller.register.exit') }}"
-            class="header-logo-wrapper"
-            id="sellerRegistrationExit"
-            aria-label="Exit seller registration and return to login"
-        >
+    href="{{ url('/') }}"
+    class="header-logo-wrapper"
+    id="sellerRegistrationExit"
+    aria-label="Return to ShopEase landing page"
+>
 
             <img
                 src="{{ asset('icons/login/signup-logo.png') }}"

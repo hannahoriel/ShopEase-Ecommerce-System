@@ -2713,10 +2713,10 @@
         <!-- LOGO / RETURN TO LOGIN -->
 
         <a
-            href="{{ route('login') }}"
-            class="header-logo-wrapper"
-            aria-label="Return to login"
-        >
+    href="{{ url('/') }}"
+    class="header-logo-wrapper"
+    aria-label="Return to ShopEase landing page"
+>
 
             <img
                 src="{{ asset('icons/login/signup-logo.png') }}"

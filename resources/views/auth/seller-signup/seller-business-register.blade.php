@@ -10,7 +10,10 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>ShopEase - Business Information</title>
+    <title>
+        ShopEase - Business Information
+    </title>
+
 
     <!-- =========================================================
          POPPINS
@@ -38,6 +41,7 @@
     <style>
 
         :root {
+
             --maroon-dark: #52070B;
             --maroon: #7B1B1B;
             --maroon-light: #A52A2A;
@@ -58,19 +62,34 @@
 
 
         * {
-            box-sizing: border-box;
+
+            box-sizing:
+                border-box;
+
         }
 
 
         body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
 
-            font-family: 'Poppins', sans-serif;
+            margin:
+                0;
 
-            background: var(--background);
-            color: var(--text-dark);
+            padding:
+                0;
+
+            min-height:
+                100vh;
+
+            font-family:
+                'Poppins',
+                sans-serif;
+
+            background:
+                var(--background);
+
+            color:
+                var(--text-dark);
+
         }
 
 
@@ -79,9 +98,16 @@
         ========================================================== */
 
         .registration-page {
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
+
+            min-height:
+                100vh;
+
+            position:
+                relative;
+
+            overflow-x:
+                hidden;
+
         }
 
 
@@ -90,91 +116,162 @@
         ========================================================== */
 
         .registration-header {
-            display: flex;
-            align-items: center;
 
-            gap: 26px;
+            display:
+                flex;
 
-            padding-top: 28px;
-            padding-left: 0;
+            align-items:
+                center;
+
+            gap:
+                26px;
+
+            padding-top:
+                28px;
+
+            padding-left:
+                0;
+
         }
 
 
+        /* =========================================================
+           CLICKABLE LOGO
+           NOW RETURNS TO LANDING PAGE
+        ========================================================== */
+
         .header-logo-wrapper {
-            width: 128px;
-            height: 105px;
 
-            background: var(--maroon-dark);
+            width:
+                128px;
 
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 60px;
+            height:
+                105px;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background:
+                var(--maroon-dark);
 
-            flex-shrink: 0;
+            border-top-right-radius:
+                60px;
 
-            text-decoration: none;
-            cursor: pointer;
+            border-bottom-right-radius:
+                60px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            flex-shrink:
+                0;
+
+            text-decoration:
+                none;
+
+            cursor:
+                pointer;
 
             transition:
                 opacity 0.2s ease,
                 transform 0.2s ease;
+
         }
 
 
         .header-logo-wrapper:hover {
-            opacity: 0.92;
-            transform: translateX(2px);
+
+            opacity:
+                0.92;
+
+            transform:
+                translateX(2px);
+
         }
 
 
         .header-logo-wrapper:focus-visible {
-            outline: 2px solid var(--maroon);
-            outline-offset: 4px;
+
+            outline:
+                2px solid
+                var(--maroon);
+
+            outline-offset:
+                4px;
+
         }
 
 
         .signup-logo {
-            width: 68px;
-            height: auto;
 
-            object-fit: contain;
+            width:
+                68px;
+
+            height:
+                auto;
+
+            object-fit:
+                contain;
+
         }
 
 
         .header-copy {
-            padding-top: 0;
+
+            padding-top:
+                0;
+
         }
 
 
         .header-title {
-            margin: 0;
 
-            font-size: 31px;
-            line-height: 1.15;
+            margin:
+                0;
 
-            font-weight: 700;
+            font-size:
+                31px;
 
-            color: var(--text-dark);
+            line-height:
+                1.15;
+
+            font-weight:
+                700;
+
+            color:
+                var(--text-dark);
+
         }
 
 
         .header-title span {
-            color: var(--maroon-dark);
+
+            color:
+                var(--maroon-dark);
+
         }
 
 
         .header-subtitle {
-            margin: 3px 0 0;
 
-            font-size: 19px;
-            line-height: 1.3;
+            margin:
+                3px 0 0;
 
-            font-weight: 400;
+            font-size:
+                19px;
 
-            color: #969696;
+            line-height:
+                1.3;
+
+            font-weight:
+                400;
+
+            color:
+                #969696;
+
         }
 
 
@@ -183,124 +280,206 @@
         ========================================================== */
 
         .stepper-wrapper {
-            width: 560px;
 
-            margin: 18px auto 18px;
+            width:
+                560px;
 
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
+            margin:
+                18px auto 18px;
+
+            display:
+                flex;
+
+            align-items:
+                flex-start;
+
+            justify-content:
+                center;
+
         }
 
 
         .step {
-            flex: 1;
 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            flex:
+                1;
 
-            position: relative;
+            display:
+                flex;
 
-            text-decoration: none;
-            color: inherit;
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            position:
+                relative;
+
+            text-decoration:
+                none;
+
+            color:
+                inherit;
+
         }
 
 
         .step:not(:last-child)::after {
-            content: "";
 
-            position: absolute;
+            content:
+                "";
 
-            top: 16px;
-            left: 50%;
+            position:
+                absolute;
 
-            width: 100%;
-            height: 1.5px;
+            top:
+                16px;
 
-            background: #9E9E9E;
+            left:
+                50%;
 
-            z-index: 0;
+            width:
+                100%;
+
+            height:
+                1.5px;
+
+            background:
+                #9E9E9E;
+
+            z-index:
+                0;
+
         }
 
 
         .step-clickable {
-            cursor: pointer;
+
+            cursor:
+                pointer;
+
         }
 
 
         .step-number {
-            width: 34px;
-            height: 34px;
 
-            border-radius: 50%;
+            width:
+                34px;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height:
+                34px;
 
-            font-size: 14px;
-            font-weight: 500;
+            border-radius:
+                50%;
 
-            border: 1.5px solid #999;
+            display:
+                flex;
 
-            color: #888;
+            align-items:
+                center;
 
-            background: var(--background);
+            justify-content:
+                center;
 
-            position: relative;
-            z-index: 1;
+            font-size:
+                14px;
+
+            font-weight:
+                500;
+
+            border:
+                1.5px solid
+                #999;
+
+            color:
+                #888;
+
+            background:
+                var(--background);
+
+            position:
+                relative;
+
+            z-index:
+                1;
 
             transition:
                 transform 0.2s ease,
                 background 0.2s ease,
                 border-color 0.2s ease,
                 color 0.2s ease;
+
         }
 
 
         .step-clickable:hover .step-number {
-            transform: scale(1.06);
 
-            border-color: var(--maroon);
+            transform:
+                scale(1.06);
 
-            color: var(--maroon-dark);
+            border-color:
+                var(--maroon);
+
+            color:
+                var(--maroon-dark);
+
         }
 
 
         .step-clickable:hover .step-label {
-            color: var(--maroon-dark);
+
+            color:
+                var(--maroon-dark);
+
         }
 
 
         .step.active .step-number {
-            background: var(--maroon);
 
-            border-color: var(--maroon);
+            background:
+                var(--maroon);
 
-            color: white;
+            border-color:
+                var(--maroon);
 
-            font-weight: 600;
+            color:
+                white;
+
+            font-weight:
+                600;
+
         }
 
 
         .step-label {
-            margin-top: 6px;
 
-            font-size: 14px;
+            margin-top:
+                6px;
 
-            font-weight: 400;
+            font-size:
+                14px;
 
-            color: #969696;
+            font-weight:
+                400;
 
-            white-space: nowrap;
+            color:
+                #969696;
+
+            white-space:
+                nowrap;
+
         }
 
 
         .step.active .step-label {
-            color: var(--maroon-dark);
 
-            font-weight: 500;
+            color:
+                var(--maroon-dark);
+
+            font-weight:
+                500;
+
         }
 
 
@@ -309,30 +488,41 @@
         ========================================================== */
 
         .registration-content {
-            width: 100%;
+
+            width:
+                100%;
 
             padding:
                 0
                 55px
                 40px;
+
         }
 
 
         .registration-card {
-            width: 100%;
 
-            max-width: 1580px;
+            width:
+                100%;
 
-            min-height: 685px;
+            max-width:
+                1580px;
 
-            margin: 0 auto;
+            min-height:
+                685px;
 
-            background: var(--white);
+            margin:
+                0 auto;
 
-            border-radius: 12px;
+            background:
+                var(--white);
+
+            border-radius:
+                12px;
 
             box-shadow:
-                0 2px 12px rgba(
+                0 2px 12px
+                rgba(
                     0,
                     0,
                     0,
@@ -344,7 +534,9 @@
                 46px
                 26px;
 
-            position: relative;
+            position:
+                relative;
+
         }
 
 
@@ -353,16 +545,21 @@
         ========================================================== */
 
         .business-layout {
-            display: grid;
+
+            display:
+                grid;
 
             grid-template-columns:
                 440px
                 440px
                 1fr;
 
-            column-gap: 55px;
+            column-gap:
+                55px;
 
-            width: 100%;
+            width:
+                100%;
+
         }
 
 
@@ -371,74 +568,100 @@
         ========================================================== */
 
         .form-group {
-            min-width: 0;
+
+            min-width:
+                0;
+
         }
 
 
         .form-label {
-            display: block;
 
-            margin-bottom: 8px;
+            display:
+                block;
 
-            font-size: 15px;
+            margin-bottom:
+                8px;
 
-            line-height: 1.2;
+            font-size:
+                15px;
 
-            font-weight: 500;
+            line-height:
+                1.2;
 
-            color: var(--text-dark);
+            font-weight:
+                500;
+
+            color:
+                var(--text-dark);
+
         }
 
 
         .required {
-            color: #E01D1D;
+
+            color:
+                #E01D1D;
+
         }
 
 
         .form-input {
-            width: 100%;
 
-            height: 48px;
+            width:
+                100%;
+
+            height:
+                48px;
 
             border:
                 1.5px solid
                 var(--border);
 
-            border-radius: 9px;
+            border-radius:
+                9px;
 
             padding:
                 0
                 14px;
 
-            background: white;
+            background:
+                white;
 
             font-family:
                 'Poppins',
                 sans-serif;
 
-            font-size: 14px;
+            font-size:
+                14px;
 
             color:
                 var(--text-dark);
 
-            outline: none;
+            outline:
+                none;
 
             transition:
                 border-color
                 0.2s ease,
-
                 box-shadow
                 0.2s ease;
+
         }
 
 
         .form-input::placeholder {
-            color: #A6A6A6;
+
+            color:
+                #A6A6A6;
+
         }
 
 
         .form-input:focus {
-            border-color: #B8B8B8;
+
+            border-color:
+                #B8B8B8;
 
             box-shadow:
                 0 0 0 3px
@@ -448,6 +671,7 @@
                     27,
                     0.06
                 );
+
         }
 
 
@@ -456,38 +680,48 @@
         ========================================================== */
 
         .permit-upload {
-            width: 100%;
 
-            height: 123px;
+            width:
+                100%;
+
+            height:
+                123px;
 
             border:
                 1.5px solid
                 var(--border);
 
-            border-radius: 9px;
+            border-radius:
+                9px;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
-            justify-content: center;
+            align-items:
+                center;
 
-            cursor: pointer;
+            justify-content:
+                center;
 
-            background: white;
+            cursor:
+                pointer;
+
+            background:
+                white;
 
             transition:
                 border-color
                 0.2s ease,
-
                 background
                 0.2s ease,
-
                 box-shadow
                 0.2s ease;
+
         }
 
 
         .permit-upload:hover {
+
             border-color:
                 var(--maroon);
 
@@ -502,69 +736,102 @@
                     11,
                     0.05
                 );
+
         }
 
 
         .permit-upload input {
-            display: none;
+
+            display:
+                none;
+
         }
 
 
         .permit-placeholder {
-            text-align: center;
 
-            color: #A8A8A8;
+            text-align:
+                center;
 
-            padding: 10px;
+            color:
+                #A8A8A8;
 
-            max-width: 100%;
+            padding:
+                10px;
+
+            max-width:
+                100%;
+
         }
 
 
         .permit-icon {
-            width: 40px;
-            height: 40px;
+
+            width:
+                40px;
+
+            height:
+                40px;
 
             margin:
                 0
                 auto
                 8px;
+
         }
 
 
         .permit-text {
-            margin: 0;
 
-            font-size: 14px;
+            margin:
+                0;
 
-            color: #A5A5A5;
+            font-size:
+                14px;
 
-            max-width: 360px;
+            color:
+                #A5A5A5;
 
-            word-break: break-word;
+            max-width:
+                360px;
+
+            word-break:
+                break-word;
+
         }
 
 
         .permit-selected {
+
             color:
                 var(--maroon);
 
-            font-weight: 500;
+            font-weight:
+                500;
 
-            max-width: 360px;
+            max-width:
+                360px;
 
-            word-break: break-word;
+            word-break:
+                break-word;
+
         }
 
 
         .permit-existing {
-            display: block;
 
-            margin-top: 4px;
+            display:
+                block;
 
-            color: #A5A5A5;
+            margin-top:
+                4px;
 
-            font-size: 11px;
+            color:
+                #A5A5A5;
+
+            font-size:
+                11px;
+
         }
 
 
@@ -573,119 +840,166 @@
         ========================================================== */
 
         .category-section {
-            margin-top: 36px;
 
-            width: 440px;
+            margin-top:
+                36px;
+
+            width:
+                440px;
+
         }
 
 
         .category-title {
-            margin: 0;
 
-            font-size: 16px;
+            margin:
+                0;
 
-            font-weight: 500;
+            font-size:
+                16px;
+
+            font-weight:
+                500;
 
             color:
                 var(--text-dark);
+
         }
 
 
         .category-subtitle {
+
             margin:
                 3px
                 0
                 12px;
 
-            font-size: 14px;
+            font-size:
+                14px;
 
-            color: #A0A0A0;
+            color:
+                #A0A0A0;
+
         }
 
 
         .category-list {
-            display: flex;
 
-            flex-direction: column;
+            display:
+                flex;
 
-            gap: 7px;
+            flex-direction:
+                column;
+
+            gap:
+                7px;
+
         }
 
 
         .category-option {
-            display: flex;
 
-            align-items: center;
+            display:
+                flex;
 
-            gap: 12px;
+            align-items:
+                center;
 
-            min-height: 23px;
+            gap:
+                12px;
 
-            cursor: pointer;
+            min-height:
+                23px;
 
-            user-select: none;
+            cursor:
+                pointer;
+
+            user-select:
+                none;
+
         }
 
 
         .category-option input {
-            display: none;
+
+            display:
+                none;
+
         }
 
 
         .custom-checkbox {
-            width: 18px;
-            height: 18px;
 
-            border-radius: 50%;
+            width:
+                18px;
+
+            height:
+                18px;
+
+            border-radius:
+                50%;
 
             border:
                 1.7px solid
                 #9B9B9B;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
-            justify-content: center;
+            align-items:
+                center;
 
-            flex-shrink: 0;
+            justify-content:
+                center;
+
+            flex-shrink:
+                0;
 
             transition:
                 border-color
                 0.2s ease,
-
                 background
                 0.2s ease;
+
         }
 
 
-        .category-option
-        input:checked
-        + .custom-checkbox {
+        .category-option input:checked + .custom-checkbox {
+
             border-color:
                 #C92B2B;
+
         }
 
 
-        .category-option
-        input:checked
-        + .custom-checkbox::after {
+        .category-option input:checked + .custom-checkbox::after {
 
-            content: "";
+            content:
+                "";
 
-            width: 7px;
-            height: 7px;
+            width:
+                7px;
 
-            border-radius: 50%;
+            height:
+                7px;
+
+            border-radius:
+                50%;
 
             background:
                 #C92B2B;
+
         }
 
 
         .category-name {
-            font-size: 15px;
 
-            color: #242424;
+            font-size:
+                15px;
+
+            color:
+                #242424;
+
         }
 
 
@@ -694,55 +1008,73 @@
         ========================================================== */
 
         .form-actions {
-            position: absolute;
 
-            right: 46px;
+            position:
+                absolute;
 
-            bottom: 26px;
+            right:
+                46px;
 
-            display: flex;
+            bottom:
+                26px;
 
-            justify-content: flex-end;
+            display:
+                flex;
+
+            justify-content:
+                flex-end;
+
         }
 
 
         .continue-button {
-            width: 165px;
-            height: 48px;
 
-            border: none;
+            width:
+                165px;
 
-            border-radius: 24px;
+            height:
+                48px;
+
+            border:
+                none;
+
+            border-radius:
+                24px;
 
             background:
                 var(--maroon);
 
-            color: white;
+            color:
+                white;
 
             font-family:
                 'Poppins',
                 sans-serif;
 
-            font-size: 16px;
+            font-size:
+                16px;
 
-            font-weight: 600;
+            font-weight:
+                600;
 
-            cursor: pointer;
+            cursor:
+                pointer;
 
             transition:
                 background
                 0.2s ease,
-
                 transform
                 0.1s ease,
-
                 box-shadow
                 0.2s ease;
+
         }
 
 
         .continue-button:hover {
-            background: #661515;
+
+            background:
+                #661515;
 
             box-shadow:
                 0 5px 14px
@@ -752,23 +1084,32 @@
                     27,
                     0.15
                 );
+
         }
 
 
         .continue-button:active {
+
             transform:
                 scale(0.98);
 
-            box-shadow: none;
+            box-shadow:
+                none;
+
         }
 
 
         .continue-button:disabled {
-            opacity: 0.7;
 
-            cursor: not-allowed;
+            opacity:
+                0.7;
 
-            box-shadow: none;
+            cursor:
+                not-allowed;
+
+            box-shadow:
+                none;
+
         }
 
 
@@ -777,11 +1118,16 @@
         ========================================================== */
 
         .error-message {
-            margin-top: 5px;
 
-            font-size: 12px;
+            margin-top:
+                5px;
 
-            color: #C62828;
+            font-size:
+                12px;
+
+            color:
+                #C62828;
+
         }
 
 
@@ -792,19 +1138,25 @@
         @media (max-width: 1200px) {
 
             .business-layout {
+
                 grid-template-columns:
                     minmax(0, 1fr)
                     minmax(0, 1fr);
 
-                column-gap: 30px;
+                column-gap:
+                    30px;
+
             }
 
 
             .category-section {
-                width: 100%;
+
+                width:
+                    100%;
 
                 grid-column:
                     1 / -1;
+
             }
 
         }
@@ -813,96 +1165,146 @@
         @media (max-width: 760px) {
 
             .registration-header {
-                gap: 18px;
 
-                padding-top: 24px;
+                gap:
+                    18px;
+
+                padding-top:
+                    24px;
+
             }
 
 
             .header-logo-wrapper {
-                width: 105px;
-                height: 100px;
 
-                border-top-right-radius: 55px;
-                border-bottom-right-radius: 55px;
+                width:
+                    105px;
+
+                height:
+                    100px;
+
+                border-top-right-radius:
+                    55px;
+
+                border-bottom-right-radius:
+                    55px;
+
             }
 
 
             .signup-logo {
-                width: 70px;
+
+                width:
+                    70px;
+
             }
 
 
             .header-title {
-                font-size: 25px;
+
+                font-size:
+                    25px;
+
             }
 
 
             .header-subtitle {
-                font-size: 16px;
+
+                font-size:
+                    16px;
+
             }
 
 
             .stepper-wrapper {
-                width: 95%;
 
-                margin-top: 24px;
+                width:
+                    95%;
+
+                margin-top:
+                    24px;
+
             }
 
 
             .step-label {
-                font-size: 13px;
+
+                font-size:
+                    13px;
+
             }
 
 
             .registration-content {
+
                 padding:
                     0
                     20px
                     30px;
+
             }
 
 
             .registration-card {
-                min-height: auto;
+
+                min-height:
+                    auto;
 
                 padding:
                     24px
                     20px
                     95px;
+
             }
 
 
             .business-layout {
-                display: grid;
+
+                display:
+                    grid;
 
                 grid-template-columns:
                     1fr;
 
-                gap: 25px;
+                gap:
+                    25px;
+
             }
 
 
             .category-section {
-                grid-column: auto;
 
-                width: 100%;
+                grid-column:
+                    auto;
 
-                margin-top: 0;
+                width:
+                    100%;
+
+                margin-top:
+                    0;
+
             }
 
 
             .form-actions {
-                position: static;
 
-                margin-top: 30px;
+                position:
+                    static;
 
-                justify-content: flex-end;
+                margin-top:
+                    30px;
+
+                justify-content:
+                    flex-end;
+
             }
 
 
             .continue-button {
-                width: 150px;
+
+                width:
+                    150px;
+
             }
 
         }
@@ -923,13 +1325,14 @@
 
     <header class="registration-header">
 
-        <!-- CLICKABLE LOGO / EXIT REGISTRATION -->
+
+        <!-- CLICKABLE LOGO / RETURN TO LANDING PAGE -->
 
         <a
-            href="{{ route('seller.register.exit') }}"
+            href="{{ url('/') }}"
             class="header-logo-wrapper"
             id="sellerRegistrationExit"
-            aria-label="Exit seller registration and return to login"
+            aria-label="Return to ShopEase landing page"
         >
 
             <img
@@ -944,11 +1347,16 @@
         <div class="header-copy">
 
             <h1 class="header-title">
+
                 Seller <span>Registration</span>
+
             </h1>
 
+
             <p class="header-subtitle">
+
                 Fill the details below to create your seller account.
+
             </p>
 
         </div>
@@ -974,11 +1382,16 @@
         >
 
             <div class="step-number">
+
                 1
+
             </div>
 
+
             <div class="step-label">
+
                 Seller Information
+
             </div>
 
         </a>
@@ -995,11 +1408,16 @@
         >
 
             <div class="step-number">
+
                 2
+
             </div>
 
+
             <div class="step-label">
+
                 Business Information
+
             </div>
 
         </a>
@@ -1016,11 +1434,16 @@
         >
 
             <div class="step-number">
+
                 3
+
             </div>
 
+
             <div class="step-label">
+
                 Review Information
+
             </div>
 
         </a>
@@ -1058,6 +1481,7 @@
 
                     <div class="form-group">
 
+
                         <label
                             for="business_name"
                             class="form-label"
@@ -1066,7 +1490,9 @@
                             Business Name
 
                             <span class="required">
+
                                 *
+
                             </span>
 
                         </label>
@@ -1086,10 +1512,13 @@
                         @error('business_name')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
+
 
                     </div>
 
@@ -1101,93 +1530,135 @@
 
                     <div class="form-group">
 
+
                         <label
-    class="form-label"
-    for="business_permit"
->
-    Business Permit
-    <span class="required">*</span>
-</label>
+                            class="form-label"
+                            for="business_permit"
+                        >
 
-<label
-    for="business_permit"
-    class="permit-upload"
->
-    <input
-        type="file"
-        id="business_permit"
-        name="business_permit"
-        accept=".jpg,.jpeg,.png,.pdf"
-    >
+                            Business Permit
 
-    <div
-        class="permit-placeholder"
-        id="permitPlaceholder"
-    >
+                            <span class="required">
 
-        @if(!empty($sellerData['business_permit_path'] ?? null))
+                                *
 
-            <svg
-                class="permit-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#7B1B1B"
-                stroke-width="1.7"
-            >
-                <path d="M20 6L9 17l-5-5" />
-            </svg>
+                            </span>
 
-            <p class="permit-text permit-selected">
-                {{ $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path']) }}
-            </p>
+                        </label>
 
-            <small class="permit-existing">
-                Business permit already uploaded.
-                Choose another file to replace it.
-            </small>
 
-        @else
+                        <label
+                            for="business_permit"
+                            class="permit-upload"
+                        >
 
-            <svg
-                class="permit-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.7"
-            >
-                <rect
-                    x="3"
-                    y="3"
-                    width="18"
-                    height="18"
-                    rx="3"
-                />
 
-                <circle
-                    cx="8.5"
-                    cy="8.5"
-                    r="1.4"
-                />
+                            <input
+                                type="file"
+                                id="business_permit"
+                                name="business_permit"
+                                accept=".jpg,.jpeg,.png,.pdf"
+                            >
 
-                <path
-                    d="M21 15l-4.5-4.5L10 17l-3-3-4 4"
-                />
-            </svg>
 
-            <p class="permit-text">
-                Upload your permit here
-            </p>
+                            <div
+                                class="permit-placeholder"
+                                id="permitPlaceholder"
+                            >
 
-        @endif
 
-    </div>
-</label>
+                                @if(!empty($sellerData['business_permit_path'] ?? null))
 
-@error('business_permit')
-    <p class="error-message">
-        {{ $message }}
-    </p>
-@enderror
+
+                                    <svg
+                                        class="permit-icon"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="#7B1B1B"
+                                        stroke-width="1.7"
+                                    >
+
+                                        <path
+                                            d="M20 6L9 17l-5-5"
+                                        />
+
+                                    </svg>
+
+
+                                    <p class="permit-text permit-selected">
+
+                                        {{ $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path']) }}
+
+                                    </p>
+
+
+                                    <small class="permit-existing">
+
+                                        Business permit already uploaded.
+                                        Choose another file to replace it.
+
+                                    </small>
+
+
+                                @else
+
+
+                                    <svg
+                                        class="permit-icon"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                    >
+
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="3"
+                                        />
+
+
+                                        <circle
+                                            cx="8.5"
+                                            cy="8.5"
+                                            r="1.4"
+                                        />
+
+
+                                        <path
+                                            d="M21 15l-4.5-4.5L10 17l-3-3-4 4"
+                                        />
+
+                                    </svg>
+
+
+                                    <p class="permit-text">
+
+                                        Upload your permit here
+
+                                    </p>
+
+
+                                @endif
+
+
+                            </div>
+
+                        </label>
+
+
+                        @error('business_permit')
+
+                            <p class="error-message">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
 
                     </div>
 
@@ -1205,7 +1676,9 @@
                             Select Category
 
                             <span class="required">
+
                                 *
+
                             </span>
 
                         </h3>
@@ -1242,17 +1715,14 @@
 
                             }
 
-                            if (
-                                !is_array(
-                                    $selectedCategories
-                                )
-                            ) {
+                            if (!is_array($selectedCategories)) {
 
                                 $selectedCategories = [];
 
                             }
 
                         @endphp
+
 
 
                         <div class="category-list">
@@ -1272,7 +1742,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Pet Supplies
+
                                 </span>
 
                             </label>
@@ -1293,7 +1765,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Electronics and Gadgets
+
                                 </span>
 
                             </label>
@@ -1314,7 +1788,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Women's Apparel
+
                                 </span>
 
                             </label>
@@ -1335,7 +1811,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Men's Apparel
+
                                 </span>
 
                             </label>
@@ -1356,7 +1834,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Kids and Baby
+
                                 </span>
 
                             </label>
@@ -1377,7 +1857,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Home and Garden
+
                                 </span>
 
                             </label>
@@ -1398,7 +1880,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Sports and Outdoors
+
                                 </span>
 
                             </label>
@@ -1419,7 +1903,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Health and Beauty
+
                                 </span>
 
                             </label>
@@ -1440,7 +1926,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Books and Media
+
                                 </span>
 
                             </label>
@@ -1461,7 +1949,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Food and Gourmet
+
                                 </span>
 
                             </label>
@@ -1482,7 +1972,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Automotive &amp; Motorcycle
+
                                 </span>
 
                             </label>
@@ -1503,7 +1995,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Furniture and Office Equipment
+
                                 </span>
 
                             </label>
@@ -1524,7 +2018,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Jewelry and Watches
+
                                 </span>
 
                             </label>
@@ -1545,7 +2041,9 @@
                                 <span class="custom-checkbox"></span>
 
                                 <span class="category-name">
+
                                     Office and School Supplies
+
                                 </span>
 
                             </label>
@@ -1557,7 +2055,9 @@
                         @error('categories')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
@@ -1567,6 +2067,7 @@
 
 
                 </div>
+
 
 
                 <!-- =====================================================
@@ -1604,6 +2105,7 @@ document.addEventListener(
     'DOMContentLoaded',
     function () {
 
+
         /* =========================================================
            ELEMENTS
         ========================================================== */
@@ -1613,15 +2115,18 @@ document.addEventListener(
                 'businessRegistrationForm'
             );
 
+
         const permitInput =
             document.getElementById(
                 'business_permit'
             );
 
+
         const permitPlaceholder =
             document.getElementById(
                 'permitPlaceholder'
             );
+
 
         const continueButton =
             document.getElementById(
@@ -1633,6 +2138,7 @@ document.addEventListener(
             document.querySelectorAll(
                 'input[name="categories[]"]'
             );
+
 
 
         /* =========================================================
@@ -1648,11 +2154,14 @@ document.addEventListener(
                 'change',
                 function () {
 
+
                     if (
                         !this.files ||
                         !this.files.length
                     ) {
+
                         return;
+
                     }
 
 
@@ -1680,15 +2189,19 @@ document.addEventListener(
                         <p
                             class="permit-text permit-selected"
                         >
+
                             ${file.name}
+
                         </p>
 
 
                         <small
                             class="permit-existing"
                         >
+
                             File selected.
                             It will be saved when you continue.
+
                         </small>
 
                     `;
@@ -1712,12 +2225,15 @@ document.addEventListener(
                     'change',
                     function () {
 
+
                         const selectedCount =
                             Array.from(
                                 categoryInputs
                             ).filter(
                                 function (item) {
+
                                     return item.checked;
+
                                 }
                             ).length;
 
@@ -1726,7 +2242,8 @@ document.addEventListener(
                             selectedCount === 0
                         ) {
 
-                            this.checked = true;
+                            this.checked =
+                                true;
 
                         }
 
@@ -1748,19 +2265,22 @@ document.addEventListener(
                 'submit',
                 function (event) {
 
+
                     const selectedCategories =
                         Array.from(
                             categoryInputs
                         ).filter(
                             function (input) {
+
                                 return input.checked;
+
                             }
                         );
 
 
-                    /*
-                     * Require at least one category.
-                     */
+                    /* ---------------------------------------------
+                       REQUIRE AT LEAST ONE CATEGORY
+                    ---------------------------------------------- */
 
                     if (
                         selectedCategories.length === 0
@@ -1768,32 +2288,29 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         alert(
                             'Please select at least one category.'
                         );
+
 
                         return;
 
                     }
 
 
-                    /*
-                     * Business permit is required only when
-                     * there is no previously uploaded permit.
-                     *
-                     * This allows the user to move between
-                     * Step 1, Step 2 and Step 3 without the
-                     * browser blocking navigation because of
-                     * the file field.
-                     */
+
+                    /* ---------------------------------------------
+                       BUSINESS PERMIT VALIDATION
+                    ---------------------------------------------- */
 
                     const existingPermit =
-    @json(
-        !empty(
-            $sellerData['business_permit_path']
-            ?? null
-        )
-    );
+                        @json(
+                            !empty(
+                                $sellerData['business_permit_path']
+                                ?? null
+                            )
+                        );
 
 
                     if (
@@ -1807,23 +2324,27 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         alert(
                             'Please upload your Business Permit.'
                         );
+
 
                         return;
 
                     }
 
 
-                    /*
-                     * Prevent double submission.
-                     */
+
+                    /* ---------------------------------------------
+                       PREVENT DOUBLE SUBMISSION
+                    ---------------------------------------------- */
 
                     if (continueButton) {
 
                         continueButton.disabled =
                             true;
+
 
                         continueButton.textContent =
                             'Saving...';
@@ -1836,7 +2357,6 @@ document.addEventListener(
         }
 
     }
-
 );
 
 </script>
