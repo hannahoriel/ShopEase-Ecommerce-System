@@ -16,13 +16,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         foreach ([
-            ['name' => 'Admin User', 'email' => 'admin@shopease.test', 'role' => User::ROLE_ADMIN],
-            ['name' => 'Buyer User', 'email' => 'buyer@shopease.test', 'role' => User::ROLE_BUYER],
-            ['name' => 'Seller User', 'email' => 'seller@shopease.test', 'role' => User::ROLE_SELLER],
-            ['name' => 'Logistics User', 'email' => 'logistics@shopease.test', 'role' => User::ROLE_LOGISTICS],
-            ['name' => 'Rider User', 'email' => 'rider@shopease.test', 'role' => User::ROLE_RIDER],
-        ] as $account) {
-            User::factory()->create($account + ['password' => 'password']);
-        }
+    ['name' => 'Admin User', 'email' => 'admin@gmail.com', 'role' => User::ROLE_ADMIN, 'password' => 'Admin@123'],
+    ['name' => 'Buyer User', 'email' => 'buyer@shopease.test', 'role' => User::ROLE_BUYER, 'password' => 'password'],
+    ['name' => 'Seller User', 'email' => 'seller@shopease.test', 'role' => User::ROLE_SELLER, 'password' => 'seller123'],
+    ['name' => 'Logistics User', 'email' => 'logistics@shopease.test', 'role' => User::ROLE_LOGISTICS, 'password' => 'password'],
+    ['name' => 'Rider User', 'email' => 'rider@shopease.test', 'role' => User::ROLE_RIDER, 'password' => 'password'],
+] as $account) {
+    User::factory()->create($account);
+}
     }
 }
