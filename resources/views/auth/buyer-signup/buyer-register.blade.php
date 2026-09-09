@@ -1806,26 +1806,6 @@
                                         Select or search province
                                     </option>
 
-                                    <option value="Laguna">
-                                        Laguna
-                                    </option>
-
-                                    <option value="Rizal">
-                                        Rizal
-                                    </option>
-
-                                    <option value="Batangas">
-                                        Batangas
-                                    </option>
-
-                                    <option value="Quezon">
-                                        Quezon
-                                    </option>
-
-                                    <option value="Cavite">
-                                        Cavite
-                                    </option>
-
                                 </select>
 
 
@@ -3155,9 +3135,9 @@ document.addEventListener(
         }
 
 
-        /* =========================================================
-           MUNICIPALITY / BARANGAY DEMO DATA
-        ========================================================== */
+          /* =========================================================
+              PROVINCE / MUNICIPALITY / BARANGAY LOCATION API
+          ========================================================== */
 
         const provinceSelect =
             document.getElementById(
@@ -3177,225 +3157,71 @@ document.addEventListener(
             );
 
 
-        const locationData = {
+        const locationsApiBase = '/api/v1/locations';
 
-            Laguna: {
+        function resetLocationSelect(select, placeholder) {
+            select.innerHTML = `<option value="" selected disabled>${placeholder}</option>`;
+            select.disabled = true;
+        }
 
-                municipalities: {
+        function locationName(location) {
+            return location.name || location.prov_name || location.city_name || location.mun_name || location.brgy_name || '';
+        }
 
-                    'Pila': [
-                        'Aplaya',
-                        'Bagong Pook',
-                        'Bulilan Sur',
-                        'Bulilan Norte',
-                        'Linga',
-                        'Lumban',
-                        'Pansol',
-                        'Santa Clara Norte',
-                        'Santa Clara Sur'
-                    ],
+        function populateLocationSelect(select, locations, placeholder) {
+            resetLocationSelect(select, placeholder);
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = locationName(location);
+                option.textContent = locationName(location);
+                option.dataset.code = location.code || location.psgc_code || location.prov_code || location.mun_code || location.city_code || location.brgy_code || '';
+                option.dataset.region = location.isRegion ? 'true' : 'false';
+                select.appendChild(option);
+            });
+            select.disabled = false;
+        }
 
-                    'Santa Cruz': [
-                        'Bagumbayan',
-                        'Bubucal',
-                        'Jasaan',
-                        'Labuin',
-                        'Malinao'
-                    ]
-
-                }
-
-            },
-
-            Rizal: {
-
-                municipalities: {
-
-                    'Antipolo': [
-                        'Dela Paz',
-                        'Mayamot',
-                        'San Isidro',
-                        'San Jose'
-                    ],
-
-                    'Cainta': [
-                        'San Andres',
-                        'San Isidro',
-                        'San Juan'
-                    ]
-
-                }
-
-            },
-
-            Batangas: {
-
-                municipalities: {
-
-                    'Tanauan': [
-                        'Altura Bata',
-                        'Altura Matanda',
-                        'Darasa'
-                    ]
-
-                }
-
+        async function loadLocations(endpoint) {
+            const response = await fetch(`${locationsApiBase}/${endpoint}`, {
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error('Unable to load location options.');
             }
-
-        };
-
-
-        if (provinceSelect) {
-
-            provinceSelect.addEventListener(
-                'change',
-                function () {
-
-                    municipalitySelect.innerHTML =
-                        `
-                            <option
-                                value=""
-                                selected
-                                disabled
-                            >
-                                Select or search municipality
-                            </option>
-                        `;
-
-
-                    barangaySelect.innerHTML =
-                        `
-                            <option
-                                value=""
-                                selected
-                                disabled
-                            >
-                                Select or search barangay
-                            </option>
-                        `;
-
-
-                    municipalitySelect.classList.remove(
-                        'required-error'
-                    );
-
-                    barangaySelect.classList.remove(
-                        'required-error'
-                    );
-
-
-                    const province =
-                        locationData[
-                            this.value
-                        ];
-
-
-                    if (
-                        province &&
-                        province.municipalities
-                    ) {
-
-                        Object.keys(
-                            province.municipalities
-                        ).forEach(
-                            function (
-                                municipality
-                            ) {
-
-                                const option =
-                                    document.createElement(
-                                        'option'
-                                    );
-
-                                option.value =
-                                    municipality;
-
-                                option.textContent =
-                                    municipality;
-
-                                municipalitySelect.appendChild(
-                                    option
-                                );
-
-                            }
-                        );
-
-                    }
-
-                }
-            );
-
+            return response.json();
         }
 
+        resetLocationSelect(municipalitySelect, 'Select or search municipality');
+        resetLocationSelect(barangaySelect, 'Select or search barangay');
 
-        if (municipalitySelect) {
+        loadLocations('provinces')
+            .then(provinces => populateLocationSelect(provinceSelect, provinces, 'Select or search province'))
+            .catch(error => console.error(error));
 
-            municipalitySelect.addEventListener(
-                'change',
-                function () {
+        provinceSelect?.addEventListener('change', async function () {
+            resetLocationSelect(municipalitySelect, 'Loading municipalities...');
+            resetLocationSelect(barangaySelect, 'Select or search barangay');
+            try {
+                const isRegion = this.options[this.selectedIndex]?.dataset.region === 'true';
+                const query = isRegion ? '?is_region=1' : '';
+                const provinceCode = this.options[this.selectedIndex]?.dataset.code || this.value;
+                const municipalities = await loadLocations(`provinces/${encodeURIComponent(provinceCode)}/cities${query}`);
+                populateLocationSelect(municipalitySelect, municipalities, 'Select or search municipality');
+            } catch (error) {
+                console.error(error);
+            }
+        });
 
-                    barangaySelect.innerHTML =
-                        `
-                            <option
-                                value=""
-                                selected
-                                disabled
-                            >
-                                Select or search barangay
-                            </option>
-                        `;
-
-
-                    barangaySelect.classList.remove(
-                        'required-error'
-                    );
-
-
-                    const province =
-                        locationData[
-                            provinceSelect.value
-                        ];
-
-
-                    if (
-                        province &&
-                        province.municipalities &&
-                        province.municipalities[
-                            this.value
-                        ]
-                    ) {
-
-                        province.municipalities[
-                            this.value
-                        ].forEach(
-                            function (
-                                barangay
-                            ) {
-
-                                const option =
-                                    document.createElement(
-                                        'option'
-                                    );
-
-                                option.value =
-                                    barangay;
-
-                                option.textContent =
-                                    barangay;
-
-                                barangaySelect.appendChild(
-                                    option
-                                );
-
-                            }
-                        );
-
-                    }
-
-                }
-            );
-
-        }
+        municipalitySelect?.addEventListener('change', async function () {
+            resetLocationSelect(barangaySelect, 'Loading barangays...');
+            try {
+                const municipalityCode = this.options[this.selectedIndex]?.dataset.code || this.value;
+                const barangays = await loadLocations(`cities/${encodeURIComponent(municipalityCode)}/barangays`);
+                populateLocationSelect(barangaySelect, barangays, 'Select or search barangay');
+            } catch (error) {
+                console.error(error);
+            }
+        });
 
     }
 );

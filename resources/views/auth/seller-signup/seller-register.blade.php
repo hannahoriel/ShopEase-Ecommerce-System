@@ -1359,7 +1359,7 @@
                             name="age"
                             class="form-input readonly"
                             placeholder="Auto generated"
-                            value="{{ old('age', $sellerData['age'] ?? '') }}"
+                            value=""
                             readonly
                         >
 
@@ -1413,6 +1413,7 @@
                                         name="province"
                                         class="form-select"
                                         required
+                                        data-old-value="{{ old('province', $sellerData['province'] ?? '') }}"
                                     >
 
                                         <option
@@ -1421,34 +1422,6 @@
                                             {{ old('province', $sellerData['province'] ?? '') === '' ? 'selected' : '' }}
                                         >
                                             Select or search province
-                                        </option>
-
-                                        <option
-                                            value="Laguna"
-                                            {{ old('province', $sellerData['province'] ?? '') === 'Laguna' ? 'selected' : '' }}
-                                        >
-                                            Laguna
-                                        </option>
-
-                                        <option
-                                            value="Cavite"
-                                            {{ old('province', $sellerData['province'] ?? '') === 'Cavite' ? 'selected' : '' }}
-                                        >
-                                            Cavite
-                                        </option>
-
-                                        <option
-                                            value="Batangas"
-                                            {{ old('province', $sellerData['province'] ?? '') === 'Batangas' ? 'selected' : '' }}
-                                        >
-                                            Batangas
-                                        </option>
-
-                                        <option
-                                            value="Rizal"
-                                            {{ old('province', $sellerData['province'] ?? '') === 'Rizal' ? 'selected' : '' }}
-                                        >
-                                            Rizal
                                         </option>
 
                                     </select>
@@ -1482,6 +1455,7 @@
                                         name="municipality"
                                         class="form-select"
                                         required
+                                        data-old-value="{{ old('municipality', $sellerData['municipality'] ?? '') }}"
                                     >
 
                                         <option
@@ -1490,27 +1464,6 @@
                                             {{ old('municipality', $sellerData['municipality'] ?? '') === '' ? 'selected' : '' }}
                                         >
                                             Select or search municipality
-                                        </option>
-
-                                        <option
-                                            value="Calamba"
-                                            {{ old('municipality', $sellerData['municipality'] ?? '') === 'Calamba' ? 'selected' : '' }}
-                                        >
-                                            Calamba
-                                        </option>
-
-                                        <option
-                                            value="Santa Rosa"
-                                            {{ old('municipality', $sellerData['municipality'] ?? '') === 'Santa Rosa' ? 'selected' : '' }}
-                                        >
-                                            Santa Rosa
-                                        </option>
-
-                                        <option
-                                            value="Biñan"
-                                            {{ old('municipality', $sellerData['municipality'] ?? '') === 'Biñan' ? 'selected' : '' }}
-                                        >
-                                            Biñan
                                         </option>
 
                                     </select>
@@ -1544,6 +1497,7 @@
                                         name="barangay"
                                         class="form-select"
                                         required
+                                        data-old-value="{{ old('barangay', $sellerData['barangay'] ?? '') }}"
                                     >
 
                                         <option
@@ -1552,27 +1506,6 @@
                                             {{ old('barangay', $sellerData['barangay'] ?? '') === '' ? 'selected' : '' }}
                                         >
                                             Select or search barangay
-                                        </option>
-
-                                        <option
-                                            value="Masico"
-                                            {{ old('barangay', $sellerData['barangay'] ?? '') === 'Masico' ? 'selected' : '' }}
-                                        >
-                                            Masico
-                                        </option>
-
-                                        <option
-                                            value="Canlubang"
-                                            {{ old('barangay', $sellerData['barangay'] ?? '') === 'Canlubang' ? 'selected' : '' }}
-                                        >
-                                            Canlubang
-                                        </option>
-
-                                        <option
-                                            value="Real"
-                                            {{ old('barangay', $sellerData['barangay'] ?? '') === 'Real' ? 'selected' : '' }}
-                                        >
-                                            Real
                                         </option>
 
                                     </select>
@@ -1969,7 +1902,106 @@ document.addEventListener(
         }
 
 
-        calculateAge();
+        /* =========================================================
+           PROVINCE / MUNICIPALITY / BARANGAY LOCATION API
+        ========================================================== */
+
+        const provinceSelect = document.getElementById('province');
+        const municipalitySelect = document.getElementById('municipality');
+        const barangaySelect = document.getElementById('barangay');
+        const locationsApiBase = '/api/v1/locations';
+
+        function resetLocationSelect(select, placeholder) {
+            select.innerHTML = `<option value="" selected disabled>${placeholder}</option>`;
+            select.disabled = true;
+        }
+
+        function locationName(location) {
+            return location.name || location.prov_name || location.city_name || location.mun_name || location.brgy_name || '';
+        }
+
+        function populateLocationSelect(select, locations, placeholder, selectedValue = '') {
+            resetLocationSelect(select, placeholder);
+            locations.forEach(location => {
+                const name = locationName(location);
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                option.dataset.code = location.code || location.psgc_code || location.prov_code || location.mun_code || location.city_code || location.brgy_code || '';
+                option.dataset.region = location.isRegion ? 'true' : 'false';
+                option.selected = name === selectedValue;
+                select.appendChild(option);
+            });
+            select.disabled = false;
+        }
+
+        async function loadLocations(endpoint) {
+            const response = await fetch(`${locationsApiBase}/${endpoint}`, {
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error('Unable to load location options.');
+            }
+            return response.json();
+        }
+
+        async function loadMunicipalities(provinceCode, selectedValue = '') {
+            const isRegion = provinceSelect.options[provinceSelect.selectedIndex]?.dataset.region === 'true';
+            const query = isRegion ? '?is_region=1' : '';
+            const municipalities = await loadLocations(`provinces/${encodeURIComponent(provinceCode)}/cities${query}`);
+            populateLocationSelect(municipalitySelect, municipalities, 'Select or search municipality', selectedValue);
+        }
+
+        async function loadBarangays(municipalityCode, selectedValue = '') {
+            const barangays = await loadLocations(`cities/${encodeURIComponent(municipalityCode)}/barangays`);
+            populateLocationSelect(barangaySelect, barangays, 'Select or search barangay', selectedValue);
+        }
+
+        if (provinceSelect && municipalitySelect && barangaySelect) {
+            const oldProvince = provinceSelect.dataset.oldValue;
+            const oldMunicipality = municipalitySelect.dataset.oldValue;
+            const oldBarangay = barangaySelect.dataset.oldValue;
+
+            resetLocationSelect(municipalitySelect, 'Select or search municipality');
+            resetLocationSelect(barangaySelect, 'Select or search barangay');
+
+            loadLocations('provinces')
+                .then(provinces => {
+                    populateLocationSelect(provinceSelect, provinces, 'Select or search province', oldProvince);
+                    const selectedProvince = provinceSelect.options[provinceSelect.selectedIndex];
+                    if (!selectedProvince || !selectedProvince.value) {
+                        return null;
+                    }
+                    return loadMunicipalities(selectedProvince.dataset.code || selectedProvince.value, oldMunicipality);
+                })
+                .then(() => {
+                    const selectedMunicipality = municipalitySelect.options[municipalitySelect.selectedIndex];
+                    if (!selectedMunicipality || !selectedMunicipality.value) {
+                        return null;
+                    }
+                    return loadBarangays(selectedMunicipality.dataset.code || selectedMunicipality.value, oldBarangay);
+                })
+                .catch(error => console.error(error));
+
+            provinceSelect.addEventListener('change', async function () {
+                resetLocationSelect(municipalitySelect, 'Loading municipalities...');
+                resetLocationSelect(barangaySelect, 'Select or search barangay');
+                try {
+                    await loadMunicipalities(this.options[this.selectedIndex]?.dataset.code || this.value);
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+
+            municipalitySelect.addEventListener('change', async function () {
+                resetLocationSelect(barangaySelect, 'Loading barangays...');
+                try {
+                    await loadBarangays(this.options[this.selectedIndex]?.dataset.code || this.value);
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+        }
 
 
         /* =========================================================

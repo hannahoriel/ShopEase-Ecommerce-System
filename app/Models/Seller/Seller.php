@@ -25,6 +25,7 @@ class Seller extends Model
         'barangay',
         'street',
         'house_number',
+        'store_name',
         'business_name',
         'line_of_business',
         'upload_id',

@@ -2,14 +2,29 @@
 <style>
     /* Hide the visual scrollbar inside registration detail modals while keeping them scrollable. */
     .registration-detail-modal {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
-    .registration-detail-modal::-webkit-scrollbar {
-        display: none;
-        width: 0;
-        height: 0;
+    .registration-detail-modal > .registration-detail-body {
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: auto;
+        scrollbar-color: #c7c7c7 #f7f7f7;
+    }
+
+    .registration-detail-modal > .registration-detail-body::-webkit-scrollbar {
+        width: 9px;
+    }
+
+    .registration-detail-modal > .registration-detail-body::-webkit-scrollbar-track {
+        background: #f7f7f7;
+    }
+
+    .registration-detail-modal > .registration-detail-body::-webkit-scrollbar-thumb {
+        background: #c7c7c7;
+        border-radius: 8px;
     }
 
     /* Make the entire Approved/Rejected modal content scroll as one unit. */
@@ -90,7 +105,7 @@
                 <div class="min-w-0">
 
                     <p id="pending-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                        18
+                        {{ $counts['pending'] }}
                     </p>
 
                     <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
@@ -103,12 +118,6 @@
 
 
             <!-- Bottom Text -->
-
-            <p class="mt-3 ml-[72px] text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
 
         </div>
 
@@ -158,7 +167,7 @@
                         <div class="min-w-0">
 
                             <p id="rejected-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                                4
+                                {{ $counts['rejected'] }}
                             </p>
 
                             <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
@@ -254,7 +263,7 @@
                         <div class="min-w-0">
 
                             <p id="approved-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                                8
+                                {{ $counts['approved'] }}
                             </p>
 
                             <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
@@ -341,7 +350,7 @@
                 <div class="min-w-0">
 
                     <p id="total-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                        42
+                        {{ $counts['total'] }}
                     </p>
 
                     <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
@@ -936,14 +945,14 @@
 
         <div
             class="relative registration-detail-modal bg-white w-full max-w-3xl max-h-[92vh]
-                   overflow-y-auto rounded-[24px] shadow-2xl
+                   overflow-hidden rounded-[24px] shadow-2xl
                    border border-white"
             role="dialog"
             aria-modal="true"
             aria-labelledby="seller-details-title"
         >
 
-            <div class="px-7 pt-6 pb-3">
+            <div class="shrink-0 px-7 pt-6 pb-3">
 
                 <div class="flex items-center justify-between pb-4 border-b border-gray-200">
 
@@ -970,7 +979,7 @@
 
             </div>
 
-            <div class="px-7 pb-5">
+            <div class="registration-detail-body flex-1 px-7 pb-5">
 
                 <!-- Personal Information -->
                 <section>
@@ -1088,7 +1097,7 @@
 
             </div>
 
-            <div class="px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
+            <div class="shrink-0 px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
                 <button
                     type="button"
                     class="registration-reject px-9 py-2.5 rounded-lg bg-[#8F211F] text-white text-[14px] font-semibold hover:bg-[#741A18] transition"
@@ -1121,14 +1130,14 @@
 
         <div
             class="relative registration-detail-modal bg-white w-full max-w-3xl max-h-[92vh]
-                   overflow-y-auto rounded-[24px] shadow-2xl
+                   overflow-hidden rounded-[24px] shadow-2xl
                    border border-white"
             role="dialog"
             aria-modal="true"
             aria-labelledby="buyer-details-title"
         >
 
-            <div class="px-7 pt-6 pb-3">
+            <div class="shrink-0 px-7 pt-6 pb-3">
                 <div class="flex items-center justify-between pb-4 border-b border-gray-200">
                     <h3 id="buyer-details-title" class="text-[23px] font-semibold text-gray-900">Buyer Details</h3>
                     <button
@@ -1144,7 +1153,7 @@
                 </div>
             </div>
 
-            <div class="px-7 pb-5">
+            <div class="registration-detail-body flex-1 px-7 pb-5">
 
                 <!-- Personal Information -->
                 <section>
@@ -1207,7 +1216,7 @@
 
             </div>
 
-            <div class="px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
+            <div class="shrink-0 px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
                 <button type="button" class="registration-reject px-9 py-2.5 rounded-lg bg-[#8F211F] text-white text-[14px] font-semibold hover:bg-[#741A18] transition">Reject</button>
                 <button type="button" class="registration-approve px-9 py-2.5 rounded-lg bg-[#EA7779] text-white text-[14px] font-semibold hover:bg-[#D86567] transition">Approve</button>
             </div>
@@ -1451,6 +1460,14 @@
                         Buyer
                     </option>
 
+                    <option value="logistics">
+                        Logistics
+                    </option>
+
+                    <option value="rider">
+                        Rider
+                    </option>
+
                 </select>
 
                 <svg
@@ -1614,6 +1631,37 @@
                 </thead>
 
                 <tbody class="divide-y divide-gray-200">
+
+                    @if($registrations->isNotEmpty())
+                        @foreach($registrations as $registration)
+                            <tr
+                                class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
+                                data-id="{{ $registration->id }}"
+                                data-name="{{ $registration->full_name }}"
+                                data-email="{{ $registration->email }}"
+                                data-phone="{{ $registration->phone }}"
+                                data-type="{{ $registration->user_type }}"
+                                data-status="{{ $registration->status }}"
+                                data-date="{{ $registration->created_at->toDateString() }}"
+                                role="button"
+                                tabindex="0"
+                            >
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">
+                                            {{ collect(explode(' ', $registration->full_name))->filter()->map(fn ($part) => strtoupper(substr($part, 0, 1)))->take(2)->join('') }}
+                                        </div>
+                                        <span class="text-[13px] font-medium text-gray-800">{{ $registration->full_name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-[13px] text-gray-800">{{ ucfirst($registration->user_type) }}</td>
+                                <td class="px-5 py-3 text-[13px] text-gray-400">{{ $registration->email }}</td>
+                                <td class="px-5 py-3 text-[13px] text-gray-800">{{ $registration->phone }}</td>
+                                <td class="px-5 py-3 text-[13px] text-gray-800">{{ $registration->created_at->format('F j, Y g:i A') }}</td>
+                                <td class="px-5 py-3"><span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">Pending</span></td>
+                            </tr>
+                        @endforeach
+                    @elseif(false)
 
                     <tr
                         class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
@@ -2665,6 +2713,8 @@
                             </span>
                         </td>
                     </tr>
+                    @endif
+
                 </tbody>
 
             </table>
@@ -2777,7 +2827,11 @@ document.addEventListener('DOMContentLoaded', function () {
     ========================================================== */
 
     let allRows = Array.from(document.querySelectorAll('.registration-row'));
-    const initialPendingCount = allRows.length;
+    const serverCounts = @json($counts);
+
+    // Remove legacy demo rows before any filtering or empty-state rendering.
+    allRows = allRows.filter(row => row.dataset.id);
+    document.querySelectorAll('.registration-row:not([data-id])').forEach(row => row.remove());
 
     const approvedUsersBody = document.getElementById('approved-users-body');
     const rejectedUsersBody = document.getElementById('rejected-users-body');
@@ -2790,19 +2844,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const approvedUsersSearch = document.getElementById('approved-users-search');
     const rejectedUsersSearch = document.getElementById('rejected-users-search');
 
-    const initialApprovedCount = approvedUsersBody
-        ? approvedUsersBody.querySelectorAll('tr').length
-        : 0;
+    // Archive rows are loaded from the database when their modal opens.
+    if (approvedUsersBody) {
+        approvedUsersBody.innerHTML = '';
+    }
 
-    const initialRejectedCount = rejectedUsersBody
-        ? rejectedUsersBody.querySelectorAll('tr').length
-        : 0;
+    if (rejectedUsersBody) {
+        rejectedUsersBody.innerHTML = '';
+    }
 
-    const totalRegistrations =
-        initialPendingCount + initialApprovedCount + initialRejectedCount;
+    const totalRegistrations = serverCounts.total;
 
-    let approvedCount = initialApprovedCount;
-    let rejectedCount = initialRejectedCount;
+    let approvedCount = serverCounts.approved;
+    let rejectedCount = serverCounts.rejected;
 
     let currentPage = 1;
     let itemsPerPage = 10;
@@ -2914,6 +2968,52 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tbody) {
             tbody.querySelectorAll('tr').forEach(row => row.classList.remove('hidden'));
         }
+    }
+
+    async function loadArchiveUsers(endpoint, tbody, action) {
+        if (!tbody) {
+            return;
+        }
+
+        const response = await fetch(endpoint, {
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error('Unable to load archived registrations.');
+        }
+
+        const result = await response.json();
+        const iconByType = {
+            seller: "{{ asset('icons/admin/dashboard/body/seller.png') }}",
+            buyer: "{{ asset('icons/admin/dashboard/body/buyer.png') }}",
+            rider: "{{ asset('icons/admin/dashboard/body/rider.png') }}",
+            logistics: "{{ asset('icons/admin/dashboard/body/logistics.png') }}"
+        };
+
+        tbody.innerHTML = result.data.map(registration => {
+            const name = registration.full_name || `${registration.first_name} ${registration.last_name}`;
+            const initials = name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('');
+            const type = registration.user_type || '';
+            const reviewedDate = registration.reviewed_at
+                ? new Date(registration.reviewed_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                : '—';
+
+            return `<tr class="hover:bg-[#FFF9F7] transition">
+                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">${escapeHtml(initials)}</div><span class="text-[13px] font-medium text-gray-800">${escapeHtml(name)}</span></div></td>
+                <td class="px-6 py-4"><div class="flex items-center gap-2"><img src="${iconByType[type] || iconByType.buyer}" class="w-5 h-5 object-contain" alt="${escapeHtml(type)}"><span class="text-[13px]">${escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))}</span></div></td>
+                <td class="px-6 py-4 text-[13px] text-gray-400">${escapeHtml(registration.email)}</td>
+                <td class="px-6 py-4 text-[13px]">${escapeHtml(registration.phone)}</td>
+                <td class="px-6 py-4 text-[13px]">${reviewedDate}</td>
+            </tr>`;
+        }).join('') || `<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">No ${action} users found.</td></tr>`;
+
+        if (action === 'approved') {
+            approvedCount = result.count;
+        } else {
+            rejectedCount = result.count;
+        }
+        updateRegistrationStats();
     }
 
     /* =========================================================
@@ -3232,6 +3332,103 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '—').replace(/[&<>'"]/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#039;',
+            '"': '&quot;'
+        }[character]));
+    }
+
+    function renderRegistrationDetails(modal, registration) {
+        if (!modal) {
+            return;
+        }
+
+        const body = modal.querySelector('.registration-detail-modal > .px-7.pb-5');
+        const birthday = registration.birthdate
+            ? new Date(`${registration.birthdate}T00:00:00`).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            })
+            : '—';
+        const age = registration.birthdate
+            ? Math.floor((Date.now() - new Date(registration.birthdate).getTime()) / 31557600000)
+            : '—';
+        const validId = registration.valid_id_url
+            ? `<a href="${escapeHtml(registration.valid_id_url)}" target="_blank" rel="noopener"><img src="${escapeHtml(registration.valid_id_url)}" alt="Uploaded valid ID" class="w-full max-h-[360px] object-contain rounded-lg border border-gray-200 bg-gray-50"></a>`
+            : '<div class="h-40 flex items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-400">No valid ID uploaded</div>';
+
+        if (body) {
+            body.innerHTML = `
+                <section>
+                    <h4 class="text-[20px] font-semibold text-[#A52A2A] mb-6">Personal Information</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-8">
+                        <div class="space-y-4 text-[15px]">
+                            <div><span class="text-gray-400">Last Name</span><p class="font-medium">${escapeHtml(registration.last_name)}</p></div>
+                            <div><span class="text-gray-400">First Name</span><p class="font-medium">${escapeHtml(registration.first_name)}</p></div>
+                            <div><span class="text-gray-400">Middle Name</span><p class="font-medium">${escapeHtml(registration.middle_name)}</p></div>
+                            <div><span class="text-gray-400">Sex</span><p class="font-medium">${escapeHtml(registration.sex)}</p></div>
+                            <div><span class="text-gray-400">Birthday</span><p class="font-medium">${birthday}</p></div>
+                            <div><span class="text-gray-400">Age</span><p class="font-medium">${age}</p></div>
+                            <div><span class="text-gray-400">Email</span><p class="font-medium break-all">${escapeHtml(registration.email)}</p></div>
+                            <div><span class="text-gray-400">Contact No.</span><p class="font-medium">${escapeHtml(registration.phone)}</p></div>
+                        </div>
+                        <div><p class="text-[15px] text-gray-400 mb-2">Uploaded Valid ID</p>${validId}</div>
+                    </div>
+                </section>
+                <div class="border-t border-gray-200 my-7"></div>
+                <section>
+                    <h4 class="text-[20px] font-semibold text-[#A52A2A] mb-6">Address</h4>
+                    <div class="space-y-4 text-[15px]">
+                        <div><span class="text-gray-400">Province</span><p class="font-medium">${escapeHtml(registration.province)}</p></div>
+                        <div><span class="text-gray-400">Municipality</span><p class="font-medium">${escapeHtml(registration.municipality)}</p></div>
+                        <div><span class="text-gray-400">Barangay</span><p class="font-medium">${escapeHtml(registration.barangay)}</p></div>
+                        <div><span class="text-gray-400">Street</span><p class="font-medium">${escapeHtml(registration.street)}</p></div>
+                        <div><span class="text-gray-400">House No.</span><p class="font-medium">${escapeHtml(registration.house_no)}</p></div>
+                        <div><span class="text-gray-400">Zip Code</span><p class="font-medium">${escapeHtml(registration.zip_code)}</p></div>
+                    </div>
+                </section>
+                ${registration.user_type === 'seller' ? `
+                    <div class="border-t border-gray-200 my-7"></div>
+                    <section>
+                        <h4 class="text-[20px] font-semibold text-[#A52A2A] mb-6">Business Information</h4>
+                        <div class="space-y-4 text-[15px]">
+                            <div><span class="text-gray-400">Business Name</span><p class="font-medium">${escapeHtml(registration.business_name)}</p></div>
+                            <div><span class="text-gray-400">Category</span><p class="font-medium">${escapeHtml(registration.business_category)}</p></div>
+                            <div><span class="text-gray-400">Business Permit</span><p class="font-medium break-all">${escapeHtml(registration.business_permit_path ? registration.business_permit_path.split('/').pop() : null)}</p></div>
+                        </div>
+                    </section>` : ''}
+            `;
+        }
+
+        const title = modal.querySelector('h3');
+        if (title) {
+            title.textContent = `${registration.user_type === 'seller' ? 'Seller' : 'Buyer'} Details`;
+        }
+    }
+
+    async function loadRegistrationDetails(row, modal) {
+        if (!row.dataset.id) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/registrations/${row.dataset.id}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error('Unable to load registration details.');
+            }
+
+            renderRegistrationDetails(modal, await response.json());
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
 
     document.querySelectorAll('.registration-row').forEach(row => {
 
@@ -3241,11 +3438,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (type === 'seller') {
                 openRegistrationModal(sellerDetailsModal);
+                loadRegistrationDetails(this, sellerDetailsModal);
                 return;
             }
 
             if (type === 'buyer') {
                 openRegistrationModal(buyerDetailsModal);
+                loadRegistrationDetails(this, buyerDetailsModal);
             }
 
         });
@@ -3541,6 +3740,33 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 4500);
     }
 
+    async function submitRegistrationReview(row, action, payload = {}) {
+        if (!row.dataset.id) {
+            showRegistrationFlash(action, row.dataset.name || 'The applicant');
+            moveRegistrationToArchive(row, action);
+            return true;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const response = await fetch(`/admin/registrations/${row.dataset.id}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken || ''
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || `Unable to ${action} registration.`);
+        }
+
+        moveRegistrationToArchive(row, action);
+        return true;
+    }
+
     if (registrationFlashClose) {
         registrationFlashClose.addEventListener('click', () => {
             clearTimeout(registrationFlashTimer);
@@ -3576,7 +3802,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (confirmRejectRegistration) {
-        confirmRejectRegistration.addEventListener('click', function () {
+        confirmRejectRegistration.addEventListener('click', async function () {
 
             if (!activeRegistrationRow) {
                 closeRejectRegistrationModal();
@@ -3597,23 +3823,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 activeRegistrationRow.dataset.name ||
                 'The applicant';
 
-            moveRegistrationToArchive(
-                activeRegistrationRow,
-                'rejected'
-            );
+            confirmRejectRegistration.disabled = true;
 
-            closeRegistrationModal(sellerDetailsModal);
-            closeRegistrationModal(buyerDetailsModal);
-            closeRejectRegistrationModal();
-
-            showRegistrationFlash('rejected', name);
+            try {
+                await submitRegistrationReview(activeRegistrationRow, 'reject', {
+                    reason,
+                    details: rejectAdditionalDetails?.value || ''
+                });
+                closeRegistrationModal(sellerDetailsModal);
+                closeRegistrationModal(buyerDetailsModal);
+                closeRejectRegistrationModal();
+                showRegistrationFlash('rejected', name);
+            } catch (error) {
+                showRegistrationFlash('error', error.message);
+            } finally {
+                confirmRejectRegistration.disabled = false;
+            }
 
         });
     }
 
     document.querySelectorAll('.registration-reject').forEach(button => {
 
-        button.addEventListener('click', function () {
+        button.addEventListener('click', async function () {
 
             if (!activeRegistrationRow) {
                 return;
@@ -3627,7 +3859,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.registration-approve').forEach(button => {
 
-        button.addEventListener('click', function () {
+        button.addEventListener('click', async function () {
 
             if (!activeRegistrationRow) {
                 return;
@@ -3645,15 +3877,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            moveRegistrationToArchive(
-                activeRegistrationRow,
-                'approved'
-            );
+            button.disabled = true;
 
-            closeRegistrationModal(sellerDetailsModal);
-            closeRegistrationModal(buyerDetailsModal);
-
-            showRegistrationFlash('approved', name);
+            try {
+                await submitRegistrationReview(activeRegistrationRow, 'approve');
+                closeRegistrationModal(sellerDetailsModal);
+                closeRegistrationModal(buyerDetailsModal);
+                showRegistrationFlash('approved', name);
+            } catch (error) {
+                showRegistrationFlash('error', error.message);
+            } finally {
+                button.disabled = false;
+            }
 
         });
 
@@ -3693,7 +3928,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         approvedUsersButton.addEventListener(
             'click',
-            function () {
+            async function () {
 
                 approvedUsersModal.classList.remove(
                     'hidden'
@@ -3704,6 +3939,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
                 resetArchiveSearch(approvedUsersSearch, approvedUsersBody);
+
+                try {
+                    await loadArchiveUsers('/admin/registrations/approved/list', approvedUsersBody, 'approved');
+                } catch (error) {
+                    console.error(error);
+                }
 
                 document.body.classList.add(
                     'overflow-hidden'
@@ -3809,7 +4050,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         rejectedUsersButton.addEventListener(
             'click',
-            function () {
+            async function () {
 
                 rejectedUsersModal.classList.remove(
                     'hidden'
@@ -3820,6 +4061,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
                 resetArchiveSearch(rejectedUsersSearch, rejectedUsersBody);
+
+                try {
+                    await loadArchiveUsers('/admin/registrations/rejected/list', rejectedUsersBody, 'rejected');
+                } catch (error) {
+                    console.error(error);
+                }
 
                 document.body.classList.add(
                     'overflow-hidden'

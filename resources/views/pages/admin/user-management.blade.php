@@ -4,13 +4,24 @@
 
 @section('content')
 <style>
-    .user-management-scrollbar-hidden {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+    .user-management-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #c9a39b #f8f4f3;
     }
 
-    .user-management-scrollbar-hidden::-webkit-scrollbar {
-        display: none;
+    .user-management-scrollbar::-webkit-scrollbar {
+        width: 9px;
+    }
+
+    .user-management-scrollbar::-webkit-scrollbar-track {
+        background: #f8f4f3;
+        border-radius: 999px;
+    }
+
+    .user-management-scrollbar::-webkit-scrollbar-thumb {
+        background: #c9a39b;
+        border-radius: 999px;
+        border: 2px solid #f8f4f3;
     }
 
     /* Suspension duration: hide browser number spinners. */
@@ -255,7 +266,7 @@
         aria-hidden="true"
     >
         <div
-            class="user-management-scrollbar-hidden relative bg-white w-full max-w-6xl max-h-[94vh] overflow-y-auto rounded-[28px] shadow-2xl"
+            class="user-management-scrollbar relative bg-white w-full max-w-6xl max-h-[94vh] overflow-y-auto rounded-[28px] shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="user-modal-title"
@@ -391,7 +402,12 @@
 
                                 <div>
                                     <p class="text-[15px] text-gray-400 mb-2">Valid ID</p>
-                                    <div class="w-full h-[178px] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#f0e7d2] via-[#efe1c2] to-[#d6c49c] relative shadow-sm">
+                                    <div id="user-modal-valid-id-preview" class="w-full h-[178px] rounded-lg overflow-hidden border border-gray-200 bg-gray-50 relative shadow-sm">
+                                        <img id="user-modal-valid-id" src="" alt="Valid ID" class="hidden w-full h-full object-contain bg-white">
+                                        <div id="user-modal-valid-id-empty" class="absolute inset-0 flex items-center justify-center text-[13px] text-gray-400">Valid ID not provided</div>
+                                        <a id="user-modal-valid-id-link" href="#" target="_blank" rel="noopener" class="hidden absolute bottom-2 right-2 rounded bg-white/90 px-2 py-1 text-[11px] font-medium text-[#A52A2A] shadow">Open document</a>
+                                    </div>
+                                    <div class="hidden">
                                         <div class="absolute top-3 left-4 text-[8px] font-semibold text-[#2d3550]">REPUBLIKA NG PILIPINAS</div>
                                         <div class="absolute top-6 left-4 text-[7px] text-[#2d3550]">PHILIPPINE IDENTIFICATION CARD</div>
                                         <div class="absolute left-4 top-[44px] w-[57px] h-[74px] rounded bg-gray-300 flex items-center justify-center overflow-hidden">
@@ -475,14 +491,12 @@
                                 <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
                                     <span class="text-[15px] text-gray-400">Business Permit</span>
 
-                                    <div class="inline-flex items-center gap-2 w-fit min-w-[225px] rounded-lg border border-gray-300 px-3 py-2">
+                                    <a id="user-modal-business-permit-link" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 w-fit min-w-[225px] rounded-lg border border-gray-300 px-3 py-2">
                                         <svg class="w-4 h-4 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h8l4 4v14H7zM15 3v5h5M10 13h5m-5 4h5"/>
                                         </svg>
-                                        <span id="user-modal-business-permit" class="text-[13px] text-gray-700">
-                                            business_permit.png
-                                        </span>
-                                    </div>
+                                        <span id="user-modal-business-permit" class="text-[13px] text-gray-700">Business permit not provided</span>
+                                    </a>
                                 </div>
                             </div>
                         </section>
@@ -1105,22 +1119,36 @@ document.addEventListener('DOMContentLoaded', function () {
             'user-modal-barangay': details.barangay,
             'user-modal-street': details.street,
             'user-modal-house': details.house_number,
+            'user-modal-zip': details.zip_code,
             'user-modal-business-name': details.business_name,
             'user-modal-business-category': details.line_of_business,
-            'user-modal-business-permit': details.upload_business_permit,
         };
 
         Object.entries(fields).forEach(([id, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                document.getElementById(id).textContent = value;
-            }
+            document.getElementById(id).textContent = value || 'Not provided';
         });
+
+        const validId = document.getElementById('user-modal-valid-id');
+        const validIdEmpty = document.getElementById('user-modal-valid-id-empty');
+        const validIdLink = document.getElementById('user-modal-valid-id-link');
+        validId.src = details.valid_id_url || '';
+        validId.classList.toggle('hidden', !details.valid_id_url);
+        validIdEmpty.classList.toggle('hidden', Boolean(details.valid_id_url));
+        validIdLink.href = details.valid_id_url || '#';
+        validIdLink.classList.toggle('hidden', !details.valid_id_url);
+
+        const permitLink = document.getElementById('user-modal-business-permit-link');
+        const permitName = document.getElementById('user-modal-business-permit');
+        permitLink.href = details.business_permit_url || '#';
+        permitLink.classList.toggle('pointer-events-none', !details.business_permit_url);
+        permitName.textContent = details.upload_business_permit
+            ? details.upload_business_permit.split('/').pop()
+            : 'Business permit not provided';
     }
 
     function openModal(user) {
         selectedUser = user;
 
-        const names = splitName(user.name);
         const isSeller = user.type === 'seller';
 
         document.getElementById('user-profile-name').textContent = user.name;
@@ -1136,21 +1164,19 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('user-profile-date').textContent = user.dateLabel;
         document.getElementById('user-profile-time').textContent = user.timeLabel || '';
 
-        document.getElementById('user-modal-last-name').textContent = isSeller ? 'Dela Cruz' : names.lastName;
-        document.getElementById('user-modal-first-name').textContent = isSeller ? 'Juan' : names.firstName;
-        document.getElementById('user-modal-middle-name').textContent = 'Amador';
-        document.getElementById('user-modal-sex').textContent = 'Male';
-        document.getElementById('user-modal-birthday').textContent = 'November 7, 2006';
-        document.getElementById('user-modal-age').textContent = '19';
+        document.getElementById('user-modal-last-name').textContent = 'Loading...';
+        document.getElementById('user-modal-first-name').textContent = 'Loading...';
+        document.getElementById('user-modal-middle-name').textContent = 'Loading...';
+        document.getElementById('user-modal-sex').textContent = 'Loading...';
+        document.getElementById('user-modal-birthday').textContent = 'Loading...';
+        document.getElementById('user-modal-age').textContent = 'Loading...';
         document.getElementById('user-modal-email').textContent = user.email;
         document.getElementById('user-modal-phone').textContent = user.phone;
 
-        document.getElementById('user-modal-province').textContent = 'Laguna';
-        document.getElementById('user-modal-municipality').textContent = 'Calamba';
-        document.getElementById('user-modal-barangay').textContent = 'Masico';
-        document.getElementById('user-modal-street').textContent = 'Block 2 Lot 2, San Lorenzo St.';
-        document.getElementById('user-modal-house').textContent = '587';
-        document.getElementById('user-modal-zip').textContent = '4020';
+        ['user-modal-province', 'user-modal-municipality', 'user-modal-barangay',
+            'user-modal-street', 'user-modal-house', 'user-modal-zip'].forEach(id => {
+            document.getElementById(id).textContent = 'Loading...';
+        });
 
         const categories = document.getElementById('user-profile-categories');
         const businessSection = document.getElementById('seller-business-section');
@@ -1159,9 +1185,9 @@ document.addEventListener('DOMContentLoaded', function () {
             categories.classList.remove('hidden');
             businessSection.classList.remove('hidden');
 
-            document.getElementById('user-modal-business-name').textContent = 'Dela Cruz Online Boutique';
-            document.getElementById('user-modal-business-category').textContent = 'Fashion & Apparel';
-            document.getElementById('user-modal-business-permit').textContent = 'business_permit.png';
+            document.getElementById('user-modal-business-name').textContent = 'Loading...';
+            document.getElementById('user-modal-business-category').textContent = 'Loading...';
+            document.getElementById('user-modal-business-permit').textContent = 'Loading...';
         } else {
             categories.classList.add('hidden');
             businessSection.classList.add('hidden');

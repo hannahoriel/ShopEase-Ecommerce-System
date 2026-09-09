@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AccountStatusChanged;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
@@ -107,9 +110,21 @@ class UserManagementController extends Controller
             ])->save();
         });
 
+        $updatedUser = $user->fresh();
+
+        if (in_array($status, ['suspended', 'deactivated'], true)) {
+            Mail::to($updatedUser->email)->send(new AccountStatusChanged(
+                user: $updatedUser,
+                status: $status,
+                reason: $validated['reason'] ?? null,
+                details: $validated['details'] ?? null,
+                duration: $status === 'suspended' ? (int) $validated['duration'] : null,
+            ));
+        }
+
         return response()->json([
-            'message' => "{$user->name}'s account has been {$status}.",
-            'user' => $this->serializeUser($user->fresh(), true),
+            'message' => "{$updatedUser->name}'s account has been {$status}.",
+            'user' => $this->serializeUser($updatedUser, true),
             'counts' => $this->counts(),
         ]);
     }
@@ -177,11 +192,18 @@ class UserManagementController extends Controller
         ];
 
         if ($details) {
-            $data['details'] = $user->only([
+            $data['details'] = array_merge($user->only([
                 'first_name', 'last_name', 'middle_initial', 'sex', 'birthday', 'age', 'province',
-                'municipality', 'barangay', 'street', 'house_number', 'business_name',
+                'municipality', 'barangay', 'street', 'house_number', 'zip_code', 'business_name',
                 'line_of_business', 'upload_id', 'upload_business_permit', 'account_action_reason',
                 'account_action_details',
+            ]), [
+                'valid_id_url' => $user->upload_id
+                    ? Storage::disk('public')->url($user->upload_id)
+                    : null,
+                'business_permit_url' => $user->upload_business_permit
+                    ? Storage::disk('public')->url($user->upload_business_permit)
+                    : null,
             ]);
         }
 

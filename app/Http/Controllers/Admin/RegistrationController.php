@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Mail\RegistrationApproved;
 use App\Mail\RegistrationRejected;
 use App\Models\Admin\Registration;
+use App\Models\Buyer\Buyer;
+use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -69,6 +72,7 @@ class RegistrationController extends Controller
      */
     public function approvedArchive(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
         $query = Registration::approved();
 
         if ($search = $request->string('search')->trim()->value()) {
@@ -88,6 +92,7 @@ class RegistrationController extends Controller
      */
     public function rejectedArchive(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
         $query = Registration::rejected();
 
         if ($search = $request->string('search')->trim()->value()) {
@@ -107,7 +112,20 @@ class RegistrationController extends Controller
      */
     public function show(Registration $registration): JsonResponse
     {
-        return response()->json($registration);
+        abort_unless(request()->user()?->role === User::ROLE_ADMIN, 403);
+        abort_unless($registration->status === 'pending', 404);
+
+        return response()->json(array_merge(
+            $registration->toArray(),
+            [
+                'valid_id_url' => $registration->valid_id_path
+                    ? Storage::disk('public')->url($registration->valid_id_path)
+                    : null,
+                'business_permit_url' => $registration->business_permit_path
+                    ? Storage::disk('public')->url($registration->business_permit_path)
+                    : null,
+            ]
+        ));
     }
 
     /**
@@ -122,16 +140,40 @@ class RegistrationController extends Controller
         }
 
         DB::transaction(function () use ($registration, $request) {
-            $user = User::create([
+            $user = $registration->user ?: User::create([
                 'name' => $registration->full_name,
                 'email' => $registration->email,
-                'phone' => $registration->phone,
-                'role' => $registration->user_type, // 'seller' | 'buyer'
+                'contact_no' => $registration->phone,
+                'role' => $registration->user_type,
                 'password' => $registration->password ?? bcrypt(Str::random(24)),
+            ]);
+
+            $user->update([
+                'name' => $registration->full_name,
+                'first_name' => $registration->first_name,
+                'last_name' => $registration->last_name,
+                'middle_initial' => $registration->middle_name,
+                'sex' => $registration->sex,
+                'email' => $registration->email,
+                'contact_no' => $registration->phone,
+                'birthday' => $registration->birthdate,
+                'age' => $registration->birthdate?->age,
+                'province' => $registration->province,
+                'municipality' => $registration->municipality,
+                'barangay' => $registration->barangay,
+                'street' => $registration->street,
+                'house_number' => $registration->house_no,
+                'business_name' => $registration->business_name,
+                'line_of_business' => $registration->business_category,
+                'upload_id' => $registration->valid_id_path,
+                'upload_business_permit' => $registration->business_permit_path,
                 'email_verified_at' => now(),
                 'registration_status' => 'active',
                 'approved_at' => now(),
+                'rejected_at' => null,
             ]);
+
+            $this->updateRoleProfileStatus($user, 'active', now());
 
             $registration->update([
                 'status' => 'approved',
@@ -141,7 +183,7 @@ class RegistrationController extends Controller
             ]);
         });
 
-        Mail::to($registration->email)->queue(new RegistrationApproved($registration));
+        Mail::to($registration->email)->send(new RegistrationApproved($registration));
 
         $message = "{$registration->full_name}'s registration has been approved. The user has been notified via email.";
 
@@ -181,7 +223,17 @@ class RegistrationController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        Mail::to($registration->email)->queue(new RegistrationRejected($registration));
+        $registration->user?->update([
+            'registration_status' => 'rejected',
+            'approved_at' => null,
+            'rejected_at' => now(),
+        ]);
+
+        if ($registration->user) {
+            $this->updateRoleProfileStatus($registration->user, 'rejected', null, now());
+        }
+
+        Mail::to($registration->email)->send(new RegistrationRejected($registration));
 
         $message = "{$registration->full_name}'s registration has been rejected. The user has been notified via email.";
 
@@ -195,6 +247,25 @@ class RegistrationController extends Controller
         return back()->with('success', $message);
     }
 
+    private function updateRoleProfileStatus(
+        User $user,
+        string $status,
+        ?\Carbon\Carbon $approvedAt = null,
+        ?\Carbon\Carbon $rejectedAt = null,
+    ): void {
+        $profile = match ($user->role) {
+            User::ROLE_BUYER => Buyer::where('user_id', $user->id)->first(),
+            User::ROLE_SELLER => Seller::where('user_id', $user->id)->first(),
+            default => null,
+        };
+
+        $profile?->update([
+            'registration_status' => $status,
+            'approved_at' => $approvedAt,
+            'rejected_at' => $rejectedAt,
+        ]);
+    }
+
     /**
      * Apply the search box + user-type filter + date filter to a query.
      */
@@ -205,7 +276,7 @@ class RegistrationController extends Controller
         }
 
         if ($type = $request->string('user_type')->value()) {
-            if (in_array($type, ['seller', 'buyer'], true)) {
+            if (in_array($type, ['seller', 'buyer', 'logistics', 'rider'], true)) {
                 $query->where('user_type', $type);
             }
         }
