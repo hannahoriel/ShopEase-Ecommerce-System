@@ -325,15 +325,7 @@
                                 </div>
 
                                 <!-- SELLER CATEGORIES -->
-                                <div id="user-profile-categories" class="mt-3 space-y-2">
-                                    <span class="inline-flex items-center rounded-full bg-[#FFE3E2] px-3 py-1 text-[12px] font-medium text-[#A52A2A]">
-                                        Women’s Apparel
-                                    </span>
-                                    <br>
-                                    <span class="inline-flex items-center rounded-full bg-[#DCEBD9] px-3 py-1 text-[12px] font-medium text-[#2D6D27]">
-                                        Health &amp; Beauty
-                                    </span>
-                                </div>
+                                <div id="user-profile-categories" class="mt-3 flex flex-wrap gap-2"></div>
                             </div>
                         </div>
 
@@ -1099,6 +1091,37 @@ document.addEventListener('DOMContentLoaded', function () {
         return selected ? selected.value : '';
     }
 
+    function renderUserCategories(value) {
+        const categories = document.getElementById('user-profile-categories');
+        categories.replaceChildren();
+
+        const categoryList = Array.isArray(value)
+            ? value
+            : String(value || '').split(',');
+        const categoryValues = categoryList.map(category => category.trim()).filter(Boolean);
+
+        if (categoryValues.length === 0) {
+            const emptyState = document.createElement('span');
+            emptyState.className = 'text-[13px] text-gray-500';
+            emptyState.textContent = 'Not provided';
+            categories.appendChild(emptyState);
+            return;
+        }
+
+        const badgeClasses = [
+            ['bg-[#FFE3E2]', 'text-[#A52A2A]'],
+            ['bg-[#DCEBD9]', 'text-[#2D6D27]'],
+        ];
+
+        categoryValues.forEach((category, index) => {
+            const badge = document.createElement('span');
+            const [backgroundClass, textClass] = badgeClasses[index % badgeClasses.length];
+            badge.className = `inline-flex items-center rounded-full px-3 py-1 text-[12px] font-medium ${backgroundClass} ${textClass}`;
+            badge.textContent = category;
+            categories.appendChild(badge);
+        });
+    }
+
     async function loadUserDetails(user) {
         const response = await fetch(detailUrl.replace('__USER__', user.id), {
             headers: { 'Accept': 'application/json' },
@@ -1127,6 +1150,7 @@ document.addEventListener('DOMContentLoaded', function () {
         Object.entries(fields).forEach(([id, value]) => {
             document.getElementById(id).textContent = value || 'Not provided';
         });
+        renderUserCategories(details.line_of_business);
 
         const validId = document.getElementById('user-modal-valid-id');
         const validIdEmpty = document.getElementById('user-modal-valid-id-empty');
@@ -1184,6 +1208,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isSeller) {
             categories.classList.remove('hidden');
             businessSection.classList.remove('hidden');
+            renderUserCategories('');
 
             document.getElementById('user-modal-business-name').textContent = 'Loading...';
             document.getElementById('user-modal-business-category').textContent = 'Loading...';

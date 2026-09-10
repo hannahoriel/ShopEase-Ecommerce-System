@@ -3359,6 +3359,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const validId = registration.valid_id_url
             ? `<a href="${escapeHtml(registration.valid_id_url)}" target="_blank" rel="noopener"><img src="${escapeHtml(registration.valid_id_url)}" alt="Uploaded valid ID" class="w-full max-h-[360px] object-contain rounded-lg border border-gray-200 bg-gray-50"></a>`
             : '<div class="h-40 flex items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-400">No valid ID uploaded</div>';
+        const businessPermit = registration.business_permit_url
+            ? `<a href="${escapeHtml(registration.business_permit_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 w-fit rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-700 hover:bg-[#FFF9F7] transition"><svg class="w-4 h-4 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h8l4 4v14H7zM15 3v5h5M10 13h5m-5 4h5"/></svg>${escapeHtml(registration.business_permit_path ? registration.business_permit_path.split('/').pop() : 'View business permit')}</a>`
+            : '<span class="text-gray-400">Business permit not provided</span>';
 
         if (body) {
             body.innerHTML = `
@@ -3397,7 +3400,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="space-y-4 text-[15px]">
                             <div><span class="text-gray-400">Business Name</span><p class="font-medium">${escapeHtml(registration.business_name)}</p></div>
                             <div><span class="text-gray-400">Category</span><p class="font-medium">${escapeHtml(registration.business_category)}</p></div>
-                            <div><span class="text-gray-400">Business Permit</span><p class="font-medium break-all">${escapeHtml(registration.business_permit_path ? registration.business_permit_path.split('/').pop() : null)}</p></div>
+                            <div><span class="text-gray-400">Business Permit</span><div class="mt-1">${businessPermit}</div></div>
                         </div>
                     </section>` : ''}
             `;
@@ -3411,7 +3414,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadRegistrationDetails(row, modal) {
         if (!row.dataset.id) {
-            return;
+            return false;
         }
 
         try {
@@ -3424,92 +3427,32 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             renderRegistrationDetails(modal, await response.json());
+            return true;
         } catch (error) {
             console.error(error);
+            return false;
         }
     }
 
 
     document.querySelectorAll('.registration-row').forEach(row => {
 
-        row.addEventListener('click', function () {
-
-            const type = (this.dataset.type || '').toLowerCase();
-
-            if (type === 'seller') {
-                openRegistrationModal(sellerDetailsModal);
-                loadRegistrationDetails(this, sellerDetailsModal);
-                return;
-            }
-
-            if (type === 'buyer') {
-                openRegistrationModal(buyerDetailsModal);
-                loadRegistrationDetails(this, buyerDetailsModal);
-            }
-
-        });
-
-        row.setAttribute('role', 'button');
-        row.setAttribute('tabindex', '0');
-
-        row.addEventListener('keydown', function (event) {
-
-            if (event.key !== 'Enter' && event.key !== ' ') {
-                return;
-            }
-
-            event.preventDefault();
-            this.click();
-
-        });
-
-    });
-
-
-    document.querySelectorAll('.registration-modal-close').forEach(button => {
-
-        button.addEventListener('click', function () {
-
-            const modalId = this.dataset.modal;
-            closeRegistrationModal(document.getElementById(modalId));
-
-        });
-
-    });
-
-
-    [sellerDetailsModal, buyerDetailsModal].forEach(modal => {
-
-        if (!modal) {
-            return;
-        }
-
-        modal.addEventListener('click', function (event) {
-
-            if (event.target === modal) {
-                closeRegistrationModal(modal);
-            }
-
-        });
-
-    });
-
-
-    document.querySelectorAll('.registration-row').forEach(row => {
-
-        row.addEventListener('click', function () {
+        row.addEventListener('click', async function () {
 
             activeRegistrationRow = this;
-
             const type = (this.dataset.type || '').toLowerCase();
 
             if (type === 'seller') {
-                openRegistrationModal(sellerDetailsModal);
+                if (await loadRegistrationDetails(this, sellerDetailsModal)) {
+                    openRegistrationModal(sellerDetailsModal);
+                }
                 return;
             }
 
             if (type === 'buyer') {
-                openRegistrationModal(buyerDetailsModal);
+                if (await loadRegistrationDetails(this, buyerDetailsModal)) {
+                    openRegistrationModal(buyerDetailsModal);
+                }
             }
 
         });

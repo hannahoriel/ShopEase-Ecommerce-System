@@ -112,7 +112,7 @@ class UserManagementController extends Controller
 
         $updatedUser = $user->fresh();
 
-        if (in_array($status, ['suspended', 'deactivated'], true)) {
+        if (in_array($status, ['active', 'suspended', 'deactivated'], true)) {
             Mail::to($updatedUser->email)->send(new AccountStatusChanged(
                 user: $updatedUser,
                 status: $status,
@@ -188,7 +188,9 @@ class UserManagementController extends Controller
             'dateLabel' => $user->created_at?->format('F j, Y'),
             'timeLabel' => $user->created_at?->format('g:i A'),
             'status' => $user->registration_status ?: 'active',
-            'suspensionDays' => $user->suspended_until?->isFuture() ? now()->diffInDays($user->suspended_until) : 0,
+            'suspensionDays' => $user->suspended_until?->isFuture()
+                ? (int) round(now()->diffInDays($user->suspended_until))
+                : 0,
         ];
 
         if ($details) {
