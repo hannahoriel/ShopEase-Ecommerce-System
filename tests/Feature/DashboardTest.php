@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Announcement;
-use App\Models\Complaint;
-use App\Models\Order;
-use App\Models\Seller;
+use App\Models\Admin\Announcement;
+use App\Models\Admin\Complaint;
+use App\Models\Admin\Order;
+use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,8 +35,7 @@ class DashboardTest extends TestCase
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
             'store_name' => 'Test Store',
-            'commission_rate' => 5,
-            'status' => 'active',
+            'registration_status' => 'active',
             'updated_at' => now(),
         ]);
 

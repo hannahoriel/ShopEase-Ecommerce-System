@@ -783,6 +783,16 @@ Route::get('/seller/register/review', function () {
         []
     );
 
+    $sellerData['valid_id_path'] = $sellerData['valid_id_path']
+        ?? $sellerData['valid_id']
+        ?? $sellerData['upload_id']
+        ?? null;
+
+    $sellerData['business_permit_path'] = $sellerData['business_permit_path']
+        ?? $sellerData['business_permit']
+        ?? $sellerData['upload_business_permit']
+        ?? null;
+
 
     /*
     |--------------------------------------------------------------------------

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Admin\Registration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AuthRegistrationTest extends TestCase
@@ -167,5 +169,92 @@ class AuthRegistrationTest extends TestCase
             ->assertSee('Maria A Dela Cruz')
             ->assertSee('maria.pending@example.com')
             ->assertSee('registration-search');
+    }
+
+    public function test_approved_buyer_can_login_with_submitted_password_and_reaches_buyer_dashboard(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $password = 'Password123!';
+        $user = User::factory()->create([
+            'role' => User::ROLE_BUYER,
+            'registration_status' => 'pending',
+            'password' => $password,
+            'email' => 'approved.buyer@example.com',
+        ]);
+        $registration = Registration::create([
+            'user_type' => User::ROLE_BUYER,
+            'last_name' => 'Buyer',
+            'first_name' => 'Approved',
+            'sex' => 'female',
+            'birthdate' => '2000-01-15',
+            'email' => $user->email,
+            'phone' => '09170000001',
+            'password' => Hash::make($password),
+            'province' => 'Cebu',
+            'municipality' => 'Cebu City',
+            'barangay' => 'Lahug',
+            'street' => 'Main Street',
+            'house_no' => '10',
+            'zip_code' => '6000',
+            'valid_id_path' => 'ids/buyer.jpg',
+            'status' => 'pending',
+            'user_id' => $user->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.approve', $registration))
+            ->assertRedirect();
+
+        $this->post(route('logout'));
+
+        $this->post(route('login.attempt'), [
+            'email' => $user->email,
+            'password' => $password,
+        ])->assertRedirect(route('buyer.dashboard'));
+    }
+
+    public function test_approved_seller_can_login_with_submitted_password_and_reaches_seller_dashboard(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $password = 'Password123!';
+        $user = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'registration_status' => 'pending',
+            'password' => $password,
+            'email' => 'approved.seller@example.com',
+        ]);
+        $registration = Registration::create([
+            'user_type' => User::ROLE_SELLER,
+            'last_name' => 'Seller',
+            'first_name' => 'Approved',
+            'sex' => 'female',
+            'birthdate' => '1995-05-20',
+            'email' => $user->email,
+            'phone' => '09170000002',
+            'password' => Hash::make($password),
+            'province' => 'Cebu',
+            'municipality' => 'Cebu City',
+            'barangay' => 'Lahug',
+            'street' => 'Main Street',
+            'house_no' => '11',
+            'zip_code' => '6000',
+            'business_name' => 'Approved Store',
+            'valid_id_path' => 'ids/seller.jpg',
+            'status' => 'pending',
+            'user_id' => $user->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.approve', $registration))
+            ->assertRedirect();
+
+        $this->post(route('logout'));
+
+        $this->post(route('login.attempt'), [
+            'email' => $user->email,
+            'password' => $password,
+        ])->assertRedirect(route('seller.dashboard'));
     }
 }

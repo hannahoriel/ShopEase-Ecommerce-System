@@ -436,6 +436,21 @@
         }
 
 
+        .password-field {
+            margin-top: 25px;
+        }
+
+
+        .field-help {
+            display: block;
+            margin-top: 8px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #777777;
+        }
+
+
         /* =========================================================
            LABEL
         ========================================================== */
@@ -2195,6 +2210,17 @@
 
                 </div>
 
+
+                <div class="field-group full-width password-field">
+                    <label for="password" class="field-label">Password<span class="required">*</span></label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a password" minlength="8" autocomplete="new-password" required>
+                    <small class="field-help">At least 8 characters with uppercase and lowercase letters, a number, and a special character.</small>
+                </div>
+
+                <div class="field-group full-width password-confirmation-field">
+                    <label for="password_confirmation" class="field-label">Confirm Password<span class="required">*</span></label>
+                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-input" placeholder="Confirm your password" minlength="8" autocomplete="new-password" required>
+                </div>
 
                 <!-- =================================================
                      CONTINUE BUTTON

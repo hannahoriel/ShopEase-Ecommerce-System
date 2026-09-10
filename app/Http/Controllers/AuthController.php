@@ -233,7 +233,7 @@ class AuthController extends Controller
             'password' => [
                 'required',
                 'confirmed',
-                Rules\Password::defaults(),
+                ...$this->passwordRules(),
             ],
 
             'upload_id' => [
@@ -535,6 +535,7 @@ class AuthController extends Controller
     public function completeBuyerRegistration(array $data): void
     {
         $data = $this->normalizeRegistrationData($data);
+        validator($data, $this->passwordValidationRules())->validate();
 
         DB::transaction(function () use ($data): void {
             $user = $this->createRegisteredUser($data, User::ROLE_BUYER);
@@ -566,6 +567,7 @@ class AuthController extends Controller
     public function completeSellerRegistration(array $data): void
     {
         $data = $this->normalizeRegistrationData($data);
+        validator($data, $this->passwordValidationRules())->validate();
 
         DB::transaction(function () use ($data): void {
             $user = $this->createRegisteredUser($data, User::ROLE_SELLER);
@@ -711,12 +713,41 @@ class AuthController extends Controller
 
     private function normalizeRegistrationData(array $data): array
     {
-        return array_merge([
+        $data = array_merge([
             'middle_initial' => $data['middle_name'] ?? null,
             'house_number' => $data['house_no'] ?? null,
             'valid_id_path' => $data['valid_id'] ?? null,
             'business_permit_path' => $data['business_permit'] ?? null,
         ], $data);
+
+        $data['valid_id_path'] = $data['valid_id_path']
+            ?: ($data['valid_id'] ?? $data['upload_id'] ?? null);
+
+        $data['business_permit_path'] = $data['business_permit_path']
+            ?: ($data['business_permit'] ?? $data['upload_business_permit'] ?? null);
+
+        return $data;
+    }
+
+    private function passwordValidationRules(): array
+    {
+        return [
+            'password' => [
+                'required',
+                'confirmed',
+                ...$this->passwordRules(),
+            ],
+        ];
+    }
+
+    private function passwordRules(): array
+    {
+        return [
+            Rules\Password::min(8)
+                ->mixedCase()
+                ->numbers()
+                ->symbols(),
+        ];
     }
 
 
