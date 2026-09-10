@@ -4707,15 +4707,72 @@ function closeEmailVerificationModal() {
    SUBMIT → EMAIL VERIFICATION
 ========================================================= */
 
+let resendCooldownTimer = null;
+
+function startResendCooldown(seconds) {
+    clearInterval(resendCooldownTimer);
+    emailResendButton.disabled = true;
+
+    const updateCooldown = function () {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = String(seconds % 60).padStart(2, '0');
+        const label = emailResendButton.querySelector('span');
+
+        if (label) {
+            label.textContent = `Resend Code (${minutes}:${remainingSeconds})`;
+        }
+
+        if (seconds <= 0) {
+            clearInterval(resendCooldownTimer);
+            resendCooldownTimer = null;
+            emailResendButton.disabled = false;
+
+            if (label) {
+                label.textContent = 'Resend Code';
+            }
+        }
+
+        seconds -= 1;
+    };
+
+    updateCooldown();
+    resendCooldownTimer = setInterval(updateCooldown, 1000);
+}
+
 if (completionForm) {
 
     completionForm.addEventListener(
         'submit',
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
-            openEmailVerificationModal();
+            try {
+                const response = await fetch(
+                    "{{ route('seller.register.send-code') }}",
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'Accept': 'application/json',
+                        },
+                    }
+                );
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    throw new Error(result.message || 'Unable to send the verification code.');
+                }
+
+                openEmailVerificationModal();
+                startResendCooldown(2 * 60);
+            } catch (error) {
+                alert(error.message);
+                if (continueButton) {
+                    continueButton.disabled = false;
+                    continueButton.textContent = 'Submit';
+                }
+            }
 
         }
     );
@@ -4853,7 +4910,7 @@ if (emailVerifyButton) {
 
     emailVerifyButton.addEventListener(
         'click',
-        function () {
+        async function () {
 
             let verificationCode =
                 '';
@@ -4880,45 +4937,64 @@ if (emailVerifyButton) {
             }
 
 
-            /*
-             * UI FLOW:
-             *
-             * Email Verification
-             *          ↓
-             * Registration Submitted
-             */
+            emailVerifyButton.disabled = true;
 
-            if (emailVerificationModal) {
-
-                emailVerificationModal.classList.remove(
-                    'active'
+            try {
+                const response = await fetch(
+                    "{{ route('seller.register.verify-code') }}",
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ code: verificationCode }),
+                    }
                 );
 
+                const result = await response.json();
 
-                emailVerificationModal.setAttribute(
-                    'aria-hidden',
-                    'true'
-                );
+                if (!response.ok) {
+                    throw new Error(result.message || 'The verification code is invalid.');
+                }
 
-            }
+                if (emailVerificationModal) {
 
-
-            if (registrationSubmittedModal) {
-
-                registrationSubmittedModal.classList.add(
-                    'active'
-                );
+                    emailVerificationModal.classList.remove(
+                        'active'
+                    );
 
 
-                registrationSubmittedModal.setAttribute(
-                    'aria-hidden',
-                    'false'
-                );
+                    emailVerificationModal.setAttribute(
+                        'aria-hidden',
+                        'true'
+                    );
+
+                }
 
 
-                document.body.style.overflow =
-                    'hidden';
+                if (registrationSubmittedModal) {
 
+                    registrationSubmittedModal.classList.add(
+                        'active'
+                    );
+
+
+                    registrationSubmittedModal.setAttribute(
+                        'aria-hidden',
+                        'false'
+                    );
+
+
+                    document.body.style.overflow =
+                        'hidden';
+
+                }
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                emailVerifyButton.disabled = false;
             }
 
         }
@@ -4935,11 +5011,40 @@ if (emailResendButton) {
 
     emailResendButton.addEventListener(
         'click',
-        function () {
+        async function () {
 
-            console.log(
-                'Resend verification code'
-            );
+            emailResendButton.disabled = true;
+            let response;
+
+            try {
+                response = await fetch(
+                    "{{ route('seller.register.send-code') }}",
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'Accept': 'application/json',
+                        },
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Unable to resend the verification code.');
+                }
+
+                startResendCooldown(10 * 60);
+                alert(result.message);
+            } catch (error) {
+                if (response?.status !== 429) {
+                    alert(error.message);
+                }
+            } finally {
+                if (!resendCooldownTimer) {
+                    emailResendButton.disabled = false;
+                }
+            }
 
         }
     );
@@ -4959,8 +5064,7 @@ if (
         'click',
         function () {
 
-            window.location.href =
-                "{{ route('login') }}";
+            completionForm.submit();
 
         }
     );

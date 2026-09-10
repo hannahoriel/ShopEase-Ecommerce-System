@@ -18,6 +18,7 @@ class RoleLoginTest extends TestCase
             'role' => $role,
             'email' => "$role@example.com",
             'password' => 'password',
+            'registration_status' => 'active',
         ]);
 
         $response = $this->post(route('login.attempt'), [
@@ -25,8 +26,7 @@ class RoleLoginTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirectToRoute('dashboard');
-        $this->get(route('dashboard'))->assertRedirectToRoute($dashboard);
+        $response->assertRedirectToRoute($dashboard);
         $this->assertAuthenticatedAs($user);
     }
 
@@ -56,9 +56,9 @@ class RoleLoginTest extends TestCase
         $this->actingAs($user)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee(route('logout'))
-            ->assertSee('method="POST"')
-            ->assertSee('name="_token"');
+            ->assertSee(route('logout'), false)
+            ->assertSee('method="POST"', false)
+            ->assertSee('name="_token"', false);
     }
 
     public function test_user_can_log_out(): void

@@ -4,13 +4,24 @@
 
 @section('content')
 <style>
-    .user-management-scrollbar-hidden {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+    .user-management-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #c9a39b #f8f4f3;
     }
 
-    .user-management-scrollbar-hidden::-webkit-scrollbar {
-        display: none;
+    .user-management-scrollbar::-webkit-scrollbar {
+        width: 9px;
+    }
+
+    .user-management-scrollbar::-webkit-scrollbar-track {
+        background: #f8f4f3;
+        border-radius: 999px;
+    }
+
+    .user-management-scrollbar::-webkit-scrollbar-thumb {
+        background: #c9a39b;
+        border-radius: 999px;
+        border: 2px solid #f8f4f3;
     }
 
     /* Suspension duration: hide browser number spinners. */
@@ -63,11 +74,6 @@
                 </div>
             </div>
 
-            <p class="absolute left-[92px] bottom-5 text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
         </div>
 
         <!-- Sellers -->
@@ -97,11 +103,6 @@
                 </div>
             </div>
 
-            <p class="absolute left-[92px] bottom-5 text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
         </div>
 
         <!-- Suspended -->
@@ -159,11 +160,6 @@
                 </div>
             </div>
 
-            <p class="absolute left-[92px] bottom-5 text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">↑</span>
-                <span class="font-semibold">12%</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
         </div>
 
     </div>
@@ -270,7 +266,7 @@
         aria-hidden="true"
     >
         <div
-            class="user-management-scrollbar-hidden relative bg-white w-full max-w-6xl max-h-[94vh] overflow-y-auto rounded-[28px] shadow-2xl"
+            class="user-management-scrollbar relative bg-white w-full max-w-6xl max-h-[94vh] overflow-y-auto rounded-[28px] shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="user-modal-title"
@@ -329,15 +325,7 @@
                                 </div>
 
                                 <!-- SELLER CATEGORIES -->
-                                <div id="user-profile-categories" class="mt-3 space-y-2">
-                                    <span class="inline-flex items-center rounded-full bg-[#FFE3E2] px-3 py-1 text-[12px] font-medium text-[#A52A2A]">
-                                        Women’s Apparel
-                                    </span>
-                                    <br>
-                                    <span class="inline-flex items-center rounded-full bg-[#DCEBD9] px-3 py-1 text-[12px] font-medium text-[#2D6D27]">
-                                        Health &amp; Beauty
-                                    </span>
-                                </div>
+                                <div id="user-profile-categories" class="mt-3 flex flex-wrap gap-2"></div>
                             </div>
                         </div>
 
@@ -406,7 +394,12 @@
 
                                 <div>
                                     <p class="text-[15px] text-gray-400 mb-2">Valid ID</p>
-                                    <div class="w-full h-[178px] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#f0e7d2] via-[#efe1c2] to-[#d6c49c] relative shadow-sm">
+                                    <div id="user-modal-valid-id-preview" class="w-full h-[178px] rounded-lg overflow-hidden border border-gray-200 bg-gray-50 relative shadow-sm">
+                                        <img id="user-modal-valid-id" src="" alt="Valid ID" class="hidden w-full h-full object-contain bg-white">
+                                        <div id="user-modal-valid-id-empty" class="absolute inset-0 flex items-center justify-center text-[13px] text-gray-400">Valid ID not provided</div>
+                                        <a id="user-modal-valid-id-link" href="#" target="_blank" rel="noopener" class="hidden absolute bottom-2 right-2 rounded bg-white/90 px-2 py-1 text-[11px] font-medium text-[#A52A2A] shadow">Open document</a>
+                                    </div>
+                                    <div class="hidden">
                                         <div class="absolute top-3 left-4 text-[8px] font-semibold text-[#2d3550]">REPUBLIKA NG PILIPINAS</div>
                                         <div class="absolute top-6 left-4 text-[7px] text-[#2d3550]">PHILIPPINE IDENTIFICATION CARD</div>
                                         <div class="absolute left-4 top-[44px] w-[57px] h-[74px] rounded bg-gray-300 flex items-center justify-center overflow-hidden">
@@ -490,14 +483,12 @@
                                 <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
                                     <span class="text-[15px] text-gray-400">Business Permit</span>
 
-                                    <div class="inline-flex items-center gap-2 w-fit min-w-[225px] rounded-lg border border-gray-300 px-3 py-2">
+                                    <a id="user-modal-business-permit-link" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 w-fit min-w-[225px] rounded-lg border border-gray-300 px-3 py-2">
                                         <svg class="w-4 h-4 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h8l4 4v14H7zM15 3v5h5M10 13h5m-5 4h5"/>
                                         </svg>
-                                        <span id="user-modal-business-permit" class="text-[13px] text-gray-700">
-                                            business_permit.png
-                                        </span>
-                                    </div>
+                                        <span id="user-modal-business-permit" class="text-[13px] text-gray-700">Business permit not provided</span>
+                                    </a>
                                 </div>
                             </div>
                         </section>
@@ -774,7 +765,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const users = [
+    const users = @json($users);
+    const counts = @json($counts);
+    const statusUrl = @json(route('admin.user.management.status', ['user' => '__USER__']));
+    const detailUrl = @json(route('admin.user.management.show', ['user' => '__USER__']));
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    /*
         {id:1,name:'Juan Dela Cruz',type:'seller',email:'juan.delacruz@gmail.com',phone:'0917 123 4567',date:'2026-05-31',dateLabel:'May 31, 2026',status:'active',suspensionDays:0},
         {id:2,name:'Maria Santos',type:'buyer',email:'maria.santos@gmail.com',phone:'0928 765 4321',date:'2026-05-31',dateLabel:'May 31, 2026',status:'active',suspensionDays:0},
         {id:3,name:'Jose Ramirez',type:'seller',email:'jose.ramirez@gmail.com',phone:'0906 555 7890',date:'2026-05-30',dateLabel:'May 30, 2026',status:'active',suspensionDays:0},
@@ -805,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
         {id:28,name:'Paolo Mendoza',type:'buyer',email:'paolo.mendoza@gmail.com',phone:'0917 642 1305',date:'2026-05-18',dateLabel:'May 18, 2026',status:'active',suspensionDays:0},
         {id:29,name:'Diana Lopez',type:'seller',email:'diana.lopez@gmail.com',phone:'0927 345 6677',date:'2026-05-18',dateLabel:'May 18, 2026',status:'active',suspensionDays:0},
         {id:30,name:'Ramon Navarro',type:'buyer',email:'ramon.navarro@gmail.com',phone:'0908 517 4423',date:'2026-05-17',dateLabel:'May 17, 2026',status:'suspended',suspensionDays:7}
-    ];
+    ]; */
 
     const state = { page:1, itemsPerPage:10, filtered:[...users] };
 
@@ -943,10 +939,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const sellers = users.filter(u => u.type === 'seller').length;
         const suspended = users.filter(u => u.status === 'suspended').length;
 
-        document.getElementById('buyers-count-card').textContent = 328 + (buyers - 15);
-        document.getElementById('sellers-count-card').textContent = 412 + (sellers - 15);
-        document.getElementById('suspended-count-card').textContent = 153 + (suspended - 3);
-        document.getElementById('total-users-count-card').textContent = (1245 + total - 30).toLocaleString();
+        document.getElementById('buyers-count-card').textContent = counts.buyers;
+        document.getElementById('sellers-count-card').textContent = counts.sellers;
+        document.getElementById('suspended-count-card').textContent = counts.suspended;
+        document.getElementById('total-users-count-card').textContent = counts.total.toLocaleString();
     }
 
     function renderModalActions(user) {
@@ -1095,10 +1091,88 @@ document.addEventListener('DOMContentLoaded', function () {
         return selected ? selected.value : '';
     }
 
+    function renderUserCategories(value) {
+        const categories = document.getElementById('user-profile-categories');
+        categories.replaceChildren();
+
+        const categoryList = Array.isArray(value)
+            ? value
+            : String(value || '').split(',');
+        const categoryValues = categoryList.map(category => category.trim()).filter(Boolean);
+
+        if (categoryValues.length === 0) {
+            const emptyState = document.createElement('span');
+            emptyState.className = 'text-[13px] text-gray-500';
+            emptyState.textContent = 'Not provided';
+            categories.appendChild(emptyState);
+            return;
+        }
+
+        const badgeClasses = [
+            ['bg-[#FFE3E2]', 'text-[#A52A2A]'],
+            ['bg-[#DCEBD9]', 'text-[#2D6D27]'],
+        ];
+
+        categoryValues.forEach((category, index) => {
+            const badge = document.createElement('span');
+            const [backgroundClass, textClass] = badgeClasses[index % badgeClasses.length];
+            badge.className = `inline-flex items-center rounded-full px-3 py-1 text-[12px] font-medium ${backgroundClass} ${textClass}`;
+            badge.textContent = category;
+            categories.appendChild(badge);
+        });
+    }
+
+    async function loadUserDetails(user) {
+        const response = await fetch(detailUrl.replace('__USER__', user.id), {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!response.ok || selectedUser?.id !== user.id) return;
+
+        const details = (await response.json()).details || {};
+        const fields = {
+            'user-modal-last-name': details.last_name,
+            'user-modal-first-name': details.first_name,
+            'user-modal-middle-name': details.middle_initial,
+            'user-modal-sex': details.sex,
+            'user-modal-birthday': details.birthday,
+            'user-modal-age': details.age,
+            'user-modal-province': details.province,
+            'user-modal-municipality': details.municipality,
+            'user-modal-barangay': details.barangay,
+            'user-modal-street': details.street,
+            'user-modal-house': details.house_number,
+            'user-modal-zip': details.zip_code,
+            'user-modal-business-name': details.business_name,
+            'user-modal-business-category': details.line_of_business,
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+            document.getElementById(id).textContent = value || 'Not provided';
+        });
+        renderUserCategories(details.line_of_business);
+
+        const validId = document.getElementById('user-modal-valid-id');
+        const validIdEmpty = document.getElementById('user-modal-valid-id-empty');
+        const validIdLink = document.getElementById('user-modal-valid-id-link');
+        validId.src = details.valid_id_url || '';
+        validId.classList.toggle('hidden', !details.valid_id_url);
+        validIdEmpty.classList.toggle('hidden', Boolean(details.valid_id_url));
+        validIdLink.href = details.valid_id_url || '#';
+        validIdLink.classList.toggle('hidden', !details.valid_id_url);
+
+        const permitLink = document.getElementById('user-modal-business-permit-link');
+        const permitName = document.getElementById('user-modal-business-permit');
+        permitLink.href = details.business_permit_url || '#';
+        permitLink.classList.toggle('pointer-events-none', !details.business_permit_url);
+        permitName.textContent = details.upload_business_permit
+            ? details.upload_business_permit.split('/').pop()
+            : 'Business permit not provided';
+    }
+
     function openModal(user) {
         selectedUser = user;
 
-        const names = splitName(user.name);
         const isSeller = user.type === 'seller';
 
         document.getElementById('user-profile-name').textContent = user.name;
@@ -1112,23 +1186,21 @@ document.addEventListener('DOMContentLoaded', function () {
         profileStatus.innerHTML = statusBadge(user.status);
 
         document.getElementById('user-profile-date').textContent = user.dateLabel;
-        document.getElementById('user-profile-time').textContent = '10:30 AM';
+        document.getElementById('user-profile-time').textContent = user.timeLabel || '';
 
-        document.getElementById('user-modal-last-name').textContent = isSeller ? 'Dela Cruz' : names.lastName;
-        document.getElementById('user-modal-first-name').textContent = isSeller ? 'Juan' : names.firstName;
-        document.getElementById('user-modal-middle-name').textContent = 'Amador';
-        document.getElementById('user-modal-sex').textContent = 'Male';
-        document.getElementById('user-modal-birthday').textContent = 'November 7, 2006';
-        document.getElementById('user-modal-age').textContent = '19';
+        document.getElementById('user-modal-last-name').textContent = 'Loading...';
+        document.getElementById('user-modal-first-name').textContent = 'Loading...';
+        document.getElementById('user-modal-middle-name').textContent = 'Loading...';
+        document.getElementById('user-modal-sex').textContent = 'Loading...';
+        document.getElementById('user-modal-birthday').textContent = 'Loading...';
+        document.getElementById('user-modal-age').textContent = 'Loading...';
         document.getElementById('user-modal-email').textContent = user.email;
         document.getElementById('user-modal-phone').textContent = user.phone;
 
-        document.getElementById('user-modal-province').textContent = 'Laguna';
-        document.getElementById('user-modal-municipality').textContent = 'Calamba';
-        document.getElementById('user-modal-barangay').textContent = 'Masico';
-        document.getElementById('user-modal-street').textContent = 'Block 2 Lot 2, San Lorenzo St.';
-        document.getElementById('user-modal-house').textContent = '587';
-        document.getElementById('user-modal-zip').textContent = '4020';
+        ['user-modal-province', 'user-modal-municipality', 'user-modal-barangay',
+            'user-modal-street', 'user-modal-house', 'user-modal-zip'].forEach(id => {
+            document.getElementById(id).textContent = 'Loading...';
+        });
 
         const categories = document.getElementById('user-profile-categories');
         const businessSection = document.getElementById('seller-business-section');
@@ -1136,10 +1208,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isSeller) {
             categories.classList.remove('hidden');
             businessSection.classList.remove('hidden');
+            renderUserCategories('');
 
-            document.getElementById('user-modal-business-name').textContent = 'Dela Cruz Online Boutique';
-            document.getElementById('user-modal-business-category').textContent = 'Fashion & Apparel';
-            document.getElementById('user-modal-business-permit').textContent = 'business_permit.png';
+            document.getElementById('user-modal-business-name').textContent = 'Loading...';
+            document.getElementById('user-modal-business-category').textContent = 'Loading...';
+            document.getElementById('user-modal-business-permit').textContent = 'Loading...';
         } else {
             categories.classList.add('hidden');
             businessSection.classList.add('hidden');
@@ -1151,6 +1224,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.add('flex');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('overflow-hidden');
+        loadUserDetails(user);
     }
 
     function closeModal() {
@@ -1161,19 +1235,32 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedUser = null;
     }
 
-    function updateSelectedStatus(newStatus, notifyUser = false) {
+    async function updateSelectedStatus(newStatus, notifyUser = false, action = {}) {
         if (!selectedUser) return;
 
         const user = users.find(u => u.id === selectedUser.id);
         if (!user) return;
 
-        user.status = newStatus;
+        const response = await fetch(statusUrl.replace('__USER__', user.id), {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ status: newStatus, ...action })
+        });
 
-        if (newStatus === 'suspended') {
-            user.suspensionDays = Number(user.suspensionDays || 7);
-        } else {
-            user.suspensionDays = 0;
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            alert(error.message || 'Unable to update this account.');
+            return;
         }
+
+        const result = await response.json();
+        Object.assign(user, result.user);
+        Object.assign(counts, result.counts);
 
         selectedUser = user;
 
@@ -1320,7 +1407,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         user.suspensionDays = duration;
         closeSuspendAccountModal();
-        updateSelectedStatus('suspended', true);
+        updateSelectedStatus('suspended', true, {
+            reason,
+            duration,
+            details: document.getElementById('suspend-additional-details').value
+        });
     });
 
     document.getElementById('confirm-deactivate-account').addEventListener('click', function () {
@@ -1333,7 +1424,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         closeDeactivateAccountModal();
-        updateSelectedStatus('deactivated', true);
+        updateSelectedStatus('deactivated', true, {
+            reason,
+            details: document.getElementById('deactivate-additional-details').value
+        });
     });
 
     document.addEventListener('keydown', event => {
