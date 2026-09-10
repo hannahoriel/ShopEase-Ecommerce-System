@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Admin\Announcement;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
+use App\Models\Admin\Registration;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
@@ -22,6 +23,16 @@ class DashboardTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $pendingBuyer = User::factory()->create(['role' => User::ROLE_BUYER, 'registration_status' => 'pending']);
         $pendingSeller = User::factory()->create(['role' => User::ROLE_SELLER, 'registration_status' => 'pending']);
+        Registration::factory()->create([
+            'user_id' => $pendingBuyer->id,
+            'user_type' => User::ROLE_BUYER,
+            'status' => 'pending',
+        ]);
+        Registration::factory()->create([
+            'user_id' => $pendingSeller->id,
+            'user_type' => User::ROLE_SELLER,
+            'status' => 'pending',
+        ]);
         $activeBuyer = User::factory()->create([
             'role' => User::ROLE_BUYER,
             'registration_status' => 'active',

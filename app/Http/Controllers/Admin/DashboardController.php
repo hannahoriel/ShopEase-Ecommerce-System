@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Announcement;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
+use App\Models\Admin\Registration;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
@@ -21,8 +22,8 @@ class DashboardController extends Controller
         // ---------------------------------------------------------------
         // STAT CARDS
         // ---------------------------------------------------------------
-        $pendingRegistrationsToday = User::pending()->whereDate('created_at', $today)->count();
-        $pendingRegistrationsYesterday = User::pending()->whereDate('created_at', $yesterday)->count();
+        $pendingRegistrationsToday = Registration::pending()->whereDate('created_at', $today)->count();
+        $pendingRegistrationsYesterday = Registration::pending()->whereDate('created_at', $yesterday)->count();
 
         $activeUsersToday = User::active()->whereDate('approved_at', $today)->count();
         $activeUsersYesterday = User::active()->whereDate('approved_at', $yesterday)->count();
@@ -36,7 +37,7 @@ class DashboardController extends Controller
         $stats = [
             [
                 'icon' => 'pending.png',
-                'value' => number_format(User::pending()->count()),
+                'value' => number_format(Registration::pending()->count()),
                 'label' => 'Pending Registrations',
                 'change' => $this->percentChange($pendingRegistrationsYesterday, $pendingRegistrationsToday),
             ],
@@ -94,8 +95,8 @@ class DashboardController extends Controller
         // PENDING REGISTRATIONS BREAKDOWN
         // ---------------------------------------------------------------
         $pendingBreakdown = [
-            'sellers' => User::pending()->where('role', 'seller')->count(),
-            'buyers' => User::pending()->where('role', 'buyer')->count(),
+            'sellers' => Registration::pending()->where('user_type', 'seller')->count(),
+            'buyers' => Registration::pending()->where('user_type', 'buyer')->count(),
         ];
 
         // ---------------------------------------------------------------
