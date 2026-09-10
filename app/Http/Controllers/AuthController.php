@@ -519,6 +519,11 @@ class AuthController extends Controller
         |--------------------------------------------------------------------------
         | Return To Login
         |--------------------------------------------------------------------------
+        |
+        | This generic registration flow still returns to login.
+        | Your specialized Buyer/Seller registration flows use
+        | their own routes and registration pages.
+        |
         */
 
         return redirect()
@@ -758,17 +763,41 @@ class AuthController extends Controller
         Request $request
     ): RedirectResponse {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Logout
+        |--------------------------------------------------------------------------
+        */
+
         Auth::logout();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Invalidate Session
+        |--------------------------------------------------------------------------
+        */
 
         $request->session()->invalidate();
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Regenerate CSRF Token
+        |--------------------------------------------------------------------------
+        */
+
         $request->session()->regenerateToken();
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Return To LANDING PAGE
+        |--------------------------------------------------------------------------
+        */
+
         return redirect()->route(
-            'login'
+            'landing.page'
         );
     }
 
@@ -783,7 +812,6 @@ class AuthController extends Controller
         if (! $birthday) {
 
             return 0;
-
         }
 
 
@@ -814,7 +842,6 @@ class AuthController extends Controller
         if (! $request->hasFile($field)) {
 
             return null;
-
         }
 
 

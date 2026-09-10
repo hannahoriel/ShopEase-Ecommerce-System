@@ -10,7 +10,10 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>ShopEase - Seller Registration</title>
+    <title>
+        ShopEase - Seller Registration
+    </title>
+
 
     <!-- =========================================================
          POPPINS
@@ -34,9 +37,11 @@
 
     @vite(['resources/css/app.css'])
 
+
     <style>
 
         :root {
+
             --maroon-dark: #52070B;
             --maroon: #7B1B1B;
             --maroon-light: #A52A2A;
@@ -56,284 +61,554 @@
             --success: #2E7D32;
         }
 
+
+        /* =========================================================
+           RESET
+        ========================================================== */
+
         * {
-            box-sizing: border-box;
+
+            box-sizing:
+                border-box;
+
         }
+
+
+        /* =========================================================
+           BODY
+        ========================================================== */
 
         body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
 
-            font-family: 'Poppins', sans-serif;
+            margin:
+                0;
 
-            background: var(--background);
-            color: var(--text-dark);
+            padding:
+                0;
+
+            min-height:
+                100vh;
+
+            font-family:
+                'Poppins',
+                sans-serif;
+
+            background:
+                var(--background);
+
+            color:
+                var(--text-dark);
+
         }
+
 
         /* =========================================================
            PAGE
         ========================================================== */
 
         .registration-page {
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
+
+            min-height:
+                100vh;
+
+            position:
+                relative;
+
+            overflow-x:
+                hidden;
+
         }
+
 
         /* =========================================================
            HEADER
         ========================================================== */
 
         .registration-header {
-            display: flex;
-            align-items: center;
 
-            gap: 26px;
+            display:
+                flex;
 
-            padding-top: 28px;
-            padding-left: 0;
+            align-items:
+                center;
+
+            gap:
+                26px;
+
+            padding-top:
+                28px;
+
+            padding-left:
+                0;
+
         }
+
+
+        /* =========================================================
+           LOGO WRAPPER
+        ========================================================== */
 
         .header-logo-wrapper {
-            width: 128px;
-            height: 105px;
 
-            background: var(--maroon-dark);
+            width:
+                128px;
 
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 60px;
+            height:
+                105px;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background:
+                var(--maroon-dark);
 
-            flex-shrink: 0;
+            border-top-right-radius:
+                60px;
 
-            text-decoration: none;
-            cursor: pointer;
+            border-bottom-right-radius:
+                60px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            flex-shrink:
+                0;
+
+            text-decoration:
+                none;
+
+            cursor:
+                pointer;
 
             transition:
-                opacity 0.2s ease,
-                transform 0.2s ease;
+                opacity
+                0.2s
+                ease,
+
+                transform
+                0.2s
+                ease;
+
         }
+
 
         .header-logo-wrapper:hover {
-            opacity: 0.92;
-            transform: translateX(2px);
+
+            opacity:
+                0.92;
+
+            transform:
+                translateX(
+                    2px
+                );
+
         }
+
 
         .header-logo-wrapper:focus-visible {
-            outline: 2px solid var(--maroon);
-            outline-offset: 4px;
+
+            outline:
+                2px solid
+                var(--maroon);
+
+            outline-offset:
+                4px;
+
         }
+
+
+        /* =========================================================
+           SIGNUP LOGO
+        ========================================================== */
 
         .signup-logo {
-            width: 68px;
-            height: auto;
-            object-fit: contain;
+
+            width:
+                68px;
+
+            height:
+                auto;
+
+            object-fit:
+                contain;
+
         }
+
+
+        /* =========================================================
+           HEADER COPY
+        ========================================================== */
 
         .header-copy {
-            padding-top: 0;
+
+            padding-top:
+                0;
+
         }
+
 
         .header-title {
-            margin: 0;
 
-            font-size: 31px;
-            line-height: 1.15;
+            margin:
+                0;
 
-            font-weight: 700;
+            font-size:
+                31px;
 
-            color: var(--text-dark);
+            line-height:
+                1.15;
+
+            font-weight:
+                700;
+
+            color:
+                var(--text-dark);
+
         }
+
 
         .header-title span {
-            color: var(--maroon-dark);
+
+            color:
+                var(--maroon-dark);
+
         }
+
 
         .header-subtitle {
-            margin: 3px 0 0;
 
-            font-size: 19px;
-            line-height: 1.3;
+            margin:
+                3px 0 0;
 
-            font-weight: 400;
+            font-size:
+                19px;
 
-            color: #969696;
+            line-height:
+                1.3;
+
+            font-weight:
+                400;
+
+            color:
+                #969696;
+
         }
+
 
         /* =========================================================
            STEPPER
         ========================================================== */
 
         .stepper-wrapper {
-            width: 560px;
 
-            margin: 18px auto 18px;
+            width:
+                560px;
 
-            display: flex;
+            margin:
+                18px auto 18px;
 
-            align-items: flex-start;
+            display:
+                flex;
 
-            justify-content: center;
+            align-items:
+                flex-start;
+
+            justify-content:
+                center;
+
         }
+
 
         .step {
-            flex: 1;
 
-            display: flex;
-            flex-direction: column;
+            flex:
+                1;
 
-            align-items: center;
+            display:
+                flex;
 
-            position: relative;
+            flex-direction:
+                column;
 
-            text-decoration: none;
-            color: inherit;
+            align-items:
+                center;
+
+            position:
+                relative;
+
+            text-decoration:
+                none;
+
+            color:
+                inherit;
+
         }
+
 
         .step:not(:last-child)::after {
-            content: "";
 
-            position: absolute;
+            content:
+                "";
 
-            top: 16px;
-            left: 50%;
+            position:
+                absolute;
 
-            width: 100%;
-            height: 1.5px;
+            top:
+                16px;
 
-            background: #9E9E9E;
+            left:
+                50%;
 
-            z-index: 0;
+            width:
+                100%;
+
+            height:
+                1.5px;
+
+            background:
+                #9E9E9E;
+
+            z-index:
+                0;
+
         }
+
 
         .step-clickable {
-            cursor: pointer;
+
+            cursor:
+                pointer;
+
         }
+
 
         .step-number {
-            width: 34px;
-            height: 34px;
 
-            border-radius: 50%;
+            width:
+                34px;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height:
+                34px;
 
-            font-size: 14px;
-            font-weight: 500;
+            border-radius:
+                50%;
 
-            border: 1.5px solid #999;
+            display:
+                flex;
 
-            color: #888;
+            align-items:
+                center;
 
-            background: var(--background);
+            justify-content:
+                center;
 
-            position: relative;
+            font-size:
+                14px;
 
-            z-index: 1;
+            font-weight:
+                500;
+
+            border:
+                1.5px solid
+                #999;
+
+            color:
+                #888;
+
+            background:
+                var(--background);
+
+            position:
+                relative;
+
+            z-index:
+                1;
 
             transition:
-                transform 0.2s ease,
-                background 0.2s ease,
-                border-color 0.2s ease,
-                color 0.2s ease;
+                transform
+                0.2s
+                ease,
+
+                background
+                0.2s
+                ease,
+
+                border-color
+                0.2s
+                ease,
+
+                color
+                0.2s
+                ease;
+
         }
+
 
         .step-clickable:hover .step-number {
-            transform: scale(1.06);
 
-            border-color: var(--maroon);
+            transform:
+                scale(
+                    1.06
+                );
 
-            color: var(--maroon-dark);
+            border-color:
+                var(--maroon);
+
+            color:
+                var(--maroon-dark);
+
         }
+
 
         .step-clickable:hover .step-label {
-            color: var(--maroon-dark);
+
+            color:
+                var(--maroon-dark);
+
         }
+
 
         .step.active .step-number {
-            background: var(--maroon);
 
-            border-color: var(--maroon);
+            background:
+                var(--maroon);
 
-            color: white;
+            border-color:
+                var(--maroon);
 
-            font-weight: 600;
+            color:
+                white;
+
+            font-weight:
+                600;
+
         }
+
 
         .step-label {
-            margin-top: 6px;
 
-            font-size: 14px;
+            margin-top:
+                6px;
 
-            font-weight: 400;
+            font-size:
+                14px;
 
-            color: #969696;
+            font-weight:
+                400;
 
-            white-space: nowrap;
+            color:
+                #969696;
+
+            white-space:
+                nowrap;
+
         }
+
 
         .step.active .step-label {
-            color: var(--maroon-dark);
 
-            font-weight: 500;
+            color:
+                var(--maroon-dark);
+
+            font-weight:
+                500;
+
         }
+
 
         /* =========================================================
            MAIN CONTENT
         ========================================================== */
 
         .registration-content {
-            width: 100%;
 
-            padding: 0 55px 40px;
+            width:
+                100%;
+
+            padding:
+                0
+                55px
+                40px;
+
         }
+
 
         .registration-card {
-            width: 100%;
 
-            max-width: 1580px;
+            width:
+                100%;
 
-            margin: 0 auto;
+            max-width:
+                1580px;
 
-            background: var(--white);
+            margin:
+                0 auto;
 
-            border-radius: 12px;
+            background:
+                var(--white);
+
+            border-radius:
+                12px;
 
             box-shadow:
-                0 2px 12px rgba(0, 0, 0, 0.04);
+                0 2px 12px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.04
+                );
 
-            padding: 30px 40px 40px;
+            padding:
+                30px
+                40px
+                40px;
+
         }
+
 
         /* =========================================================
            FORM GRID
         ========================================================== */
 
         .form-grid {
-            display: grid;
+
+            display:
+                grid;
 
             grid-template-columns:
-                repeat(3, minmax(0, 1fr));
+                repeat(
+                    3,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
 
-            column-gap: 32px;
+            column-gap:
+                32px;
 
-            row-gap: 25px;
+            row-gap:
+                25px;
 
-            width: 100%;
+            width:
+                100%;
+
         }
 
+
         /* =========================================================
-           FIELD
+           FORM GROUP
         ========================================================== */
 
         .form-group {
-            min-width: 0;
+
+            min-width:
+                0;
+
         }
 
         .password-field {
@@ -350,56 +625,97 @@
         }
 
         .form-label {
-            display: block;
 
-            margin-bottom: 7px;
+            display:
+                block;
 
-            font-size: 15px;
+            margin-bottom:
+                7px;
 
-            font-weight: 500;
+            font-size:
+                15px;
 
-            color: var(--text-dark);
+            font-weight:
+                500;
+
+            color:
+                var(--text-dark);
+
         }
+
 
         .required {
-            color: #E01D1D;
+
+            color:
+                #E01D1D;
+
         }
+
+
+        /* =========================================================
+           INPUT / SELECT
+        ========================================================== */
 
         .form-input,
         .form-select {
 
-            width: 100%;
-            height: 49px;
+            width:
+                100%;
 
-            border: 1.5px solid var(--border);
+            height:
+                49px;
 
-            border-radius: 9px;
+            border:
+                1.5px solid
+                var(--border);
 
-            padding: 0 14px;
+            border-radius:
+                9px;
 
-            background: white;
+            padding:
+                0 14px;
 
-            font-family: 'Poppins', sans-serif;
+            background:
+                white;
 
-            font-size: 14px;
+            font-family:
+                'Poppins',
+                sans-serif;
 
-            color: var(--text-dark);
+            font-size:
+                14px;
 
-            outline: none;
+            color:
+                var(--text-dark);
+
+            outline:
+                none;
 
             transition:
-                border-color 0.2s ease,
-                box-shadow 0.2s ease;
+                border-color
+                0.2s
+                ease,
+
+                box-shadow
+                0.2s
+                ease;
+
         }
 
+
         .form-input::placeholder {
-            color: #A6A6A6;
+
+            color:
+                #A6A6A6;
+
         }
+
 
         .form-input:focus,
         .form-select:focus {
 
-            border-color: #B8B8B8;
+            border-color:
+                #B8B8B8;
 
             box-shadow:
                 0 0 0 3px
@@ -409,44 +725,70 @@
                     27,
                     0.06
                 );
+
         }
+
 
         /* =========================================================
            SELECT
         ========================================================== */
 
         .select-wrapper {
-            position: relative;
+
+            position:
+                relative;
+
         }
+
 
         .form-select {
-            appearance: none;
 
-            padding-right: 45px;
+            appearance:
+                none;
 
-            cursor: pointer;
+            padding-right:
+                45px;
+
+            cursor:
+                pointer;
+
         }
 
+
         .select-arrow {
-            position: absolute;
 
-            right: 15px;
+            position:
+                absolute;
 
-            top: 50%;
+            right:
+                15px;
+
+            top:
+                50%;
 
             transform:
                 translateY(-50%)
                 rotate(45deg);
 
-            width: 10px;
-            height: 10px;
+            width:
+                10px;
 
-            border-right: 2px solid #111;
+            height:
+                10px;
 
-            border-bottom: 2px solid #111;
+            border-right:
+                2px solid
+                #111;
 
-            pointer-events: none;
+            border-bottom:
+                2px solid
+                #111;
+
+            pointer-events:
+                none;
+
         }
+
 
         /* =========================================================
            CONTACT NUMBER
@@ -454,24 +796,35 @@
 
         .contact-wrapper {
 
-            display: flex;
+            display:
+                flex;
 
-            gap: 0;
+            gap:
+                0;
 
-            height: 49px;
+            height:
+                49px;
 
-            border: 1.5px solid var(--border);
+            border:
+                1.5px solid
+                var(--border);
 
-            border-radius: 9px;
+            border-radius:
+                9px;
 
-            overflow: hidden;
+            overflow:
+                hidden;
 
-            background: white;
+            background:
+                white;
+
         }
+
 
         .contact-wrapper:focus-within {
 
-            border-color: #B8B8B8;
+            border-color:
+                #B8B8B8;
 
             box-shadow:
                 0 0 0 3px
@@ -481,47 +834,74 @@
                     27,
                     0.06
                 );
+
         }
+
 
         .contact-prefix {
 
-            width: 80px;
+            width:
+                80px;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
+            align-items:
+                center;
 
-            justify-content: center;
+            justify-content:
+                center;
 
-            color: #555;
+            color:
+                #555;
 
-            font-size: 14px;
+            font-size:
+                14px;
 
-            border-right: 1px solid #E2E2E2;
+            border-right:
+                1px solid
+                #E2E2E2;
 
-            flex-shrink: 0;
+            flex-shrink:
+                0;
+
         }
+
 
         .contact-input {
 
-            flex: 1;
+            flex:
+                1;
 
-            border: none;
+            border:
+                none;
 
-            outline: none;
+            outline:
+                none;
 
-            padding: 0 14px;
+            padding:
+                0 14px;
 
-            font-family: 'Poppins', sans-serif;
+            font-family:
+                'Poppins',
+                sans-serif;
 
-            font-size: 14px;
+            font-size:
+                14px;
 
-            color: var(--text-dark);
+            color:
+                var(--text-dark);
+
         }
+
 
         .contact-input::placeholder {
-            color: #A6A6A6;
+
+            color:
+                #A6A6A6;
+
         }
+
 
         /* =========================================================
            AGE
@@ -529,12 +909,17 @@
 
         .readonly {
 
-            background: #F1F1F1;
+            background:
+                #F1F1F1;
 
-            color: #9A9A9A;
+            color:
+                #9A9A9A;
 
-            cursor: not-allowed;
+            cursor:
+                not-allowed;
+
         }
+
 
         /* =========================================================
            ADDRESS
@@ -542,170 +927,282 @@
 
         .address-section {
 
-            margin-top: 4px;
+            margin-top:
+                4px;
 
-            grid-column: 1 / -1;
+            grid-column:
+                1 / -1;
+
         }
+
 
         .address-title {
 
-            margin-bottom: 1px;
+            margin-bottom:
+                1px;
 
-            font-size: 17px;
+            font-size:
+                17px;
 
-            font-weight: 500;
+            font-weight:
+                500;
 
-            color: var(--text-dark);
+            color:
+                var(--text-dark);
+
         }
+
 
         .address-subtitle {
 
-            margin: 0 0 16px;
+            margin:
+                0 0 16px;
 
-            font-size: 14px;
+            font-size:
+                14px;
 
-            color: #A1A1A1;
+            color:
+                #A1A1A1;
+
         }
+
 
         .address-grid {
 
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
-                minmax(0, 1.15fr)
-                minmax(0, 1.15fr)
-                minmax(0, 1.15fr)
-                minmax(120px, 0.52fr);
+                minmax(
+                    0,
+                    1.15fr
+                )
+                minmax(
+                    0,
+                    1.15fr
+                )
+                minmax(
+                    0,
+                    1.15fr
+                )
+                minmax(
+                    120px,
+                    0.52fr
+                );
 
-            gap: 18px;
+            gap:
+                18px;
 
-            width: 100%;
+            width:
+                100%;
+
         }
+
 
         .address-bottom-grid {
 
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
-                repeat(4, minmax(0, 1fr));
+                repeat(
+                    4,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
 
-            gap: 24px;
+            gap:
+                24px;
 
-            margin-top: 24px;
+            margin-top:
+                24px;
 
-            width: 100%;
+            width:
+                100%;
+
         }
 
+
         /* =========================================================
-           VALID ID UPLOAD
+           VALID ID
         ========================================================== */
 
         .upload-section {
 
-            margin-top: 28px;
+            margin-top:
+                28px;
 
-            grid-column: 1 / -1;
+            grid-column:
+                1 / -1;
+
         }
+
 
         .upload-label {
 
-            display: block;
+            display:
+                block;
 
-            margin-bottom: 8px;
+            margin-bottom:
+                8px;
 
-            font-size: 16px;
+            font-size:
+                16px;
 
-            font-weight: 500;
+            font-weight:
+                500;
+
         }
+
 
         .upload-box {
 
-            width: 340px;
-            height: 145px;
+            width:
+                340px;
 
-            border: 1.5px solid #D6D6D6;
+            height:
+                145px;
 
-            border-radius: 9px;
+            border:
+                1.5px solid
+                #D6D6D6;
 
-            display: flex;
+            border-radius:
+                9px;
 
-            align-items: center;
-            justify-content: center;
+            display:
+                flex;
 
-            cursor: pointer;
+            align-items:
+                center;
 
-            background: white;
+            justify-content:
+                center;
+
+            cursor:
+                pointer;
+
+            background:
+                white;
 
             transition:
-                border-color 0.2s ease,
-                background 0.2s ease,
-                box-shadow 0.2s ease;
+                border-color
+                0.2s
+                ease,
+
+                background
+                0.2s
+                ease,
+
+                box-shadow
+                0.2s
+                ease;
+
         }
+
 
         .upload-box:hover {
 
-            border-color: var(--maroon);
+            border-color:
+                var(--maroon);
 
-            background: #FFFDFC;
+            background:
+                #FFFDFC;
 
             box-shadow:
-                0 4px 14px rgba(
+                0 4px 14px
+                rgba(
                     82,
                     7,
                     11,
                     0.05
                 );
+
         }
 
+
         .upload-box input[type="file"] {
-            display: none;
+
+            display:
+                none;
+
         }
+
 
         .upload-placeholder {
 
-            text-align: center;
+            text-align:
+                center;
 
-            color: #A8A8A8;
+            color:
+                #A8A8A8;
 
-            padding: 10px;
+            padding:
+                10px;
+
         }
+
 
         .upload-icon {
 
-            width: 40px;
-            height: 40px;
+            width:
+                40px;
 
-            margin: 0 auto 8px;
+            height:
+                40px;
+
+            margin:
+                0 auto 8px;
+
         }
+
 
         .upload-placeholder p {
 
-            margin: 0;
+            margin:
+                0;
 
-            font-size: 13px;
+            font-size:
+                13px;
 
-            word-break: break-word;
+            word-break:
+                break-word;
+
         }
+
 
         .upload-placeholder small {
 
-            display: block;
+            display:
+                block;
 
-            margin-top: 4px;
+            margin-top:
+                4px;
 
-            font-size: 11px;
+            font-size:
+                11px;
 
-            color: #B1B1B1;
+            color:
+                #B1B1B1;
+
         }
+
 
         .stored-file {
 
-            color: var(--maroon);
+            color:
+                var(--maroon);
 
-            font-weight: 500;
+            font-weight:
+                500;
 
-            max-width: 290px;
+            max-width:
+                290px;
+
         }
+
 
         /* =========================================================
            ERROR
@@ -713,12 +1210,17 @@
 
         .error-message {
 
-            margin-top: 5px;
+            margin-top:
+                5px;
 
-            font-size: 12px;
+            font-size:
+                12px;
 
-            color: #C62828;
+            color:
+                #C62828;
+
         }
+
 
         /* =========================================================
            NEXT BUTTON
@@ -726,80 +1228,128 @@
 
         .form-actions {
 
-            margin-top: 30px;
+            margin-top:
+                30px;
 
-            display: flex;
+            display:
+                flex;
 
-            justify-content: flex-end;
+            justify-content:
+                flex-end;
+
         }
+
 
         .next-button {
 
-            width: 165px;
-            height: 48px;
+            width:
+                165px;
 
-            border: none;
+            height:
+                48px;
 
-            border-radius: 24px;
+            border:
+                none;
 
-            background: var(--maroon);
+            border-radius:
+                24px;
 
-            color: white;
+            background:
+                var(--maroon);
 
-            font-family: 'Poppins', sans-serif;
+            color:
+                white;
 
-            font-size: 16px;
+            font-family:
+                'Poppins',
+                sans-serif;
 
-            font-weight: 600;
+            font-size:
+                16px;
 
-            cursor: pointer;
+            font-weight:
+                600;
+
+            cursor:
+                pointer;
 
             transition:
-                background 0.2s ease,
-                transform 0.1s ease,
-                box-shadow 0.2s ease;
+                background
+                0.2s
+                ease,
+
+                transform
+                0.1s
+                ease,
+
+                box-shadow
+                0.2s
+                ease;
+
         }
+
 
         .next-button:hover {
 
-            background: #661515;
+            background:
+                #661515;
 
             box-shadow:
-                0 5px 14px rgba(
+                0 5px 14px
+                rgba(
                     123,
                     27,
                     27,
                     0.15
                 );
+
         }
+
 
         .next-button:active {
 
-            transform: scale(0.98);
+            transform:
+                scale(
+                    0.98
+                );
 
-            box-shadow: none;
+            box-shadow:
+                none;
+
         }
 
+
         /* =========================================================
-           RESPONSIVE - TABLET
+           TABLET
         ========================================================== */
 
         @media (max-width: 1100px) {
 
             .header-title {
-                font-size: 30px;
+
+                font-size:
+                    30px;
+
             }
+
 
             .header-subtitle {
-                font-size: 18px;
+
+                font-size:
+                    18px;
+
             }
 
+
             .registration-card {
+
                 padding:
                     25px
                     30px
                     35px;
+
             }
+
 
             .form-grid {
 
@@ -812,10 +1362,14 @@
                         )
                     );
 
-                column-gap: 22px;
+                column-gap:
+                    22px;
 
-                row-gap: 22px;
+                row-gap:
+                    22px;
+
             }
+
 
             .address-grid {
 
@@ -827,7 +1381,9 @@
                             1fr
                         )
                     );
+
             }
+
 
             .address-bottom-grid {
 
@@ -839,54 +1395,88 @@
                             1fr
                         )
                     );
+
             }
 
         }
 
+
         /* =========================================================
-           RESPONSIVE - MOBILE
+           MOBILE
         ========================================================== */
 
         @media (max-width: 760px) {
 
             .registration-header {
 
-                gap: 20px;
+                gap:
+                    20px;
 
-                padding-top: 25px;
+                padding-top:
+                    25px;
+
             }
+
 
             .header-logo-wrapper {
 
-                width: 105px;
-                height: 100px;
+                width:
+                    105px;
 
-                border-top-right-radius: 55px;
-                border-bottom-right-radius: 55px;
+                height:
+                    100px;
+
+                border-top-right-radius:
+                    55px;
+
+                border-bottom-right-radius:
+                    55px;
+
             }
+
 
             .signup-logo {
-                width: 70px;
+
+                width:
+                    70px;
+
             }
+
 
             .header-title {
-                font-size: 25px;
+
+                font-size:
+                    25px;
+
             }
 
+
             .header-subtitle {
-                font-size: 16px;
+
+                font-size:
+                    16px;
+
             }
+
 
             .stepper-wrapper {
 
-                width: 95%;
+                width:
+                    95%;
 
-                margin-top: 28px;
+                margin-top:
+                    28px;
+
             }
+
 
             .step-label {
-                font-size: 13px;
+
+                font-size:
+                    13px;
+
             }
+
 
             .registration-content {
 
@@ -894,7 +1484,9 @@
                     0
                     20px
                     35px;
+
             }
+
 
             .registration-card {
 
@@ -902,29 +1494,46 @@
                     24px
                     20px
                     30px;
+
             }
+
 
             .form-grid {
 
-                grid-template-columns: 1fr;
+                grid-template-columns:
+                    1fr;
 
-                gap: 22px;
+                gap:
+                    22px;
+
             }
+
 
             .address-grid,
             .address-bottom-grid {
 
-                grid-template-columns: 1fr;
+                grid-template-columns:
+                    1fr;
 
-                gap: 20px;
+                gap:
+                    20px;
+
             }
+
 
             .upload-box {
-                width: 100%;
+
+                width:
+                    100%;
+
             }
 
+
             .next-button {
-                width: 150px;
+
+                width:
+                    150px;
+
             }
 
         }
@@ -933,9 +1542,12 @@
 
 </head>
 
+
 <body>
 
+
 <div class="registration-page">
+
 
     <!-- =========================================================
          HEADER
@@ -943,13 +1555,17 @@
 
     <header class="registration-header">
 
-        <!-- CLICKABLE LOGO / EXIT -->
+
+        <!-- =====================================================
+             CLICKABLE LOGO
+             RETURNS DIRECTLY TO LANDING PAGE
+        ====================================================== -->
 
         <a
-            href="{{ route('seller.register.exit') }}"
+            href="{{ url('/') }}"
             class="header-logo-wrapper"
             id="sellerRegistrationExit"
-            aria-label="Exit seller registration and return to login"
+            aria-label="Return to ShopEase landing page"
         >
 
             <img
@@ -963,17 +1579,28 @@
 
         <div class="header-copy">
 
+
             <h1 class="header-title">
-                Seller <span>Registration</span>
+
+                Seller
+                <span>
+                    Registration
+                </span>
+
             </h1>
 
+
             <p class="header-subtitle">
+
                 Fill the details below to create your seller account.
+
             </p>
+
 
         </div>
 
     </header>
+
 
 
     <!-- =========================================================
@@ -981,6 +1608,7 @@
     ========================================================== -->
 
     <div class="stepper-wrapper">
+
 
         <!-- STEP 1 -->
 
@@ -992,14 +1620,20 @@
         >
 
             <div class="step-number">
+
                 1
+
             </div>
 
+
             <div class="step-label">
+
                 Seller Information
+
             </div>
 
         </a>
+
 
 
         <!-- STEP 2 -->
@@ -1012,14 +1646,20 @@
         >
 
             <div class="step-number">
+
                 2
+
             </div>
 
+
             <div class="step-label">
+
                 Business Information
+
             </div>
 
         </a>
+
 
 
         <!-- STEP 3 -->
@@ -1032,16 +1672,23 @@
         >
 
             <div class="step-number">
+
                 3
+
             </div>
 
+
             <div class="step-label">
+
                 Review Information
+
             </div>
 
         </a>
 
+
     </div>
+
 
 
     <!-- =========================================================
@@ -1050,23 +1697,29 @@
 
     <main class="registration-content">
 
-      <form
-    id="sellerRegistrationForm"
-    method="POST"
-    action="{{ route('seller.register.submit') }}"
-    enctype="multipart/form-data"
->
-    @csrf
+
+        <form
+            id="sellerRegistrationForm"
+            method="POST"
+            action="{{ route('seller.register.submit') }}"
+            enctype="multipart/form-data"
+        >
+
+            @csrf
+
 
             <div class="registration-card">
 
+
                 <div class="form-grid">
+
 
                     <!-- =================================================
                          LAST NAME
                     ================================================== -->
 
                     <div class="form-group">
+
 
                         <label
                             class="form-label"
@@ -1075,9 +1728,12 @@
 
                             Last Name
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
+
 
                         <input
                             type="text"
@@ -1089,15 +1745,20 @@
                             required
                         >
 
+
                         @error('last_name')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1106,6 +1767,7 @@
 
                     <div class="form-group">
 
+
                         <label
                             class="form-label"
                             for="first_name"
@@ -1113,9 +1775,12 @@
 
                             First Name
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
+
 
                         <input
                             type="text"
@@ -1127,15 +1792,20 @@
                             required
                         >
 
+
                         @error('first_name')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1143,6 +1813,7 @@
                     ================================================== -->
 
                     <div class="form-group">
+
 
                         <label
                             class="form-label"
@@ -1153,6 +1824,7 @@
 
                         </label>
 
+
                         <input
                             type="text"
                             id="middle_name"
@@ -1162,7 +1834,9 @@
                             value="{{ old('middle_name', $sellerData['middle_name'] ?? '') }}"
                         >
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1171,6 +1845,7 @@
 
                     <div class="form-group">
 
+
                         <label
                             class="form-label"
                             for="sex"
@@ -1178,11 +1853,15 @@
 
                             Sex
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
 
+
                         <div class="select-wrapper">
+
 
                             <select
                                 id="sex"
@@ -1196,38 +1875,53 @@
                                     disabled
                                     {{ old('sex', $sellerData['sex'] ?? '') === '' ? 'selected' : '' }}
                                 >
+
                                     Select sex
+
                                 </option>
+
 
                                 <option
                                     value="Male"
                                     {{ old('sex', $sellerData['sex'] ?? '') === 'Male' ? 'selected' : '' }}
                                 >
+
                                     Male
+
                                 </option>
+
 
                                 <option
                                     value="Female"
                                     {{ old('sex', $sellerData['sex'] ?? '') === 'Female' ? 'selected' : '' }}
                                 >
+
                                     Female
+
                                 </option>
 
                             </select>
 
+
                             <span class="select-arrow"></span>
 
+
                         </div>
+
 
                         @error('sex')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1236,6 +1930,7 @@
 
                     <div class="form-group">
 
+
                         <label
                             class="form-label"
                             for="email"
@@ -1243,9 +1938,12 @@
 
                             Email
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
+
 
                         <input
                             type="email"
@@ -1257,15 +1955,20 @@
                             required
                         >
 
+
                         @error('email')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1274,6 +1977,7 @@
 
                     <div class="form-group">
 
+
                         <label
                             class="form-label"
                             for="contact_no"
@@ -1281,15 +1985,22 @@
 
                             Contact No.
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
 
+
                         <div class="contact-wrapper">
 
+
                             <div class="contact-prefix">
+
                                 +63
+
                             </div>
+
 
                             <input
                                 type="text"
@@ -1303,17 +2014,23 @@
                                 required
                             >
 
+
                         </div>
+
 
                         @error('contact_no')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1322,6 +2039,7 @@
 
                     <div class="form-group">
 
+
                         <label
                             class="form-label"
                             for="birthday"
@@ -1329,9 +2047,12 @@
 
                             Birthday
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
+
 
                         <input
                             type="date"
@@ -1342,15 +2063,20 @@
                             required
                         >
 
+
                         @error('birthday')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1359,12 +2085,16 @@
 
                     <div class="form-group">
 
+
                         <label
                             class="form-label"
                             for="age"
                         >
+
                             Age
+
                         </label>
+
 
                         <input
                             type="text"
@@ -1376,12 +2106,15 @@
                             readonly
                         >
 
+
                     </div>
+
 
 
                     <!-- EMPTY COLUMN -->
 
                     <div></div>
+
 
 
                     <!-- =================================================
@@ -1390,16 +2123,25 @@
 
                     <div class="address-section">
 
+
                         <h3 class="address-title">
+
                             Address
+
                         </h3>
 
+
                         <p class="address-subtitle">
+
                             Please select your address
+
                         </p>
 
 
-                        <!-- PROVINCE / MUNICIPALITY / BARANGAY / ZIP -->
+
+                        <!-- =================================================
+                             PROVINCE / MUNICIPALITY / BARANGAY / ZIP
+                        ================================================== -->
 
                         <div class="address-grid">
 
@@ -1408,6 +2150,7 @@
 
                             <div class="form-group">
 
+
                                 <label
                                     class="form-label"
                                     for="province"
@@ -1415,11 +2158,15 @@
 
                                     Province
 
-                                    <span class="required">*</span>
+                                    <span class="required">
+                                        *
+                                    </span>
 
                                 </label>
 
+
                                 <div class="select-wrapper">
+
 
                                     <select
                                         id="province"
@@ -1434,21 +2181,28 @@
                                             disabled
                                             {{ old('province', $sellerData['province'] ?? '') === '' ? 'selected' : '' }}
                                         >
+
                                             Select or search province
+
                                         </option>
 
                                     </select>
 
+
                                     <span class="select-arrow"></span>
+
 
                                 </div>
 
+
                             </div>
+
 
 
                             <!-- MUNICIPALITY -->
 
                             <div class="form-group">
+
 
                                 <label
                                     class="form-label"
@@ -1457,11 +2211,15 @@
 
                                     Municipality
 
-                                    <span class="required">*</span>
+                                    <span class="required">
+                                        *
+                                    </span>
 
                                 </label>
 
+
                                 <div class="select-wrapper">
+
 
                                     <select
                                         id="municipality"
@@ -1476,21 +2234,28 @@
                                             disabled
                                             {{ old('municipality', $sellerData['municipality'] ?? '') === '' ? 'selected' : '' }}
                                         >
+
                                             Select or search municipality
+
                                         </option>
 
                                     </select>
 
+
                                     <span class="select-arrow"></span>
+
 
                                 </div>
 
+
                             </div>
+
 
 
                             <!-- BARANGAY -->
 
                             <div class="form-group">
+
 
                                 <label
                                     class="form-label"
@@ -1499,11 +2264,15 @@
 
                                     Barangay
 
-                                    <span class="required">*</span>
+                                    <span class="required">
+                                        *
+                                    </span>
 
                                 </label>
 
+
                                 <div class="select-wrapper">
+
 
                                     <select
                                         id="barangay"
@@ -1518,21 +2287,28 @@
                                             disabled
                                             {{ old('barangay', $sellerData['barangay'] ?? '') === '' ? 'selected' : '' }}
                                         >
+
                                             Select or search barangay
+
                                         </option>
 
                                     </select>
 
+
                                     <span class="select-arrow"></span>
+
 
                                 </div>
 
+
                             </div>
+
 
 
                             <!-- ZIP CODE -->
 
                             <div class="form-group">
+
 
                                 <label
                                     class="form-label"
@@ -1541,9 +2317,12 @@
 
                                     Zip Code
 
-                                    <span class="required">*</span>
+                                    <span class="required">
+                                        *
+                                    </span>
 
                                 </label>
+
 
                                 <input
                                     type="text"
@@ -1557,12 +2336,17 @@
                                     required
                                 >
 
+
                             </div>
+
 
                         </div>
 
 
-                        <!-- STREET / HOUSE / BUILDING / SUBDIVISION -->
+
+                        <!-- =================================================
+                             STREET / HOUSE / BUILDING / SUBDIVISION
+                        ================================================== -->
 
                         <div class="address-bottom-grid">
 
@@ -1571,12 +2355,16 @@
 
                             <div class="form-group">
 
+
                                 <label
                                     class="form-label"
                                     for="street"
                                 >
+
                                     Street
+
                                 </label>
+
 
                                 <input
                                     type="text"
@@ -1587,19 +2375,25 @@
                                     value="{{ old('street', $sellerData['street'] ?? '') }}"
                                 >
 
+
                             </div>
+
 
 
                             <!-- HOUSE NUMBER -->
 
                             <div class="form-group">
 
+
                                 <label
                                     class="form-label"
                                     for="house_no"
                                 >
+
                                     House No.
+
                                 </label>
+
 
                                 <input
                                     type="text"
@@ -1610,19 +2404,25 @@
                                     value="{{ old('house_no', $sellerData['house_no'] ?? '') }}"
                                 >
 
+
                             </div>
+
 
 
                             <!-- BUILDING -->
 
                             <div class="form-group">
 
+
                                 <label
                                     class="form-label"
                                     for="building"
                                 >
+
                                     Building
+
                                 </label>
+
 
                                 <input
                                     type="text"
@@ -1633,19 +2433,25 @@
                                     value="{{ old('building', $sellerData['building'] ?? '') }}"
                                 >
 
+
                             </div>
+
 
 
                             <!-- SUBDIVISION -->
 
                             <div class="form-group">
 
+
                                 <label
                                     class="form-label"
                                     for="subdivision"
                                 >
+
                                     Subdivision
+
                                 </label>
+
 
                                 <input
                                     type="text"
@@ -1656,11 +2462,15 @@
                                     value="{{ old('subdivision', $sellerData['subdivision'] ?? '') }}"
                                 >
 
+
                             </div>
+
 
                         </div>
 
+
                     </div>
+
 
 
                     <!-- =================================================
@@ -1669,9 +2479,15 @@
 
                     <div class="upload-section">
 
+
                         <label class="upload-label">
+
                             Valid ID
-                            <span class="required">*</span>
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -1679,6 +2495,7 @@
                             for="valid_id"
                             class="upload-box"
                         >
+
 
                             <input
                                 type="file"
@@ -1691,7 +2508,9 @@
 
                             <div class="upload-placeholder">
 
+
                                 @if(!empty($sellerData['valid_id_path']))
+
 
                                     <svg
                                         class="upload-icon"
@@ -1707,6 +2526,7 @@
 
                                     </svg>
 
+
                                     <p
                                         class="stored-file"
                                     >
@@ -1715,11 +2535,16 @@
 
                                     </p>
 
+
                                     <small>
+
                                         Choose another file to replace it
+
                                     </small>
 
+
                                 @else
+
 
                                     <svg
                                         class="upload-icon"
@@ -1749,17 +2574,26 @@
 
                                     </svg>
 
+
                                     <p>
+
                                         Upload a valid ID
+
                                     </p>
 
+
                                     <small>
+
                                         JPG, JPEG, PNG
+
                                     </small>
+
 
                                 @endif
 
+
                             </div>
+
 
                         </label>
 
@@ -1767,12 +2601,16 @@
                         @error('valid_id')
 
                             <p class="error-message">
+
                                 {{ $message }}
+
                             </p>
 
                         @enderror
 
+
                     </div>
+
 
                 </div>
 
@@ -1790,26 +2628,36 @@
 
                 <!-- =================================================
                      NEXT BUTTON
-                ================================================== -->
+                ====================================================== -->
 
                 <div class="form-actions">
 
+
                     <button
-    type="submit"
-    class="next-button"
-    id="nextButton"
->
-    Continue
-</button>
+                        type="submit"
+                        class="next-button"
+                        id="nextButton"
+                    >
+
+                        Continue
+
+                    </button>
+
+
                 </div>
+
 
             </div>
 
+
         </form>
+
 
     </main>
 
+
 </div>
+
 
 
 <script>
@@ -1817,6 +2665,7 @@
 document.addEventListener(
     'DOMContentLoaded',
     function () {
+
 
         /* =========================================================
            ELEMENTS
@@ -1827,30 +2676,36 @@ document.addEventListener(
                 'birthday'
             );
 
+
         const age =
             document.getElementById(
                 'age'
             );
+
 
         const contactInput =
             document.getElementById(
                 'contact_no'
             );
 
+
         const zipInput =
             document.getElementById(
                 'zip_code'
             );
+
 
         const validId =
             document.getElementById(
                 'valid_id'
             );
 
+
         const form =
             document.getElementById(
                 'sellerRegistrationForm'
             );
+
 
 
         /* =========================================================
@@ -1859,19 +2714,24 @@ document.addEventListener(
 
         function calculateAge() {
 
+
             if (
                 !birthday ||
                 !age
             ) {
+
                 return;
+
             }
 
 
             if (!birthday.value) {
 
-                age.value = '';
+                age.value =
+                    '';
 
                 return;
+
             }
 
 
@@ -1879,6 +2739,7 @@ document.addEventListener(
                 new Date(
                     birthday.value
                 );
+
 
             const today =
                 new Date();
@@ -1914,6 +2775,7 @@ document.addEventListener(
                     : '';
 
         }
+
 
 
         if (birthday) {
@@ -2028,6 +2890,7 @@ document.addEventListener(
         }
 
 
+
         /* =========================================================
            CONTACT NUMBER
         ========================================================== */
@@ -2053,6 +2916,7 @@ document.addEventListener(
             );
 
         }
+
 
 
         /* =========================================================
@@ -2082,6 +2946,7 @@ document.addEventListener(
         }
 
 
+
         /* =========================================================
            VALID ID PREVIEW
         ========================================================== */
@@ -2091,6 +2956,7 @@ document.addEventListener(
             validId.addEventListener(
                 'change',
                 function () {
+
 
                     if (
                         !this.files ||
@@ -2113,14 +2979,15 @@ document.addEventListener(
 
 
                     const placeholder =
-                        uploadBox
-                            ?.querySelector(
-                                '.upload-placeholder'
-                            );
+                        uploadBox?.querySelector(
+                            '.upload-placeholder'
+                        );
 
 
                     if (!placeholder) {
+
                         return;
+
                     }
 
 
@@ -2151,7 +3018,9 @@ document.addEventListener(
 
 
                         <small>
+
                             File selected
+
                         </small>
 
                     `;
@@ -2160,6 +3029,7 @@ document.addEventListener(
             );
 
         }
+
 
 
         /* =========================================================
@@ -2183,14 +3053,14 @@ document.addEventListener(
                      * saved to MySQL when Continue
                      * was clicked.
                      *
-                     * We intentionally do NOT save
-                     * anything to browser storage.
+                     * No browser storage is used.
                      */
 
                 }
             );
 
         }
+
 
 
         /* =========================================================
@@ -2210,14 +3080,15 @@ document.addEventListener(
                 function () {
 
                     /*
-                     * Step 3 reads the seller registration
-                     * record from MySQL.
+                     * Step 3 reads the seller
+                     * registration record from MySQL.
                      */
 
                 }
             );
 
         }
+
 
 
         /* =========================================================
@@ -2235,7 +3106,7 @@ document.addEventListener(
                      *
                      * seller.register.submit
                      *
-                     * will save/update Step 1
+                     * saves/updates Step 1
                      * in seller_registrations.
                      */
 
@@ -2245,10 +3116,10 @@ document.addEventListener(
         }
 
     }
-
 );
 
 </script>
+
 
 </body>
 
