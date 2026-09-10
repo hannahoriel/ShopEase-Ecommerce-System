@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Buyer;
-use App\Models\Logistics;
-use App\Models\Rider;
-use App\Models\Seller;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
+use App\Models\Admin\Registration;
+use App\Models\Buyer\Buyer;
+use App\Models\Rider\Rider;
+use App\Models\Seller\Seller;
+use App\Models\Logistics\Logistics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +23,7 @@ class AuthController extends Controller
     /**
      * Handle an authentication attempt.
      */
-    public function login(Request $request): RedirectResponse|JsonResponse
+    public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => [
@@ -74,22 +74,53 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        if ($request->is('api/*') || $request->expectsJson()) {
-            return response()->json([
-                'message' => 'Login successful.',
-                'token' => $request->user()->createToken('api')->plainTextToken,
-                'user' => $request->user(),
-            ]);
-        }
 
-        return redirect()->intended(route('dashboard'));
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect According To User Role
+        |--------------------------------------------------------------------------
+        */
+
+        return match (Auth::user()->role) {
+
+            User::ROLE_ADMIN =>
+                redirect()->route(
+                    'admin.dashboard'
+                ),
+
+            User::ROLE_BUYER =>
+                redirect()->route(
+                    'buyer.dashboard'
+                ),
+
+            User::ROLE_SELLER =>
+                redirect()->route(
+                    'seller.dashboard'
+                ),
+
+            User::ROLE_LOGISTICS =>
+                redirect()->route(
+                    'logistics.dashboard'
+                ),
+
+            User::ROLE_RIDER =>
+                redirect()->route(
+                    'rider.dashboard'
+                ),
+
+            default =>
+                redirect()->route(
+                    'dashboard'
+                ),
+
+        };
     }
 
 
     /**
      * Register a new user and hold the account pending admin approval.
      */
-    public function register(Request $request): RedirectResponse|JsonResponse
+    public function register(Request $request): RedirectResponse
     {
         $role = $request->input(
             'role',
@@ -304,54 +335,86 @@ class AuthController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $user = User::create([
-            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'middle_initial' => $validated['middle_initial'] ?? null,
-            'sex' => $validated['sex'],
-            'email' => $validated['email'],
-            'contact_no' => $validated['contact_no'],
-            'birthday' => $validated['birthday'],
-            'age' => $this->calculateAge($birthday),
-            'province' => $validated['province'],
-            'municipality' => $validated['municipality'],
-            'barangay' => $validated['barangay'],
-            'street' => $validated['street'],
-            'house_number' => $validated['house_number'],
-            'role' => $validated['role'],
-            'password' => Hash::make($validated['password']),
-            'registration_status' => 'pending',
-        ]);
+        $profile = [
 
-        $profileData = [
-            'user_id' => $user->id,
-            'last_name' => $validated['last_name'],
-            'first_name' => $validated['first_name'],
-            'middle_initial' => $validated['middle_initial'] ?? null,
-            'sex' => $validated['sex'],
-            'contact_no' => $validated['contact_no'],
-            'birthday' => $validated['birthday'],
-            'age' => $this->calculateAge($birthday),
-            'province' => $validated['province'],
-            'municipality' => $validated['municipality'],
-            'barangay' => $validated['barangay'],
-            'street' => $validated['street'],
-            'house_number' => $validated['house_number'],
-            'registration_status' => 'pending',
+            'name' =>
+                trim(
+                    $validated['first_name']
+                    . ' '
+                    . $validated['last_name']
+                ),
+
+            'first_name' =>
+                $validated['first_name'],
+
+            'last_name' =>
+                $validated['last_name'],
+
+            'middle_initial' =>
+                $validated['middle_initial']
+                ?? null,
+
+            'sex' =>
+                $validated['sex'],
+
+            'email' =>
+                $validated['email'],
+
+            'contact_no' =>
+                $validated['contact_no'],
+
+            'birthday' =>
+                $validated['birthday'],
+
+            'age' =>
+                $this->calculateAge(
+                    $birthday
+                ),
+
+            'province' =>
+                $validated['province'],
+
+            'municipality' =>
+                $validated['municipality'],
+
+            'barangay' =>
+                $validated['barangay'],
+
+            'street' =>
+                $validated['street'],
+
+            'house_number' =>
+                $validated['house_number'],
+
+            'role' =>
+                $validated['role'],
+
+            'password' =>
+                Hash::make(
+                    $validated['password']
+                ),
+
+            'registration_status' =>
+                'pending',
         ];
 
-        if ($role === User::ROLE_BUYER) {
-            $profileData['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
-            Buyer::create($profileData);
-        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Seller Profile
+        |--------------------------------------------------------------------------
+        */
 
         if ($role === User::ROLE_SELLER) {
-            $profileData['business_name'] = $validated['business_name'];
-            $profileData['line_of_business'] = $validated['line_of_business'];
-            $profileData['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
-            $profileData['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
-            Seller::create($profileData);
+
+            $profile['business_name'] =
+                $validated['business_name'];
+
+            $profile['store_name'] =
+                $validated['business_name'];
+
+            $profile['line_of_business'] =
+                $validated['line_of_business'];
         }
 
 
@@ -362,30 +425,113 @@ class AuthController extends Controller
         */
 
         if ($role === User::ROLE_RIDER) {
-            $profileData['vehicle'] = $validated['vehicle'];
-            $profileData['plate_number'] = $validated['plate_number'];
-            $profileData['upload_or_cr'] = $this->storeRegistrationFile($request, 'upload_or_cr');
-            $profileData['upload_id_license'] = $this->storeRegistrationFile($request, 'upload_id_license');
-            Rider::create($profileData);
+
+            $profile['vehicle'] =
+                $validated['vehicle'];
+
+            $profile['plate_number'] =
+                $validated['plate_number'];
         }
 
-        if ($role === User::ROLE_LOGISTICS) {
-            $profileData['business_name'] = $validated['business_name'] ?? null;
-            $profileData['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');
-            $profileData['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
-            Logistics::create($profileData);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store Uploaded Files
+        |--------------------------------------------------------------------------
+        */
+
+        $profile['upload_id'] =
+            $this->storeRegistrationFile(
+                $request,
+                'upload_id'
+            );
+
+
+        $profile['upload_id_license'] =
+            $this->storeRegistrationFile(
+                $request,
+                'upload_id_license'
+            );
+
+
+        if ($role === User::ROLE_SELLER) {
+
+            $profile['upload_business_permit'] =
+                $this->storeRegistrationFile(
+                    $request,
+                    'upload_business_permit'
+                );
         }
 
-        $message = 'Your registration has been submitted and is awaiting administrator approval.';
 
-        if ($request->is('api/*') || $request->expectsJson()) {
-            return response()->json([
-                'message' => $message,
-                'user' => $user,
-            ], 201);
+        if ($role === User::ROLE_RIDER) {
+
+            $profile['upload_or_cr'] =
+                $this->storeRegistrationFile(
+                    $request,
+                    'upload_or_cr'
+                );
         }
 
-        return redirect()->route('login')->with('status', $message);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create User
+        |--------------------------------------------------------------------------
+        */
+
+        DB::transaction(function () use ($profile, $role): void {
+            $rejectedUser = User::where('email', $profile['email'])
+                ->where(function ($query) use ($profile) {
+                    $query->where('registration_status', 'rejected')
+                        ->orWhereIn('id', Registration::where('email', $profile['email'])
+                            ->where('status', 'rejected')
+                            ->pluck('user_id'));
+                })
+                ->first();
+            $user = $rejectedUser ?: User::create($profile);
+
+            if ($rejectedUser) {
+                $user->update($profile);
+                Buyer::where('user_id', $user->id)->delete();
+                Seller::where('user_id', $user->id)->delete();
+                Rider::where('user_id', $user->id)->delete();
+                Logistics::where('user_id', $user->id)->delete();
+            }
+
+            $this->createRegistration($user, $profile);
+
+            $profile['user_id'] = $user->id;
+
+            if ($role === User::ROLE_BUYER) {
+                Buyer::create($profile);
+            } elseif ($role === User::ROLE_SELLER) {
+                Seller::create($profile);
+            } elseif ($role === User::ROLE_RIDER) {
+                Rider::create($profile);
+            } elseif ($role === User::ROLE_LOGISTICS) {
+                Logistics::create($profile);
+            }
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return To Login
+        |--------------------------------------------------------------------------
+        |
+        | This generic registration flow still returns to login.
+        | Your specialized Buyer/Seller registration flows use
+        | their own routes and registration pages.
+        |
+        */
+
+        return redirect()
+            ->route('login')
+            ->with(
+                'status',
+                'Your registration has been submitted and is awaiting administrator approval.'
+            );
     }
 
     /**
@@ -613,14 +759,24 @@ class AuthController extends Controller
     /**
      * Log the user out of the application.
      */
-    public function logout(Request $request): RedirectResponse|JsonResponse
-    {
-        $request->user()?->currentAccessToken()?->delete();
+    public function logout(
+        Request $request
+    ): RedirectResponse {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Logout
+        |--------------------------------------------------------------------------
+        */
+
         Auth::logout();
 
-        if ($request->is('api/*') || $request->expectsJson()) {
-            return response()->json(['message' => 'Logout successful.']);
-        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Invalidate Session
+        |--------------------------------------------------------------------------
+        */
 
         $request->session()->invalidate();
 
