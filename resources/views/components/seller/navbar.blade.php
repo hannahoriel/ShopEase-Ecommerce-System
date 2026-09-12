@@ -1,13 +1,17 @@
 {{-- =========================================================
      SELLER NAVBAR
      resources/views/components/seller/navbar.blade.php
-     
-     Styled to match ADMIN NAVBAR
-     Seller sidebar width = 288px
+
+     Dynamic navbar position:
+     - Burger + title follow the seller sidebar
+     - Instant position adjustment
+     - No delayed navbar animation
+     - Sidebar remains responsible for its own animation
 ========================================================= --}}
 
 
 <header
+    id="seller-navbar"
     class="
         fixed
         top-0
@@ -28,16 +32,14 @@
     ====================================================== -->
 
     <div
-    id="navbar-left"
-    class="
-        ml-[326px]
-        flex
-        items-center
-        gap-9
-        transition-all
-        duration-300
-    "
->
+        id="navbar-left"
+        class="
+            seller-navbar-left
+            flex
+            items-center
+            gap-9
+        "
+    >
 
 
         <!-- =================================================
@@ -52,10 +54,11 @@
                 flex
                 items-center
                 justify-center
-                transition-all
+                transition-transform
                 duration-200
                 hover:scale-110
                 active:scale-95
+                shrink-0
             "
             aria-label="Toggle seller sidebar"
             aria-controls="sellerSidebar"
@@ -128,7 +131,6 @@
             class="relative"
         >
 
-
             <!-- NOTIFICATION BUTTON -->
 
             <button
@@ -149,8 +151,6 @@
                 aria-controls="notification-dropdown"
             >
 
-                <!-- ACTUAL SELLER NOTIFICATION ICON -->
-
                 <img
                     src="{{ asset('icons/seller/sidebar&navbar/notification.png') }}"
                     class="
@@ -161,8 +161,6 @@
                     alt="Notifications"
                 >
 
-
-                <!-- NOTIFICATION COUNT -->
 
                 <span
                     class="
@@ -409,7 +407,6 @@
 
                     </div>
 
-
                 </div>
 
 
@@ -482,7 +479,7 @@
             >
 
 
-                <!-- SELLER PROFILE ICON -->
+                <!-- PROFILE ICON -->
 
                 <img
                     src="{{ asset('icons/seller/sidebar&navbar/seller-profile.png') }}"
@@ -493,7 +490,6 @@
                     "
                     alt="Seller Profile"
                 >
-
 
 
                 <!-- SELLER DETAILS -->
@@ -528,7 +524,6 @@
                     </p>
 
                 </div>
-
 
 
                 <!-- ARROW -->
@@ -814,6 +809,58 @@
 
 
 
+<style>
+
+/* =========================================================
+   DYNAMIC NAVBAR POSITION
+========================================================= */
+
+/*
+|--------------------------------------------------------------------------
+| IMPORTANT
+|--------------------------------------------------------------------------
+|
+| There is NO transition on margin-left.
+|
+| The sidebar itself can animate smoothly.
+| The burger/title should immediately follow its current edge.
+|
+*/
+
+.seller-navbar-left {
+
+    margin-left:
+        326px;
+
+    transition:
+        none !important;
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Reduced motion
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    prefers-reduced-motion: reduce
+) {
+
+    .seller-navbar-left {
+
+        transition:
+            none !important;
+
+    }
+
+}
+
+</style>
+
+
+
 <!-- =========================================================
      SELLER NAVBAR JAVASCRIPT
 ========================================================= -->
@@ -828,6 +875,12 @@ document.addEventListener(
         /* =====================================================
            ELEMENTS
         ====================================================== */
+
+        const navbarLeft =
+            document.getElementById(
+                'navbar-left'
+            );
+
 
         const sidebarToggle =
             document.getElementById(
@@ -873,23 +926,118 @@ document.addEventListener(
 
 
         /* =====================================================
-           SIDEBAR TOGGLE
-
-           Uses the same event already supported
-           by seller/sidebar.blade.php.
+           UPDATE NAVBAR POSITION
         ====================================================== */
 
-        if (sidebarToggle) {
+        function updateNavbarPosition() {
+
+            if (
+                !navbarLeft
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Read actual sidebar position
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                sellerSidebar
+            ) {
+
+                const rect =
+                    sellerSidebar.getBoundingClientRect();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Current visible right edge
+                |--------------------------------------------------------------------------
+                |
+                | If the sidebar is fully hidden,
+                | rect.right can be negative.
+                |
+                */
+
+                const sidebarRight =
+                    Math.max(
+                        0,
+                        rect.right
+                    );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Gap between sidebar and burger
+                |--------------------------------------------------------------------------
+                */
+
+                const spacing =
+                    38;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | INSTANT POSITION UPDATE
+                |--------------------------------------------------------------------------
+                */
+
+                navbarLeft.style.marginLeft =
+                    `${sidebarRight + spacing}px`;
+
+
+                return;
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fallback
+            |--------------------------------------------------------------------------
+            */
+
+            navbarLeft.style.marginLeft =
+                '326px';
+
+        }
+
+
+
+        /* =====================================================
+           INITIAL POSITION
+        ====================================================== */
+
+        updateNavbarPosition();
+
+
+        requestAnimationFrame(
+            updateNavbarPosition
+        );
+
+
+
+        /* =====================================================
+           SIDEBAR TOGGLE
+        ====================================================== */
+
+        if (
+            sidebarToggle
+        ) {
 
             sidebarToggle.addEventListener(
                 'click',
                 function () {
 
-
                     /*
-                    |----------------------------------------------------------
-                    | Tell seller sidebar to toggle itself
-                    |----------------------------------------------------------
+                    |--------------------------------------------------------------------------
+                    | Trigger sidebar
+                    |--------------------------------------------------------------------------
                     */
 
                     document.body.dispatchEvent(
@@ -900,29 +1048,187 @@ document.addEventListener(
 
 
                     /*
-                    |----------------------------------------------------------
-                    | Update aria state
-                    |----------------------------------------------------------
+                    |--------------------------------------------------------------------------
+                    | Immediately update once.
+                    |--------------------------------------------------------------------------
                     */
 
-                    if (sellerSidebar) {
+                    updateNavbarPosition();
 
-                        const isOpen =
-                            sellerSidebar.classList.contains(
-                                'mobile-open'
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Follow sidebar during its animation.
+                    |--------------------------------------------------------------------------
+                    |
+                    | No navbar transition.
+                    | We simply read the sidebar's current edge.
+                    |
+                    */
+
+                    let frames =
+                        0;
+
+
+                    const maxFrames =
+                        30;
+
+
+                    function syncNavbar() {
+
+                        updateNavbarPosition();
+
+
+                        frames++;
+
+
+                        if (
+                            frames <
+                            maxFrames
+                        ) {
+
+                            requestAnimationFrame(
+                                syncNavbar
                             );
 
-                        sidebarToggle.setAttribute(
-                            'aria-expanded',
-                            String(!isOpen)
-                        );
+                        }
 
                     }
+
+
+                    requestAnimationFrame(
+                        syncNavbar
+                    );
 
                 }
             );
 
         }
+
+
+
+        /* =====================================================
+           RESIZE OBSERVER
+        ====================================================== */
+
+        if (
+            sellerSidebar &&
+            typeof ResizeObserver !==
+            'undefined'
+        ) {
+
+            const sidebarResizeObserver =
+                new ResizeObserver(
+                    function () {
+
+                        updateNavbarPosition();
+
+                    }
+                );
+
+
+            sidebarResizeObserver.observe(
+                sellerSidebar
+            );
+
+        }
+
+
+
+        /* =====================================================
+           MUTATION OBSERVER
+        ====================================================== */
+
+        if (
+            sellerSidebar
+        ) {
+
+            const sidebarMutationObserver =
+                new MutationObserver(
+                    function () {
+
+                        /*
+                        |----------------------------------------------------------
+                        | Update immediately.
+                        |----------------------------------------------------------
+                        */
+
+                        updateNavbarPosition();
+
+
+                        /*
+                        |----------------------------------------------------------
+                        | Follow the sidebar for a short frame window.
+                        |----------------------------------------------------------
+                        */
+
+                        let frames =
+                            0;
+
+
+                        const maxFrames =
+                            30;
+
+
+                        function syncAfterMutation() {
+
+                            updateNavbarPosition();
+
+
+                            frames++;
+
+
+                            if (
+                                frames <
+                                maxFrames
+                            ) {
+
+                                requestAnimationFrame(
+                                    syncAfterMutation
+                                );
+
+                            }
+
+                        }
+
+
+                        requestAnimationFrame(
+                            syncAfterMutation
+                        );
+
+                    }
+                );
+
+
+            sidebarMutationObserver.observe(
+                sellerSidebar,
+                {
+                    attributes:
+                        true,
+
+                    attributeFilter: [
+                        'class',
+                        'style'
+                    ]
+                }
+            );
+
+        }
+
+
+
+        /* =====================================================
+           WINDOW RESIZE
+        ====================================================== */
+
+        window.addEventListener(
+            'resize',
+            function () {
+
+                updateNavbarPosition();
+
+            }
+        );
 
 
 
@@ -943,12 +1249,14 @@ document.addEventListener(
 
 
                     /*
-                    |----------------------------------------------------------
-                    | Close profile dropdown
-                    |----------------------------------------------------------
+                    |--------------------------------------------------------------------------
+                    | Close profile
+                    |--------------------------------------------------------------------------
                     */
 
-                    if (profileDropdown) {
+                    if (
+                        profileDropdown
+                    ) {
 
                         profileDropdown.classList.add(
                             'hidden'
@@ -957,7 +1265,9 @@ document.addEventListener(
                     }
 
 
-                    if (profileButton) {
+                    if (
+                        profileButton
+                    ) {
 
                         profileButton.setAttribute(
                             'aria-expanded',
@@ -967,7 +1277,9 @@ document.addEventListener(
                     }
 
 
-                    if (profileChevron) {
+                    if (
+                        profileChevron
+                    ) {
 
                         profileChevron.classList.remove(
                             'rotate-180'
@@ -977,9 +1289,9 @@ document.addEventListener(
 
 
                     /*
-                    |----------------------------------------------------------
-                    | Toggle notification dropdown
-                    |----------------------------------------------------------
+                    |--------------------------------------------------------------------------
+                    | Toggle notification
+                    |--------------------------------------------------------------------------
                     */
 
                     const isHidden =
@@ -995,7 +1307,9 @@ document.addEventListener(
 
                     notificationButton.setAttribute(
                         'aria-expanded',
-                        String(isHidden)
+                        String(
+                            isHidden
+                        )
                     );
 
                 }
@@ -1022,12 +1336,14 @@ document.addEventListener(
 
 
                     /*
-                    |----------------------------------------------------------
-                    | Close notification dropdown
-                    |----------------------------------------------------------
+                    |--------------------------------------------------------------------------
+                    | Close notification
+                    |--------------------------------------------------------------------------
                     */
 
-                    if (notificationDropdown) {
+                    if (
+                        notificationDropdown
+                    ) {
 
                         notificationDropdown.classList.add(
                             'hidden'
@@ -1036,7 +1352,9 @@ document.addEventListener(
                     }
 
 
-                    if (notificationButton) {
+                    if (
+                        notificationButton
+                    ) {
 
                         notificationButton.setAttribute(
                             'aria-expanded',
@@ -1047,9 +1365,9 @@ document.addEventListener(
 
 
                     /*
-                    |----------------------------------------------------------
-                    | Toggle profile dropdown
-                    |----------------------------------------------------------
+                    |--------------------------------------------------------------------------
+                    | Toggle profile
+                    |--------------------------------------------------------------------------
                     */
 
                     const isHidden =
@@ -1065,11 +1383,15 @@ document.addEventListener(
 
                     profileButton.setAttribute(
                         'aria-expanded',
-                        String(isHidden)
+                        String(
+                            isHidden
+                        )
                     );
 
 
-                    if (profileChevron) {
+                    if (
+                        profileChevron
+                    ) {
 
                         profileChevron.classList.toggle(
                             'rotate-180',
@@ -1095,9 +1417,9 @@ document.addEventListener(
 
 
                 /*
-                |----------------------------------------------------------
-                | Close notification dropdown
-                |----------------------------------------------------------
+                |--------------------------------------------------------------------------
+                | Notification
+                |--------------------------------------------------------------------------
                 */
 
                 if (
@@ -1125,9 +1447,9 @@ document.addEventListener(
 
 
                 /*
-                |----------------------------------------------------------
-                | Close profile dropdown
-                |----------------------------------------------------------
+                |--------------------------------------------------------------------------
+                | Profile
+                |--------------------------------------------------------------------------
                 */
 
                 if (
@@ -1152,7 +1474,9 @@ document.addEventListener(
                     );
 
 
-                    if (profileChevron) {
+                    if (
+                        profileChevron
+                    ) {
 
                         profileChevron.classList.remove(
                             'rotate-180'
@@ -1176,13 +1500,24 @@ document.addEventListener(
             function (event) {
 
                 if (
-                    event.key !== 'Escape'
+                    event.key !==
+                    'Escape'
                 ) {
+
                     return;
+
                 }
 
 
-                if (notificationDropdown) {
+                /*
+                |--------------------------------------------------------------------------
+                | Notification
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    notificationDropdown
+                ) {
 
                     notificationDropdown.classList.add(
                         'hidden'
@@ -1191,7 +1526,9 @@ document.addEventListener(
                 }
 
 
-                if (notificationButton) {
+                if (
+                    notificationButton
+                ) {
 
                     notificationButton.setAttribute(
                         'aria-expanded',
@@ -1201,7 +1538,15 @@ document.addEventListener(
                 }
 
 
-                if (profileDropdown) {
+                /*
+                |--------------------------------------------------------------------------
+                | Profile
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    profileDropdown
+                ) {
 
                     profileDropdown.classList.add(
                         'hidden'
@@ -1210,7 +1555,9 @@ document.addEventListener(
                 }
 
 
-                if (profileButton) {
+                if (
+                    profileButton
+                ) {
 
                     profileButton.setAttribute(
                         'aria-expanded',
@@ -1220,7 +1567,9 @@ document.addEventListener(
                 }
 
 
-                if (profileChevron) {
+                if (
+                    profileChevron
+                ) {
 
                     profileChevron.classList.remove(
                         'rotate-180'

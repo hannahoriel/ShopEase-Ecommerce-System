@@ -1242,7 +1242,7 @@
         }
 
 
-        .status-pill.processing {
+        .status-pill.preparing {
 
             background:
                 #FFE9C3;
@@ -2377,7 +2377,7 @@
                                 ></span>
 
                                 <span class="status-name">
-                                    Processing
+                                    Preparing
                                 </span>
 
                                 <span class="status-count">
@@ -2569,7 +2569,7 @@
                                 <img
                                     src="{{ asset('icons/seller/dashboard/processing.png') }}"
                                     class="order-status-image"
-                                    alt="Processing"
+                                    alt="Preparing"
                                 >
 
                             </div>
@@ -2584,9 +2584,9 @@
                                     </span>
 
                                     <span
-                                        class="status-pill processing"
+                                        class="status-pill preparing"
                                     >
-                                        Processing
+                                        Preparing
                                     </span>
 
                                 </div>
@@ -3689,7 +3689,7 @@
                                     labels: [
 
                                         'New Orders',
-                                        'Processing',
+                                        'Preparing',
                                         'To Ship',
                                         'In Transit',
                                         'Delivered'

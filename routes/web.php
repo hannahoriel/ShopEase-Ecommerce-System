@@ -1920,3 +1920,43 @@ Route::get('/buyer/register/exit', function () {
 
 })->middleware('guest')
   ->name('buyer.register.exit');
+
+  Route::get('/seller/inventory', function () {
+
+    abort_unless(
+        Auth::user()->role === User::ROLE_SELLER,
+        403
+    );
+
+    return view('pages.seller.inventory');
+
+})->middleware('auth')
+  ->name('seller.inventory');
+
+  Route::get('/seller/order-status', function () {
+
+    abort_unless(
+        Auth::user()->role === User::ROLE_SELLER,
+        403
+    );
+
+    return view(
+        'pages.seller.order-status'
+    );
+
+})->middleware('auth')
+  ->name('seller.order.status');
+
+Route::get('/seller/shipping-status', function () {
+
+    abort_unless(
+        Auth::user()->role === User::ROLE_SELLER,
+        403
+    );
+
+    return view(
+        'pages.seller.shipping-status'
+    );
+
+})->middleware('auth')
+  ->name('seller.shipping.status');
