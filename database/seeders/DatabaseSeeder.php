@@ -6,6 +6,7 @@ use App\Models\Admin\Admin;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -22,7 +23,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'Ease',
             'phone_number' => '0912345678',
             'email' => 'admin@gmail.com',
-            'password' => 'Admin@123',
+            'password' => Hash::make('Admin@123'),
             'profile_picture' => null,
         ];
 
@@ -39,16 +40,37 @@ class DatabaseSeeder extends Seeder
                 'last_name' => $admin['last_name'],
                 'contact_no' => $admin['phone_number'],
                 'role' => User::ROLE_ADMIN,
-                'password' => $admin['password'],
+                'password' => Hash::make('Admin@123'),
             ]
         );
 
         foreach ([
-            ['name' => 'Buyer User', 'email' => 'buyer@shopease.test', 'role' => User::ROLE_BUYER, 'password' => 'password'],
-            ['name' => 'Seller User', 'email' => 'seller@shopease.test', 'role' => User::ROLE_SELLER, 'password' => 'seller123'],
-            ['name' => 'Logistics User', 'email' => 'logistics@shopease.test', 'role' => User::ROLE_LOGISTICS, 'password' => 'password'],
-            ['name' => 'Rider User', 'email' => 'rider@shopease.test', 'role' => User::ROLE_RIDER, 'password' => 'password'],
+            [
+                'name' => 'Buyer User',
+                'email' => 'buyer@shopease.test',
+                'role' => User::ROLE_BUYER,
+                'password' => Hash::make('password')
+            ],
+            [
+                'name' => 'Seller User',
+                'email' => 'seller@shopease.test',
+                'role' => User::ROLE_SELLER,
+                'password' => Hash::make('seller123')
+            ],
+            [
+                'name' => 'Logistics User',
+                'email' => 'logistics@shopease.test',
+                'role' => User::ROLE_LOGISTICS,
+                'password' => Hash::make('password')
+            ],
+            [
+                'name' => 'Rider User',
+                'email' => 'rider@shopease.test',
+                'role' => User::ROLE_RIDER,
+                'password' => Hash::make('password')
+            ],
         ] as $account) {
+
             User::updateOrCreate(
                 ['email' => $account['email']],
                 $account

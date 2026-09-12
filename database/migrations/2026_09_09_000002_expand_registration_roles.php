@@ -1,19 +1,38 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE registrations MODIFY user_type ENUM('seller', 'buyer', 'logistics', 'rider') NOT NULL");
-        DB::statement("ALTER TABLE registrations MODIFY sex ENUM('male', 'female', 'other') NOT NULL");
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        Schema::table('registrations', function (Blueprint $table) {
+            $table->enum('user_type', [
+                'seller',
+                'buyer',
+                'logistics',
+                'rider',
+            ])->change();
+        });
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE registrations MODIFY user_type ENUM('seller', 'buyer') NOT NULL");
-        DB::statement("ALTER TABLE registrations MODIFY sex ENUM('male', 'female') NOT NULL");
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        Schema::table('registrations', function (Blueprint $table) {
+            $table->enum('user_type', [
+                'seller',
+                'buyer',
+            ])->change();
+        });
     }
 };
