@@ -1,16 +1,46 @@
+@php
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUYER REGISTRATION DATA
+    |--------------------------------------------------------------------------
+    |
+    | The buyer registration session is provided by the route:
+    |
+    | session('buyer_registration', [])
+    |
+    | This allows the information to remain while the user moves
+    | between Step 1 and Step 2.
+    |
+    */
+
+    $buyerData =
+        is_array($buyerData ?? null)
+            ? $buyerData
+            : [];
+
+@endphp
+
+
 <!DOCTYPE html>
+
 <html lang="en">
+
 
 <head>
 
     <meta charset="UTF-8">
+
 
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>ShopEase - Buyer Registration</title>
+
+    <title>
+        ShopEase - Buyer Registration
+    </title>
 
 
     <!-- =========================================================
@@ -40,6 +70,7 @@
     <style>
 
         :root {
+
             --maroon-dark: #52070B;
             --maroon: #7B1B1B;
             --maroon-light: #A52A2A;
@@ -57,19 +88,28 @@
             --border: #D8D8D8;
 
             --error: #D32F2F;
+
         }
 
 
         * {
-            box-sizing: border-box;
+
+            box-sizing:
+                border-box;
+
         }
 
 
         body {
-            margin: 0;
-            padding: 0;
 
-            min-height: 100vh;
+            margin:
+                0;
+
+            padding:
+                0;
+
+            min-height:
+                100vh;
 
             font-family:
                 'Poppins',
@@ -80,6 +120,7 @@
 
             color:
                 var(--text-dark);
+
         }
 
 
@@ -88,11 +129,16 @@
         ========================================================== */
 
         .registration-page {
-            min-height: 100vh;
 
-            position: relative;
+            min-height:
+                100vh;
 
-            overflow-x: hidden;
+            position:
+                relative;
+
+            overflow-x:
+                hidden;
+
         }
 
 
@@ -101,109 +147,159 @@
         ========================================================== */
 
         .registration-header {
-            display: flex;
 
-            align-items: center;
+            display:
+                flex;
 
-            gap: 26px;
+            align-items:
+                center;
 
-            padding-top: 28px;
-            padding-left: 0;
+            gap:
+                26px;
+
+            padding-top:
+                28px;
+
+            padding-left:
+                0;
+
         }
 
 
         .header-logo-wrapper {
-            width: 128px;
-            height: 105px;
+
+            width:
+                128px;
+
+            height:
+                105px;
 
             background:
                 var(--maroon-dark);
 
-            border-top-right-radius: 60px;
-            border-bottom-right-radius: 60px;
+            border-top-right-radius:
+                60px;
 
-            display: flex;
+            border-bottom-right-radius:
+                60px;
 
-            align-items: center;
-            justify-content: center;
+            display:
+                flex;
 
-            flex-shrink: 0;
+            align-items:
+                center;
 
-            text-decoration: none;
+            justify-content:
+                center;
 
-            cursor: pointer;
+            flex-shrink:
+                0;
+
+            text-decoration:
+                none;
+
+            cursor:
+                pointer;
 
             transition:
                 opacity 0.2s ease,
                 transform 0.2s ease;
+
         }
 
 
         .header-logo-wrapper:hover {
-            opacity: 0.92;
+
+            opacity:
+                0.92;
 
             transform:
                 translateX(2px);
+
         }
 
 
         .header-logo-wrapper:focus-visible {
+
             outline:
                 2px solid
                 var(--maroon);
 
-            outline-offset: 4px;
+            outline-offset:
+                4px;
+
         }
 
 
         .signup-logo {
-            width: 68px;
 
-            height: auto;
+            width:
+                68px;
 
-            object-fit: contain;
+            height:
+                auto;
+
+            object-fit:
+                contain;
+
         }
 
 
         .header-copy {
-            padding-top: 0;
+
+            padding-top:
+                0;
+
         }
 
 
         .header-title {
-            margin: 0;
 
-            font-size: 31px;
+            margin:
+                0;
 
-            line-height: 1.15;
+            font-size:
+                31px;
 
-            font-weight: 700;
+            line-height:
+                1.15;
+
+            font-weight:
+                700;
 
             color:
                 var(--text-dark);
+
         }
 
 
         .header-title span {
+
             color:
                 var(--maroon-dark);
+
         }
 
 
         .header-subtitle {
+
             margin:
                 3px
                 0
                 0;
 
-            font-size: 19px;
+            font-size:
+                19px;
 
-            line-height: 1.3;
+            line-height:
+                1.3;
 
-            font-weight: 400;
+            font-weight:
+                400;
 
             color:
                 #969696;
+
         }
 
 
@@ -212,73 +308,113 @@
         ========================================================== */
 
         .stepper-wrapper {
-            width: 560px;
+
+            width:
+                560px;
 
             margin:
-                18px auto
-                18px;
+                18px auto 18px;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: flex-start;
+            align-items:
+                flex-start;
 
-            justify-content: center;
+            justify-content:
+                center;
+
         }
 
 
         .step {
-            flex: 1;
 
-            display: flex;
+            flex:
+                1;
 
-            flex-direction: column;
+            display:
+                flex;
 
-            align-items: center;
+            flex-direction:
+                column;
 
-            position: relative;
+            align-items:
+                center;
 
-            text-decoration: none;
+            position:
+                relative;
 
-            color: inherit;
+            text-decoration:
+                none;
 
-            cursor: pointer;
+            color:
+                inherit;
+
         }
 
 
         .step:not(:last-child)::after {
-            content: "";
 
-            position: absolute;
+            content:
+                "";
 
-            top: 16px;
+            position:
+                absolute;
 
-            left: 50%;
+            top:
+                16px;
 
-            width: 100%;
+            left:
+                50%;
 
-            height: 1.5px;
+            width:
+                100%;
+
+            height:
+                1.5px;
 
             background:
                 #9E9E9E;
 
-            z-index: 0;
+            z-index:
+                0;
+
+        }
+
+
+        .step-clickable {
+
+            cursor:
+                pointer;
+
         }
 
 
         .step-number {
-            width: 34px;
-            height: 34px;
 
-            border-radius: 50%;
+            width:
+                34px;
 
-            display: flex;
+            height:
+                34px;
 
-            align-items: center;
-            justify-content: center;
+            border-radius:
+                50%;
 
-            font-size: 14px;
+            display:
+                flex;
 
-            font-weight: 500;
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            font-size:
+                14px;
+
+            font-weight:
+                500;
 
             border:
                 1.5px solid
@@ -290,19 +426,23 @@
             background:
                 var(--background);
 
-            position: relative;
+            position:
+                relative;
 
-            z-index: 1;
+            z-index:
+                1;
 
             transition:
                 transform 0.2s ease,
                 background 0.2s ease,
                 border-color 0.2s ease,
                 color 0.2s ease;
+
         }
 
 
-        .step:hover .step-number {
+        .step-clickable:hover .step-number {
+
             transform:
                 scale(1.06);
 
@@ -311,10 +451,20 @@
 
             color:
                 var(--maroon-dark);
+
+        }
+
+
+        .step-clickable:hover .step-label {
+
+            color:
+                var(--maroon-dark);
+
         }
 
 
         .step.active .step-number {
+
             background:
                 var(--maroon);
 
@@ -324,49 +474,57 @@
             color:
                 #FFFFFF;
 
-            font-weight: 600;
+            font-weight:
+                600;
+
         }
 
 
         .step-label {
-            margin-top: 6px;
 
-            font-size: 14px;
+            margin-top:
+                6px;
 
-            font-weight: 400;
+            font-size:
+                14px;
+
+            font-weight:
+                400;
 
             color:
                 #969696;
 
-            white-space: nowrap;
-        }
+            white-space:
+                nowrap;
 
-
-        .step:hover .step-label {
-            color:
-                var(--maroon-dark);
         }
 
 
         .step.active .step-label {
+
             color:
                 var(--maroon-dark);
 
-            font-weight: 500;
+            font-weight:
+                500;
+
         }
 
 
         /* =========================================================
-           MAIN CONTENT
+           CONTENT
         ========================================================== */
 
         .registration-content {
-            width: 100%;
+
+            width:
+                100%;
 
             padding:
                 0
                 55px
                 40px;
+
         }
 
 
@@ -375,11 +533,15 @@
         ========================================================== */
 
         .registration-card {
-            width: 100%;
 
-            max-width: 1580px;
+            width:
+                100%;
 
-            min-height: 680px;
+            max-width:
+                1580px;
+
+            min-height:
+                680px;
 
             margin:
                 0 auto;
@@ -402,10 +564,11 @@
             padding:
                 30px
                 36px
-                105px;
+                110px;
 
             position:
                 relative;
+
         }
 
 
@@ -414,40 +577,41 @@
         ========================================================== */
 
         .buyer-form-grid {
-            display: grid;
+
+            display:
+                grid;
 
             grid-template-columns:
-                repeat(3, minmax(0, 1fr));
+                repeat(
+                    3,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
 
-            column-gap: 30px;
+            column-gap:
+                30px;
 
-            row-gap: 25px;
+            row-gap:
+                25px;
+
         }
 
 
         .field-group {
-            min-width: 0;
+
+            min-width:
+                0;
+
         }
 
 
         .field-group.full-width {
+
             grid-column:
                 1 / -1;
-        }
 
-
-        .password-field {
-            margin-top: 25px;
-        }
-
-
-        .field-help {
-            display: block;
-            margin-top: 8px;
-            margin-bottom: 10px;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #777777;
         }
 
 
@@ -456,45 +620,48 @@
         ========================================================== */
 
         .field-label {
-            display: block;
 
-            margin-bottom: 8px;
+            display:
+                block;
 
-            font-size: 16px;
+            margin-bottom:
+                8px;
 
-            line-height: 1.2;
+            font-size:
+                16px;
 
-            font-weight: 500;
+            line-height:
+                1.2;
+
+            font-weight:
+                500;
 
             color:
                 var(--text-dark);
+
         }
 
 
         .required {
+
             color:
                 #D72626;
+
         }
 
 
         /* =========================================================
-           INPUT WRAPPER
-        ========================================================== */
-
-        .input-wrap {
-            position: relative;
-        }
-
-
-        /* =========================================================
-           INPUTS
+           INPUT
         ========================================================== */
 
         .form-input,
-        .form-select {
-            width: 100%;
+        .search-select-input {
 
-            height: 48px;
+            width:
+                100%;
+
+            height:
+                48px;
 
             padding:
                 0
@@ -523,22 +690,28 @@
             font-weight:
                 400;
 
-            outline: none;
+            outline:
+                none;
 
             transition:
                 border-color 0.2s ease,
                 box-shadow 0.2s ease;
+
         }
 
 
-        .form-input::placeholder {
+        .form-input::placeholder,
+        .search-select-input::placeholder {
+
             color:
                 #A7A7A7;
+
         }
 
 
         .form-input:focus,
-        .form-select:focus {
+        .search-select-input:focus {
+
             border-color:
                 #9D9D9D;
 
@@ -550,157 +723,128 @@
                     130,
                     0.08
                 );
+
         }
 
 
         /* =========================================================
-           REQUIRED ERROR STATE
+           NORMAL SELECT
         ========================================================== */
 
-        .form-input.required-error,
-        .form-select.required-error,
-        .contact-wrapper.required-error,
-        .valid-id-upload.required-error {
-            border-color:
-                var(--error) !important;
+        .normal-select-wrapper {
+
+            position:
+                relative;
+
         }
 
 
-        .form-input.required-error:focus,
-        .form-select.required-error:focus {
-            box-shadow:
-                0 0 0 3px
-                rgba(
-                    211,
-                    47,
-                    47,
-                    0.10
-                );
+        .normal-select {
+
+            appearance:
+                none;
+
+            -webkit-appearance:
+                none;
+
+            padding-right:
+                42px;
+
+            cursor:
+                pointer;
+
+        }
+
+
+        .normal-select-arrow {
+
+            position:
+                absolute;
+
+            right:
+                15px;
+
+            top:
+                50%;
+
+            width:
+                10px;
+
+            height:
+                10px;
+
+            transform:
+                translateY(-65%)
+                rotate(45deg);
+
+            border-right:
+                2px solid
+                #111111;
+
+            border-bottom:
+                2px solid
+                #111111;
+
+            pointer-events:
+                none;
+
         }
 
 
         /* =========================================================
-           FIELD ERROR
+           ERROR
         ========================================================== */
 
         .field-error {
-            margin-top: 5px;
 
-            font-size: 11px;
+            margin-top:
+                5px;
 
-            line-height: 1.4;
+            font-size:
+                11px;
+
+            line-height:
+                1.4;
 
             color:
                 var(--error);
 
-            display: none;
+            display:
+                none;
+
         }
 
 
         .field-error.show {
-            display: block;
+
+            display:
+                block;
+
+        }
+
+
+        .required-error {
+
+            border-color:
+                var(--error) !important;
+
         }
 
 
         /* =========================================================
-           SELECT
-        ========================================================== */
-
-        .form-select {
-            appearance: none;
-
-            -webkit-appearance: none;
-
-            padding-right: 42px;
-
-            cursor: pointer;
-
-            color:
-                #A0A0A0;
-        }
-
-
-        .form-select.has-value {
-            color:
-                #333333;
-        }
-
-
-        .select-arrow {
-            position: absolute;
-
-            right: 15px;
-
-            top: 50%;
-
-            transform:
-                translateY(-50%);
-
-            width: 18px;
-            height: 18px;
-
-            pointer-events: none;
-
-            color:
-                #171717;
-        }
-
-
-        /* =========================================================
-           DATE INPUT
-        ========================================================== */
-
-        .date-input {
-            padding-right: 42px;
-        }
-
-
-        .date-icon {
-            position: absolute;
-
-            right: 15px;
-
-            top: 50%;
-
-            transform:
-                translateY(-50%);
-
-            width: 18px;
-            height: 18px;
-
-            pointer-events: none;
-
-            color:
-                #111111;
-        }
-
-
-        /* =========================================================
-           AGE
-        ========================================================== */
-
-        .age-input {
-            background:
-                #F1F1F1;
-
-            color:
-                #999999;
-
-            cursor:
-                default;
-        }
-
-
-        /* =========================================================
-           CONTACT NUMBER
+           CONTACT
         ========================================================== */
 
         .contact-wrapper {
-            display: flex;
 
-            align-items: center;
+            display:
+                flex;
 
-            height: 48px;
+            align-items:
+                center;
+
+            height:
+                48px;
 
             border:
                 1.5px solid
@@ -718,10 +862,12 @@
             transition:
                 border-color 0.2s ease,
                 box-shadow 0.2s ease;
+
         }
 
 
         .contact-wrapper:focus-within {
+
             border-color:
                 #9D9D9D;
 
@@ -733,44 +879,60 @@
                     130,
                     0.08
                 );
+
         }
 
 
         .contact-icon {
-            width: 18px;
-            height: 18px;
 
-            margin-left: 14px;
+            width:
+                18px;
+
+            height:
+                18px;
+
+            margin-left:
+                14px;
 
             color:
                 #454545;
 
-            flex-shrink: 0;
+            flex-shrink:
+                0;
+
         }
 
 
         .country-code {
-            padding:
-                0
-                10px;
 
-            font-size: 14px;
+            padding:
+                0 10px;
+
+            font-size:
+                14px;
 
             color:
                 #333333;
 
-            flex-shrink: 0;
+            flex-shrink:
+                0;
+
         }
 
 
         .contact-input {
-            flex: 1;
 
-            height: 100%;
+            flex:
+                1;
 
-            border: none;
+            height:
+                100%;
 
-            outline: none;
+            border:
+                none;
+
+            outline:
+                none;
 
             padding:
                 0
@@ -782,55 +944,89 @@
                 'Poppins',
                 sans-serif;
 
-            font-size: 14px;
+            font-size:
+                14px;
 
             color:
                 #333333;
 
             background:
                 transparent;
+
         }
 
 
         .contact-input::placeholder {
+
             color:
                 #A7A7A7;
+
         }
 
 
         /* =========================================================
-           ADDRESS TITLE
+           AGE
+        ========================================================== */
+
+        .age-input {
+
+            background:
+                #F1F1F1;
+
+            color:
+                #999999;
+
+            cursor:
+                default;
+
+        }
+
+
+        /* =========================================================
+           ADDRESS HEADING
         ========================================================== */
 
         .address-heading {
-            margin-top: 2px;
 
-            margin-bottom: -9px;
+            margin-top:
+                2px;
+
+            margin-bottom:
+                -8px;
+
         }
 
 
         .address-heading-title {
-            margin: 0;
 
-            font-size: 16px;
+            margin:
+                0;
 
-            font-weight: 500;
+            font-size:
+                16px;
+
+            font-weight:
+                500;
 
             color:
                 #161616;
+
         }
 
 
         .address-heading-subtitle {
+
             margin:
                 3px
                 0
                 0;
 
-            font-size: 12px;
+            font-size:
+                12px;
 
             color:
                 #A0A0A0;
+
         }
 
 
@@ -839,10 +1035,12 @@
         ========================================================== */
 
         .address-grid {
+
             grid-column:
                 1 / -1;
 
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
                 1.15fr
@@ -852,20 +1050,283 @@
 
             gap:
                 20px;
+
         }
 
 
         .address-bottom-grid {
+
             grid-column:
                 1 / -1;
 
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
-                repeat(4, 1fr);
+                repeat(
+                    4,
+                    1fr
+                );
 
             gap:
                 25px;
+
+        }
+
+
+        /* =========================================================
+           SEARCHABLE ADDRESS
+        ========================================================== */
+
+        .search-select {
+
+            position:
+                relative;
+
+            width:
+                100%;
+
+        }
+
+
+        .search-select.disabled
+        .search-select-input {
+
+            background:
+                #F1F1F1;
+
+            color:
+                #999999;
+
+            cursor:
+                not-allowed;
+
+        }
+
+
+        .search-select-input {
+
+            padding:
+                0
+                42px
+                0
+                13px;
+
+            cursor:
+                text;
+
+        }
+
+
+        .search-select.open
+        .search-select-input {
+
+            border-color:
+                #9D9D9D;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    130,
+                    130,
+                    130,
+                    0.08
+                );
+
+        }
+
+
+        .search-select-arrow {
+
+            position:
+                absolute;
+
+            top:
+                50%;
+
+            right:
+                15px;
+
+            width:
+                10px;
+
+            height:
+                10px;
+
+            transform:
+                translateY(-65%)
+                rotate(45deg);
+
+            border-right:
+                2px solid
+                #111111;
+
+            border-bottom:
+                2px solid
+                #111111;
+
+            pointer-events:
+                none;
+
+            transition:
+                transform 0.2s ease;
+
+        }
+
+
+        .search-select.open
+        .search-select-arrow {
+
+            transform:
+                translateY(-30%)
+                rotate(225deg);
+
+        }
+
+
+        .search-select-options {
+
+            position:
+                absolute;
+
+            left:
+                0;
+
+            right:
+                0;
+
+            top:
+                calc(
+                    100% + 6px
+                );
+
+            max-height:
+                250px;
+
+            overflow-y:
+                auto;
+
+            background:
+                #FFFFFF;
+
+            border:
+                1px solid
+                #DED8D4;
+
+            border-radius:
+                10px;
+
+            box-shadow:
+                0 10px 30px
+                rgba(
+                    32,
+                    12,
+                    12,
+                    0.12
+                );
+
+            padding:
+                6px;
+
+            z-index:
+                5000;
+
+            display:
+                none;
+
+        }
+
+
+        .search-select.open
+        .search-select-options {
+
+            display:
+                block;
+
+        }
+
+
+        .search-select-option {
+
+            width:
+                100%;
+
+            border:
+                none;
+
+            background:
+                transparent;
+
+            border-radius:
+                7px;
+
+            padding:
+                10px 11px;
+
+            text-align:
+                left;
+
+            font-family:
+                'Poppins',
+                sans-serif;
+
+            font-size:
+                13px;
+
+            color:
+                #333333;
+
+            cursor:
+                pointer;
+
+            transition:
+                background 0.15s ease,
+                color 0.15s ease;
+
+        }
+
+
+        .search-select-option:hover,
+        .search-select-option.highlighted {
+
+            background:
+                var(--peach-soft);
+
+            color:
+                var(--maroon-dark);
+
+        }
+
+
+        .search-select-option.selected {
+
+            background:
+                #F8E8E4;
+
+            color:
+                var(--maroon-dark);
+
+            font-weight:
+                500;
+
+        }
+
+
+        .search-select-no-results,
+        .search-select-loading {
+
+            padding:
+                11px;
+
+            text-align:
+                center;
+
+            font-size:
+                12px;
+
+            color:
+                #999999;
+
         }
 
 
@@ -874,18 +1335,23 @@
         ========================================================== */
 
         .valid-id-section {
+
             grid-column:
                 1 / -1;
 
             margin-top:
                 1px;
+
         }
 
 
         .valid-id-upload {
-            width: 345px;
 
-            height: 205px;
+            width:
+                345px;
+
+            height:
+                205px;
 
             border:
                 1.5px solid
@@ -897,23 +1363,30 @@
             background:
                 #FFFFFF;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
+            align-items:
+                center;
 
-            justify-content: center;
+            justify-content:
+                center;
 
-            cursor: pointer;
+            cursor:
+                pointer;
 
-            overflow: hidden;
+            overflow:
+                hidden;
 
             transition:
                 border-color 0.2s ease,
                 box-shadow 0.2s ease;
+
         }
 
 
         .valid-id-upload:hover {
+
             border-color:
                 var(--maroon);
 
@@ -925,118 +1398,279 @@
                     11,
                     0.06
                 );
-        }
 
-
-        .upload-placeholder {
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-
-            justify-content: center;
-
-            text-align: center;
-
-            color:
-                #B3B3B3;
-        }
-
-
-        .upload-placeholder svg {
-            width: 53px;
-            height: 53px;
-
-            margin-bottom: 9px;
-        }
-
-
-        .upload-placeholder p {
-            margin: 0;
-
-            font-size: 13px;
-
-            font-weight: 500;
-
-            color:
-                #A8A8A8;
-        }
-
-
-        .upload-placeholder small {
-            margin-top: 4px;
-
-            font-size: 11px;
-
-            color:
-                #B6B6B6;
-        }
-
-
-        .valid-id-preview {
-            width: 100%;
-            height: 100%;
-
-            object-fit: contain;
-
-            padding: 10px;
-
-            background:
-                #FFFFFF;
-        }
-
-
-        .valid-id-file-name {
-            margin-top: 7px;
-
-            width: 345px;
-
-            overflow: hidden;
-
-            text-overflow: ellipsis;
-
-            white-space: nowrap;
-
-            font-size: 12px;
-
-            color:
-                var(--maroon);
-
-            font-weight: 500;
         }
 
 
         .hidden-file-input {
-            display: none;
+
+            display:
+                none;
+
+        }
+
+
+        .upload-placeholder {
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            text-align:
+                center;
+
+            color:
+                #B3B3B3;
+
+            padding:
+                20px;
+
+        }
+
+
+        .upload-placeholder svg {
+
+            width:
+                53px;
+
+            height:
+                53px;
+
+            margin-bottom:
+                10px;
+
+        }
+
+
+        .upload-placeholder p {
+
+            margin:
+                0;
+
+            font-size:
+                13px;
+
+            font-weight:
+                500;
+
+            color:
+                #A8A8A8;
+
+        }
+
+
+        .upload-placeholder small {
+
+            margin-top:
+                4px;
+
+            font-size:
+                11px;
+
+            color:
+                #B6B6B6;
+
+        }
+
+
+        .stored-file {
+
+            max-width:
+                290px;
+
+            word-break:
+                break-word;
+
+            color:
+                var(--maroon) !important;
+
+            font-weight:
+                500;
+
+        }
+
+
+        .valid-id-file-name {
+
+            margin-top:
+                7px;
+
+            width:
+                345px;
+
+            max-width:
+                100%;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
+
+            white-space:
+                nowrap;
+
+            font-size:
+                12px;
+
+            color:
+                var(--maroon);
+
+            font-weight:
+                500;
+
         }
 
 
         /* =========================================================
-           ACTIONS
+           PASSWORD
+        ========================================================== */
+
+        .password-field {
+
+            margin-top:
+                25px;
+
+        }
+
+
+        .password-confirmation-field {
+
+            margin-top:
+                0;
+
+        }
+
+
+        .field-help {
+
+            display:
+                block;
+
+            margin-top:
+                8px;
+
+            margin-bottom:
+                10px;
+
+            font-size:
+                12px;
+
+            line-height:
+                1.5;
+
+            color:
+                #777777;
+
+        }
+
+
+        .password-match-error {
+
+            margin:
+                5px
+                0
+                0;
+
+            font-size:
+                11px;
+
+            line-height:
+                1.4;
+
+            color:
+                var(--error);
+
+            display:
+                none;
+
+        }
+
+
+        .password-match-error.show {
+
+            display:
+                block;
+
+        }
+
+
+        .form-input.password-mismatch {
+
+            border-color:
+                var(--error) !important;
+
+        }
+
+
+        .form-input.password-mismatch:focus {
+
+            border-color:
+                var(--error) !important;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    211,
+                    47,
+                    47,
+                    0.10
+                );
+
+        }
+
+
+        /* =========================================================
+           BUTTON
         ========================================================== */
 
         .form-actions {
-            position: absolute;
 
-            right: 46px;
+            position:
+                absolute;
 
-            bottom: 26px;
+            right:
+                46px;
 
-            display: flex;
+            bottom:
+                26px;
 
-            justify-content: flex-end;
+            display:
+                flex;
+
+            justify-content:
+                flex-end;
+
         }
 
 
         .continue-button {
-            width: 165px;
 
-            height: 48px;
+            width:
+                165px;
 
-            border: none;
+            height:
+                48px;
 
-            border-radius: 24px;
+            border:
+                none;
+
+            border-radius:
+                24px;
 
             background:
                 var(--maroon);
@@ -1048,48 +1682,63 @@
                 'Poppins',
                 sans-serif;
 
-            font-size: 16px;
+            font-size:
+                16px;
 
-            font-weight: 600;
+            font-weight:
+                600;
 
-            cursor: pointer;
+            cursor:
+                pointer;
 
             transition:
                 background 0.2s ease,
                 transform 0.1s ease,
                 box-shadow 0.2s ease;
+
         }
 
 
         .continue-button:hover {
+
             background:
                 #661515;
 
             box-shadow:
-                0 5px 14px
+                0 5px
+                14px
                 rgba(
                     123,
                     27,
                     27,
                     0.15
                 );
+
         }
 
 
         .continue-button:active {
+
             transform:
                 scale(0.98);
 
             box-shadow:
                 none;
+
         }
 
 
         .continue-button:disabled {
-            opacity: 0.65;
+
+            opacity:
+                0.65;
 
             cursor:
                 not-allowed;
+
+            box-shadow:
+                none;
+
         }
 
 
@@ -1100,20 +1749,44 @@
         @media (max-width: 1200px) {
 
             .buyer-form-grid {
+
                 grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
+                    repeat(
+                        2,
+                        minmax(
+                            0,
+                            1fr
+                        )
+                    );
+
             }
 
 
             .address-grid {
+
                 grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
+                    repeat(
+                        2,
+                        minmax(
+                            0,
+                            1fr
+                        )
+                    );
+
             }
 
 
             .address-bottom-grid {
+
                 grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
+                    repeat(
+                        2,
+                        minmax(
+                            0,
+                            1fr
+                        )
+                    );
+
             }
 
         }
@@ -1122,40 +1795,60 @@
         @media (max-width: 900px) {
 
             .registration-content {
+
                 padding:
                     0
                     25px
                     35px;
+
             }
 
 
             .registration-card {
+
                 padding-bottom:
-                    105px;
+                    110px;
+
             }
 
 
             .buyer-form-grid {
+
                 grid-template-columns:
                     1fr;
+
             }
 
 
             .address-grid {
+
                 grid-template-columns:
                     1fr;
+
             }
 
 
             .address-bottom-grid {
+
                 grid-template-columns:
                     1fr;
+
             }
 
 
-            .valid-id-upload,
+            .valid-id-upload {
+
+                width:
+                    100%;
+
+            }
+
+
             .valid-id-file-name {
-                width: 100%;
+
+                width:
+                    100%;
+
             }
 
         }
@@ -1164,80 +1857,131 @@
         @media (max-width: 760px) {
 
             .registration-header {
-                gap: 18px;
 
-                padding-top: 24px;
+                gap:
+                    18px;
+
+                padding-top:
+                    24px;
+
             }
 
 
             .header-logo-wrapper {
-                width: 105px;
-                height: 100px;
+
+                width:
+                    105px;
+
+                height:
+                    100px;
 
                 border-top-right-radius:
                     55px;
 
                 border-bottom-right-radius:
                     55px;
+
             }
 
 
             .signup-logo {
-                width: 70px;
+
+                width:
+                    70px;
+
             }
 
 
             .header-title {
-                font-size: 25px;
+
+                font-size:
+                    25px;
+
             }
 
 
             .header-subtitle {
-                font-size: 16px;
+
+                font-size:
+                    16px;
+
             }
 
 
             .stepper-wrapper {
-                width: 95%;
 
-                margin-top: 24px;
+                width:
+                    95%;
+
+                margin-top:
+                    24px;
+
             }
 
 
             .step-label {
-                font-size: 13px;
+
+                font-size:
+                    13px;
+
             }
 
 
             .registration-content {
+
                 padding:
                     0
                     20px
                     30px;
+
             }
 
 
             .registration-card {
+
                 padding:
                     24px
                     20px
                     105px;
+
             }
 
 
             .field-label {
-                font-size: 15px;
-            }
 
+                font-size:
+                    15px;
 
-            .continue-button {
-                width: 150px;
             }
 
 
             .form-actions {
-                right: 20px;
-                bottom: 22px;
+
+                position:
+                    static;
+
+                margin-top:
+                    30px;
+
+                justify-content:
+                    flex-end;
+
+            }
+
+
+            .continue-button {
+
+                width:
+                    150px;
+
+            }
+
+
+            .search-select-options {
+
+                max-height:
+                    220px;
+
             }
 
         }
@@ -1249,6 +1993,7 @@
 
 <body>
 
+
 <div class="registration-page">
 
 
@@ -1259,13 +2004,19 @@
     <header class="registration-header">
 
 
-        <!-- LOGO / RETURN TO LOGIN -->
+        <!--
+        IMPORTANT:
+        Do NOT use url('/') here.
+
+        buyer.register.exit clears the buyer registration
+        session and then redirects to the landing page.
+        -->
 
         <a
-    href="{{ url('/') }}"
-    class="header-logo-wrapper"
-    aria-label="Return to ShopEase landing page"
->
+            href="{{ route('buyer.register.exit') }}"
+            class="header-logo-wrapper"
+            aria-label="Exit buyer registration and return to ShopEase landing page"
+        >
 
             <img
                 src="{{ asset('icons/login/signup-logo.png') }}"
@@ -1278,10 +2029,14 @@
 
         <div class="header-copy">
 
+
             <h1 class="header-title">
 
                 Buyer
-                <span>Registration</span>
+
+                <span>
+                    Registration
+                </span>
 
             </h1>
 
@@ -1292,9 +2047,11 @@
 
             </p>
 
+
         </div>
 
     </header>
+
 
 
     <!-- =========================================================
@@ -1323,8 +2080,8 @@
         </div>
 
 
+
         <!-- STEP 2 -->
-        <!-- CLICKABLE -->
 
         <a
             href="{{ route('buyer.review.register') }}"
@@ -1347,16 +2104,13 @@
     </div>
 
 
+
     <!-- =========================================================
          MAIN CONTENT
     ========================================================== -->
 
     <main class="registration-content">
 
-
-        <!-- =====================================================
-             BUYER FORM
-        ====================================================== -->
 
         <form
             id="buyerRegistrationForm"
@@ -1384,7 +2138,13 @@
                             for="last_name"
                             class="field-label"
                         >
-                            Last Name<span class="required">*</span>
+
+                            Last Name
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -1394,10 +2154,11 @@
                             name="last_name"
                             class="form-input"
                             placeholder="Enter your last name"
-                            value="{{ old('last_name') }}"
+                            value="{{ old('last_name', $buyerData['last_name'] ?? '') }}"
                             autocomplete="family-name"
                             required
                         >
+
 
                         <div
                             class="field-error"
@@ -1409,9 +2170,8 @@
                     </div>
 
 
-                    <!-- =================================================
-                         FIRST NAME
-                    ================================================== -->
+
+                    <!-- FIRST NAME -->
 
                     <div class="field-group">
 
@@ -1419,7 +2179,13 @@
                             for="first_name"
                             class="field-label"
                         >
-                            First Name<span class="required">*</span>
+
+                            First Name
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -1429,10 +2195,11 @@
                             name="first_name"
                             class="form-input"
                             placeholder="Enter your first name"
-                            value="{{ old('first_name') }}"
+                            value="{{ old('first_name', $buyerData['first_name'] ?? '') }}"
                             autocomplete="given-name"
                             required
                         >
+
 
                         <div
                             class="field-error"
@@ -1444,9 +2211,8 @@
                     </div>
 
 
-                    <!-- =================================================
-                         MIDDLE NAME
-                    ================================================== -->
+
+                    <!-- MIDDLE NAME -->
 
                     <div class="field-group">
 
@@ -1454,7 +2220,13 @@
                             for="middle_name"
                             class="field-label"
                         >
-                            Middle Name<span class="required">*</span>
+
+                            Middle Name
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -1464,9 +2236,10 @@
                             name="middle_name"
                             class="form-input"
                             placeholder="Enter your middle name"
-                            value="{{ old('middle_name') }}"
+                            value="{{ old('middle_name', $buyerData['middle_name'] ?? '') }}"
                             required
                         >
+
 
                         <div
                             class="field-error"
@@ -1478,9 +2251,8 @@
                     </div>
 
 
-                    <!-- =================================================
-                         SEX
-                    ================================================== -->
+
+                    <!-- SEX -->
 
                     <div class="field-group">
 
@@ -1488,55 +2260,66 @@
                             for="sex"
                             class="field-label"
                         >
-                            Sex<span class="required">*</span>
+
+                            Sex
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
-                        <div class="input-wrap">
+                        <div class="normal-select-wrapper">
 
                             <select
                                 id="sex"
                                 name="sex"
-                                class="form-select"
+                                class="
+                                    form-input
+                                    normal-select
+                                "
                                 required
                             >
 
                                 <option
                                     value=""
-                                    selected
                                     disabled
+                                    {{ old('sex', $buyerData['sex'] ?? '') === '' ? 'selected' : '' }}
                                 >
                                     Select sex
                                 </option>
 
-                                <option value="Male">
+
+                                <option
+                                    value="Male"
+                                    {{ old('sex', $buyerData['sex'] ?? '') === 'Male' ? 'selected' : '' }}
+                                >
                                     Male
                                 </option>
 
-                                <option value="Female">
+
+                                <option
+                                    value="Female"
+                                    {{ old('sex', $buyerData['sex'] ?? '') === 'Female' ? 'selected' : '' }}
+                                >
                                     Female
                                 </option>
 
-                                <option value="Prefer not to say">
+
+                                <option
+                                    value="Prefer not to say"
+                                    {{ old('sex', $buyerData['sex'] ?? '') === 'Prefer not to say' ? 'selected' : '' }}
+                                >
                                     Prefer not to say
                                 </option>
 
                             </select>
 
 
-                            <svg
-                                class="select-arrow"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-
-                                <path d="M6 9l6 6 6-6" />
-
-                            </svg>
+                            <span
+                                class="normal-select-arrow"
+                            ></span>
 
                         </div>
 
@@ -1551,9 +2334,8 @@
                     </div>
 
 
-                    <!-- =================================================
-                         EMAIL
-                    ================================================== -->
+
+                    <!-- EMAIL -->
 
                     <div class="field-group">
 
@@ -1561,7 +2343,13 @@
                             for="email"
                             class="field-label"
                         >
-                            Email<span class="required">*</span>
+
+                            Email
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -1571,7 +2359,7 @@
                             name="email"
                             class="form-input"
                             placeholder="Enter your email"
-                            value="{{ old('email') }}"
+                            value="{{ old('email', $buyerData['email'] ?? '') }}"
                             autocomplete="email"
                             required
                         >
@@ -1581,15 +2369,14 @@
                             class="field-error"
                             id="emailError"
                         >
-                            Please enter your email.
+                            Please enter a valid email address.
                         </div>
 
                     </div>
 
 
-                    <!-- =================================================
-                         CONTACT NUMBER
-                    ================================================== -->
+
+                    <!-- CONTACT -->
 
                     <div class="field-group">
 
@@ -1597,14 +2384,20 @@
                             for="contact_no"
                             class="field-label"
                         >
-                            Contact No.<span class="required">*</span>
+
+                            Contact No.
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
-                        <div class="contact-wrapper"
-                             id="contactWrapper"
+                        <div
+                            class="contact-wrapper"
+                            id="contactWrapper"
                         >
-
 
                             <svg
                                 class="contact-icon"
@@ -1643,7 +2436,7 @@
                                 name="contact_no"
                                 class="contact-input"
                                 placeholder="Enter your contact number"
-                                value="{{ old('contact_no') }}"
+                                value="{{ old('contact_no', $buyerData['contact_no'] ?? '') }}"
                                 inputmode="numeric"
                                 maxlength="10"
                                 autocomplete="tel"
@@ -1663,9 +2456,8 @@
                     </div>
 
 
-                    <!-- =================================================
-                         BIRTHDAY
-                    ================================================== -->
+
+                    <!-- BIRTHDAY -->
 
                     <div class="field-group">
 
@@ -1673,62 +2465,24 @@
                             for="birthday"
                             class="field-label"
                         >
-                            Birthday<span class="required">*</span>
+
+                            Birthday
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
-                        <div class="input-wrap">
-
-                            <input
-                                type="date"
-                                id="birthday"
-                                name="birthday"
-                                class="form-input date-input"
-                                value="{{ old('birthday') }}"
-                                required
-                            >
-
-
-                            <svg
-                                class="date-icon"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.8"
-                            >
-
-                                <rect
-                                    x="3"
-                                    y="4"
-                                    width="18"
-                                    height="18"
-                                    rx="2"
-                                />
-
-                                <line
-                                    x1="16"
-                                    y1="2"
-                                    x2="16"
-                                    y2="6"
-                                />
-
-                                <line
-                                    x1="8"
-                                    y1="2"
-                                    x2="8"
-                                    y2="6"
-                                />
-
-                                <line
-                                    x1="3"
-                                    y1="10"
-                                    x2="21"
-                                    y2="10"
-                                />
-
-                            </svg>
-
-                        </div>
+                        <input
+                            type="date"
+                            id="birthday"
+                            name="birthday"
+                            class="form-input"
+                            value="{{ old('birthday', $buyerData['birthday'] ?? '') }}"
+                            required
+                        >
 
 
                         <div
@@ -1741,9 +2495,8 @@
                     </div>
 
 
-                    <!-- =================================================
-                         AGE
-                    ================================================== -->
+
+                    <!-- AGE -->
 
                     <div class="field-group">
 
@@ -1751,7 +2504,9 @@
                             for="age"
                             class="field-label"
                         >
+
                             Age
+
                         </label>
 
 
@@ -1761,32 +2516,47 @@
                             name="age"
                             class="form-input age-input"
                             placeholder="Auto generated"
-                            value=""
+                            value="{{ old('age', $buyerData['age'] ?? '') }}"
                             readonly
                         >
 
                     </div>
 
 
-                    <!-- =================================================
-                         ADDRESS HEADING
-                    ================================================== -->
 
-                    <div class="field-group full-width address-heading">
+                    <div></div>
+
+
+
+                    <!-- ADDRESS HEADING -->
+
+                    <div
+                        class="
+                            field-group
+                            full-width
+                            address-heading
+                        "
+                    >
 
                         <h3 class="address-heading-title">
+
                             Address
+
                         </h3>
 
+
                         <p class="address-heading-subtitle">
-                            Please select your address
+
+                            Type to search and select your address
+
                         </p>
 
                     </div>
 
 
+
                     <!-- =================================================
-                         ADDRESS TOP ROW
+                         ADDRESS GRID
                     ================================================== -->
 
                     <div class="address-grid">
@@ -1797,44 +2567,55 @@
                         <div class="field-group">
 
                             <label
-                                for="province"
+                                for="provinceSearch"
                                 class="field-label"
                             >
-                                Province<span class="required">*</span>
+
+                                Province
+
+                                <span class="required">
+                                    *
+                                </span>
+
                             </label>
 
 
-                            <div class="input-wrap">
+                            <div
+                                class="search-select"
+                                id="provinceSearchWrapper"
+                            >
 
-                                <select
+                                <input
+                                    type="text"
+                                    id="provinceSearch"
+                                    class="search-select-input"
+                                    placeholder="Type to search province"
+                                    autocomplete="off"
+                                    role="combobox"
+                                    aria-expanded="false"
+                                    aria-controls="provinceOptions"
+                                    value="{{ old('province', $buyerData['province'] ?? '') }}"
+                                >
+
+
+                                <span
+                                    class="search-select-arrow"
+                                ></span>
+
+
+                                <div
+                                    class="search-select-options"
+                                    id="provinceOptions"
+                                    role="listbox"
+                                ></div>
+
+
+                                <input
+                                    type="hidden"
                                     id="province"
                                     name="province"
-                                    class="form-select"
-                                    required
+                                    value="{{ old('province', $buyerData['province'] ?? '') }}"
                                 >
-
-                                    <option
-                                        value=""
-                                        selected
-                                        disabled
-                                    >
-                                        Select or search province
-                                    </option>
-
-                                </select>
-
-
-                                <svg
-                                    class="select-arrow"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-
-                                    <path d="M6 9l6 6 6-6" />
-
-                                </svg>
 
                             </div>
 
@@ -1849,49 +2630,65 @@
                         </div>
 
 
+
                         <!-- MUNICIPALITY -->
 
                         <div class="field-group">
 
                             <label
-                                for="municipality"
+                                for="municipalitySearch"
                                 class="field-label"
                             >
-                                Municipality<span class="required">*</span>
+
+                                Municipality
+
+                                <span class="required">
+                                    *
+                                </span>
+
                             </label>
 
 
-                            <div class="input-wrap">
+                            <div
+                                class="
+                                    search-select
+                                    disabled
+                                "
+                                id="municipalitySearchWrapper"
+                            >
 
-                                <select
+                                <input
+                                    type="text"
+                                    id="municipalitySearch"
+                                    class="search-select-input"
+                                    placeholder="Select province first"
+                                    autocomplete="off"
+                                    role="combobox"
+                                    aria-expanded="false"
+                                    aria-controls="municipalityOptions"
+                                    value="{{ old('municipality', $buyerData['municipality'] ?? '') }}"
+                                    disabled
+                                >
+
+
+                                <span
+                                    class="search-select-arrow"
+                                ></span>
+
+
+                                <div
+                                    class="search-select-options"
+                                    id="municipalityOptions"
+                                    role="listbox"
+                                ></div>
+
+
+                                <input
+                                    type="hidden"
                                     id="municipality"
                                     name="municipality"
-                                    class="form-select"
-                                    required
+                                    value="{{ old('municipality', $buyerData['municipality'] ?? '') }}"
                                 >
-
-                                    <option
-                                        value=""
-                                        selected
-                                        disabled
-                                    >
-                                        Select or search municipality
-                                    </option>
-
-                                </select>
-
-
-                                <svg
-                                    class="select-arrow"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-
-                                    <path d="M6 9l6 6 6-6" />
-
-                                </svg>
 
                             </div>
 
@@ -1906,49 +2703,65 @@
                         </div>
 
 
+
                         <!-- BARANGAY -->
 
                         <div class="field-group">
 
                             <label
-                                for="barangay"
+                                for="barangaySearch"
                                 class="field-label"
                             >
-                                Barangay<span class="required">*</span>
+
+                                Barangay
+
+                                <span class="required">
+                                    *
+                                </span>
+
                             </label>
 
 
-                            <div class="input-wrap">
+                            <div
+                                class="
+                                    search-select
+                                    disabled
+                                "
+                                id="barangaySearchWrapper"
+                            >
 
-                                <select
+                                <input
+                                    type="text"
+                                    id="barangaySearch"
+                                    class="search-select-input"
+                                    placeholder="Select municipality first"
+                                    autocomplete="off"
+                                    role="combobox"
+                                    aria-expanded="false"
+                                    aria-controls="barangayOptions"
+                                    value="{{ old('barangay', $buyerData['barangay'] ?? '') }}"
+                                    disabled
+                                >
+
+
+                                <span
+                                    class="search-select-arrow"
+                                ></span>
+
+
+                                <div
+                                    class="search-select-options"
+                                    id="barangayOptions"
+                                    role="listbox"
+                                ></div>
+
+
+                                <input
+                                    type="hidden"
                                     id="barangay"
                                     name="barangay"
-                                    class="form-select"
-                                    required
+                                    value="{{ old('barangay', $buyerData['barangay'] ?? '') }}"
                                 >
-
-                                    <option
-                                        value=""
-                                        selected
-                                        disabled
-                                    >
-                                        Select or search barangay
-                                    </option>
-
-                                </select>
-
-
-                                <svg
-                                    class="select-arrow"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-
-                                    <path d="M6 9l6 6 6-6" />
-
-                                </svg>
 
                             </div>
 
@@ -1963,7 +2776,8 @@
                         </div>
 
 
-                        <!-- ZIP CODE -->
+
+                        <!-- ZIP -->
 
                         <div class="field-group">
 
@@ -1971,7 +2785,13 @@
                                 for="zip_code"
                                 class="field-label"
                             >
-                                Zip Code<span class="required">*</span>
+
+                                Zip Code
+
+                                <span class="required">
+                                    *
+                                </span>
+
                             </label>
 
 
@@ -1981,7 +2801,7 @@
                                 name="zip_code"
                                 class="form-input"
                                 placeholder="Enter zip code"
-                                value="{{ old('zip_code') }}"
+                                value="{{ old('zip_code', $buyerData['zip_code'] ?? '') }}"
                                 inputmode="numeric"
                                 maxlength="4"
                                 required
@@ -2000,8 +2820,9 @@
                     </div>
 
 
+
                     <!-- =================================================
-                         ADDRESS BOTTOM ROW
+                         ADDRESS BOTTOM
                     ================================================== -->
 
                     <div class="address-bottom-grid">
@@ -2025,13 +2846,14 @@
                                 name="street"
                                 class="form-input"
                                 placeholder="Enter street"
-                                value="{{ old('street') }}"
+                                value="{{ old('street', $buyerData['street'] ?? '') }}"
                             >
 
                         </div>
 
 
-                        <!-- HOUSE NO -->
+
+                        <!-- HOUSE -->
 
                         <div class="field-group">
 
@@ -2049,10 +2871,11 @@
                                 name="house_no"
                                 class="form-input"
                                 placeholder="Enter house no."
-                                value="{{ old('house_no') }}"
+                                value="{{ old('house_no', $buyerData['house_no'] ?? '') }}"
                             >
 
                         </div>
+
 
 
                         <!-- BUILDING -->
@@ -2073,10 +2896,11 @@
                                 name="building"
                                 class="form-input"
                                 placeholder="Enter building"
-                                value="{{ old('building') }}"
+                                value="{{ old('building', $buyerData['building'] ?? '') }}"
                             >
 
                         </div>
+
 
 
                         <!-- SUBDIVISION -->
@@ -2097,12 +2921,13 @@
                                 name="subdivision"
                                 class="form-input"
                                 placeholder="Enter subdivision"
-                                value="{{ old('subdivision') }}"
+                                value="{{ old('subdivision', $buyerData['subdivision'] ?? '') }}"
                             >
 
                         </div>
 
                     </div>
+
 
 
                     <!-- =================================================
@@ -2116,7 +2941,13 @@
                             for="valid_id"
                             class="field-label"
                         >
-                            Valid ID<span class="required">*</span>
+
+                            Valid ID
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -2126,70 +2957,113 @@
                             id="validIdUploadBox"
                         >
 
+                            <input
+                                type="file"
+                                id="valid_id"
+                                name="valid_id"
+                                class="hidden-file-input"
+                                accept=".jpg,.jpeg,.png,.webp"
+                                {{ empty($buyerData['valid_id_path'] ?? null) ? 'required' : '' }}
+                            >
+
+
                             <div
                                 class="upload-placeholder"
                                 id="validIdPlaceholder"
                             >
 
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.6"
-                                >
+                                @if(
+                                    !empty(
+                                        $buyerData['valid_id_path']
+                                        ?? null
+                                    )
+                                )
 
-                                    <rect
-                                        x="3"
-                                        y="3"
-                                        width="18"
-                                        height="18"
-                                        rx="3"
-                                    />
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="#7B1B1B"
+                                        stroke-width="1.7"
+                                    >
 
-                                    <circle
-                                        cx="8.5"
-                                        cy="8.5"
-                                        r="1.5"
-                                    />
+                                        <path
+                                            d="M20 6L9 17l-5-5"
+                                        />
 
-                                    <path
-                                        d="M21 15l-4.5-4.5L10 17l-3-3-4 4"
-                                    />
-
-                                </svg>
+                                    </svg>
 
 
-                                <p>
-                                    Upload your valid ID
-                                </p>
+                                    <p class="stored-file">
+
+                                        {{
+                                            $buyerData[
+                                                'valid_id_original_name'
+                                            ]
+                                            ??
+                                            basename(
+                                                $buyerData[
+                                                    'valid_id_path'
+                                                ]
+                                            )
+                                        }}
+
+                                    </p>
 
 
-                                <small>
-                                    JPG, JPEG, PNG, or WEBP
-                                </small>
+                                    <small>
+
+                                        Choose another file to replace it
+
+                                    </small>
+
+                                @else
+
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.6"
+                                    >
+
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="3"
+                                        />
+
+                                        <circle
+                                            cx="8.5"
+                                            cy="8.5"
+                                            r="1.5"
+                                        />
+
+                                        <path
+                                            d="M21 15l-4.5-4.5L10 17l-3-3-4 4"
+                                        />
+
+                                    </svg>
+
+
+                                    <p>
+
+                                        Upload your valid ID
+
+                                    </p>
+
+
+                                    <small>
+
+                                        JPG, JPEG, PNG, or WEBP
+
+                                    </small>
+
+                                @endif
 
                             </div>
 
-
-                            <img
-                                src=""
-                                alt="Valid ID preview"
-                                class="valid-id-preview"
-                                id="validIdPreviewImage"
-                                style="display:none;"
-                            >
-
                         </label>
-
-
-                        <input
-                            type="file"
-                            id="valid_id"
-                            name="valid_id"
-                            class="hidden-file-input"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            required
-                        >
 
 
                         <div
@@ -2211,19 +3085,107 @@
                 </div>
 
 
-                <div class="field-group full-width password-field">
-                    <label for="password" class="field-label">Password<span class="required">*</span></label>
-                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a password" minlength="8" autocomplete="new-password" required>
-                    <small class="field-help">At least 8 characters with uppercase and lowercase letters, a number, and a special character.</small>
-                </div>
-
-                <div class="field-group full-width password-confirmation-field">
-                    <label for="password_confirmation" class="field-label">Confirm Password<span class="required">*</span></label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-input" placeholder="Confirm your password" minlength="8" autocomplete="new-password" required>
-                </div>
 
                 <!-- =================================================
-                     CONTINUE BUTTON
+                     PASSWORD
+                ================================================== -->
+
+                <div
+                    class="
+                        field-group
+                        full-width
+                        password-field
+                    "
+                >
+
+                    <label
+                        for="password"
+                        class="field-label"
+                    >
+
+                        Password
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-input"
+                        placeholder="Create a password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+
+
+                    <small class="field-help">
+
+                        At least 8 characters with uppercase and lowercase
+                        letters, a number, and a special character.
+
+                    </small>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     CONFIRM PASSWORD
+                ================================================== -->
+
+                <div
+                    class="
+                        field-group
+                        full-width
+                        password-confirmation-field
+                    "
+                >
+
+                    <label
+                        for="password_confirmation"
+                        class="field-label"
+                    >
+
+                        Confirm Password
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="password"
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        class="form-input"
+                        placeholder="Confirm your password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+
+
+                    <p
+                        class="password-match-error"
+                        id="passwordConfirmationError"
+                    >
+                        Passwords do not match.
+                    </p>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     CONTINUE
                 ================================================== -->
 
                 <div class="form-actions">
@@ -2233,10 +3195,13 @@
                         class="continue-button"
                         id="continueButton"
                     >
+
                         Continue
+
                     </button>
 
                 </div>
+
 
             </div>
 
@@ -2247,6 +3212,7 @@
 </div>
 
 
+
 <script>
 
 document.addEventListener(
@@ -2255,137 +3221,32 @@ document.addEventListener(
 
 
         /* =========================================================
-           AGE AUTO GENERATION
+           ELEMENTS
         ========================================================== */
 
-        const birthdayInput =
+        const form =
+            document.getElementById(
+                'buyerRegistrationForm'
+            );
+
+
+        const continueButton =
+            document.getElementById(
+                'continueButton'
+            );
+
+
+        const birthday =
             document.getElementById(
                 'birthday'
             );
 
 
-        const ageInput =
+        const age =
             document.getElementById(
                 'age'
             );
 
-
-        function calculateAge(
-            birthDate
-        ) {
-
-            if (!birthDate) {
-                ageInput.value = '';
-                return;
-            }
-
-
-            const today =
-                new Date();
-
-
-            const birth =
-                new Date(
-                    birthDate
-                );
-
-
-            let age =
-                today.getFullYear()
-                -
-                birth.getFullYear();
-
-
-            const monthDifference =
-                today.getMonth()
-                -
-                birth.getMonth();
-
-
-            if (
-                monthDifference < 0 ||
-                (
-                    monthDifference === 0 &&
-                    today.getDate() < birth.getDate()
-                )
-            ) {
-
-                age--;
-
-            }
-
-
-            ageInput.value =
-                age >= 0
-                    ? age
-                    : '';
-
-        }
-
-
-        if (birthdayInput) {
-
-            birthdayInput.addEventListener(
-                'change',
-                function () {
-
-                    calculateAge(
-                        this.value
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =========================================================
-           SELECT COLOR
-        ========================================================== */
-
-        const selects =
-            document.querySelectorAll(
-                '.form-select'
-            );
-
-
-        selects.forEach(
-            function (select) {
-
-                select.addEventListener(
-                    'change',
-                    function () {
-
-                        if (
-                            this.value
-                        ) {
-
-                            this.classList.add(
-                                'has-value'
-                            );
-
-                        } else {
-
-                            this.classList.remove(
-                                'has-value'
-                            );
-
-                        }
-
-                        this.classList.remove(
-                            'required-error'
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-        /* =========================================================
-           CONTACT NUMBER
-        ========================================================== */
 
         const contactInput =
             document.getElementById(
@@ -2399,95 +3260,15 @@ document.addEventListener(
             );
 
 
-        if (contactInput) {
-
-            contactInput.addEventListener(
-                'input',
-                function () {
-
-                    this.value =
-                        this.value
-                            .replace(
-                                /[^0-9]/g,
-                                ''
-                            )
-                            .slice(
-                                0,
-                                10
-                            );
-
-                    if (this.value) {
-
-                        contactWrapper.classList.remove(
-                            'required-error'
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =========================================================
-           ZIP CODE
-        ========================================================== */
-
-        const zipCodeInput =
+        const zipInput =
             document.getElementById(
                 'zip_code'
             );
 
 
-        if (zipCodeInput) {
-
-            zipCodeInput.addEventListener(
-                'input',
-                function () {
-
-                    this.value =
-                        this.value
-                            .replace(
-                                /[^0-9]/g,
-                                ''
-                            )
-                            .slice(
-                                0,
-                                4
-                            );
-
-                }
-            );
-
-        }
-
-
-        /* =========================================================
-           VALID ID PREVIEW
-        ========================================================== */
-
-        const validIdInput =
+        const validId =
             document.getElementById(
                 'valid_id'
-            );
-
-
-        const validIdPlaceholder =
-            document.getElementById(
-                'validIdPlaceholder'
-            );
-
-
-        const validIdPreviewImage =
-            document.getElementById(
-                'validIdPreviewImage'
-            );
-
-
-        const validIdFileName =
-            document.getElementById(
-                'validIdFileName'
             );
 
 
@@ -2497,140 +3278,1759 @@ document.addEventListener(
             );
 
 
-        if (validIdInput) {
-
-            validIdInput.addEventListener(
-                'change',
-                function () {
-
-                    const file =
-                        this.files[0];
+        const validIdPlaceholder =
+            document.getElementById(
+                'validIdPlaceholder'
+            );
 
 
-                    if (!file) {
-
-                        validIdPreviewImage.style.display =
-                            'none';
-
-                        validIdPreviewImage.src =
-                            '';
-
-                        validIdPlaceholder.style.display =
-                            'flex';
-
-                        validIdFileName.style.display =
-                            'none';
-
-                        return;
-
-                    }
+        const validIdFileName =
+            document.getElementById(
+                'validIdFileName'
+            );
 
 
-                    const allowedTypes = [
-                        'image/jpeg',
-                        'image/png',
-                        'image/webp'
-                    ];
+
+        /* =========================================================
+           PASSWORD MATCH
+        ========================================================== */
+
+        const passwordInput =
+            document.getElementById(
+                'password'
+            );
 
 
-                    if (
-                        !allowedTypes.includes(
-                            file.type
+        const passwordConfirmationInput =
+            document.getElementById(
+                'password_confirmation'
+            );
+
+
+        const passwordConfirmationError =
+            document.getElementById(
+                'passwordConfirmationError'
+            );
+
+
+        function checkPasswordMatch() {
+
+            if (
+                !passwordInput ||
+                !passwordConfirmationInput ||
+                !passwordConfirmationError
+            ) {
+
+                return true;
+
+            }
+
+
+            if (
+                !passwordConfirmationInput.value
+            ) {
+
+                passwordConfirmationInput.classList.remove(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.classList.remove(
+                    'show'
+                );
+
+
+                return false;
+
+            }
+
+
+            if (
+                passwordInput.value !==
+                passwordConfirmationInput.value
+            ) {
+
+                passwordConfirmationInput.classList.add(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.textContent =
+                    'Passwords do not match.';
+
+
+                passwordConfirmationError.classList.add(
+                    'show'
+                );
+
+
+                return false;
+
+            }
+
+
+            passwordConfirmationInput.classList.remove(
+                'password-mismatch'
+            );
+
+
+            passwordConfirmationError.classList.remove(
+                'show'
+            );
+
+
+            return true;
+
+        }
+
+
+        passwordInput?.addEventListener(
+            'input',
+            checkPasswordMatch
+        );
+
+
+        passwordConfirmationInput?.addEventListener(
+            'input',
+            checkPasswordMatch
+        );
+
+
+
+        /* =========================================================
+           AGE
+        ========================================================== */
+
+        function calculateAge() {
+
+            if (
+                !birthday ||
+                !age
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !birthday.value
+            ) {
+
+                age.value =
+                    '';
+
+                return;
+
+            }
+
+
+            const birthDate =
+                new Date(
+                    birthday.value +
+                    'T00:00:00'
+                );
+
+
+            const today =
+                new Date();
+
+
+            let calculatedAge =
+                today.getFullYear()
+                -
+                birthDate.getFullYear();
+
+
+            const monthDifference =
+                today.getMonth()
+                -
+                birthDate.getMonth();
+
+
+            if (
+                monthDifference < 0 ||
+                (
+                    monthDifference === 0 &&
+                    today.getDate() <
+                    birthDate.getDate()
+                )
+            ) {
+
+                calculatedAge--;
+
+            }
+
+
+            age.value =
+                calculatedAge >= 0
+                    ? calculatedAge
+                    : '';
+
+        }
+
+
+        birthday?.addEventListener(
+            'change',
+            calculateAge
+        );
+
+
+        calculateAge();
+
+
+
+        /* =========================================================
+           CONTACT
+        ========================================================== */
+
+        contactInput?.addEventListener(
+            'input',
+            function () {
+
+                this.value =
+                    this.value
+                        .replace(
+                            /\D/g,
+                            ''
                         )
-                    ) {
-
-                        this.value = '';
-
-                        validIdUploadBox.classList.add(
-                            'required-error'
+                        .slice(
+                            0,
+                            10
                         );
 
-                        alert(
-                            'Please upload a JPG, JPEG, PNG, or WEBP file.'
+
+                contactWrapper?.classList.remove(
+                    'required-error'
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           ZIP
+        ========================================================== */
+
+        zipInput?.addEventListener(
+            'input',
+            function () {
+
+                this.value =
+                    this.value
+                        .replace(
+                            /\D/g,
+                            ''
+                        )
+                        .slice(
+                            0,
+                            4
                         );
 
-                        return;
-
-                    }
-
-
-                    validIdUploadBox.classList.remove(
-                        'required-error'
-                    );
+            }
+        );
 
 
-                    const reader =
-                        new FileReader();
+
+        /* =========================================================
+           VALID ID
+        ========================================================== */
+
+        validId?.addEventListener(
+            'change',
+            function () {
+
+                const file =
+                    this.files?.[0];
 
 
-                    reader.onload =
-                        function (event) {
+                if (
+                    !file
+                ) {
 
-                            validIdPreviewImage.src =
-                                event.target.result;
-
-                            validIdPreviewImage.style.display =
-                                'block';
-
-                            validIdPlaceholder.style.display =
-                                'none';
-
-                            validIdFileName.textContent =
-                                file.name;
-
-                            validIdFileName.style.display =
-                                'block';
-
-                        };
-
-
-                    reader.readAsDataURL(
-                        file
-                    );
+                    return;
 
                 }
+
+
+                const allowedTypes = [
+
+                    'image/jpeg',
+
+                    'image/png',
+
+                    'image/webp'
+
+                ];
+
+
+                if (
+                    !allowedTypes.includes(
+                        file.type
+                    )
+                ) {
+
+                    this.value =
+                        '';
+
+
+                    alert(
+                        'Please upload a JPG, JPEG, PNG, or WEBP file.'
+                    );
+
+
+                    return;
+
+                }
+
+
+                validIdUploadBox?.classList.remove(
+                    'required-error'
+                );
+
+
+                if (
+                    validIdPlaceholder
+                ) {
+
+                    validIdPlaceholder.innerHTML =
+
+                        `
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#7B1B1B"
+                                stroke-width="1.7"
+                            >
+
+                                <path
+                                    d="M20 6L9 17l-5-5"
+                                />
+
+                            </svg>
+
+                            <p class="stored-file">
+
+                                ${file.name}
+
+                            </p>
+
+                            <small>
+                                File selected
+                            </small>
+                        `;
+
+                }
+
+
+                if (
+                    validIdFileName
+                ) {
+
+                    validIdFileName.textContent =
+                        file.name;
+
+                    validIdFileName.style.display =
+                        'block';
+
+                }
+
+
+                document
+                    .getElementById(
+                        'validIdError'
+                    )
+                    ?.classList.remove(
+                        'show'
+                    );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           LOCATION API
+        ========================================================== */
+
+        const locationsApiBase =
+            '/api/v1/locations';
+
+
+
+        function getLocationName(
+            location
+        ) {
+
+            return (
+                location.name
+                ||
+                location.prov_name
+                ||
+                location.city_name
+                ||
+                location.mun_name
+                ||
+                location.brgy_name
+                ||
+                ''
             );
 
         }
 
 
+        function getLocationCode(
+            location
+        ) {
+
+            return (
+                location.code
+                ||
+                location.psgc_code
+                ||
+                location.prov_code
+                ||
+                location.mun_code
+                ||
+                location.city_code
+                ||
+                location.brgy_code
+                ||
+                ''
+            );
+
+        }
+
+
+        async function loadLocations(
+            endpoint
+        ) {
+
+            const response =
+                await fetch(
+                    `${locationsApiBase}/${endpoint}`,
+                    {
+                        headers:
+                            {
+                                Accept:
+                                    'application/json'
+                            }
+                    }
+                );
+
+
+            if (
+                !response.ok
+            ) {
+
+                throw new Error(
+                    'Unable to load location options.'
+                );
+
+            }
+
+
+            return response.json();
+
+        }
+
+
+
         /* =========================================================
-           REQUIRED FIELD VALIDATION
+           SEARCH SELECT
         ========================================================== */
 
-        const buyerRegistrationForm =
-            document.getElementById(
-                'buyerRegistrationForm'
+        function createSearchSelect(
+            wrapper,
+            input,
+            optionsContainer,
+            hiddenInput
+        ) {
+
+            let locations =
+                [];
+
+
+            let filteredLocations =
+                [];
+
+
+            let highlightedIndex =
+                -1;
+
+
+            let loading =
+                false;
+
+
+            function open() {
+
+                if (
+                    input.disabled
+                ) {
+
+                    return;
+
+                }
+
+
+                wrapper.classList.add(
+                    'open'
+                );
+
+
+                input.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                render(
+                    input.value
+                );
+
+            }
+
+
+            function close() {
+
+                wrapper.classList.remove(
+                    'open'
+                );
+
+
+                input.setAttribute(
+                    'aria-expanded',
+                    'false'
+                );
+
+
+                highlightedIndex =
+                    -1;
+
+            }
+
+
+            function setLoading(
+                message
+            ) {
+
+                loading =
+                    true;
+
+
+                optionsContainer.innerHTML =
+
+                    `
+                        <div class="search-select-loading">
+
+                            ${message}
+
+                        </div>
+                    `;
+
+            }
+
+
+            function stopLoading() {
+
+                loading =
+                    false;
+
+            }
+
+
+            function render(
+                searchText = ''
+            ) {
+
+                if (
+                    loading
+                ) {
+
+                    return;
+
+                }
+
+
+                const query =
+                    searchText
+                        .trim()
+                        .toLowerCase();
+
+
+                filteredLocations =
+                    locations.filter(
+                        function (
+                            location
+                        ) {
+
+                            return getLocationName(
+                                location
+                            )
+                                .toLowerCase()
+                                .includes(
+                                    query
+                                );
+
+                        }
+                    );
+
+
+                highlightedIndex =
+                    -1;
+
+
+                if (
+                    filteredLocations.length ===
+                    0
+                ) {
+
+                    optionsContainer.innerHTML =
+
+                        `
+                            <div
+                                class="search-select-no-results"
+                            >
+                                No matching result found.
+                            </div>
+                        `;
+
+                    return;
+
+                }
+
+
+                optionsContainer.innerHTML =
+                    '';
+
+
+                filteredLocations.forEach(
+                    function (
+                        location,
+                        index
+                    ) {
+
+                        const option =
+                            document.createElement(
+                                'button'
+                            );
+
+
+                        option.type =
+                            'button';
+
+
+                        option.className =
+                            'search-select-option';
+
+
+                        option.textContent =
+                            getLocationName(
+                                location
+                            );
+
+
+                        option.dataset.index =
+                            index;
+
+
+                        if (
+                            getLocationName(
+                                location
+                            )
+                            ===
+                            hiddenInput.value
+                        ) {
+
+                            option.classList.add(
+                                'selected'
+                            );
+
+                        }
+
+
+                        option.addEventListener(
+                            'mousedown',
+                            function (
+                                event
+                            ) {
+
+                                event.preventDefault();
+
+
+                                selectLocation(
+                                    location
+                                );
+
+                            }
+                        );
+
+
+                        optionsContainer.appendChild(
+                            option
+                        );
+
+                    }
+                );
+
+            }
+
+
+            function selectLocation(
+                location
+            ) {
+
+                const name =
+                    getLocationName(
+                        location
+                    );
+
+
+                input.value =
+                    name;
+
+
+                hiddenInput.value =
+                    name;
+
+
+                wrapper.classList.remove(
+                    'open'
+                );
+
+
+                input.setAttribute(
+                    'aria-expanded',
+                    'false'
+                );
+
+
+                input.dispatchEvent(
+                    new CustomEvent(
+                        'location:selected',
+                        {
+                            detail:
+                                location
+                        }
+                    )
+                );
+
+            }
+
+
+            function setLocations(
+                newLocations
+            ) {
+
+                locations =
+                    Array.isArray(
+                        newLocations
+                    )
+                        ? newLocations
+                        : [];
+
+
+                filteredLocations =
+                    locations.slice();
+
+
+                stopLoading();
+
+
+                render(
+                    input.value
+                );
+
+            }
+
+
+            function clear() {
+
+                locations =
+                    [];
+
+
+                filteredLocations =
+                    [];
+
+
+                highlightedIndex =
+                    -1;
+
+
+                input.value =
+                    '';
+
+
+                hiddenInput.value =
+                    '';
+
+
+                optionsContainer.innerHTML =
+                    '';
+
+
+                close();
+
+            }
+
+
+            input.addEventListener(
+                'focus',
+                open
             );
 
 
-        const continueButton =
-            document.getElementById(
-                'continueButton'
+            input.addEventListener(
+                'click',
+                open
             );
 
+
+            input.addEventListener(
+                'input',
+                function () {
+
+                    hiddenInput.value =
+                        '';
+
+
+                    render(
+                        this.value
+                    );
+
+
+                    open();
+
+                }
+            );
+
+
+            input.addEventListener(
+                'keydown',
+                function (
+                    event
+                ) {
+
+                    if (
+                        input.disabled
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'ArrowDown'
+                    ) {
+
+                        event.preventDefault();
+
+
+                        if (
+                            !wrapper.classList.contains(
+                                'open'
+                            )
+                        ) {
+
+                            open();
+
+                        }
+
+
+                        highlightedIndex =
+                            Math.min(
+                                highlightedIndex + 1,
+                                filteredLocations.length - 1
+                            );
+
+
+                        updateHighlight();
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'ArrowUp'
+                    ) {
+
+                        event.preventDefault();
+
+
+                        highlightedIndex =
+                            Math.max(
+                                highlightedIndex - 1,
+                                0
+                            );
+
+
+                        updateHighlight();
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'Enter'
+                    ) {
+
+                        if (
+                            highlightedIndex >= 0 &&
+                            filteredLocations[
+                                highlightedIndex
+                            ]
+                        ) {
+
+                            event.preventDefault();
+
+
+                            selectLocation(
+                                filteredLocations[
+                                    highlightedIndex
+                                ]
+                            );
+
+                        }
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'Escape'
+                    ) {
+
+                        close();
+
+                    }
+
+                }
+            );
+
+
+            function updateHighlight() {
+
+                const options =
+                    optionsContainer.querySelectorAll(
+                        '.search-select-option'
+                    );
+
+
+                options.forEach(
+                    function (
+                        option,
+                        index
+                    ) {
+
+                        option.classList.toggle(
+                            'highlighted',
+                            index ===
+                            highlightedIndex
+                        );
+
+                    }
+                );
+
+
+                options[
+                    highlightedIndex
+                ]?.scrollIntoView({
+                    block:
+                        'nearest'
+                });
+
+            }
+
+
+            input.addEventListener(
+                'blur',
+                function () {
+
+                    setTimeout(
+                        function () {
+
+                            if (
+                                hiddenInput.value !==
+                                input.value
+                            ) {
+
+                                input.value =
+                                    hiddenInput.value;
+
+                            }
+
+
+                            close();
+
+                        },
+                        180
+                    );
+
+                }
+            );
+
+
+            return {
+
+                open,
+
+                close,
+
+                setLoading,
+
+                stopLoading,
+
+                setLocations,
+
+                clear
+
+            };
+
+        }
+
+
+
+        /* =========================================================
+           ADDRESS ELEMENTS
+        ========================================================== */
+
+        const provinceWrapper =
+            document.getElementById(
+                'provinceSearchWrapper'
+            );
+
+
+        const provinceSearch =
+            document.getElementById(
+                'provinceSearch'
+            );
+
+
+        const provinceOptions =
+            document.getElementById(
+                'provinceOptions'
+            );
+
+
+        const provinceHidden =
+            document.getElementById(
+                'province'
+            );
+
+
+        const municipalityWrapper =
+            document.getElementById(
+                'municipalitySearchWrapper'
+            );
+
+
+        const municipalitySearch =
+            document.getElementById(
+                'municipalitySearch'
+            );
+
+
+        const municipalityOptions =
+            document.getElementById(
+                'municipalityOptions'
+            );
+
+
+        const municipalityHidden =
+            document.getElementById(
+                'municipality'
+            );
+
+
+        const barangayWrapper =
+            document.getElementById(
+                'barangaySearchWrapper'
+            );
+
+
+        const barangaySearch =
+            document.getElementById(
+                'barangaySearch'
+            );
+
+
+        const barangayOptions =
+            document.getElementById(
+                'barangayOptions'
+            );
+
+
+        const barangayHidden =
+            document.getElementById(
+                'barangay'
+            );
+
+
+
+        /* =========================================================
+           CONTROLS
+        ========================================================== */
+
+        const provinceControl =
+            createSearchSelect(
+                provinceWrapper,
+                provinceSearch,
+                provinceOptions,
+                provinceHidden
+            );
+
+
+        const municipalityControl =
+            createSearchSelect(
+                municipalityWrapper,
+                municipalitySearch,
+                municipalityOptions,
+                municipalityHidden
+            );
+
+
+        const barangayControl =
+            createSearchSelect(
+                barangayWrapper,
+                barangaySearch,
+                barangayOptions,
+                barangayHidden
+            );
+
+
+
+        /* =========================================================
+           ADDRESS STATES
+        ========================================================== */
+
+        function disableMunicipality() {
+
+            municipalityControl.clear();
+
+
+            municipalitySearch.disabled =
+                true;
+
+
+            municipalitySearch.placeholder =
+                'Select province first';
+
+
+            municipalityWrapper.classList.add(
+                'disabled'
+            );
+
+        }
+
+
+        function disableBarangay() {
+
+            barangayControl.clear();
+
+
+            barangaySearch.disabled =
+                true;
+
+
+            barangaySearch.placeholder =
+                'Select municipality first';
+
+
+            barangayWrapper.classList.add(
+                'disabled'
+            );
+
+        }
+
+
+        function enableMunicipality() {
+
+            municipalitySearch.disabled =
+                false;
+
+
+            municipalitySearch.placeholder =
+                'Type to search municipality';
+
+
+            municipalityWrapper.classList.remove(
+                'disabled'
+            );
+
+        }
+
+
+        function enableBarangay() {
+
+            barangaySearch.disabled =
+                false;
+
+
+            barangaySearch.placeholder =
+                'Type to search barangay';
+
+
+            barangayWrapper.classList.remove(
+                'disabled'
+            );
+
+        }
+
+
+
+        /* =========================================================
+           LOAD MUNICIPALITIES
+        ========================================================== */
+
+        async function loadMunicipalities(
+            provinceLocation
+        ) {
+
+            const provinceCode =
+                getLocationCode(
+                    provinceLocation
+                );
+
+
+            const isRegion =
+                provinceLocation.isRegion === true;
+
+
+            const query =
+                isRegion
+                    ? '?is_region=1'
+                    : '';
+
+
+            municipalityControl.clear();
+
+
+            municipalityControl.setLoading(
+                'Loading municipalities...'
+            );
+
+
+            enableMunicipality();
+
+
+            try {
+
+                const municipalities =
+                    await loadLocations(
+                        `provinces/${encodeURIComponent(
+                            provinceCode
+                        )}/cities${query}`
+                    );
+
+
+                municipalityControl.setLocations(
+                    municipalities
+                );
+
+
+                disableBarangay();
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    'Municipality loading error:',
+                    error
+                );
+
+
+                disableBarangay();
+
+            }
+
+        }
+
+
+
+        /* =========================================================
+           LOAD BARANGAYS
+        ========================================================== */
+
+        async function loadBarangays(
+            municipalityLocation
+        ) {
+
+            const municipalityCode =
+                getLocationCode(
+                    municipalityLocation
+                );
+
+
+            barangayControl.clear();
+
+
+            barangayControl.setLoading(
+                'Loading barangays...'
+            );
+
+
+            enableBarangay();
+
+
+            try {
+
+                const barangays =
+                    await loadLocations(
+                        `cities/${encodeURIComponent(
+                            municipalityCode
+                        )}/barangays`
+                    );
+
+
+                barangayControl.setLocations(
+                    barangays
+                );
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    'Barangay loading error:',
+                    error
+                );
+
+            }
+
+        }
+
+
+
+        /* =========================================================
+           PROVINCE SELECTED
+        ========================================================== */
+
+        provinceSearch.addEventListener(
+            'location:selected',
+            function (
+                event
+            ) {
+
+                const provinceLocation =
+                    event.detail;
+
+
+                document
+                    .getElementById(
+                        'provinceError'
+                    )
+                    ?.classList.remove(
+                        'show'
+                    );
+
+
+                provinceSearch.classList.remove(
+                    'required-error'
+                );
+
+
+                loadMunicipalities(
+                    provinceLocation
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           MUNICIPALITY SELECTED
+        ========================================================== */
+
+        municipalitySearch.addEventListener(
+            'location:selected',
+            function (
+                event
+            ) {
+
+                const municipalityLocation =
+                    event.detail;
+
+
+                document
+                    .getElementById(
+                        'municipalityError'
+                    )
+                    ?.classList.remove(
+                        'show'
+                    );
+
+
+                municipalitySearch.classList.remove(
+                    'required-error'
+                );
+
+
+                loadBarangays(
+                    municipalityLocation
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           BARANGAY SELECTED
+        ========================================================== */
+
+        barangaySearch.addEventListener(
+            'location:selected',
+            function () {
+
+                document
+                    .getElementById(
+                        'barangayError'
+                    )
+                    ?.classList.remove(
+                        'show'
+                    );
+
+
+                barangaySearch.classList.remove(
+                    'required-error'
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           RESTORE SAVED ADDRESS
+        ========================================================== */
+
+        async function initializeLocations() {
+
+            const savedProvince =
+                provinceHidden.value.trim();
+
+
+            const savedMunicipality =
+                municipalityHidden.value.trim();
+
+
+            const savedBarangay =
+                barangayHidden.value.trim();
+
+
+            disableMunicipality();
+
+
+            disableBarangay();
+
+
+            try {
+
+                provinceControl.setLoading(
+                    'Loading provinces...'
+                );
+
+
+                const provinces =
+                    await loadLocations(
+                        'provinces'
+                    );
+
+
+                provinceControl.setLocations(
+                    provinces
+                );
+
+
+                if (
+                    !savedProvince
+                ) {
+
+                    return;
+
+                }
+
+
+                const matchedProvince =
+                    provinces.find(
+                        function (
+                            province
+                        ) {
+
+                            return (
+                                getLocationName(
+                                    province
+                                )
+                                ===
+                                savedProvince
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    !matchedProvince
+                ) {
+
+                    return;
+
+                }
+
+
+                provinceSearch.value =
+                    savedProvince;
+
+
+                provinceHidden.value =
+                    savedProvince;
+
+
+                await loadMunicipalities(
+                    matchedProvince
+                );
+
+
+                if (
+                    !savedMunicipality
+                ) {
+
+                    return;
+
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Reload municipalities separately so we can
+                | identify the saved municipality.
+                |--------------------------------------------------------------------------
+                */
+
+                const provinceCode =
+                    getLocationCode(
+                        matchedProvince
+                    );
+
+
+                const isRegion =
+                    matchedProvince.isRegion === true;
+
+
+                const query =
+                    isRegion
+                        ? '?is_region=1'
+                        : '';
+
+
+                const municipalities =
+                    await loadLocations(
+                        `provinces/${encodeURIComponent(
+                            provinceCode
+                        )}/cities${query}`
+                    );
+
+
+                municipalityControl.setLocations(
+                    municipalities
+                );
+
+
+                const matchedMunicipality =
+                    municipalities.find(
+                        function (
+                            municipality
+                        ) {
+
+                            return (
+                                getLocationName(
+                                    municipality
+                                )
+                                ===
+                                savedMunicipality
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    !matchedMunicipality
+                ) {
+
+                    return;
+
+                }
+
+
+                municipalitySearch.value =
+                    savedMunicipality;
+
+
+                municipalityHidden.value =
+                    savedMunicipality;
+
+
+                await loadBarangays(
+                    matchedMunicipality
+                );
+
+
+                if (
+                    !savedBarangay
+                ) {
+
+                    return;
+
+                }
+
+
+                const municipalityCode =
+                    getLocationCode(
+                        matchedMunicipality
+                    );
+
+
+                const barangays =
+                    await loadLocations(
+                        `cities/${encodeURIComponent(
+                            municipalityCode
+                        )}/barangays`
+                    );
+
+
+                barangayControl.setLocations(
+                    barangays
+                );
+
+
+                const matchedBarangay =
+                    barangays.find(
+                        function (
+                            barangay
+                        ) {
+
+                            return (
+                                getLocationName(
+                                    barangay
+                                )
+                                ===
+                                savedBarangay
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    matchedBarangay
+                ) {
+
+                    barangaySearch.value =
+                        savedBarangay;
+
+
+                    barangayHidden.value =
+                        savedBarangay;
+
+                }
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    'Location initialization error:',
+                    error
+                );
+
+            }
+
+        }
+
+
+        initializeLocations();
+
+
+
+        /* =========================================================
+           OUTSIDE CLICK
+        ========================================================== */
+
+        document.addEventListener(
+            'click',
+            function (
+                event
+            ) {
+
+                [
+
+                    provinceWrapper,
+
+                    municipalityWrapper,
+
+                    barangayWrapper
+
+                ].forEach(
+                    function (
+                        wrapper
+                    ) {
+
+                        if (
+                            wrapper &&
+                            !wrapper.contains(
+                                event.target
+                            )
+                        ) {
+
+                            wrapper.classList.remove(
+                                'open'
+                            );
+
+
+                            wrapper
+                                .querySelector(
+                                    '.search-select-input'
+                                )
+                                ?.setAttribute(
+                                    'aria-expanded',
+                                    'false'
+                                );
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           FORM VALIDATION
+        ========================================================== */
 
         function showError(
             element,
             errorElement
         ) {
 
-            if (element) {
-
-                element.classList.add(
-                    'required-error'
-                );
-
-            }
+            element?.classList.add(
+                'required-error'
+            );
 
 
-            if (errorElement) {
-
-                errorElement.classList.add(
-                    'show'
-                );
-
-            }
+            errorElement?.classList.add(
+                'show'
+            );
 
         }
 
@@ -2640,29 +5040,22 @@ document.addEventListener(
             errorElement
         ) {
 
-            if (element) {
-
-                element.classList.remove(
-                    'required-error'
-                );
-
-            }
+            element?.classList.remove(
+                'required-error'
+            );
 
 
-            if (errorElement) {
-
-                errorElement.classList.remove(
-                    'show'
-                );
-
-            }
+            errorElement?.classList.remove(
+                'show'
+            );
 
         }
 
 
-        function validateRequiredFields() {
+        function validateForm() {
 
-            let isValid = true;
+            let isValid =
+                true;
 
 
             /* LAST NAME */
@@ -2672,20 +5065,25 @@ document.addEventListener(
                     'last_name'
                 );
 
+
             const lastNameError =
                 document.getElementById(
                     'lastNameError'
                 );
 
 
-            if (!lastName.value.trim()) {
+            if (
+                !lastName.value.trim()
+            ) {
 
                 showError(
                     lastName,
                     lastNameError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
@@ -2704,20 +5102,25 @@ document.addEventListener(
                     'first_name'
                 );
 
+
             const firstNameError =
                 document.getElementById(
                     'firstNameError'
                 );
 
 
-            if (!firstName.value.trim()) {
+            if (
+                !firstName.value.trim()
+            ) {
 
                 showError(
                     firstName,
                     firstNameError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
@@ -2736,20 +5139,25 @@ document.addEventListener(
                     'middle_name'
                 );
 
+
             const middleNameError =
                 document.getElementById(
                     'middleNameError'
                 );
 
 
-            if (!middleName.value.trim()) {
+            if (
+                !middleName.value.trim()
+            ) {
 
                 showError(
                     middleName,
                     middleNameError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
@@ -2768,20 +5176,25 @@ document.addEventListener(
                     'sex'
                 );
 
+
             const sexError =
                 document.getElementById(
                     'sexError'
                 );
 
 
-            if (!sex.value) {
+            if (
+                !sex.value
+            ) {
 
                 showError(
                     sex,
                     sexError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
@@ -2800,32 +5213,26 @@ document.addEventListener(
                     'email'
                 );
 
+
             const emailError =
                 document.getElementById(
                     'emailError'
                 );
 
 
-            if (!email.value.trim()) {
+            if (
+                !email.value.trim() ||
+                !email.checkValidity()
+            ) {
 
                 showError(
                     email,
                     emailError
                 );
 
-                isValid = false;
 
-            } else if (!email.checkValidity()) {
-
-                showError(
-                    email,
-                    emailError
-                );
-
-                emailError.textContent =
-                    'Please enter a valid email address.';
-
-                isValid = false;
+                isValid =
+                    false;
 
             } else {
 
@@ -2854,7 +5261,9 @@ document.addEventListener(
                     contactError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
@@ -2874,19 +5283,23 @@ document.addEventListener(
                 );
 
 
-            if (!birthdayInput.value) {
+            if (
+                !birthday.value
+            ) {
 
                 showError(
-                    birthdayInput,
+                    birthday,
                     birthdayError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
                 clearError(
-                    birthdayInput,
+                    birthday,
                     birthdayError
                 );
 
@@ -2895,31 +5308,38 @@ document.addEventListener(
 
             /* PROVINCE */
 
-            const provinceSelect =
-                document.getElementById(
-                    'province'
-                );
-
             const provinceError =
                 document.getElementById(
                     'provinceError'
                 );
 
 
-            if (!provinceSelect.value) {
+            if (
+                !provinceHidden.value.trim()
+            ) {
 
-                showError(
-                    provinceSelect,
-                    provinceError
+                provinceSearch.classList.add(
+                    'required-error'
                 );
 
-                isValid = false;
+
+                provinceError.classList.add(
+                    'show'
+                );
+
+
+                isValid =
+                    false;
 
             } else {
 
-                clearError(
-                    provinceSelect,
-                    provinceError
+                provinceSearch.classList.remove(
+                    'required-error'
+                );
+
+
+                provinceError.classList.remove(
+                    'show'
                 );
 
             }
@@ -2927,31 +5347,38 @@ document.addEventListener(
 
             /* MUNICIPALITY */
 
-            const municipalitySelect =
-                document.getElementById(
-                    'municipality'
-                );
-
             const municipalityError =
                 document.getElementById(
                     'municipalityError'
                 );
 
 
-            if (!municipalitySelect.value) {
+            if (
+                !municipalityHidden.value.trim()
+            ) {
 
-                showError(
-                    municipalitySelect,
-                    municipalityError
+                municipalitySearch.classList.add(
+                    'required-error'
                 );
 
-                isValid = false;
+
+                municipalityError.classList.add(
+                    'show'
+                );
+
+
+                isValid =
+                    false;
 
             } else {
 
-                clearError(
-                    municipalitySelect,
-                    municipalityError
+                municipalitySearch.classList.remove(
+                    'required-error'
+                );
+
+
+                municipalityError.classList.remove(
+                    'show'
                 );
 
             }
@@ -2959,31 +5386,38 @@ document.addEventListener(
 
             /* BARANGAY */
 
-            const barangaySelect =
-                document.getElementById(
-                    'barangay'
-                );
-
             const barangayError =
                 document.getElementById(
                     'barangayError'
                 );
 
 
-            if (!barangaySelect.value) {
+            if (
+                !barangayHidden.value.trim()
+            ) {
 
-                showError(
-                    barangaySelect,
-                    barangayError
+                barangaySearch.classList.add(
+                    'required-error'
                 );
 
-                isValid = false;
+
+                barangayError.classList.add(
+                    'show'
+                );
+
+
+                isValid =
+                    false;
 
             } else {
 
-                clearError(
-                    barangaySelect,
-                    barangayError
+                barangaySearch.classList.remove(
+                    'required-error'
+                );
+
+
+                barangayError.classList.remove(
+                    'show'
                 );
 
             }
@@ -2998,20 +5432,22 @@ document.addEventListener(
 
 
             if (
-                !zipCodeInput.value.trim()
+                !zipInput.value.trim()
             ) {
 
                 showError(
-                    zipCodeInput,
+                    zipInput,
                     zipError
                 );
 
-                isValid = false;
+
+                isValid =
+                    false;
 
             } else {
 
                 clearError(
-                    zipCodeInput,
+                    zipInput,
                     zipError
                 );
 
@@ -3026,22 +5462,125 @@ document.addEventListener(
                 );
 
 
+            const hasExistingId =
+                {{ !empty($buyerData['valid_id_path'] ?? null) ? 'true' : 'false' }};
+
+
             if (
-                !validIdInput.files.length
+                !validId.files.length &&
+                !hasExistingId
             ) {
 
-                showError(
-                    validIdUploadBox,
-                    validIdError
+                validIdUploadBox.classList.add(
+                    'required-error'
                 );
 
-                isValid = false;
+
+                validIdError.classList.add(
+                    'show'
+                );
+
+
+                isValid =
+                    false;
 
             } else {
 
-                clearError(
-                    validIdUploadBox,
-                    validIdError
+                validIdUploadBox.classList.remove(
+                    'required-error'
+                );
+
+
+                validIdError.classList.remove(
+                    'show'
+                );
+
+            }
+
+
+            /* PASSWORD */
+
+            const password =
+                passwordInput.value.trim();
+
+
+            const confirmation =
+                passwordConfirmationInput.value.trim();
+
+
+            if (
+                !password
+            ) {
+
+                passwordInput.classList.add(
+                    'required-error'
+                );
+
+
+                isValid =
+                    false;
+
+            } else {
+
+                passwordInput.classList.remove(
+                    'required-error'
+                );
+
+            }
+
+
+            if (
+                !confirmation
+            ) {
+
+                passwordConfirmationInput.classList.add(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.textContent =
+                    'Please confirm your password.';
+
+
+                passwordConfirmationError.classList.add(
+                    'show'
+                );
+
+
+                isValid =
+                    false;
+
+            } else if (
+                password !==
+                confirmation
+            ) {
+
+                passwordConfirmationInput.classList.add(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.textContent =
+                    'Passwords do not match.';
+
+
+                passwordConfirmationError.classList.add(
+                    'show'
+                );
+
+
+                isValid =
+                    false;
+
+            } else {
+
+                passwordConfirmationInput.classList.remove(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.classList.remove(
+                    'show'
                 );
 
             }
@@ -3052,68 +5591,71 @@ document.addEventListener(
         }
 
 
+
         /* =========================================================
            CLEAR ERRORS WHILE TYPING
         ========================================================== */
 
-        const textInputs =
-            document.querySelectorAll(
+        document
+            .querySelectorAll(
                 '.form-input, .contact-input'
-            );
+            )
+            .forEach(
+                function (
+                    input
+                ) {
 
+                    input.addEventListener(
+                        'input',
+                        function () {
 
-        textInputs.forEach(
-            function (input) {
-
-                input.addEventListener(
-                    'input',
-                    function () {
-
-                        this.classList.remove(
-                            'required-error'
-                        );
-
-                        const error =
-                            this
-                                .closest(
-                                    '.field-group'
-                                )
-                                ?.querySelector(
-                                    '.field-error'
-                                );
-
-                        if (error) {
-
-                            error.classList.remove(
-                                'show'
+                            this.classList.remove(
+                                'required-error'
                             );
 
+
+                            this.closest(
+                                '.field-group'
+                            )
+                                ?.querySelector(
+                                    '.field-error'
+                                )
+                                ?.classList.remove(
+                                    'show'
+                                );
+
                         }
+                    );
 
-                    }
-                );
+                }
+            );
 
-            }
-        );
 
 
         /* =========================================================
            FORM SUBMIT
         ========================================================== */
 
-        if (buyerRegistrationForm) {
+        if (
+            form
+        ) {
 
-            buyerRegistrationForm.addEventListener(
+            form.addEventListener(
                 'submit',
-                function (event) {
+                function (
+                    event
+                ) {
 
                     const valid =
-                        validateRequiredFields();
+                        validateForm();
 
 
-                    if (!valid) {
+                    if (
+                        !valid
+                    ) {
 
                         event.preventDefault();
+
 
                         const firstError =
                             document.querySelector(
@@ -3121,37 +5663,60 @@ document.addEventListener(
                             );
 
 
-                        if (firstError) {
+                        if (
+                            firstError
+                        ) {
 
                             firstError.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center'
+                                behavior:
+                                    'smooth',
+
+                                block:
+                                    'center'
                             });
 
 
-                            if (
-                                typeof firstError.focus ===
-                                'function'
-                            ) {
+                            setTimeout(
+                                function () {
 
-                                firstError.focus();
+                                    firstError.focus?.();
 
-                            }
+                                },
+                                250
+                            );
 
                         }
+
 
                         return;
 
                     }
 
 
-                    if (continueButton) {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Continue
+                    |--------------------------------------------------------------------------
+                    |
+                    | The form is allowed to submit normally.
+                    | The POST route saves the buyer information
+                    | into buyer_registration session.
+                    |
+                    | When the review page returns to this page,
+                    | $buyerData will repopulate the fields.
+                    |
+                    */
+
+                    if (
+                        continueButton
+                    ) {
 
                         continueButton.disabled =
                             true;
 
+
                         continueButton.textContent =
-                            'Continue...';
+                            'Saving...';
 
                     }
 
@@ -3160,97 +5725,7 @@ document.addEventListener(
 
         }
 
-
-          /* =========================================================
-              PROVINCE / MUNICIPALITY / BARANGAY LOCATION API
-          ========================================================== */
-
-        const provinceSelect =
-            document.getElementById(
-                'province'
-            );
-
-
-        const municipalitySelect =
-            document.getElementById(
-                'municipality'
-            );
-
-
-        const barangaySelect =
-            document.getElementById(
-                'barangay'
-            );
-
-
-        const locationsApiBase = '/api/v1/locations';
-
-        function resetLocationSelect(select, placeholder) {
-            select.innerHTML = `<option value="" selected disabled>${placeholder}</option>`;
-            select.disabled = true;
-        }
-
-        function locationName(location) {
-            return location.name || location.prov_name || location.city_name || location.mun_name || location.brgy_name || '';
-        }
-
-        function populateLocationSelect(select, locations, placeholder) {
-            resetLocationSelect(select, placeholder);
-            locations.forEach(location => {
-                const option = document.createElement('option');
-                option.value = locationName(location);
-                option.textContent = locationName(location);
-                option.dataset.code = location.code || location.psgc_code || location.prov_code || location.mun_code || location.city_code || location.brgy_code || '';
-                option.dataset.region = location.isRegion ? 'true' : 'false';
-                select.appendChild(option);
-            });
-            select.disabled = false;
-        }
-
-        async function loadLocations(endpoint) {
-            const response = await fetch(`${locationsApiBase}/${endpoint}`, {
-                headers: { Accept: 'application/json' }
-            });
-            if (!response.ok) {
-                throw new Error('Unable to load location options.');
-            }
-            return response.json();
-        }
-
-        resetLocationSelect(municipalitySelect, 'Select or search municipality');
-        resetLocationSelect(barangaySelect, 'Select or search barangay');
-
-        loadLocations('provinces')
-            .then(provinces => populateLocationSelect(provinceSelect, provinces, 'Select or search province'))
-            .catch(error => console.error(error));
-
-        provinceSelect?.addEventListener('change', async function () {
-            resetLocationSelect(municipalitySelect, 'Loading municipalities...');
-            resetLocationSelect(barangaySelect, 'Select or search barangay');
-            try {
-                const isRegion = this.options[this.selectedIndex]?.dataset.region === 'true';
-                const query = isRegion ? '?is_region=1' : '';
-                const provinceCode = this.options[this.selectedIndex]?.dataset.code || this.value;
-                const municipalities = await loadLocations(`provinces/${encodeURIComponent(provinceCode)}/cities${query}`);
-                populateLocationSelect(municipalitySelect, municipalities, 'Select or search municipality');
-            } catch (error) {
-                console.error(error);
-            }
-        });
-
-        municipalitySelect?.addEventListener('change', async function () {
-            resetLocationSelect(barangaySelect, 'Loading barangays...');
-            try {
-                const municipalityCode = this.options[this.selectedIndex]?.dataset.code || this.value;
-                const barangays = await loadLocations(`cities/${encodeURIComponent(municipalityCode)}/barangays`);
-                populateLocationSelect(barangaySelect, barangays, 'Select or search barangay');
-            } catch (error) {
-                console.error(error);
-            }
-        });
-
-    }
-);
+    });
 
 </script>
 

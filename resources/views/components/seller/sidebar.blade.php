@@ -1,16 +1,28 @@
 {{-- =========================================================
      SELLER SIDEBAR
      resources/views/components/seller/sidebar.blade.php
-     
-     Admin-matched styling + preserved Seller UX
+
+     ADMIN-MATCHED UX
+     ---------------------------------------------------------
+     - Same sidebar gradient
+     - Same hover behavior
+     - Same active indicator
+     - Inventory is clickable
+     - Orders accordion preserved
+     - Collapsed sidebar preserved
 ========================================================= --}}
+
 
 <aside
     id="sellerSidebar"
     class="
-        fixed left-0 top-0 z-50
+        fixed
+        left-0
+        top-0
+        z-50
 
-        w-72 h-screen
+        w-72
+        h-screen
 
         overflow-hidden
 
@@ -20,23 +32,37 @@
 
         rounded-tr-[4rem]
 
-        flex flex-col
+        flex
+        flex-col
 
-        py-8 px-5
+        py-8
+        px-5
 
         text-white
 
-        transition-all duration-300
+        transition-all
+        duration-300
 
         sidebar-reload
     "
 >
 
-    <div class="flex-1 min-h-0">
 
-        <!-- =====================================================
+    <!-- =====================================================
+         MAIN SIDEBAR CONTENT
+    ====================================================== -->
+
+    <div
+        class="
+            flex-1
+            min-h-0
+        "
+    >
+
+
+        <!-- =================================================
              LOGO
-        ====================================================== -->
+        ================================================== -->
 
         <div
             id="seller-sidebar-logo"
@@ -84,9 +110,9 @@
 
 
 
-        <!-- =====================================================
+        <!-- =================================================
              NAVIGATION
-        ====================================================== -->
+        ================================================== -->
 
         <nav
             id="seller-sidebar-nav"
@@ -100,11 +126,9 @@
 
             <a
                 href="{{ route('seller.dashboard') }}"
-
                 class="
                     sidebar-link
                     sidebar-menu-item
-
                     seller-nav-item
 
                     flex
@@ -146,7 +170,6 @@
 
                     <img
                         src="{{ asset('icons/seller/sidebar&navbar/dashboard.png') }}"
-
                         class="
                             sidebar-icon
 
@@ -156,7 +179,6 @@
                             object-contain
                             shrink-0
                         "
-
                         alt=""
                     >
 
@@ -185,13 +207,10 @@
             ================================================== --}}
 
             <a
-                href="#"
-                onclick="return false;"
-
+                href="{{ route('seller.inventory') }}"
                 class="
                     sidebar-link
                     sidebar-menu-item
-
                     seller-nav-item
 
                     flex
@@ -208,8 +227,11 @@
 
                     w-full
 
-                    hover:bg-maroon-800/50
-                    hover:translate-x-1
+                    {{
+                        request()->routeIs('seller.inventory')
+                            ? 'bg-maroon-700/60'
+                            : 'hover:bg-maroon-800/50 hover:translate-x-1'
+                    }}
                 "
             >
 
@@ -230,7 +252,6 @@
 
                     <img
                         src="{{ asset('icons/seller/sidebar&navbar/inventory.png') }}"
-
                         class="
                             sidebar-icon
 
@@ -240,7 +261,6 @@
                             object-contain
                             shrink-0
                         "
-
                         alt=""
                     >
 
@@ -270,7 +290,6 @@
 
             <div
                 id="seller-order-management-label"
-
                 class="
                     sidebar-section-label
 
@@ -311,18 +330,16 @@
 
 
             {{-- =================================================
-                 ORDERS PARENT
+                 ORDERS
             ================================================== --}}
 
             <button
                 type="button"
-
                 id="sellerOrdersToggle"
 
                 class="
                     sidebar-link
                     sidebar-menu-item
-
                     seller-nav-item
                     seller-orders-toggle
 
@@ -356,7 +373,6 @@
                 "
 
                 aria-expanded="{{ $ordersActive ? 'true' : 'false' }}"
-
                 aria-controls="sellerOrdersSubmenu"
             >
 
@@ -377,7 +393,6 @@
 
                     <img
                         src="{{ asset('icons/seller/sidebar&navbar/orders.png') }}"
-
                         class="
                             sidebar-icon
 
@@ -387,7 +402,6 @@
                             object-contain
                             shrink-0
                         "
-
                         alt=""
                     >
 
@@ -427,6 +441,12 @@
 
                         transition-transform
                         duration-300
+
+                        {{
+                            $ordersActive
+                                ? 'open'
+                                : ''
+                        }}
                     "
                 >
 
@@ -477,87 +497,77 @@
                 "
             >
 
+
                 <!-- ORDER STATUS -->
 
                 <a
-                    href="#"
-                    onclick="return false;"
+    href="{{ route('seller.order.status') }}"
+    class="
+        seller-subnav-item
 
-                    class="
-                        seller-subnav-item
+        flex
+        items-center
 
-                        flex
-                        items-center
+        min-h-[42px]
 
-                        min-h-[42px]
+        ml-9
+        px-4
 
-                        ml-9
-                        px-4
+        rounded-full
 
-                        rounded-full
+        text-[15px]
+        font-normal
 
-                        text-[15px]
-                        font-normal
+        text-white/95
 
-                        text-white/95
+        transition-all
+        duration-300
 
-                        transition-all
-                        duration-300
+        hover:bg-maroon-800/50
+        hover:translate-x-1
 
-                        hover:bg-maroon-800/50
-                        hover:translate-x-1
-
-                        {{
-                            request()->routeIs('seller.order.status.*')
-                                ? 'bg-maroon-800/70 font-medium'
-                                : ''
-                        }}
-                    "
-                >
-                    Order Status
-                </a>
+        {{
+            request()->routeIs('seller.order.status')
+                ? 'bg-maroon-800/70 font-medium'
+                : ''
+        }}
+    "
+>
+    Order Status
+</a>
 
 
 
                 <!-- SHIPPING STATUS -->
 
-                <a
-                    href="#"
-                    onclick="return false;"
+                <a 
+    href="{{ route('seller.shipping.status') }}" 
 
-                    class="
-                        seller-subnav-item
+    class=" 
+        seller-subnav-item 
+        flex 
+        items-center 
+        min-h-[42px] 
+        ml-9 
+        px-4 
+        rounded-full 
+        text-[15px] 
+        font-normal 
+        text-white/95 
+        transition-all 
+        duration-300 
+        hover:bg-maroon-800/50 
+        hover:translate-x-1 
 
-                        flex
-                        items-center
-
-                        min-h-[42px]
-
-                        ml-9
-                        px-4
-
-                        rounded-full
-
-                        text-[15px]
-                        font-normal
-
-                        text-white/95
-
-                        transition-all
-                        duration-300
-
-                        hover:bg-maroon-800/50
-                        hover:translate-x-1
-
-                        {{
-                            request()->routeIs('seller.shipping.*')
-                                ? 'bg-maroon-800/70 font-medium'
-                                : ''
-                        }}
-                    "
-                >
-                    Shipping Status
-                </a>
+        {{
+            request()->routeIs('seller.shipping.status') 
+                ? 'bg-maroon-800/70 font-medium' 
+                : '' 
+        }} 
+    " 
+> 
+    Shipping Status 
+</a>
 
 
 
@@ -616,7 +626,6 @@
                 class="
                     sidebar-link
                     sidebar-menu-item
-
                     seller-nav-item
 
                     flex
@@ -655,7 +664,6 @@
 
                     <img
                         src="{{ asset('icons/seller/sidebar&navbar/reports.png') }}"
-
                         class="
                             sidebar-icon
 
@@ -665,7 +673,6 @@
                             object-contain
                             shrink-0
                         "
-
                         alt=""
                     >
 
@@ -700,7 +707,6 @@
                 class="
                     sidebar-link
                     sidebar-menu-item
-
                     seller-nav-item
 
                     flex
@@ -739,7 +745,6 @@
 
                     <img
                         src="{{ asset('icons/seller/sidebar&navbar/messages.png') }}"
-
                         class="
                             sidebar-icon
 
@@ -749,7 +754,6 @@
                             object-contain
                             shrink-0
                         "
-
                         alt=""
                     >
 
@@ -784,7 +788,6 @@
                 class="
                     sidebar-link
                     sidebar-menu-item
-
                     seller-nav-item
 
                     flex
@@ -823,7 +826,6 @@
 
                     <img
                         src="{{ asset('icons/seller/sidebar&navbar/account-management.png') }}"
-
                         class="
                             sidebar-icon
 
@@ -833,7 +835,6 @@
                             object-contain
                             shrink-0
                         "
-
                         alt=""
                     >
 
@@ -873,6 +874,8 @@
             w-full
             shrink-0
         "
+
+        id="sellerLogoutForm"
     >
 
         @csrf
@@ -883,6 +886,8 @@
             class="
                 sidebar-logout
                 sidebar-logout-reload
+
+                shrink-0
 
                 flex
                 items-center
@@ -928,7 +933,6 @@
 
                 <img
                     src="{{ asset('icons/seller/sidebar&navbar/log-out.png') }}"
-
                     class="
                         sidebar-icon
 
@@ -938,7 +942,6 @@
                         object-contain
                         shrink-0
                     "
-
                     alt=""
                 >
 
@@ -962,128 +965,114 @@
 <style>
 
 /* =========================================================
-   SELLER SIDEBAR BASE
+   SELLER SIDEBAR
+   EXACT ADMIN BASE
 ========================================================= */
 
 #sellerSidebar {
 
-    width: 288px;
-    height: 100vh;
+    width:
+        288px;
 
-    position: fixed;
+    height:
+        100vh;
 
-    top: 0;
-    left: 0;
+    position:
+        fixed;
 
-    z-index: 50;
+    top:
+        0;
 
-    overflow: hidden;
+    left:
+        0;
 
-    display: flex;
-    flex-direction: column;
+    z-index:
+        50;
+
+    overflow:
+        hidden;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
 
     padding:
-        32px
-        20px;
-
-    box-sizing: border-box;
-
-    color: #FFFFFF;
-
+        32px 20px;
 
     /*
-     * REVERSED GRADIENT
-     *
-     * LIGHTER ONLY AT THE TOP
-     * DARKER + MORE DOMINANT AT THE BOTTOM
-     */
+    |------------------------------------------------------------------
+    | SIDEBAR COLOR
+    |------------------------------------------------------------------
+    */
+
     background:
         linear-gradient(
             to bottom,
-            #5B1414 0%,
-            #501111 30%,
-            #410E0E 100%
+            #52070B,
+            #410509
         );
-
 
     border-top-right-radius:
         4rem;
 
-
     transition:
-        width 0.3s ease,
-        transform 0.25s ease;
+        all
+        0.3s
+        ease;
+
+    box-sizing:
+        border-box;
+
+    color:
+        #FFFFFF;
 
 }
 
 
+
 /* =========================================================
-   NAV ITEM
+   NORMAL NAVIGATION
 ========================================================= */
 
 #sellerSidebar .sidebar-link {
 
     transform:
-        translateX(0)
-        scale(1);
+        translateX(0);
 
     transform-origin:
         center;
 
-    will-change:
-        transform,
-        background-color,
-        box-shadow;
-
-
     transition:
-        background-color
-        0.25s ease,
-
-        transform
-        0.22s cubic-bezier(
-            0.22,
-            1,
-            0.36,
-            1
-        ),
-
-        box-shadow
-        0.25s ease,
-
-        width
-        0.30s ease,
-
-        height
-        0.30s ease,
-
-        padding
-        0.30s ease,
-
-        margin
-        0.30s ease;
+        all
+        0.3s
+        ease;
 
 }
+
 
 
 /* =========================================================
    NORMAL HOVER
 ========================================================= */
 
-#sellerSidebar .sidebar-link:hover {
+#sellerSidebar
+.sidebar-link:not(.bg-maroon-700\/60):hover {
 
     background:
         rgba(
-            255,
-            255,
-            255,
-            0.08
+            65,
+            5,
+            9,
+            0.50
         );
 
     transform:
         translateX(4px);
 
 }
+
 
 
 /* =========================================================
@@ -1098,23 +1087,16 @@
             165,
             42,
             42,
-            0.72
-        );
-
-    box-shadow:
-        0 4px 12px
-        rgba(
-            46,
-            0,
-            0,
-            0.20
+            0.60
         );
 
 }
 
 
+
 /* =========================================================
    ACTIVE HOVER
+   DOES NOT MOVE
 ========================================================= */
 
 #sellerSidebar
@@ -1125,7 +1107,7 @@
             165,
             42,
             42,
-            0.82
+            0.60
         );
 
     transform:
@@ -1134,11 +1116,13 @@
 }
 
 
+
 /* =========================================================
-   ICON
+   ICON WRAPPER
 ========================================================= */
 
-#sellerSidebar .sidebar-icon-wrapper {
+#sellerSidebar
+.sidebar-icon-wrapper {
 
     width:
         20px;
@@ -1161,7 +1145,13 @@
 }
 
 
-#sellerSidebar .sidebar-icon {
+
+/* =========================================================
+   ICON
+========================================================= */
+
+#sellerSidebar
+.sidebar-icon {
 
     width:
         20px;
@@ -1178,11 +1168,13 @@
 }
 
 
+
 /* =========================================================
    LOGOUT ICON
 ========================================================= */
 
-#sellerSidebar .sidebar-logout
+#sellerSidebar
+.sidebar-logout
 .sidebar-icon {
 
     width:
@@ -1194,6 +1186,7 @@
 }
 
 
+
 /* =========================================================
    ORDERS CHEVRON
 ========================================================= */
@@ -1202,6 +1195,11 @@
 
     transform:
         rotate(0deg);
+
+    transition:
+        transform
+        0.3s
+        ease;
 
 }
 
@@ -1212,6 +1210,7 @@
         rotate(180deg);
 
 }
+
 
 
 /* =========================================================
@@ -1234,7 +1233,7 @@
         0.3s ease,
 
         opacity
-        0.25s ease;
+        0.3s ease;
 
 }
 
@@ -1250,6 +1249,40 @@
 }
 
 
+
+/* =========================================================
+   SUBMENU HOVER
+========================================================= */
+
+#sellerSidebar
+.seller-subnav-item {
+
+    transition:
+        all
+        0.3s
+        ease;
+
+}
+
+
+#sellerSidebar
+.seller-subnav-item:hover {
+
+    background:
+        rgba(
+            65,
+            5,
+            9,
+            0.50
+        );
+
+    transform:
+        translateX(4px);
+
+}
+
+
+
 /* =========================================================
    COLLAPSED SIDEBAR
 ========================================================= */
@@ -1260,6 +1293,7 @@
         80px;
 
 }
+
 
 
 /* =========================================================
@@ -1287,6 +1321,11 @@
 }
 
 
+
+/* =========================================================
+   HIDE LOGO
+========================================================= */
+
 #sellerSidebar.seller-sidebar-collapsed
 #seller-sidebar-logo img {
 
@@ -1296,8 +1335,9 @@
 }
 
 
+
 /* =========================================================
-   COLLAPSED LABELS
+   HIDE LABELS
 ========================================================= */
 
 #sellerSidebar.seller-sidebar-collapsed
@@ -1318,8 +1358,9 @@
 }
 
 
+
 /* =========================================================
-   COLLAPSED MENU ITEM
+   COLLAPSED MENU
 ========================================================= */
 
 #sellerSidebar.seller-sidebar-collapsed
@@ -1355,25 +1396,27 @@
 }
 
 
+
 /* =========================================================
-   COLLAPSED HOVER
+   COLLAPSED NORMAL HOVER
 ========================================================= */
 
 #sellerSidebar.seller-sidebar-collapsed
-.sidebar-link:hover {
+.sidebar-link:not(.bg-maroon-700\/60):hover {
 
     background:
         rgba(
-            255,
-            255,
-            255,
-            0.10
+            65,
+            5,
+            9,
+            0.50
         );
 
     transform:
         scale(1.04);
 
 }
+
 
 
 /* =========================================================
@@ -1384,18 +1427,15 @@
 .sidebar-link.bg-maroon-700\/60 {
 
     background:
-        #A52A2A;
-
-    box-shadow:
-        0 4px 12px
         rgba(
-            46,
-            0,
-            0,
-            0.25
+            165,
+            42,
+            42,
+            0.70
         );
 
 }
+
 
 
 /* =========================================================
@@ -1406,12 +1446,18 @@
 .sidebar-link.bg-maroon-700\/60:hover {
 
     background:
-        #B52D2D;
+        rgba(
+            165,
+            42,
+            42,
+            0.80
+        );
 
     transform:
         scale(1.04);
 
 }
+
 
 
 /* =========================================================
@@ -1445,8 +1491,9 @@
 }
 
 
+
 /* =========================================================
-   COLLAPSED ORDERS SUBMENU
+   HIDE SUBMENU
 ========================================================= */
 
 #sellerSidebar.seller-sidebar-collapsed
@@ -1458,8 +1505,9 @@
 }
 
 
+
 /* =========================================================
-   COLLAPSED CHEVRON
+   HIDE CHEVRON
 ========================================================= */
 
 #sellerSidebar.seller-sidebar-collapsed
@@ -1469,6 +1517,7 @@
         none;
 
 }
+
 
 
 /* =========================================================
@@ -1484,26 +1533,17 @@
         999px;
 
     transition:
-        background-color
-        0.25s ease,
-
-        transform
-        0.2s ease,
-
-        width
-        0.3s ease,
-
-        height
-        0.3s ease,
-
-        padding
-        0.3s ease,
-
-        margin
-        0.3s ease;
+        all
+        0.3s
+        ease;
 
 }
 
+
+
+/* =========================================================
+   LOGOUT HOVER
+========================================================= */
 
 #sellerSidebar .sidebar-logout:hover {
 
@@ -1519,6 +1559,7 @@
         translateY(-1px);
 
 }
+
 
 
 /* =========================================================
@@ -1558,6 +1599,7 @@
 }
 
 
+
 /* =========================================================
    COLLAPSED LOGOUT HOVER
 ========================================================= */
@@ -1577,6 +1619,59 @@
         scale(1.04);
 
 }
+
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 760px) {
+
+    #sellerSidebar {
+
+        width:
+            288px;
+
+        transform:
+            translateX(-100%);
+
+        transition:
+            transform
+            0.25s
+            ease;
+
+        box-shadow:
+            10px
+            0
+            30px
+            rgba(
+                0,
+                0,
+                0,
+                0.18
+            );
+
+    }
+
+
+    #sellerSidebar.mobile-open {
+
+        transform:
+            translateX(0);
+
+    }
+
+
+    #sellerSidebar.seller-sidebar-collapsed {
+
+        width:
+            288px;
+
+    }
+
+}
+
 
 
 /* =========================================================
@@ -1628,8 +1723,9 @@
 }
 
 
+
 /* =========================================================
-   TOP TO BOTTOM DELAYS
+   TOP TO BOTTOM
 ========================================================= */
 
 .sidebar-menu-item:nth-child(1) {
@@ -1678,48 +1774,34 @@
 }
 
 
+
 /* =========================================================
-   MOBILE
+   REDUCED MOTION
 ========================================================= */
 
-@media (max-width: 760px) {
+@media (prefers-reduced-motion: reduce) {
 
-    #sellerSidebar {
-
-        width:
-            288px;
-
-        transform:
-            translateX(-100%);
+    #sellerSidebar,
+    #sellerSidebar .sidebar-link,
+    #sellerSidebar .seller-subnav-item,
+    #sellerSidebar .sidebar-logout {
 
         transition:
-            transform
-            0.25s ease;
-
-        box-shadow:
-            10px 0 30px
-            rgba(
-                0,
-                0,
-                0,
-                0.18
-            );
+            none !important;
 
     }
 
 
-    #sellerSidebar.mobile-open {
+    .sidebar-menu-item {
+
+        animation:
+            none;
+
+        opacity:
+            1;
 
         transform:
-            translateX(0);
-
-    }
-
-
-    #sellerSidebar.seller-sidebar-collapsed {
-
-        width:
-            288px;
+            none;
 
     }
 
@@ -1770,12 +1852,43 @@ document.addEventListener(
             );
 
 
+        const sellerLogoutForm =
+            document.getElementById(
+                'sellerLogoutForm'
+            );
+
+
 
         /* =====================================================
            SIDEBAR STATE
         ====================================================== */
 
-        let collapsed = false;
+        let collapsed =
+            false;
+
+
+
+        /* =====================================================
+           INITIAL ORDERS STATE
+        ====================================================== */
+
+        if (
+            ordersToggle &&
+            ordersSubmenu
+        ) {
+
+            const initialOpen =
+                ordersSubmenu.classList.contains(
+                    'open'
+                );
+
+
+            ordersToggle.dataset.wasOpen =
+                initialOpen
+                    ? 'true'
+                    : 'false';
+
+        }
 
 
 
@@ -1794,9 +1907,9 @@ document.addEventListener(
 
 
                     /*
-                    |------------------------------------------------------------------
+                    |----------------------------------------------------------
                     | Do not open submenu while collapsed
-                    |------------------------------------------------------------------
+                    |----------------------------------------------------------
                     */
 
                     if (
@@ -1822,7 +1935,9 @@ document.addEventListener(
                     );
 
 
-                    if (ordersChevron) {
+                    if (
+                        ordersChevron
+                    ) {
 
                         ordersChevron.classList.toggle(
                             'open'
@@ -1833,18 +1948,16 @@ document.addEventListener(
 
                     ordersToggle.setAttribute(
                         'aria-expanded',
-                        String(!isOpen)
+                        String(
+                            !isOpen
+                        )
                     );
 
 
-                    /*
-                    |------------------------------------------------------------------
-                    | Remember state
-                    |------------------------------------------------------------------
-                    */
-
                     ordersToggle.dataset.wasOpen =
-                        String(!isOpen);
+                        String(
+                            !isOpen
+                        );
 
                 }
             );
@@ -1859,18 +1972,23 @@ document.addEventListener(
 
         function collapseSidebar() {
 
-            if (!sidebar) {
+            if (
+                !sidebar
+            ) {
+
                 return;
+
             }
 
 
-            collapsed = true;
+            collapsed =
+                true;
 
 
             /*
-            |------------------------------------------------------------------
-            | Remember Orders state
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
+            | Remember current Orders state
+            |----------------------------------------------------------
             */
 
             if (
@@ -1889,14 +2007,9 @@ document.addEventListener(
 
 
             /*
-            |------------------------------------------------------------------
-            | ONLY CHANGE COLLAPSED STATE
-            |------------------------------------------------------------------
-            |
-            | All normal hover, radius,
-            | spacing, and visual styling
-            | remain defined by CSS.
-            |
+            |----------------------------------------------------------
+            | Apply collapsed class
+            |----------------------------------------------------------
             */
 
             sidebar.classList.add(
@@ -1905,12 +2018,14 @@ document.addEventListener(
 
 
             /*
-            |------------------------------------------------------------------
-            | Temporarily close Orders submenu
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
+            | Temporarily close submenu
+            |----------------------------------------------------------
             */
 
-            if (ordersSubmenu) {
+            if (
+                ordersSubmenu
+            ) {
 
                 ordersSubmenu.classList.remove(
                     'open'
@@ -1919,7 +2034,9 @@ document.addEventListener(
             }
 
 
-            if (ordersChevron) {
+            if (
+                ordersChevron
+            ) {
 
                 ordersChevron.classList.remove(
                     'open'
@@ -1928,7 +2045,9 @@ document.addEventListener(
             }
 
 
-            if (ordersToggle) {
+            if (
+                ordersToggle
+            ) {
 
                 ordersToggle.setAttribute(
                     'aria-expanded',
@@ -1947,19 +2066,18 @@ document.addEventListener(
 
         function expandSidebar() {
 
-            if (!sidebar) {
+            if (
+                !sidebar
+            ) {
+
                 return;
+
             }
 
 
-            collapsed = false;
+            collapsed =
+                false;
 
-
-            /*
-            |------------------------------------------------------------------
-            | Remove ONLY collapsed state
-            |------------------------------------------------------------------
-            */
 
             sidebar.classList.remove(
                 'seller-sidebar-collapsed'
@@ -1967,9 +2085,9 @@ document.addEventListener(
 
 
             /*
-            |------------------------------------------------------------------
-            | Restore Orders submenu
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
+            | Restore Orders submenu if it was open
+            |----------------------------------------------------------
             */
 
             const shouldReopenOrders =
@@ -1988,7 +2106,9 @@ document.addEventListener(
                 );
 
 
-                if (ordersChevron) {
+                if (
+                    ordersChevron
+                ) {
 
                     ordersChevron.classList.add(
                         'open'
@@ -1997,10 +2117,16 @@ document.addEventListener(
                 }
 
 
-                ordersToggle.setAttribute(
-                    'aria-expanded',
-                    'true'
-                );
+                if (
+                    ordersToggle
+                ) {
+
+                    ordersToggle.setAttribute(
+                        'aria-expanded',
+                        'true'
+                    );
+
+                }
 
             }
 
@@ -2014,15 +2140,19 @@ document.addEventListener(
 
         function toggleSidebar() {
 
-            if (!sidebar) {
+            if (
+                !sidebar
+            ) {
+
                 return;
+
             }
 
 
             /*
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
             | MOBILE
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
             */
 
             if (
@@ -2039,12 +2169,14 @@ document.addEventListener(
 
 
             /*
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
             | DESKTOP
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
             */
 
-            if (collapsed) {
+            if (
+                collapsed
+            ) {
 
                 expandSidebar();
 
@@ -2092,22 +2224,19 @@ document.addEventListener(
 
         document.addEventListener(
             'keydown',
-            function (event) {
+            function (
+                event
+            ) {
 
                 if (
-                    event.key !== 'Escape'
+                    event.key !==
+                    'Escape'
                 ) {
 
                     return;
 
                 }
 
-
-                /*
-                |------------------------------------------------------------------
-                | Close mobile sidebar
-                |------------------------------------------------------------------
-                */
 
                 if (
                     sidebar &&
@@ -2131,16 +2260,20 @@ document.addEventListener(
            RELOAD UX
         ====================================================== */
 
-        if (sidebar) {
+        if (
+            sidebar
+        ) {
 
 
             /*
-            |------------------------------------------------------------------
-            | Logo
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
+            | Logo animation
+            |----------------------------------------------------------
             */
 
-            if (sidebarLogo) {
+            if (
+                sidebarLogo
+            ) {
 
                 sidebarLogo.classList.remove(
                     'sidebar-logo-reload'
@@ -2156,9 +2289,9 @@ document.addEventListener(
 
 
             /*
-            |------------------------------------------------------------------
-            | Menu items
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
+            | Menu animation
+            |----------------------------------------------------------
             */
 
             const menuItems =
@@ -2168,7 +2301,9 @@ document.addEventListener(
 
 
             menuItems.forEach(
-                function (item) {
+                function (
+                    item
+                ) {
 
                     item.classList.remove(
                         'sidebar-menu-item'
@@ -2185,9 +2320,9 @@ document.addEventListener(
 
 
             /*
-            |------------------------------------------------------------------
-            | Logout
-            |------------------------------------------------------------------
+            |----------------------------------------------------------
+            | Logout animation
+            |----------------------------------------------------------
             */
 
             const logout =
@@ -2196,7 +2331,9 @@ document.addEventListener(
                 );
 
 
-            if (logout) {
+            if (
+                logout
+            ) {
 
                 logout.classList.remove(
                     'sidebar-logout-reload'
@@ -2215,24 +2352,58 @@ document.addEventListener(
 
 
         /* =====================================================
-           INITIAL ORDERS STATE
+           SELLER LOGOUT
         ====================================================== */
 
         if (
-            ordersToggle &&
-            ordersSubmenu
+            sellerLogoutForm
         ) {
 
-            const initialOpen =
-                ordersSubmenu.classList.contains(
-                    'open'
-                );
+            sellerLogoutForm.addEventListener(
+                'submit',
+                function () {
+
+                    const button =
+                        sellerLogoutForm.querySelector(
+                            'button[type="submit"]'
+                        );
 
 
-            ordersToggle.dataset.wasOpen =
-                initialOpen
-                    ? 'true'
-                    : 'false';
+                    if (
+                        !button
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    button.disabled =
+                        true;
+
+
+                    button.classList.add(
+                        'opacity-70'
+                    );
+
+
+                    const label =
+                        button.querySelector(
+                            '.sidebar-label'
+                        );
+
+
+                    if (
+                        label
+                    ) {
+
+                        label.textContent =
+                            'Logging Out...';
+
+                    }
+
+                }
+            );
 
         }
 

@@ -1,3 +1,27 @@
+@php
+
+    /*
+    |--------------------------------------------------------------------------
+    | SELLER REGISTRATION DATA
+    |--------------------------------------------------------------------------
+    |
+    | This data comes from:
+    |
+    | session('seller_registration', [])
+    |
+    | It remains available while the user moves between
+    | Seller Step 1, Step 2, and Step 3.
+    |
+    */
+
+    $sellerData =
+        is_array($sellerData ?? null)
+            ? $sellerData
+            : [];
+
+@endphp
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -59,12 +83,10 @@
             --border: #D8D8D8;
 
             --success: #2E7D32;
+            --error: #D32F2F;
+
         }
 
-
-        /* =========================================================
-           RESET
-        ========================================================== */
 
         * {
 
@@ -73,10 +95,6 @@
 
         }
 
-
-        /* =========================================================
-           BODY
-        ========================================================== */
 
         body {
 
@@ -101,10 +119,6 @@
 
         }
 
-
-        /* =========================================================
-           PAGE
-        ========================================================== */
 
         .registration-page {
 
@@ -144,10 +158,6 @@
         }
 
 
-        /* =========================================================
-           LOGO WRAPPER
-        ========================================================== */
-
         .header-logo-wrapper {
 
             width:
@@ -184,13 +194,8 @@
                 pointer;
 
             transition:
-                opacity
-                0.2s
-                ease,
-
-                transform
-                0.2s
-                ease;
+                opacity 0.2s ease,
+                transform 0.2s ease;
 
         }
 
@@ -220,10 +225,6 @@
         }
 
 
-        /* =========================================================
-           SIGNUP LOGO
-        ========================================================== */
-
         .signup-logo {
 
             width:
@@ -237,10 +238,6 @@
 
         }
 
-
-        /* =========================================================
-           HEADER COPY
-        ========================================================== */
 
         .header-copy {
 
@@ -428,21 +425,10 @@
                 1;
 
             transition:
-                transform
-                0.2s
-                ease,
-
-                background
-                0.2s
-                ease,
-
-                border-color
-                0.2s
-                ease,
-
-                color
-                0.2s
-                ease;
+                transform 0.2s ease,
+                background 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease;
 
         }
 
@@ -480,7 +466,7 @@
                 var(--maroon);
 
             color:
-                white;
+                #FFFFFF;
 
             font-weight:
                 600;
@@ -520,7 +506,7 @@
 
 
         /* =========================================================
-           MAIN CONTENT
+           CONTENT
         ========================================================== */
 
         .registration-content {
@@ -600,10 +586,6 @@
         }
 
 
-        /* =========================================================
-           FORM GROUP
-        ========================================================== */
-
         .form-group {
 
             min-width:
@@ -611,18 +593,10 @@
 
         }
 
-        .password-field {
-            margin-top: 25px;
-        }
 
-        .field-help {
-            display: block;
-            margin-top: 8px;
-            margin-bottom: 10px;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #777777;
-        }
+        /* =========================================================
+           LABEL
+        ========================================================== */
 
         .form-label {
 
@@ -653,11 +627,10 @@
 
 
         /* =========================================================
-           INPUT / SELECT
+           INPUT
         ========================================================== */
 
-        .form-input,
-        .form-select {
+        .form-input {
 
             width:
                 100%;
@@ -673,10 +646,11 @@
                 9px;
 
             padding:
-                0 14px;
+                0
+                14px;
 
             background:
-                white;
+                #FFFFFF;
 
             font-family:
                 'Poppins',
@@ -692,13 +666,8 @@
                 none;
 
             transition:
-                border-color
-                0.2s
-                ease,
-
-                box-shadow
-                0.2s
-                ease;
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
 
         }
 
@@ -711,8 +680,7 @@
         }
 
 
-        .form-input:focus,
-        .form-select:focus {
+        .form-input:focus {
 
             border-color:
                 #B8B8B8;
@@ -730,45 +698,213 @@
 
 
         /* =========================================================
-           SELECT
+           PASSWORD
         ========================================================== */
 
-        .select-wrapper {
+        .password-field {
+
+            margin-top:
+                25px;
+
+        }
+
+
+        .password-confirmation-field {
+
+            margin-top:
+                0;
+
+        }
+
+
+        .field-help {
+
+            display:
+                block;
+
+            margin-top:
+                8px;
+
+            margin-bottom:
+                10px;
+
+            font-size:
+                12px;
+
+            line-height:
+                1.5;
+
+            color:
+                #777777;
+
+        }
+
+
+        .password-match-error {
+
+            margin:
+                5px
+                0
+                0;
+
+            font-size:
+                11px;
+
+            line-height:
+                1.4;
+
+            color:
+                var(--error);
+
+            display:
+                none;
+
+        }
+
+
+        .password-match-error.show {
+
+            display:
+                block;
+
+        }
+
+
+        .form-input.password-mismatch {
+
+            border-color:
+                var(--error) !important;
+
+        }
+
+
+        .form-input.password-mismatch:focus {
+
+            border-color:
+                var(--error) !important;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    211,
+                    47,
+                    47,
+                    0.10
+                );
+
+        }
+
+
+        /* =========================================================
+           SEARCHABLE ADDRESS
+        ========================================================== */
+
+        .search-select {
 
             position:
                 relative;
 
+            width:
+                100%;
+
         }
 
 
-        .form-select {
+        .search-select-input {
 
-            appearance:
+            width:
+                100%;
+
+            height:
+                49px;
+
+            border:
+                1.5px solid
+                var(--border);
+
+            border-radius:
+                9px;
+
+            padding:
+                0
+                42px
+                0
+                14px;
+
+            background:
+                #FFFFFF;
+
+            font-family:
+                'Poppins',
+                sans-serif;
+
+            font-size:
+                14px;
+
+            color:
+                var(--text-dark);
+
+            outline:
                 none;
 
-            padding-right:
-                45px;
-
-            cursor:
-                pointer;
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
 
         }
 
 
-        .select-arrow {
+        .search-select-input::placeholder {
+
+            color:
+                #A0A0A0;
+
+        }
+
+
+        .search-select.open
+        .search-select-input {
+
+            border-color:
+                #B8B8B8;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    123,
+                    27,
+                    27,
+                    0.06
+                );
+
+        }
+
+
+        .search-select.disabled
+        .search-select-input {
+
+            background:
+                #F5F5F5;
+
+            color:
+                #A5A5A5;
+
+            cursor:
+                not-allowed;
+
+        }
+
+
+        .search-select-arrow {
 
             position:
                 absolute;
 
-            right:
-                15px;
-
             top:
                 50%;
 
-            transform:
-                translateY(-50%)
-                rotate(45deg);
+            right:
+                15px;
 
             width:
                 10px;
@@ -776,22 +912,185 @@
             height:
                 10px;
 
+            transform:
+                translateY(-65%)
+                rotate(45deg);
+
             border-right:
                 2px solid
-                #111;
+                #111111;
 
             border-bottom:
                 2px solid
-                #111;
+                #111111;
 
             pointer-events:
+                none;
+
+            transition:
+                transform 0.2s ease;
+
+        }
+
+
+        .search-select.open
+        .search-select-arrow {
+
+            transform:
+                translateY(-30%)
+                rotate(225deg);
+
+        }
+
+
+        .search-select-options {
+
+            position:
+                absolute;
+
+            left:
+                0;
+
+            right:
+                0;
+
+            top:
+                calc(
+                    100% + 6px
+                );
+
+            max-height:
+                250px;
+
+            overflow-y:
+                auto;
+
+            background:
+                #FFFFFF;
+
+            border:
+                1px solid
+                #DED8D4;
+
+            border-radius:
+                10px;
+
+            box-shadow:
+                0 10px 30px
+                rgba(
+                    32,
+                    12,
+                    12,
+                    0.12
+                );
+
+            padding:
+                6px;
+
+            z-index:
+                5000;
+
+            display:
                 none;
 
         }
 
 
+        .search-select.open
+        .search-select-options {
+
+            display:
+                block;
+
+        }
+
+
+        .search-select-option {
+
+            width:
+                100%;
+
+            border:
+                none;
+
+            background:
+                transparent;
+
+            border-radius:
+                7px;
+
+            padding:
+                10px 11px;
+
+            text-align:
+                left;
+
+            font-family:
+                'Poppins',
+                sans-serif;
+
+            font-size:
+                13px;
+
+            color:
+                #333333;
+
+            cursor:
+                pointer;
+
+            transition:
+                background 0.15s ease,
+                color 0.15s ease;
+
+        }
+
+
+        .search-select-option:hover,
+        .search-select-option.highlighted {
+
+            background:
+                var(--peach-soft);
+
+            color:
+                var(--maroon-dark);
+
+        }
+
+
+        .search-select-option.selected {
+
+            background:
+                #F8E8E4;
+
+            color:
+                var(--maroon-dark);
+
+            font-weight:
+                500;
+
+        }
+
+
+        .search-select-no-results,
+        .search-select-loading {
+
+            padding:
+                11px;
+
+            text-align:
+                center;
+
+            font-size:
+                12px;
+
+            color:
+                #999999;
+
+        }
+
+
         /* =========================================================
-           CONTACT NUMBER
+           CONTACT
         ========================================================== */
 
         .contact-wrapper {
@@ -816,7 +1115,7 @@
                 hidden;
 
             background:
-                white;
+                #FFFFFF;
 
         }
 
@@ -853,7 +1152,7 @@
                 center;
 
             color:
-                #555;
+                #555555;
 
             font-size:
                 14px;
@@ -880,7 +1179,8 @@
                 none;
 
             padding:
-                0 14px;
+                0
+                14px;
 
             font-family:
                 'Poppins',
@@ -956,7 +1256,9 @@
         .address-subtitle {
 
             margin:
-                0 0 16px;
+                0
+                0
+                16px;
 
             font-size:
                 14px;
@@ -973,22 +1275,10 @@
                 grid;
 
             grid-template-columns:
-                minmax(
-                    0,
-                    1.15fr
-                )
-                minmax(
-                    0,
-                    1.15fr
-                )
-                minmax(
-                    0,
-                    1.15fr
-                )
-                minmax(
-                    120px,
-                    0.52fr
-                );
+                minmax(0, 1.15fr)
+                minmax(0, 1.15fr)
+                minmax(0, 1.15fr)
+                minmax(120px, 0.52fr);
 
             gap:
                 18px;
@@ -1085,20 +1375,12 @@
                 pointer;
 
             background:
-                white;
+                #FFFFFF;
 
             transition:
-                border-color
-                0.2s
-                ease,
-
-                background
-                0.2s
-                ease,
-
-                box-shadow
-                0.2s
-                ease;
+                border-color 0.2s ease,
+                background 0.2s ease,
+                box-shadow 0.2s ease;
 
         }
 
@@ -1154,7 +1436,9 @@
                 40px;
 
             margin:
-                0 auto 8px;
+                0
+                auto
+                8px;
 
         }
 
@@ -1201,6 +1485,9 @@
             max-width:
                 290px;
 
+            word-break:
+                break-word;
+
         }
 
 
@@ -1223,7 +1510,7 @@
 
 
         /* =========================================================
-           NEXT BUTTON
+           BUTTON
         ========================================================== */
 
         .form-actions {
@@ -1258,7 +1545,7 @@
                 var(--maroon);
 
             color:
-                white;
+                #FFFFFF;
 
             font-family:
                 'Poppins',
@@ -1274,17 +1561,9 @@
                 pointer;
 
             transition:
-                background
-                0.2s
-                ease,
-
-                transform
-                0.1s
-                ease,
-
-                box-shadow
-                0.2s
-                ease;
+                background 0.2s ease,
+                transform 0.1s ease,
+                box-shadow 0.2s ease;
 
         }
 
@@ -1295,7 +1574,8 @@
                 #661515;
 
             box-shadow:
-                0 5px 14px
+                0 5px
+                14px
                 rgba(
                     123,
                     27,
@@ -1309,9 +1589,21 @@
         .next-button:active {
 
             transform:
-                scale(
-                    0.98
-                );
+                scale(0.98);
+
+            box-shadow:
+                none;
+
+        }
+
+
+        .next-button:disabled {
+
+            opacity:
+                0.65;
+
+            cursor:
+                not-allowed;
 
             box-shadow:
                 none;
@@ -1536,6 +1828,14 @@
 
             }
 
+
+            .search-select-options {
+
+                max-height:
+                    220px;
+
+            }
+
         }
 
     </style>
@@ -1556,17 +1856,21 @@
     <header class="registration-header">
 
 
-        <!-- =====================================================
-             CLICKABLE LOGO
-             RETURNS DIRECTLY TO LANDING PAGE
-        ====================================================== -->
+        <!--
+        IMPORTANT:
+
+        Going to the landing page must use the named landing route.
+
+        The landing route itself clears the temporary seller and buyer
+        registration sessions before displaying the landing page.
+        -->
 
         <a
-            href="{{ url('/') }}"
-            class="header-logo-wrapper"
-            id="sellerRegistrationExit"
-            aria-label="Return to ShopEase landing page"
-        >
+    href="{{ route('seller.register.exit') }}"
+    class="header-logo-wrapper"
+    id="sellerRegistrationExit"
+    aria-label="Exit seller registration and return to ShopEase landing page"
+>
 
             <img
                 src="{{ asset('icons/login/signup-logo.png') }}"
@@ -1583,6 +1887,7 @@
             <h1 class="header-title">
 
                 Seller
+
                 <span>
                     Registration
                 </span>
@@ -1595,7 +1900,6 @@
                 Fill the details below to create your seller account.
 
             </p>
-
 
         </div>
 
@@ -1620,16 +1924,12 @@
         >
 
             <div class="step-number">
-
                 1
-
             </div>
 
 
             <div class="step-label">
-
                 Seller Information
-
             </div>
 
         </a>
@@ -1646,16 +1946,12 @@
         >
 
             <div class="step-number">
-
                 2
-
             </div>
 
 
             <div class="step-label">
-
                 Business Information
-
             </div>
 
         </a>
@@ -1672,20 +1968,15 @@
         >
 
             <div class="step-number">
-
                 3
-
             </div>
 
 
             <div class="step-label">
-
                 Review Information
-
             </div>
 
         </a>
-
 
     </div>
 
@@ -1720,7 +2011,6 @@
 
                     <div class="form-group">
 
-
                         <label
                             class="form-label"
                             for="last_name"
@@ -1742,6 +2032,7 @@
                             class="form-input"
                             placeholder="Enter your last name"
                             value="{{ old('last_name', $sellerData['last_name'] ?? '') }}"
+                            autocomplete="family-name"
                             required
                         >
 
@@ -1756,7 +2047,6 @@
 
                         @enderror
 
-
                     </div>
 
 
@@ -1766,7 +2056,6 @@
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -1789,6 +2078,7 @@
                             class="form-input"
                             placeholder="Enter your first name"
                             value="{{ old('first_name', $sellerData['first_name'] ?? '') }}"
+                            autocomplete="given-name"
                             required
                         >
 
@@ -1803,7 +2093,6 @@
 
                         @enderror
 
-
                     </div>
 
 
@@ -1813,7 +2102,6 @@
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -1834,7 +2122,6 @@
                             value="{{ old('middle_name', $sellerData['middle_name'] ?? '') }}"
                         >
 
-
                     </div>
 
 
@@ -1844,7 +2131,6 @@
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -1866,7 +2152,7 @@
                             <select
                                 id="sex"
                                 name="sex"
-                                class="form-select"
+                                class="form-input"
                                 required
                             >
 
@@ -1902,10 +2188,6 @@
 
                             </select>
 
-
-                            <span class="select-arrow"></span>
-
-
                         </div>
 
 
@@ -1919,7 +2201,6 @@
 
                         @enderror
 
-
                     </div>
 
 
@@ -1929,7 +2210,6 @@
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -1952,6 +2232,7 @@
                             class="form-input"
                             placeholder="Enter your email"
                             value="{{ old('email', $sellerData['email'] ?? '') }}"
+                            autocomplete="email"
                             required
                         >
 
@@ -1966,17 +2247,15 @@
 
                         @enderror
 
-
                     </div>
 
 
 
                     <!-- =================================================
-                         CONTACT NUMBER
+                         CONTACT
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -1996,9 +2275,7 @@
 
 
                             <div class="contact-prefix">
-
                                 +63
-
                             </div>
 
 
@@ -2010,10 +2287,10 @@
                                 placeholder="Enter your contact number"
                                 maxlength="10"
                                 inputmode="numeric"
+                                autocomplete="tel"
                                 value="{{ old('contact_no', $sellerData['contact_no'] ?? '') }}"
                                 required
                             >
-
 
                         </div>
 
@@ -2028,7 +2305,6 @@
 
                         @enderror
 
-
                     </div>
 
 
@@ -2038,7 +2314,6 @@
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -2074,7 +2349,6 @@
 
                         @enderror
 
-
                     </div>
 
 
@@ -2084,7 +2358,6 @@
                     ================================================== -->
 
                     <div class="form-group">
-
 
                         <label
                             class="form-label"
@@ -2102,16 +2375,13 @@
                             name="age"
                             class="form-input readonly"
                             placeholder="Auto generated"
-                            value=""
+                            value="{{ old('age', $sellerData['age'] ?? '') }}"
                             readonly
                         >
-
 
                     </div>
 
 
-
-                    <!-- EMPTY COLUMN -->
 
                     <div></div>
 
@@ -2133,15 +2403,11 @@
 
                         <p class="address-subtitle">
 
-                            Please select your address
+                            Type to search and select your address
 
                         </p>
 
 
-
-                        <!-- =================================================
-                             PROVINCE / MUNICIPALITY / BARANGAY / ZIP
-                        ================================================== -->
 
                         <div class="address-grid">
 
@@ -2153,7 +2419,7 @@
 
                                 <label
                                     class="form-label"
-                                    for="province"
+                                    for="provinceSearch"
                                 >
 
                                     Province
@@ -2165,35 +2431,45 @@
                                 </label>
 
 
-                                <div class="select-wrapper">
+                                <div
+                                    class="search-select"
+                                    id="provinceSearchWrapper"
+                                >
 
-
-                                    <select
-                                        id="province"
-                                        name="province"
-                                        class="form-select"
-                                        required
-                                        data-old-value="{{ old('province', $sellerData['province'] ?? '') }}"
+                                    <input
+                                        type="text"
+                                        id="provinceSearch"
+                                        class="search-select-input"
+                                        placeholder="Type to search province"
+                                        autocomplete="off"
+                                        role="combobox"
+                                        aria-expanded="false"
+                                        aria-controls="provinceOptions"
+                                        value="{{ old('province', $sellerData['province'] ?? '') }}"
                                     >
 
-                                        <option
-                                            value=""
-                                            disabled
-                                            {{ old('province', $sellerData['province'] ?? '') === '' ? 'selected' : '' }}
-                                        >
 
-                                            Select or search province
-
-                                        </option>
-
-                                    </select>
+                                    <span
+                                        class="search-select-arrow"
+                                    ></span>
 
 
-                                    <span class="select-arrow"></span>
+                                    <div
+                                        class="search-select-options"
+                                        id="provinceOptions"
+                                        role="listbox"
+                                    ></div>
 
+
+                                    <input
+                                        type="hidden"
+                                        id="province"
+                                        name="province"
+                                        value="{{ old('province', $sellerData['province'] ?? '') }}"
+                                        required
+                                    >
 
                                 </div>
-
 
                             </div>
 
@@ -2206,7 +2482,7 @@
 
                                 <label
                                     class="form-label"
-                                    for="municipality"
+                                    for="municipalitySearch"
                                 >
 
                                     Municipality
@@ -2218,35 +2494,49 @@
                                 </label>
 
 
-                                <div class="select-wrapper">
+                                <div
+                                    class="
+                                        search-select
+                                        disabled
+                                    "
+                                    id="municipalitySearchWrapper"
+                                >
 
-
-                                    <select
-                                        id="municipality"
-                                        name="municipality"
-                                        class="form-select"
-                                        required
-                                        data-old-value="{{ old('municipality', $sellerData['municipality'] ?? '') }}"
+                                    <input
+                                        type="text"
+                                        id="municipalitySearch"
+                                        class="search-select-input"
+                                        placeholder="Select province first"
+                                        autocomplete="off"
+                                        role="combobox"
+                                        aria-expanded="false"
+                                        aria-controls="municipalityOptions"
+                                        value="{{ old('municipality', $sellerData['municipality'] ?? '') }}"
+                                        disabled
                                     >
 
-                                        <option
-                                            value=""
-                                            disabled
-                                            {{ old('municipality', $sellerData['municipality'] ?? '') === '' ? 'selected' : '' }}
-                                        >
 
-                                            Select or search municipality
-
-                                        </option>
-
-                                    </select>
+                                    <span
+                                        class="search-select-arrow"
+                                    ></span>
 
 
-                                    <span class="select-arrow"></span>
+                                    <div
+                                        class="search-select-options"
+                                        id="municipalityOptions"
+                                        role="listbox"
+                                    ></div>
 
+
+                                    <input
+                                        type="hidden"
+                                        id="municipality"
+                                        name="municipality"
+                                        value="{{ old('municipality', $sellerData['municipality'] ?? '') }}"
+                                        required
+                                    >
 
                                 </div>
-
 
                             </div>
 
@@ -2259,7 +2549,7 @@
 
                                 <label
                                     class="form-label"
-                                    for="barangay"
+                                    for="barangaySearch"
                                 >
 
                                     Barangay
@@ -2271,41 +2561,55 @@
                                 </label>
 
 
-                                <div class="select-wrapper">
+                                <div
+                                    class="
+                                        search-select
+                                        disabled
+                                    "
+                                    id="barangaySearchWrapper"
+                                >
 
-
-                                    <select
-                                        id="barangay"
-                                        name="barangay"
-                                        class="form-select"
-                                        required
-                                        data-old-value="{{ old('barangay', $sellerData['barangay'] ?? '') }}"
+                                    <input
+                                        type="text"
+                                        id="barangaySearch"
+                                        class="search-select-input"
+                                        placeholder="Select municipality first"
+                                        autocomplete="off"
+                                        role="combobox"
+                                        aria-expanded="false"
+                                        aria-controls="barangayOptions"
+                                        value="{{ old('barangay', $sellerData['barangay'] ?? '') }}"
+                                        disabled
                                     >
 
-                                        <option
-                                            value=""
-                                            disabled
-                                            {{ old('barangay', $sellerData['barangay'] ?? '') === '' ? 'selected' : '' }}
-                                        >
 
-                                            Select or search barangay
-
-                                        </option>
-
-                                    </select>
+                                    <span
+                                        class="search-select-arrow"
+                                    ></span>
 
 
-                                    <span class="select-arrow"></span>
+                                    <div
+                                        class="search-select-options"
+                                        id="barangayOptions"
+                                        role="listbox"
+                                    ></div>
 
+
+                                    <input
+                                        type="hidden"
+                                        id="barangay"
+                                        name="barangay"
+                                        value="{{ old('barangay', $sellerData['barangay'] ?? '') }}"
+                                        required
+                                    >
 
                                 </div>
-
 
                             </div>
 
 
 
-                            <!-- ZIP CODE -->
+                            <!-- ZIP -->
 
                             <div class="form-group">
 
@@ -2336,9 +2640,7 @@
                                     required
                                 >
 
-
                             </div>
-
 
                         </div>
 
@@ -2354,7 +2656,6 @@
                             <!-- STREET -->
 
                             <div class="form-group">
-
 
                                 <label
                                     class="form-label"
@@ -2375,15 +2676,13 @@
                                     value="{{ old('street', $sellerData['street'] ?? '') }}"
                                 >
 
-
                             </div>
 
 
 
-                            <!-- HOUSE NUMBER -->
+                            <!-- HOUSE -->
 
                             <div class="form-group">
-
 
                                 <label
                                     class="form-label"
@@ -2404,7 +2703,6 @@
                                     value="{{ old('house_no', $sellerData['house_no'] ?? '') }}"
                                 >
 
-
                             </div>
 
 
@@ -2412,7 +2710,6 @@
                             <!-- BUILDING -->
 
                             <div class="form-group">
-
 
                                 <label
                                     class="form-label"
@@ -2433,7 +2730,6 @@
                                     value="{{ old('building', $sellerData['building'] ?? '') }}"
                                 >
 
-
                             </div>
 
 
@@ -2441,7 +2737,6 @@
                             <!-- SUBDIVISION -->
 
                             <div class="form-group">
-
 
                                 <label
                                     class="form-label"
@@ -2462,12 +2757,9 @@
                                     value="{{ old('subdivision', $sellerData['subdivision'] ?? '') }}"
                                 >
 
-
                             </div>
 
-
                         </div>
-
 
                     </div>
 
@@ -2496,7 +2788,6 @@
                             class="upload-box"
                         >
 
-
                             <input
                                 type="file"
                                 id="valid_id"
@@ -2509,7 +2800,12 @@
                             <div class="upload-placeholder">
 
 
-                                @if(!empty($sellerData['valid_id_path']))
+                                @if(
+                                    !empty(
+                                        $sellerData['valid_id_path']
+                                        ?? null
+                                    )
+                                )
 
 
                                     <svg
@@ -2527,11 +2823,19 @@
                                     </svg>
 
 
-                                    <p
-                                        class="stored-file"
-                                    >
+                                    <p class="stored-file">
 
-                                        {{ $sellerData['valid_id_original_name'] ?? basename($sellerData['valid_id_path']) }}
+                                        {{
+                                            $sellerData[
+                                                'valid_id_original_name'
+                                            ]
+                                            ??
+                                            basename(
+                                                $sellerData[
+                                                    'valid_id_path'
+                                                ]
+                                            )
+                                        }}
 
                                     </p>
 
@@ -2576,24 +2880,18 @@
 
 
                                     <p>
-
                                         Upload a valid ID
-
                                     </p>
 
 
                                     <small>
-
                                         JPG, JPEG, PNG
-
                                     </small>
 
 
                                 @endif
 
-
                             </div>
-
 
                         </label>
 
@@ -2608,27 +2906,111 @@
 
                         @enderror
 
-
                     </div>
 
-
                 </div>
 
 
-                <div class="form-group password-field">
-                    <label class="form-label" for="password">Password <span class="required">*</span></label>
-                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a password" minlength="8" autocomplete="new-password" required>
-                    <small class="field-help">At least 8 characters with uppercase and lowercase letters, a number, and a special character.</small>
-                </div>
-
-                <div class="form-group password-confirmation-field">
-                    <label class="form-label" for="password_confirmation">Confirm Password <span class="required">*</span></label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-input" placeholder="Confirm your password" minlength="8" autocomplete="new-password" required>
-                </div>
 
                 <!-- =================================================
-                     NEXT BUTTON
-                ====================================================== -->
+                     PASSWORD
+                ================================================== -->
+
+                <div
+                    class="
+                        form-group
+                        password-field
+                    "
+                >
+
+                    <label
+                        class="form-label"
+                        for="password"
+                    >
+
+                        Password
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-input"
+                        placeholder="Create a password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+
+
+                    <small class="field-help">
+
+                        At least 8 characters with uppercase and lowercase
+                        letters, a number, and a special character.
+
+                    </small>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     CONFIRM PASSWORD
+                ================================================== -->
+
+                <div
+                    class="
+                        form-group
+                        password-confirmation-field
+                    "
+                >
+
+                    <label
+                        class="form-label"
+                        for="password_confirmation"
+                    >
+
+                        Confirm Password
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="password"
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        class="form-input"
+                        placeholder="Confirm your password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+
+
+                    <p
+                        class="password-match-error"
+                        id="passwordConfirmationError"
+                    >
+                        Passwords do not match.
+                    </p>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     BUTTON
+                ================================================== -->
 
                 <div class="form-actions">
 
@@ -2707,13 +3089,123 @@ document.addEventListener(
             );
 
 
+        const nextButton =
+            document.getElementById(
+                'nextButton'
+            );
+
+
+        /* =========================================================
+           PASSWORD MATCH
+        ========================================================== */
+
+        const passwordInput =
+            document.getElementById(
+                'password'
+            );
+
+
+        const passwordConfirmationInput =
+            document.getElementById(
+                'password_confirmation'
+            );
+
+
+        const passwordConfirmationError =
+            document.getElementById(
+                'passwordConfirmationError'
+            );
+
+
+        function checkPasswordMatch() {
+
+            if (
+                !passwordInput ||
+                !passwordConfirmationInput ||
+                !passwordConfirmationError
+            ) {
+
+                return true;
+
+            }
+
+
+            if (
+                !passwordConfirmationInput.value
+            ) {
+
+                passwordConfirmationInput.classList.remove(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.classList.remove(
+                    'show'
+                );
+
+
+                return false;
+
+            }
+
+
+            if (
+                passwordInput.value !==
+                passwordConfirmationInput.value
+            ) {
+
+                passwordConfirmationInput.classList.add(
+                    'password-mismatch'
+                );
+
+
+                passwordConfirmationError.textContent =
+                    'Passwords do not match.';
+
+
+                passwordConfirmationError.classList.add(
+                    'show'
+                );
+
+
+                return false;
+
+            }
+
+
+            passwordConfirmationInput.classList.remove(
+                'password-mismatch'
+            );
+
+
+            passwordConfirmationError.classList.remove(
+                'show'
+            );
+
+
+            return true;
+
+        }
+
+
+        passwordInput?.addEventListener(
+            'input',
+            checkPasswordMatch
+        );
+
+
+        passwordConfirmationInput?.addEventListener(
+            'input',
+            checkPasswordMatch
+        );
+
+
 
         /* =========================================================
            AGE CALCULATION
         ========================================================== */
 
         function calculateAge() {
-
 
             if (
                 !birthday ||
@@ -2725,7 +3217,9 @@ document.addEventListener(
             }
 
 
-            if (!birthday.value) {
+            if (
+                !birthday.value
+            ) {
 
                 age.value =
                     '';
@@ -2737,7 +3231,8 @@ document.addEventListener(
 
             const birthDate =
                 new Date(
-                    birthday.value
+                    birthday.value +
+                    'T00:00:00'
                 );
 
 
@@ -2746,20 +3241,25 @@ document.addEventListener(
 
 
             let calculatedAge =
-                today.getFullYear() -
+                today.getFullYear()
+                -
                 birthDate.getFullYear();
 
 
             const monthDifference =
-                today.getMonth() -
+                today.getMonth()
+                -
                 birthDate.getMonth();
 
 
             if (
-                monthDifference < 0 ||
+                monthDifference < 0
+                ||
                 (
-                    monthDifference === 0 &&
-                    today.getDate() <
+                    monthDifference === 0
+                    &&
+                    today.getDate()
+                    <
                     birthDate.getDate()
                 )
             ) {
@@ -2777,117 +3277,13 @@ document.addEventListener(
         }
 
 
-
-        if (birthday) {
-
-            birthday.addEventListener(
-                'change',
-                calculateAge
-            );
-
-        }
+        birthday?.addEventListener(
+            'change',
+            calculateAge
+        );
 
 
-        /* =========================================================
-           PROVINCE / MUNICIPALITY / BARANGAY LOCATION API
-        ========================================================== */
-
-        const provinceSelect = document.getElementById('province');
-        const municipalitySelect = document.getElementById('municipality');
-        const barangaySelect = document.getElementById('barangay');
-        const locationsApiBase = '/api/v1/locations';
-
-        function resetLocationSelect(select, placeholder) {
-            select.innerHTML = `<option value="" selected disabled>${placeholder}</option>`;
-            select.disabled = true;
-        }
-
-        function locationName(location) {
-            return location.name || location.prov_name || location.city_name || location.mun_name || location.brgy_name || '';
-        }
-
-        function populateLocationSelect(select, locations, placeholder, selectedValue = '') {
-            resetLocationSelect(select, placeholder);
-            locations.forEach(location => {
-                const name = locationName(location);
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                option.dataset.code = location.code || location.psgc_code || location.prov_code || location.mun_code || location.city_code || location.brgy_code || '';
-                option.dataset.region = location.isRegion ? 'true' : 'false';
-                option.selected = name === selectedValue;
-                select.appendChild(option);
-            });
-            select.disabled = false;
-        }
-
-        async function loadLocations(endpoint) {
-            const response = await fetch(`${locationsApiBase}/${endpoint}`, {
-                headers: { Accept: 'application/json' }
-            });
-            if (!response.ok) {
-                throw new Error('Unable to load location options.');
-            }
-            return response.json();
-        }
-
-        async function loadMunicipalities(provinceCode, selectedValue = '') {
-            const isRegion = provinceSelect.options[provinceSelect.selectedIndex]?.dataset.region === 'true';
-            const query = isRegion ? '?is_region=1' : '';
-            const municipalities = await loadLocations(`provinces/${encodeURIComponent(provinceCode)}/cities${query}`);
-            populateLocationSelect(municipalitySelect, municipalities, 'Select or search municipality', selectedValue);
-        }
-
-        async function loadBarangays(municipalityCode, selectedValue = '') {
-            const barangays = await loadLocations(`cities/${encodeURIComponent(municipalityCode)}/barangays`);
-            populateLocationSelect(barangaySelect, barangays, 'Select or search barangay', selectedValue);
-        }
-
-        if (provinceSelect && municipalitySelect && barangaySelect) {
-            const oldProvince = provinceSelect.dataset.oldValue;
-            const oldMunicipality = municipalitySelect.dataset.oldValue;
-            const oldBarangay = barangaySelect.dataset.oldValue;
-
-            resetLocationSelect(municipalitySelect, 'Select or search municipality');
-            resetLocationSelect(barangaySelect, 'Select or search barangay');
-
-            loadLocations('provinces')
-                .then(provinces => {
-                    populateLocationSelect(provinceSelect, provinces, 'Select or search province', oldProvince);
-                    const selectedProvince = provinceSelect.options[provinceSelect.selectedIndex];
-                    if (!selectedProvince || !selectedProvince.value) {
-                        return null;
-                    }
-                    return loadMunicipalities(selectedProvince.dataset.code || selectedProvince.value, oldMunicipality);
-                })
-                .then(() => {
-                    const selectedMunicipality = municipalitySelect.options[municipalitySelect.selectedIndex];
-                    if (!selectedMunicipality || !selectedMunicipality.value) {
-                        return null;
-                    }
-                    return loadBarangays(selectedMunicipality.dataset.code || selectedMunicipality.value, oldBarangay);
-                })
-                .catch(error => console.error(error));
-
-            provinceSelect.addEventListener('change', async function () {
-                resetLocationSelect(municipalitySelect, 'Loading municipalities...');
-                resetLocationSelect(barangaySelect, 'Select or search barangay');
-                try {
-                    await loadMunicipalities(this.options[this.selectedIndex]?.dataset.code || this.value);
-                } catch (error) {
-                    console.error(error);
-                }
-            });
-
-            municipalitySelect.addEventListener('change', async function () {
-                resetLocationSelect(barangaySelect, 'Loading barangays...');
-                try {
-                    await loadBarangays(this.options[this.selectedIndex]?.dataset.code || this.value);
-                } catch (error) {
-                    console.error(error);
-                }
-            });
-        }
+        calculateAge();
 
 
 
@@ -2895,27 +3291,23 @@ document.addEventListener(
            CONTACT NUMBER
         ========================================================== */
 
-        if (contactInput) {
+        contactInput?.addEventListener(
+            'input',
+            function () {
 
-            contactInput.addEventListener(
-                'input',
-                function () {
+                this.value =
+                    this.value
+                        .replace(
+                            /\D/g,
+                            ''
+                        )
+                        .slice(
+                            0,
+                            10
+                        );
 
-                    this.value =
-                        this.value
-                            .replace(
-                                /\D/g,
-                                ''
-                            )
-                            .slice(
-                                0,
-                                10
-                            );
-
-                }
-            );
-
-        }
+            }
+        );
 
 
 
@@ -2923,76 +3315,101 @@ document.addEventListener(
            ZIP CODE
         ========================================================== */
 
-        if (zipInput) {
+        zipInput?.addEventListener(
+            'input',
+            function () {
 
-            zipInput.addEventListener(
-                'input',
-                function () {
+                this.value =
+                    this.value
+                        .replace(
+                            /\D/g,
+                            ''
+                        )
+                        .slice(
+                            0,
+                            4
+                        );
 
-                    this.value =
-                        this.value
-                            .replace(
-                                /\D/g,
-                                ''
-                            )
-                            .slice(
-                                0,
-                                4
-                            );
-
-                }
-            );
-
-        }
+            }
+        );
 
 
 
         /* =========================================================
-           VALID ID PREVIEW
+           VALID ID
         ========================================================== */
 
-        if (validId) {
+        validId?.addEventListener(
+            'change',
+            function () {
 
-            validId.addEventListener(
-                'change',
-                function () {
+                if (
+                    !this.files ||
+                    !this.files.length
+                ) {
 
+                    return;
 
-                    if (
-                        !this.files ||
-                        !this.files.length
-                    ) {
-
-                        return;
-
-                    }
+                }
 
 
-                    const file =
-                        this.files[0];
+                const file =
+                    this.files[0];
 
 
-                    const uploadBox =
-                        document.querySelector(
-                            '.upload-box'
-                        );
+                const uploadBox =
+                    document.querySelector(
+                        '.upload-box'
+                    );
 
 
-                    const placeholder =
-                        uploadBox?.querySelector(
-                            '.upload-placeholder'
-                        );
+                const placeholder =
+                    uploadBox?.querySelector(
+                        '.upload-placeholder'
+                    );
 
 
-                    if (!placeholder) {
+                if (
+                    !placeholder
+                ) {
 
-                        return;
+                    return;
 
-                    }
+                }
 
 
-                    placeholder.innerHTML = `
+                const allowedTypes = [
 
+                    'image/jpeg',
+
+                    'image/png'
+
+                ];
+
+
+                if (
+                    !allowedTypes.includes(
+                        file.type
+                    )
+                ) {
+
+                    this.value =
+                        '';
+
+
+                    alert(
+                        'Please upload a JPG, JPEG, or PNG file.'
+                    );
+
+
+                    return;
+
+                }
+
+
+                placeholder.innerHTML =
+
+                    `
                         <svg
                             class="upload-icon"
                             viewBox="0 0 24 24"
@@ -3025,7 +3442,904 @@ document.addEventListener(
 
                     `;
 
+            }
+        );
+
+
+
+        /* =========================================================
+           SEARCHABLE ADDRESS COMPONENT
+        ========================================================== */
+
+        const locationsApiBase =
+            '/api/v1/locations';
+
+
+
+        function createSearchSelect(
+            wrapper,
+            input,
+            optionsContainer,
+            hiddenInput
+        ) {
+
+            let locations =
+                [];
+
+
+            let filteredLocations =
+                [];
+
+
+            let highlightedIndex =
+                -1;
+
+
+            let loading =
+                false;
+
+
+
+            function open() {
+
+                if (
+                    input.disabled
+                ) {
+
+                    return;
+
                 }
+
+
+                wrapper.classList.add(
+                    'open'
+                );
+
+
+                input.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+
+
+                render(
+                    input.value
+                );
+
+            }
+
+
+
+            function close() {
+
+                wrapper.classList.remove(
+                    'open'
+                );
+
+
+                input.setAttribute(
+                    'aria-expanded',
+                    'false'
+                );
+
+
+                highlightedIndex =
+                    -1;
+
+            }
+
+
+
+            function setLoading(
+                message =
+                    'Loading...'
+            ) {
+
+                loading =
+                    true;
+
+
+                optionsContainer.innerHTML =
+
+                    `
+                        <div
+                            class="search-select-loading"
+                        >
+                            ${message}
+                        </div>
+                    `;
+
+            }
+
+
+
+            function stopLoading() {
+
+                loading =
+                    false;
+
+            }
+
+
+
+            function render(
+                searchText =
+                    ''
+            ) {
+
+                if (
+                    loading
+                ) {
+
+                    return;
+
+                }
+
+
+                const query =
+                    searchText
+                        .trim()
+                        .toLowerCase();
+
+
+                filteredLocations =
+                    locations.filter(
+                        function (
+                            location
+                        ) {
+
+                            const name =
+                                location.name
+                                ||
+                                location.prov_name
+                                ||
+                                location.city_name
+                                ||
+                                location.mun_name
+                                ||
+                                location.brgy_name
+                                ||
+                                '';
+
+
+                            return name
+                                .toLowerCase()
+                                .includes(
+                                    query
+                                );
+
+                        }
+                    );
+
+
+                highlightedIndex =
+                    -1;
+
+
+                if (
+                    filteredLocations.length === 0
+                ) {
+
+                    optionsContainer.innerHTML =
+
+                        `
+                            <div
+                                class="search-select-no-results"
+                            >
+                                No matching result found.
+                            </div>
+                        `;
+
+                    return;
+
+                }
+
+
+                optionsContainer.innerHTML =
+                    '';
+
+
+                filteredLocations.forEach(
+                    function (
+                        location,
+                        index
+                    ) {
+
+                        const name =
+                            location.name
+                            ||
+                            location.prov_name
+                            ||
+                            location.city_name
+                            ||
+                            location.mun_name
+                            ||
+                            location.brgy_name
+                            ||
+                            '';
+
+
+                        const option =
+                            document.createElement(
+                                'button'
+                            );
+
+
+                        option.type =
+                            'button';
+
+
+                        option.className =
+                            'search-select-option';
+
+
+                        option.textContent =
+                            name;
+
+
+                        option.dataset.index =
+                            index;
+
+
+                        if (
+                            name ===
+                            hiddenInput.value
+                        ) {
+
+                            option.classList.add(
+                                'selected'
+                            );
+
+                        }
+
+
+                        option.addEventListener(
+                            'mousedown',
+                            function (
+                                event
+                            ) {
+
+                                event.preventDefault();
+
+
+                                selectLocation(
+                                    location
+                                );
+
+                            }
+                        );
+
+
+                        optionsContainer.appendChild(
+                            option
+                        );
+
+                    }
+                );
+
+            }
+
+
+
+            function selectLocation(
+                location
+            ) {
+
+                const name =
+                    location.name
+                    ||
+                    location.prov_name
+                    ||
+                    location.city_name
+                    ||
+                    location.mun_name
+                    ||
+                    location.brgy_name
+                    ||
+                    '';
+
+
+                input.value =
+                    name;
+
+
+                hiddenInput.value =
+                    name;
+
+
+                wrapper.classList.remove(
+                    'open'
+                );
+
+
+                input.setAttribute(
+                    'aria-expanded',
+                    'false'
+                );
+
+
+                input.dispatchEvent(
+                    new CustomEvent(
+                        'location:selected',
+                        {
+                            detail:
+                                location
+                        }
+                    )
+                );
+
+            }
+
+
+
+            function setLocations(
+                newLocations
+            ) {
+
+                locations =
+                    Array.isArray(
+                        newLocations
+                    )
+                        ? newLocations
+                        : [];
+
+
+                filteredLocations =
+                    locations.slice();
+
+
+                stopLoading();
+
+
+                render(
+                    input.value
+                );
+
+            }
+
+
+
+            function clear() {
+
+                locations =
+                    [];
+
+
+                filteredLocations =
+                    [];
+
+
+                highlightedIndex =
+                    -1;
+
+
+                input.value =
+                    '';
+
+
+                hiddenInput.value =
+                    '';
+
+
+                optionsContainer.innerHTML =
+                    '';
+
+
+                close();
+
+            }
+
+
+
+            input.addEventListener(
+                'focus',
+                function () {
+
+                    open();
+
+                }
+            );
+
+
+            input.addEventListener(
+                'click',
+                function () {
+
+                    open();
+
+                }
+            );
+
+
+            input.addEventListener(
+                'input',
+                function () {
+
+                    hiddenInput.value =
+                        '';
+
+
+                    render(
+                        this.value
+                    );
+
+
+                    open();
+
+                }
+            );
+
+
+
+            input.addEventListener(
+                'keydown',
+                function (
+                    event
+                ) {
+
+                    if (
+                        input.disabled
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'ArrowDown'
+                    ) {
+
+                        event.preventDefault();
+
+
+                        if (
+                            !wrapper.classList.contains(
+                                'open'
+                            )
+                        ) {
+
+                            open();
+
+                        }
+
+
+                        highlightedIndex =
+                            Math.min(
+                                highlightedIndex + 1,
+                                filteredLocations.length - 1
+                            );
+
+
+                        updateHighlight();
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'ArrowUp'
+                    ) {
+
+                        event.preventDefault();
+
+
+                        highlightedIndex =
+                            Math.max(
+                                highlightedIndex - 1,
+                                0
+                            );
+
+
+                        updateHighlight();
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'Enter'
+                    ) {
+
+                        if (
+                            highlightedIndex >= 0
+                            &&
+                            filteredLocations[
+                                highlightedIndex
+                            ]
+                        ) {
+
+                            event.preventDefault();
+
+
+                            selectLocation(
+                                filteredLocations[
+                                    highlightedIndex
+                                ]
+                            );
+
+                        }
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        'Escape'
+                    ) {
+
+                        close();
+
+                    }
+
+                }
+            );
+
+
+
+            function updateHighlight() {
+
+                const optionElements =
+                    optionsContainer.querySelectorAll(
+                        '.search-select-option'
+                    );
+
+
+                optionElements.forEach(
+                    function (
+                        option,
+                        index
+                    ) {
+
+                        option.classList.toggle(
+                            'highlighted',
+                            index ===
+                            highlightedIndex
+                        );
+
+                    }
+                );
+
+
+                const activeOption =
+                    optionElements[
+                        highlightedIndex
+                    ];
+
+
+                if (
+                    activeOption
+                ) {
+
+                    activeOption.scrollIntoView({
+                        block:
+                            'nearest'
+                    });
+
+                }
+
+            }
+
+
+
+            input.addEventListener(
+                'blur',
+                function () {
+
+                    setTimeout(
+                        function () {
+
+                            if (
+                                hiddenInput.value !==
+                                input.value
+                            ) {
+
+                                input.value =
+                                    hiddenInput.value;
+
+                            }
+
+
+                            close();
+
+                        },
+                        180
+                    );
+
+                }
+            );
+
+
+
+            return {
+
+                open,
+
+                close,
+
+                setLoading,
+
+                stopLoading,
+
+                setLocations,
+
+                clear
+
+            };
+
+        }
+
+
+
+        /* =========================================================
+           ADDRESS ELEMENTS
+        ========================================================== */
+
+        const provinceWrapper =
+            document.getElementById(
+                'provinceSearchWrapper'
+            );
+
+
+        const provinceSearch =
+            document.getElementById(
+                'provinceSearch'
+            );
+
+
+        const provinceOptions =
+            document.getElementById(
+                'provinceOptions'
+            );
+
+
+        const provinceHidden =
+            document.getElementById(
+                'province'
+            );
+
+
+        const municipalityWrapper =
+            document.getElementById(
+                'municipalitySearchWrapper'
+            );
+
+
+        const municipalitySearch =
+            document.getElementById(
+                'municipalitySearch'
+            );
+
+
+        const municipalityOptions =
+            document.getElementById(
+                'municipalityOptions'
+            );
+
+
+        const municipalityHidden =
+            document.getElementById(
+                'municipality'
+            );
+
+
+        const barangayWrapper =
+            document.getElementById(
+                'barangaySearchWrapper'
+            );
+
+
+        const barangaySearch =
+            document.getElementById(
+                'barangaySearch'
+            );
+
+
+        const barangayOptions =
+            document.getElementById(
+                'barangayOptions'
+            );
+
+
+        const barangayHidden =
+            document.getElementById(
+                'barangay'
+            );
+
+
+
+        /* =========================================================
+           CONTROLS
+        ========================================================== */
+
+        const provinceControl =
+            createSearchSelect(
+                provinceWrapper,
+                provinceSearch,
+                provinceOptions,
+                provinceHidden
+            );
+
+
+        const municipalityControl =
+            createSearchSelect(
+                municipalityWrapper,
+                municipalitySearch,
+                municipalityOptions,
+                municipalityHidden
+            );
+
+
+        const barangayControl =
+            createSearchSelect(
+                barangayWrapper,
+                barangaySearch,
+                barangayOptions,
+                barangayHidden
+            );
+
+
+
+        /* =========================================================
+           LOCATION HELPERS
+        ========================================================== */
+
+        function getLocationName(
+            location
+        ) {
+
+            return (
+                location.name
+                ||
+                location.prov_name
+                ||
+                location.city_name
+                ||
+                location.mun_name
+                ||
+                location.brgy_name
+                ||
+                ''
+            );
+
+        }
+
+
+
+        function getLocationCode(
+            location
+        ) {
+
+            return (
+                location.code
+                ||
+                location.psgc_code
+                ||
+                location.prov_code
+                ||
+                location.mun_code
+                ||
+                location.city_code
+                ||
+                location.brgy_code
+                ||
+                ''
+            );
+
+        }
+
+
+
+        async function loadLocations(
+            endpoint
+        ) {
+
+            const response =
+                await fetch(
+                    `${locationsApiBase}/${endpoint}`,
+                    {
+                        headers: {
+                            Accept:
+                                'application/json'
+                        }
+                    }
+                );
+
+
+            if (
+                !response.ok
+            ) {
+
+                throw new Error(
+                    'Unable to load location options.'
+                );
+
+            }
+
+
+            return response.json();
+
+        }
+
+
+
+        /* =========================================================
+           DISABLE / ENABLE
+        ========================================================== */
+
+        function disableMunicipality() {
+
+            municipalityControl.clear();
+
+
+            municipalitySearch.disabled =
+                true;
+
+
+            municipalitySearch.placeholder =
+                'Select province first';
+
+
+            municipalityWrapper.classList.add(
+                'disabled'
+            );
+
+        }
+
+
+
+        function disableBarangay() {
+
+            barangayControl.clear();
+
+
+            barangaySearch.disabled =
+                true;
+
+
+            barangaySearch.placeholder =
+                'Select municipality first';
+
+
+            barangayWrapper.classList.add(
+                'disabled'
+            );
+
+        }
+
+
+
+        function enableMunicipality() {
+
+            municipalitySearch.disabled =
+                false;
+
+
+            municipalitySearch.placeholder =
+                'Type to search municipality';
+
+
+            municipalityWrapper.classList.remove(
+                'disabled'
+            );
+
+        }
+
+
+
+        function enableBarangay() {
+
+            barangaySearch.disabled =
+                false;
+
+
+            barangaySearch.placeholder =
+                'Type to search barangay';
+
+
+            barangayWrapper.classList.remove(
+                'disabled'
             );
 
         }
@@ -3033,61 +4347,526 @@ document.addEventListener(
 
 
         /* =========================================================
-           STEP 2 NAVIGATION
+           LOAD MUNICIPALITIES
         ========================================================== */
 
-        const stepTwoLink =
-            document.getElementById(
-                'stepTwoLink'
+        async function loadMunicipalities(
+            provinceLocation
+        ) {
+
+            const provinceCode =
+                getLocationCode(
+                    provinceLocation
+                );
+
+
+            const isRegion =
+                provinceLocation.isRegion ===
+                true;
+
+
+            const query =
+                isRegion
+                    ? '?is_region=1'
+                    : '';
+
+
+            municipalityControl.clear();
+
+
+            municipalityControl.setLoading(
+                'Loading municipalities...'
             );
 
 
-        if (stepTwoLink) {
+            enableMunicipality();
 
-            stepTwoLink.addEventListener(
-                'click',
-                function () {
 
-                    /*
-                     * Step 1 information is already
-                     * saved to MySQL when Continue
-                     * was clicked.
-                     *
-                     * No browser storage is used.
-                     */
+            try {
 
-                }
-            );
+                const municipalities =
+                    await loadLocations(
+                        `provinces/${encodeURIComponent(
+                            provinceCode
+                        )}/cities${query}`
+                    );
+
+
+                municipalityControl.setLocations(
+                    municipalities
+                );
+
+
+                disableBarangay();
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    'Municipality loading error:',
+                    error
+                );
+
+
+                municipalityOptions.innerHTML =
+
+                    `
+                        <div
+                            class="search-select-no-results"
+                        >
+                            Unable to load municipalities.
+                        </div>
+                    `;
+
+
+                disableBarangay();
+
+            }
 
         }
 
 
 
         /* =========================================================
-           STEP 3 NAVIGATION
+           LOAD BARANGAYS
         ========================================================== */
 
-        const stepThreeLink =
-            document.getElementById(
-                'stepThreeLink'
+        async function loadBarangays(
+            municipalityLocation
+        ) {
+
+            const municipalityCode =
+                getLocationCode(
+                    municipalityLocation
+                );
+
+
+            barangayControl.clear();
+
+
+            barangayControl.setLoading(
+                'Loading barangays...'
             );
 
 
-        if (stepThreeLink) {
+            enableBarangay();
 
-            stepThreeLink.addEventListener(
-                'click',
-                function () {
 
-                    /*
-                     * Step 3 reads the seller
-                     * registration record from MySQL.
-                     */
+            try {
 
-                }
-            );
+                const barangays =
+                    await loadLocations(
+                        `cities/${encodeURIComponent(
+                            municipalityCode
+                        )}/barangays`
+                    );
+
+
+                barangayControl.setLocations(
+                    barangays
+                );
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    'Barangay loading error:',
+                    error
+                );
+
+
+                barangayOptions.innerHTML =
+
+                    `
+                        <div
+                            class="search-select-no-results"
+                        >
+                            Unable to load barangays.
+                        </div>
+                    `;
+
+            }
 
         }
+
+
+
+        /* =========================================================
+           PROVINCE SELECTED
+        ========================================================== */
+
+        provinceSearch.addEventListener(
+            'location:selected',
+            function (
+                event
+            ) {
+
+                const provinceLocation =
+                    event.detail;
+
+
+                municipalityControl.clear();
+
+
+                barangayControl.clear();
+
+
+                enableMunicipality();
+
+
+                disableBarangay();
+
+
+                loadMunicipalities(
+                    provinceLocation
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           MUNICIPALITY SELECTED
+        ========================================================== */
+
+        municipalitySearch.addEventListener(
+            'location:selected',
+            function (
+                event
+            ) {
+
+                const municipalityLocation =
+                    event.detail;
+
+
+                barangayControl.clear();
+
+
+                enableBarangay();
+
+
+                loadBarangays(
+                    municipalityLocation
+                );
+
+            }
+        );
+
+
+
+        /* =========================================================
+           INITIALIZE / RESTORE SAVED ADDRESS
+        ========================================================== */
+
+        async function initializeLocations() {
+
+            const savedProvince =
+                provinceHidden.value.trim();
+
+
+            const savedMunicipality =
+                municipalityHidden.value.trim();
+
+
+            const savedBarangay =
+                barangayHidden.value.trim();
+
+
+            disableMunicipality();
+
+
+            disableBarangay();
+
+
+            try {
+
+                provinceControl.setLoading(
+                    'Loading provinces...'
+                );
+
+
+                const provinces =
+                    await loadLocations(
+                        'provinces'
+                    );
+
+
+                provinceControl.setLocations(
+                    provinces
+                );
+
+
+                if (
+                    !savedProvince
+                ) {
+
+                    return;
+
+                }
+
+
+                /* -----------------------------------------------------
+                   RESTORE PROVINCE
+                ----------------------------------------------------- */
+
+                const matchedProvince =
+                    provinces.find(
+                        function (
+                            province
+                        ) {
+
+                            return (
+                                getLocationName(
+                                    province
+                                )
+                                ===
+                                savedProvince
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    !matchedProvince
+                ) {
+
+                    return;
+
+                }
+
+
+                provinceSearch.value =
+                    savedProvince;
+
+
+                provinceHidden.value =
+                    savedProvince;
+
+
+                /* -----------------------------------------------------
+                   RESTORE MUNICIPALITY
+                ----------------------------------------------------- */
+
+                const provinceCode =
+                    getLocationCode(
+                        matchedProvince
+                    );
+
+
+                const isRegion =
+                    matchedProvince.isRegion ===
+                    true;
+
+
+                const query =
+                    isRegion
+                        ? '?is_region=1'
+                        : '';
+
+
+                const municipalities =
+                    await loadLocations(
+                        `provinces/${encodeURIComponent(
+                            provinceCode
+                        )}/cities${query}`
+                    );
+
+
+                municipalityControl.setLocations(
+                    municipalities
+                );
+
+
+                enableMunicipality();
+
+
+                if (
+                    !savedMunicipality
+                ) {
+
+                    return;
+
+                }
+
+
+                const matchedMunicipality =
+                    municipalities.find(
+                        function (
+                            municipality
+                        ) {
+
+                            return (
+                                getLocationName(
+                                    municipality
+                                )
+                                ===
+                                savedMunicipality
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    !matchedMunicipality
+                ) {
+
+                    return;
+
+                }
+
+
+                municipalitySearch.value =
+                    savedMunicipality;
+
+
+                municipalityHidden.value =
+                    savedMunicipality;
+
+
+                /* -----------------------------------------------------
+                   RESTORE BARANGAY
+                ----------------------------------------------------- */
+
+                const municipalityCode =
+                    getLocationCode(
+                        matchedMunicipality
+                    );
+
+
+                const barangays =
+                    await loadLocations(
+                        `cities/${encodeURIComponent(
+                            municipalityCode
+                        )}/barangays`
+                    );
+
+
+                barangayControl.setLocations(
+                    barangays
+                );
+
+
+                enableBarangay();
+
+
+                if (
+                    !savedBarangay
+                ) {
+
+                    return;
+
+                }
+
+
+                const matchedBarangay =
+                    barangays.find(
+                        function (
+                            barangay
+                        ) {
+
+                            return (
+                                getLocationName(
+                                    barangay
+                                )
+                                ===
+                                savedBarangay
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    matchedBarangay
+                ) {
+
+                    barangaySearch.value =
+                        savedBarangay;
+
+
+                    barangayHidden.value =
+                        savedBarangay;
+
+                }
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    'Location initialization error:',
+                    error
+                );
+
+            }
+
+        }
+
+
+        initializeLocations();
+
+
+
+        /* =========================================================
+           OUTSIDE CLICK
+        ========================================================== */
+
+        document.addEventListener(
+            'click',
+            function (
+                event
+            ) {
+
+                const wrappers = [
+
+                    provinceWrapper,
+
+                    municipalityWrapper,
+
+                    barangayWrapper
+
+                ];
+
+
+                wrappers.forEach(
+                    function (
+                        wrapper
+                    ) {
+
+                        if (
+                            wrapper
+                            &&
+                            !wrapper.contains(
+                                event.target
+                            )
+                        ) {
+
+                            wrapper.classList.remove(
+                                'open'
+                            );
+
+
+                            wrapper
+                                .querySelector(
+                                    '.search-select-input'
+                                )
+                                ?.setAttribute(
+                                    'aria-expanded',
+                                    'false'
+                                );
+
+                        }
+
+                    }
+                );
+
+            }
+        );
 
 
 
@@ -3095,20 +4874,194 @@ document.addEventListener(
            FORM SUBMIT
         ========================================================== */
 
-        if (form) {
+        if (
+            form
+        ) {
 
             form.addEventListener(
                 'submit',
-                function () {
+                function (
+                    event
+                ) {
 
-                    /*
-                     * Laravel route:
-                     *
-                     * seller.register.submit
-                     *
-                     * saves/updates Step 1
-                     * in seller_registrations.
-                     */
+                    /* -------------------------------------------------
+                       PASSWORD
+                    ------------------------------------------------- */
+
+                    const password =
+                        passwordInput
+                            ? passwordInput.value.trim()
+                            : '';
+
+
+                    const confirmation =
+                        passwordConfirmationInput
+                            ? passwordConfirmationInput.value.trim()
+                            : '';
+
+
+                    if (
+                        !password
+                    ) {
+
+                        event.preventDefault();
+
+
+                        passwordInput?.focus();
+
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !confirmation
+                    ) {
+
+                        event.preventDefault();
+
+
+                        passwordConfirmationInput?.classList.add(
+                            'password-mismatch'
+                        );
+
+
+                        if (
+                            passwordConfirmationError
+                        ) {
+
+                            passwordConfirmationError.textContent =
+                                'Please confirm your password.';
+
+
+                            passwordConfirmationError.classList.add(
+                                'show'
+                            );
+
+                        }
+
+
+                        passwordConfirmationInput?.focus();
+
+
+                        return;
+
+                    }
+
+
+                    if (
+                        password !==
+                        confirmation
+                    ) {
+
+                        event.preventDefault();
+
+
+                        passwordConfirmationInput?.classList.add(
+                            'password-mismatch'
+                        );
+
+
+                        if (
+                            passwordConfirmationError
+                        ) {
+
+                            passwordConfirmationError.textContent =
+                                'Passwords do not match.';
+
+
+                            passwordConfirmationError.classList.add(
+                                'show'
+                            );
+
+                        }
+
+
+                        passwordConfirmationInput?.focus();
+
+
+                        return;
+
+                    }
+
+
+
+                    /* -------------------------------------------------
+                       ADDRESS VALIDATION
+                    ------------------------------------------------- */
+
+                    if (
+                        !provinceHidden.value.trim()
+                    ) {
+
+                        event.preventDefault();
+
+
+                        provinceSearch.focus();
+
+
+                        provinceControl.open();
+
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !municipalityHidden.value.trim()
+                    ) {
+
+                        event.preventDefault();
+
+
+                        municipalitySearch.focus();
+
+
+                        municipalityControl.open();
+
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !barangayHidden.value.trim()
+                    ) {
+
+                        event.preventDefault();
+
+
+                        barangaySearch.focus();
+
+
+                        barangayControl.open();
+
+
+                        return;
+
+                    }
+
+
+
+                    /* -------------------------------------------------
+                       PREVENT DOUBLE SUBMISSION
+                    ------------------------------------------------- */
+
+                    if (
+                        nextButton
+                    ) {
+
+                        nextButton.disabled =
+                            true;
+
+
+                        nextButton.textContent =
+                            'Saving...';
+
+                    }
 
                 }
             );
@@ -3116,6 +5069,7 @@ document.addEventListener(
         }
 
     }
+
 );
 
 </script>
