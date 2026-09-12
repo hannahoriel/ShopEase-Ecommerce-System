@@ -1,0 +1,25 @@
+*   [33m03f52bb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m, [m[1;31morigin/feature[m[33m)[m Resolve merge conflict in seller registration
+[31m|[m[32m\[m  
+[31m|[m *   [33m25ccf30[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #6 from hannahoriel/hannahUI
+[31m|[m [33m|[m[34m\[m  
+[31m|[m [33m|[m * [33m0b55483[m[33m ([m[1;31morigin/hannahUI[m[33m)[m Landing page yahu
+* [33m|[m [34m|[m [33m8eb2eb2[m feat: enhance user management and registration details with improved status handling and dynamic category rendering
+* [33m|[m [34m|[m [33m225467b[m feat: update dashboard metrics to use Registration model for pending registrations
+* [33m|[m [34m|[m [33m92cffda[m feat: enhance registration process with password validation and admin account setup
+* [33m|[m [34m|[m [33m56f2ad4[m feat: add email notifications for account status changes and verification codes
+* [33m|[m [34m|[m [33m5140474[m Refactor authentication and registration routes for sellers and buyers; enhance session management and file handling for registration documents.
+[35m|[m[33m\[m[33m|[m [34m|[m 
+[35m|[m * [34m|[m [33m8af0159[m Merge pull request #5 from hannahoriel/hannahUI
+[35m|[m [1;31m|[m[34m\[m[34m|[m 
+[35m|[m [1;31m|[m * [33m79c9357[m fixed ui of login, complete registrations, initial but improved seller dashboard
+[35m|[m [1;31m|[m[1;31m/[m  
+[35m|[m *   [33m19beeed[m Merge pull request #4 from hannahoriel/feature
+[35m|[m [1;33m|[m[1;34m\[m  
+* [1;33m|[m [1;34m|[m [33m8ea5b95[m feat: update .gitignore to include additional output files
+* [1;33m|[m [1;34m|[m [33m662b8f4[m Implement admin dashboard and account management
+[1;34m|[m [1;33m|[m[1;34m/[m  
+[1;34m|[m[1;34m/[m[1;33m|[m   
+[1;34m|[m [1;33m|[m *   [33mc0a205f[m[33m ([m[1;35mrefs/stash[m[33m)[m On feature:  WIP before pulling master
+[1;34m|[m [1;33m|[m[1;34m/[m[1;36m|[m[31m\[m  
+[1;34m|[m[1;34m/[m[1;33m|[m [1;36m|[m [31m|[m 
+[1;34m|[m [1;33m|[m [1;36m|[m * [33mc768ca8[m untracked files on feature: c58bac7 feat: add ShopEase auth, role flow, and ecommerce pages

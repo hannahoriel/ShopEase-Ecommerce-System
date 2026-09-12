@@ -4,44 +4,99 @@ document.addEventListener('DOMContentLoaded', () => {
     // ELEMENTS
     // ==========================================
 
-    const sidebar = document.getElementById('admin-sidebar');
-    const toggle = document.getElementById('sidebar-toggle');
-    const content = document.getElementById('admin-content');
-    const navbarLeft = document.getElementById('navbar-left');
-    const sidebarLogo = document.getElementById('sidebar-logo');
+    const sidebar =
+        document.getElementById('admin-sidebar');
 
-    if (!sidebar || !toggle) return;
+    const toggle =
+        document.getElementById('sidebar-toggle');
+
+    const content =
+        document.getElementById('admin-content');
+
+    const navbarLeft =
+        document.getElementById('navbar-left');
+
+    const sidebarLogo =
+        document.getElementById('sidebar-logo');
+
+
+    if (!sidebar || !toggle) {
+        return;
+    }
+
+
+    // ==========================================
+    // STORE ORIGINAL SIDEBAR CLASSES
+    // ==========================================
+    //
+    // This is important because the sidebar has
+    // specific hover, radius, spacing and active
+    // classes that must return exactly after expand.
+    //
+
+    const originalSidebarLinkClasses = new Map();
+
+    sidebar
+        .querySelectorAll('.sidebar-link')
+        .forEach(link => {
+
+            originalSidebarLinkClasses.set(
+                link,
+                link.className
+            );
+
+        });
+
+
+    const logout =
+        sidebar.querySelector('.sidebar-logout');
+
+
+    const originalLogoutClasses =
+        logout
+            ? logout.className
+            : '';
+
+
+    // ==========================================
+    // COLLAPSED STATE
+    // ==========================================
+
+    let collapsed = false;
 
 
     // ==========================================
     // SIDEBAR TOGGLE
     // ==========================================
 
-    let collapsed = false;
-
     toggle.addEventListener('click', () => {
 
         collapsed = !collapsed;
 
 
-        // ==========================================
+        // ==================================================
         // COLLAPSED
-        // ==========================================
+        // ==================================================
 
         if (collapsed) {
 
-            // Sidebar width
-            sidebar.classList.remove('w-72');
-            sidebar.classList.add('w-20');
 
-            // Sidebar horizontal padding
-            sidebar.classList.remove('px-5');
-            sidebar.classList.add('px-5');
+            // ==========================================
+            // SIDEBAR WIDTH
+            // ==========================================
+
+            sidebar.classList.remove(
+                'w-72'
+            );
+
+            sidebar.classList.add(
+                'w-20'
+            );
 
 
-            // ------------------------------------------
+            // ==========================================
             // LOGO
-            // ------------------------------------------
+            // ==========================================
 
             if (sidebarLogo) {
 
@@ -55,39 +110,54 @@ document.addEventListener('DOMContentLoaded', () => {
                     'mb-6'
                 );
 
-                // Hide logo completely so it won't become tiny
+
                 const logoImage =
                     sidebarLogo.querySelector('img');
 
+
                 if (logoImage) {
-                    logoImage.classList.add('hidden');
+
+                    logoImage.classList.add(
+                        'hidden'
+                    );
+
                 }
 
             }
 
 
-            // ------------------------------------------
-            // SIDEBAR LABELS
-            // ------------------------------------------
+            // ==========================================
+            // HIDE LABELS
+            // ==========================================
 
-            document
+            sidebar
                 .querySelectorAll('.sidebar-label')
                 .forEach(label => {
 
-                    label.classList.add('hidden');
+                    label.classList.add(
+                        'hidden'
+                    );
 
                 });
 
 
-            // ------------------------------------------
+            // ==========================================
             // SIDEBAR LINKS
-            // ------------------------------------------
+            // ==========================================
+            //
+            // IMPORTANT:
+            // We only change the dimensions/position.
+            //
+            // We DO NOT remove the original hover
+            // background classes or rounded-full.
+            // This keeps the sidebar beautiful when
+            // collapsed.
+            //
 
-            document
+            sidebar
                 .querySelectorAll('.sidebar-link')
                 .forEach(link => {
 
-                    // Remove normal desktop sizing
                     link.classList.remove(
                         'gap-3',
                         'px-4',
@@ -96,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         'hover:translate-x-1'
                     );
 
-                    // Fixed icon button
+
                     link.classList.add(
                         'w-10',
                         'h-10',
@@ -106,16 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         'rounded-full'
                     );
 
-                });
 
-
-            // ------------------------------------------
-            // ACTIVE ICON
-            // ------------------------------------------
-
-            document
-                .querySelectorAll('.sidebar-link')
-                .forEach(link => {
+                    // ==================================
+                    // ACTIVE ITEM
+                    // ==================================
 
                     if (
                         link.classList.contains(
@@ -136,12 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
 
-            // ------------------------------------------
+            // ==========================================
             // ICON WRAPPERS
-            // ------------------------------------------
+            // ==========================================
 
-            document
-                .querySelectorAll('.sidebar-icon-wrapper')
+            sidebar
+                .querySelectorAll(
+                    '.sidebar-icon-wrapper'
+                )
                 .forEach(wrapper => {
 
                     wrapper.classList.remove(
@@ -158,15 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
 
-            // ------------------------------------------
+            // ==========================================
             // ICONS
-            // ------------------------------------------
+            // ==========================================
 
-            document
+            sidebar
                 .querySelectorAll('.sidebar-icon')
                 .forEach(icon => {
 
-                    // Keep EXACT same icon size
                     icon.classList.remove(
                         'w-6',
                         'h-6'
@@ -181,12 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
 
-            // ------------------------------------------
+            // ==========================================
             // LOGOUT
-            // ------------------------------------------
-
-            const logout =
-                document.querySelector('.sidebar-logout');
+            // ==========================================
 
             if (logout) {
 
@@ -207,21 +269,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
 
-            // ------------------------------------------
+            // ==========================================
             // CONTENT
-            // ------------------------------------------
+            // ==========================================
 
             if (content) {
 
-                content.classList.remove('ml-72');
-                content.classList.add('ml-20');
+                content.classList.remove(
+                    'ml-72'
+                );
+
+                content.classList.add(
+                    'ml-20'
+                );
 
             }
 
 
-            // ------------------------------------------
-            // NAVBAR
-            // ------------------------------------------
+            // ==========================================
+            // NAVBAR LEFT
+            // ==========================================
 
             if (navbarLeft) {
 
@@ -238,20 +305,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
 
-        // ==========================================
+        // ==================================================
         // EXPANDED
-        // ==========================================
+        // ==================================================
 
         else {
 
-            // Sidebar width
-            sidebar.classList.remove('w-20');
-            sidebar.classList.add('w-72');
+
+            // ==========================================
+            // SIDEBAR WIDTH
+            // ==========================================
+
+            sidebar.classList.remove(
+                'w-20'
+            );
+
+            sidebar.classList.add(
+                'w-72'
+            );
 
 
-            // ------------------------------------------
+            // ==========================================
             // LOGO
-            // ------------------------------------------
+            // ==========================================
 
             if (sidebarLogo) {
 
@@ -265,124 +341,101 @@ document.addEventListener('DOMContentLoaded', () => {
                     'mb-10'
                 );
 
+
                 const logoImage =
                     sidebarLogo.querySelector('img');
 
+
                 if (logoImage) {
-                    logoImage.classList.remove('hidden');
+
+                    logoImage.classList.remove(
+                        'hidden'
+                    );
+
                 }
 
             }
 
 
-            // ------------------------------------------
-            // SIDEBAR LABELS
-            // ------------------------------------------
+            // ==========================================
+            // SHOW LABELS
+            // ==========================================
 
-            document
+            sidebar
                 .querySelectorAll('.sidebar-label')
                 .forEach(label => {
 
-                    label.classList.remove('hidden');
-
-                });
-
-
-            // ------------------------------------------
-            // SIDEBAR LINKS
-            // ------------------------------------------
-
-            document
-                .querySelectorAll('.sidebar-link')
-                .forEach(link => {
-
-                    link.classList.remove(
-                        'w-10',
-                        'h-10',
-                        'p-0',
-                        'mx-auto',
-                        'justify-center',
-                        'rounded-full'
-                    );
-
-                    link.classList.add(
-                        'gap-3',
-                        'px-4',
-                        'py-3',
-                        'w-full'
+                    label.classList.remove(
+                        'hidden'
                     );
 
                 });
 
 
-            // ------------------------------------------
-            // ACTIVE ICON
-            // ------------------------------------------
+            // ==========================================
+            // RESTORE ORIGINAL SIDEBAR LINKS
+            // ==========================================
+            //
+            // Instead of manually rebuilding classes,
+            // restore the EXACT class list each item
+            // originally had.
+            //
 
-            document
+            sidebar
                 .querySelectorAll('.sidebar-link')
                 .forEach(link => {
 
-                    if (
-                        link.classList.contains(
-                            'bg-maroon-700'
-                        )
-                    ) {
-
-                        link.classList.remove(
-                            'bg-maroon-700'
+                    const originalClasses =
+                        originalSidebarLinkClasses.get(
+                            link
                         );
 
-                        link.classList.add(
-                            'bg-maroon-700/60'
-                        );
+
+                    if (originalClasses) {
+
+                        link.className =
+                            originalClasses;
 
                     }
 
                 });
 
 
-            // ------------------------------------------
-            // LOGOUT
-            // ------------------------------------------
+            // ==========================================
+            // RESTORE ORIGINAL LOGOUT
+            // ==========================================
 
-            const logout =
-                document.querySelector('.sidebar-logout');
+            if (
+                logout &&
+                originalLogoutClasses
+            ) {
 
-            if (logout) {
-
-                logout.classList.remove(
-                    'w-10',
-                    'h-10',
-                    'p-0',
-                    'mx-auto',
-                    'rounded-full'
-                );
-
-                logout.classList.add(
-                    'gap-2',
-                    'py-3',
-                    'w-full'
-                );
+                logout.className =
+                    originalLogoutClasses;
 
             }
 
 
-            // ------------------------------------------
+            // ==========================================
             // CONTENT
-            // ------------------------------------------
+            // ==========================================
 
             if (content) {
 
-                content.classList.remove('ml-20');
-                content.classList.add('ml-72');
+                content.classList.remove(
+                    'ml-20'
+                );
+
+                content.classList.add(
+                    'ml-72'
+                );
 
             }
 
 
-            // ------------------------------------------
-            // NAVBAR
-            // ------------------------------------------
+            // ==========================================
+            // NAVBAR LEFT
+            // ==========================================
 
             if (navbarLeft) {
 
@@ -401,98 +454,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
-    // ==========================================
-    // SIDEBAR ACTIVE MENU
-    // ==========================================
-
-    const sidebarLinks =
-        document.querySelectorAll('.sidebar-link');
-
-    sidebarLinks.forEach(link => {
-
-        link.addEventListener('click', function (event) {
-
-            event.preventDefault();
-
-            // Since Dashboard is currently the only
-            // available page, keep it active.
-
-            if (
-                this.querySelector('.sidebar-label') &&
-                this.querySelector('.sidebar-label').textContent.trim()
-                === 'Dashboard'
-            ) {
-
-                sidebarLinks.forEach(item => {
-
-                    item.classList.remove(
-                        'bg-maroon-700/60',
-                        'bg-maroon-700'
-                    );
-
-                });
-
-
-                if (collapsed) {
-
-                    this.classList.add(
-                        'bg-maroon-700'
-                    );
-
-                } else {
-
-                    this.classList.add(
-                        'bg-maroon-700/60'
-                    );
-
-                }
-
-            }
-
-        });
-
-    });
-
-
-
     // ==========================================
     // PROFILE DROPDOWN
     // ==========================================
 
     const profileButton =
-        document.getElementById('profile-button');
+        document.getElementById(
+            'profile-button'
+        );
+
 
     const profileDropdown =
-        document.getElementById('profile-dropdown');
+        document.getElementById(
+            'profile-dropdown'
+        );
 
 
-    if (profileButton && profileDropdown) {
+    if (
+        profileButton &&
+        profileDropdown
+    ) {
 
-        profileButton.addEventListener('click', (event) => {
+        profileButton.addEventListener(
+            'click',
+            (event) => {
 
-            event.stopPropagation();
-
-            profileDropdown.classList.toggle('hidden');
+                event.stopPropagation();
 
 
-            const notificationDropdown =
-                document.getElementById(
-                    'notification-dropdown'
-                );
-
-            if (notificationDropdown) {
-
-                notificationDropdown.classList.add(
+                profileDropdown.classList.toggle(
                     'hidden'
                 );
 
-            }
 
-        });
+                const notificationDropdown =
+                    document.getElementById(
+                        'notification-dropdown'
+                    );
+
+
+                if (notificationDropdown) {
+
+                    notificationDropdown.classList.add(
+                        'hidden'
+                    );
+
+                }
+
+            }
+        );
 
     }
-
 
 
     // ==========================================
@@ -503,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(
             'notification-button'
         );
+
 
     const notificationDropdown =
         document.getElementById(
@@ -520,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
             (event) => {
 
                 event.stopPropagation();
+
 
                 notificationDropdown.classList.toggle(
                     'hidden'
@@ -540,31 +554,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
     // ==========================================
     // CLICK OUTSIDE DROPDOWNS
     // ==========================================
 
-    document.addEventListener('click', () => {
+    document.addEventListener(
+        'click',
+        () => {
 
-        if (profileDropdown) {
+            if (profileDropdown) {
 
-            profileDropdown.classList.add(
-                'hidden'
-            );
+                profileDropdown.classList.add(
+                    'hidden'
+                );
+
+            }
+
+
+            if (notificationDropdown) {
+
+                notificationDropdown.classList.add(
+                    'hidden'
+                );
+
+            }
 
         }
-
-        if (notificationDropdown) {
-
-            notificationDropdown.classList.add(
-                'hidden'
-            );
-
-        }
-
-    });
-
+    );
 
 
     // ==========================================
@@ -597,7 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
     }
-
 
 
     // ==========================================
@@ -647,47 +662,119 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-// ==========================================
+
+// ======================================================
 // SIDEBAR RELOAD UX
-// ==========================================
+// ======================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
 
-    const sidebar = document.getElementById('admin-sidebar');
+        const sidebar =
+            document.getElementById(
+                'admin-sidebar'
+            );
 
-    if (!sidebar) return;
 
-    // Restart sidebar animations on page reload
-    const logo = document.getElementById('sidebar-logo');
-    const menuItems = document.querySelectorAll('.sidebar-menu-item');
-    const logout = document.querySelector('.sidebar-logout-reload');
+        if (!sidebar) {
+            return;
+        }
 
-    if (logo) {
-        logo.classList.remove('sidebar-logo-reload');
 
-        void logo.offsetWidth;
+        // ==========================================
+        // LOGO RELOAD
+        // ==========================================
 
-        logo.classList.add('sidebar-logo-reload');
+        const logo =
+            document.getElementById(
+                'sidebar-logo'
+            );
+
+
+        // ==========================================
+        // MENU ITEMS
+        // ==========================================
+
+        const menuItems =
+            sidebar.querySelectorAll(
+                '.sidebar-menu-item'
+            );
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        const logout =
+            sidebar.querySelector(
+                '.sidebar-logout-reload'
+            );
+
+
+        // ==========================================
+        // RESTART LOGO ANIMATION
+        // ==========================================
+
+        if (logo) {
+
+            logo.classList.remove(
+                'sidebar-logo-reload'
+            );
+
+
+            void logo.offsetWidth;
+
+
+            logo.classList.add(
+                'sidebar-logo-reload'
+            );
+
+        }
+
+
+        // ==========================================
+        // RESTART MENU ANIMATIONS
+        // ==========================================
+
+        menuItems.forEach(
+            item => {
+
+                item.classList.remove(
+                    'sidebar-menu-item'
+                );
+
+
+                void item.offsetWidth;
+
+
+                item.classList.add(
+                    'sidebar-menu-item'
+                );
+
+            }
+        );
+
+
+        // ==========================================
+        // RESTART LOGOUT ANIMATION
+        // ==========================================
+
+        if (logout) {
+
+            logout.classList.remove(
+                'sidebar-logout-reload'
+            );
+
+
+            void logout.offsetWidth;
+
+
+            logout.classList.add(
+                'sidebar-logout-reload'
+            );
+
+        }
+
     }
-
-    menuItems.forEach(item => {
-
-        item.classList.remove('sidebar-menu-item');
-
-        void item.offsetWidth;
-
-        item.classList.add('sidebar-menu-item');
-
-    });
-
-    if (logout) {
-
-        logout.classList.remove('sidebar-logout-reload');
-
-        void logout.offsetWidth;
-
-        logout.classList.add('sidebar-logout-reload');
-
-    }
-
-});
+);

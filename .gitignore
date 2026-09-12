@@ -1,4 +1,7 @@
 *.log
+out.txt
+test.out
+testlog.txt
 .DS_Store
 .env
 .env.backup
