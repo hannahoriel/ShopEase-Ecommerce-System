@@ -66,8 +66,8 @@
                     [
                         'label' => 'Seller Compliance',
                         'icon' => 'seller-compliance.png',
-                        'route' => null
-                    ],
+                        'route' => 'admin.seller.compliance'
+],
 
                     [
                         'label' => 'Complaints and Disputes',

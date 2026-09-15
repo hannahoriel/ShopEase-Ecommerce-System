@@ -40,16 +40,10 @@
                 <div class="role-radio"></div>
 
                 <div class="role-icon">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
+                    <img
+                        src="{{ asset('icons/login/seller-selected.png') }}"
+                        alt="Seller"
                     >
-                        <path d="M4 9l1-5h14l1 5"/>
-                        <path d="M4 9h16v10a1 1 0 01-1 1H5a1 1 0 01-1-1V9z"/>
-                        <path d="M9 13a3 3 0 006 0"/>
-                    </svg>
                 </div>
 
                 <div class="role-title">
@@ -71,17 +65,10 @@
                 <div class="role-radio"></div>
 
                 <div class="role-icon">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
+                    <img
+                        src="{{ asset('icons/login/buyer-unselected.png') }}"
+                        alt="Buyer"
                     >
-                        <circle cx="9" cy="8" r="2.5"/>
-                        <circle cx="17" cy="9" r="2"/>
-                        <path d="M4 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/>
-                        <path d="M14.5 14.5c2 .2 3.5 1.8 3.5 4.5"/>
-                    </svg>
                 </div>
 
                 <div class="role-title">
@@ -132,12 +119,82 @@
 
 
 @section('scripts')
+<style>
+    /*
+    |--------------------------------------------------------------------------
+    | Role Icons
+    |--------------------------------------------------------------------------
+    | The PNGs already contain their own circular design,
+    | so no additional circle/background is added here.
+    */
+
+    .role-icon {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .role-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
     const roleCards = document.querySelectorAll('.role-card');
     const roleInput = document.getElementById('roleInput');
     const continueButton = document.getElementById('continueRegistration');
+
+    const roleImages = {
+        seller: {
+            selected: "{{ asset('icons/login/seller-selected.png') }}",
+            unselected: "{{ asset('icons/login/seller-unselected.png') }}"
+        },
+        buyer: {
+            selected: "{{ asset('icons/login/buyer-selected.png') }}",
+            unselected: "{{ asset('icons/login/buyer-unselected.png') }}"
+        }
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update Role Icons
+    |--------------------------------------------------------------------------
+    */
+
+    function updateRoleIcons(selectedRole) {
+
+        roleCards.forEach(card => {
+
+            const role = card.dataset.role;
+            const icon = card.querySelector('.role-icon img');
+
+            if (!icon || !roleImages[role]) {
+                return;
+            }
+
+            if (role === selectedRole) {
+
+                icon.src = roleImages[role].selected;
+
+            } else {
+
+                icon.src = roleImages[role].unselected;
+
+            }
+
+        });
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -147,6 +204,8 @@ document.addEventListener('DOMContentLoaded', function () {
     */
 
     let selectedRole = roleInput.value || 'seller';
+
+    updateRoleIcons(selectedRole);
 
 
     /*
@@ -167,6 +226,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             selectedRole = this.dataset.role;
             roleInput.value = selectedRole;
+
+            updateRoleIcons(selectedRole);
 
         });
 

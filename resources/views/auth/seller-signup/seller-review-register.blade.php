@@ -664,35 +664,131 @@
         }
 
 
-        .category-badge {
-            display:
-                inline-flex;
+        /* =========================================================
+   CATEGORY PILLS
+   SAME COLORS AS SELLER INVENTORY
+========================================================= */
 
-            align-items:
-                center;
+.category-badge {
+    display:
+        inline-flex;
 
-            padding:
-                7px 12px;
+    align-items:
+        center;
 
-            border-radius:
-                20px;
+    justify-content:
+        center;
 
-            background:
-                var(--peach-soft);
+    padding:
+        7px 12px;
 
-            border:
-                1px solid
-                var(--peach-light);
+    border-radius:
+        20px;
 
-            color:
-                var(--maroon);
+    border:
+        1px solid transparent;
 
-            font-size:
-                12px;
+    font-size:
+        12px;
 
-            font-weight:
-                500;
-        }
+    line-height:
+        1.2;
+
+    font-weight:
+        500;
+
+    white-space:
+        nowrap;
+}
+
+
+/* =========================================================
+   UNIQUE CATEGORY COLORS
+========================================================= */
+
+.category-pet-supplies {
+    background: #E7F5E9;
+    color: #2F6B3A;
+    border-color: #CBE8D0;
+}
+
+.category-electronics-and-gadgets {
+    background: #DDEBFF;
+    color: #185FA3;
+    border-color: #C3DAFA;
+}
+
+.category-womens-apparel {
+    background: #F9DFEA;
+    color: #A12763;
+    border-color: #F0C4D8;
+}
+
+.category-mens-apparel {
+    background: #E6E2F8;
+    color: #5A4A9A;
+    border-color: #D2CCEE;
+}
+
+.category-kids-and-baby {
+    background: #FFE5B8;
+    color: #9A5B00;
+    border-color: #F5D49A;
+}
+
+.category-home-and-garden {
+    background: #DDF3E4;
+    color: #27704A;
+    border-color: #C4E6CF;
+}
+
+.category-sports-and-outdoors {
+    background: #DDECF2;
+    color: #23627A;
+    border-color: #C3DDE7;
+}
+
+.category-health-and-beauty {
+    background: #FFE0DC;
+    color: #A63B2C;
+    border-color: #F4C9C2;
+}
+
+.category-books-and-media {
+    background: #E6E8F2;
+    color: #3F4A68;
+    border-color: #D1D5E3;
+}
+
+.category-food-and-gourmet {
+    background: #FFF0C7;
+    color: #8A5A00;
+    border-color: #F0DFA7;
+}
+
+.category-automotive-motorcycle {
+    background: #E3E3E3;
+    color: #434343;
+    border-color: #D0D0D0;
+}
+
+.category-furniture-and-office-equipment {
+    background: #EBDCCF;
+    color: #795548;
+    border-color: #DBC6B6;
+}
+
+.category-jewelry-and-watches {
+    background: #F8E2B8;
+    color: #946B00;
+    border-color: #EED49B;
+}
+
+.category-office-and-school-supplies {
+    background: #E2F0F7;
+    color: #2B617D;
+    border-color: #C8DFEA;
+}
 
 
         /* =========================================================
@@ -3299,13 +3395,83 @@
 
                                         @foreach($selectedCategories as $category)
 
-                                            <span class="category-badge">
+    @php
 
-                                                {{ $category }}
+        $categoryClassMap = [
 
-                                            </span>
+            'Pet Supplies'
+                => 'category-pet-supplies',
 
-                                        @endforeach
+            'Electronics and Gadgets'
+                => 'category-electronics-and-gadgets',
+
+            'Electronics & Gadgets'
+                => 'category-electronics-and-gadgets',
+
+            "Women's Apparel"
+                => 'category-womens-apparel',
+
+            "Women’s Apparel"
+                => 'category-womens-apparel',
+
+            "Men's Apparel"
+                => 'category-mens-apparel',
+
+            "Men’s Apparel"
+                => 'category-mens-apparel',
+
+            'Kids and Baby'
+                => 'category-kids-and-baby',
+
+            'Home and Garden'
+                => 'category-home-and-garden',
+
+            'Sports and Outdoors'
+                => 'category-sports-and-outdoors',
+
+            'Health and Beauty'
+                => 'category-health-and-beauty',
+
+            'Books and Media'
+                => 'category-books-and-media',
+
+            'Food and Gourmet'
+                => 'category-food-and-gourmet',
+
+            'Automotive & Motorcycle'
+                => 'category-automotive-motorcycle',
+
+            'Automotive and Motorcycle'
+                => 'category-automotive-motorcycle',
+
+            'Furniture and Office Equipment'
+                => 'category-furniture-and-office-equipment',
+
+            'Jewelry and Watches'
+                => 'category-jewelry-and-watches',
+
+            'Office and School Supplies'
+                => 'category-office-and-school-supplies',
+
+        ];
+
+        $categoryClass =
+            $categoryClassMap[$category]
+            ?? 'category-default';
+
+    @endphp
+
+
+    <span
+        class="
+            category-badge
+            {{ $categoryClass }}
+        "
+    >
+        {{ $category }}
+    </span>
+
+@endforeach
 
                                     </div>
 
