@@ -55,9 +55,10 @@ class AuthRegistrationTest extends TestCase
             'registration_status' => 'pending',
         ]);
 
-        $user = User::where('email', 'buyer.reg@example.com')->first();
-        $this->assertNotNull($user);
-        $this->assertSame(26, $user->age);
+        $this->assertDatabaseHas('buyers', [
+            'user_id' => User::where('email', 'buyer.reg@example.com')->value('id'),
+            'age' => 26,
+        ]);
     }
 
     public function test_seller_registration_collects_business_details(): void
@@ -130,6 +131,43 @@ class AuthRegistrationTest extends TestCase
             'plate_number' => 'ABC 1234',
             'registration_status' => 'pending',
         ]);
+    }
+
+    public function test_underage_users_cannot_register_for_any_role(): void
+    {
+        foreach ([
+            User::ROLE_BUYER,
+            User::ROLE_SELLER,
+            User::ROLE_LOGISTICS,
+            User::ROLE_RIDER,
+        ] as $role) {
+            $response = $this->from(route('register'))
+                ->post(route('register.attempt'), [
+                    'role' => $role,
+                    'last_name' => 'Applicant',
+                    'first_name' => 'Young',
+                    'sex' => 'other',
+                    'email' => $role . '.underage@example.com',
+                    'contact_no' => '09170000000',
+                    'birthday' => now()->subYears(17)->toDateString(),
+                    'province' => 'Cebu',
+                    'municipality' => 'Cebu City',
+                    'barangay' => 'Lahug',
+                    'street' => 'Main Street',
+                    'house_number' => '1',
+                    'vehicle' => 'motorcycle',
+                    'plate_number' => 'ABC 1234',
+                    'business_name' => 'Young Store',
+                    'line_of_business' => 'Retail',
+                    'password' => 'Password123!',
+                    'password_confirmation' => 'Password123!',
+                ]);
+
+            $response->assertSessionHasErrors('birthday');
+            $this->assertDatabaseMissing('users', [
+                'email' => $role . '.underage@example.com',
+            ]);
+        }
     }
 
     public function test_admin_can_view_pending_registrations_page_and_display_data(): void

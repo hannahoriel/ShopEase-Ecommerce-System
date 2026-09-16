@@ -24,7 +24,7 @@
          Out for Delivery
          Delivered
      - Fade-only modal closing
-     - Hidden modal scrollbar
+    - Scrollable shipping details modal
      - Responsive sidebar adjustment
 ========================================================= --}}
 
@@ -2551,10 +2551,11 @@
                 auto;
 
             scrollbar-width:
-                none;
+                thin;
 
-            -ms-overflow-style:
-                none;
+            scrollbar-color:
+                #B9867D
+                #F8EFEC;
         }
 
 
@@ -3442,16 +3443,20 @@
                 );
 
             overflow-y:
-                auto;
+                scroll;
 
             overflow-x:
                 hidden;
 
             scrollbar-width:
-                none;
+                thin;
 
-            -ms-overflow-style:
-                none;
+            scrollbar-color:
+                #B9867D
+                #F8EFEC;
+
+            scrollbar-gutter:
+                stable;
 
             border-radius:
                 28px;
@@ -3476,14 +3481,39 @@
 
         .shipping-modal-panel::-webkit-scrollbar {
 
-            display:
-                none;
-
             width:
-                0;
+                8px;
+        }
 
-            height:
-                0;
+
+        .shipping-modal-panel::-webkit-scrollbar-track {
+
+            background:
+                #F8EFEC;
+
+            border-radius:
+                999px;
+        }
+
+
+        .shipping-modal-panel::-webkit-scrollbar-thumb {
+
+            background:
+                #B9867D;
+
+            border:
+                2px solid
+                #F8EFEC;
+
+            border-radius:
+                999px;
+        }
+
+
+        .shipping-modal-panel::-webkit-scrollbar-thumb:hover {
+
+            background:
+                #96665E;
         }
 
 

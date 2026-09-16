@@ -8,6 +8,7 @@ use App\Models\Buyer\Buyer;
 use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
 use App\Models\Logistics\Logistics;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ class AuthController extends Controller
     /**
      * Handle an authentication attempt.
      */
-    public function login(Request $request): RedirectResponse
+    public function login(Request $request): RedirectResponse|JsonResponse
     {
         $credentials = $request->validate([
             'email' => [
@@ -38,22 +39,13 @@ class AuthController extends Controller
             ],
         ]);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Attempt Login
-        |--------------------------------------------------------------------------
-        */
-
         if (! Auth::attempt(
             $credentials,
             $request->boolean('remember')
         )) {
-
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
-
         }
 
         if (Auth::user()->role !== User::ROLE_ADMIN
@@ -65,24 +57,20 @@ class AuthController extends Controller
             ]);
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Regenerate Session
-        |--------------------------------------------------------------------------
-        */
-
         $request->session()->regenerate();
 
+        if ($request->expectsJson() || $request->is('api/*')) {
+            $token = Auth::user()->createToken('api-token')->plainTextToken;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Redirect According To User Role
-        |--------------------------------------------------------------------------
-        */
+            return response()->json([
+                'message' => 'Login successful.',
+                'user' => Auth::user(),
+                'role' => Auth::user()->role,
+                'token' => $token,
+            ]);
+        }
 
         return match (Auth::user()->role) {
-
             User::ROLE_ADMIN =>
                 redirect()->route(
                     'admin.dashboard'
@@ -112,7 +100,6 @@ class AuthController extends Controller
                 redirect()->route(
                     'dashboard'
                 ),
-
         };
     }
 
@@ -120,7 +107,7 @@ class AuthController extends Controller
     /**
      * Register a new user and hold the account pending admin approval.
      */
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request): RedirectResponse|JsonResponse
     {
         $role = $request->input(
             'role',
@@ -195,9 +182,7 @@ class AuthController extends Controller
             ],
 
             'birthday' => [
-                'required',
-                'date',
-                'before_or_equal:today',
+                ...$this->birthdayValidationRules(),
             ],
 
             'province' => [
@@ -489,10 +474,10 @@ class AuthController extends Controller
                             ->pluck('user_id'));
                 })
                 ->first();
-            $user = $rejectedUser ?: User::create($profile);
+            $user = $rejectedUser ?: User::create($this->userAttributes($profile));
 
             if ($rejectedUser) {
-                $user->update($profile);
+                $user->update($this->userAttributes($profile));
                 Buyer::where('user_id', $user->id)->delete();
                 Seller::where('user_id', $user->id)->delete();
                 Rider::where('user_id', $user->id)->delete();
@@ -526,6 +511,13 @@ class AuthController extends Controller
         |
         */
 
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'Your registration has been submitted and is awaiting administrator approval.',
+                'status' => 'pending',
+            ], 201);
+        }
+
         return redirect()
             ->route('login')
             ->with(
@@ -540,7 +532,7 @@ class AuthController extends Controller
     public function completeBuyerRegistration(array $data): void
     {
         $data = $this->normalizeRegistrationData($data);
-        validator($data, $this->passwordValidationRules())->validate();
+        validator($data, $this->registrationValidationRules())->validate();
 
         DB::transaction(function () use ($data): void {
             $user = $this->createRegisteredUser($data, User::ROLE_BUYER);
@@ -572,7 +564,7 @@ class AuthController extends Controller
     public function completeSellerRegistration(array $data): void
     {
         $data = $this->normalizeRegistrationData($data);
-        validator($data, $this->passwordValidationRules())->validate();
+        validator($data, $this->registrationValidationRules())->validate();
 
         DB::transaction(function () use ($data): void {
             $user = $this->createRegisteredUser($data, User::ROLE_SELLER);
@@ -623,24 +615,7 @@ class AuthController extends Controller
 
         $attributes = [
             'name' => trim($data['first_name'] . ' ' . $data['last_name']),
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'middle_initial' => $data['middle_initial'] ?? null,
-            'sex' => $data['sex'],
             'email' => $data['email'],
-            'contact_no' => $data['contact_no'],
-            'birthday' => $data['birthday'],
-            'age' => $this->calculateAge($data['birthday']),
-            'province' => $data['province'],
-            'municipality' => $data['municipality'],
-            'barangay' => $data['barangay'],
-            'street' => $data['street'] ?? null,
-            'house_number' => $data['house_number'] ?? null,
-            'store_name' => $data['store_name'] ?? ($data['business_name'] ?? null),
-            'business_name' => $data['business_name'] ?? null,
-                'line_of_business' => $this->categoryValue($data),
-            'upload_id' => $data['valid_id_path'] ?? null,
-            'upload_business_permit' => $data['business_permit_path'] ?? null,
             'password' => Hash::make($data['password'] ?? Str::random(40)),
             'role' => $role,
             'registration_status' => 'pending',
@@ -716,6 +691,21 @@ class AuthController extends Controller
         return $data['line_of_business'] ?? null;
     }
 
+    private function userAttributes(array $attributes): array
+    {
+        return array_intersect_key($attributes, array_flip([
+            'name',
+            'email',
+            'password',
+            'role',
+            'email_verified_at',
+            'registration_status',
+            'approved_at',
+            'rejected_at',
+            'suspended_until',
+        ]));
+    }
+
     private function normalizeRegistrationData(array $data): array
     {
         $data = array_merge([
@@ -745,6 +735,26 @@ class AuthController extends Controller
         ];
     }
 
+    private function registrationValidationRules(): array
+    {
+        return array_merge(
+            [
+                'birthday' => $this->birthdayValidationRules(),
+            ],
+            $this->passwordValidationRules(),
+        );
+    }
+
+    private function birthdayValidationRules(): array
+    {
+        return [
+            'required',
+            'date',
+            'before_or_equal:today',
+            'before_or_equal:' . now()->subYears(18)->toDateString(),
+        ];
+    }
+
     private function passwordRules(): array
     {
         return [
@@ -761,40 +771,18 @@ class AuthController extends Controller
      */
     public function logout(
         Request $request
-    ): RedirectResponse {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Logout
-        |--------------------------------------------------------------------------
-        */
+    ): RedirectResponse|JsonResponse {
 
         Auth::logout();
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Invalidate Session
-        |--------------------------------------------------------------------------
-        */
-
         $request->session()->invalidate();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Regenerate CSRF Token
-        |--------------------------------------------------------------------------
-        */
-
         $request->session()->regenerateToken();
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Return To LANDING PAGE
-        |--------------------------------------------------------------------------
-        */
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'Logout successful.',
+            ]);
+        }
 
         return redirect()->route(
             'landing.page'

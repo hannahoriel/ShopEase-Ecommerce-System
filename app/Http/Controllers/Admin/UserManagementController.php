@@ -147,7 +147,8 @@ class UserManagementController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('contact_no', 'like', "%{$search}%");
+                    ->orWhereHas('buyerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"))
+                    ->orWhereHas('sellerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"));
             });
         }
 
@@ -178,12 +179,20 @@ class UserManagementController extends Controller
 
     private function serializeUser(User $user, bool $details = false): array
     {
+        $profile = match ($user->role) {
+            User::ROLE_BUYER => $user->buyerProfile,
+            User::ROLE_SELLER => $user->sellerProfile,
+            User::ROLE_RIDER => $user->riderProfile,
+            User::ROLE_LOGISTICS => $user->logisticsProfile,
+            default => null,
+        };
+
         $data = [
             'id' => $user->id,
             'name' => $user->name,
             'type' => $user->role,
             'email' => $user->email,
-            'phone' => $user->contact_no,
+            'phone' => $profile?->contact_no,
             'date' => $user->created_at?->toDateString(),
             'dateLabel' => $user->created_at?->format('F j, Y'),
             'timeLabel' => $user->created_at?->format('g:i A'),
@@ -194,17 +203,17 @@ class UserManagementController extends Controller
         ];
 
         if ($details) {
-            $data['details'] = array_merge($user->only([
+            $data['details'] = array_merge($profile?->only([
                 'first_name', 'last_name', 'middle_initial', 'sex', 'birthday', 'age', 'province',
                 'municipality', 'barangay', 'street', 'house_number', 'zip_code', 'business_name',
                 'line_of_business', 'upload_id', 'upload_business_permit', 'account_action_reason',
                 'account_action_details',
-            ]), [
-                'valid_id_url' => $user->upload_id
-                    ? Storage::disk('public')->url($user->upload_id)
+            ]) ?? [], [
+                'valid_id_url' => $profile?->upload_id
+                    ? Storage::disk('public')->url($profile->upload_id)
                     : null,
-                'business_permit_url' => $user->upload_business_permit
-                    ? Storage::disk('public')->url($user->upload_business_permit)
+                'business_permit_url' => $profile?->upload_business_permit
+                    ? Storage::disk('public')->url($profile->upload_business_permit)
                     : null,
             ]);
         }

@@ -10,6 +10,8 @@ use App\Models\Admin\Registration;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -121,6 +123,74 @@ class DashboardController extends Controller
         ));
     }
 
+    public function apiIndex(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
+
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+
+        $pendingRegistrationsToday = Registration::pending()->whereDate('created_at', $today)->count();
+        $pendingRegistrationsYesterday = Registration::pending()->whereDate('created_at', $yesterday)->count();
+
+        $activeUsersToday = User::active()->whereDate('approved_at', $today)->count();
+        $activeUsersYesterday = User::active()->whereDate('approved_at', $yesterday)->count();
+
+        $activeSellersToday = Seller::active()->whereDate('updated_at', $today)->count();
+        $activeSellersYesterday = Seller::active()->whereDate('updated_at', $yesterday)->count();
+
+        $commissionToday = Order::completed()->whereDate('created_at', $today)->sum('commission_amount');
+        $commissionYesterday = Order::completed()->whereDate('created_at', $yesterday)->sum('commission_amount');
+
+        $stats = [
+            'pending_registrations' => [
+                'value' => (int) Registration::pending()->count(),
+                'today' => $pendingRegistrationsToday,
+                'yesterday' => $pendingRegistrationsYesterday,
+            ],
+            'active_users' => [
+                'value' => (int) User::active()->count(),
+                'today' => $activeUsersToday,
+                'yesterday' => $activeUsersYesterday,
+            ],
+            'active_sellers' => [
+                'value' => (int) Seller::active()->count(),
+                'today' => $activeSellersToday,
+                'yesterday' => $activeSellersYesterday,
+            ],
+            'total_commission' => [
+                'value' => (float) Order::completed()->sum('commission_amount'),
+                'today' => (float) $commissionToday,
+                'yesterday' => (float) $commissionYesterday,
+            ],
+        ];
+
+        $salesSummary = [
+            'gross_sales' => (float) Order::completed()->sum('total'),
+            'total_orders' => (int) Order::count(),
+            'average_order_value' => (float) ($this->safeAverageOrderValue()),
+            'completed_orders' => (int) Order::completed()->count(),
+            'returns_refunds' => (int) Order::refunded()->count(),
+        ];
+
+        $complaints = Complaint::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        return response()->json([
+            'stats' => $stats,
+            'sales_summary' => $salesSummary,
+            'complaints' => $complaints,
+            'pending_breakdown' => [
+                'sellers' => Registration::pending()->where('user_type', 'seller')->count(),
+                'buyers' => Registration::pending()->where('user_type', 'buyer')->count(),
+            ],
+            'announcement' => Announcement::where('is_active', true)->latest()->first(),
+            'overview_chart' => $this->buildOverviewChart(),
+        ]);
+    }
+
     /**
      * Percentage change from $previous to $current, formatted for display.
      * Returns something like "12%" and lets the view decide the up/down arrow
@@ -138,6 +208,14 @@ class DashboardController extends Controller
             'value' => number_format(abs($percent), 0) . '%',
             'direction' => $percent >= 0 ? 'up' : 'down',
         ];
+    }
+
+    private function safeAverageOrderValue(): float
+    {
+        $completedOrders = Order::completed()->count();
+        $grossSales = Order::completed()->sum('total');
+
+        return $completedOrders > 0 ? (float) ($grossSales / $completedOrders) : 0.0;
     }
 
     /**

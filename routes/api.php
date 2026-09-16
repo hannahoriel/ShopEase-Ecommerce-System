@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Seller\OrderStatusController;
+use App\Http\Controllers\Seller\ShippingStatusController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
@@ -37,6 +40,17 @@ Route::prefix('v1')->group(function () {
             Route::get('/users', [UserManagementController::class, 'list']);
             Route::get('/users/{user}', [UserManagementController::class, 'show']);
             Route::patch('/users/{user}/status', [UserManagementController::class, 'updateStatus']);
+        });
+
+        Route::middleware('role:seller')->prefix('seller')->group(function () {
+            Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
+            Route::get('/order-status', [OrderStatusController::class, 'index']);
+            Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
+            Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
+            Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
+            Route::get('/shipping-status', [ShippingStatusController::class, 'index']);
+            Route::get('/shipping/{order}', [ShippingStatusController::class, 'show']);
+            Route::patch('/shipping/{order}/status', [ShippingStatusController::class, 'update']);
         });
     });
 });
