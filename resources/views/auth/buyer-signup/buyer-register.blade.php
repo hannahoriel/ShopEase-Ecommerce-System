@@ -2572,6 +2572,12 @@
                             value="{{ old('age', $buyerData['age'] ?? '') }}"
                             readonly
                         >
+                        <div
+                            class="field-error"
+                            id="ageError"
+                        >
+                            Must be 18 years old or above.
+                        </div>
 
                     </div>
 
@@ -3336,6 +3342,11 @@ document.addEventListener(
                 'age'
             );
 
+        const ageError =
+            document.getElementById(
+                'ageError'
+            );
+
 
         const contactInput =
             document.getElementById(
@@ -3659,6 +3670,10 @@ document.addEventListener(
                 age.value =
                     '';
 
+                ageError.classList.remove(
+                    'show'
+                );
+
                 return;
 
             }
@@ -3705,6 +3720,11 @@ document.addEventListener(
                 calculatedAge >= 0
                     ? calculatedAge
                     : '';
+
+            ageError.classList.toggle(
+                'show',
+                calculatedAge < 18
+            );
 
         }
 

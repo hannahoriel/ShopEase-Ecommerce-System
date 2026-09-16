@@ -8,17 +8,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Serves the Philippine province / city-municipality / barangay
- * cascading dropdown data.
- *
- * This is the Laravel port of the original Flask app, which simply
- * rendered a template and let the browser call the public PSGC /
- * Buonzz APIs directly. Here the same "try PSGC, fall back to
- * Buonzz" logic now lives on the server, behind our own JSON
- * endpoints, and results are cached since PH location data changes
- * essentially never.
- */
 class LocationController extends Controller
 {
     /**
@@ -29,14 +18,6 @@ class LocationController extends Controller
         return view('location');
     }
 
-    /**
-     * GET /api/locations/provinces
-     *
-     * Returns all provinces, plus a synthetic "Metro Manila (NCR)"
-     * entry (NCR isn't a province, so the upstream APIs don't
-     * return it here) so the UI can offer it the same way the
-     * original app did.
-     */
     public function provinces(): JsonResponse
     {
         $provinces = Cache::remember('locations:provinces', config('locations.cache_ttl'), function () {
@@ -60,13 +41,7 @@ class LocationController extends Controller
         return response()->json($provinces);
     }
 
-    /**
-     * GET /api/locations/provinces/{code}/cities?is_region=1
-     *
-     * Cities/municipalities for a given province code. Pass
-     * ?is_region=1 for the synthetic NCR "province" to fetch its
-     * cities from the regions endpoint instead.
-     */
+
     public function municipalities(Request $request, string $code): JsonResponse
     {
         $isRegion = $request->boolean('is_region') || $code === config('locations.ncr_code');
@@ -87,9 +62,7 @@ class LocationController extends Controller
         return response()->json($municipalities);
     }
 
-    /**
-     * GET /api/locations/cities/{code}/barangays
-     */
+
     public function barangays(string $code): JsonResponse
     {
         $barangays = Cache::remember("locations:barangays:{$code}", config('locations.cache_ttl'), function () use ($code) {
@@ -101,10 +74,7 @@ class LocationController extends Controller
         return response()->json($barangays);
     }
 
-    /**
-     * Try each configured upstream source in order until one
-     * succeeds, mirroring the original front-end's fetchWithFallbacks().
-     */
+
     private function fetchWithFallback(string $endpointType, ?string $code = null): array
     {
         foreach (config('locations.fallback_order') as $source) {

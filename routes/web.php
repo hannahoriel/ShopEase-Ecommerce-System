@@ -4,6 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RegistrationController;
+use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Seller\OrderStatusController;
+use App\Http\Controllers\Seller\ShippingStatusController;
 use App\Models\User;
 use App\Models\Admin\Registration;
 use Illuminate\Http\Request;
@@ -195,7 +198,6 @@ Route::get('/admin/dashboard', function () {
 
 foreach ([
     'buyer' => User::ROLE_BUYER,
-    'seller' => User::ROLE_SELLER,
     'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
 ] as $dashboard => $role) {
@@ -222,6 +224,10 @@ foreach ([
         ->name("$dashboard.dashboard");
 
 }
+
+Route::get('/seller/dashboard', [SellerDashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('seller.dashboard');
 
 
 /*
@@ -2085,7 +2091,6 @@ Route::get('/seller/inventory', function () {
 })->middleware('auth')
   ->name('seller.inventory');
 
-
 /*
 |--------------------------------------------------------------------------
 | SELLER ORDER STATUS
@@ -2099,9 +2104,7 @@ Route::get('/seller/order-status', function () {
         403
     );
 
-    return view(
-        'pages.seller.order-status'
-    );
+    return app(OrderStatusController::class)->page(request());
 
 })->middleware('auth')
   ->name('seller.order.status');
@@ -2114,19 +2117,12 @@ Route::get('/seller/order-status', function () {
 */
 
 Route::get('/seller/shipping-status', function () {
+    abort_unless(Auth::user()->role === User::ROLE_SELLER, 403);
 
-    abort_unless(
-        Auth::user()->role === User::ROLE_SELLER,
-        403
-    );
-
-    return view(
-        'pages.seller.shipping-status'
-    );
-
+    return app(ShippingStatusController::class)->page(request());
 })->middleware('auth')
   ->name('seller.shipping.status');
-
+  
 Route::get('/admin/seller-compliance', function () {
     return view('pages.admin.seller-compliance');
 })->name('admin.seller.compliance');
