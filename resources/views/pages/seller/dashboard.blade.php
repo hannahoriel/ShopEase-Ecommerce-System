@@ -1992,7 +1992,7 @@
             <section class="dashboard-welcome">
 
                 <h2>
-                    Welcome, Seller!
+                    Welcome, {{ $dashboard['seller']['store_name'] }}!
                 </h2>
 
             </section>
@@ -2027,7 +2027,7 @@
                         <div class="stat-info">
 
                             <span class="stat-value">
-                                ₱236,500.00
+                                ₱{{ number_format($dashboard['stats']['total_sales'], 2) }}
                             </span>
 
                             <span class="stat-label">
@@ -2076,7 +2076,7 @@
                         <div class="stat-info">
 
                             <span class="stat-value">
-                                1,245
+                                {{ number_format($dashboard['stats']['total_orders']) }}
                             </span>
 
                             <span class="stat-label">
@@ -2125,11 +2125,11 @@
                         <div class="stat-info">
 
                             <span class="stat-value">
-                                352
+                                {{ number_format($dashboard['stats']['pending_orders']) }}
                             </span>
 
                             <span class="stat-label">
-                                Units Sold
+                                Pending Orders
                             </span>
 
                         </div>
@@ -2174,11 +2174,11 @@
                         <div class="stat-info">
 
                             <span class="stat-value">
-                                ₱45,680.00
+                                {{ number_format($dashboard['stats']['low_stock_products']) }}
                             </span>
 
                             <span class="stat-label">
-                                Net Profit
+                                Low Stock Products
                             </span>
 
                         </div>

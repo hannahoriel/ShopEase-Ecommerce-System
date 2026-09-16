@@ -11,7 +11,7 @@
      - Ready to Ship tracking appears after scheduling
      - ALL MODAL EXIT ANIMATIONS ARE FADE-OUT ONLY
      - No modal slide / scale / translate transitions
-     - Modal scrollbar is hidden while remaining scrollable
+    - Modal content remains scrollable on smaller screens
 ========================================================= --}}
 
 <!DOCTYPE html>
@@ -397,14 +397,17 @@
             max-height:calc(100vh - 24px);
             overflow-y:auto;
             overflow-x:hidden;
-            scrollbar-width:none;
-            -ms-overflow-style:none;
+            scrollbar-width:thin;
+            scrollbar-color:#B9867D #F8EFEC;
             border-radius:28px;
             background:#fff;
             box-shadow:0 20px 60px rgba(35,14,11,.18);
             outline:none;
         }
-        .order-details-modal-panel::-webkit-scrollbar{display:none;width:0;height:0}
+        .order-details-modal-panel::-webkit-scrollbar{width:8px}
+        .order-details-modal-panel::-webkit-scrollbar-track{background:#F8EFEC;border-radius:999px}
+        .order-details-modal-panel::-webkit-scrollbar-thumb{background:#B9867D;border-radius:999px;border:2px solid #F8EFEC}
+        .order-details-modal-panel::-webkit-scrollbar-thumb:hover{background:#96665E}
         .schedule-modal-panel{
             position:relative;
             width:560px;
@@ -412,13 +415,16 @@
             max-height:calc(100vh - 32px);
             overflow-y:auto;
             overflow-x:hidden;
-            scrollbar-width:none;
-            -ms-overflow-style:none;
+            scrollbar-width:thin;
+            scrollbar-color:#B9867D #F8EFEC;
             border-radius:24px;
             background:#fff;
             box-shadow:0 20px 60px rgba(35,14,11,.18);
         }
-        .schedule-modal-panel::-webkit-scrollbar{display:none;width:0;height:0}
+        .schedule-modal-panel::-webkit-scrollbar{width:8px}
+        .schedule-modal-panel::-webkit-scrollbar-track{background:#F8EFEC;border-radius:999px}
+        .schedule-modal-panel::-webkit-scrollbar-thumb{background:#B9867D;border-radius:999px;border:2px solid #F8EFEC}
+        .schedule-modal-panel::-webkit-scrollbar-thumb:hover{background:#96665E}
 
         .modal-section{flex:0 0 auto}
         .modal-header-section{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 35px;border-bottom:1px solid #D9D5D3}
