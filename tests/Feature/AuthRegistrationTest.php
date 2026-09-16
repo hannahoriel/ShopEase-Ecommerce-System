@@ -209,6 +209,26 @@ class AuthRegistrationTest extends TestCase
             ->assertSee('registration-search');
     }
 
+    public function test_rejected_user_cannot_login_even_with_valid_credentials(): void
+    {
+        $password = 'Password123!';
+        $user = User::factory()->create([
+            'role' => User::ROLE_BUYER,
+            'registration_status' => 'rejected',
+            'password' => $password,
+            'email' => 'rejected.buyer@example.com',
+        ]);
+
+        $this->post(route('login.attempt'), [
+            'email' => $user->email,
+            'password' => $password,
+        ])
+            ->assertSessionHasErrors('email')
+            ->assertSessionHasErrors(['email' => 'Your registration was rejected and this account cannot log in.']);
+
+        $this->assertGuest();
+    }
+
     public function test_approved_buyer_can_login_with_submitted_password_and_reaches_buyer_dashboard(): void
     {
         Mail::fake();

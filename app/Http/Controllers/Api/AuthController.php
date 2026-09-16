@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\AuthController as WebAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Http\Services\RegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly RegistrationService $registrationService
+    ) {}
+
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
@@ -45,7 +47,7 @@ class AuthController extends Controller
 
     public function register(Request $request): JsonResponse
     {
-        app(WebAuthController::class)->register($request);
+        $this->registrationService->register($request);
 
         return response()->json([
             'message' => 'Your registration has been submitted and is awaiting administrator approval.',
@@ -55,9 +57,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        if ($token = $request->bearerToken()) {
-            PersonalAccessToken::findToken($token)?->delete();
-        }
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logout successful.',
