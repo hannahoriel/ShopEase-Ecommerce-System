@@ -190,10 +190,6 @@ class MultiStepRegistrationPersistenceTest extends TestCase
             'user_id' => $user->id,
             'business_permit_path' => $path,
         ]);
-        $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'upload_business_permit' => $path,
-        ]);
         $this->assertDatabaseHas('sellers', [
             'user_id' => $user->id,
             'upload_business_permit' => $path,

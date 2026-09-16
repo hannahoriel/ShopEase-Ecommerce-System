@@ -55,9 +55,10 @@ class AuthRegistrationTest extends TestCase
             'registration_status' => 'pending',
         ]);
 
-        $user = User::where('email', 'buyer.reg@example.com')->first();
-        $this->assertNotNull($user);
-        $this->assertSame(26, $user->age);
+        $this->assertDatabaseHas('buyers', [
+            'user_id' => User::where('email', 'buyer.reg@example.com')->value('id'),
+            'age' => 26,
+        ]);
     }
 
     public function test_seller_registration_collects_business_details(): void
