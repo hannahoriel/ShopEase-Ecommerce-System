@@ -30,9 +30,17 @@ class DashboardController extends Controller
         $orders = Order::where('seller_id', $seller->id);
         $completedOrders = (clone $orders)->completed();
         $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
 
         $totalSales = (float) $completedOrders->sum('total');
         $completedCount = (clone $completedOrders)->count();
+        $todaySales = (float) (clone $completedOrders)->whereDate('created_at', $today)->sum('total');
+        $yesterdaySales = (float) (clone $completedOrders)->whereDate('created_at', $yesterday)->sum('total');
+        $todayOrders = (clone $orders)->whereDate('created_at', $today)->count();
+        $yesterdayOrders = (clone $orders)->whereDate('created_at', $yesterday)->count();
+        $todayPendingOrders = (clone $orders)->where('status', 'pending')->whereDate('created_at', $today)->count();
+        $yesterdayPendingOrders = (clone $orders)->where('status', 'pending')->whereDate('created_at', $yesterday)->count();
+        $lowStockProducts = $seller->products()->where('stock_quantity', '<=', 5)->count();
 
         return [
             'seller' => [
@@ -44,13 +52,19 @@ class DashboardController extends Controller
                 'total_sales' => $totalSales,
                 'total_orders' => (clone $orders)->count(),
                 'pending_orders' => (clone $orders)->where('status', 'pending')->count(),
-                'low_stock_products' => $seller->products()->where('stock_quantity', '<=', 5)->count(),
+                'low_stock_products' => $lowStockProducts,
+                'changes' => [
+                    'total_sales' => $this->percentChange($yesterdaySales, $todaySales),
+                    'total_orders' => $this->percentChange($yesterdayOrders, $todayOrders),
+                    'pending_orders' => $this->percentChange($yesterdayPendingOrders, $todayPendingOrders),
+                    'low_stock_products' => $this->unavailableChange(),
+                ],
             ],
             'sales_summary' => [
                 'gross_sales' => $totalSales,
                 'completed_orders' => $completedCount,
                 'average_order_value' => $completedCount > 0 ? round($totalSales / $completedCount, 2) : 0.0,
-                'today_sales' => (float) (clone $completedOrders)->whereDate('created_at', $today)->sum('total'),
+                'today_sales' => $todaySales,
             ],
             'orders_by_status' => (clone $orders)
                 ->selectRaw('status, COUNT(*) as total')
@@ -72,6 +86,28 @@ class DashboardController extends Controller
                 ])
                 ->values()
                 ->all(),
+        ];
+    }
+
+    private function percentChange(float|int $previous, float|int $current): array
+    {
+        if ($previous == 0) {
+            $percent = $current > 0 ? 100 : 0;
+        } else {
+            $percent = (($current - $previous) / $previous) * 100;
+        }
+
+        return [
+            'value' => number_format(abs($percent), 0) . '%',
+            'direction' => $percent >= 0 ? 'up' : 'down',
+        ];
+    }
+
+    private function unavailableChange(): array
+    {
+        return [
+            'value' => '0%',
+            'direction' => 'up',
         ];
     }
 

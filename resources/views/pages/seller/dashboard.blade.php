@@ -2042,7 +2042,8 @@
                     <div class="stat-bottom">
 
                         <span class="stat-change">
-                            ↑ 12%
+                            {{ $dashboard['stats']['changes']['total_sales']['direction'] === 'up' ? '↑' : '↓' }}
+                            {{ $dashboard['stats']['changes']['total_sales']['value'] }}
                         </span>
 
                         <span>
@@ -2091,7 +2092,8 @@
                     <div class="stat-bottom">
 
                         <span class="stat-change">
-                            ↑ 8%
+                            {{ $dashboard['stats']['changes']['total_orders']['direction'] === 'up' ? '↑' : '↓' }}
+                            {{ $dashboard['stats']['changes']['total_orders']['value'] }}
                         </span>
 
                         <span>
@@ -2140,7 +2142,8 @@
                     <div class="stat-bottom">
 
                         <span class="stat-change">
-                            ↑ 5%
+                            {{ $dashboard['stats']['changes']['pending_orders']['direction'] === 'up' ? '↑' : '↓' }}
+                            {{ $dashboard['stats']['changes']['pending_orders']['value'] }}
                         </span>
 
                         <span>
@@ -2189,7 +2192,8 @@
                     <div class="stat-bottom">
 
                         <span class="stat-change">
-                            ↑ 5%
+                            {{ $dashboard['stats']['changes']['low_stock_products']['direction'] === 'up' ? '↑' : '↓' }}
+                            {{ $dashboard['stats']['changes']['low_stock_products']['value'] }}
                         </span>
 
                         <span>

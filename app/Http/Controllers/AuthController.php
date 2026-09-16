@@ -182,9 +182,7 @@ class AuthController extends Controller
             ],
 
             'birthday' => [
-                'required',
-                'date',
-                'before_or_equal:today',
+                ...$this->birthdayValidationRules(),
             ],
 
             'province' => [
@@ -534,7 +532,7 @@ class AuthController extends Controller
     public function completeBuyerRegistration(array $data): void
     {
         $data = $this->normalizeRegistrationData($data);
-        validator($data, $this->passwordValidationRules())->validate();
+        validator($data, $this->registrationValidationRules())->validate();
 
         DB::transaction(function () use ($data): void {
             $user = $this->createRegisteredUser($data, User::ROLE_BUYER);
@@ -566,7 +564,7 @@ class AuthController extends Controller
     public function completeSellerRegistration(array $data): void
     {
         $data = $this->normalizeRegistrationData($data);
-        validator($data, $this->passwordValidationRules())->validate();
+        validator($data, $this->registrationValidationRules())->validate();
 
         DB::transaction(function () use ($data): void {
             $user = $this->createRegisteredUser($data, User::ROLE_SELLER);
@@ -734,6 +732,26 @@ class AuthController extends Controller
                 'confirmed',
                 ...$this->passwordRules(),
             ],
+        ];
+    }
+
+    private function registrationValidationRules(): array
+    {
+        return array_merge(
+            [
+                'birthday' => $this->birthdayValidationRules(),
+            ],
+            $this->passwordValidationRules(),
+        );
+    }
+
+    private function birthdayValidationRules(): array
+    {
+        return [
+            'required',
+            'date',
+            'before_or_equal:today',
+            'before_or_equal:' . now()->subYears(18)->toDateString(),
         ];
     }
 
