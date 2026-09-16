@@ -4,18 +4,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\OrderStatusController;
+use App\Http\Controllers\Api\Seller\ShippingStatusController;
 use App\Http\Controllers\LocationController;
-use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
-use App\Http\Controllers\Seller\OrderStatusController;
-use App\Http\Controllers\Seller\ShippingStatusController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);
 
-    // Public — no auth required, so the registration form can populate
-    // its province/city/barangay dropdowns before a user is logged in.
+
     Route::prefix('locations')->group(function () {
         Route::get('/provinces', [LocationController::class, 'provinces']);
         Route::get('/provinces/{code}/cities', [LocationController::class, 'municipalities']);
