@@ -8,7 +8,6 @@ use App\Models\Buyer\Buyer;
 use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
 use App\Models\Logistics\Logistics;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +23,7 @@ class AuthController extends Controller
     /**
      * Handle an authentication attempt.
      */
-    public function login(Request $request): RedirectResponse|JsonResponse
+    public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => [
@@ -58,17 +57,6 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
-
-        if ($request->expectsJson() || $request->is('api/*')) {
-            $token = Auth::user()->createToken('api-token')->plainTextToken;
-
-            return response()->json([
-                'message' => 'Login successful.',
-                'user' => Auth::user(),
-                'role' => Auth::user()->role,
-                'token' => $token,
-            ]);
-        }
 
         return match (Auth::user()->role) {
             User::ROLE_ADMIN =>
@@ -107,7 +95,7 @@ class AuthController extends Controller
     /**
      * Register a new user and hold the account pending admin approval.
      */
-    public function register(Request $request): RedirectResponse|JsonResponse
+    public function register(Request $request): RedirectResponse
     {
         $role = $request->input(
             'role',
@@ -511,13 +499,6 @@ class AuthController extends Controller
         |
         */
 
-        if ($request->expectsJson() || $request->is('api/*')) {
-            return response()->json([
-                'message' => 'Your registration has been submitted and is awaiting administrator approval.',
-                'status' => 'pending',
-            ], 201);
-        }
-
         return redirect()
             ->route('login')
             ->with(
@@ -771,18 +752,12 @@ class AuthController extends Controller
      */
     public function logout(
         Request $request
-    ): RedirectResponse|JsonResponse {
+    ): RedirectResponse {
 
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        if ($request->expectsJson() || $request->is('api/*')) {
-            return response()->json([
-                'message' => 'Logout successful.',
-            ]);
-        }
 
         return redirect()->route(
             'landing.page'

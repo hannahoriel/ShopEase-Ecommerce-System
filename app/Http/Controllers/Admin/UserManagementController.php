@@ -203,12 +203,15 @@ class UserManagementController extends Controller
         ];
 
         if ($details) {
-            $data['details'] = array_merge($profile?->only([
+            $detailFields = [
                 'first_name', 'last_name', 'middle_initial', 'sex', 'birthday', 'age', 'province',
                 'municipality', 'barangay', 'street', 'house_number', 'zip_code', 'business_name',
                 'line_of_business', 'upload_id', 'upload_business_permit', 'account_action_reason',
                 'account_action_details',
-            ]) ?? [], [
+            ];
+            $detailsSource = $profile ?: $user;
+
+            $data['details'] = array_merge($detailsSource->only($detailFields), [
                 'valid_id_url' => $profile?->upload_id
                     ? Storage::disk('public')->url($profile->upload_id)
                     : null,
