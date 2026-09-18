@@ -4296,83 +4296,146 @@ document.addEventListener(
            FORM SUBMISSION
         ========================================================== */
 
-        let resendCooldownTimer = null;
+let resendCooldownTimer = null;
 
-        function startResendCooldown(seconds) {
+function startResendCooldown(seconds) {
+    clearInterval(resendCooldownTimer);
+    emailResendButton.disabled = true;
+
+    const updateCooldown = function () {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = String(seconds % 60).padStart(2, '0');
+        const label = emailResendButton.querySelector('span');
+
+        if (label) {
+            label.textContent =
+                `Resend Code (${minutes}:${remainingSeconds})`;
+        }
+
+        if (seconds <= 0) {
             clearInterval(resendCooldownTimer);
-            emailResendButton.disabled = true;
+            resendCooldownTimer = null;
+            emailResendButton.disabled = false;
 
-            const updateCooldown = function () {
-                const minutes = Math.floor(seconds / 60);
-                const remainingSeconds = String(seconds % 60).padStart(2, '0');
-                const label = emailResendButton.querySelector('span');
-
-                if (label) {
-                    label.textContent = `Resend Code (${minutes}:${remainingSeconds})`;
-                }
-
-                if (seconds <= 0) {
-                    clearInterval(resendCooldownTimer);
-                    resendCooldownTimer = null;
-                    emailResendButton.disabled = false;
-
-                    if (label) {
-                        label.textContent = 'Resend Code';
-                    }
-                }
-
-                seconds -= 1;
-            };
-
-            updateCooldown();
-            resendCooldownTimer = setInterval(updateCooldown, 1000);
+            if (label) {
+                label.textContent = 'Resend Code';
+            }
         }
 
-        if (buyerCompletionForm) {
+        seconds -= 1;
+    };
 
-            buyerCompletionForm.addEventListener(
-                'submit',
-                async function (event) {
+    updateCooldown();
+    resendCooldownTimer = setInterval(
+        updateCooldown,
+        1000
+    );
+}
 
-                    /*
-                     * Keep buyer on the review page
-                     * while showing email verification.
-                     */
 
-                    event.preventDefault();
+if (buyerCompletionForm) {
 
-                    try {
-                        const response = await fetch(
-                            "{{ route('buyer.register.send-code') }}",
-                            {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                                    'Accept': 'application/json',
-                                },
-                            }
-                        );
+    buyerCompletionForm.addEventListener(
+        'submit',
+        async function (event) {
 
-                        const result = await response.json();
+            /*
+             * Prevent normal form submission first.
+             * The verification modal must appear before
+             * the actual registration is submitted.
+             */
 
-                        if (!response.ok) {
-                            throw new Error(result.message || 'Unable to send the verification code.');
+            event.preventDefault();
+
+
+            /*
+             * Show submitting state
+             */
+
+            if (continueButton) {
+
+                continueButton.disabled = true;
+
+                continueButton.textContent =
+                    'Submitting...';
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "{{ route('buyer.register.send-code') }}",
+                        {
+                            method: 'POST',
+
+                            headers: {
+                                'X-CSRF-TOKEN':
+                                    document.querySelector(
+                                        'input[name="_token"]'
+                                    ).value,
+
+                                'Accept':
+                                    'application/json',
+                            },
                         }
+                    );
 
-                        openEmailVerificationModal();
-                        startResendCooldown(2 * 60);
-                    } catch (error) {
-                        alert(error.message);
-                        if (continueButton) {
-                            continueButton.disabled = false;
-                            continueButton.textContent = 'Submit';
-                        }
-                    }
+
+                const result =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        result.message ||
+                        'Unable to send the verification code.'
+                    );
 
                 }
-            );
+
+
+                /*
+                 * Email code successfully sent.
+                 * Open verification modal.
+                 */
+
+                openEmailVerificationModal();
+
+
+                startResendCooldown(
+                    2 * 60
+                );
+
+
+            } catch (error) {
+
+                alert(
+                    error.message
+                );
+
+
+                /*
+                 * Restore button when sending fails
+                 */
+
+                if (continueButton) {
+
+                    continueButton.disabled = false;
+
+                    continueButton.textContent =
+                        'Submit';
+
+                }
+
+            }
 
         }
+    );
+
+}
 
 
         /* =========================================================

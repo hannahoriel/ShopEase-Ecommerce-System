@@ -3,75 +3,197 @@
 
 @section('content')
 
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    #admin-content,
+    #admin-content * {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+
 <div
     id="admin-content"
-    class="ml-72 pt-[128px] px-6 pb-8 min-h-screen transition-all duration-300"
+    class="ml-60 pt-[95px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
 
     <!-- Welcome -->
-    <h2 class="text-[22px] font-bold text-gray-800 mb-6">
+    <h2 class="text-[21px] font-semibold text-black mb-5">
         Welcome, Admin!
     </h2>
 
 
     <!-- ==================== STAT CARDS ==================== -->
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 
-    @foreach ($stats as $stat)
+        @php
+            $stats = [
+                [
+                    'icon' => 'pending.png',
+                    'value' => '236',
+                    'label' => 'Pending Registrations',
+                    'change' => '12%'
+                ],
+                [
+                    'icon' => 'active-users.png',
+                    'value' => '1,245',
+                    'label' => 'Active Users',
+                    'change' => '8%'
+                ],
+                [
+                    'icon' => 'active-sellers.png',
+                    'value' => '352',
+                    'label' => 'Active Sellers',
+                    'change' => '5%'
+                ],
+                [
+                    'icon' => 'total-commision.png',
+                    'value' => '₱45,680.00',
+                    'label' => 'Total Commission',
+                    'change' => '5%'
+                ],
+            ];
+        @endphp
 
-        <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px] relative
-                   flex flex-col justify-between
-                   transition-all duration-300
-                   hover:-translate-y-1 hover:shadow-md"
-        >
+        @foreach ($stats as $stat)
 
-            <!-- TOP CONTENT -->
-            <div class="flex items-center gap-4">
+            <div class="dashboard-stat-card">
 
-                <!-- ICON -->
-                <div class="w-14 h-14 shrink-0 flex items-center justify-center">
+                <div class="dashboard-stat-main">
+
+                    <!-- PNG ICON -->
                     <img
                         src="{{ asset('icons/admin/dashboard/body/' . $stat['icon']) }}"
-                        class="w-14 h-14 object-contain"
                         alt="{{ $stat['label'] }}"
+                        class="dashboard-stat-icon"
                     >
+
+                    <!-- CONTENT -->
+                    <div class="dashboard-stat-content">
+
+                        <div class="dashboard-stat-number">
+                            {{ $stat['value'] }}
+                        </div>
+
+                        <div class="dashboard-stat-label">
+                            {{ $stat['label'] }}
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <!-- VALUE + LABEL -->
-                <div class="min-w-0">
-                    <p class="text-[26px] font-bold text-gray-900 leading-none">
-                        {{ $stat['value'] }}
-                    </p>
+                <!-- GROWTH -->
+                <div class="dashboard-stat-growth">
 
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
-                        {{ $stat['label'] }}
-                    </p>
+                    <span class="dashboard-growth-arrow">
+                        ↑
+                    </span>
+
+                    <strong>
+                        {{ $stat['change'] }}
+                    </strong>
+
+                    from yesterday
+
                 </div>
 
             </div>
 
-            <!-- BOTTOM CHANGE -->
-            <p class="mt-3 ml-[72px] text-[13px] text-green-600">
-                <span class="text-[18px] align-middle">{{ $stat['change']['direction'] === 'up' ? '↑' : '↓' }}</span>
-                <span class="font-semibold">{{ $stat['change']['value'] }}</span>
-                <span class="text-gray-400"> from yesterday</span>
-            </p>
+        @endforeach
 
-        </div>
+    </div>
 
-    @endforeach
 
-</div>
+    <style>
+        /* =========================================================
+           DASHBOARD STAT CARDS
+           Matches Seller Compliance stat-card structure/format.
+        ========================================================== */
+
+        .dashboard-stat-card {
+            min-height: 108px;
+            background: #FFFFFF;
+            border: 1px solid #F0E9E6;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .dashboard-stat-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /*
+         * The PNG contains its own visual background.
+         * No extra icon wrapper is added.
+         */
+        .dashboard-stat-icon {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .dashboard-stat-content {
+            min-width: 0;
+        }
+
+        .dashboard-stat-number {
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 600;
+            color: #17120F;
+        }
+
+        .dashboard-stat-label {
+            margin-top: 5px;
+            font-size: 13px;
+            line-height: 1.15;
+            font-weight: 400;
+            color: #8C8784;
+        }
+
+        .dashboard-stat-growth {
+            margin-top: 15px;
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 400;
+            color: #8C8784;
+            white-space: nowrap;
+        }
+
+        .dashboard-stat-growth strong {
+            color: #11951B;
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        .dashboard-growth-arrow {
+            color: #11951B;
+            font-size: 16px;
+            vertical-align: -1px;
+            margin-right: 2px;
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-stat-card {
+                min-height: 104px;
+            }
+        }
+    </style>
 
     <!-- ==================== PLATFORM OVERVIEW + SALES ==================== -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-6">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
 
         <!-- Platform Overview -->
-        <div class="xl:col-span-2 bg-white rounded-2xl p-5 shadow-sm">
+        <div class="xl:col-span-2 bg-white rounded-2xl p-4 shadow-sm">
 
-            <h3 class="text-[18px] font-bold text-gray-800 mb-4">
+            <h3 class="text-[17px] font-semibold text-black mb-3">
                 Platform Overview
             </h3>
 
@@ -86,23 +208,23 @@
 
 
         <!-- Sales Summary -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+        <div class="bg-white rounded-2xl p-4 shadow-sm flex flex-col justify-between">
 
             <div>
 
-                <h3 class="text-[18px] font-bold text-gray-800 mb-4">
+                <h3 class="text-[17px] font-semibold text-black mb-3">
                     Sales Summary
                 </h3>
 
-                <div class="space-y-3 text-[15px]">
+                <div class="space-y-2.5 text-[13px]">
 
                     <div class="flex justify-between gap-4">
                         <span class="text-gray-400">
                             Gross Sales
                         </span>
 
-                        <span class="font-semibold text-right">
-                            {{ $salesSummary['gross_sales'] }}
+                        <span class="font-medium text-right">
+                            ₱145,560,000.00
                         </span>
                     </div>
 
@@ -111,8 +233,8 @@
                             Total Orders
                         </span>
 
-                        <span class="font-semibold">
-                            {{ $salesSummary['total_orders'] }}
+                        <span class="font-medium">
+                            1,256
                         </span>
                     </div>
 
@@ -121,8 +243,8 @@
                             Average Order Value
                         </span>
 
-                        <span class="font-semibold">
-                            {{ $salesSummary['average_order_value'] }}
+                        <span class="font-medium">
+                            ₱145.00
                         </span>
                     </div>
 
@@ -131,8 +253,8 @@
                             Completed Orders
                         </span>
 
-                        <span class="font-semibold">
-                            {{ $salesSummary['completed_orders'] }}
+                        <span class="font-medium">
+                            1,256
                         </span>
                     </div>
 
@@ -141,8 +263,8 @@
                             Return/Refund
                         </span>
 
-                        <span class="font-semibold">
-                            {{ $salesSummary['returns_refunds'] }}
+                        <span class="font-medium">
+                            25
                         </span>
                     </div>
 
@@ -150,7 +272,7 @@
 
             </div>
 
-            <button class="mt-4 bg-maroon-900 text-white rounded-full py-3 text-[15px] font-medium hover:bg-maroon-800 transition">
+            <button class="mt-3 bg-maroon-900 text-white rounded-full py-2.5 text-[13px] font-medium hover:bg-maroon-800 transition">
                 View Full Report
             </button>
 
@@ -160,24 +282,24 @@
 
 
     <!-- ==================== BOTTOM CARDS ==================== -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
         <!-- Complaints -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
 
-            <div class="flex justify-between mb-4">
+            <div class="flex justify-between mb-3">
 
-                <h3 class="text-[18px] font-bold text-gray-800">
+                <h3 class="text-[17px] font-semibold text-black">
                     Complaints and Dispute
                 </h3>
 
-                <a href="#" class="text-[13px] text-maroon-700 font-medium">
+                <a href="#" class="text-[12px] text-maroon-700 font-medium">
                     View all
                 </a>
 
             </div>
 
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-4">
 
                 <div class="shrink-0">
                     <canvas
@@ -187,24 +309,24 @@
                     ></canvas>
                 </div>
 
-                <div class="space-y-2 text-[15px] flex-1">
+                <div class="space-y-2 text-[13px] flex-1">
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-maroon-900"></span>
                         <span>Open</span>
-                        <span class="ml-auto font-semibold">{{ $complaints['open'] }}</span>
+                        <span class="ml-auto font-medium">20</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-red-500"></span>
                         <span>In Progress</span>
-                        <span class="ml-auto font-semibold">{{ $complaints['in_progress'] }}</span>
+                        <span class="ml-auto font-medium">10</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-peach-dark"></span>
                         <span>Resolved</span>
-                        <span class="ml-auto font-semibold">{{ $complaints['resolved'] }}</span>
+                        <span class="ml-auto font-medium">45</span>
                     </div>
 
                 </div>
@@ -215,64 +337,71 @@
 
 
         <!-- Pending Registrations -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
 
-            <div class="flex justify-between mb-4">
+            <div class="flex justify-between mb-3">
 
-                <h3 class="text-[18px] font-bold text-gray-800">
+                <h3 class="text-[17px] font-semibold text-black">
                     Pending Registrations
                 </h3>
 
-                <a href="#" class="text-[13px] text-maroon-700 font-medium">
+                <a href="#" class="text-[12px] text-maroon-700 font-medium">
                     View all
                 </a>
 
             </div>
 
-            <div class="space-y-4 text-[15px] mt-7">
+            <div class="space-y-4 text-[15px]">
 
-    <!-- Sellers -->
-    <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <img
+                        src="{{ asset('icons/admin/dashboard/body/seller.png') }}"
+                        class="w-5 h-5"
+                        alt=""
+                    >
 
-        <img
-            src="{{ asset('icons/admin/dashboard/body/seller.png') }}"
-            class="w-5 h-5"
-            alt=""
-        >
+                    <span>Sellers</span>
 
-        <span>Sellers</span>
+                    <span class="ml-auto font-medium">
+                        12
+                    </span>
+                </div>
 
-            <span class="ml-auto font-semibold">
-                {{ $pendingBreakdown['sellers'] }}
-        </span>
+                <div class="flex items-center gap-3">
+                    <img
+                        src="{{ asset('icons/admin/dashboard/body/courier.png') }}"
+                        class="w-5 h-5"
+                        alt=""
+                    >
 
-    </div>
+                    <span>Couriers</span>
 
+                    <span class="ml-auto font-medium">
+                        8
+                    </span>
+                </div>
 
-    <!-- Buyers -->
-    <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <img
+                        src="{{ asset('icons/admin/dashboard/body/buyer.png') }}"
+                        class="w-5 h-5"
+                        alt=""
+                    >
 
-        <img
-            src="{{ asset('icons/admin/dashboard/body/buyer.png') }}"
-            class="w-5 h-5"
-            alt=""
-        >
+                    <span>Buyers</span>
 
-        <span>Buyers</span>
+                    <span class="ml-auto font-medium">
+                        15
+                    </span>
+                </div>
 
-            <span class="ml-auto font-semibold">
-                {{ $pendingBreakdown['buyers'] }}
-        </span>
-
-    </div>
-
-</div>
+            </div>
 
         </div>
 
 
         <!-- Announcement -->
-        <div class="bg-maroon-900 text-white rounded-2xl p-5 shadow-sm relative overflow-hidden">
+        <div class="bg-maroon-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
 
             <!-- Decorative circles -->
             <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-peach-dark/10"></div>
@@ -295,22 +424,22 @@
                     </p>
 
                     <span class="text-[13px] bg-white/10 px-3 py-1 rounded-full">
-                        {{ $announcementMonth }}
+                        August
                     </span>
 
                 </div>
 
-                <h3 class="text-[21px] font-bold mb-2">
-                    {{ $announcement?->title }}
+                <h3 class="text-[19px] font-bold mb-2">
+                    Augzu Sale 2026!
                 </h3>
 
-                <p class="text-[15px] text-white/75 leading-relaxed max-w-[230px]">
-                    {{ $announcement?->body }}
+                <p class="text-[14px] text-white/75 leading-relaxed max-w-[230px]">
+                    Abangan ang mga katangahan ngayong August
                 </p>
 
 
                 <!-- Bottom accent -->
-                <div class="mt-5 flex items-center gap-2">
+                <div class="mt-4 flex items-center gap-2">
 
                     <span class="w-8 h-1 rounded-full bg-peach-dark"></span>
 
@@ -335,19 +464,29 @@
 
 <script>
 
+Chart.defaults.font.family = 'Poppins, sans-serif';
+
 new Chart(document.getElementById('overviewChart'), {
 
     type: 'line',
 
     data: {
 
-        labels: @json($overviewChart['labels']),
+        labels: [
+            'May 1',
+            'May 6',
+            'May 11',
+            'May 16',
+            'May 21',
+            'May 26',
+            'May 31'
+        ],
 
         datasets: [
 
             {
                 label: 'Registrations',
-                data: @json($overviewChart['registrations']),
+                data: [80,120,90,150,110,140,300],
 
                 borderColor: '#5c1414',
                 backgroundColor: 'rgba(92,20,20,0.15)',
@@ -369,7 +508,7 @@ new Chart(document.getElementById('overviewChart'), {
 
             {
                 label: 'Active Users',
-                data: @json($overviewChart['active_users']),
+                data: [60,90,70,180,130,160,380],
 
                 borderColor: '#e63946',
                 backgroundColor: 'rgba(230,57,70,0.10)',
@@ -391,7 +530,7 @@ new Chart(document.getElementById('overviewChart'), {
 
             {
                 label: 'Active Sellers',
-                data: @json($overviewChart['active_sellers']),
+                data: [100,150,120,200,160,190,350],
 
                 borderColor: '#f3a341',
                 backgroundColor: 'rgba(243,163,65,0.15)',
@@ -552,7 +691,7 @@ new Chart(document.getElementById('complaintsChart'), {
 
         datasets: [{
 
-            data: @json(array_values($complaints)),
+            data: [20, 10, 45],
 
             backgroundColor: [
                 '#5c1414',

@@ -701,7 +701,10 @@
            PASSWORD
         ========================================================== */
 
-        .password-field {
+        .password-field,
+.password-confirmation-field {
+    grid-column: 1 / -1 !important;
+    width: 50%;
 
             margin-top:
                 25px;
@@ -1490,6 +1493,66 @@
 
         }
 
+
+
+        /* =========================================================
+           PASSWORD EYE TOGGLE
+        ========================================================== */
+
+        .password-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-input-wrapper .form-input {
+            padding-right: 50px;
+        }
+
+        .password-eye-button {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+
+            width: 22px;
+            height: 22px;
+
+            padding: 0;
+            margin: 0;
+
+            border: none;
+            outline: none;
+            background: transparent;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+            z-index: 10;
+
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .password-eye-button img {
+            width: 18px;
+            height: 18px;
+
+            display: block;
+            object-fit: contain;
+
+            pointer-events: none;
+        }
+
+        .password-eye-button:hover img {
+            opacity: 0.75;
+        }
+
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none !important;
+        }
 
         /* =========================================================
            ERROR
@@ -2944,16 +3007,34 @@
                     </label>
 
 
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        class="form-input"
-                        placeholder="Create a password"
-                        minlength="8"
-                        autocomplete="new-password"
-                        required
-                    >
+                    <div class="password-input-wrapper">
+
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-input"
+                            placeholder="Create a password"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="password-eye-button"
+                            id="passwordEyeButton"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                        >
+                            <img
+                                src="{{ asset('icons/login/hide-password.png') }}"
+                                alt="Password hidden"
+                                id="passwordEyeIcon"
+                            >
+                        </button>
+
+                    </div>
 
 
                     <small class="field-help">
@@ -2992,16 +3073,34 @@
                     </label>
 
 
-                    <input
-                        type="password"
-                        id="password_confirmation"
-                        name="password_confirmation"
-                        class="form-input"
-                        placeholder="Confirm your password"
-                        minlength="8"
-                        autocomplete="new-password"
-                        required
-                    >
+                    <div class="password-input-wrapper">
+
+                        <input
+                            type="password"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            class="form-input"
+                            placeholder="Confirm your password"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="password-eye-button"
+                            id="passwordConfirmationEyeButton"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                        >
+                            <img
+                                src="{{ asset('icons/login/hide-password.png') }}"
+                                alt="Password hidden"
+                                id="passwordConfirmationEyeIcon"
+                            >
+                        </button>
+
+                    </div>
 
 
                     <p
@@ -3210,6 +3309,156 @@ document.addEventListener(
         passwordConfirmationInput?.addEventListener(
             'input',
             checkPasswordMatch
+        );
+
+
+        /* =========================================================
+           PASSWORD VISIBILITY TOGGLE
+        ========================================================== */
+
+        const passwordEyeButton =
+            document.getElementById(
+                'passwordEyeButton'
+            );
+
+        const passwordEyeIcon =
+            document.getElementById(
+                'passwordEyeIcon'
+            );
+
+        const passwordConfirmationEyeButton =
+            document.getElementById(
+                'passwordConfirmationEyeButton'
+            );
+
+        const passwordConfirmationEyeIcon =
+            document.getElementById(
+                'passwordConfirmationEyeIcon'
+            );
+
+
+        function updatePasswordEye(
+            input,
+            button,
+            icon
+        ) {
+
+            if (
+                !input ||
+                !button ||
+                !icon
+            ) {
+                return;
+            }
+
+
+            if (input.type === 'password') {
+
+                icon.src =
+                    "{{ asset('icons/login/hide-password.png') }}";
+
+                icon.alt =
+                    'Password hidden';
+
+                button.setAttribute(
+                    'aria-label',
+                    'Show password'
+                );
+
+                button.setAttribute(
+                    'aria-pressed',
+                    'false'
+                );
+
+            } else {
+
+                icon.src =
+                    "{{ asset('icons/login/show-password.png') }}";
+
+                icon.alt =
+                    'Password visible';
+
+                button.setAttribute(
+                    'aria-label',
+                    'Hide password'
+                );
+
+                button.setAttribute(
+                    'aria-pressed',
+                    'true'
+                );
+            }
+        }
+
+
+        function toggleSellerPassword(
+            input,
+            button,
+            icon
+        ) {
+
+            if (
+                !input ||
+                !button ||
+                !icon
+            ) {
+                return;
+            }
+
+
+            input.type =
+                input.type === 'password'
+                    ? 'text'
+                    : 'password';
+
+
+            updatePasswordEye(
+                input,
+                button,
+                icon
+            );
+        }
+
+
+        passwordEyeButton?.addEventListener(
+            'click',
+            function () {
+
+                toggleSellerPassword(
+                    passwordInput,
+                    passwordEyeButton,
+                    passwordEyeIcon
+                );
+
+            }
+        );
+
+
+        passwordConfirmationEyeButton?.addEventListener(
+            'click',
+            function () {
+
+                toggleSellerPassword(
+                    passwordConfirmationInput,
+                    passwordConfirmationEyeButton,
+                    passwordConfirmationEyeIcon
+                );
+
+            }
+        );
+
+
+        updatePasswordEye(
+            passwordInput,
+            passwordEyeButton,
+            passwordEyeIcon
+        );
+
+
+        updatePasswordEye(
+            passwordConfirmationInput,
+            passwordConfirmationEyeButton,
+            passwordConfirmationEyeIcon
         );
 
 

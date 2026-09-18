@@ -7,7 +7,7 @@
         bg-gradient-to-b from-maroon-900 to-maroon-950
         rounded-tr-[4rem]
         flex flex-col
-        py-8 px-5
+        py-6 px-4
         text-white
         transition-all duration-300
         sidebar-reload
@@ -22,7 +22,7 @@
             id="sidebar-logo"
             class="
                 flex items-center justify-center
-                mb-10 px-2 -mt-4
+                mb-7 px-1 -mt-2
                 transition-all duration-500
                 sidebar-logo-reload
             "
@@ -31,7 +31,7 @@
             <img
                 src="{{ asset('icons/admin/dashboard/sidebar&navbar/shopease.png') }}"
                 alt="ShopEase"
-                class="h-20 w-auto"
+                class="h-16 w-auto"
             >
 
         </div>
@@ -39,7 +39,7 @@
 
         <!-- ==================== NAVIGATION ==================== -->
 
-        <nav class="space-y-1">
+        <nav class="space-y-0.5">
 
             @php
 
@@ -66,25 +66,25 @@
                     [
                         'label' => 'Seller Compliance',
                         'icon' => 'seller-compliance.png',
-                        'route' => null
+                        'route' => 'admin.seller.compliance'
                     ],
 
                     [
                         'label' => 'Complaints and Disputes',
                         'icon' => 'complaints-disputes.png',
-                        'route' => null
+                        'route' => 'admin.complaints.disputes'
                     ],
 
                     [
                         'label' => 'Commission',
                         'icon' => 'commission.png',
-                        'route' => null
+                        'route' => 'admin.commission',
                     ],
 
                     [
                         'label' => 'Logistics Management',
                         'icon' => 'logistic-management.png',
-                        'route' => null
+                        'route' => 'admin.logistics.management',
                     ],
 
                     [
@@ -96,7 +96,7 @@
                     [
                         'label' => 'Platform Settings',
                         'icon' => 'settings.png',
-                        'route' => null
+                        'route' => 'admin.platform.settings',
                     ],
 
                     [
@@ -137,9 +137,9 @@
                             sidebar-link
                             sidebar-menu-item
                             flex items-center
-                            gap-3
-                            px-4
-                            py-3
+                            gap-2.5
+                            px-3
+                            py-2.5
                             rounded-full
                             transition-all
                             duration-300
@@ -160,7 +160,7 @@
                                 sidebar-icon-wrapper
                                 flex items-center justify-center
                                 shrink-0
-                                w-5 h-5
+                                w-[18px] h-[18px]
                                 transition-all duration-300
                             "
                         >
@@ -169,7 +169,7 @@
                                 src="{{ asset('icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}"
                                 class="
                                     sidebar-icon
-                                    w-5 h-5
+                                    w-[18px] h-[18px]
                                     object-contain
                                     shrink-0
                                 "
@@ -184,7 +184,7 @@
                         <span
                             class="
                                 sidebar-label
-                                text-[16px]
+                                text-[14px]
                                 font-medium
                                 whitespace-nowrap
                             "
@@ -205,9 +205,9 @@
                             sidebar-link
                             sidebar-menu-item
                             flex items-center
-                            gap-3
-                            px-4
-                            py-3
+                            gap-2.5
+                            px-3
+                            py-2.5
                             rounded-full
                             transition-all
                             duration-300
@@ -224,7 +224,7 @@
                                 sidebar-icon-wrapper
                                 flex items-center justify-center
                                 shrink-0
-                                w-5 h-5
+                                w-[18px] h-[18px]
                             "
                         >
 
@@ -232,7 +232,7 @@
                                 src="{{ asset('icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}"
                                 class="
                                     sidebar-icon
-                                    w-5 h-5
+                                    w-[18px] h-[18px]
                                     object-contain
                                     shrink-0
                                 "
@@ -247,7 +247,7 @@
                         <span
                             class="
                                 sidebar-label
-                                text-[16px]
+                                text-[14px]
                                 font-medium
                                 whitespace-nowrap
                             "
@@ -287,8 +287,8 @@
                 gap-2
                 border border-white/40
                 rounded-full
-                py-3
-                text-[15px]
+                py-2.5
+                text-[14px]
                 font-medium
                 hover:bg-white/10
                 transition-all duration-300
@@ -302,7 +302,7 @@
                     sidebar-icon-wrapper
                     flex items-center justify-center
                     shrink-0
-                    w-5 h-5
+                    w-[18px] h-[18px]
                 "
             >
 
@@ -310,7 +310,7 @@
                     src="{{ asset('icons/admin/dashboard/sidebar&navbar/log-out.png') }}"
                     class="
                         sidebar-icon
-                        w-4 h-4
+                        w-[15px] h-[15px]
                         object-contain
                         shrink-0
                     "
@@ -320,7 +320,7 @@
             </span>
 
 
-            <span class="sidebar-label">
+            <span class="sidebar-label text-[14px]">
                 Log Out
             </span>
 
@@ -466,6 +466,17 @@
             0.6s
             forwards;
 
+    }
+
+
+    /* =========================================================
+       COMPACT SIDEBAR SIZE
+       Keep this so the existing hide/collapse function can
+       still use the original w-72 / w-20 state classes.
+    ========================================================== */
+
+    #admin-sidebar.sidebar-reload:not(.w-20) {
+        width: 256px !important;
     }
 
 

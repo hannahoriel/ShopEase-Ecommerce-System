@@ -1948,7 +1948,543 @@
 
         }
 
-    </style>
+    
+
+        /* =====================================================
+           SELLER DASHBOARD — EXACT ADMIN INTERFACE MATCH
+        ====================================================== */
+
+        body {
+            background: #FBF8F6;
+            color: #17120F;
+        }
+
+        /* Admin wrapper: ml-60 pt-[95px] pl-5 pb-7 */
+        .seller-dashboard-page {
+            min-height: 100vh;
+            margin-left: 270px !important;
+            padding-top: 140px !important;
+            padding-left: 20px !important;
+            padding-right: 25px !important;
+            padding-bottom: 28px !important;
+            background: #FBF8F6;
+            transition: margin-left .30s ease, padding-left .30s ease !important;
+        }
+
+        .seller-dashboard-page.sidebar-collapsed,
+        body.seller-sidebar-collapsed .seller-dashboard-page {
+            margin-left: 100px !important;
+        }
+
+        .seller-dashboard-content {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .dashboard-welcome {
+            margin: 0 0 20px !important;
+        }
+
+        .dashboard-welcome h2 {
+            margin: 0 !important;
+            color: #000 !important;
+            font-size: 21px !important;
+            line-height: 1.2 !important;
+            font-weight: 600 !important;
+        }
+
+        /* STAT CARDS */
+        .stats-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 16px !important;
+            margin: 0 0 20px !important;
+            width: 100% !important;
+        }
+
+        .stat-card {
+            min-width: 0 !important;
+            min-height: 108px !important;
+            padding: 16px !important;
+            display: block !important;
+            background: #fff !important;
+            border: 1px solid #F0E9E6 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 2px 12px rgba(42,20,15,.05) !important;
+            transform: translateY(0) !important;
+            transition:
+                transform .22s ease,
+                box-shadow .22s ease,
+                border-color .22s ease !important;
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px) !important;
+            border-color: #F0E9E6 !important;
+            box-shadow:
+                0 5px 14px rgba(42,20,15,.07),
+                0 2px 5px rgba(42,20,15,.04) !important;
+        }
+
+        .stat-card:hover .stat-icon-image {
+            transform: scale(1.03);
+        }
+
+        .stat-top {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+        }
+
+        .stat-icon,
+        .stat-icon-image {
+            width: 40px !important;
+            height: 40px !important;
+            flex: 0 0 40px !important;
+        }
+
+        .stat-icon {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: transparent !important;
+            border: 0 !important;
+            overflow: visible !important;
+        }
+
+        .stat-icon-image {
+            display: block !important;
+            object-fit: contain !important;
+            transform: scale(1);
+            transition: transform .22s ease !important;
+        }
+
+        .stat-value {
+            margin: 0 !important;
+            color: #17120F !important;
+            font-size: 23px !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
+        }
+
+        .stat-label {
+            margin-top: 5px !important;
+            color: #8C8784 !important;
+            font-size: 13px !important;
+            line-height: 1.15 !important;
+            font-weight: 400 !important;
+        }
+
+        .stat-bottom {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 0 !important;
+            margin-top: 15px !important;
+            color: #8C8784 !important;
+            font-size: 12px !important;
+            line-height: 1.2 !important;
+            font-weight: 400 !important;
+            white-space: nowrap !important;
+        }
+
+        .stat-growth-arrow {
+            color: #11951B !important;
+            font-size: 16px !important;
+            line-height: 1 !important;
+            margin-right: 2px !important;
+        }
+
+        .stat-change {
+            color: #11951B !important;
+            font-size: 12px !important;
+            line-height: 1.2 !important;
+            font-weight: 500 !important;
+            margin-right: 4px !important;
+        }
+
+        /* MAIN ROW — same xl:grid-cols-3 / gap-4 / mb-5 */
+        .dashboard-main-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 16px !important;
+            margin: 0 0 20px !important;
+            width: 100% !important;
+        }
+
+        .sales-card {
+            grid-column: span 2 !important;
+        }
+
+        .status-card {
+            grid-column: span 1 !important;
+        }
+
+        /* Admin cards: bg-white rounded-2xl p-4 shadow-sm */
+        .dashboard-card {
+            min-width: 0 !important;
+            padding: 16px !important;
+            background: #fff !important;
+            border: 0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
+            overflow: hidden !important;
+            transform: none !important;
+            transition: none !important;
+        }
+
+        .dashboard-card:hover {
+            transform: none !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
+        }
+
+        .dashboard-card-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 16px !important;
+            margin: 0 0 12px !important;
+            padding: 0 !important;
+        }
+
+        .dashboard-card-title {
+            margin: 0 !important;
+            color: #000 !important;
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+            font-weight: 600 !important;
+        }
+
+        .dashboard-card-action {
+            height: 32px !important;
+            padding: 0 11px !important;
+            border: 1px solid #E5E1DE !important;
+            border-radius: 7px !important;
+            background: #fff !important;
+            color: #57514E !important;
+            font-size: 12px !important;
+            font-weight: 400 !important;
+            outline: none !important;
+            transition: border-color .18s ease, box-shadow .18s ease !important;
+        }
+
+        .dashboard-card-action:hover {
+            border-color: #C9C2BE !important;
+        }
+
+        .dashboard-card-action:focus {
+            border-color: #AFA7A3 !important;
+            box-shadow: 0 0 0 2px rgba(123,27,27,.05) !important;
+        }
+
+        /* SALES */
+        .sales-card,
+        .status-card {
+            min-height: 0 !important;
+        }
+
+        .sales-legend {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 16px !important;
+            margin: 0 0 8px !important;
+        }
+
+        .legend-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            color: #57514E !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+        }
+
+        .legend-dot {
+            width: 8px !important;
+            height: 8px !important;
+        }
+
+        .sales-chart-container {
+            width: 100% !important;
+            height: 250px !important;
+            padding: 0 !important;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 700ms ease, transform 700ms ease !important;
+        }
+
+        .sales-chart-container.admin-visible {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .sales-chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* STATUS */
+        .status-content {
+            display: grid !important;
+            grid-template-columns: 120px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 16px !important;
+            padding: 4px 0 0 !important;
+        }
+
+        .status-chart-wrap {
+            width: 120px !important;
+            height: 120px !important;
+            margin: 0 auto !important;
+        }
+
+        .status-total {
+            color: #17120F !important;
+            font-size: 17px !important;
+            font-weight: 600 !important;
+        }
+
+        .status-total-label {
+            color: #8C8784 !important;
+            font-size: 10px !important;
+            font-weight: 400 !important;
+        }
+
+        .status-legend {
+            gap: 9px !important;
+        }
+
+        .status-legend-item {
+            grid-template-columns: 8px minmax(0, 1fr) auto !important;
+            gap: 8px !important;
+            color: #292929 !important;
+            font-size: 13px !important;
+        }
+
+        .status-legend-dot {
+            width: 8px !important;
+            height: 8px !important;
+        }
+
+        .status-count {
+            font-size: 13px !important;
+            font-weight: 500 !important;
+        }
+
+        /* BOTTOM ROW — same xl:grid-cols-3 / gap-4 */
+        .dashboard-lower-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 16px !important;
+            width: 100% !important;
+        }
+
+        .recent-orders-card,
+        .low-stock-card {
+            min-height: 0 !important;
+        }
+
+        .card-header-link {
+            color: #A52A2A !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+
+        .card-header-link:hover {
+            color: #52070B !important;
+        }
+
+        .orders-list,
+        .stock-list {
+            padding: 0 !important;
+        }
+
+        .order-row {
+            grid-template-columns: 20px minmax(0, 1fr) 78px 14px !important;
+            gap: 8px !important;
+            min-height: 43px !important;
+            padding: 3px 0 !important;
+        }
+
+        .order-row:hover,
+        .stock-row:hover {
+            background: #FFF9F7 !important;
+        }
+
+        .order-status-icon,
+        .order-status-image {
+            width: 20px !important;
+            height: 20px !important;
+            flex: 0 0 20px !important;
+        }
+
+        .order-id {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+
+        .order-date {
+            font-size: 9px !important;
+        }
+
+        .order-price {
+            font-size: 11px !important;
+            font-weight: 500 !important;
+        }
+
+        .order-payment {
+            font-size: 9px !important;
+        }
+
+        .order-arrow svg {
+            width: 14px !important;
+            height: 14px !important;
+        }
+
+        .stock-row {
+            gap: 10px !important;
+            min-height: 54px !important;
+            padding: 3px 0 !important;
+        }
+
+        .stock-image {
+            width: 40px !important;
+            height: 40px !important;
+            flex: 0 0 40px !important;
+            border-radius: 8px !important;
+        }
+
+        .stock-name {
+            font-size: 12px !important;
+            font-weight: 400 !important;
+        }
+
+        .stock-number {
+            font-size: 10px !important;
+            font-weight: 500 !important;
+        }
+
+        /* ANNOUNCEMENT — same Admin visual scale */
+        .announcement-card {
+            min-height: 0 !important;
+            padding: 16px !important;
+            border-radius: 16px !important;
+            background: #5C1414 !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
+        }
+
+        .announcement-card::before,
+        .announcement-card::after {
+            content: "" !important;
+            position: absolute !important;
+            border-radius: 999px !important;
+            background: rgba(243,169,140,.10) !important;
+            pointer-events: none !important;
+        }
+
+        .announcement-card::before {
+            width: 128px !important;
+            height: 128px !important;
+            right: -40px !important;
+            top: -40px !important;
+        }
+
+        .announcement-card::after {
+            width: 112px !important;
+            height: 112px !important;
+            right: -20px !important;
+            bottom: -48px !important;
+        }
+
+        .announcement-label {
+            color: #F3A98C !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            letter-spacing: .05em !important;
+        }
+
+        .announcement-title {
+            margin: 16px 0 8px !important;
+            font-size: 19px !important;
+            font-weight: 700 !important;
+        }
+
+        .announcement-text {
+            max-width: 230px !important;
+            color: rgba(255,255,255,.75) !important;
+            font-size: 14px !important;
+            line-height: 1.55 !important;
+        }
+
+        .announcement-icon {
+            right: 16px !important;
+            bottom: 18px !important;
+            width: 42px !important;
+            height: 42px !important;
+            color: #F3A98C !important;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1279px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .dashboard-main-grid,
+            .dashboard-lower-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .sales-card,
+            .status-card {
+                grid-column: auto !important;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .seller-dashboard-page,
+            .seller-dashboard-page.sidebar-collapsed,
+            body.seller-sidebar-collapsed .seller-dashboard-page {
+                margin-left: 0 !important;
+                padding-top: 78px !important;
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+                padding-bottom: 28px !important;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+                gap: 13px !important;
+            }
+
+            .stat-card {
+                min-height: 104px !important;
+            }
+
+            .dashboard-main-grid,
+            .dashboard-lower-grid {
+                gap: 14px !important;
+            }
+
+            .status-content {
+                grid-template-columns: 1fr !important;
+                justify-items: center !important;
+            }
+
+            .status-legend {
+                width: 100% !important;
+            }
+
+            .sales-chart-container {
+                height: 220px !important;
+            }
+        }
+
+</style>
 
 </head>
 
@@ -2041,8 +2577,11 @@
 
                     <div class="stat-bottom">
 
-                        <span class="stat-change">
+                        <span class="stat-growth-arrow">
                             {{ $dashboard['stats']['changes']['total_sales']['direction'] === 'up' ? '↑' : '↓' }}
+                        </span>
+
+                        <span class="stat-change">
                             {{ $dashboard['stats']['changes']['total_sales']['value'] }}
                         </span>
 
@@ -2091,8 +2630,11 @@
 
                     <div class="stat-bottom">
 
-                        <span class="stat-change">
+                        <span class="stat-growth-arrow">
                             {{ $dashboard['stats']['changes']['total_orders']['direction'] === 'up' ? '↑' : '↓' }}
+                        </span>
+
+                        <span class="stat-change">
                             {{ $dashboard['stats']['changes']['total_orders']['value'] }}
                         </span>
 
@@ -2141,8 +2683,11 @@
 
                     <div class="stat-bottom">
 
-                        <span class="stat-change">
+                        <span class="stat-growth-arrow">
                             {{ $dashboard['stats']['changes']['pending_orders']['direction'] === 'up' ? '↑' : '↓' }}
+                        </span>
+
+                        <span class="stat-change">
                             {{ $dashboard['stats']['changes']['pending_orders']['value'] }}
                         </span>
 
@@ -2191,8 +2736,11 @@
 
                     <div class="stat-bottom">
 
-                        <span class="stat-change">
+                        <span class="stat-growth-arrow">
                             {{ $dashboard['stats']['changes']['low_stock_products']['direction'] === 'up' ? '↑' : '↓' }}
+                        </span>
+
+                        <span class="stat-change">
                             {{ $dashboard['stats']['changes']['low_stock_products']['value'] }}
                         </span>
 
@@ -3046,9 +3594,34 @@
 
     <script>
 
+        Chart.defaults.font.family =
+            'Poppins, sans-serif';
+
+        Chart.defaults.font.size =
+            13;
+
+        Chart.defaults.color =
+            '#6B7280';
+
         document.addEventListener(
             'DOMContentLoaded',
             function () {
+
+                setTimeout(
+                    function () {
+                        const salesChartContainer =
+                            document.querySelector(
+                                '.sales-chart-container'
+                            );
+
+                        if (salesChartContainer) {
+                            salesChartContainer.classList.add(
+                                'admin-visible'
+                            );
+                        }
+                    },
+                    150
+                );
 
 
                 /* =================================================
@@ -3273,19 +3846,31 @@
                                                 previousGradient,
 
                                             borderWidth:
-                                                1.7,
+                                                2,
 
                                             fill:
                                                 true,
 
                                             tension:
-                                                0.3,
+                                                0.4,
 
                                             pointRadius:
-                                                0,
+                                                3,
 
                                             pointHoverRadius:
-                                                4
+                                                7,
+
+                                            pointBackgroundColor:
+                                                '#FFFFFF',
+
+                                            pointBorderColor:
+                                                '#5D0B11',
+
+                                            pointBorderWidth:
+                                                2,
+
+                                            pointHoverBorderWidth:
+                                                3
 
                                         },
 
@@ -3304,19 +3889,31 @@
                                                 currentGradient,
 
                                             borderWidth:
-                                                1.7,
+                                                2,
 
                                             fill:
                                                 true,
 
                                             tension:
-                                                0.3,
+                                                0.4,
 
                                             pointRadius:
-                                                0,
+                                                3,
 
                                             pointHoverRadius:
-                                                4
+                                                7,
+
+                                            pointBackgroundColor:
+                                                '#FFFFFF',
+
+                                            pointBorderColor:
+                                                '#E00000',
+
+                                            pointBorderWidth:
+                                                2,
+
+                                            pointHoverBorderWidth:
+                                                3
 
                                         }
 
@@ -3345,7 +3942,7 @@
                                     animation: {
 
                                         duration:
-                                            450,
+                                            1600,
 
                                         easing:
                                             'easeOutQuart'
@@ -3364,22 +3961,25 @@
                                         tooltip: {
 
                                             backgroundColor:
-                                                '#FFFFFF',
+                                                '#5C1414',
 
                                             titleColor:
-                                                '#161616',
+                                                '#FFFFFF',
 
                                             bodyColor:
-                                                '#444444',
-
-                                            borderColor:
-                                                '#E7E1DE',
-
-                                            borderWidth:
-                                                1,
+                                                '#FFFFFF',
 
                                             padding:
+                                                12,
+
+                                            cornerRadius:
                                                 10,
+
+                                            displayColors:
+                                                true,
+
+                                            boxPadding:
+                                                4,
 
                                             titleFont: {
 
@@ -3390,7 +3990,7 @@
                                                     13,
 
                                                 weight:
-                                                    '600'
+                                                    'bold'
 
                                             },
 
@@ -3400,7 +4000,7 @@
                                                     'Poppins',
 
                                                 size:
-                                                    12
+                                                    13
 
                                             },
 
@@ -3467,7 +4067,7 @@
                                                         'Poppins',
 
                                                     size:
-                                                        12
+                                                        13
 
                                                 },
 
@@ -3531,7 +4131,7 @@
                                                         'Poppins',
 
                                                     size:
-                                                        12
+                                                        13
 
                                                 },
 
@@ -3721,7 +4321,7 @@
                                                 0,
 
                                             hoverOffset:
-                                                3
+                                                8
 
                                         }
 
@@ -3738,12 +4338,12 @@
                                         false,
 
                                     cutout:
-                                        '62%',
+                                        '70%',
 
                                     animation: {
 
                                         duration:
-                                            450,
+                                            900,
 
                                         easing:
                                             'easeOutQuart'
@@ -3921,7 +4521,7 @@
                             }
 
                         },
-                        190
+                        320
                     );
 
                 }
