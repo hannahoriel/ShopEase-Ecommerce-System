@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
+use App\Http\Controllers\Seller\InventoryController;
 use App\Models\User;
 use App\Models\Admin\Registration;
 use Illuminate\Http\Request;
@@ -2077,20 +2078,12 @@ Route::get('/buyer/register/exit', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/seller/inventory', function () {
-
-    abort_unless(
-        Auth::user()->role === User::ROLE_SELLER,
-        403
-    );
-
-    return view(
-        'pages.seller.inventory'
-    );
-
-})->middleware('auth')
-  ->name('seller.inventory');
-
+Route::get(
+    '/seller/inventory',
+    [InventoryController::class, 'index']
+)
+    ->middleware('auth')
+    ->name('seller.inventory');
 /*
 |--------------------------------------------------------------------------
 | SELLER ORDER STATUS
@@ -2126,3 +2119,19 @@ Route::get('/seller/shipping-status', function () {
 Route::get('/admin/seller-compliance', function () {
     return view('pages.admin.seller-compliance');
 })->name('admin.seller.compliance');
+
+Route::get('/admin/complaints-disputes', function () {
+    return view('pages.admin.complaints-disputes');
+})->name('admin.complaints.disputes');
+
+Route::get('/admin/commission', function () {
+    return view('pages.admin.commission');
+})->name('admin.commission');
+
+Route::get('/admin/logistics-management', function () {
+    return view('pages.admin.logistics-management');
+})->name('admin.logistics.management');
+
+Route::get('/admin/platform-settings', function () {
+    return view('pages.admin.platform-settings');
+})->name('admin.platform.settings');

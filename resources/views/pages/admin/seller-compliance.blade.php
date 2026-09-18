@@ -76,7 +76,7 @@
         m-0
         p-0
 
-        bg-[#FCF8F6]
+        bg-[#FFF4EF]
 
         font-[Poppins,sans-serif]
 
@@ -120,11 +120,11 @@
         class="seller-compliance-page 
             min-h-screen
 
-            bg-[#FCF8F6]
+            bg-[#FFF4EF]
 
-            pt-[104px]
+            pt-[125px]
 
-            ml-72
+            ml-65
 
             transition-all
 
@@ -134,40 +134,15 @@
 
         <div
             class="
-                px-[42px]
+                px-[25px]
 
-                pt-[42px]
+                pt-[10px]
 
-                pb-[30px]
+                pb-[24px]
             "
         >
 
 
-            {{-- =================================================
-                 PAGE HEADER
-            ================================================== --}}
-
-            <div
-                class="
-                    mb-[28px]
-                "
-            >
-
-                <h1
-                    class="
-                        text-[28px]
-
-                        leading-tight
-
-                        font-semibold
-
-                        text-[#17120F]
-                    "
-                >
-                    Seller Compliance
-                </h1>
-
-            </div>
 
 
 
@@ -183,7 +158,7 @@
 
                     gap-[12px]
 
-                    mb-[46px]
+                    mb-[34px]
                 "
             >
 
@@ -2278,6 +2253,42 @@
         </div>
     </div>
 
+    
+
+    {{-- =========================================================
+         PRODUCT MODERATION FLASH MESSAGE
+    ========================================================== --}}
+    <div
+        id="productDecisionFlash"
+        class="product-decision-flash"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+        <div id="productDecisionFlashIcon" class="product-decision-flash-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12l4 4L19 6" />
+            </svg>
+        </div>
+
+        <div class="product-decision-flash-copy">
+            <strong id="productDecisionFlashTitle">Product updated</strong>
+            <span id="productDecisionFlashMessage">The product moderation status has been updated.</span>
+        </div>
+
+        <button
+            type="button"
+            id="productDecisionFlashClose"
+            class="product-decision-flash-close"
+            aria-label="Close notification"
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M6 6l12 12" />
+                <path d="M18 6L6 18" />
+            </svg>
+        </button>
+    </div>
+
     </main>
 
 
@@ -2296,7 +2307,7 @@
         .compliance-stat-card {
 
             min-height:
-                112px;
+                108px;
 
             background:
                 #FFFFFF;
@@ -2306,7 +2317,7 @@
                 #F0E9E6;
 
             border-radius:
-                12px;
+                16px;
 
             box-shadow:
                 0
@@ -2320,9 +2331,7 @@
                 );
 
             padding:
-                16px
-                14px
-                13px;
+                16px;
 
             box-sizing:
                 border-box;
@@ -2353,13 +2362,13 @@
         .compliance-stat-icon {
 
             width:
-                42px;
+                40px;
 
             height:
-                42px;
+                40px;
 
             flex:
-                0 0 42px;
+                0 0 40px;
 
             object-fit:
                 contain;
@@ -2381,13 +2390,13 @@
         .compliance-stat-number {
 
             font-size:
-                22px;
+                23px;
 
             line-height:
                 1;
 
             font-weight:
-                500;
+                700;
 
             color:
                 #17120F;
@@ -2401,7 +2410,7 @@
                 5px;
 
             font-size:
-                12px;
+                13px;
 
             line-height:
                 1.15;
@@ -2418,7 +2427,7 @@
                 15px;
 
             font-size:
-                10px;
+                12px;
 
             line-height:
                 1.2;
@@ -2471,7 +2480,7 @@
         .compliance-filter-card {
 
             min-height:
-                68px;
+                64px;
 
             display:
                 flex;
@@ -2483,8 +2492,8 @@
                 10px;
 
             padding:
-                12px
-                18px;
+                10px
+                16px;
 
             background:
                 #FFFFFF;
@@ -2508,7 +2517,7 @@
                 );
 
             margin-bottom:
-                16px;
+                14px;
 
             box-sizing:
                 border-box;
@@ -2561,10 +2570,10 @@
                 inherit;
 
             font-size:
-                12px;
+                13px;
 
             color:
-                #45403E;
+                #76716E;
 
         }
 
@@ -2572,26 +2581,30 @@
         .compliance-search::placeholder {
 
             color:
-                #B2AFAD;
+                #76716E;
+
+            opacity:
+                1;
 
         }
 
 
-        .compliance-search:focus {
+        .compliance-search:focus,
+        .compliance-filter:focus {
 
             border-color:
-                #B8B0AC;
+                #7B1B1B;
 
             box-shadow:
                 0
                 0
                 0
-                3px
+                2px
                 rgba(
                     123,
                     27,
                     27,
-                    0.05
+                    0.10
                 );
 
         }
@@ -2618,7 +2631,7 @@
                 translateY(-50%);
 
             color:
-                #B7B3B1;
+                #76716E;
 
             pointer-events:
                 none;
@@ -2654,7 +2667,7 @@
                 inherit;
 
             font-size:
-                11px;
+                13px;
 
             color:
                 #76716E;
@@ -2676,7 +2689,7 @@
         .filter-compliance {
 
             width:
-                148px;
+                168px;
 
         }
 
@@ -2916,10 +2929,16 @@
                 18px;
 
             font-size:
-                12px;
+                13px;
+
+            line-height:
+                1.2;
+
+            font-weight:
+                500;
 
             color:
-                #8A8582;
+                #8C8784;
 
         }
 
@@ -2950,6 +2969,12 @@
             background:
                 #FFFBF9;
 
+        }
+
+        /* User Management table typography */
+        .compliance-table-card,
+        .compliance-table-card * {
+            font-family: 'Poppins', sans-serif;
         }
 
 
@@ -3025,10 +3050,10 @@
                 12px;
 
             line-height:
-                1.1;
+                1.25;
 
             font-weight:
-                600;
+                500;
 
             color:
                 #17120F;
@@ -3051,13 +3076,16 @@
                 2px;
 
             font-size:
-                9px;
+                12px;
 
             line-height:
-                1.1;
+                1.2;
+
+            font-weight:
+                400;
 
             color:
-                #17120F;
+                #8C8784;
 
             white-space:
                 nowrap;
@@ -3074,7 +3102,10 @@
         .seller-products {
 
             font-size:
-                11px;
+                13px;
+
+            line-height:
+                1.25;
 
             color:
                 #17120F;
@@ -3111,7 +3142,7 @@
             min-height: 22px;
             padding: 0 10px;
             border-radius: 999px;
-            font-size: 9px;
+            font-size: 12px;
             line-height: 1;
             font-weight: 500;
             white-space: nowrap;
@@ -3143,12 +3174,13 @@
         }
 
         .seller-products-total {
-            font-weight: 500;
+            font-weight: 600;
             color: #17120F;
         }
 
         .seller-products-review {
-            font-size: 9px;
+            font-size: 12px;
+            line-height: 1.2;
             color: #C56A19;
             font-weight: 500;
         }
@@ -3169,10 +3201,13 @@
         .score-number {
 
             font-size:
-                11px;
+                13px;
 
             line-height:
                 1.2;
+
+            font-weight:
+                500;
 
             color:
                 #17120F;
@@ -3268,7 +3303,10 @@
                 999px;
 
             font-size:
-                9px;
+                12px;
+
+            line-height:
+                1;
 
             font-weight:
                 500;
@@ -4777,6 +4815,102 @@
                 const page =
                     document.getElementById('admin-content');
 
+                /* =================================================
+                   SIDEBAR MOVEMENT ONLY
+                   -------------------------------------------------
+                   Keep ALL existing Seller Compliance spacing as-is.
+                   This only synchronizes the page movement with the
+                   shared sidebar's w-20 collapsed state.
+                ================================================== */
+                if (sidebar && page) {
+
+                    const originalPageMarginLeft =
+                        parseFloat(
+                            window.getComputedStyle(page).marginLeft
+                        ) || 0;
+
+                    const originalSidebarWidth =
+                        sidebar.getBoundingClientRect().width || 256;
+
+                    const originalSidebarGap =
+                        originalPageMarginLeft - originalSidebarWidth;
+
+                    const collapsedSidebarWidth = 80;
+
+                    page.style.transitionProperty =
+                        'margin-left';
+
+                    page.style.transitionDuration =
+                        '300ms';
+
+                    page.style.transitionTimingFunction =
+                        'ease';
+
+                    function syncSellerComplianceWithSidebar() {
+
+                        /*
+                         * Leave the page's existing responsive spacing
+                         * completely untouched on smaller screens.
+                         */
+                        if (window.innerWidth <= 900) {
+                            page.style.removeProperty('margin-left');
+                            return;
+                        }
+
+                        const isCollapsed =
+                            sidebar.classList.contains('w-20');
+
+                        if (isCollapsed) {
+                            page.style.marginLeft =
+                                `${collapsedSidebarWidth + originalSidebarGap}px`;
+                        } else {
+                            /*
+                             * Restore the exact margin the page already had.
+                             * No desktop spacing is changed.
+                             */
+                            page.style.marginLeft =
+                                `${originalPageMarginLeft}px`;
+                        }
+                    }
+
+                    const sidebarMovementObserver =
+                        new MutationObserver(function (mutations) {
+
+                            const classChanged =
+                                mutations.some(function (mutation) {
+                                    return (
+                                        mutation.type === 'attributes' &&
+                                        mutation.attributeName === 'class'
+                                    );
+                                });
+
+                            if (!classChanged) {
+                                return;
+                            }
+
+                            /*
+                             * Run after the sidebar toggle has updated its
+                             * width class, so both animations begin together.
+                             */
+                            requestAnimationFrame(
+                                syncSellerComplianceWithSidebar
+                            );
+                        });
+
+                    sidebarMovementObserver.observe(
+                        sidebar,
+                        {
+                            attributes: true,
+                            attributeFilter: ['class']
+                        }
+                    );
+
+                    window.addEventListener(
+                        'resize',
+                        syncSellerComplianceWithSidebar
+                    );
+                }
+
                 const rows = Array.from(
                     document.querySelectorAll('.seller-compliance-row')
                 );
@@ -5522,8 +5656,62 @@
                 }
 
                 function getProductStatusLabel(status) {
-                    return { approved: 'Approved', warning: 'Issue Warning', removed: 'Removed', 'under-review': 'Under Review' }[status] || 'Under Review';
+                    return { approved: 'Approved', warning: 'Warning Issued', removed: 'Removed', 'under-review': 'Under Review' }[status] || 'Under Review';
                 }
+
+
+                const productDecisionFlash = document.getElementById('productDecisionFlash');
+                const productDecisionFlashTitle = document.getElementById('productDecisionFlashTitle');
+                const productDecisionFlashMessage = document.getElementById('productDecisionFlashMessage');
+                const productDecisionFlashClose = document.getElementById('productDecisionFlashClose');
+                let productDecisionFlashTimer = null;
+
+                function hideProductDecisionFlash() {
+                    if (productDecisionFlashTimer) {
+                        clearTimeout(productDecisionFlashTimer);
+                        productDecisionFlashTimer = null;
+                    }
+                    productDecisionFlash?.classList.remove('show');
+                }
+
+                function showProductDecisionFlash(type, productName) {
+                    if (!productDecisionFlash) return;
+
+                    const productLabel = productName || 'Product';
+                    const config = {
+                        approved: {
+                            title: 'Product Approved',
+                            message: `${productLabel} has been approved successfully.`
+                        },
+                        warning: {
+                            title: 'Warning Issued',
+                            message: `A warning has been issued for ${productLabel}.`
+                        },
+                        removed: {
+                            title: 'Product Removed',
+                            message: `${productLabel} has been removed from the seller's store.`
+                        }
+                    }[type] || {
+                        title: 'Product Updated',
+                        message: `${productLabel} has been updated.`
+                    };
+
+                    if (productDecisionFlashTitle) productDecisionFlashTitle.textContent = config.title;
+                    if (productDecisionFlashMessage) productDecisionFlashMessage.textContent = config.message;
+
+                    productDecisionFlash.classList.remove('approved', 'warning', 'removed');
+                    productDecisionFlash.classList.add(type);
+
+                    if (productDecisionFlashTimer) clearTimeout(productDecisionFlashTimer);
+
+                    requestAnimationFrame(function () {
+                        productDecisionFlash.classList.add('show');
+                    });
+
+                    productDecisionFlashTimer = setTimeout(hideProductDecisionFlash, 3800);
+                }
+
+                productDecisionFlashClose?.addEventListener('click', hideProductDecisionFlash);
 
                 function currentProductStoreName() {
                     return activeSellerRow?.dataset?.name || '';
@@ -5995,6 +6183,7 @@
                     refreshCurrentSellerProducts();
                     closeRemoveProductModal(true);
                     openProductDetails(activeProduct);
+                    showProductDecisionFlash('removed', activeProduct.name);
                 });
 
                 sellerRemoveProductModal?.addEventListener('click', function (event) {
@@ -6106,6 +6295,7 @@
                     refreshCurrentSellerProducts();
                     closeIssueWarningModal(false);
                     openProductDetails(activeProduct);
+                    showProductDecisionFlash('warning', activeProduct.name);
                 });
 
                 sellerIssueWarningModal?.addEventListener('click', function (event) {
@@ -6142,6 +6332,7 @@
                         removeProductIssue(storeName, activeProduct);
                         refreshCurrentSellerProducts();
                         openProductDetails(activeProduct);
+                        showProductDecisionFlash('approved', activeProduct.name);
                     }
                 });
 
@@ -6912,16 +7103,134 @@
         /* Product moderation states */
         .seller-product-card.status-approved { border-color:#25A32D !important; }
         .seller-product-card.status-warning { border-color:#E7A31A !important; }
-        .seller-product-card.status-under-review { border-color:#FF9D22 !important; }
+        .seller-product-card.status-under-review { border-color:#D71919 !important; }
         .seller-product-card.status-removed { border-color:#A9A9A9 !important; background:#F1F1F1; }
+
+        /* Lower-right product moderation feedback */
+        .product-decision-flash {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 220;
+            width: min(370px, calc(100vw - 32px));
+            min-height: 72px;
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 13px 14px;
+            box-sizing: border-box;
+            background: #FFFFFF;
+            border: 1px solid #E7E2DF;
+            border-radius: 14px;
+            box-shadow: 0 14px 34px rgba(42, 20, 15, .16);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(14px);
+            transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+        }
+
+        .product-decision-flash.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .product-decision-flash.approved { border-color: #BFDDB8; }
+        .product-decision-flash.warning { border-color: #F0C776; }
+        .product-decision-flash.removed { border-color: #E7A8AB; }
+
+        .product-decision-flash-icon {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #E7F4E3;
+            color: #28721B;
+        }
+
+        .product-decision-flash.warning .product-decision-flash-icon {
+            background: #FFF1D6;
+            color: #A56500;
+        }
+
+        .product-decision-flash.removed .product-decision-flash-icon {
+            background: #FFE3E5;
+            color: #B3262E;
+        }
+
+        .product-decision-flash-icon svg {
+            width: 19px;
+            height: 19px;
+        }
+
+        .product-decision-flash-copy {
+            min-width: 0;
+            flex: 1 1 auto;
+            display: grid;
+            gap: 3px;
+            padding-top: 1px;
+        }
+
+        .product-decision-flash-copy strong {
+            font-size: 13px;
+            line-height: 1.25;
+            font-weight: 600;
+            color: #17120F;
+        }
+
+        .product-decision-flash-copy span {
+            font-size: 11px;
+            line-height: 1.45;
+            font-weight: 400;
+            color: #77716E;
+        }
+
+        .product-decision-flash-close {
+            width: 28px;
+            height: 28px;
+            flex: 0 0 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -2px;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #AAA4A1;
+            cursor: pointer;
+            transition: background .15s ease, color .15s ease;
+        }
+
+        .product-decision-flash-close:hover {
+            background: #F6F2F0;
+            color: #5D5754;
+        }
+
+        .product-decision-flash-close svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        @media (max-width: 640px) {
+            .product-decision-flash {
+                right: 16px;
+                bottom: 16px;
+            }
+        }
+
         .seller-product-card.status-removed .seller-product-image,
         .seller-product-card.status-removed .seller-product-info { opacity:.58; }
         .seller-product-status-label { display:inline-flex; margin-top:4px; font-size:7px; line-height:1; font-weight:600; }
         .seller-product-card.status-approved .seller-product-status-label { color:#2E8A32; }
         .seller-product-card.status-warning .seller-product-status-label { color:#C78B0A; }
-        .seller-product-card.status-under-review .seller-product-status-label { color:#C56A19; }
+        .seller-product-card.status-under-review .seller-product-status-label { color:red; }
         .seller-product-card.status-removed .seller-product-status-label { color:#777777; }
-        .seller-product-compliance-notice { margin-top:12px; padding:8px 10px; border-radius:8px; display:grid; gap:3px; width:min(100%,330px); box-sizing:border-box; }
+        .seller-product-compliance-notice { margin-top:12px; padding:8px 10px; border-radius:8px; display:grid; gap:3px; width:min(100%,285px); box-sizing:border-box; }
         .seller-product-compliance-notice.hidden { display:none !important; }
         .seller-product-compliance-notice strong { font-size:9px; font-weight:700; }
         .seller-product-compliance-notice span { font-size:8px; line-height:1.35; }
@@ -6941,6 +7250,256 @@
 
         .seller-product-close-action:hover {
             background: #F7F4F2;
+        }
+    
+    /* =====================================================
+       DASHBOARD TYPOGRAPHY MATCH
+    ====================================================== */
+
+    .seller-compliance-page,
+    .seller-compliance-page button,
+    .seller-compliance-page input,
+    .seller-compliance-page select,
+    .seller-compliance-page textarea {
+        font-family: Poppins, sans-serif;
+    }
+
+    .seller-compliance-page > div > h2 {
+        font-size: 21px;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+
+        /* =========================================================
+           BALANCED ADMIN TYPOGRAPHY
+           Matches the Dashboard scale while avoiding overly heavy text.
+        ========================================================== */
+
+        .seller-compliance-page,
+        .seller-compliance-page button,
+        .seller-compliance-page input,
+        .seller-compliance-page select,
+        .seller-compliance-page textarea {
+            font-family: Poppins, sans-serif;
+        }
+
+        .seller-compliance-page > div > h2,
+        .seller-compliance-page h2 {
+            font-size: 21px;
+            line-height: 1.2;
+            font-weight: 600;
+        }
+
+        .compliance-stat-number {
+            /* Same as Registrations stat card number */
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 600;
+        }
+
+        .compliance-stat-label {
+            /* Same as Registrations stat card label */
+            font-size: 13px;
+            line-height: 1.15;
+            font-weight: 400;
+        }
+
+        .compliance-stat-growth {
+            /* Same compact secondary-text scale used by Registrations */
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        .compliance-stat-growth strong {
+            font-weight: 500;
+        }
+
+        /* Final card typography lock — matches Registrations */
+        .seller-compliance-page .compliance-stat-number {
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 600;
+        }
+
+        .seller-compliance-page .compliance-stat-label {
+            font-size: 13px;
+            line-height: 1.15;
+            font-weight: 400;
+        }
+
+        .seller-compliance-page .compliance-stat-growth {
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        .compliance-table-header {
+            font-size: 13px;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        .seller-store-name {
+            font-size: 14px;
+            line-height: 1.1;
+            font-weight: 500;
+        }
+
+        .seller-owner-name {
+            font-size: 12px;
+            line-height: 1.1;
+            font-weight: 400;
+        }
+
+        .category-pill {
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 500;
+        }
+
+        .seller-products-total {
+            font-size: 14px;
+            line-height: 1.2;
+            font-weight: 500;
+        }
+
+        .seller-products-review {
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        .score-number {
+            font-size: 14px;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        .status-pill {
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 500;
+        }
+
+        .compliance-search,
+        .compliance-filter {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .compliance-pagination {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .seller-details-title-row h2 {
+            font-size: 17px;
+            line-height: 1.2;
+            font-weight: 600;
+        }
+
+        .seller-details-store-wrap h3 {
+            font-size: 19px;
+            line-height: 1.05;
+            font-weight: 600;
+        }
+
+        .seller-product-main-info h2 {
+            font-size: 19px;
+            line-height: 1.12;
+            font-weight: 600;
+        }
+
+        .seller-product-price {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .seller-product-sold {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .seller-product-compliance-notice strong {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .seller-product-compliance-notice span {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+</style>
+
+
+    <style>
+        /* FINAL TABLE CONTENT FONT SIZE
+           Keep every visible Seller Compliance table content at 12px.
+           Header styling remains separate from row content. */
+        .seller-compliance-page .compliance-table-body,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .seller-store-name,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .seller-owner-name,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .category-pill,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .seller-products,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .seller-products-total,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .seller-products-review,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .score-cell,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .score-number,
+        .seller-compliance-page .compliance-table-body .seller-compliance-row .status-pill {
+            font-size: 12px !important;
+        }
+    </style>
+
+    <style>
+        /* =========================================================
+           SELLER COMPLIANCE NAVBAR TITLE
+           Keep the title lighter while allowing the shared admin
+           sidebar script to control page movement at the same speed
+           as the other admin pages.
+        ========================================================== */
+        #navbar-left h1 {
+            font-weight: 600 !important;
+        }
+    </style>
+
+
+    <style>
+        /* =========================================================
+           FILTER COLOR CONSISTENCY
+           Use All Categories as the visual reference for the whole
+           Seller Compliance filter row.
+        ========================================================== */
+        #sellerSearch,
+        #sellerTypeFilter,
+        #complianceFilter {
+            border-color: #D9D6D4 !important;
+            background-color: #FFFFFF !important;
+            color: #76716E !important;
+        }
+
+        #sellerSearch::placeholder {
+            color: #76716E !important;
+            opacity: 1;
+        }
+
+        .compliance-search-icon {
+            color: #76716E !important;
+        }
+
+        #complianceFilter {
+            width: 168px !important;
+            min-width: 168px !important;
+        }
+
+        #sellerSearch:focus,
+        #sellerTypeFilter:focus,
+        #complianceFilter:focus {
+            border-color: #7B1B1B !important;
+            box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
         }
     </style>
 

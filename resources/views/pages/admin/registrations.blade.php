@@ -1,5 +1,116 @@
 
 <style>
+    /* =========================================================
+       DASHBOARD TYPOGRAPHY / FORMAT
+       Uses the same Poppins family, sizing, weights, and
+       visual hierarchy as the Dashboard.
+    ========================================================== */
+
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    #admin-content,
+    #admin-content * {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    #admin-content {
+        color: #17120F;
+    }
+
+    #admin-content h2 {
+        color: #17120F;
+        font-size: 21px;
+        line-height: 1.2;
+        font-weight: 600;
+    }
+
+    #admin-content h3 {
+        color: #17120F;
+        font-weight: 600;
+    }
+
+    /* Dashboard-style registration stat cards */
+    #admin-content .registration-stat-card {
+        min-height: 108px;
+        background: #FFFFFF;
+        border: 1px solid #F0E9E6;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+        padding: 16px;
+        box-sizing: border-box;
+    }
+
+    #admin-content .registration-stat-icon {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        object-fit: contain;
+        display: block;
+    }
+
+    #admin-content .registration-stat-number {
+        font-size: 23px;
+        line-height: 1;
+        font-weight: 600;
+        color: #17120F;
+    }
+
+    #admin-content .registration-stat-label {
+        margin-top: 5px;
+        font-size: 13px;
+        line-height: 1.15;
+        font-weight: 400;
+        color: #8C8784;
+    }
+
+    #admin-content .registration-card-link {
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 500;
+        color: #7B1B1B;
+    }
+
+    /* Match Dashboard's common text hierarchy across this page. */
+    #admin-content .text-\[23px\] { font-size: 23px; }
+    #admin-content .text-\[21px\] { font-size: 21px; }
+    #admin-content .text-\[20px\] { font-size: 20px; }
+    #admin-content .text-\[19px\] { font-size: 19px; }
+    #admin-content .text-\[18px\] { font-size: 18px; }
+    #admin-content .text-\[17px\] { font-size: 17px; }
+    #admin-content .text-\[15px\] { font-size: 15px; }
+    #admin-content .text-\[14px\] { font-size: 14px; }
+    #admin-content .text-\[13px\] { font-size: 13px; }
+    #admin-content .text-\[12px\] { font-size: 12px; }
+    #admin-content .text-\[11px\] { font-size: 11px; }
+    #admin-content .text-\[10px\] { font-size: 10px; }
+
+    #admin-content .font-semibold { font-weight: 600; }
+    #admin-content .font-medium { font-weight: 500; }
+    #admin-content .font-normal { font-weight: 400; }
+
+    /* Keep very small utility/status text readable while matching Dashboard scale. */
+    #admin-content .registration-table-text {
+        font-size: 14px;
+        line-height: 1.25;
+        font-weight: 400;
+        color: #17120F;
+    }
+
+    #admin-content .registration-muted-text {
+        font-size: 12px;
+        line-height: 1.25;
+        font-weight: 400;
+        color: #8C8784;
+    }
+
+    /* Dashboard-like buttons */
+    #admin-content button,
+    #admin-content input,
+    #admin-content select,
+    #admin-content textarea {
+        font-family: 'Poppins', sans-serif;
+    }
+
     /* Hide the visual scrollbar inside registration detail modals while keeping them scrollable. */
     .registration-detail-modal {
         display: flex;
@@ -72,6 +183,61 @@
     .category-office-and-school-supplies { background: #E2F0F7; color: #2B617D; }
     .category-default { background: #F1EFEE; color: #6B6663; }
 
+
+    /* =========================================================
+       REGISTRATIONS TABLE — FINAL 12PX CONTENT
+       Keep all visible table row content at exactly 12px.
+       Table headers and controls can keep their own sizing.
+    ========================================================== */
+    #admin-content #registrations-table tbody,
+    #admin-content #registrations-table tbody tr,
+    #admin-content #registrations-table tbody td,
+    #admin-content #registrations-table tbody td span,
+    #admin-content #registrations-table tbody td div {
+        font-size: 12px !important;
+    }
+
+    #admin-content #registrations-table tbody td .text-\[10px\] {
+        font-size: 12px !important;
+    }
+
+    /* Keep the archive tables consistent too. */
+    #admin-content #approved-users-body,
+    #admin-content #approved-users-body tr,
+    #admin-content #approved-users-body td,
+    #admin-content #approved-users-body td span,
+    #admin-content #approved-users-body td div,
+    #admin-content #rejected-users-body,
+    #admin-content #rejected-users-body tr,
+    #admin-content #rejected-users-body td,
+    #admin-content #rejected-users-body td span,
+    #admin-content #rejected-users-body td div {
+        font-size: 12px !important;
+    }
+
+    /* Search bar — match the compact Seller Compliance width. */
+    #admin-content .registration-search-wrap {
+        position: relative;
+        width: 330px;
+        flex: 0 0 330px;
+    }
+
+    #admin-content #registration-search {
+        width: 100%;
+        height: 36px;
+        box-sizing: border-box;
+        border-radius: 8px;
+        padding: 0 38px 0 12px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1279px) {
+        #admin-content .registration-search-wrap {
+            width: 100%;
+            flex: 1 1 100%;
+        }
+    }
+
 </style>
 
 @extends('layouts.admin')
@@ -82,52 +248,36 @@
 
 <div
     id="admin-content"
-    class="ml-72 pt-[128px] px-6 pb-8 min-h-screen transition-all duration-300"
+    class="ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
-
-    <!-- =========================================================
-         PAGE HEADER
-    ========================================================== -->
-
-    <div class="mb-8">
-
-        <h2 class="text-[26px] font-bold text-gray-900">
-            Account Registrations
-        </h2>
-
-    </div>
-
-
     <!-- =========================================================
          REGISTRATION STAT CARDS
     ========================================================== -->
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
 
         <!-- =====================================================
              PENDING
         ====================================================== -->
 
         <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px]
+            class="registration-stat-card
                    flex flex-col justify-between
                    transition-all duration-300
                    hover:-translate-y-1 hover:shadow-md"
         >
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2.5">
 
                 <!-- Icon -->
 
                 <div
-                    class="w-14 h-14 shrink-0
-                           flex items-center justify-center"
+                    class="shrink-0 flex items-center justify-center"
                 >
 
                     <img
                         src="{{ asset('icons/admin/registrations/Pending Registrations.png') }}"
-                        class="w-14 h-14 object-contain"
+                        class="registration-stat-icon"
                         alt="Pending Registrations"
                     >
 
@@ -138,11 +288,11 @@
 
                 <div class="min-w-0">
 
-                    <p id="pending-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                    <p id="pending-count-card" class="registration-stat-number">
                         {{ $counts['pending'] }}
                     </p>
 
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                    <p class="registration-stat-label whitespace-nowrap">
                         Pending Requests
                     </p>
 
@@ -165,11 +315,9 @@
             <button
                 type="button"
                 id="rejected-users-button"
-                class="w-full bg-white rounded-xl p-5 shadow-sm border border-gray-100
-       min-h-[132px]
-       relative
-       text-left
-       flex flex-col justify-center
+                class="registration-stat-card w-full
+                       relative text-left
+                       flex flex-col justify-center
                        transition-all duration-300
                        hover:-translate-y-1 hover:shadow-md
                        hover:border-[#E9A3A3]
@@ -178,18 +326,17 @@
 
                 <div class="flex items-center justify-between">
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2.5">
 
                         <!-- Icon -->
 
                         <div
-                            class="w-14 h-14 shrink-0
-                                   flex items-center justify-center"
+                            class="shrink-0 flex items-center justify-center"
                         >
 
                             <img
                                 src="{{ asset('icons/admin/registrations/Rejected Registrations.png') }}"
-                                class="w-14 h-14 object-contain"
+                                class="registration-stat-icon"
                                 alt="Rejected Registrations"
                             >
 
@@ -200,11 +347,11 @@
 
                         <div class="min-w-0">
 
-                            <p id="rejected-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                            <p id="rejected-count-card" class="registration-stat-number">
                                 {{ $counts['rejected'] }}
                             </p>
 
-                            <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                            <p class="registration-stat-label whitespace-nowrap">
                                 Rejected Users
                             </p>
 
@@ -216,7 +363,7 @@
                     <!-- Arrow -->
 
                     <svg
-                        class="w-5 h-5 shrink-0 text-gray-400
+                        class="w-[18px] h-[18px] shrink-0 text-gray-400
                                group-hover:text-[#7B1B1B]
                                group-hover:translate-x-1
                                transition-all duration-300"
@@ -239,9 +386,9 @@
 
                 <!-- Bottom Text -->
 
-                <div class="mt-3 ml-[72px]">
+                <div class="mt-2 ml-[52px]">
 
-                    <span class="text-[12px] text-[#7B1B1B] font-medium">
+                    <span class="registration-card-link">
                         View rejected users →
                     </span>
 
@@ -261,11 +408,9 @@
             <button
                 type="button"
                 id="approved-users-button"
-                class="w-full bg-white rounded-xl p-5 shadow-sm border border-gray-100
-       min-h-[132px]
-       relative
-       text-left
-       flex flex-col justify-center
+                class="registration-stat-card w-full
+                       relative text-left
+                       flex flex-col justify-center
                        transition-all duration-300
                        hover:-translate-y-1 hover:shadow-md
                        hover:border-[#E9A3A3]
@@ -274,18 +419,17 @@
 
                 <div class="flex items-center justify-between">
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2.5">
 
                         <!-- Icon -->
 
                         <div
-                            class="w-14 h-14 shrink-0
-                                   flex items-center justify-center"
+                            class="shrink-0 flex items-center justify-center"
                         >
 
                             <img
                                 src="{{ asset('icons/admin/registrations/Approved Registrations.png') }}"
-                                class="w-14 h-14 object-contain"
+                                class="registration-stat-icon"
                                 alt="Approved Registrations"
                             >
 
@@ -296,11 +440,11 @@
 
                         <div class="min-w-0">
 
-                            <p id="approved-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                            <p id="approved-count-card" class="registration-stat-number">
                                 {{ $counts['approved'] }}
                             </p>
 
-                            <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                            <p class="registration-stat-label whitespace-nowrap">
                                 Approved Users
                             </p>
 
@@ -312,7 +456,7 @@
                     <!-- Arrow -->
 
                     <svg
-                        class="w-5 h-5 shrink-0 text-gray-400
+                        class="w-[18px] h-[18px] shrink-0 text-gray-400
                                group-hover:text-[#7B1B1B]
                                group-hover:translate-x-1
                                transition-all duration-300"
@@ -335,9 +479,9 @@
 
                 <!-- Bottom Text -->
 
-                <div class="mt-3 ml-[72px]">
+                <div class="mt-2 ml-[52px]">
 
-                    <span class="text-[12px] text-[#7B1B1B] font-medium">
+                    <span class="registration-card-link">
                         View approved users →
                     </span>
 
@@ -353,26 +497,23 @@
         ====================================================== -->
 
         <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px]
-                   relative
+            class="registration-stat-card relative
                    flex flex-col justify-start
                    transition-all duration-300
                    hover:-translate-y-1 hover:shadow-md"
         >
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2.5">
 
                 <!-- Icon -->
 
                 <div
-                    class="w-14 h-14 shrink-0
-                           flex items-center justify-center"
+                    class="shrink-0 flex items-center justify-center"
                 >
 
                     <img
                         src="{{ asset('icons/admin/registrations/Total registrations.png') }}"
-                        class="w-14 h-14 object-contain"
+                        class="registration-stat-icon"
                         alt="Total Registrations"
                     >
 
@@ -383,11 +524,11 @@
 
                 <div class="min-w-0">
 
-                    <p id="total-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                    <p id="total-count-card" class="registration-stat-number">
                         {{ $counts['total'] }}
                     </p>
 
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                    <p class="registration-stat-label whitespace-nowrap">
                         Total Registration
                     </p>
 
@@ -411,7 +552,7 @@
     >
 
         <div
-            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[85vh]
+            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[88vh]
                    overflow-y-auto rounded-2xl shadow-xl
                    transform transition-all duration-300"
         >
@@ -420,12 +561,12 @@
 
             <div
                 class="flex items-center justify-between
-                       px-6 py-5 border-b border-gray-200"
+                       px-5 py-4 border-b border-gray-200"
             >
 
                 <div>
 
-                    <h3 class="text-[21px] font-bold text-gray-900">
+                    <h3 class="text-[20px] font-bold text-gray-900">
                         Approved Users
                     </h3>
 
@@ -439,14 +580,14 @@
                 <button
                     type="button"
                     id="close-approved-users"
-                    class="w-9 h-9 flex items-center justify-center
+                    class="w-8 h-8 flex items-center justify-center
                            rounded-full text-gray-500
                            hover:bg-gray-100 hover:text-gray-800
                            transition"
                 >
 
                     <svg
-                        class="w-5 h-5"
+                        class="w-[18px] h-[18px]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -545,7 +686,7 @@
                        flex items-center justify-between"
             >
 
-                <p id="approved-users-count" class="text-[13px] text-gray-400">
+                <p id="approved-users-count" class="text-[12px] text-gray-400">
                 </p>
 
                 <button
@@ -578,7 +719,7 @@
     >
 
         <div
-            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[85vh]
+            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[88vh]
                    overflow-y-auto rounded-2xl shadow-xl
                    transform transition-all duration-300"
         >
@@ -587,12 +728,12 @@
 
             <div
                 class="flex items-center justify-between
-                       px-6 py-5 border-b border-gray-200"
+                       px-5 py-4 border-b border-gray-200"
             >
 
                 <div>
 
-                    <h3 class="text-[21px] font-bold text-gray-900">
+                    <h3 class="text-[20px] font-bold text-gray-900">
                         Rejected Users
                     </h3>
 
@@ -606,14 +747,14 @@
                 <button
                     type="button"
                     id="close-rejected-users"
-                    class="w-9 h-9 flex items-center justify-center
+                    class="w-8 h-8 flex items-center justify-center
                            rounded-full text-gray-500
                            hover:bg-gray-100 hover:text-gray-800
                            transition"
                 >
 
                     <svg
-                        class="w-5 h-5"
+                        class="w-[18px] h-[18px]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -712,7 +853,7 @@
                        flex items-center justify-between"
             >
 
-                <p id="rejected-users-count" class="text-[13px] text-gray-400">
+                <p id="rejected-users-count" class="text-[12px] text-gray-400">
                 </p>
 
                 <button
@@ -772,7 +913,7 @@
                         data-modal="seller-details-modal"
                         aria-label="Close seller details"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
                         </svg>
                     </button>
@@ -792,13 +933,13 @@
             <div class="shrink-0 px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
                 <button
                     type="button"
-                    class="registration-reject px-9 py-2.5 rounded-lg bg-[#8F211F] text-white text-[14px] font-semibold hover:bg-[#741A18] transition"
+                    class="registration-reject px-9 py-2.5 rounded-lg border border-[#C92D32] bg-[#FFE6E6] text-[#A61B1B] text-[14px] font-semibold hover:bg-[#FFDADA] transition"
                 >
                     Reject
                 </button>
                 <button
                     type="button"
-                    class="registration-approve px-9 py-2.5 rounded-lg bg-[#EA7779] text-white text-[14px] font-semibold hover:bg-[#D86567] transition"
+                    class="registration-approve px-9 py-2.5 rounded-lg border border-[#4E9B46] bg-[#E7F4E3] text-[#28721B] text-[14px] font-semibold hover:bg-[#DCEFD7] transition"
                 >
                     Approve
                 </button>
@@ -838,7 +979,7 @@
                         data-modal="buyer-details-modal"
                         aria-label="Close buyer details"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
                         </svg>
                     </button>
@@ -854,8 +995,8 @@
             </div>
 
             <div class="shrink-0 px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
-                <button type="button" class="registration-reject px-9 py-2.5 rounded-lg bg-[#8F211F] text-white text-[14px] font-semibold hover:bg-[#741A18] transition">Reject</button>
-                <button type="button" class="registration-approve px-9 py-2.5 rounded-lg bg-[#EA7779] text-white text-[14px] font-semibold hover:bg-[#D86567] transition">Approve</button>
+                <button type="button" class="registration-reject px-9 py-2.5 rounded-lg border border-[#C92D32] bg-[#FFE6E6] text-[#A61B1B] text-[14px] font-semibold hover:bg-[#FFDADA] transition">Reject</button>
+                <button type="button" class="registration-approve px-9 py-2.5 rounded-lg border border-[#4E9B46] bg-[#E7F4E3] text-[#28721B] text-[14px] font-semibold hover:bg-[#DCEFD7] transition">Approve</button>
             </div>
 
         </div>
@@ -979,8 +1120,8 @@
                 <button
                     type="button"
                     id="confirm-reject-registration"
-                    class="px-7 py-2.5 rounded-lg bg-[#8F211F] text-white
-                           text-[14px] font-semibold hover:bg-[#741A18] transition"
+                    class="px-7 py-2.5 rounded-lg border border-[#C92D32] bg-[#FFE6E6] text-[#A61B1B]
+                           text-[14px] font-semibold hover:bg-[#FFDADA] transition"
                 >
                     Reject
                 </button>
@@ -993,10 +1134,10 @@
     ========================================================== -->
     <div
         id="registration-flash"
-        class="fixed bottom-6 right-6 z-[180] hidden w-[370px] rounded-xl border
-               bg-white shadow-xl px-4 py-4"
+        class="registration-decision-flash"
         role="status"
         aria-live="polite"
+        aria-atomic="true"
     >
         <div class="flex items-start gap-3">
             <div
@@ -1029,20 +1170,20 @@
 
     <div
         class="bg-white rounded-xl shadow-sm border border-gray-100
-               p-4 mb-5"
+               p-3.5 mb-4"
     >
 
-        <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
+        <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5">
 
             <!-- Search -->
 
-            <div class="relative flex-1 min-w-0">
+            <div class="registration-search-wrap">
 
                 <input
                     id="registration-search"
                     type="text"
                     placeholder="Search name, email, and phone"
-                    class="w-full h-[38px] rounded-lg border border-gray-300
+                    class="w-full h-[36px] rounded-lg border border-gray-300
                            bg-white pl-4 pr-11 text-[13px] text-gray-700
                            placeholder:text-gray-300
                            outline-none
@@ -1077,8 +1218,8 @@
 
                 <select
                     id="user-type-filter"
-                    class="appearance-none w-full xl:w-[138px]
-                           h-[38px] rounded-lg border border-gray-300
+                    class="appearance-none w-full xl:w-[132px]
+                           h-[36px] rounded-lg border border-gray-300
                            bg-white px-3 pr-9 text-[13px] text-gray-700
                            outline-none cursor-pointer
                            focus:border-maroon-700
@@ -1134,8 +1275,8 @@
                 <input
                     id="date-filter"
                     type="date"
-                    class="w-full xl:w-[205px]
-                           h-[38px] rounded-lg border border-gray-300
+                    class="w-full xl:w-[195px]
+                           h-[36px] rounded-lg border border-gray-300
                            bg-white px-3 pr-10 text-[13px] text-gray-700
                            outline-none
                            focus:border-maroon-700
@@ -1152,7 +1293,7 @@
                     type="button"
                     id="date-calendar-button"
                     class="absolute right-0 top-0
-                           w-10 h-[38px]
+                           w-9 h-[36px]
                            flex items-center justify-center
                            text-gray-700
                            hover:text-[#7B1B1B]
@@ -1197,7 +1338,7 @@
 
                 <svg
                     id="registration-reload-icon"
-                    class="w-6 h-6"
+                    class="w-[18px] h-[18px]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1239,27 +1380,27 @@
 
                     <tr class="border-b border-gray-200">
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Applicant
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             User Type
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Email
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Phone
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Date Registered
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Status
                         </th>
 
@@ -1282,33 +1423,33 @@
                             role="button"
                             tabindex="0"
                         >
-                            <td class="px-5 py-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-7 h-7 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">
                                         {{ collect(explode(' ', $registration->full_name))->filter()->map(fn ($part) => strtoupper(substr($part, 0, 1)))->take(2)->join('') }}
                                     </div>
-                                    <span class="text-[13px] font-medium text-gray-800">{{ $registration->full_name }}</span>
+                                    <span class="text-[12px] font-medium text-gray-800">{{ $registration->full_name }}</span>
                                 </div>
                             </td>
-                            <td class="px-5 py-3">
-                                <div class="flex items-center gap-2">
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-1.5">
                                     @if(strtolower($registration->user_type) === 'seller')
-                                        <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
+                                        <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-[18px] h-[18px] object-contain" alt="Seller">
                                     @elseif(strtolower($registration->user_type) === 'buyer')
-                                        <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
+                                        <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-[18px] h-[18px] object-contain" alt="Buyer">
                                     @elseif(strtolower($registration->user_type) === 'logistics')
-                                        <img src="{{ asset('icons/admin/dashboard/body/logistics.png') }}" class="w-5 h-5 object-contain" alt="Logistics">
+                                        <img src="{{ asset('icons/admin/dashboard/body/logistics.png') }}" class="w-[18px] h-[18px] object-contain" alt="Logistics">
                                     @elseif(strtolower($registration->user_type) === 'rider')
-                                        <img src="{{ asset('icons/admin/dashboard/body/rider.png') }}" class="w-5 h-5 object-contain" alt="Rider">
+                                        <img src="{{ asset('icons/admin/dashboard/body/rider.png') }}" class="w-[18px] h-[18px] object-contain" alt="Rider">
                                     @endif
-                                    <span class="text-[13px] text-gray-800">{{ ucfirst($registration->user_type) }}</span>
+                                    <span class="text-[12px] text-gray-800">{{ ucfirst($registration->user_type) }}</span>
                                 </div>
                             </td>
-                            <td class="px-5 py-3 text-[13px] text-gray-400">{{ $registration->email }}</td>
-                            <td class="px-5 py-3 text-[13px] text-gray-800">{{ $registration->phone }}</td>
-                            <td class="px-5 py-3 text-[13px] text-gray-800">{{ $registration->created_at->format('F j, Y g:i A') }}</td>
-                            <td class="px-5 py-3">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
+                            <td class="px-4 py-2.5 text-[12px] text-gray-400">{{ $registration->email }}</td>
+                            <td class="px-4 py-2.5 text-[12px] text-gray-800">{{ $registration->phone }}</td>
+                            <td class="px-4 py-2.5 text-[12px] text-gray-800">{{ $registration->created_at->format('F j, Y g:i A') }}</td>
+                            <td class="px-4 py-2.5">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[10px] font-medium border border-[#FFD1B8]">
                                     {{ ucfirst($registration->status) }}
                                 </span>
                             </td>
@@ -1334,23 +1475,23 @@
 
         <div
             class="flex flex-col md:flex-row items-center justify-between
-                   gap-4 px-5 py-4 border-t border-gray-200"
+                   gap-3 px-4 py-3 border-t border-gray-200"
         >
 
             <p
                 id="registration-count"
-                class="text-[13px] text-gray-400"
+                class="text-[12px] text-gray-400"
             >
                 Showing 0–0 of 0 entries
             </p>
 
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
 
                 <button
                     type="button"
                     id="registration-prev"
-                    class="w-7 h-7 flex items-center justify-center
+                    class="w-6 h-6 flex items-center justify-center
                            text-gray-700 hover:bg-gray-100
                            rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Previous page"
@@ -1363,7 +1504,7 @@
                 <button
                     type="button"
                     id="registration-next"
-                    class="w-7 h-7 flex items-center justify-center
+                    class="w-6 h-6 flex items-center justify-center
                            text-gray-700 hover:bg-gray-100
                            rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Next page"
@@ -1373,7 +1514,7 @@
 
                 <select
                     id="items-per-page"
-                    class="ml-2 h-8 rounded-md
+                    class="ml-2 h-7 rounded-md
                            border border-[#F0B9AC]
                            bg-[#FFF5F1]
                            px-2 text-[12px] text-gray-700
@@ -1414,10 +1555,10 @@
             <button
                 type="button"
                 id="registration-image-preview-close"
-                class="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition"
+                class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition"
                 aria-label="Close image preview"
             >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
                 </svg>
             </button>
@@ -1434,6 +1575,108 @@
     </div>
 </div>
 
+
+
+<style>
+    /* =========================================================
+       REGISTRATION ACTION FLASH
+       Same quick lower-right style used across the admin modals.
+    ========================================================== */
+    .registration-decision-flash {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 220;
+        width: min(370px, calc(100vw - 32px));
+        min-height: 72px;
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 13px 14px;
+        box-sizing: border-box;
+        background: #FFFFFF;
+        border: 1px solid #E7E2DF;
+        border-radius: 14px;
+        box-shadow: 0 14px 34px rgba(42, 20, 15, .16);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(10px);
+        transition: opacity .08s ease, transform .08s ease, visibility .08s ease;
+    }
+
+    .registration-decision-flash.show {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .registration-decision-flash.approved {
+        border-color: #BFDDB8;
+    }
+
+    .registration-decision-flash.rejected,
+    .registration-decision-flash.error {
+        border-color: #E7A8AB;
+    }
+
+    @media (max-width: 640px) {
+        .registration-decision-flash {
+            right: 16px;
+            bottom: 16px;
+        }
+    }
+</style>
+
+
+<style>
+    /* =========================================================
+       REGISTRATION FILTER COLOR CONSISTENCY
+       Matches the Seller Compliance filter/search styling.
+    ========================================================== */
+
+    /* Search, user-type filter, and date field use the same
+       neutral border/background/text colors as Seller Compliance. */
+    #registration-search,
+    #user-type-filter,
+    #date-filter {
+        border-color: #D9D6D4 !important;
+        background-color: #FFFFFF !important;
+        color: #76716E !important;
+    }
+
+    /* Match the Seller Compliance search placeholder tone. */
+    #registration-search::placeholder {
+        color: #76716E !important;
+        opacity: 1;
+    }
+
+    /* Search icon + select arrow + calendar icon. */
+    #registration-search + svg,
+    #user-type-filter + svg,
+    #date-calendar-button {
+        color: #76716E !important;
+    }
+
+    /* Keep native date text consistent across Chromium browsers. */
+    #date-filter::-webkit-datetime-edit,
+    #date-filter::-webkit-datetime-edit-fields-wrapper,
+    #date-filter::-webkit-datetime-edit-text,
+    #date-filter::-webkit-datetime-edit-month-field,
+    #date-filter::-webkit-datetime-edit-day-field,
+    #date-filter::-webkit-datetime-edit-year-field {
+        color: #76716E !important;
+    }
+
+    /* Same maroon active/focus indication used in Seller Compliance. */
+    #registration-search:focus,
+    #user-type-filter:focus,
+    #date-filter:focus {
+        border-color: #7B1B1B !important;
+        box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
+    }
+</style>
 
 @push('scripts')
 
@@ -1596,16 +1839,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tr.innerHTML = `
             <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">
                         ${initials(name)}
                     </div>
-                    <span class="text-[13px] font-medium text-gray-800">${name}</span>
+                    <span class="text-[12px] font-medium text-gray-800">${name}</span>
                 </div>
             </td>
             <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                    <img src="${icon}" class="w-5 h-5 object-contain" alt="${type}">
+                <div class="flex items-center gap-1.5">
+                    <img src="${icon}" class="w-[18px] h-[18px] object-contain" alt="${type}">
                     <span class="text-[13px]">${type}</span>
                 </div>
             </td>
@@ -1698,8 +1941,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 : '—';
 
             return `<tr class="hover:bg-[#FFF9F7] transition">
-                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">${escapeHtml(initials)}</div><span class="text-[13px] font-medium text-gray-800">${escapeHtml(name)}</span></div></td>
-                <td class="px-6 py-4"><div class="flex items-center gap-2"><img src="${iconByType[type] || iconByType.buyer}" class="w-5 h-5 object-contain" alt="${escapeHtml(type)}"><span class="text-[13px]">${escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))}</span></div></td>
+                <td class="px-6 py-4"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">${escapeHtml(initials)}</div><span class="text-[12px] font-medium text-gray-800">${escapeHtml(name)}</span></div></td>
+                <td class="px-6 py-4"><div class="flex items-center gap-1.5"><img src="${iconByType[type] || iconByType.buyer}" class="w-[18px] h-[18px] object-contain" alt="${escapeHtml(type)}"><span class="text-[13px]">${escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))}</span></div></td>
                 <td class="px-6 py-4 text-[13px] text-gray-400">${escapeHtml(registration.email)}</td>
                 <td class="px-6 py-4 text-[13px]">${escapeHtml(registration.phone)}</td>
                 <td class="px-6 py-4 text-[13px]">${reviewedDate}</td>
@@ -2513,47 +2756,51 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const approved = type === 'approved';
+        const rejected = type === 'rejected' || type === 'reject';
+        const isError = type === 'error';
 
-        registrationFlash.classList.remove(
-            'border-[#B6D9AC]',
-            'border-[#E6B4B4]'
-        );
-
+        registrationFlash.classList.remove('approved', 'rejected', 'error');
         registrationFlash.classList.add(
-            approved ? 'border-[#B6D9AC]' : 'border-[#E6B4B4]'
+            approved ? 'approved' : (isError ? 'error' : 'rejected')
         );
 
         registrationFlashIcon.className =
             'w-9 h-9 rounded-full flex items-center justify-center shrink-0 ' +
-            (approved ? 'bg-[#DDF0D6]' : 'bg-[#FFE0E0]');
+            (approved ? 'bg-[#DDF0D6]' : 'bg-[#FFE3E5]');
 
         registrationFlashIcon.innerHTML = approved
             ? `<svg class="w-5 h-5 text-[#28721B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6"/>
                </svg>`
-            : `<svg class="w-5 h-5 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            : `<svg class="w-5 h-5 text-[#B3262E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6 6 18"/>
                </svg>`;
 
-        registrationFlashTitle.textContent =
-            approved ? 'Registration Approved' : 'Registration Rejected';
+        if (isError) {
+            registrationFlashTitle.textContent = 'Action Failed';
+            registrationFlashMessage.textContent = name || 'Unable to update this registration.';
+        } else {
+            registrationFlashTitle.textContent =
+                approved ? 'Registration Approved' : 'Registration Rejected';
 
-        registrationFlashMessage.textContent =
-            approved
-                ? `${name}'s registration has been approved. The user has been notified via email.`
-                : `${name}'s registration has been rejected. The user has been notified via email.`;
-
-        registrationFlash.classList.remove('hidden');
+            registrationFlashMessage.textContent =
+                approved
+                    ? `${name}'s registration has been approved. The user will be notified via email.`
+                    : `${name}'s registration has been rejected. The user will be notified via email.`;
+        }
 
         clearTimeout(registrationFlashTimer);
+
+        // Show immediately on the same action click.
+        registrationFlash.classList.add('show');
+
         registrationFlashTimer = setTimeout(() => {
-            registrationFlash.classList.add('hidden');
-        }, 4500);
+            registrationFlash.classList.remove('show');
+        }, 3800);
     }
 
     async function submitRegistrationReview(row, action, payload = {}) {
         if (!row.dataset.id) {
-            showRegistrationFlash(action, row.dataset.name || 'The applicant');
             moveRegistrationToArchive(row, action);
             return true;
         }
@@ -2583,7 +2830,7 @@ document.addEventListener('DOMContentLoaded', function () {
             clearTimeout(registrationFlashTimer);
 
             if (registrationFlash) {
-                registrationFlash.classList.add('hidden');
+                registrationFlash.classList.remove('show');
             }
         });
     }
@@ -2634,6 +2881,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 activeRegistrationRow.dataset.name ||
                 'The applicant';
 
+            // Flash immediately when the Reject action is confirmed.
+            showRegistrationFlash('rejected', name);
+
             confirmRejectRegistration.disabled = true;
 
             try {
@@ -2644,7 +2894,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 closeRegistrationModal(sellerDetailsModal);
                 closeRegistrationModal(buyerDetailsModal);
                 closeRejectRegistrationModal();
-                showRegistrationFlash('rejected', name);
             } catch (error) {
                 showRegistrationFlash('error', error.message);
             } finally {
@@ -2688,13 +2937,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            // Flash immediately after the admin confirms approval.
+            showRegistrationFlash('approved', name);
+
             button.disabled = true;
 
             try {
                 await submitRegistrationReview(activeRegistrationRow, 'approve');
                 closeRegistrationModal(sellerDetailsModal);
                 closeRegistrationModal(buyerDetailsModal);
-                showRegistrationFlash('approved', name);
             } catch (error) {
                 showRegistrationFlash('error', error.message);
             } finally {

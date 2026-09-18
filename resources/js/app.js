@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (content) {
 
                 content.classList.remove(
-                    'ml-72'
+                    'ml-60'
                 );
 
                 content.classList.add(
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
 
                 content.classList.add(
-                    'ml-72'
+                    'ml-60'
                 );
 
             }

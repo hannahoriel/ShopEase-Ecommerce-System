@@ -3,19 +3,28 @@
 
 @section('content')
 
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    #admin-content,
+    #admin-content * {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+
 <div
     id="admin-content"
-    class="ml-72 pt-[128px] px-6 pb-8 min-h-screen transition-all duration-300"
+    class="ml-60 pt-[95px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
 
     <!-- Welcome -->
-    <h2 class="text-[22px] font-bold text-gray-800 mb-6">
+    <h2 class="text-[21px] font-semibold text-black mb-5">
         Welcome, Admin!
     </h2>
 
 
     <!-- ==================== STAT CARDS ==================== -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 
         @php
             $stats = [
@@ -48,48 +57,143 @@
 
         @foreach ($stats as $stat)
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm">
+            <div class="dashboard-stat-card">
 
-            <div class="flex items-center gap-4">
+                <div class="dashboard-stat-main">
 
-                <!-- ICON -->
-                <img
-                    src="{{ asset('icons/admin/dashboard/body/' . $stat['icon']) }}"
-                    class="w-12 h-12 object-contain shrink-0"
-                    alt=""
-                >
+                    <!-- PNG ICON -->
+                    <img
+                        src="{{ asset('icons/admin/dashboard/body/' . $stat['icon']) }}"
+                        alt="{{ $stat['label'] }}"
+                        class="dashboard-stat-icon"
+                    >
 
-                <!-- TEXT -->
-                <div>
-                    <p class="text-[25px] font-bold text-gray-800 leading-tight">
-                        {{ $stat['value'] }}
-                    </p>
+                    <!-- CONTENT -->
+                    <div class="dashboard-stat-content">
 
-                    <p class="text-[15px] text-gray-400">
-                        {{ $stat['label'] }}
-                    </p>
+                        <div class="dashboard-stat-number">
+                            {{ $stat['value'] }}
+                        </div>
 
-                    <p class="text-[13px] text-green-600 mt-1">
-                        ↑ {{ $stat['change'] }} from yesterday
-                    </p>
+                        <div class="dashboard-stat-label">
+                            {{ $stat['label'] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- GROWTH -->
+                <div class="dashboard-stat-growth">
+
+                    <span class="dashboard-growth-arrow">
+                        ↑
+                    </span>
+
+                    <strong>
+                        {{ $stat['change'] }}
+                    </strong>
+
+                    from yesterday
+
                 </div>
 
             </div>
-
-        </div>
 
         @endforeach
 
     </div>
 
 
+    <style>
+        /* =========================================================
+           DASHBOARD STAT CARDS
+           Matches Seller Compliance stat-card structure/format.
+        ========================================================== */
+
+        .dashboard-stat-card {
+            min-height: 108px;
+            background: #FFFFFF;
+            border: 1px solid #F0E9E6;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .dashboard-stat-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /*
+         * The PNG contains its own visual background.
+         * No extra icon wrapper is added.
+         */
+        .dashboard-stat-icon {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .dashboard-stat-content {
+            min-width: 0;
+        }
+
+        .dashboard-stat-number {
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 600;
+            color: #17120F;
+        }
+
+        .dashboard-stat-label {
+            margin-top: 5px;
+            font-size: 13px;
+            line-height: 1.15;
+            font-weight: 400;
+            color: #8C8784;
+        }
+
+        .dashboard-stat-growth {
+            margin-top: 15px;
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 400;
+            color: #8C8784;
+            white-space: nowrap;
+        }
+
+        .dashboard-stat-growth strong {
+            color: #11951B;
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        .dashboard-growth-arrow {
+            color: #11951B;
+            font-size: 16px;
+            vertical-align: -1px;
+            margin-right: 2px;
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-stat-card {
+                min-height: 104px;
+            }
+        }
+    </style>
+
     <!-- ==================== PLATFORM OVERVIEW + SALES ==================== -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-6">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
 
         <!-- Platform Overview -->
-        <div class="xl:col-span-2 bg-white rounded-2xl p-5 shadow-sm">
+        <div class="xl:col-span-2 bg-white rounded-2xl p-4 shadow-sm">
 
-            <h3 class="text-[18px] font-bold text-gray-800 mb-4">
+            <h3 class="text-[17px] font-semibold text-black mb-3">
                 Platform Overview
             </h3>
 
@@ -104,22 +208,22 @@
 
 
         <!-- Sales Summary -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+        <div class="bg-white rounded-2xl p-4 shadow-sm flex flex-col justify-between">
 
             <div>
 
-                <h3 class="text-[18px] font-bold text-gray-800 mb-4">
+                <h3 class="text-[17px] font-semibold text-black mb-3">
                     Sales Summary
                 </h3>
 
-                <div class="space-y-3 text-[15px]">
+                <div class="space-y-2.5 text-[13px]">
 
                     <div class="flex justify-between gap-4">
                         <span class="text-gray-400">
                             Gross Sales
                         </span>
 
-                        <span class="font-semibold text-right">
+                        <span class="font-medium text-right">
                             ₱145,560,000.00
                         </span>
                     </div>
@@ -129,7 +233,7 @@
                             Total Orders
                         </span>
 
-                        <span class="font-semibold">
+                        <span class="font-medium">
                             1,256
                         </span>
                     </div>
@@ -139,7 +243,7 @@
                             Average Order Value
                         </span>
 
-                        <span class="font-semibold">
+                        <span class="font-medium">
                             ₱145.00
                         </span>
                     </div>
@@ -149,7 +253,7 @@
                             Completed Orders
                         </span>
 
-                        <span class="font-semibold">
+                        <span class="font-medium">
                             1,256
                         </span>
                     </div>
@@ -159,7 +263,7 @@
                             Return/Refund
                         </span>
 
-                        <span class="font-semibold">
+                        <span class="font-medium">
                             25
                         </span>
                     </div>
@@ -168,7 +272,7 @@
 
             </div>
 
-            <button class="mt-4 bg-maroon-900 text-white rounded-full py-3 text-[15px] font-medium hover:bg-maroon-800 transition">
+            <button class="mt-3 bg-maroon-900 text-white rounded-full py-2.5 text-[13px] font-medium hover:bg-maroon-800 transition">
                 View Full Report
             </button>
 
@@ -178,24 +282,24 @@
 
 
     <!-- ==================== BOTTOM CARDS ==================== -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
         <!-- Complaints -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
 
-            <div class="flex justify-between mb-4">
+            <div class="flex justify-between mb-3">
 
-                <h3 class="text-[18px] font-bold text-gray-800">
+                <h3 class="text-[17px] font-semibold text-black">
                     Complaints and Dispute
                 </h3>
 
-                <a href="#" class="text-[13px] text-maroon-700 font-medium">
+                <a href="#" class="text-[12px] text-maroon-700 font-medium">
                     View all
                 </a>
 
             </div>
 
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-4">
 
                 <div class="shrink-0">
                     <canvas
@@ -205,24 +309,24 @@
                     ></canvas>
                 </div>
 
-                <div class="space-y-2 text-[15px] flex-1">
+                <div class="space-y-2 text-[13px] flex-1">
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-maroon-900"></span>
                         <span>Open</span>
-                        <span class="ml-auto font-semibold">20</span>
+                        <span class="ml-auto font-medium">20</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-red-500"></span>
                         <span>In Progress</span>
-                        <span class="ml-auto font-semibold">10</span>
+                        <span class="ml-auto font-medium">10</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-peach-dark"></span>
                         <span>Resolved</span>
-                        <span class="ml-auto font-semibold">45</span>
+                        <span class="ml-auto font-medium">45</span>
                     </div>
 
                 </div>
@@ -233,15 +337,15 @@
 
 
         <!-- Pending Registrations -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm">
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
 
-            <div class="flex justify-between mb-4">
+            <div class="flex justify-between mb-3">
 
-                <h3 class="text-[18px] font-bold text-gray-800">
+                <h3 class="text-[17px] font-semibold text-black">
                     Pending Registrations
                 </h3>
 
-                <a href="#" class="text-[13px] text-maroon-700 font-medium">
+                <a href="#" class="text-[12px] text-maroon-700 font-medium">
                     View all
                 </a>
 
@@ -258,7 +362,7 @@
 
                     <span>Sellers</span>
 
-                    <span class="ml-auto font-semibold">
+                    <span class="ml-auto font-medium">
                         12
                     </span>
                 </div>
@@ -272,7 +376,7 @@
 
                     <span>Couriers</span>
 
-                    <span class="ml-auto font-semibold">
+                    <span class="ml-auto font-medium">
                         8
                     </span>
                 </div>
@@ -286,7 +390,7 @@
 
                     <span>Buyers</span>
 
-                    <span class="ml-auto font-semibold">
+                    <span class="ml-auto font-medium">
                         15
                     </span>
                 </div>
@@ -297,7 +401,7 @@
 
 
         <!-- Announcement -->
-        <div class="bg-maroon-900 text-white rounded-2xl p-5 shadow-sm relative overflow-hidden">
+        <div class="bg-maroon-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
 
             <!-- Decorative circles -->
             <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-peach-dark/10"></div>
@@ -325,17 +429,17 @@
 
                 </div>
 
-                <h3 class="text-[21px] font-bold mb-2">
+                <h3 class="text-[19px] font-bold mb-2">
                     Augzu Sale 2026!
                 </h3>
 
-                <p class="text-[15px] text-white/75 leading-relaxed max-w-[230px]">
+                <p class="text-[14px] text-white/75 leading-relaxed max-w-[230px]">
                     Abangan ang mga katangahan ngayong August
                 </p>
 
 
                 <!-- Bottom accent -->
-                <div class="mt-5 flex items-center gap-2">
+                <div class="mt-4 flex items-center gap-2">
 
                     <span class="w-8 h-1 rounded-full bg-peach-dark"></span>
 
@@ -359,6 +463,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+
+Chart.defaults.font.family = 'Poppins, sans-serif';
 
 new Chart(document.getElementById('overviewChart'), {
 
