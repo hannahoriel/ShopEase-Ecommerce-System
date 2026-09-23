@@ -8,6 +8,7 @@ use App\Http\Controllers\Seller\DashboardController as SellerDashboardController
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
 use App\Http\Controllers\Seller\InventoryController;
+use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryApiController;
 use App\Models\User;
 use App\Models\Admin\Registration;
 use Illuminate\Http\Request;
@@ -27,9 +28,7 @@ use Illuminate\Support\Str;
 
 Route::get('/', function () {
 
-    return view(
-        'pages.landing-page'
-    );
+    return redirect()->route('login');
 
 })->name('landing.page');
 
@@ -117,9 +116,7 @@ Route::post('/auth/logout', function (
 
     $request->session()->regenerateToken();
 
-    return redirect()->route(
-        'landing.page'
-    );
+    return redirect()->route('login');
 
 })->middleware('auth')
   ->name('logout');
@@ -1204,9 +1201,7 @@ Route::post(
 
 
         return redirect()
-            ->route(
-                'landing.page'
-            )
+            ->route('login')
             ->with(
                 'success',
                 'Seller registration submitted successfully.'
@@ -1969,9 +1964,7 @@ Route::post(
         */
 
         return redirect()
-            ->route(
-                'landing.page'
-            )
+            ->route('login')
             ->with(
                 'success',
                 'Buyer registration submitted successfully.'
@@ -2084,6 +2077,26 @@ Route::get(
 )
     ->middleware('auth')
     ->name('seller.inventory');
+
+Route::post(
+    '/seller/inventory/products',
+    [SellerInventoryApiController::class, 'store']
+)->middleware('auth')->name('seller.inventory.products.store');
+
+Route::patch(
+    '/seller/inventory/products/{product}/archive',
+    [SellerInventoryApiController::class, 'archive']
+)->middleware('auth')->name('seller.inventory.products.archive');
+
+Route::patch(
+    '/seller/inventory/products/{product}/unarchive',
+    [SellerInventoryApiController::class, 'unarchive']
+)->middleware('auth')->name('seller.inventory.products.unarchive');
+
+Route::delete(
+    '/seller/inventory/products/{product}',
+    [SellerInventoryApiController::class, 'destroy']
+)->middleware('auth')->name('seller.inventory.products.destroy');
 /*
 |--------------------------------------------------------------------------
 | SELLER ORDER STATUS
@@ -2115,7 +2128,7 @@ Route::get('/seller/shipping-status', function () {
     return app(ShippingStatusController::class)->page(request());
 })->middleware('auth')
   ->name('seller.shipping.status');
-  
+
 Route::get('/admin/seller-compliance', function () {
     return view('pages.admin.seller-compliance');
 })->name('admin.seller.compliance');

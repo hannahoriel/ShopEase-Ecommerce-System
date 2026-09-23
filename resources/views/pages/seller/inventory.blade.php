@@ -294,6 +294,8 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>
         ShopEase - Inventory
     </title>
@@ -441,11 +443,7 @@
                     "
                 >
                     <span
-                        class="
-                            text-[20px]
-                            leading-none
-                            font-light
-                        "
+                        class="text-[20px] leading-none font-light"
                     >
                         +
                     </span>
@@ -1866,7 +1864,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="health-and-beauty"
@@ -1977,7 +1975,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="books-and-media"
@@ -2088,7 +2086,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="food-and-gourmet"
@@ -2199,7 +2197,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="automotive-motorcycle"
@@ -2310,7 +2308,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="furniture-and-office-equipment"
@@ -2421,7 +2419,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="jewelry-and-watches"
@@ -2529,7 +2527,7 @@
 
                             hover:bg-[#FFFBF9]
                         "
-                    
+
                         data-policy="true"
 
                         data-category="office-and-school-supplies"
@@ -3279,6 +3277,20 @@
                                         placeholder="e.g. Black"
                                     >
 
+                                    <label
+                                        for="productColorPhotoInput"
+                                        class="create-variation-photo-picker"
+                                        title="Add optional color photo"
+                                    >
+                                        <input
+                                            id="productColorPhotoInput"
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            class="hidden"
+                                        >
+                                        <span id="colorPhotoPickerText">Photo</span>
+                                    </label>
+
                                     <button
                                         type="button"
                                         id="addProductColorButton"
@@ -3311,6 +3323,20 @@
                                         type="text"
                                         placeholder="e.g. Medium"
                                     >
+
+                                    <label
+                                        for="productSizePhotoInput"
+                                        class="create-variation-photo-picker"
+                                        title="Add optional size photo"
+                                    >
+                                        <input
+                                            id="productSizePhotoInput"
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            class="hidden"
+                                        >
+                                        <span id="sizePhotoPickerText">Photo</span>
+                                    </label>
 
                                     <button
                                         type="button"
@@ -4821,6 +4847,7 @@
 
                 <div>
                     <h2
+                        id="removeProductModalTitle"
                         class="
                             text-[22px]
                             font-semibold
@@ -4832,6 +4859,7 @@
                     </h2>
 
                     <p
+                        id="removeProductModalSubtitle"
                         class="
                             mt-[10px]
                             text-[16px]
@@ -4843,7 +4871,7 @@
                     </p>
                 </div>
 
-                <div class="mt-[26px]">
+                <div id="removeReasonBlock" class="mt-[26px]">
 
                     <p
                         class="
@@ -4915,7 +4943,7 @@
 
                 </div>
 
-                <div class="mt-[27px]">
+                <div id="removeDetailsBlock" class="mt-[27px]">
 
                     <label
                         for="removeAdditionalDetails"
@@ -5547,7 +5575,7 @@
         .category-womens-apparel { background: #F9DFEA; color: #A12763; }
         .category-mens-apparel { background: #E6E2F8; color: #5A4A9A; }
         .category-kids-and-baby { background: #FFE5B8; color: #9A5B00; }
-        .category-home-and-garden { background: #DDF3E4; color: #27704A; }
+        .category-home-and-garden { background: #EEF0D8; color: #596126; }
         .category-sports-and-outdoors { background: #DDECF2; color: #23627A; }
         .category-health-and-beauty { background: #FFE0DC; color: #A63B2C; }
         .category-books-and-media { background: #E6E8F2; color: #3F4A68; }
@@ -6220,7 +6248,7 @@
 
         }
 
-    
+
 
         /* =====================================================
            INVENTORY — MATCH CURRENT SELLER DASHBOARD
@@ -6614,7 +6642,7 @@
         }
 
 
-    
+
 
         /* =====================================================
            SMALLER PRODUCT DETAILS MODAL
@@ -6634,6 +6662,10 @@
 
             height: auto !important;
             max-height: 82vh !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #C9A9A2 #F4ECE9;
 
             border-radius: 22px !important;
 
@@ -6764,6 +6796,7 @@
 
         #addProductModal {
             font-family: 'Poppins', sans-serif;
+            overflow-y: auto;
         }
 
         .create-product-modal-panel {
@@ -6841,8 +6874,34 @@
             min-height: 0;
             flex: 1 1 auto;
             overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #C9A9A2 #F4ECE9;
             padding: 16px 20px 20px;
             background: #FCFAF9;
+        }
+
+        .create-product-scroll::-webkit-scrollbar,
+        #productDetailsModalPanel::-webkit-scrollbar {
+            width: 9px;
+        }
+
+        .create-product-scroll::-webkit-scrollbar-track,
+        #productDetailsModalPanel::-webkit-scrollbar-track {
+            border-radius: 999px;
+            background: #F4ECE9;
+        }
+
+        .create-product-scroll::-webkit-scrollbar-thumb,
+        #productDetailsModalPanel::-webkit-scrollbar-thumb {
+            border: 2px solid #F4ECE9;
+            border-radius: 999px;
+            background: #C9A9A2;
+        }
+
+        .create-product-scroll::-webkit-scrollbar-thumb:hover,
+        #productDetailsModalPanel::-webkit-scrollbar-thumb:hover {
+            background: #A97970;
         }
 
         .create-product-section {
@@ -7193,8 +7252,13 @@
 
         .create-chip-entry {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 52px;
+            grid-template-columns: minmax(0, 1fr) 58px 52px;
             gap: 7px;
+        }
+
+        .create-chip-entry .create-variation-photo-picker {
+            min-width: 0;
+            height: 32px;
         }
 
         .create-chip-entry input {
@@ -7459,7 +7523,7 @@
             min-height: 34px;
             padding: 4px 6px;
             display: grid;
-            grid-template-columns: 28px minmax(0, 1fr) 20px;
+            grid-template-columns: minmax(0, 1fr) 105px 105px 20px;
             gap: 7px;
             align-items: center;
             border: 1px solid #E9D8D3;
@@ -7470,7 +7534,7 @@
         }
 
         .create-variation-chip.no-photo {
-            grid-template-columns: minmax(0, 1fr) 20px;
+            grid-template-columns: minmax(0, 1fr) 105px 105px 20px;
         }
 
         .create-variation-thumb {
@@ -7487,6 +7551,13 @@
             height: 100%;
             display: block;
             object-fit: cover;
+        }
+
+        .create-variation-identity {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 7px;
         }
 
         .create-variation-chip-name {
@@ -7532,6 +7603,10 @@
         @media (max-width: 640px) {
             .create-variation-entry {
                 grid-template-columns: minmax(0, 1fr) 58px;
+            }
+
+            .create-chip-entry {
+                grid-template-columns: minmax(0, 1fr) 58px 52px;
             }
 
             #addProductVariationButton {
@@ -7617,8 +7692,8 @@
         }
 
         .create-category-pill.is-selected[data-category-slug="home-and-garden"] {
-            background: #DDF3E4;
-            color: #27704A;
+            background: #EEF0D8;
+            color: #596126;
         }
 
         .create-category-pill.is-selected[data-category-slug="sports-and-outdoors"] {
@@ -7901,11 +7976,11 @@
         }
 
         .create-variation-chip.has-option-price {
-            grid-template-columns: 28px minmax(0,1fr) 105px 20px !important;
+            grid-template-columns: minmax(0,1fr) 105px 105px 20px !important;
         }
 
         .create-variation-chip.no-photo.has-option-price {
-            grid-template-columns: minmax(0,1fr) 105px 20px !important;
+            grid-template-columns: minmax(0,1fr) 105px 105px 20px !important;
         }
 
         .create-priced-option-row {
@@ -7913,7 +7988,7 @@
             min-height: 38px;
             padding: 5px 6px 5px 9px;
             display: grid;
-            grid-template-columns: minmax(0,1fr) 105px 20px;
+            grid-template-columns: minmax(0,1fr) 105px 105px 20px;
             gap: 7px;
             align-items: center;
             border: 1px solid #E9D8D3;
@@ -7922,7 +7997,7 @@
         }
 
         .create-priced-option-row.no-option-price {
-            grid-template-columns: minmax(0,1fr) 20px;
+            grid-template-columns: minmax(0,1fr) 105px 20px;
         }
 
         .create-option-value-name {
@@ -7960,6 +8035,7 @@
             }
 
             .create-variation-chip.has-option-price .create-option-price-wrap,
+            .create-variation-chip .create-option-price-wrap,
             .create-priced-option-row .create-option-price-wrap {
                 grid-column: 1 / -1;
             }
@@ -8087,6 +8163,16 @@
             line-height: 1.45;
             font-weight: 500;
             overflow-wrap: anywhere;
+        }
+
+        .product-created-detail-line {
+            padding: 4px 0;
+            border-bottom: 1px solid #EEE8E5;
+        }
+
+        .product-created-detail-line:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
         }
 
         .product-created-option-row {
@@ -12285,6 +12371,18 @@
                         'confirmRemoveProduct'
                     );
 
+                const removeProductModalTitle =
+                    document.getElementById('removeProductModalTitle');
+
+                const removeProductModalSubtitle =
+                    document.getElementById('removeProductModalSubtitle');
+
+                const removeReasonBlock =
+                    document.getElementById('removeReasonBlock');
+
+                const removeDetailsBlock =
+                    document.getElementById('removeDetailsBlock');
+
 
                 const removeAdditionalDetails =
                     document.getElementById(
@@ -12411,8 +12509,13 @@
 
                     return createdInventoryProducts.find(
                         function (product) {
-                            return product.id ===
-                                productId;
+                            return String(product.id) ===
+                                String(productId);
+                        }
+                    ) || archivedInventoryProducts.find(
+                        function (product) {
+                            return String(product.id) ===
+                                String(productId);
                         }
                     ) || null;
 
@@ -12551,16 +12654,33 @@
                         label;
 
                     const valueElement =
-                        document.createElement(
-                            'span'
-                        );
+                        Array.isArray(value)
+                            ? document.createElement('div')
+                            : document.createElement('span');
 
                     valueElement.className =
                         'product-created-detail-value';
 
-                    valueElement.textContent =
-                        value ||
-                        '—';
+                    if (Array.isArray(value)) {
+                        valueElement.classList.add(
+                            'product-created-detail-list'
+                        );
+
+                        value.forEach(function (line) {
+                            const lineElement =
+                                document.createElement('div');
+
+                            lineElement.className =
+                                'product-created-detail-line';
+
+                            lineElement.textContent = line;
+                            valueElement.appendChild(lineElement);
+                        });
+                    } else {
+                        valueElement.textContent =
+                            value ||
+                            '—';
+                    }
 
                     item.appendChild(
                         labelElement
@@ -12785,13 +12905,16 @@
                                                 : '';
 
                                         const photoNote =
-                                            entry.photoData
+                                            entry.photoData || entry.photo
                                                 ? ' 📷'
                                                 : '';
 
+                                        const stockText =
+                                            `Stock: ${Number(entry.stock || 0)}`;
+
                                         return priceText
-                                            ? `${entry.name}${photoNote} — ${priceText}`
-                                            : `${entry.name}${photoNote}`;
+                                            ? `${entry.name}${photoNote} — ${priceText} — ${stockText}`
+                                            : `${entry.name}${photoNote} — ${stockText}`;
 
                                     }
                                 );
@@ -12799,9 +12922,7 @@
                             productDetailsBuyerOptions.appendChild(
                                 makeCreatedDetailItem(
                                     group.label,
-                                    rows.join(
-                                        ', '
-                                    ),
+                                    rows,
                                     true
                                 )
                             );
@@ -13723,6 +13844,13 @@
                         return;
                     }
 
+                    if (saveProductChanges) {
+                        saveProductChanges.textContent =
+                            row.classList.contains('archived-row')
+                                ? 'Unarchive'
+                                : 'Save Changes';
+                    }
+
                     const createdProduct =
                         getCreatedProductFromRow(
                             row
@@ -13768,11 +13896,16 @@
                         }
 
                         if (productDetailsStatus) {
+                            const createdStatus =
+                                getCreatedProductStatus(
+                                    createdProduct.stock
+                                );
+
                             productDetailsStatus.textContent =
-                                'Pending';
+                                createdStatus.label;
 
                             productDetailsStatus.className =
-                                'status-badge status-pending mt-[6px]';
+                                `status-badge mt-[6px] ${createdStatus.className}`;
                         }
 
                         if (productDetailsUploaded) {
@@ -14269,6 +14402,80 @@
                    SAVE CHANGES
                 ================================================== */
 
+                function persistArchiveState(productId, archived) {
+                    if (!productId || !/^\d+$/.test(String(productId))) {
+                        return Promise.resolve(true);
+                    }
+
+                    const endpoint =
+                        `{{ url('/seller/inventory/products') }}/${productId}/${archived ? 'archive' : 'unarchive'}`;
+
+                    return fetch(endpoint, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            'Accept': 'application/json'
+                        }
+                    }).then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Unable to update the product archive state.');
+                        }
+
+                        return response.json();
+                    });
+                }
+
+                function unarchiveCurrentProduct(product) {
+                    if (!product || !currentProductRow) {
+                        return;
+                    }
+
+                    if (!currentProductRow.dataset.archivePersisted) {
+                        persistArchiveState(product.id, false)
+                            .then(function () {
+                                currentProductRow.dataset.archivePersisted = 'true';
+                                unarchiveCurrentProduct(product);
+                            })
+                            .catch(function (error) {
+                                window.alert(error.message);
+                            });
+                        return;
+                    }
+
+                    archivedInventoryProducts =
+                        archivedInventoryProducts.filter(function (item) {
+                            return String(item.id) !== String(product.id);
+                        });
+
+                    createdInventoryProducts = [
+                        product,
+                        ...createdInventoryProducts.filter(function (item) {
+                            return String(item.id) !== String(product.id);
+                        })
+                    ];
+
+                    saveArchivedProducts();
+                    saveCreatedProducts();
+
+                    const restoredRow = buildCreatedProductRow(product, true);
+
+                    if (restoredRow) {
+                        allTable.prepend(restoredRow);
+                    }
+
+                    currentProductRow.remove();
+                    activeTab = 'all';
+
+                    tabs.forEach(function (tab) {
+                        tab.classList.toggle(
+                            'active',
+                            tab.dataset.tab === 'all'
+                        );
+                    });
+
+                    updateTabView();
+                }
+
                 saveProductChanges?.addEventListener(
                     'click',
                     function () {
@@ -14281,11 +14488,34 @@
                                 currentProductRow
                             );
 
+                        const isArchived =
+                            currentProductRow?.classList.contains(
+                                'archived-row'
+                            );
+
                         saveProductChanges.disabled =
                             true;
 
                         saveProductChanges.textContent =
-                            'Saving...';
+                            isArchived
+                                ? 'Unarchiving...'
+                                : 'Saving...';
+
+                        if (isArchived) {
+                            unarchiveCurrentProduct(createdProduct);
+
+                            window.setTimeout(function () {
+                                saveProductChanges.disabled = false;
+                                saveProductChanges.textContent = 'Save Changes';
+                                closeProductDetails(function () {
+                                    showInventoryFlash(
+                                        'Product restored to All Products.'
+                                    );
+                                });
+                            }, 450);
+
+                            return;
+                        }
 
                         /*
                          * Created products are truly editable in the current
@@ -14384,6 +14614,30 @@
 
                     if (removeAdditionalDetails) {
                         removeAdditionalDetails.value = '';
+                    }
+
+                    const isArchived =
+                        currentProductRow?.classList.contains('archived-row');
+
+                    if (removeProductModalTitle) {
+                        removeProductModalTitle.textContent = isArchived
+                            ? 'Permanently Remove Product'
+                            : 'Remove Product';
+                    }
+
+                    if (removeProductModalSubtitle) {
+                        removeProductModalSubtitle.textContent = isArchived
+                            ? 'Are you sure you want to permanently remove the products? This action cannot be undone.'
+                            : 'You are about to remove your product.';
+                    }
+
+                    removeReasonBlock?.classList.toggle('hidden', isArchived);
+                    removeDetailsBlock?.classList.toggle('hidden', isArchived);
+
+                    if (confirmRemoveProduct) {
+                        confirmRemoveProduct.textContent = isArchived
+                            ? 'Yes, Permanently Remove'
+                            : 'Remove';
                     }
 
                     updateRemoveDetailsCount();
@@ -14530,22 +14784,37 @@
                 function categoryBadgeClass(category) {
 
                     const map = {
+                        'pet-supplies': 'category-pet-supplies',
                         'Pet Supplies': 'category-pet-supplies',
+                        'electronics-and-gadgets': 'category-electronics-and-gadgets',
                         'Electronics and Gadgets': 'category-electronics-and-gadgets',
                         'Electronics & Gadgets': 'category-electronics-and-gadgets',
+                        'womens-apparel': 'category-womens-apparel',
                         "Women's Apparel": 'category-womens-apparel',
                         "Women’s Apparel": 'category-womens-apparel',
+                        'mens-apparel': 'category-mens-apparel',
                         "Men's Apparel": 'category-mens-apparel',
                         "Men’s Apparel": 'category-mens-apparel',
+                        'kids-and-baby': 'category-kids-and-baby',
                         'Kids and Baby': 'category-kids-and-baby',
+                        'home-and-garden': 'category-home-and-garden',
                         'Home and Garden': 'category-home-and-garden',
+                        'sports-and-outdoors': 'category-sports-and-outdoors',
                         'Sports and Outdoors': 'category-sports-and-outdoors',
+                        'health-and-beauty': 'category-health-and-beauty',
                         'Health and Beauty': 'category-health-and-beauty',
+                        'books-and-media': 'category-books-and-media',
                         'Books and Media': 'category-books-and-media',
+                        'food-and-gourmet': 'category-food-and-gourmet',
                         'Food and Gourmet': 'category-food-and-gourmet',
+                        'automotive-motorcycle': 'category-automotive-motorcycle',
                         'Automotive & Motorcycle': 'category-automotive-motorcycle',
+                        'Automotive and Motorcycle': 'category-automotive-motorcycle',
+                        'furniture-and-office-equipment': 'category-furniture-and-office-equipment',
                         'Furniture and Office Equipment': 'category-furniture-and-office-equipment',
+                        'jewelry-and-watches': 'category-jewelry-and-watches',
                         'Jewelry and Watches': 'category-jewelry-and-watches',
+                        'office-and-school-supplies': 'category-office-and-school-supplies',
                         'Office and School Supplies': 'category-office-and-school-supplies'
                     };
 
@@ -14560,6 +14829,22 @@
                     }
 
                     const row = currentProductRow;
+
+                    if (
+                        row.dataset.createdProductId &&
+                        /^\d+$/.test(String(row.dataset.createdProductId)) &&
+                        !row.dataset.archivePersisted
+                    ) {
+                        persistArchiveState(row.dataset.createdProductId, true)
+                            .then(function () {
+                                row.dataset.archivePersisted = 'true';
+                                archiveCurrentProduct(reason, details);
+                            })
+                            .catch(function (error) {
+                                window.alert(error.message);
+                            });
+                        return;
+                    }
 
                     const name =
                         row.dataset.name ||
@@ -14591,22 +14876,39 @@
                         return;
                     }
 
+                    const archivedProductId =
+                        row.dataset.createdProductId ||
+                        `row-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+                    const sourceProduct =
+                        createdInventoryProducts.find(function (product) {
+                            return String(product.id) === String(archivedProductId);
+                        }) || {};
+
                     const archivedRow =
                         document.createElement(
                             'article'
                         );
 
                     archivedRow.className =
-                        'archived-row grid grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr] items-center min-h-[90px] px-[20px] border-b border-[#DDD9D7]';
+                        'archived-row product-clickable grid grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr] items-center min-h-[90px] px-[20px] border-b border-[#DDD9D7]';
+
+                    archivedRow.dataset.createdProductId = archivedProductId;
+                    archivedRow.tabIndex = 0;
+                    archivedRow.setAttribute('role', 'button');
+
+                    const archivedCover = sourceProduct.coverPhoto
+                        ? `<img src="${escapeHtml(sourceProduct.coverPhoto)}" alt="${escapeHtml(name)}" class="created-product-cover">`
+                        : '<div class="product-bag"></div>';
 
                     archivedRow.innerHTML = `
                         <div class="product-main">
                             <div class="product-thumb">
-                                <div class="product-bag"></div>
+                                ${archivedCover}
                             </div>
                             <div class="min-w-0">
                                 <h3 class="product-name">${escapeHtml(name)}</h3>
-                                <p class="product-sold">${reasonLabel(reason)}</p>
+                                <p class="product-sold">${escapeHtml(details || reasonLabel(reason))}</p>
                             </div>
                         </div>
 
@@ -14618,15 +14920,36 @@
 
                         <div class="product-number">${escapeHtml(stock)}</div>
 
-                        <div class="archived-reason">
-                            <p class="archived-reason-title">Archived</p>
-                            <p class="archived-reason-detail">${escapeHtml(details || reasonLabel(reason))}</p>
+                        <div>
+                            <span class="status-badge status-pending">Archived</span>
                         </div>
+
+                        <div></div>
                     `;
 
                     archivedTable.appendChild(
                         archivedRow
                     );
+
+                    bindProductRow(archivedRow);
+
+                    archivedInventoryProducts =
+                        archivedInventoryProducts.filter(function (product) {
+                            return String(product.id) !== String(archivedProductId);
+                        });
+
+                    archivedInventoryProducts.unshift({
+                        ...sourceProduct,
+                        id: archivedProductId,
+                        name,
+                        category,
+                        price,
+                        stock,
+                        reason: details || reasonLabel(reason),
+                        archivedAt: new Date().toISOString()
+                    });
+
+                    saveArchivedProducts();
 
                     archivedTable.classList.remove(
                         'hidden'
@@ -14648,6 +14971,8 @@
 
                     row.remove();
 
+                    updateTabView();
+
                 }
 
 
@@ -14666,6 +14991,52 @@
 
                 }
 
+                function renderArchivedProductRow(product) {
+                    if (!archivedTable || !product) {
+                        return;
+                    }
+
+                    const archivedRow = document.createElement('article');
+                    archivedRow.className =
+                        'archived-row product-clickable grid grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr] items-center min-h-[90px] px-[20px] border-b border-[#DDD9D7]';
+
+                    archivedRow.dataset.createdProductId = product.id || '';
+                    archivedRow.tabIndex = 0;
+                    archivedRow.setAttribute('role', 'button');
+
+                    const archivedCover = product.coverPhoto
+                        ? `<img src="${escapeHtml(product.coverPhoto)}" alt="${escapeHtml(product.name || 'Product')}" class="created-product-cover">`
+                        : '<div class="product-bag"></div>';
+
+                    archivedRow.innerHTML = `
+                        <div class="product-main">
+                            <div class="product-thumb">
+                                ${archivedCover}
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="product-name">${escapeHtml(product.name || 'Product')}</h3>
+                                <p class="product-sold">${escapeHtml(product.reason || 'Archived product')}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="category-badge ${categoryBadgeClass(product.category || '—')}">
+                                ${escapeHtml(product.category || '—')}
+                            </span>
+                        </div>
+                        <div class="product-number">${escapeHtml(product.price || '—')}</div>
+                        <div class="product-number">${escapeHtml(product.stock || '—')}</div>
+                        <div>
+                            <span class="status-badge status-pending">Archived</span>
+                        </div>
+
+                        <div></div>
+                    `;
+
+                    archivedTable.appendChild(archivedRow);
+
+                    bindProductRow(archivedRow);
+                }
+
 
                 function escapeHtml(value) {
 
@@ -14678,6 +15049,43 @@
 
                 }
 
+                function categoryDisplayLabel(category) {
+                    const value = String(category || '').trim();
+
+                    if (!value) {
+                        return '—';
+                    }
+
+                    const definition = Object.values(
+                        productSpecificationLibrary || {}
+                    ).find(function (item) {
+                        return item.slug === value;
+                    });
+
+                    if (definition?.label) {
+                        return definition.label;
+                    }
+
+                    const labels = {
+                        'pet-supplies': 'Pet Supplies',
+                        'electronics-and-gadgets': 'Electronics and Gadgets',
+                        'womens-apparel': "Women's Apparel",
+                        'mens-apparel': "Men's Apparel",
+                        'kids-and-baby': 'Kids and Baby',
+                        'home-and-garden': 'Home and Garden',
+                        'sports-and-outdoors': 'Sports and Outdoors',
+                        'health-and-beauty': 'Health and Beauty',
+                        'books-and-media': 'Books and Media',
+                        'food-and-gourmet': 'Food and Gourmet',
+                        'automotive-motorcycle': 'Automotive & Motorcycle',
+                        'furniture-and-office-equipment': 'Furniture and Office Equipment',
+                        'jewelry-and-watches': 'Jewelry and Watches',
+                        'office-and-school-supplies': 'Office and School Supplies'
+                    };
+
+                    return labels[value] || value;
+                }
+
 
                 /* =================================================
                    CREATED PRODUCT LIST
@@ -14686,6 +15094,9 @@
 
                 const createdProductsStorageKey =
                     'shopease_seller_inventory_created_products_v1';
+
+                const archivedProductsStorageKey =
+                    'shopease_seller_inventory_archived_products_v1';
 
 
                 function loadCreatedProducts() {
@@ -14719,9 +15130,116 @@
 
                 }
 
+                function loadArchivedProducts() {
+                    try {
+                        const stored = JSON.parse(
+                            localStorage.getItem(archivedProductsStorageKey) ||
+                            '[]'
+                        );
 
-                let createdInventoryProducts =
-                    loadCreatedProducts();
+                        return Array.isArray(stored) ? stored : [];
+                    } catch (error) {
+                        console.warn('Unable to read archived products:', error);
+                        return [];
+                    }
+                }
+
+                let archivedInventoryProducts = loadArchivedProducts();
+
+                function saveArchivedProducts() {
+                    try {
+                        localStorage.setItem(
+                            archivedProductsStorageKey,
+                            JSON.stringify(archivedInventoryProducts)
+                        );
+                    } catch (error) {
+                        console.warn('Unable to save archived products:', error);
+                    }
+                }
+
+
+                function normalizePersistedProduct(product) {
+                    const specifications = product.specifications || {};
+                    const specificationDisplay = Object.entries(specifications)
+                        .map(function ([key, value]) {
+                            const cleanKey = String(key)
+                                .replace(/^category_specifications\[/, '')
+                                .replace(/\]$/, '');
+
+                            return {
+                                key: cleanKey,
+                                label: createdProductLabelFromKey(cleanKey),
+                                value: String(value ?? '')
+                            };
+                        })
+                        .filter(function (item) {
+                            return item.value !== '';
+                        });
+
+                    const storagePrefix = '{{ asset('storage') }}/';
+                    const photos = Array.isArray(product.photos)
+                        ? product.photos.map(function (photo) {
+                            return String(photo).startsWith('http') || String(photo).startsWith('data:')
+                                ? photo
+                                : storagePrefix + String(photo).replace(/^\//, '');
+                        })
+                        : [];
+
+                    return {
+                        id: String(product.id),
+                        title: product.title || product.name || 'New Product',
+                        category: product.category || '',
+                        categoryLabel: categoryDisplayLabel(
+                            product.categoryLabel || product.category
+                        ),
+                        pricingMode: product.pricingMode || product.pricing_mode || 'fixed',
+                        pricingSource: product.pricingSource || product.pricing_source || '',
+                        basePrice: product.basePrice ?? product.price ?? 0,
+                        stock: product.stock ?? product.stock_quantity ?? 0,
+                        variations: Array.isArray(product.variations) ? product.variations : [],
+                        colors: Array.isArray(product.colors) ? product.colors : [],
+                        sizes: Array.isArray(product.sizes) ? product.sizes : [],
+                        specifications: specifications,
+                        specificationDisplay: specificationDisplay,
+                        description: product.description || '',
+                        sku: product.sku || '',
+                        photos: photos,
+                        coverPhoto: photos[0] || '',
+                        approvalStatus: product.status || 'pending',
+                        createdAt: product.created_at || new Date().toISOString()
+                    };
+                }
+
+                const serverInventoryProducts = @json($inventoryProducts ?? []);
+                const serverCreatedProducts = serverInventoryProducts.map(
+                    normalizePersistedProduct
+                );
+                const serverArchivedProducts = @json($archivedProducts ?? [])
+                    .map(normalizePersistedProduct);
+
+                archivedInventoryProducts = [
+                    ...serverArchivedProducts,
+                    ...archivedInventoryProducts.filter(function (localProduct) {
+                        return !serverArchivedProducts.some(function (serverProduct) {
+                            return String(serverProduct.id) === String(localProduct.id);
+                        });
+                    })
+                ];
+
+                let createdInventoryProducts = [
+                    ...serverCreatedProducts,
+                    ...loadCreatedProducts().filter(function (localProduct) {
+                        return !serverCreatedProducts.some(function (serverProduct) {
+                            return serverProduct.id === String(localProduct.id);
+                        }) && !archivedInventoryProducts.some(function (archivedProduct) {
+                            return String(archivedProduct.id) === String(localProduct.id);
+                        });
+                    })
+                ].filter(function (product) {
+                    return !archivedInventoryProducts.some(function (archivedProduct) {
+                        return String(archivedProduct.id) === String(product.id);
+                    });
+                });
 
 
                 function saveCreatedProducts() {
@@ -14933,21 +15451,28 @@
                 function getCreatedProductStatus(
                     stock
                 ) {
+                    const quantity = Number(stock || 0);
 
-                    /*
-                     * Every newly created product starts as Pending.
-                     * Stock is retained, but the listing does not become
-                     * In Stock / Low Stock / Out of Stock until approval.
-                     */
+                    if (quantity <= 0) {
+                        return {
+                            slug: 'out-of-stock',
+                            label: 'Out of Stock',
+                            className: 'status-out-stock'
+                        };
+                    }
+
+                    if (quantity <= 5) {
+                        return {
+                            slug: 'low-stock',
+                            label: 'Low Stock',
+                            className: 'status-low-stock'
+                        };
+                    }
+
                     return {
-                        slug:
-                            'pending',
-
-                        label:
-                            'Pending',
-
-                        className:
-                            'status-pending'
+                        slug: 'in-stock',
+                        label: 'In Stock',
+                        className: 'status-in-stock'
                     };
 
                 }
@@ -14968,12 +15493,13 @@
                         );
 
                     const categoryLabel =
-                        product.categoryLabel ||
+                        categoryDisplayLabel(
+                            product.categoryLabel ||
                         productSpecificationLibrary[
                             product.category
                         ]?.label ||
-                        product.category ||
-                        '—';
+                        product.category
+                        );
 
                     const row =
                         document.createElement(
@@ -15177,6 +15703,19 @@
 
                 }
 
+                function restoreArchivedProductRows() {
+                    if (!archivedTable) {
+                        return;
+                    }
+
+                    archivedTable.innerHTML = '';
+
+                    archivedInventoryProducts
+                        .slice()
+                        .reverse()
+                        .forEach(renderArchivedProductRow);
+                }
+
 
                 function createCompactCoverDataUrl(
                     file
@@ -15291,6 +15830,44 @@
 
 
                 restoreCreatedProductRows();
+                restoreArchivedProductRows();
+
+                async function permanentlyDeleteCurrentProduct() {
+                    const product = getCreatedProductFromRow(currentProductRow);
+                    const productId = currentProductRow?.dataset.createdProductId;
+
+                    if (!productId || !/^\d+$/.test(String(productId))) {
+                        return;
+                    }
+
+                    const response = await fetch(
+                        `{{ url('/seller/inventory/products') }}/${productId}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                'Accept': 'application/json'
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Unable to permanently remove the product.');
+                    }
+
+                    archivedInventoryProducts = archivedInventoryProducts.filter(function (item) {
+                        return String(item.id) !== String(productId);
+                    });
+
+                    createdInventoryProducts = createdInventoryProducts.filter(function (item) {
+                        return String(item.id) !== String(productId);
+                    });
+
+                    saveArchivedProducts();
+                    saveCreatedProducts();
+                    currentProductRow.remove();
+                    updateTabView();
+                }
 
 
                 /* =================================================
@@ -15299,7 +15876,29 @@
 
                 confirmRemoveProduct?.addEventListener(
                     'click',
-                    function () {
+                    async function () {
+
+                        const isArchived =
+                            currentProductRow?.classList.contains('archived-row');
+
+                        if (isArchived) {
+                            confirmRemoveProduct.disabled = true;
+                            confirmRemoveProduct.textContent = 'Removing...';
+
+                            try {
+                                await permanentlyDeleteCurrentProduct();
+                                closeRemoveProductModal();
+                                closeProductDetails(function () {
+                                    showInventoryFlash('Product permanently removed.');
+                                });
+                            } catch (error) {
+                                window.alert(error.message);
+                                confirmRemoveProduct.disabled = false;
+                                confirmRemoveProduct.textContent = 'Yes, Permanently Remove';
+                            }
+
+                            return;
+                        }
 
                         const selectedReason =
                             document.querySelector(
@@ -15476,6 +16075,18 @@
                         'productSizeEntry'
                     );
 
+                const productColorPhotoInput =
+                    document.getElementById('productColorPhotoInput');
+
+                const productSizePhotoInput =
+                    document.getElementById('productSizePhotoInput');
+
+                const colorPhotoPickerText =
+                    document.getElementById('colorPhotoPickerText');
+
+                const sizePhotoPickerText =
+                    document.getElementById('sizePhotoPickerText');
+
                 const addProductSizeButton =
                     document.getElementById(
                         'addProductSizeButton'
@@ -15569,6 +16180,10 @@
                 let selectedProductPhotos = [];
                 let selectedVariationPhoto = null;
                 let selectedVariationPhotoUrl = null;
+                let selectedColorPhoto = null;
+                let selectedColorPhotoUrl = null;
+                let selectedSizePhoto = null;
+                let selectedSizePhotoUrl = null;
                 let productVariations = [];
                 let productColors = [];
                 let productSizes = [];
@@ -15909,17 +16524,16 @@
                 }
 
                 function getOptionPriceMeta(group) {
-                    if (pricingMode !== 'varies') {
-                        return null;
-                    }
-
                     const isPrimary =
+                        pricingMode !== 'varies' ||
                         pricingSource === group;
 
                     return {
                         isPrimary,
                         label:
-                            isPrimary
+                            pricingMode === 'fixed'
+                                ? 'Item Price'
+                                : isPrimary
                                 ? 'Item Price'
                                 : 'Additional',
                         prefix:
@@ -15927,7 +16541,9 @@
                                 ? '₱'
                                 : '+₱',
                         placeholder:
-                            isPrimary
+                            pricingMode === 'fixed'
+                                ? 'Base price'
+                                : isPrimary
                                 ? 'Price'
                                 : '0.00'
                     };
@@ -15986,6 +16602,10 @@
                     input.className =
                         'create-option-price-input';
 
+                    if (pricingMode === 'fixed') {
+                        input.disabled = true;
+                    }
+
                     if (meta.isPrimary) {
                         input.classList.add(
                             'is-primary-price'
@@ -15994,19 +16614,53 @@
                     }
 
                     input.value =
-                        item.price ?? '';
+                        pricingMode === 'fixed'
+                            ? createProductPrice?.value || ''
+                            : item.price ?? '';
 
                     input.addEventListener(
                         'input',
                         function () {
-                            item.price =
-                                input.value;
+                            if (pricingMode !== 'fixed') {
+                                item.price = input.value;
+                            }
                         }
                     );
 
                     box.appendChild(prefix);
                     box.appendChild(input);
 
+                    wrap.appendChild(label);
+                    wrap.appendChild(box);
+
+                    return wrap;
+                }
+
+                function createOptionStockControl(item) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'create-option-price-wrap';
+
+                    const label = document.createElement('small');
+                    label.className = 'create-option-price-label';
+                    label.textContent = 'Stock';
+
+                    const box = document.createElement('div');
+                    box.className = 'create-option-price-box';
+
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = '0';
+                    input.step = '1';
+                    input.required = true;
+                    input.placeholder = '0';
+                    input.className = 'create-option-price-input';
+                    input.value = item.stock ?? '';
+
+                    input.addEventListener('input', function () {
+                        item.stock = input.value;
+                    });
+
+                    box.appendChild(input);
                     wrap.appendChild(label);
                     wrap.appendChild(box);
 
@@ -16119,6 +16773,15 @@
                     }
                 );
 
+                createProductPrice?.addEventListener(
+                    'input',
+                    function () {
+                        if (pricingMode === 'fixed') {
+                            renderAllBuyerOptions();
+                        }
+                    }
+                );
+
 
                 /* =================================================
                    VARIATIONS — CHIP STYLE + OPTIONAL PHOTO
@@ -16203,6 +16866,35 @@
                     }
                 );
 
+                function bindOptionPhotoPicker(input, setPhoto, setUrl, textElement) {
+                    input?.addEventListener('change', function () {
+                        const file = input.files?.[0];
+
+                        if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                            input.value = '';
+                            return;
+                        }
+
+                        setPhoto(file);
+                        setUrl(URL.createObjectURL(file));
+                        if (textElement) textElement.textContent = 'Added';
+                    });
+                }
+
+                bindOptionPhotoPicker(
+                    productColorPhotoInput,
+                    function (file) { selectedColorPhoto = file; },
+                    function (url) { selectedColorPhotoUrl = url; },
+                    colorPhotoPickerText
+                );
+
+                bindOptionPhotoPicker(
+                    productSizePhotoInput,
+                    function (file) { selectedSizePhoto = file; },
+                    function (url) { selectedSizePhotoUrl = url; },
+                    sizePhotoPickerText
+                );
+
 
                 function revokeVariationUrls() {
 
@@ -16237,6 +16929,12 @@
                             const item =
                                 document.createElement('div');
 
+                            const identity =
+                                document.createElement('div');
+
+                            identity.className =
+                                'create-variation-identity';
+
                             const hasPhoto =
                                 Boolean(variation.photoUrl);
 
@@ -16269,7 +16967,7 @@
                                     variation.name;
 
                                 thumb.appendChild(image);
-                                item.appendChild(thumb);
+                                identity.appendChild(thumb);
                             }
 
                             const label =
@@ -16280,6 +16978,9 @@
 
                             label.textContent =
                                 variation.name;
+
+                            identity.appendChild(label);
+                            item.appendChild(identity);
 
                             const hidden =
                                 document.createElement('input');
@@ -16293,7 +16994,6 @@
                             hidden.value =
                                 variation.name;
 
-                            item.appendChild(label);
                             item.appendChild(hidden);
 
                             const priceControl =
@@ -16307,6 +17007,10 @@
                                     priceControl
                                 );
                             }
+
+                            item.appendChild(
+                                createOptionStockControl(variation)
+                            );
 
                             const remove =
                                 document.createElement('button');
@@ -16364,45 +17068,36 @@
                         return;
                     }
 
-                    const value =
-                        productVariationEntry.value.trim();
+                    const values = productVariationEntry.value
+                        .split(',')
+                        .map(function (value) {
+                            return value.trim();
+                        })
+                        .filter(Boolean);
 
-                    if (!value) {
+                    if (!values.length) {
                         productVariationEntry.focus();
                         return;
                     }
 
-                    const alreadyExists =
-                        productVariations.some(
+                    values.forEach(function (value, valueIndex) {
+                        const alreadyExists = productVariations.some(
                             function (variation) {
-                                return variation.name
-                                    .toLowerCase() ===
-                                    value.toLowerCase();
+                                return variation.name.toLowerCase() === value.toLowerCase();
                             }
                         );
 
-                    if (alreadyExists) {
-                        productVariationEntry.focus();
-                        return;
-                    }
+                        if (alreadyExists) {
+                            return;
+                        }
 
-                    /*
-                     * Keep the photo URL with the variation.
-                     * The File object is also retained so a future
-                     * store endpoint can append it to FormData.
-                     */
-                    productVariations.push({
-                        name:
-                            value,
-
-                        photo:
-                            selectedVariationPhoto,
-
-                        photoUrl:
-                            selectedVariationPhotoUrl,
-
-                        price:
-                            ''
+                        productVariations.push({
+                            name: value,
+                            photo: valueIndex === 0 ? selectedVariationPhoto : null,
+                            photoUrl: valueIndex === 0 ? selectedVariationPhotoUrl : null,
+                            price: '',
+                            stock: ''
+                        });
                     });
 
                     selectedVariationPhoto =
@@ -16486,6 +17181,9 @@
                             const row =
                                 document.createElement('div');
 
+                            const identity = document.createElement('div');
+                            identity.className = 'create-variation-identity';
+
                             row.className =
                                 pricingMode === 'varies'
                                     ? 'create-priced-option-row'
@@ -16500,6 +17198,18 @@
                             label.textContent =
                                 item.name;
 
+                            if (item.photoUrl) {
+                                const thumb = document.createElement('div');
+                                thumb.className = 'create-variation-thumb';
+                                const image = document.createElement('img');
+                                image.src = item.photoUrl;
+                                image.alt = item.name;
+                                thumb.appendChild(image);
+                                identity.appendChild(thumb);
+                            }
+
+                            identity.appendChild(label);
+
                             const hidden =
                                 document.createElement('input');
 
@@ -16512,7 +17222,7 @@
                             hidden.value =
                                 item.name;
 
-                            row.appendChild(label);
+                            row.appendChild(identity);
                             row.appendChild(hidden);
 
                             const priceControl =
@@ -16526,6 +17236,10 @@
                                     priceControl
                                 );
                             }
+
+                            row.appendChild(
+                                createOptionStockControl(item)
+                            );
 
                             const remove =
                                 document.createElement('button');
@@ -16568,37 +17282,40 @@
                     entry,
                     values,
                     container,
-                    group
+                    group,
+                    pendingPhoto,
+                    pendingPhotoUrl
                 ) {
                     if (!entry) {
                         return;
                     }
 
-                    const value =
-                        entry.value.trim();
+                    const names = entry.value
+                        .split(',')
+                        .map(function (value) {
+                            return value.trim();
+                        })
+                        .filter(Boolean);
 
-                    if (!value) {
+                    if (!names.length) {
                         return;
                     }
 
-                    const alreadyExists =
-                        values.some(
-                            function (existing) {
-                                return existing.name
-                                    .toLowerCase() ===
-                                    value.toLowerCase();
-                            }
-                        );
-
-                    if (!alreadyExists) {
-                        values.push({
-                            name:
-                                value,
-
-                            price:
-                                ''
+                    names.forEach(function (name) {
+                        const alreadyExists = values.some(function (existing) {
+                            return existing.name.toLowerCase() === name.toLowerCase();
                         });
-                    }
+
+                        if (!alreadyExists) {
+                            values.push({
+                                name,
+                                photo: pendingPhoto,
+                                photoUrl: pendingPhotoUrl,
+                                price: '',
+                                stock: ''
+                            });
+                        }
+                    });
 
                     entry.value = '';
 
@@ -16616,8 +17333,15 @@
                             productColorEntry,
                             productColors,
                             productColorsContainer,
-                            'colors'
+                            'colors',
+                            selectedColorPhoto,
+                            selectedColorPhotoUrl
                         );
+
+                        selectedColorPhoto = null;
+                        selectedColorPhotoUrl = null;
+                        if (productColorPhotoInput) productColorPhotoInput.value = '';
+                        if (colorPhotoPickerText) colorPhotoPickerText.textContent = 'Photo';
 
                     }
                 );
@@ -16631,8 +17355,15 @@
                             productSizeEntry,
                             productSizes,
                             productSizesContainer,
-                            'sizes'
+                            'sizes',
+                            selectedSizePhoto,
+                            selectedSizePhotoUrl
                         );
+
+                        selectedSizePhoto = null;
+                        selectedSizePhotoUrl = null;
+                        if (productSizePhotoInput) productSizePhotoInput.value = '';
+                        if (sizePhotoPickerText) sizePhotoPickerText.textContent = 'Photo';
 
                     }
                 );
@@ -17423,6 +18154,16 @@
                         'has-photo'
                     );
 
+                    selectedColorPhoto = null;
+                    selectedColorPhotoUrl = null;
+                    selectedSizePhoto = null;
+                    selectedSizePhotoUrl = null;
+
+                    if (productColorPhotoInput) productColorPhotoInput.value = '';
+                    if (productSizePhotoInput) productSizePhotoInput.value = '';
+                    if (colorPhotoPickerText) colorPhotoPickerText.textContent = 'Photo';
+                    if (sizePhotoPickerText) sizePhotoPickerText.textContent = 'Photo';
+
                     syncProductPhotoInput();
                     renderProductPhotos();
 
@@ -17731,7 +18472,9 @@
 
                                 formData.append(
                                     `variation_items[${index}][price]`,
-                                    variation.price || '0'
+                                    pricingMode === 'fixed'
+                                        ? createProductPrice?.value || '0'
+                                        : variation.price || '0'
                                 );
 
                                 formData.append(
@@ -17740,6 +18483,11 @@
                                     pricingSource === 'variations'
                                         ? 'base'
                                         : 'addon'
+                                );
+
+                                formData.append(
+                                    `variation_items[${index}][stock]`,
+                                    variation.stock || '0'
                                 );
 
                                 if (variation.photo) {
@@ -17764,7 +18512,9 @@
 
                                 formData.append(
                                     `color_items[${index}][price]`,
-                                    color.price || '0'
+                                    pricingMode === 'fixed'
+                                        ? createProductPrice?.value || '0'
+                                        : color.price || '0'
                                 );
 
                                 formData.append(
@@ -17774,6 +18524,18 @@
                                         ? 'base'
                                         : 'addon'
                                 );
+
+                                formData.append(
+                                    `color_items[${index}][stock]`,
+                                    color.stock || '0'
+                                );
+
+                                if (color.photo) {
+                                    formData.append(
+                                        `color_items[${index}][photo]`,
+                                        color.photo
+                                    );
+                                }
 
                             }
                         );
@@ -17788,7 +18550,9 @@
 
                                 formData.append(
                                     `size_items[${index}][price]`,
-                                    size.price || '0'
+                                    pricingMode === 'fixed'
+                                        ? createProductPrice?.value || '0'
+                                        : size.price || '0'
                                 );
 
                                 formData.append(
@@ -17798,6 +18562,18 @@
                                         ? 'base'
                                         : 'addon'
                                 );
+
+                                formData.append(
+                                    `size_items[${index}][stock]`,
+                                    size.stock || '0'
+                                );
+
+                                if (size.photo) {
+                                    formData.append(
+                                        `size_items[${index}][photo]`,
+                                        size.photo
+                                    );
+                                }
 
                             }
                         );
@@ -17845,7 +18621,14 @@
 
                                             price:
                                                 Number(
-                                                    variation.price ||
+                                                    pricingMode === 'fixed'
+                                                        ? formData.get('price') || 0
+                                                        : variation.price || 0
+                                                ),
+
+                                            stock:
+                                                Number(
+                                                    variation.stock ||
                                                     0
                                                 ),
 
@@ -17867,7 +18650,14 @@
 
                                             price:
                                                 Number(
-                                                    color.price ||
+                                                    pricingMode === 'fixed'
+                                                        ? formData.get('price') || 0
+                                                        : color.price || 0
+                                                ),
+
+                                            stock:
+                                                Number(
+                                                    color.stock ||
                                                     0
                                                 ),
 
@@ -17889,7 +18679,14 @@
 
                                             price:
                                                 Number(
-                                                    size.price ||
+                                                    pricingMode === 'fixed'
+                                                        ? formData.get('price') || 0
+                                                        : size.price || 0
+                                                ),
+
+                                            stock:
+                                                Number(
+                                                    size.stock ||
                                                     0
                                                 ),
 
@@ -18026,11 +18823,41 @@
                             );
 
 
+                        let persistedProduct;
+
+                        try {
+                            const response = await fetch(
+                                '{{ route('seller.inventory.products.store') }}',
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: formData
+                                }
+                            );
+
+                            if (!response.ok) {
+                                const errorPayload = await response.json().catch(() => ({}));
+                                const firstError = Object.values(errorPayload.errors || {})[0]?.[0];
+                                throw new Error(firstError || 'Product could not be saved.');
+                            }
+
+                            persistedProduct = await response.json();
+                        } catch (error) {
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.textContent = 'Add Product';
+                            }
+
+                            window.alert(error.message || 'Product could not be saved.');
+                            return;
+                        }
+
                         const createdProduct = {
                             id:
-                                `seller-product-${Date.now()}-${Math.random()
-                                    .toString(36)
-                                    .slice(2, 8)}`,
+                                persistedProduct.id,
 
                             title:
                                 previewPayload.title,
@@ -18045,7 +18872,7 @@
                                 previewPayload.category,
 
                             approvalStatus:
-                                'pending',
+                                persistedProduct.status || 'active',
 
                             pricingMode:
                                 previewPayload.pricingMode,
@@ -18111,8 +18938,7 @@
                                 '',
 
                             createdAt:
-                                new Date()
-                                    .toISOString()
+                                persistedProduct.created_at || new Date().toISOString()
                         };
                         createdInventoryProducts.unshift(
                             createdProduct
@@ -18156,13 +18982,13 @@
                                         ) {
 
                                             showInventoryFlash(
-                                                'Product created and added to your inventory with Pending status.'
+                                                'Product created and added to your inventory.'
                                             );
 
                                         } else {
 
                                             window.alert(
-                                                'Product created and added to your inventory with Pending status.'
+                                                'Product created and added to your inventory.'
                                             );
 
                                         }

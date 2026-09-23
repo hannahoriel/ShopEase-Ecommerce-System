@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\InventoryController;
 use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
 use App\Http\Controllers\LocationController;
@@ -43,6 +44,9 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
+            Route::apiResource('/inventory', InventoryController::class)->parameters(['inventory' => 'product']);
+            Route::patch('/inventory/{product}/archive', [InventoryController::class, 'archive']);
+            Route::patch('/inventory/{product}/unarchive', [InventoryController::class, 'unarchive']);
             Route::get('/order-status', [OrderStatusController::class, 'index']);
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
