@@ -128,6 +128,7 @@ function initSellerCompliance(cfg) {
     const modals = {
         seller: $('#sellerDetailsModal'),
         product: $('#sellerProductDetailsModal'),
+        suspend: $('#sellerSuspendModal'),
         warn: $('#decisionModal-warn'),
         remove: $('#decisionModal-remove'),
     };
@@ -314,6 +315,11 @@ function initSellerCompliance(cfg) {
         removed: (name) => [
             'Product Removed',
             `${name} has been removed from the seller's store.`,
+        ],
+
+        success: (message) => [
+            'Seller Suspended',
+            message,
         ],
 
         error: (message) => [
@@ -755,6 +761,20 @@ function initSellerCompliance(cfg) {
 
     let lastFocus = null;
 
+    function syncSellerSuspendButton(seller = state.seller) {
+        const button = $('.seller-suspend-button', modals.seller);
+
+        if (!button) return;
+
+        const isSuspended = String(seller?.status || '').toLowerCase() === 'suspended';
+
+        button.textContent = isSuspended ? 'Reactivate' : 'Suspend';
+        button.classList.toggle('is-reactivate', isSuspended);
+        button.style.background = isSuspended ? '#E7F7EE' : '#D41F1F';
+        button.style.borderColor = isSuspended ? '#2E9D5C' : '#D41F1F';
+        button.style.color = isSuspended ? '#1F7A45' : '#fff';
+    }
+
     function renderSeller(seller) {
         state.seller = seller;
 
@@ -825,6 +845,7 @@ function initSellerCompliance(cfg) {
         renderDocuments(seller);
         renderProducts();
         renderIssues();
+        syncSellerSuspendButton(seller);
     }
 
     function renderDocuments(seller) {
@@ -1145,46 +1166,140 @@ function initSellerCompliance(cfg) {
         lastFocus?.focus?.();
     }
 
-    async function suspendSeller(button) {
+    function openSuspendModal() {
         const seller = state.seller;
 
-        if (
-            !seller ||
-            !window.confirm(
-                `Suspend ${
-                    seller.store_name ||
-                    'this seller'
-                }?`
-            )
-        ) {
+        if (!seller || !modals.suspend) return;
+
+        const modal = modals.suspend;
+        const isSuspended = String(seller.status || '').toLowerCase() === 'suspended';
+
+        const title = $('#sellerSuspendTitle', modal);
+        const intro = $('.decision-intro', modal);
+        const submitButton = $('.decision-submit', modal);
+
+        if (title) {
+            title.textContent = isSuspended ? 'Reactivate Account' : 'Suspend Account';
+        }
+
+        if (intro) {
+            intro.textContent = isSuspended
+                ? 'This account is currently suspended. Reactivating it will restore access immediately. Are you sure you want to reactivate this account?'
+                : "Suspending an account will temporarily disable the user’s access. You can reactivate the account anytime.";
+        }
+
+        if (submitButton) {
+            submitButton.textContent = isSuspended ? 'Reactivate' : 'Suspend';
+            submitButton.style.background = isSuspended ? '#E7F7EE' : '#FFE0E0';
+            submitButton.style.borderColor = isSuspended ? '#2E9D5C' : '#D41F1F';
+            submitButton.style.color = isSuspended ? '#1F7A45' : '#AE0000';
+        }
+
+        syncSellerSuspendButton(seller);
+
+        const reasons = $('.decision-reasons', modal);
+        const durationWrap = $('#sellerSuspendDurationWrap', modal);
+        const detailsWrap = $('#sellerSuspendDetailsWrap', modal);
+
+        if (reasons) reasons.style.display = isSuspended ? 'none' : 'block';
+        if (durationWrap) durationWrap.style.display = isSuspended ? 'none' : 'block';
+        if (detailsWrap) detailsWrap.style.display = isSuspended ? 'none' : 'block';
+
+        $$('input[name="seller-suspend-reason"]', modal).forEach((input) => {
+            input.checked = false;
+        });
+
+        const duration = $('#sellerSuspendDuration', modal);
+        const details = $('#sellerSuspendDetails', modal);
+
+        if (duration) duration.value = isSuspended ? '1' : '7';
+        if (details) details.value = '';
+
+        const counter = $('[data-counter]', modal);
+        if (counter) counter.textContent = '0/300';
+
+        show(modal);
+        duration?.focus();
+    }
+
+    function closeSuspendModal() {
+        hide(modals.suspend);
+    }
+
+    async function submitSuspend(button) {
+        const seller = state.seller;
+
+        if (!seller || !modals.suspend) return;
+
+        const isSuspended = String(seller.status || '').toLowerCase() === 'suspended';
+        const reason = $$('input[name="seller-suspend-reason"]', modals.suspend).find((input) => input.checked)?.value;
+        const duration = Number($('#sellerSuspendDuration', modals.suspend)?.value || 0);
+        const details = $('#sellerSuspendDetails', modals.suspend)?.value.trim() || '';
+
+        if (!isSuspended && !reason) {
+            $('.decision-reasons', modals.suspend)?.classList.add('has-error');
+            return;
+        }
+
+        if (!isSuspended && (!Number.isFinite(duration) || duration < 1)) {
+            $('#sellerSuspendDuration', modals.suspend)?.focus();
+            return;
+        }
+
+        if (isSuspended && !window.confirm('Are you sure you want to reactivate the account?')) {
             return;
         }
 
         button.disabled = true;
 
         try {
-            await api(
+            const payload = await api(
                 `/${seller.id}/suspend`,
                 {
                     method: 'POST',
+                    body: JSON.stringify(
+                        isSuspended
+                            ? { action: 'reactivate' }
+                            : {
+                                  reason,
+                                  duration,
+                                  details,
+                              }
+                    ),
                 }
             );
 
+            closeSuspendModal();
             closeSeller();
 
             await loadSellers({
                 silent: true,
             });
+
+            showFlash(
+                'success',
+                payload?.message || (isSuspended ? 'Seller reactivated successfully.' : 'Seller suspended successfully.')
+            );
         } catch (error) {
             console.error(error);
 
             showFlash(
                 'error',
-                'Unable to suspend this seller. Please try again.'
+                isSuspended
+                    ? 'Unable to reactivate this seller. Please try again.'
+                    : 'Unable to suspend this seller. Please try again.'
             );
         } finally {
             button.disabled = false;
         }
+    }
+
+    async function suspendSeller(button) {
+        const seller = state.seller;
+
+        if (!seller) return;
+
+        openSuspendModal();
     }
 
     /* ------------------------------------------------------------------ *
@@ -1999,6 +2114,14 @@ function initSellerCompliance(cfg) {
             }
         },
 
+        'seller-suspend-cancel': () => {
+            closeSuspendModal();
+        },
+
+        'seller-suspend-submit': (node) => {
+            submitSuspend(node);
+        },
+
         'decision-submit': (node) => {
             const type =
                 decisionType(node);
@@ -2110,6 +2233,13 @@ function initSellerCompliance(cfg) {
     );
 
     function closeTopModal() {
+        if (
+            modals.suspend &&
+            !modals.suspend.hidden
+        ) {
+            return closeSuspendModal();
+        }
+
         if (
             modals.remove &&
             !modals.remove.hidden

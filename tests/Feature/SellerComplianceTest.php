@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AccountStatusChanged;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class SellerComplianceTest extends TestCase
@@ -46,6 +48,86 @@ class SellerComplianceTest extends TestCase
             ->assertOk()
             ->assertSee('Real Store Data')
             ->assertSee('initialSellerComplianceData');
+    }
+
+    public function test_admin_can_suspend_a_seller_from_seller_compliance(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'registration_status' => 'active',
+        ]);
+
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'first_name' => 'Suspended',
+            'last_name' => 'Seller',
+            'store_name' => 'Suspend Store',
+            'registration_status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson('/admin/seller-compliance/data/' . $seller->id . '/suspend', [
+                'reason' => 'Fraudulent activity',
+                'duration' => 7,
+                'details' => 'Suspicious listings detected.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.registration_status', 'suspended')
+            ->assertJsonPath('message', 'Seller suspended successfully.');
+
+        $this->assertDatabaseHas('sellers', [
+            'id' => $seller->id,
+            'registration_status' => 'suspended',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $sellerUser->id,
+            'registration_status' => 'suspended',
+        ]);
+    }
+
+    public function test_admin_can_reactivate_a_suspended_seller_from_seller_compliance(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'registration_status' => 'suspended',
+        ]);
+
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'first_name' => 'Reactivated',
+            'last_name' => 'Seller',
+            'store_name' => 'Reactivate Store',
+            'registration_status' => 'suspended',
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson('/admin/seller-compliance/data/' . $seller->id . '/suspend', [
+                'action' => 'reactivate',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.registration_status', 'active')
+            ->assertJsonPath('message', 'Seller reactivated successfully.');
+
+        $this->assertDatabaseHas('sellers', [
+            'id' => $seller->id,
+            'registration_status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $sellerUser->id,
+            'registration_status' => 'active',
+            'suspended_until' => null,
+        ]);
+
+        Mail::assertSent(AccountStatusChanged::class, function ($mail) use ($sellerUser) {
+            return $mail->hasTo($sellerUser->email)
+                && $mail->status === 'active';
+        });
     }
 
     public function test_admin_can_fetch_live_seller_compliance_data_from_session_auth_routes(): void

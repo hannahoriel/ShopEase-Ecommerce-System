@@ -2112,6 +2112,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/seller-compliance/data/{seller}', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'show'])
         ->name('admin.seller.compliance.show');
 
+    Route::post('/admin/seller-compliance/data/{seller}/suspend', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'suspend'])
+        ->name('admin.seller.compliance.suspend');
+
     Route::post('/admin/seller-compliance/data/products/{product}/approve', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'approveProduct'])
         ->name('admin.seller.compliance.approve');
 

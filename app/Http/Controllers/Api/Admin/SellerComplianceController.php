@@ -3,15 +3,90 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AccountStatusChanged;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class SellerComplianceController extends Controller
 {
+    public function suspend(Request $request, Seller $seller): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
+
+        $action = $request->input('action', $seller->registration_status === 'suspended' ? 'reactivate' : 'suspend');
+
+        if ($action === 'reactivate') {
+            $seller->forceFill([
+                'registration_status' => 'active',
+            ])->save();
+
+            $seller->user?->forceFill([
+                'registration_status' => 'active',
+                'suspended_until' => null,
+                'account_action_reason' => null,
+                'account_action_details' => null,
+            ])->save();
+
+            $seller->user?->email && Mail::to($seller->user->email)->send(new AccountStatusChanged(
+                user: $seller->user,
+                status: 'active',
+                reason: null,
+                details: null,
+                duration: null,
+            ));
+
+            return response()->json([
+                'message' => 'Seller reactivated successfully.',
+                'data' => [
+                    'id' => $seller->id,
+                    'registration_status' => $seller->fresh()->registration_status,
+                ],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:150'],
+            'duration' => ['required', 'integer', 'min:1', 'max:365'],
+            'details' => ['nullable', 'string', 'max:300'],
+        ]);
+
+        $seller->forceFill([
+            'registration_status' => 'suspended',
+        ])->save();
+
+        $seller->user?->forceFill([
+            'registration_status' => 'suspended',
+            'suspended_until' => now()->addDays((int) $validated['duration']),
+            'account_action_reason' => $validated['reason'],
+            'account_action_details' => $validated['details'] ?? null,
+        ])->save();
+
+        $seller->user?->email && Mail::to($seller->user->email)->send(new AccountStatusChanged(
+            user: $seller->user,
+            status: 'suspended',
+            reason: $validated['reason'],
+            details: $validated['details'] ?? null,
+            duration: (int) $validated['duration'],
+        ));
+
+        return response()->json([
+            'message' => 'Seller suspended successfully.',
+            'data' => [
+                'id' => $seller->id,
+                'registration_status' => $seller->fresh()->registration_status,
+                'reason' => $validated['reason'],
+                'duration' => (int) $validated['duration'],
+                'details' => $validated['details'] ?? null,
+            ],
+        ]);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | SELLER COMPLIANCE LIST

@@ -105,3 +105,82 @@
         </div>
     </div>
 </div>
+
+<div id="sellerSuspendModal" class="sc-overlay sc-overlay--decision" aria-hidden="true" hidden>
+    <div class="decision-dialog decision-dialog--warn" role="dialog" aria-modal="true" aria-labelledby="sellerSuspendTitle" tabindex="-1">
+        <h2 id="sellerSuspendTitle">Suspend Account</h2>
+        <p class="decision-intro">Suspending an account will temporarily disable the user’s access. You can reactivate the account anytime.</p>
+
+        <fieldset class="decision-reasons" style="display: block;">
+            <legend>Reason<span>*</span></legend>
+
+            <label class="decision-option">
+                <input type="radio" name="seller-suspend-reason" value="Violation of platform policies">
+                <span class="decision-radio"></span>
+                <span>Violation of platform policies</span>
+            </label>
+
+            <label class="decision-option">
+                <input type="radio" name="seller-suspend-reason" value="Inappropriate behavior">
+                <span class="decision-radio"></span>
+                <span>Inappropriate behavior</span>
+            </label>
+
+            <label class="decision-option">
+                <input type="radio" name="seller-suspend-reason" value="Listing of prohibited products">
+                <span class="decision-radio"></span>
+                <span>Listing of prohibited products</span>
+            </label>
+
+            <label class="decision-option">
+                <input type="radio" name="seller-suspend-reason" value="Fraudulent activity">
+                <span class="decision-radio"></span>
+                <span>Fraudulent activity</span>
+            </label>
+
+            <label class="decision-option">
+                <input type="radio" name="seller-suspend-reason" value="Multiple complaints from users">
+                <span class="decision-radio"></span>
+                <span>Multiple complaints from users</span>
+            </label>
+
+            <label class="decision-option">
+                <input type="radio" name="seller-suspend-reason" value="Other (please specify)">
+                <span class="decision-radio"></span>
+                <span>Other (please specify)</span>
+            </label>
+        </fieldset>
+
+        <div id="sellerSuspendDurationWrap" class="decision-details" style="margin-top: 12px; display: block;">
+            <label for="sellerSuspendDuration">Suspension Duration<span>*</span></label>
+            <div class="decision-textarea-wrap" style="margin-top: 8px;">
+                <input
+                    id="sellerSuspendDuration"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="7"
+                    placeholder="Select number of days"
+                    class="seller-suspend-duration"
+                    style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.75rem; padding: 0.7rem 0.9rem; font-size: 0.9rem;"
+                >
+            </div>
+            <div class="decision-help" style="margin-top: 8px; font-size: 0.8rem; color: #6b7280; line-height: 1.5;">
+                After the selected number of days, the account will be automatically reactivated.
+            </div>
+        </div>
+
+        <div id="sellerSuspendDetailsWrap" class="decision-details" style="margin-top: 14px; display: block;">
+            <label for="sellerSuspendDetails">Additional Details (Optional)</label>
+            <div class="decision-textarea-wrap">
+                <textarea id="sellerSuspendDetails" maxlength="300" rows="3" placeholder="Write additional details here..."></textarea>
+                <span data-counter>0/300</span>
+            </div>
+        </div>
+
+        <div class="decision-actions">
+            <button type="button" class="decision-cancel" data-action="seller-suspend-cancel">Cancel</button>
+            <button type="button" class="decision-submit" data-action="seller-suspend-submit">Suspend</button>
+        </div>
+    </div>
+</div>

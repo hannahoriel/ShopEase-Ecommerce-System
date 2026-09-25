@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
             Route::prefix('seller-compliance')->controller(SellerComplianceController::class)->group(function () {
                 Route::get('', 'index');
                 Route::get('{seller}', 'show');
+                Route::post('{seller}/suspend', 'suspend');
                 Route::post('products/{product}/approve', 'approveProduct');
                 Route::post('products/{product}/warn', 'warnProduct');
                 Route::post('products/{product}/remove', 'removeProduct');
