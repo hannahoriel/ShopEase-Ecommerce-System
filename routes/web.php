@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
 
 Route::get('/', function () {
 
-    return redirect()->route('login');
+    return view('pages.landing-page');
 
 })->name('landing.page');
 
@@ -103,7 +103,7 @@ Route::post('/auth/logout', function (
 
     $request->session()->regenerateToken();
 
-    return redirect()->route('login');
+    return redirect()->route('landing.page');
 
 })->middleware('auth')
   ->name('logout');
