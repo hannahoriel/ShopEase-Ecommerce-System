@@ -313,6 +313,94 @@ class SellerComplianceTest extends TestCase
         ]);
     }
 
+    public function test_warning_issued_count_reflects_product_warnings(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Warning Summary Store',
+            'registration_status' => 'active',
+        ]);
+
+        Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Warning summary product',
+            'price' => 299,
+            'stock_quantity' => 5,
+            'status' => 'warning',
+            'warning_reason' => 'Misleading product information',
+            'warning_details' => 'Product image does not match the actual listing.',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/admin/seller-compliance/data?per_page=10')
+            ->assertOk()
+            ->assertJsonPath('summary.warnings', 1)
+            ->assertJsonPath('data.0.compliance', 'warning');
+    }
+
+    public function test_under_review_count_reflects_pending_products_and_filter_value(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Under Review Summary Store',
+            'registration_status' => 'active',
+        ]);
+
+        Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Under review product',
+            'price' => 399,
+            'stock_quantity' => 8,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/admin/seller-compliance/data?compliance=under-review&per_page=10')
+            ->assertOk()
+            ->assertJsonPath('summary.under_review', 1)
+            ->assertJsonPath('data.0.compliance', 'under-review')
+            ->assertJsonPath('data.0.compliance_label', 'Under Review');
+    }
+
+    public function test_seller_with_warning_and_under_review_products_still_appears_in_under_review_filter(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Mixed Compliance Store',
+            'registration_status' => 'active',
+        ]);
+
+        Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Pending review product',
+            'price' => 250,
+            'stock_quantity' => 4,
+            'status' => 'pending',
+        ]);
+
+        Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Warning product',
+            'price' => 150,
+            'stock_quantity' => 3,
+            'status' => 'warning',
+            'warning_reason' => 'Misleading product information',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/admin/seller-compliance/data?compliance=under-review&per_page=10')
+            ->assertOk()
+            ->assertJsonPath('summary.under_review', 1)
+            ->assertJsonPath('summary.warnings', 1)
+            ->assertJsonPath('data.0.compliance', 'under-review');
+    }
+
     public function test_seller_inventory_view_exposes_warning_status_for_issued_products(): void
     {
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);

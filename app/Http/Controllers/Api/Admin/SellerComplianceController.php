@@ -301,6 +301,13 @@ class SellerComplianceController extends Controller
                             )
                     );
 
+                $warningProducts =
+                    $seller->products->filter(
+                        fn ($product): bool =>
+                            strtolower(
+                                (string) $product->status
+                            ) === 'warning'
+                    );
 
                 $orderIds =
                     $orderIdsBySeller
@@ -327,9 +334,12 @@ class SellerComplianceController extends Controller
                     $this->complianceFor(
                         $seller,
                         $reviewProducts->count(),
-                        $complaintCount
+                        $complaintCount,
+                        $warningProducts->count()
                     );
 
+                $warningProductCount =
+                    $warningProducts->count();
 
                 $categories =
                     $seller->products
@@ -368,6 +378,15 @@ class SellerComplianceController extends Controller
 
                     'products_under_review' =>
                         $reviewProducts->count(),
+
+                    'warning_products_count' =>
+                        $warningProductCount,
+
+                    'has_warning' =>
+                        $warningProductCount > 0,
+
+                    'has_under_review' =>
+                        $reviewProducts->count() > 0,
 
                     'complaints_open' =>
                         $complaintCount,
@@ -548,17 +567,17 @@ class SellerComplianceController extends Controller
 
                 'warnings' =>
                     $rows
-                        ->where(
-                            'compliance',
-                            'warning'
+                        ->filter(
+                            fn (array $row): bool =>
+                                ($row['warning_products_count'] ?? 0) > 0
                         )
                         ->count(),
 
                 'under_review' =>
                     $rows
-                        ->where(
-                            'compliance',
-                            'under-review'
+                        ->filter(
+                            fn (array $row): bool =>
+                                ($row['products_under_review'] ?? 0) > 0
                         )
                         ->count(),
 
@@ -927,7 +946,15 @@ class SellerComplianceController extends Controller
             $this->complianceFor(
                 $seller,
                 $reviewCount,
-                $complaintCount
+                $complaintCount,
+                $seller->products
+                    ->filter(
+                        fn ($product): bool =>
+                            strtolower(
+                                (string) $product->status
+                            ) === 'warning'
+                    )
+                    ->count()
             );
 
 
@@ -1040,7 +1067,8 @@ class SellerComplianceController extends Controller
     private function complianceFor(
         Seller $seller,
         int $reviewCount,
-        int $complaintCount
+        int $complaintCount,
+        int $warningCount = 0
     ): array {
 
         if (
@@ -1106,6 +1134,25 @@ class SellerComplianceController extends Controller
 
                 'status' =>
                     'under-review',
+
+                'label' =>
+                    'Under Review',
+
+                'score' =>
+                    $score,
+
+            ];
+        }
+
+
+        if (
+            $warningCount > 0
+        ) {
+
+            return [
+
+                'status' =>
+                    'warning',
 
                 'label' =>
                     'Warning',
