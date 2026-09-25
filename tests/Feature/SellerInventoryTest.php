@@ -58,6 +58,49 @@ class SellerInventoryTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $otherProduct->id]);
     }
 
+    public function test_new_inventory_products_default_to_pending_for_compliance_review(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('pending-review@example.com');
+
+        $response = $this->actingAs($sellerUser)->postJson('/api/v1/seller/inventory', [
+            'name' => 'Pending review product',
+            'sku' => 'PENDING-1',
+            'price' => 599.00,
+            'stock_quantity' => 9,
+        ]);
+
+        $response->assertCreated()->assertJsonPath('status', 'pending');
+        $this->assertDatabaseHas('products', [
+            'seller_id' => $seller->id,
+            'sku' => 'PENDING-1',
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_seller_form_payload_with_title_and_stock_is_accepted(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('form-payload@example.com');
+
+        $response = $this->actingAs($sellerUser)->post('/seller/inventory/products', [
+            'title' => 'Product from form payload',
+            'sku' => 'FORM-1',
+            'description' => 'A valid product added from the form payload.',
+            'price' => 199.50,
+            'stock' => 8,
+            'category' => 'electronics',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('name', 'Product from form payload');
+
+        $this->assertDatabaseHas('products', [
+            'seller_id' => $seller->id,
+            'sku' => 'FORM-1',
+            'name' => 'Product from form payload',
+            'stock_quantity' => 8,
+        ]);
+    }
+
     public function test_inventory_validates_duplicate_sku_for_the_same_seller(): void
     {
         [$sellerUser, $seller] = $this->createSeller('seller@example.com');
@@ -125,6 +168,32 @@ class SellerInventoryTest extends TestCase
             ->getJson('/api/v1/seller/inventory')
             ->assertOk()
             ->assertJsonPath('total', 1);
+    }
+
+    public function test_seller_cannot_unarchive_a_product_removed_by_admin(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('admin-removed@example.com');
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Admin removed product',
+            'price' => 259,
+            'stock_quantity' => 3,
+            'status' => 'archived',
+            'is_archived' => true,
+            'archived_by_admin' => true,
+            'archive_reason' => 'Unsafe listing',
+        ]);
+
+        $this->actingAs($sellerUser)
+            ->patchJson("/api/v1/seller/inventory/{$product->id}/unarchive")
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'This product was removed by an administrator and cannot be restored by the seller.');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'is_archived' => true,
+            'archived_by_admin' => 1,
+        ]);
     }
 
     private function createSeller(string $email): array

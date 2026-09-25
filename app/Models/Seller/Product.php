@@ -24,12 +24,17 @@ class Product extends Model
         'stock_quantity',
         'status',
         'is_archived',
+        'archived_by_admin',
+        'archive_reason',
+        'warning_reason',
+        'warning_details',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'is_archived' => 'boolean',
+        'archived_by_admin' => 'boolean',
         'photos' => 'array',
     ];
 

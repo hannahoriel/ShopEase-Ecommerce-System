@@ -8,7 +8,7 @@ use App\Http\Controllers\Seller\DashboardController as SellerDashboardController
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
 use App\Http\Controllers\Seller\InventoryController;
-use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryApiController;
+use App\Http\Controllers\Api\Seller\InventoryController as ApiSellerInventoryController;
 use App\Models\User;
 use App\Models\Admin\Registration;
 use Illuminate\Http\Request;
@@ -32,19 +32,6 @@ Route::get('/', function () {
 
 })->name('landing.page');
 
-
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATION
-|--------------------------------------------------------------------------
-*/
-
-
-/*
-|--------------------------------------------------------------------------
-| LOGIN PAGE
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/auth/login', function () {
 
@@ -332,24 +319,6 @@ Route::patch('/admin/user-management/{user}/status', [
 ])->middleware('auth')
     ->name('admin.user.management.status');
 
-
-/*
-|--------------------------------------------------------------------------
-| SELLER REGISTRATION
-|--------------------------------------------------------------------------
-|
-| STEP 1 = Seller Information
-| STEP 2 = Business Information
-| STEP 3 = Review Documents
-|
-*/
-
-
-/*
-|--------------------------------------------------------------------------
-| SELLER STEP 1 - GET
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/seller/register', function () {
 
@@ -2078,25 +2047,21 @@ Route::get(
     ->middleware('auth')
     ->name('seller.inventory');
 
-Route::post(
-    '/seller/inventory/products',
-    [SellerInventoryApiController::class, 'store']
-)->middleware('auth')->name('seller.inventory.products.store');
+Route::middleware('auth')->group(function () {
+    Route::post('/seller/inventory/products', [ApiSellerInventoryController::class, 'store'])
+        ->name('seller.web.inventory.products.store');
 
-Route::patch(
-    '/seller/inventory/products/{product}/archive',
-    [SellerInventoryApiController::class, 'archive']
-)->middleware('auth')->name('seller.inventory.products.archive');
+    Route::patch('/seller/inventory/products/{product}/archive', [ApiSellerInventoryController::class, 'archive'])
+        ->name('seller.web.inventory.products.archive');
 
-Route::patch(
-    '/seller/inventory/products/{product}/unarchive',
-    [SellerInventoryApiController::class, 'unarchive']
-)->middleware('auth')->name('seller.inventory.products.unarchive');
+    Route::patch('/seller/inventory/products/{product}/unarchive', [ApiSellerInventoryController::class, 'unarchive'])
+        ->name('seller.web.inventory.products.unarchive');
 
-Route::delete(
-    '/seller/inventory/products/{product}',
-    [SellerInventoryApiController::class, 'destroy']
-)->middleware('auth')->name('seller.inventory.products.destroy');
+    Route::delete('/seller/inventory/products/{product}', [ApiSellerInventoryController::class, 'destroy'])
+        ->name('seller.web.inventory.products.destroy');
+});
+
+
 /*
 |--------------------------------------------------------------------------
 | SELLER ORDER STATUS
@@ -2130,8 +2095,15 @@ Route::get('/seller/shipping-status', function () {
   ->name('seller.shipping.status');
 
 Route::get('/admin/seller-compliance', function () {
-    return view('pages.admin.seller-compliance');
-})->name('admin.seller.compliance');
+
+    abort_unless(
+        Auth::user()->role === User::ROLE_ADMIN,
+        403
+    );
+
+    return app(\App\Http\Controllers\Api\Admin\SellerComplianceController::class)->page(request());
+})->middleware('auth')
+  ->name('admin.seller.compliance');
 
 Route::get('/admin/complaints-disputes', function () {
     return view('pages.admin.complaints-disputes');
