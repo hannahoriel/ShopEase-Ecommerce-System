@@ -1111,14 +1111,33 @@ class SellerComplianceController extends Controller
             collect(
                 $product->photos ?? []
             )
-
             ->map(
-                fn (string $photo): string =>
-                    Storage::disk('public')->url(
-                        $photo
-                    )
-            )
+                function ($photo) {
+                    if (!is_string($photo)) {
+                        return null;
+                    }
 
+                    $value = trim($photo);
+
+                    if ($value === '') {
+                        return null;
+                    }
+
+                    if (str_starts_with($value, 'data:') || str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+                        return $value;
+                    }
+
+                    $relativePath = ltrim($value, '/');
+                    $relativePath = preg_replace('/^storage\//', '', $relativePath);
+
+                    if ($relativePath === '') {
+                        return null;
+                    }
+
+                    return Storage::disk('public')->url($relativePath);
+                }
+            )
+            ->filter()
             ->values()
             ->all();
 

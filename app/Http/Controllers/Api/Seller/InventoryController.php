@@ -8,6 +8,7 @@ use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class InventoryController extends Controller
@@ -78,6 +79,8 @@ class InventoryController extends Controller
             'stock_quantity' => ['required', 'integer', 'min:0'],
             'status' => ['nullable', 'string', 'max:50'],
             'category' => ['nullable', 'string', 'max:255'],
+            'photos' => ['sometimes', 'array'],
+            'photos.*' => ['nullable', 'string'],
         ]);
 
         $product = $seller->products()->create([
@@ -88,6 +91,7 @@ class InventoryController extends Controller
             'stock_quantity' => (int) $validated['stock_quantity'],
             'status' => $validated['status'] ?? 'pending',
             'category' => $validated['category'] ?? null,
+            'photos' => $this->normalizePhotos($validated['photos'] ?? $request->input('photos')),
             'is_archived' => false,
         ]);
 
@@ -126,8 +130,14 @@ class InventoryController extends Controller
             'stock_quantity' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', 'string', 'max:50'],
             'category' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'photos' => ['sometimes', 'array'],
+            'photos.*' => ['nullable', 'string'],
             'is_archived' => ['sometimes', 'boolean'],
         ]);
+
+        if (array_key_exists('photos', $validated)) {
+            $validated['photos'] = $this->normalizePhotos($validated['photos']);
+        }
 
         $product->fill($validated);
 
@@ -199,6 +209,53 @@ class InventoryController extends Controller
 
     protected function serializeProduct(Product $product): array
     {
-        return $product->toArray();
+        $data = $product->toArray();
+
+        if (isset($data['photos'])) {
+            $data['photos'] = $this->normalizePhotos($data['photos']);
+        }
+
+        if (!empty($data['photos'])) {
+            $data['image_url'] = $data['photos'][0];
+        }
+
+        return $data;
+    }
+
+    protected function normalizePhotos(mixed $photos): array
+    {
+        if (is_string($photos)) {
+            $decoded = json_decode($photos, true);
+            $photos = is_array($decoded) ? $decoded : [$photos];
+        }
+
+        if (!is_array($photos)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($photo): ?string {
+            if (!is_string($photo)) {
+                return null;
+            }
+
+            $value = trim($photo);
+
+            if ($value === '') {
+                return null;
+            }
+
+            if (str_starts_with($value, 'data:') || str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+                return $value;
+            }
+
+            $relativePath = ltrim($value, '/');
+            $relativePath = preg_replace('/^storage\//', '', $relativePath);
+
+            if ($relativePath === '') {
+                return null;
+            }
+
+            return Storage::disk('public')->url($relativePath);
+        }, $photos), fn (?string $photo) => $photo !== null && $photo !== ''));
     }
 }

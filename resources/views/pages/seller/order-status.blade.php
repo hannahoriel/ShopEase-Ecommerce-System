@@ -183,7 +183,7 @@
 
                 {{-- PAGINATION --}}
                 <div class="flex items-center justify-between min-h-[58px] px-[18px] border-t border-[#E4DFDD]">
-                    <p class="text-[12px] text-[#8E8885]">Showing <span id="showingCount">6</span> out of 378 entries</p>
+                    <p class="text-[12px] text-[#8E8885]">Showing <span id="showingCount">0</span> out of <span id="totalEntriesCount">0</span> entries</p>
                     <div class="flex items-center gap-[3px]">
                         <button type="button" id="previousPage" class="pagination-button disabled" aria-label="Previous page">‹</button>
                         <button type="button" data-page="1" class="pagination-button current">1</button>
@@ -473,6 +473,7 @@
         const searchInput = document.getElementById('orderSearch');
         const noResults = document.getElementById('orderStatusNoResults');
         const showingCount = document.getElementById('showingCount');
+        const totalEntriesCount = document.getElementById('totalEntriesCount');
         const previousPage = document.getElementById('previousPage');
         const nextPage = document.getElementById('nextPage');
         const pageButtons = document.querySelectorAll('.pagination-button[data-page]');
@@ -517,6 +518,7 @@
             });
 
             if (showingCount) showingCount.textContent = visibleCount;
+            if (totalEntriesCount) totalEntriesCount.textContent = rows.length;
             if (noResults) noResults.classList.toggle('hidden', visibleCount !== 0);
         }
 

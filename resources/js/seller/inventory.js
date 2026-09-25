@@ -3242,7 +3242,30 @@ document.addEventListener(
                         'totalEntriesCount'
                     );
 
+                const itemsPerPageSelect =
+                    document.getElementById(
+                        'itemsPerPage'
+                    );
 
+                const inventoryPageButtons =
+                    document.querySelectorAll(
+                        '.pagination-button[data-page]'
+                    );
+
+                const previousPage =
+                    document.getElementById(
+                        'previousPage'
+                    );
+
+                const nextPage =
+                    document.getElementById(
+                        'nextPage'
+                    );
+
+                let inventoryCurrentPage = 1;
+                let inventoryItemsPerPage = Number(
+                    itemsPerPageSelect?.value || 7
+                );
 
 
                 const noResults =
@@ -3277,15 +3300,76 @@ document.addEventListener(
                    FILTER PRODUCTS
                 ================================================== */
 
+                function getInventoryRowsForCurrentTab() {
+
+                    if (activeTab === 'policy') {
+                        return Array.from(
+                            document.querySelectorAll(
+                                '#policyIssuesTable .policy-row'
+                            )
+                        );
+                    }
+
+                    if (activeTab === 'archived') {
+                        return Array.from(
+                            document.querySelectorAll(
+                                '#archivedItemsTable .archived-row'
+                            )
+                        );
+                    }
+
+                    return Array.from(
+                        document.querySelectorAll(
+                            '#allProductsTable .inventory-row'
+                        )
+                    );
+
+                }
+
+
+                function updateInventoryPaginationControls(totalPages) {
+
+                    if (!inventoryPageButtons.length) {
+                        return;
+                    }
+
+                    inventoryPageButtons.forEach(
+                        function (button) {
+
+                            const pageNumber = Number(
+                                button.dataset.page || 1
+                            );
+
+                            const isCurrentPage =
+                                pageNumber === inventoryCurrentPage;
+
+                            button.classList.toggle(
+                                'current',
+                                isCurrentPage
+                            );
+
+                            button.disabled = pageNumber > totalPages;
+
+                        }
+                    );
+
+                    previousPage?.classList.toggle(
+                        'disabled',
+                        inventoryCurrentPage <= 1
+                    );
+
+                    nextPage?.classList.toggle(
+                        'disabled',
+                        inventoryCurrentPage >= totalPages
+                    );
+
+                }
+
+
                 function filterProducts() {
 
                     const rows =
-                        Array.from(
-                            document.querySelectorAll(
-                                '#allProductsTable .inventory-row'
-                            )
-                        );
-
+                        getInventoryRowsForCurrentTab();
 
                     const search =
                         (
@@ -3305,10 +3389,7 @@ document.addEventListener(
                         statusFilter?.value ||
                         'all';
 
-
-                    let visible =
-                        0;
-
+                    let filteredRows = [];
 
                     rows.forEach(
                         function (row) {
@@ -3349,43 +3430,114 @@ document.addEventListener(
 
 
                             const shouldShow =
-                                activeTab === 'all' &&
                                 matchesSearch &&
                                 matchesCategory &&
                                 matchesStatus;
 
-
-                            row.classList.toggle(
-                                'hidden',
-                                !shouldShow
-                            );
-
-
                             if (
-                                shouldShow
+                                activeTab === 'all' ||
+                                activeTab === 'policy' ||
+                                activeTab === 'archived'
                             ) {
+                                row.classList.toggle(
+                                    'hidden',
+                                    !shouldShow
+                                );
+                            }
 
-                                visible++;
-
+                            if (shouldShow || activeTab !== 'all') {
+                                filteredRows.push({
+                                    row,
+                                    shouldShow
+                                });
                             }
 
                         }
                     );
 
+                    const totalVisible =
+                        filteredRows.filter(function (item) {
+                            return item.shouldShow;
+                        }).length;
+
+                    const totalPages =
+                        Math.max(
+                            1,
+                            Math.ceil(
+                                totalVisible / inventoryItemsPerPage
+                            )
+                        );
+
+                    inventoryCurrentPage =
+                        Math.min(
+                            inventoryCurrentPage,
+                            totalPages
+                        );
+
+                    const startIndex =
+                        (inventoryCurrentPage - 1) * inventoryItemsPerPage;
+
+                    const endIndex =
+                        startIndex + inventoryItemsPerPage;
+
+                    let shownOnPage = 0;
+
+                    rows.forEach(
+                        function (row) {
+
+                            const isVisible =
+                                activeTab === 'all' ||
+                                activeTab === 'policy' ||
+                                activeTab === 'archived'
+                                    ? row.classList.contains('hidden') === false
+                                    : false;
+
+                            const matchIndex =
+                                filteredRows.findIndex(function (item) {
+                                    return item.row === row;
+                                });
+
+                            const isInCurrentPage =
+                                matchIndex >= startIndex &&
+                                matchIndex < endIndex &&
+                                filteredRows[matchIndex]?.shouldShow;
+
+                            if (
+                                activeTab === 'all' ||
+                                activeTab === 'policy' ||
+                                activeTab === 'archived'
+                            ) {
+                                row.classList.toggle(
+                                    'hidden',
+                                    !(filteredRows[matchIndex]?.shouldShow && isInCurrentPage)
+                                );
+                            }
+
+                            if (filteredRows[matchIndex]?.shouldShow && isInCurrentPage) {
+                                shownOnPage++;
+                            }
+
+                        }
+                    );
 
                     if (showingCount) {
-
                         showingCount.textContent =
-                            visible;
-
+                            activeTab === 'all'
+                                ? shownOnPage
+                                : totalVisible;
                     }
 
+                    if (totalEntriesCount) {
+                        totalEntriesCount.textContent = totalVisible;
+                    }
+
+                    updateInventoryPaginationControls(totalPages);
 
                     if (noResults) {
 
                         noResults.classList.toggle(
                             'hidden',
-                            visible > 0
+                            totalVisible > 0
                         );
 
                     }
@@ -3442,11 +3594,19 @@ document.addEventListener(
                             'hidden'
                         );
 
+                        const policyRows =
+                            document.querySelectorAll(
+                                '#policyIssuesTable .policy-row'
+                            );
+
                         if (showingCount) {
                             showingCount.textContent =
-                                document.querySelectorAll(
-                                    '#policyIssuesTable .policy-row'
-                                ).length;
+                                policyRows.length;
+                        }
+
+                        if (totalEntriesCount) {
+                            totalEntriesCount.textContent =
+                                policyRows.length;
                         }
 
                         noResults?.classList.add(
@@ -3478,6 +3638,11 @@ document.addEventListener(
 
                         if (showingCount) {
                             showingCount.textContent =
+                                archivedRows.length;
+                        }
+
+                        if (totalEntriesCount) {
+                            totalEntriesCount.textContent =
                                 archivedRows.length;
                         }
 
@@ -3565,6 +3730,62 @@ document.addEventListener(
                     filterProducts
                 );
 
+                itemsPerPageSelect?.addEventListener(
+                    'change',
+                    function () {
+                        inventoryItemsPerPage = Number(
+                            itemsPerPageSelect.value || 7
+                        );
+                        inventoryCurrentPage = 1;
+                        filterProducts();
+                    }
+                );
+
+                previousPage?.addEventListener(
+                    'click',
+                    function () {
+                        if (inventoryCurrentPage <= 1) {
+                            return;
+                        }
+
+                        inventoryCurrentPage--;
+                        filterProducts();
+                    }
+                );
+
+                nextPage?.addEventListener(
+                    'click',
+                    function () {
+                        const rows = getInventoryRowsForCurrentTab();
+                        const filtered = rows.filter(function (row) {
+                            return row.dataset.name && row.dataset.name.toLowerCase().includes((searchInput?.value || '').trim().toLowerCase());
+                        });
+                        const totalPages = Math.max(1, Math.ceil(filtered.length / inventoryItemsPerPage));
+
+                        if (inventoryCurrentPage >= totalPages) {
+                            return;
+                        }
+
+                        inventoryCurrentPage++;
+                        filterProducts();
+                    }
+                );
+
+                inventoryPageButtons.forEach(
+                    function (button) {
+
+                        button.addEventListener(
+                            'click',
+                            function () {
+                                inventoryCurrentPage = Number(
+                                    button.dataset.page || 1
+                                );
+                                filterProducts();
+                            }
+                        );
+
+                    }
+                );
 
 
                 /* =================================================
@@ -4077,6 +4298,23 @@ document.addEventListener(
                 }
 
 
+                function normalizeOptionalProductValue(value) {
+
+                    if (value === null || value === undefined) {
+                        return '';
+                    }
+
+                    const text = String(value).trim();
+
+                    if (!text || ['null', 'undefined'].includes(text.toLowerCase())) {
+                        return '';
+                    }
+
+                    return text;
+
+                }
+
+
                 function createdProductSpecificationValue(
                     product,
                     target
@@ -4094,8 +4332,8 @@ document.addEventListener(
                             }
                         );
 
-                    if (found?.value) {
-                        return found.value;
+                    if (found?.value !== undefined && found?.value !== null) {
+                        return normalizeOptionalProductValue(found.value);
                     }
 
                     const legacy =
@@ -4103,8 +4341,7 @@ document.addEventListener(
                             `category_specifications[${target}]`
                         ];
 
-                    return legacy ||
-                        '';
+                    return normalizeOptionalProductValue(legacy);
 
                 }
 
@@ -4160,9 +4397,8 @@ document.addEventListener(
                             valueElement.appendChild(lineElement);
                         });
                     } else {
-                        valueElement.textContent =
-                            value ||
-                            '—';
+                        const normalizedValue = normalizeOptionalProductValue(value);
+                        valueElement.textContent = normalizedValue;
                     }
 
                     item.appendChild(
@@ -4446,7 +4682,9 @@ document.addEventListener(
                             }
 
                             draft[item.key] =
-                                item.value ?? '';
+                                normalizeOptionalProductValue(
+                                    item.value
+                                );
 
                             labels[item.key] =
                                 item.label ||
@@ -4484,7 +4722,9 @@ document.addEventListener(
                                 undefined
                             ) {
                                 draft[key] =
-                                    value ?? '';
+                                    normalizeOptionalProductValue(
+                                        value
+                                    );
                             }
 
                             if (!labels[key]) {
@@ -4686,7 +4926,9 @@ document.addEventListener(
                     }
 
                     control.value =
-                        value ?? '';
+                        normalizeOptionalProductValue(
+                            value
+                        );
 
                     const updateDraft =
                         function () {
@@ -5327,6 +5569,11 @@ document.addEventListener(
                         return;
                     }
 
+                    const createdProduct =
+                        getCreatedProductFromRow(
+                            row
+                        );
+
                     if (saveProductChanges) {
                         const archivedByAdmin = Boolean(
                             (createdProduct && (createdProduct.archivedByAdmin || createdProduct.archived_by_admin)) ||
@@ -5340,11 +5587,6 @@ document.addEventListener(
 
                         saveProductChanges.disabled = archivedByAdmin && row.classList.contains('archived-row');
                     }
-
-                    const createdProduct =
-                        getCreatedProductFromRow(
-                            row
-                        );
 
                     const isPolicy =
                         row.dataset.policy === 'true' ||
@@ -5481,17 +5723,21 @@ document.addEventListener(
 
                         if (productDetailBrand) {
                             productDetailBrand.value =
-                                createdProductSpecificationValue(
-                                    createdProduct,
-                                    'brand'
+                                normalizeOptionalProductValue(
+                                    createdProductSpecificationValue(
+                                        createdProduct,
+                                        'brand'
+                                    )
                                 );
                         }
 
                         if (productDetailMaterial) {
                             productDetailMaterial.value =
-                                createdProductSpecificationValue(
-                                    createdProduct,
-                                    'material'
+                                normalizeOptionalProductValue(
+                                    createdProductSpecificationValue(
+                                        createdProduct,
+                                        'material'
+                                    )
                                 );
                         }
 
@@ -5529,17 +5775,21 @@ document.addEventListener(
 
                         if (productDetailQuantity) {
                             productDetailQuantity.value =
-                                createdProductSpecificationValue(
-                                    createdProduct,
-                                    'quantity_per_pack'
+                                normalizeOptionalProductValue(
+                                    createdProductSpecificationValue(
+                                        createdProduct,
+                                        'quantity_per_pack'
+                                    )
                                 );
                         }
 
                         if (productDetailCountry) {
                             productDetailCountry.value =
-                                createdProductSpecificationValue(
-                                    createdProduct,
-                                    'country_of_origin'
+                                normalizeOptionalProductValue(
+                                    createdProductSpecificationValue(
+                                        createdProduct,
+                                        'country_of_origin'
+                                    )
                                 );
                         }
 
@@ -6423,7 +6673,18 @@ document.addEventListener(
                         return;
                     }
 
+                    const archivedProductId =
+                        row.dataset.createdProductId ||
+                        `row-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+                    const sourceProduct =
+                        createdInventoryProducts.find(function (product) {
+                            return String(product.id) === String(archivedProductId);
+                        }) || {};
+
                     const name =
+                        sourceProduct.name ||
+                        sourceProduct.title ||
                         row.dataset.name ||
                         'Product';
 
@@ -6453,15 +6714,6 @@ document.addEventListener(
                         return;
                     }
 
-                    const archivedProductId =
-                        row.dataset.createdProductId ||
-                        `row-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-                    const sourceProduct =
-                        createdInventoryProducts.find(function (product) {
-                            return String(product.id) === String(archivedProductId);
-                        }) || {};
-
                     const archivedRow =
                         document.createElement(
                             'article'
@@ -6474,8 +6726,9 @@ document.addEventListener(
                     archivedRow.tabIndex = 0;
                     archivedRow.setAttribute('role', 'button');
 
-                    const archivedCover = sourceProduct.coverPhoto
-                        ? `<img src="${escapeHtml(sourceProduct.coverPhoto)}" alt="${escapeHtml(name)}" class="created-product-cover">`
+                    const archivedCoverPhoto = resolveProductCoverPhoto(sourceProduct);
+                    const archivedCover = archivedCoverPhoto
+                        ? `<img src="${escapeHtml(archivedCoverPhoto)}" alt="${escapeHtml(name)}" class="created-product-cover">`
                         : '<div class="product-bag"></div>';
 
                     archivedRow.innerHTML = `
@@ -6519,6 +6772,7 @@ document.addEventListener(
                         ...sourceProduct,
                         id: archivedProductId,
                         name,
+                        title: name,
                         category,
                         price,
                         stock,
@@ -6568,6 +6822,22 @@ document.addEventListener(
 
                 }
 
+                function resolveProductCoverPhoto(product) {
+                    if (!product) {
+                        return '';
+                    }
+
+                    const photos = Array.isArray(product.photos)
+                        ? product.photos
+                        : [];
+
+                    const firstPhoto = photos.find(function (photo) {
+                        return Boolean(photo && String(photo).trim());
+                    });
+
+                    return firstPhoto || product.coverPhoto || product.image_url || '';
+                }
+
                 function renderArchivedProductRow(product) {
                     if (!archivedTable || !product) {
                         return;
@@ -6578,6 +6848,7 @@ document.addEventListener(
                     const activeReason = archivedByAdmin
                         ? (archiveReason ? `Removed by admin because ${archiveReason}` : 'Removed by admin')
                         : (product.reason || 'Archived product');
+                    const productName = product.name || product.title || 'Product';
 
                     const archivedRow = document.createElement('article');
                     archivedRow.className =
@@ -6587,9 +6858,13 @@ document.addEventListener(
                     archivedRow.tabIndex = 0;
                     archivedRow.setAttribute('role', 'button');
 
-                    const archivedCover = product.coverPhoto
-                        ? `<img src="${escapeHtml(product.coverPhoto)}" alt="${escapeHtml(product.name || 'Product')}" class="created-product-cover">`
+                    const archivedCoverPhoto = resolveProductCoverPhoto(product);
+                    const archivedCover = archivedCoverPhoto
+                        ? `<img src="${escapeHtml(archivedCoverPhoto)}" alt="${escapeHtml(productName)}" class="created-product-cover">`
                         : '<div class="product-bag"></div>';
+
+                    const categoryLabel = categoryDisplayLabel(product.categoryLabel || product.category || '');
+                    const priceText = calculateCreatedProductPrice(product) || '—';
 
                     archivedRow.innerHTML = `
                         <div class="product-main">
@@ -6597,17 +6872,17 @@ document.addEventListener(
                                 ${archivedCover}
                             </div>
                             <div class="min-w-0">
-                                <h3 class="product-name">${escapeHtml(product.name || 'Product')}</h3>
+                                <h3 class="product-name">${escapeHtml(productName)}</h3>
                                 <p class="product-sold">${escapeHtml(activeReason)}</p>
                             </div>
                         </div>
                         <div>
-                            <span class="category-badge ${categoryBadgeClass(product.category || '—')}">
-                                ${escapeHtml(product.category || '—')}
+                            <span class="category-badge ${categoryBadgeClass(categoryLabel)}">
+                                ${escapeHtml(categoryLabel)}
                             </span>
                         </div>
-                        <div class="product-number">${escapeHtml(product.price || '—')}</div>
-                        <div class="product-number">${escapeHtml(product.stock || '—')}</div>
+                        <div class="product-number">${escapeHtml(priceText)}</div>
+                        <div class="product-number">${escapeHtml(product.stock ?? 0)}</div>
                         <div>
                             <span class="status-badge status-pending">Archived</span>
                         </div>
@@ -6759,13 +7034,22 @@ document.addEventListener(
                             return item.value !== '';
                         });
 
-                    const storagePrefix = inventoryConfig.storageUrl + '/';
+                    const storageBase = String(inventoryConfig.storageUrl || '').replace(/\/+$/, '');
                     const photos = Array.isArray(product.photos)
                         ? product.photos.map(function (photo) {
-                            return String(photo).startsWith('http') || String(photo).startsWith('data:')
-                                ? photo
-                                : storagePrefix + String(photo).replace(/^\//, '');
-                        })
+                            const value = String(photo || '').trim();
+
+                            if (!value) {
+                                return '';
+                            }
+
+                            if (value.startsWith('http') || value.startsWith('data:')) {
+                                return value;
+                            }
+
+                            const relative = value.replace(/^\/+/, '').replace(/^storage\//, '');
+                            return storageBase ? `${storageBase}/${relative}` : `/${relative}`;
+                        }).filter(Boolean)
                         : [];
 
                     const archiveReason = product.archive_reason || product.archiveReason || product.reason || '';
@@ -6778,9 +7062,12 @@ document.addEventListener(
                         ? (archiveReason ? `This product was removed by an administrator because ${archiveReason}.` : 'This product was removed by an administrator.')
                         : '');
 
+                    const resolvedName = product.name || product.title || 'New Product';
+
                     return {
                         id: String(product.id),
-                        title: product.title || product.name || 'New Product',
+                        name: resolvedName,
+                        title: resolvedName,
                         category: product.category || '',
                         categoryLabel: categoryDisplayLabel(
                             product.categoryLabel || product.category
@@ -10530,6 +10817,17 @@ document.addEventListener(
                                 Boolean
                             );
 
+                        if (compactProductPhotos.length) {
+                            compactProductPhotos.forEach(
+                                function (photo) {
+                                    formData.append(
+                                        'photos[]',
+                                        photo
+                                    );
+                                }
+                            );
+                        }
+
 
                         const compactVariationPhotos =
                             await Promise.all(
@@ -10814,18 +11112,6 @@ document.addEventListener(
                 const paginationButtons =
                     document.querySelectorAll(
                         '.pagination-button[data-page]'
-                    );
-
-
-                const previousPage =
-                    document.getElementById(
-                        'previousPage'
-                    );
-
-
-                const nextPage =
-                    document.getElementById(
-                        'nextPage'
                     );
 
 

@@ -1565,10 +1565,16 @@
                         Showing
 
                         <span id="shippingShowingCount">
-                            4
+                            0
                         </span>
 
-                        out of 378 entries
+                        out of
+
+                        <span id="shippingTotalEntriesCount">
+                            0
+                        </span>
+
+                        entries
 
                     </p>
 
@@ -5236,6 +5242,11 @@
                         'shippingShowingCount'
                     );
 
+                const totalEntriesCount =
+                    document.getElementById(
+                        'shippingTotalEntriesCount'
+                    );
+
 
                 const previousPage =
                     document.getElementById(
@@ -5439,6 +5450,13 @@
 
                         showingCount.textContent =
                             visibleCount;
+
+                    }
+
+                    if (totalEntriesCount) {
+
+                        totalEntriesCount.textContent =
+                            rows.length;
 
                     }
 

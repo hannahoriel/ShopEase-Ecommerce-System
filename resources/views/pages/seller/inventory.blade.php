@@ -1085,8 +1085,6 @@
 
 
 
-
-
                 {{-- =================================================
                      ARCHIVED ITEMS
                 ================================================== --}}
@@ -1181,15 +1179,15 @@
                         Showing
 
                         <span id="showingCount">
-                            7
+                            0
                         </span>
 
                         out of
                         <span
                             id="totalEntriesCount"
-                            data-base-total="378"
+                            data-base-total="0"
                         >
-                            378
+                            0
                         </span>
                         entries
 

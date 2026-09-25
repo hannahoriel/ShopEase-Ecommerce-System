@@ -1991,9 +1991,9 @@
                 </svg>
             </div>
 
-            
 
-            
+
+
 
             <div class="complaints-date-wrap">
                 <input
@@ -2141,7 +2141,7 @@
 
             <div class="complaints-table-footer">
                 <p id="complaints-count" class="complaints-count">
-                    Showing 7 out of 378 entries
+                    Showing 0 out of 0 entries
                 </p>
 
                 <div class="complaints-pagination">
@@ -3697,7 +3697,7 @@ document.addEventListener('DOMContentLoaded', function () {
             visible ? 'none' : 'block';
 
         count.textContent =
-            `Showing ${visible} out of 378 entries`;
+            `Showing ${visible} out of ${rows.length} entries`;
 
         /*
          * If the selected complaint is filtered out,

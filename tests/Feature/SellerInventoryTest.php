@@ -123,6 +123,34 @@ class SellerInventoryTest extends TestCase
             ->assertJsonValidationErrors(['sku']);
     }
 
+    public function test_seller_product_photos_are_persisted_for_admin_and_archived_views(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('photo-persist@example.com');
+        $photos = [
+            'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQEBUQEBAVFRUVFRUVFRUVFRUVFRUVFRUYHSAgGBolGxUVITEhJSkrLi4uFx8zODMsNygtLisBCgoKDg0OGhAQGy0mICUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAbAAADAQEBAQEAAAAAAAAAAAAABQYDBAcCA//EADgQAAIBAwIEAwUGBwUBAAAAAAABAgMEAQUSITEkQVFhBhMiMnGBkaGx0fAUQmKS8CNCUnLx4RUjQ2Lx/8QAGgEBAAMBAQEAAAAAAAAAAAAAAAABAgMEBQH/xAA1EQACAgICAgEEAQAAAAAAAAAAAQIRAwQSMQUSQVEyYXGBkaGx0fAUIrH/2Q==',
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAF',
+        ];
+
+        $response = $this->actingAs($sellerUser)->postJson('/api/v1/seller/inventory', [
+            'name' => 'Photo product',
+            'sku' => 'PHOTO-1',
+            'description' => 'A product with persisted photos.',
+            'price' => 499.00,
+            'stock_quantity' => 3,
+            'photos' => $photos,
+            'status' => 'pending',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('photos.0', $photos[0])
+            ->assertJsonPath('photos.1', $photos[1]);
+
+        $product = Product::query()->where('sku', 'PHOTO-1')->firstOrFail();
+
+        $this->assertSame($photos, $product->photos);
+        $this->assertSame($photos, $product->fresh()->photos);
+    }
+
     public function test_non_sellers_cannot_access_inventory(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
@@ -193,6 +221,27 @@ class SellerInventoryTest extends TestCase
             'id' => $product->id,
             'is_archived' => true,
             'archived_by_admin' => 1,
+        ]);
+    }
+
+    public function test_archived_items_keep_the_original_product_name(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('archive-name@example.com');
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Original product title',
+            'price' => 120,
+            'stock_quantity' => 4,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($sellerUser)
+            ->get(route('seller.inventory'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'name' => 'Original product title',
         ]);
     }
 
