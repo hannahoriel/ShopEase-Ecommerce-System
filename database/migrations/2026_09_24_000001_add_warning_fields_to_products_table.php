@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('products', function (Blueprint $table): void {
+            $table->string('warning_reason')->nullable()->after('archive_reason');
+            $table->text('warning_details')->nullable()->after('warning_reason');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('products', function (Blueprint $table): void {
+            $table->dropColumn(['warning_reason', 'warning_details']);
+        });
+    }
+};

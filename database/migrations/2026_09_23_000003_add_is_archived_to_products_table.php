@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('products', function (Blueprint $table): void {
+            $table->boolean('is_archived')->default(false)->after('status');
+            $table->index(['seller_id', 'is_archived']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('products', function (Blueprint $table): void {
+            $table->dropIndex(['products_seller_id_is_archived_index']);
+            $table->dropColumn('is_archived');
+        });
+    }
+};

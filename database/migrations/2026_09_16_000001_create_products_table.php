@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('sku')->nullable();
             $table->decimal('price', 12, 2);
             $table->unsignedInteger('stock_quantity')->default(0);
-            $table->string('status')->default('active');
+            $table->string('status')->default('pending');
             $table->timestamps();
 
             $table->index(['seller_id', 'status']);
