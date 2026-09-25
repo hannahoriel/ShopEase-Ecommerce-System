@@ -2105,6 +2105,23 @@ Route::get('/admin/seller-compliance', function () {
 })->middleware('auth')
   ->name('admin.seller.compliance');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/seller-compliance/data', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'index'])
+        ->name('admin.seller.compliance.data');
+
+    Route::get('/admin/seller-compliance/data/{seller}', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'show'])
+        ->name('admin.seller.compliance.show');
+
+    Route::post('/admin/seller-compliance/data/products/{product}/approve', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'approveProduct'])
+        ->name('admin.seller.compliance.approve');
+
+    Route::post('/admin/seller-compliance/data/products/{product}/warn', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'warnProduct'])
+        ->name('admin.seller.compliance.warn');
+
+    Route::post('/admin/seller-compliance/data/products/{product}/remove', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'removeProduct'])
+        ->name('admin.seller.compliance.remove');
+});
+
 Route::get('/admin/complaints-disputes', function () {
     return view('pages.admin.complaints-disputes');
 })->name('admin.complaints.disputes');

@@ -48,6 +48,47 @@ class SellerComplianceTest extends TestCase
             ->assertSee('initialSellerComplianceData');
     }
 
+    public function test_admin_can_fetch_live_seller_compliance_data_from_session_auth_routes(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $buyerUser = User::factory()->create(['role' => User::ROLE_BUYER]);
+
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'first_name' => 'Ana',
+            'last_name' => 'Lopez',
+            'store_name' => 'AnaCart',
+            'business_name' => 'AnaCart',
+            'contact_no' => '09171234567',
+            'upload_id' => 'registration-documents/ana-valid-id.jpg',
+            'upload_business_permit' => 'registration-documents/ana-business-permit.pdf',
+            'registration_status' => 'active',
+        ]);
+
+        $sampleProduct = $seller->products()->create([
+            'name' => 'Sample Product',
+            'category' => 'health-and-beauty',
+            'status' => 'pending',
+            'price' => 250,
+            'stock_quantity' => 10,
+            'photos' => ['products/sample-product.jpg'],
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/admin/seller-compliance/data?per_page=10')
+            ->assertOk()
+            ->assertJsonPath('summary.total_sellers', 1);
+
+        $this->actingAs($admin)
+            ->postJson('/admin/seller-compliance/data/products/' . $sampleProduct->id . '/remove', [
+                'reason' => 'Prohibited product',
+                'details' => 'The product violates platform policy.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'archived');
+    }
+
     public function test_admin_can_fetch_live_seller_compliance_data(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);

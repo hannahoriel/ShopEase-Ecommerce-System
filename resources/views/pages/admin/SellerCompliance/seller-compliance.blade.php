@@ -45,7 +45,7 @@
     // Everything the JS needs.
     // Read from <script type="application/json">.
     $clientConfig = [
-    'apiUrl'     => url('/api/v1/admin/seller-compliance'),
+    'apiUrl'     => url('/admin/seller-compliance/data'),
     'perPage'    => $config['default_per_page'],
     'categories' => $config['categories'],
     'statuses'   => $config['statuses'],
