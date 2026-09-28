@@ -10,6 +10,8 @@ export default defineConfig({
     'resources/css/app.css',
     'resources/css/auth.css',
 
+    'resources/css/admin/seller_compliance.css',
+
     'resources/css/seller/inventory.css',
     'resources/css/seller/order-status.css',
     'resources/css/seller/shipping-status.css',
@@ -17,9 +19,11 @@ export default defineConfig({
     'resources/js/app.js',
     'resources/js/auth.js',
 
+    'resources/js/admin/seller_compliance.js',
+
     'resources/js/seller/inventory.js',
     'resources/js/seller/order-status.js',
-    'resources/js/seller/shipping-status.js'
+    'resources/js/seller/shipping-status.js',
 ],
             refresh: true,
             fonts: [
