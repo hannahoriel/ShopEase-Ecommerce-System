@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Buyer\Buyer;
+use App\Models\Logistics\Logistics;
+use App\Models\Rider\Rider;
+use App\Models\Seller\Seller;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     const ROLE_BUYER = 'buyer';
     const ROLE_SELLER = 'seller';
@@ -18,32 +23,16 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        'first_name',
-        'last_name',
-        'middle_initial',
-        'sex',
         'email',
-        'contact_no',
-        'birthday',
-        'age',
-        'province',
-        'municipality',
-        'barangay',
-        'street',
-        'house_number',
-        'business_name',
-        'line_of_business',
-        'vehicle',
-        'plate_number',
-        'upload_id',
-        'upload_business_permit',
-        'upload_or_cr',
-        'upload_id_license',
         'password',
         'role',
+        'email_verified_at',
         'registration_status',
         'approved_at',
         'rejected_at',
+        'suspended_until',
+        'account_action_reason',
+        'account_action_details',
     ];
 
     protected $hidden = [
@@ -55,8 +44,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'birthday' => 'date',
-            'age' => 'integer',
             'approved_at' => 'datetime',
             'suspended_until' => 'datetime',
             'password' => 'hashed',

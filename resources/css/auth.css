@@ -767,7 +767,11 @@ label {
 }
 
 
-.input-wrap svg {
+/* =========================================================
+   LEFT SIDE INPUT ICON
+========================================================= */
+
+.input-wrap > svg {
 
     position:
         absolute;
@@ -792,6 +796,9 @@ label {
 
     pointer-events:
         none;
+
+    z-index:
+        2;
 }
 
 
@@ -876,7 +883,7 @@ input[type="text"]:focus {
 
 
 /* =========================================================
-   REMOVE BROWSER BLUE / PINK AUTOFILL LOOK
+   REMOVE BROWSER AUTOFILL LOOK
 ========================================================= */
 
 input:-webkit-autofill,
@@ -902,7 +909,7 @@ input:-webkit-autofill:active {
 
 
 /* =========================================================
-   KEEP GRAY BORDER EVEN WHEN AUTOFILLED + FOCUSED
+   KEEP GRAY BORDER ON AUTOFILL + FOCUS
 ========================================================= */
 
 input[type="email"]:-webkit-autofill:focus,
@@ -923,72 +930,97 @@ input[type="text"]:-webkit-autofill:focus {
 
 
 /* =========================================================
-   PASSWORD BROWSER CONTROLS
+   HIDE BROWSER PASSWORD CONTROLS
 ========================================================= */
 
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
 
     display:
-        none;
+        none !important;
+
+    width:
+        0 !important;
+
+    height:
+        0 !important;
+
+    opacity:
+        0 !important;
+
+    visibility:
+        hidden !important;
+
+    pointer-events:
+        none !important;
 }
 
 
 /* =========================================================
-   PASSWORD EYE
+   PASSWORD INPUT
 ========================================================= */
 
-.toggle-eye {
+#loginPass {
 
-    position:
-        absolute;
-
-    right:
-        14px;
-
-    top:
-        50%;
-
-    transform:
-        translateY(-50%);
-
-    cursor:
-        pointer;
-
-    color:
-        #A89B93;
-
-    background:
-        none;
-
-    border:
-        none;
+    width:
+        100%;
 
     padding:
-        0;
-
-    display:
-        flex;
-
-    opacity:
-        0;
-
-    pointer-events:
-        none;
-
-    transition:
-        opacity
-        0.15s;
+        13px 50px 13px 40px;
 }
 
 
-.toggle-eye.show {
+/* =========================================================
+   PASSWORD EYE BUTTON
+========================================================= */
 
-    opacity:
-        1;
+#loginEyeBtn {
+    position: absolute;
 
-    pointer-events:
-        auto;
+    right: 14px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 20px;
+    height: 20px;
+
+    padding: 0;
+    margin: 0;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    z-index: 10;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#loginEyeIcon {
+    width: 18px;
+    height: 18px;
+
+    display: block;
+
+    object-fit: contain;
+
+    pointer-events: none;
+}
+
+#loginEyeBtn:hover #loginEyeIcon {
+    opacity: 0.75;
 }
 
 
@@ -1544,5 +1576,21 @@ input[type="password"]::-ms-clear {
 
         margin-bottom:
             28px;
+    }
+
+
+    #loginEyeBtn {
+
+        right:
+            12px;
+
+        width:
+            20px;
+
+        height:
+            20px;
+
+        background-size:
+            17px 17px;
     }
 }

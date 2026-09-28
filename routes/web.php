@@ -4,6 +4,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RegistrationController;
+use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Seller\OrderStatusController;
+use App\Http\Controllers\Seller\ShippingStatusController;
+use App\Http\Controllers\Seller\InventoryController;
+use App\Http\Controllers\Api\Seller\InventoryController as ApiSellerInventoryController;
 use App\Models\User;
 use App\Models\Admin\Registration;
 use Illuminate\Http\Request;
@@ -19,33 +24,14 @@ use Illuminate\Support\Str;
 |--------------------------------------------------------------------------
 | HOME / LANDING PAGE
 |--------------------------------------------------------------------------
-|
-| This is the first page users see when they visit:
-| http://127.0.0.1:8000/
-|
 */
 
 Route::get('/', function () {
 
-    return view(
-        'pages.landing-page'
-    );
+    return view('pages.landing-page');
 
 })->name('landing.page');
 
-
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATION
-|--------------------------------------------------------------------------
-*/
-
-
-/*
-|--------------------------------------------------------------------------
-| LOGIN PAGE
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/auth/login', function () {
 
@@ -105,53 +91,19 @@ Route::post('/auth/register', [
 |--------------------------------------------------------------------------
 | LOGOUT
 |--------------------------------------------------------------------------
-|
-| IMPORTANT:
-| After logout, the user is ALWAYS returned to the
-| ShopEase landing page.
-|
 */
 
 Route::post('/auth/logout', function (
     Request $request
 ) {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Logout User
-    |--------------------------------------------------------------------------
-    */
-
     Auth::logout();
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Invalidate Current Session
-    |--------------------------------------------------------------------------
-    */
 
     $request->session()->invalidate();
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Regenerate CSRF Token
-    |--------------------------------------------------------------------------
-    */
-
     $request->session()->regenerateToken();
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | RETURN TO LANDING PAGE
-    |--------------------------------------------------------------------------
-    */
-
-    return redirect()->route(
-        'landing.page'
-    );
+    return redirect()->route('landing.page');
 
 })->middleware('auth')
   ->name('logout');
@@ -161,10 +113,6 @@ Route::post('/auth/logout', function (
 |--------------------------------------------------------------------------
 | DASHBOARD REDIRECT
 |--------------------------------------------------------------------------
-|
-| After successful login, the user is sent to the dashboard
-| based on their role.
-|
 */
 
 Route::get('/dashboard', function () {
@@ -235,7 +183,6 @@ Route::get('/admin/dashboard', function () {
 
 foreach ([
     'buyer' => User::ROLE_BUYER,
-    'seller' => User::ROLE_SELLER,
     'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
 ] as $dashboard => $role) {
@@ -263,6 +210,10 @@ foreach ([
 
 }
 
+Route::get('/seller/dashboard', [SellerDashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('seller.dashboard');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -284,38 +235,45 @@ Route::get('/admin/registrations', function () {
         403
     );
 
-    return app(RegistrationController::class)->index(request());
+    return app(
+        RegistrationController::class
+    )->index(request());
 
 })->middleware('auth')
   ->name('admin.registrations');
 
+
 Route::get('/admin/registrations/{registration}', [
-        RegistrationController::class,
-        'show',
+    RegistrationController::class,
+    'show',
 ])->middleware('auth')
     ->name('admin.registrations.show');
 
+
 Route::get('/admin/registrations/approved/list', [
-        RegistrationController::class,
-        'approvedArchive',
+    RegistrationController::class,
+    'approvedArchive',
 ])->middleware('auth')
     ->name('admin.registrations.approved.list');
 
+
 Route::get('/admin/registrations/rejected/list', [
-        RegistrationController::class,
-        'rejectedArchive',
+    RegistrationController::class,
+    'rejectedArchive',
 ])->middleware('auth')
     ->name('admin.registrations.rejected.list');
 
+
 Route::post('/admin/registrations/{registration}/approve', [
-        RegistrationController::class,
-        'approve',
+    RegistrationController::class,
+    'approve',
 ])->middleware('auth')
     ->name('admin.registrations.approve');
 
+
 Route::post('/admin/registrations/{registration}/reject', [
-        RegistrationController::class,
-        'reject',
+    RegistrationController::class,
+    'reject',
 ])->middleware('auth')
     ->name('admin.registrations.reject');
 
@@ -333,49 +291,34 @@ Route::get('/admin/user-management', function () {
         403
     );
 
-    return app(UserManagementController::class)->index();
+    return app(
+        UserManagementController::class
+    )->index();
 
 })->middleware('auth')
   ->name('admin.user.management');
 
+
 Route::get('/admin/user-management/list', [
-        UserManagementController::class,
-        'list',
+    UserManagementController::class,
+    'list',
 ])->middleware('auth')
     ->name('admin.user.management.list');
 
+
 Route::get('/admin/user-management/{user}', [
-        UserManagementController::class,
-        'show',
+    UserManagementController::class,
+    'show',
 ])->middleware('auth')
     ->name('admin.user.management.show');
 
+
 Route::patch('/admin/user-management/{user}/status', [
-        UserManagementController::class,
-        'updateStatus',
+    UserManagementController::class,
+    'updateStatus',
 ])->middleware('auth')
     ->name('admin.user.management.status');
 
-
-/*
-|--------------------------------------------------------------------------
-|--------------------------------------------------------------------------
-| SELLER REGISTRATION
-|--------------------------------------------------------------------------
-|--------------------------------------------------------------------------
-|
-| STEP 1 = Seller Information
-| STEP 2 = Business Information
-| STEP 3 = Review Documents
-|
-*/
-
-
-/*
-|--------------------------------------------------------------------------
-| SELLER STEP 1 - GET
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/seller/register', function () {
 
@@ -403,38 +346,20 @@ Route::post('/seller/register', function (
     Request $request
 ) {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Existing Seller Session
-    |--------------------------------------------------------------------------
-    */
-
     $sellerData = session(
         'seller_registration',
         []
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Draft ID
-    |--------------------------------------------------------------------------
-    */
+    $previousEmail =
+        $sellerData['email'] ?? null;
 
     $draftId =
         $sellerData['draft_id']
         ?? (string) Str::uuid();
 
-
     $sellerData['draft_id'] =
         $draftId;
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Step 1 Data
-    |--------------------------------------------------------------------------
-    */
 
     $stepOneData =
         $request->except([
@@ -442,12 +367,34 @@ Route::post('/seller/register', function (
             'valid_id',
         ]);
 
-
     $sellerData =
         array_merge(
             $sellerData,
             $stepOneData
         );
+
+    $newEmail =
+        $sellerData['email'] ?? null;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Invalidate old verification when email changes
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        $previousEmail !== null &&
+        $newEmail !== null &&
+        strtolower(trim($previousEmail)) !==
+        strtolower(trim($newEmail))
+    ) {
+
+        session()->forget(
+            'seller_registration_verification'
+        );
+
+    }
 
 
     /*
@@ -461,12 +408,6 @@ Route::post('/seller/register', function (
             'valid_id'
         )
     ) {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Delete Previous Valid ID
-        |--------------------------------------------------------------------------
-        */
 
         if (
             !empty(
@@ -483,12 +424,6 @@ Route::post('/seller/register', function (
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Store New Valid ID
-        |--------------------------------------------------------------------------
-        */
-
         $file =
             $request->file(
                 'valid_id'
@@ -501,12 +436,6 @@ Route::post('/seller/register', function (
                 'public'
             );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Save File Details
-        |--------------------------------------------------------------------------
-        */
 
         $sellerData[
             'valid_id_path'
@@ -528,23 +457,11 @@ Route::post('/seller/register', function (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Save Seller Session
-    |--------------------------------------------------------------------------
-    */
-
     session([
         'seller_registration' =>
             $sellerData,
     ]);
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Continue To Step 2
-    |--------------------------------------------------------------------------
-    */
 
     return redirect()->route(
         'seller.business.register'
@@ -586,23 +503,11 @@ Route::post(
     '/seller/register/business',
     function (Request $request) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Existing Seller Session
-        |--------------------------------------------------------------------------
-        */
-
         $sellerData = session(
             'seller_registration',
             []
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Draft ID
-        |--------------------------------------------------------------------------
-        */
 
         $draftId =
             $sellerData['draft_id']
@@ -613,24 +518,12 @@ Route::post(
             $draftId;
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Business Data
-        |--------------------------------------------------------------------------
-        */
-
         $stepTwoData =
             $request->except([
                 '_token',
                 'business_permit',
             ]);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Categories
-        |--------------------------------------------------------------------------
-        */
 
         $categories =
             $request->input(
@@ -645,12 +538,6 @@ Route::post(
                 : [];
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Merge Seller Data
-        |--------------------------------------------------------------------------
-        */
-
         $sellerData =
             array_merge(
                 $sellerData,
@@ -658,23 +545,11 @@ Route::post(
             );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Business Permit
-        |--------------------------------------------------------------------------
-        */
-
         if (
             $request->hasFile(
                 'business_permit'
             )
         ) {
-
-            /*
-            |--------------------------------------------------------------------------
-            | Delete Previous Permit
-            |--------------------------------------------------------------------------
-            */
 
             if (
                 !empty(
@@ -693,12 +568,6 @@ Route::post(
             }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Store Permit
-            |--------------------------------------------------------------------------
-            */
-
             $file =
                 $request->file(
                     'business_permit'
@@ -711,12 +580,6 @@ Route::post(
                     'public'
                 );
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Save Permit Details
-            |--------------------------------------------------------------------------
-            */
 
             $sellerData[
                 'business_permit_path'
@@ -738,23 +601,11 @@ Route::post(
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Save Session
-        |--------------------------------------------------------------------------
-        */
-
         session([
             'seller_registration' =>
                 $sellerData,
         ]);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Continue To Step 3
-        |--------------------------------------------------------------------------
-        */
 
         return redirect()->route(
             'seller.review.register'
@@ -770,33 +621,17 @@ Route::post(
 |--------------------------------------------------------------------------
 | SELLER STEP 2 COMPATIBILITY ROUTE
 |--------------------------------------------------------------------------
-|
-| Some versions of the seller business Blade page
-| may still submit to seller.review.submit.
-|
 */
 
 Route::post(
     '/seller/register/review',
     function (Request $request) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Existing Seller Session
-        |--------------------------------------------------------------------------
-        */
-
         $sellerData = session(
             'seller_registration',
             []
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Draft ID
-        |--------------------------------------------------------------------------
-        */
 
         $draftId =
             $sellerData['draft_id']
@@ -807,24 +642,12 @@ Route::post(
             $draftId;
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Step 2 Data
-        |--------------------------------------------------------------------------
-        */
-
         $stepTwoData =
             $request->except([
                 '_token',
                 'business_permit',
             ]);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Categories
-        |--------------------------------------------------------------------------
-        */
 
         $categories =
             $request->input(
@@ -839,24 +662,12 @@ Route::post(
                 : [];
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Merge
-        |--------------------------------------------------------------------------
-        */
-
         $sellerData =
             array_merge(
                 $sellerData,
                 $stepTwoData
             );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Business Permit
-        |--------------------------------------------------------------------------
-        */
 
         if (
             $request->hasFile(
@@ -914,23 +725,11 @@ Route::post(
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Save Session
-        |--------------------------------------------------------------------------
-        */
-
         session([
             'seller_registration' =>
                 $sellerData,
         ]);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Continue To Review
-        |--------------------------------------------------------------------------
-        */
 
         return redirect()->route(
             'seller.review.register'
@@ -950,33 +749,25 @@ Route::post(
 
 Route::get('/seller/register/review', function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Seller Registration Data
-    |--------------------------------------------------------------------------
-    */
-
     $sellerData = session(
         'seller_registration',
         []
     );
 
-    $sellerData['valid_id_path'] = $sellerData['valid_id_path']
+
+    $sellerData['valid_id_path'] =
+        $sellerData['valid_id_path']
         ?? $sellerData['valid_id']
         ?? $sellerData['upload_id']
         ?? null;
 
-    $sellerData['business_permit_path'] = $sellerData['business_permit_path']
+
+    $sellerData['business_permit_path'] =
+        $sellerData['business_permit_path']
         ?? $sellerData['business_permit']
         ?? $sellerData['upload_business_permit']
         ?? null;
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Valid ID URL
-    |--------------------------------------------------------------------------
-    */
 
     $validIdUrl = null;
 
@@ -996,12 +787,6 @@ Route::get('/seller/register/review', function () {
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Business Permit URL
-    |--------------------------------------------------------------------------
-    */
 
     $businessPermitUrl = null;
 
@@ -1023,12 +808,6 @@ Route::get('/seller/register/review', function () {
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Review Page
-    |--------------------------------------------------------------------------
-    */
 
     return view(
         'auth.seller-signup.seller-review-register',
@@ -1056,84 +835,204 @@ Route::get('/seller/register/review', function () {
 
 Route::post('/seller/register/send-code', function (Request $request) {
 
-    $sellerData = session('seller_registration', []);
-    $email = $sellerData['email'] ?? null;
+    $sellerData =
+        session(
+            'seller_registration',
+            []
+        );
+
+
+    $email =
+        $sellerData['email'] ?? null;
+
 
     if (!$email) {
+
         return response()->json([
-            'message' => 'Your seller registration session has expired. Please start again.',
+            'message' =>
+                'Your seller registration session has expired. Please start again.',
         ], 422);
+
     }
 
-    $previousVerification = session('seller_registration_verification');
+
+    $previousVerification =
+        session(
+            'seller_registration_verification'
+        );
+
 
     if (
         $previousVerification
-        && !empty($previousVerification['resend_available_at'])
-        && now()->lessThan($previousVerification['resend_available_at'])
+        && !empty(
+            $previousVerification['resend_available_at']
+        )
+        && now()->lessThan(
+            $previousVerification['resend_available_at']
+        )
     ) {
+
         return response()->json([
-            'retry_after' => now()->diffInSeconds($previousVerification['resend_available_at']),
+            'retry_after' =>
+                now()->diffInSeconds(
+                    $previousVerification[
+                        'resend_available_at'
+                    ]
+                ),
         ], 429);
+
     }
 
-    $hasRejectedRegistration = Registration::where('email', $email)
-        ->where('status', 'rejected')
+
+    $hasRejectedRegistration =
+        Registration::where(
+            'email',
+            $email
+        )
+        ->where(
+            'status',
+            'rejected'
+        )
         ->exists();
 
-    if (User::where('email', $email)
-        ->where('registration_status', '!=', 'rejected')
-        ->exists() && ! $hasRejectedRegistration) {
+
+    if (
+        User::where(
+            'email',
+            $email
+        )
+        ->where(
+            'registration_status',
+            '!=',
+            'rejected'
+        )
+        ->exists()
+        && ! $hasRejectedRegistration
+    ) {
+
         return response()->json([
-            'message' => 'This email address is already registered. Please use another email address or log in.',
+            'message' =>
+                'This email address is already registered. Please use another email address or log in.',
         ], 422);
+
     }
 
-    $code = (string) random_int(100000, 999999);
-    $isResend = !empty($previousVerification);
+
+    $code =
+        (string) random_int(
+            100000,
+            999999
+        );
+
+
+    $isResend =
+        !empty(
+            $previousVerification
+        );
+
 
     session([
         'seller_registration_verification' => [
-            'email' => $email,
-            'code' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
-            'resend_available_at' => now()->addMinutes($isResend ? 10 : 2),
-            'verified' => false,
+
+            'email' =>
+                $email,
+
+            'code' =>
+                Hash::make(
+                    $code
+                ),
+
+            'expires_at' =>
+                now()->addMinutes(
+                    10
+                ),
+
+            'resend_available_at' =>
+                now()->addMinutes(
+                    $isResend
+                        ? 10
+                        : 2
+                ),
+
+            'verified' =>
+                false,
         ],
     ]);
 
-    Mail::to($email)->send(new \App\Mail\SellerVerificationCode($code));
+
+    Mail::to(
+        $email
+    )->send(
+        new \App\Mail\SellerVerificationCode(
+            $code
+        )
+    );
+
 
     return response()->json([
-        'message' => 'A verification code has been sent to your email address.',
+        'message' =>
+            'A verification code has been sent to your email address.',
     ]);
-})->middleware('guest')->name('seller.register.send-code');
 
+})->middleware('guest')
+  ->name('seller.register.send-code');
+
+
+/*
+|--------------------------------------------------------------------------
+| SELLER VERIFY CODE
+|--------------------------------------------------------------------------
+*/
 
 Route::post('/seller/register/verify-code', function (Request $request) {
 
-    $validated = $request->validate([
-        'code' => ['required', 'digits:6'],
-    ]);
+    $validated =
+        $request->validate([
+            'code' => [
+                'required',
+                'digits:6'
+            ],
+        ]);
 
-    $verification = session('seller_registration_verification');
+
+    $verification =
+        session(
+            'seller_registration_verification'
+        );
+
 
     if (
         !$verification
-        || now()->greaterThan($verification['expires_at'])
-        || !Hash::check($validated['code'], $verification['code'])
+        || now()->greaterThan(
+            $verification['expires_at']
+        )
+        || !Hash::check(
+            $validated['code'],
+            $verification['code']
+        )
     ) {
+
         return response()->json([
-            'message' => 'The verification code is invalid or expired.',
+            'message' =>
+                'The verification code is invalid or expired.',
         ], 422);
+
     }
 
-    session()->put('seller_registration_verification.verified', true);
+
+    session()->put(
+        'seller_registration_verification.verified',
+        true
+    );
+
 
     return response()->json([
-        'message' => 'Email verified successfully.',
+        'message' =>
+            'Email verified successfully.',
     ]);
-})->middleware('guest')->name('seller.register.verify-code');
+
+})->middleware('guest')
+  ->name('seller.register.verify-code');
 
 
 /*
@@ -1146,23 +1045,12 @@ Route::post(
     '/seller/register/complete',
     function (Request $request) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Existing Registration Data
-        |--------------------------------------------------------------------------
-        */
+        $sellerData =
+            session(
+                'seller_registration',
+                []
+            );
 
-        $sellerData = session(
-            'seller_registration',
-            []
-        );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Check Registration
-        |--------------------------------------------------------------------------
-        */
 
         if (
             empty($sellerData)
@@ -1179,37 +1067,75 @@ Route::post(
 
         }
 
-        $sellerEmail = $sellerData['email'] ?? '';
-        $hasRejectedRegistration = Registration::where('email', $sellerEmail)
-            ->where('status', 'rejected')
+
+        $sellerEmail =
+            $sellerData['email'] ?? '';
+
+
+        $hasRejectedRegistration =
+            Registration::where(
+                'email',
+                $sellerEmail
+            )
+            ->where(
+                'status',
+                'rejected'
+            )
             ->exists();
 
-        if (User::where('email', $sellerEmail)
-            ->where('registration_status', '!=', 'rejected')
-            ->exists() && ! $hasRejectedRegistration) {
+
+        if (
+            User::where(
+                'email',
+                $sellerEmail
+            )
+            ->where(
+                'registration_status',
+                '!=',
+                'rejected'
+            )
+            ->exists()
+            && ! $hasRejectedRegistration
+        ) {
+
             return redirect()
-                ->route('seller.register')
-                ->with('error', 'This email address is already registered. Please use another email address or log in.');
+                ->route(
+                    'seller.register'
+                )
+                ->with(
+                    'error',
+                    'This email address is already registered. Please use another email address or log in.'
+                );
+
         }
 
-        $verification = session('seller_registration_verification');
+
+        $verification =
+            session(
+                'seller_registration_verification'
+            );
+
 
         if (
             !$verification
-            || ($verification['email'] ?? null) !== ($sellerData['email'] ?? null)
-            || empty($verification['verified'])
+            || ($verification['email'] ?? null)
+                !== ($sellerData['email'] ?? null)
+            || empty(
+                $verification['verified']
+            )
         ) {
+
             return redirect()
-                ->route('seller.review.register')
-                ->with('error', 'Please verify your email address before submitting your registration.');
+                ->route(
+                    'seller.review.register'
+                )
+                ->with(
+                    'error',
+                    'Please verify your email address before submitting your registration.'
+                );
+
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Final Data
-        |--------------------------------------------------------------------------
-        */
 
         $finalData =
             $request->except([
@@ -1226,32 +1152,25 @@ Route::post(
             );
 
 
-        app(AuthController::class)->completeSellerRegistration($sellerData);
+        app(
+            AuthController::class
+        )->completeSellerRegistration(
+            $sellerData
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Session
-        |--------------------------------------------------------------------------
-        */
 
         session()->forget(
             'seller_registration'
         );
+
 
         session()->forget(
             'seller_registration_verification'
         );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN TO LANDING PAGE
-        |--------------------------------------------------------------------------
-        */
-
         return redirect()
-            ->route('landing.page')
+            ->route('login')
             ->with(
                 'success',
                 'Seller registration submitted successfully.'
@@ -1271,23 +1190,12 @@ Route::post(
 
 Route::get('/seller/register/exit', function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Existing Seller Registration
-    |--------------------------------------------------------------------------
-    */
+    $sellerData =
+        session(
+            'seller_registration',
+            []
+        );
 
-    $sellerData = session(
-        'seller_registration',
-        []
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Delete Valid ID
-    |--------------------------------------------------------------------------
-    */
 
     if (
         !empty(
@@ -1304,17 +1212,9 @@ Route::get('/seller/register/exit', function () {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Delete Business Permit
-    |--------------------------------------------------------------------------
-    */
-
     if (
         !empty(
-            $sellerData[
-                'business_permit_path'
-            ]
+            $sellerData['business_permit_path']
         )
     ) {
 
@@ -1326,12 +1226,6 @@ Route::get('/seller/register/exit', function () {
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Delete Registration Folder
-    |--------------------------------------------------------------------------
-    */
 
     if (
         !empty(
@@ -1346,22 +1240,15 @@ Route::get('/seller/register/exit', function () {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Clear Seller Session
-    |--------------------------------------------------------------------------
-    */
-
     session()->forget(
         'seller_registration'
     );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | RETURN TO LANDING PAGE
-    |--------------------------------------------------------------------------
-    */
+    session()->forget(
+        'seller_registration_verification'
+    );
+
 
     return redirect()->route(
         'landing.page'
@@ -1373,9 +1260,7 @@ Route::get('/seller/register/exit', function () {
 
 /*
 |--------------------------------------------------------------------------
-|--------------------------------------------------------------------------
 | BUYER REGISTRATION
-|--------------------------------------------------------------------------
 |--------------------------------------------------------------------------
 |
 | STEP 1 = Buyer Information
@@ -1416,16 +1301,21 @@ Route::post('/buyer/register', function (
     Request $request
 ) {
 
+    $buyerData =
+        session(
+            'buyer_registration',
+            []
+        );
+
+
     /*
     |--------------------------------------------------------------------------
-    | Existing Buyer Session
+    | Remember the previous email BEFORE merging
     |--------------------------------------------------------------------------
     */
 
-    $buyerData = session(
-        'buyer_registration',
-        []
-    );
+    $previousEmail =
+        $buyerData['email'] ?? null;
 
 
     /*
@@ -1456,11 +1346,42 @@ Route::post('/buyer/register', function (
         ]);
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Merge Buyer Data
+    |--------------------------------------------------------------------------
+    */
+
     $buyerData =
         array_merge(
             $buyerData,
             $stepOneData
         );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMPORTANT:
+    | Invalidate old verification when buyer changes email
+    |--------------------------------------------------------------------------
+    */
+
+    $newEmail =
+        $buyerData['email'] ?? null;
+
+
+    if (
+        $previousEmail !== null &&
+        $newEmail !== null &&
+        strtolower(trim($previousEmail)) !==
+        strtolower(trim($newEmail))
+    ) {
+
+        session()->forget(
+            'buyer_registration_verification'
+        );
+
+    }
 
 
     /*
@@ -1474,12 +1395,6 @@ Route::post('/buyer/register', function (
             'valid_id'
         )
     ) {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Delete Previous Valid ID
-        |--------------------------------------------------------------------------
-        */
 
         if (
             !empty(
@@ -1498,12 +1413,6 @@ Route::post('/buyer/register', function (
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Store Valid ID
-        |--------------------------------------------------------------------------
-        */
-
         $file =
             $request->file(
                 'valid_id'
@@ -1516,12 +1425,6 @@ Route::post('/buyer/register', function (
                 'public'
             );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | File Information
-        |--------------------------------------------------------------------------
-        */
 
         $buyerData[
             'valid_id_path'
@@ -1557,7 +1460,7 @@ Route::post('/buyer/register', function (
 
     /*
     |--------------------------------------------------------------------------
-    | Continue To Buyer Review
+    | Continue To Review
     |--------------------------------------------------------------------------
     */
 
@@ -1577,25 +1480,15 @@ Route::post('/buyer/register', function (
 
 Route::get('/buyer/register/review', function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Buyer Registration Data
-    |--------------------------------------------------------------------------
-    */
-
-    $buyerData = session(
-        'buyer_registration',
-        []
-    );
+    $buyerData =
+        session(
+            'buyer_registration',
+            []
+        );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Valid ID URL
-    |--------------------------------------------------------------------------
-    */
-
-    $validIdUrl = null;
+    $validIdUrl =
+        null;
 
 
     if (
@@ -1615,12 +1508,6 @@ Route::get('/buyer/register/review', function () {
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Review Page
-    |--------------------------------------------------------------------------
-    */
 
     return view(
         'auth.buyer-signup.buyer-review-register',
@@ -1645,78 +1532,276 @@ Route::get('/buyer/register/review', function () {
 
 Route::post('/buyer/register/send-code', function () {
 
-    $buyerData = session('buyer_registration', []);
-    $email = $buyerData['email'] ?? null;
+    /*
+    |--------------------------------------------------------------------------
+    | Current Buyer Registration
+    |--------------------------------------------------------------------------
+    */
+
+    $buyerData =
+        session(
+            'buyer_registration',
+            []
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Current Email
+    |--------------------------------------------------------------------------
+    */
+
+    $email =
+        $buyerData['email'] ?? null;
+
 
     if (!$email) {
+
         return response()->json([
-            'message' => 'Your buyer registration session has expired. Please start again.',
+            'message' =>
+                'Your buyer registration session has expired. Please start again.',
         ], 422);
+
     }
 
-    $previousVerification = session('buyer_registration_verification');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Previous Verification
+    |--------------------------------------------------------------------------
+    */
+
+    $previousVerification =
+        session(
+            'buyer_registration_verification'
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resend Cooldown
+    |--------------------------------------------------------------------------
+    */
 
     if (
         $previousVerification
-        && !empty($previousVerification['resend_available_at'])
-        && now()->lessThan($previousVerification['resend_available_at'])
+        && !empty(
+            $previousVerification['resend_available_at']
+        )
+        && now()->lessThan(
+            $previousVerification[
+                'resend_available_at'
+            ]
+        )
     ) {
+
         return response()->json([
-            'retry_after' => now()->diffInSeconds($previousVerification['resend_available_at']),
+            'retry_after' =>
+                now()->diffInSeconds(
+                    $previousVerification[
+                        'resend_available_at'
+                    ]
+                ),
         ], 429);
+
     }
 
-    if (User::where('email', $email)->exists()) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Allow previously rejected registrations to reuse the email
+    |--------------------------------------------------------------------------
+    */
+
+    $hasRejectedRegistration =
+        Registration::where(
+            'email',
+            $email
+        )
+        ->where(
+            'status',
+            'rejected'
+        )
+        ->exists();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing User Check
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        User::where(
+            'email',
+            $email
+        )
+        ->where(
+            'registration_status',
+            '!=',
+            'rejected'
+        )
+        ->exists()
+        && ! $hasRejectedRegistration
+    ) {
+
         return response()->json([
-            'message' => 'This email address is already registered. Please use another email address or log in.',
+            'message' =>
+                'This email address is already registered. Please use another email address or log in.',
         ], 422);
+
     }
 
-    $code = (string) random_int(100000, 999999);
-    $isResend = !empty($previousVerification);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate Verification Code
+    |--------------------------------------------------------------------------
+    */
+
+    $code =
+        (string) random_int(
+            100000,
+            999999
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Determine Resend
+    |--------------------------------------------------------------------------
+    */
+
+    $isResend =
+        !empty(
+            $previousVerification
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Save Verification Session
+    |--------------------------------------------------------------------------
+    */
 
     session([
         'buyer_registration_verification' => [
-            'email' => $email,
-            'code' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
-            'resend_available_at' => now()->addMinutes($isResend ? 10 : 2),
-            'verified' => false,
+
+            'email' =>
+                $email,
+
+            'code' =>
+                Hash::make(
+                    $code
+                ),
+
+            'expires_at' =>
+                now()->addMinutes(
+                    10
+                ),
+
+            'resend_available_at' =>
+                now()->addMinutes(
+                    $isResend
+                        ? 10
+                        : 2
+                ),
+
+            'verified' =>
+                false,
         ],
     ]);
 
-    Mail::to($email)->send(new \App\Mail\BuyerVerificationCode($code));
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEND BUYER VERIFICATION EMAIL
+    |--------------------------------------------------------------------------
+    */
+
+    Mail::to(
+        $email
+    )->send(
+        new \App\Mail\BuyerVerificationCode(
+            $code
+        )
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Success
+    |--------------------------------------------------------------------------
+    */
 
     return response()->json([
-        'message' => 'A verification code has been sent to your email address.',
-    ]);
-})->middleware('guest')->name('buyer.register.send-code');
-
-
-Route::post('/buyer/register/verify-code', function (Request $request) {
-
-    $validated = $request->validate([
-        'code' => ['required', 'digits:6'],
+        'message' =>
+            'A verification code has been sent to your email address.',
     ]);
 
-    $verification = session('buyer_registration_verification');
+})->middleware('guest')
+  ->name('buyer.register.send-code');
+
+
+/*
+|--------------------------------------------------------------------------
+| BUYER VERIFY CODE
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/buyer/register/verify-code', function (
+    Request $request
+) {
+
+    $validated =
+        $request->validate([
+            'code' => [
+                'required',
+                'digits:6'
+            ],
+        ]);
+
+
+    $verification =
+        session(
+            'buyer_registration_verification'
+        );
+
 
     if (
         !$verification
-        || now()->greaterThan($verification['expires_at'])
-        || !Hash::check($validated['code'], $verification['code'])
+        || now()->greaterThan(
+            $verification[
+                'expires_at'
+            ]
+        )
+        || !Hash::check(
+            $validated['code'],
+            $verification['code']
+        )
     ) {
+
         return response()->json([
-            'message' => 'The verification code is invalid or expired.',
+            'message' =>
+                'The verification code is invalid or expired.',
         ], 422);
+
     }
 
-    session()->put('buyer_registration_verification.verified', true);
+
+    session()->put(
+        'buyer_registration_verification.verified',
+        true
+    );
+
 
     return response()->json([
-        'message' => 'Email verified successfully.',
+        'message' =>
+            'Email verified successfully.',
     ]);
-})->middleware('guest')->name('buyer.register.verify-code');
+
+})->middleware('guest')
+  ->name('buyer.register.verify-code');
 
 
 /*
@@ -1735,15 +1820,16 @@ Route::post(
         |--------------------------------------------------------------------------
         */
 
-        $buyerData = session(
-            'buyer_registration',
-            []
-        );
+        $buyerData =
+            session(
+                'buyer_registration',
+                []
+            );
 
 
         /*
         |--------------------------------------------------------------------------
-        | Check Registration
+        | Check Registration Session
         |--------------------------------------------------------------------------
         */
 
@@ -1763,16 +1849,37 @@ Route::post(
         }
 
 
-        $verification = session('buyer_registration_verification');
+        /*
+        |--------------------------------------------------------------------------
+        | IMPORTANT:
+        | Verification must belong to CURRENT email
+        |--------------------------------------------------------------------------
+        */
+
+        $verification =
+            session(
+                'buyer_registration_verification'
+            );
+
 
         if (
             !$verification
-            || ($verification['email'] ?? null) !== ($buyerData['email'] ?? null)
-            || empty($verification['verified'])
+            || ($verification['email'] ?? null)
+                !== ($buyerData['email'] ?? null)
+            || empty(
+                $verification['verified']
+            )
         ) {
+
             return redirect()
-                ->route('buyer.review.register')
-                ->with('error', 'Please verify your email address before submitting your registration.');
+                ->route(
+                    'buyer.review.register'
+                )
+                ->with(
+                    'error',
+                    'Please verify your email address before submitting your registration.'
+                );
+
         }
 
 
@@ -1796,18 +1903,23 @@ Route::post(
             );
 
 
-        app(AuthController::class)->completeBuyerRegistration($buyerData);
+        app(
+            AuthController::class
+        )->completeBuyerRegistration(
+            $buyerData
+        );
 
 
         /*
         |--------------------------------------------------------------------------
-        | Clear Session
+        | Clear Registration Session
         |--------------------------------------------------------------------------
         */
 
         session()->forget(
             'buyer_registration'
         );
+
 
         session()->forget(
             'buyer_registration_verification'
@@ -1816,12 +1928,12 @@ Route::post(
 
         /*
         |--------------------------------------------------------------------------
-        | RETURN TO LANDING PAGE
+        | Return To Landing Page
         |--------------------------------------------------------------------------
         */
 
         return redirect()
-            ->route('landing.page')
+            ->route('login')
             ->with(
                 'success',
                 'Buyer registration submitted successfully.'
@@ -1841,16 +1953,11 @@ Route::post(
 
 Route::get('/buyer/register/exit', function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Existing Buyer Registration
-    |--------------------------------------------------------------------------
-    */
-
-    $buyerData = session(
-        'buyer_registration',
-        []
-    );
+    $buyerData =
+        session(
+            'buyer_registration',
+            []
+        );
 
 
     /*
@@ -1908,9 +2015,14 @@ Route::get('/buyer/register/exit', function () {
     );
 
 
+    session()->forget(
+        'buyer_registration_verification'
+    );
+
+
     /*
     |--------------------------------------------------------------------------
-    | RETURN TO LANDING PAGE
+    | Return To Landing Page
     |--------------------------------------------------------------------------
     */
 
@@ -1921,42 +2033,110 @@ Route::get('/buyer/register/exit', function () {
 })->middleware('guest')
   ->name('buyer.register.exit');
 
-  Route::get('/seller/inventory', function () {
+
+/*
+|--------------------------------------------------------------------------
+| SELLER INVENTORY
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/seller/inventory',
+    [InventoryController::class, 'index']
+)
+    ->middleware('auth')
+    ->name('seller.inventory');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/seller/inventory/products', [ApiSellerInventoryController::class, 'store'])
+        ->name('seller.web.inventory.products.store');
+
+    Route::patch('/seller/inventory/products/{product}/archive', [ApiSellerInventoryController::class, 'archive'])
+        ->name('seller.web.inventory.products.archive');
+
+    Route::patch('/seller/inventory/products/{product}/unarchive', [ApiSellerInventoryController::class, 'unarchive'])
+        ->name('seller.web.inventory.products.unarchive');
+
+    Route::delete('/seller/inventory/products/{product}', [ApiSellerInventoryController::class, 'destroy'])
+        ->name('seller.web.inventory.products.destroy');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| SELLER ORDER STATUS
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/seller/order-status', function () {
 
     abort_unless(
         Auth::user()->role === User::ROLE_SELLER,
         403
     );
 
-    return view('pages.seller.inventory');
-
-})->middleware('auth')
-  ->name('seller.inventory');
-
-  Route::get('/seller/order-status', function () {
-
-    abort_unless(
-        Auth::user()->role === User::ROLE_SELLER,
-        403
-    );
-
-    return view(
-        'pages.seller.order-status'
-    );
+    return app(OrderStatusController::class)->page(request());
 
 })->middleware('auth')
   ->name('seller.order.status');
 
+
+/*
+|--------------------------------------------------------------------------
+| SELLER SHIPPING STATUS
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/seller/shipping-status', function () {
+    abort_unless(Auth::user()->role === User::ROLE_SELLER, 403);
+
+    return app(ShippingStatusController::class)->page(request());
+})->middleware('auth')
+  ->name('seller.shipping.status');
+
+Route::get('/admin/seller-compliance', function () {
 
     abort_unless(
-        Auth::user()->role === User::ROLE_SELLER,
+        Auth::user()->role === User::ROLE_ADMIN,
         403
     );
 
-    return view(
-        'pages.seller.shipping-status'
-    );
-
+    return app(\App\Http\Controllers\Api\Admin\SellerComplianceController::class)->page(request());
 })->middleware('auth')
-  ->name('seller.shipping.status');
+  ->name('admin.seller.compliance');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/seller-compliance/data', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'index'])
+        ->name('admin.seller.compliance.data');
+
+    Route::get('/admin/seller-compliance/data/{seller}', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'show'])
+        ->name('admin.seller.compliance.show');
+
+    Route::post('/admin/seller-compliance/data/{seller}/suspend', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'suspend'])
+        ->name('admin.seller.compliance.suspend');
+
+    Route::post('/admin/seller-compliance/data/products/{product}/approve', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'approveProduct'])
+        ->name('admin.seller.compliance.approve');
+
+    Route::post('/admin/seller-compliance/data/products/{product}/warn', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'warnProduct'])
+        ->name('admin.seller.compliance.warn');
+
+    Route::post('/admin/seller-compliance/data/products/{product}/remove', [\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'removeProduct'])
+        ->name('admin.seller.compliance.remove');
+});
+
+Route::get('/admin/complaints-disputes', function () {
+    return view('pages.admin.complaints-disputes');
+})->name('admin.complaints.disputes');
+
+Route::get('/admin/commission', function () {
+    return view('pages.admin.commission');
+})->name('admin.commission');
+
+Route::get('/admin/logistics-management', function () {
+    return view('pages.admin.logistics-management');
+})->name('admin.logistics.management');
+
+Route::get('/admin/platform-settings', function () {
+    return view('pages.admin.platform-settings');
+})->name('admin.platform.settings');

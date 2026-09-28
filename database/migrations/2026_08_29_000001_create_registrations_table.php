@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
 
             // Account type
-            $table->enum('user_type', ['seller', 'buyer']);
+            $table->enum('user_type', ['seller', 'buyer', 'logistics', 'rider']);
 
             // Personal information
             $table->string('last_name');
             $table->string('first_name');
             $table->string('middle_name')->nullable();
-            $table->enum('sex', ['male', 'female']);
+            $table->enum('sex', ['male', 'female', 'other']);
             $table->date('birthdate');
             $table->string('email')->unique();
             $table->string('phone', 20);

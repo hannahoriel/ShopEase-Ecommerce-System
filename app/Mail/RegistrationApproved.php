@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class RegistrationRejected extends Mailable
+class RegistrationApproved extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -17,8 +17,8 @@ class RegistrationRejected extends Mailable
 
     public function build(): self
     {
-        return $this->subject('Update on your ShopEase registration')
-            ->markdown('emails.registrations.rejected', [
+        return $this->subject('Your ShopEase registration has been approved')
+            ->view('email.registrations.approved', [
                 'registration' => $this->registration,
             ]);
     }

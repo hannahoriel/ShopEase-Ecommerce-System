@@ -50,6 +50,36 @@ class MultiStepRegistrationPersistenceTest extends TestCase
         ]);
     }
 
+    public function test_underage_buyer_cannot_complete_registration(): void
+    {
+        $response = $this->withSession([
+            'buyer_registration' => [
+                'last_name' => 'Young',
+                'first_name' => 'Buyer',
+                'sex' => 'female',
+                'email' => 'underage.buyer@example.com',
+                'contact_no' => '09170000005',
+                'birthday' => now()->subYears(17)->toDateString(),
+                'province' => 'Cebu',
+                'municipality' => 'Cebu City',
+                'barangay' => 'Lahug',
+                'street' => 'Main Street',
+                'house_no' => '14',
+                'password' => 'Password123!',
+                'password_confirmation' => 'Password123!',
+            ],
+            'buyer_registration_verification' => [
+                'email' => 'underage.buyer@example.com',
+                'verified' => true,
+            ],
+        ])->post(route('buyer.register.complete'));
+
+        $response->assertSessionHasErrors('birthday');
+        $this->assertDatabaseMissing('users', [
+            'email' => 'underage.buyer@example.com',
+        ]);
+    }
+
     public function test_seller_completion_persists_user_and_seller_profile(): void
     {
         $response = $this->withSession([
@@ -189,10 +219,6 @@ class MultiStepRegistrationPersistenceTest extends TestCase
         $this->assertDatabaseHas('registrations', [
             'user_id' => $user->id,
             'business_permit_path' => $path,
-        ]);
-        $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'upload_business_permit' => $path,
         ]);
         $this->assertDatabaseHas('sellers', [
             'user_id' => $user->id,

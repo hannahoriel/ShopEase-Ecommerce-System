@@ -4,6 +4,13 @@
 
 @section('content')
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    #admin-content,
+    #admin-content * {
+        font-family: 'Poppins', sans-serif;
+    }
+
     .user-management-scrollbar {
         scrollbar-width: thin;
         scrollbar-color: #c9a39b #f8f4f3;
@@ -37,151 +44,234 @@
     }
 </style>
 
-<div id="admin-content" class="ml-72 pt-[128px] px-6 pb-8 min-h-screen transition-all duration-300">
+<style>
+/* Compact user-details modal: small enough for one-view on desktop,
+   with only a minimal natural scroll on shorter screens. */
+#user-management-modal > .user-management-scrollbar {
+    width: min(920px, calc(100vw - 40px));
+    max-width: 920px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+#user-management-modal > .user-management-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+#user-management-modal > .user-management-scrollbar > .px-9.pt-6.pb-4 {
+    padding: 14px 20px 10px !important;
+}
+#user-management-modal > .user-management-scrollbar > .px-7.pb-6 {
+    padding: 12px 20px !important;
+}
+#user-management-modal .text-\[22px\] { font-size: 19px !important; }
+#user-management-modal .text-\[17px\] { font-size: 13px !important; }
+#user-management-modal .text-\[18px\] { font-size: 14px !important; }
+#user-management-modal .text-\[15px\] { font-size: 13px !important; }
+#user-management-modal .text-\[14px\] { font-size: 12px !important; }
+#user-management-modal .gap-7 { gap: 12px !important; }
+#user-management-modal .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: .55rem !important; }
+#user-management-modal .my-7 { margin-top: 12px !important; margin-bottom: 12px !important; }
+#user-management-modal .mb-6 { margin-bottom: 10px !important; }
+#user-management-modal #user-modal-valid-id-preview {
+    height: 128px !important;
+    cursor: zoom-in;
+}
+#user-management-modal #user-modal-valid-id-link {
+    display: none !important;
+}
+#user-management-modal #user-modal-business-permit-link {
+    min-width: 0 !important;
+    width: 100%;
+    cursor: pointer;
+    text-decoration: none;
+}
 
-    <!-- PAGE HEADER -->
-    <div class="mb-8">
-        <h2 class="text-[26px] font-bold text-gray-900">User Management</h2>
-    </div>
+/* Keep the dynamically-rendered action buttons visible. */
+#user-management-modal #user-modal-actions {
+    min-height: 52px;
+    padding: 10px 20px 14px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #FFFFFF;
+    border-top: 1px solid #E5E7EB;
+}
 
-    <!-- STAT CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+#user-document-modal {
+    display: none;
+}
+#user-document-modal.is-open {
+    display: flex !important;
+}
+#user-document-modal .overflow-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+#user-document-modal .overflow-auto::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+</style>
+
+<div id="admin-content" class="ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300">
+
+    <!-- ==================== STAT CARDS ==================== -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 
         <!-- Buyers -->
-        <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px] relative
-                   flex flex-col justify-between
-                   transition-all duration-300
-                   hover:-translate-y-1 hover:shadow-md"
-        >
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 shrink-0 flex items-center justify-center">
-                    <img
-                        src="{{ asset('icons/admin/user-management/buyer.png') }}"
-                        class="w-14 h-14 object-contain"
-                        alt="Buyers"
-                    >
-                </div>
+        <div class="user-stat-card">
+            <div class="user-stat-main">
+                <img
+                    src="{{ asset('icons/admin/user-management/buyer.png') }}"
+                    class="user-stat-icon"
+                    alt="Buyers"
+                >
 
-                <div class="min-w-0">
-                    <p id="buyers-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                        328
-                    </p>
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
-                        Buyers
-                    </p>
+                <div class="user-stat-content">
+                    <p id="buyers-count-card" class="user-stat-number">328</p>
+                    <p class="user-stat-label">Buyers</p>
                 </div>
             </div>
-
         </div>
 
         <!-- Sellers -->
-        <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px] relative
-                   flex flex-col justify-between
-                   transition-all duration-300
-                   hover:-translate-y-1 hover:shadow-md"
-        >
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 shrink-0 flex items-center justify-center">
-                    <img
-                        src="{{ asset('icons/admin/user-management/seller.png') }}"
-                        class="w-14 h-14 object-contain"
-                        alt="Sellers"
-                    >
-                </div>
+        <div class="user-stat-card">
+            <div class="user-stat-main">
+                <img
+                    src="{{ asset('icons/admin/user-management/seller.png') }}"
+                    class="user-stat-icon"
+                    alt="Sellers"
+                >
 
-                <div class="min-w-0">
-                    <p id="sellers-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                        412
-                    </p>
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
-                        Sellers
-                    </p>
+                <div class="user-stat-content">
+                    <p id="sellers-count-card" class="user-stat-number">412</p>
+                    <p class="user-stat-label">Sellers</p>
                 </div>
             </div>
-
         </div>
 
         <!-- Suspended -->
-        <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px] relative
-                   flex flex-col justify-between
-                   transition-all duration-300
-                   hover:-translate-y-1 hover:shadow-md"
-        >
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 shrink-0 flex items-center justify-center">
-                    <img
-                        src="{{ asset('icons/admin/user-management/suspended.png') }}"
-                        class="w-14 h-14 object-contain"
-                        alt="Suspended"
-                    >
-                </div>
+        <div class="user-stat-card">
+            <div class="user-stat-main">
+                <img
+                    src="{{ asset('icons/admin/user-management/suspended.png') }}"
+                    class="user-stat-icon"
+                    alt="Suspended"
+                >
 
-                <div class="min-w-0">
-                    <p id="suspended-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                        153
-                    </p>
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
-                        Suspended
-                    </p>
+                <div class="user-stat-content">
+                    <p id="suspended-count-card" class="user-stat-number">153</p>
+                    <p class="user-stat-label">Suspended</p>
                 </div>
             </div>
         </div>
 
         <!-- Total Users -->
-        <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px] relative
-                   flex flex-col justify-between
-                   transition-all duration-300
-                   hover:-translate-y-1 hover:shadow-md"
-        >
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 shrink-0 flex items-center justify-center">
-                    <img
-                        src="{{ asset('icons/admin/user-management/total-users.png') }}"
-                        class="w-14 h-14 object-contain"
-                        alt="Total Users"
-                    >
-                </div>
+        <div class="user-stat-card">
+            <div class="user-stat-main">
+                <img
+                    src="{{ asset('icons/admin/user-management/total-users.png') }}"
+                    class="user-stat-icon"
+                    alt="Total Users"
+                >
 
-                <div class="min-w-0">
-                    <p id="total-users-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
-                        1245
-                    </p>
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
-                        Total Users
-                    </p>
+                <div class="user-stat-content">
+                    <p id="total-users-count-card" class="user-stat-number">1245</p>
+                    <p class="user-stat-label">Total Users</p>
                 </div>
             </div>
-
         </div>
 
     </div>
 
-    <!-- FILTER BAR -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
-        <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
+    <style>
+        /* =========================================================
+           USER MANAGEMENT STAT CARDS
+           Matches Dashboard typography, sizing, spacing, and format.
+        ========================================================== */
 
-            <div class="relative flex-1 min-w-0">
+        .user-stat-card {
+            min-height: 90px;
+            background: #FFFFFF;
+            border: 1px solid #F0E9E6;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+            padding: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .user-stat-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(42, 20, 15, 0.07);
+        }
+
+        .user-stat-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-stat-icon {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .user-stat-content {
+            min-width: 0;
+        }
+
+        .user-stat-number {
+            font-size: 23px;
+            line-height: 1;
+            font-weight: 600;
+            color: #17120F;
+        }
+
+        .user-stat-label {
+            margin-top: 5px;
+            font-size: 13px;
+            line-height: 1.15;
+            font-weight: 400;
+            color: #8C8784;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 640px) {
+            .user-stat-card {
+                min-height: 104px;
+            }
+        }
+    </style>
+
+    <!-- FILTER BAR -->
+    <div class="bg-white rounded-2xl shadow-sm border border-[#F0E9E6] p-4 mb-5">
+        <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5">
+
+            <div class="relative w-full xl:w-[330px] xl:flex-none">
                 <input
                     id="user-management-search"
                     type="text"
                     placeholder="Search name, email, and phone"
-                    class="w-full h-[38px] rounded-lg border border-gray-300 bg-white pl-4 pr-11 text-[13px] text-gray-700 placeholder:text-gray-300 outline-none focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10 transition"
+                    class="w-full h-[36px] rounded-lg border border-gray-300 bg-white pl-4 pr-11 text-[13px] text-gray-700 placeholder:text-gray-300 outline-none focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10 transition"
                 >
-                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/>
                 </svg>
             </div>
 
             <div class="relative">
-                <select id="user-management-type" class="appearance-none w-full xl:w-[140px] h-[38px] rounded-lg border border-gray-300 bg-white px-3 pr-9 text-[13px] text-gray-700 outline-none cursor-pointer focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10">
+                <select id="user-management-type" class="appearance-none w-full xl:w-[132px] h-[38px] rounded-lg border border-gray-300 bg-white px-3 pr-9 text-[13px] text-gray-700 outline-none cursor-pointer focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10">
                     <option value="all">All User Types</option>
                     <option value="buyer">Buyer</option>
                     <option value="seller">Seller</option>
@@ -192,7 +282,7 @@
             </div>
 
             <div class="relative">
-                <select id="user-management-status" class="appearance-none w-full xl:w-[140px] h-[38px] rounded-lg border border-gray-300 bg-white px-3 pr-9 text-[13px] text-gray-700 outline-none cursor-pointer focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10">
+                <select id="user-management-status" class="appearance-none w-full xl:w-[132px] h-[38px] rounded-lg border border-gray-300 bg-white px-3 pr-9 text-[13px] text-gray-700 outline-none cursor-pointer focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10">
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="suspended">Suspended</option>
@@ -207,9 +297,9 @@
                 <input
                     id="user-management-date"
                     type="date"
-                    class="w-full xl:w-[205px] h-[38px] rounded-lg border border-gray-300 bg-white px-3 pr-10 text-[13px] text-gray-700 outline-none focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    class="w-full xl:w-[195px] h-[38px] rounded-lg border border-gray-300 bg-white px-3 pr-10 text-[13px] text-gray-700 outline-none focus:border-[#7B1B1B] focus:ring-2 focus:ring-[#7B1B1B]/10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 >
-                <button type="button" id="user-management-date-button" class="absolute right-0 top-0 w-10 h-[38px] flex items-center justify-center text-gray-700 hover:text-[#7B1B1B]" aria-label="Open calendar">
+                <button type="button" id="user-management-date-button" class="absolute right-0 top-0 w-9 h-[36px] flex items-center justify-center text-gray-700 hover:text-[#7B1B1B]" aria-label="Open calendar">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/>
                     </svg>
@@ -225,32 +315,32 @@
     </div>
 
     <!-- USER TABLE -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-[#F0E9E6] overflow-hidden">
         <div class="overflow-x-auto">
             <table id="user-management-table" class="w-full min-w-[980px]">
                 <thead>
                     <tr class="border-b border-gray-200">
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">User</th>
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">User Type</th>
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">Email</th>
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">Phone</th>
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">Date Joined</th>
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">Status</th>
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">User</th>
+                        <th class="text-left px-4 py-3 text-[13px] font-medium text-gray-400">User Type</th>
+                        <th class="text-left px-4 py-3 text-[13px] font-medium text-gray-400">Email</th>
+                        <th class="text-left px-4 py-3 text-[13px] font-medium text-gray-400">Phone</th>
+                        <th class="text-left px-4 py-3 text-[13px] font-medium text-gray-400">Date Joined</th>
+                        <th class="text-left px-4 py-3 text-[13px] font-medium text-gray-400">Status</th>
                     </tr>
                 </thead>
                 <tbody id="user-management-body" class="divide-y divide-gray-200"></tbody>
             </table>
         </div>
 
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-gray-200">
-            <p id="user-management-count" class="text-[13px] text-gray-400">Showing 10 out of 30 users</p>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200">
+            <p id="user-management-count" class="text-[12px] text-gray-400">Showing 10 out of 30 users</p>
 
             <div class="flex items-center gap-2">
-                <button id="user-management-prev" type="button" class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 transition">‹</button>
+                <button id="user-management-prev" type="button" class="w-7 h-7 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 transition">‹</button>
                 <div id="user-management-pages" class="flex items-center gap-2"></div>
-                <button id="user-management-next" type="button" class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 transition">›</button>
+                <button id="user-management-next" type="button" class="w-7 h-7 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 transition">›</button>
 
-                <select id="user-management-items" class="ml-2 h-8 rounded-md border border-[#F0B9AC] bg-[#FFF5F1] px-2 text-[12px] text-gray-700 outline-none cursor-pointer">
+                <select id="user-management-items" class="ml-2 h-7 rounded-md border border-[#F0B9AC] bg-[#FFF5F1] px-2 text-[12px] text-gray-700 outline-none cursor-pointer">
                     <option value="10" selected>Items per page: 10</option>
                     <option value="20">Items per page: 20</option>
                     <option value="50">Items per page: 50</option>
@@ -266,26 +356,26 @@
         aria-hidden="true"
     >
         <div
-            class="user-management-scrollbar relative bg-white w-full max-w-6xl max-h-[94vh] overflow-y-auto rounded-[28px] shadow-2xl"
+            class="user-management-scrollbar relative bg-white w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-[28px] shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="user-modal-title"
         >
 
             <!-- MODAL HEADER -->
-            <div class="px-11 pt-7 pb-4">
+            <div class="px-9 pt-6 pb-4">
                 <div class="flex items-center justify-between">
-                    <h3 id="user-modal-title" class="text-[24px] font-medium text-gray-900">
+                    <h3 id="user-modal-title" class="text-[22px] font-medium text-gray-900">
                         Profile
                     </h3>
 
                     <button
                         type="button"
                         id="close-user-management-modal"
-                        class="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition"
+                        class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition"
                         aria-label="Close"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
                         </svg>
                     </button>
@@ -295,30 +385,30 @@
             </div>
 
             <!-- MODAL BODY -->
-            <div class="px-8 pb-7">
-                <div class="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-8">
+            <div class="px-7 pb-4">
+                <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-5">
 
                     <!-- LEFT PROFILE SUMMARY -->
                     <aside class="px-1 lg:pr-2">
                         <div class="flex items-start gap-4">
-                            <div class="w-[84px] h-[84px] rounded-full bg-[#D9D9D9] flex items-center justify-center shrink-0">
-                                <svg class="w-12 h-12 text-black" viewBox="0 0 24 24" fill="currentColor">
+                            <div class="w-[76px] h-[76px] rounded-full bg-[#D9D9D9] flex items-center justify-center shrink-0">
+                                <svg class="w-10 h-10 text-black" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.42 0-8 2.24-8 5v2h16v-2c0-2.76-3.58-5-8-5Z"/>
                                 </svg>
                             </div>
 
                             <div class="min-w-0 pt-1">
-                                <h4 id="user-profile-name" class="text-[24px] font-medium text-gray-900 leading-tight">
+                                <h4 id="user-profile-name" class="text-[22px] font-medium text-gray-900 leading-tight">
                                     Juan Dela Cruz
                                 </h4>
 
                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                     <div id="user-profile-status"></div>
 
-                                    <div class="flex items-center gap-2 text-[15px] text-gray-900">
+                                    <div class="flex items-center gap-2 text-[14px] text-gray-900">
                                         <img id="user-profile-type-icon"
                                              src="{{ asset('icons/admin/dashboard/body/seller.png') }}"
-                                             class="w-5 h-5 object-contain"
+                                             class="w-[18px] h-[18px] object-contain"
                                              alt="Seller">
                                         <span id="user-profile-type">Seller</span>
                                     </div>
@@ -334,12 +424,12 @@
                                 <svg class="w-5 h-5 shrink-0 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3v3m10-3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z"/>
                                 </svg>
-                                <span class="text-[18px] font-medium text-gray-900">Date Joined</span>
+                                <span class="text-[17px] font-medium text-gray-900">Date Joined</span>
                             </div>
 
                             <div class="mt-4 pl-0">
-                                <p id="user-profile-date" class="text-[15px] text-gray-900">May 31, 2026</p>
-                                <p id="user-profile-time" class="text-[15px] text-gray-900 mt-1">10:30 AM</p>
+                                <p id="user-profile-date" class="text-[14px] text-gray-900">May 31, 2026</p>
+                                <p id="user-profile-time" class="text-[14px] text-gray-900 mt-1">10:30 AM</p>
                             </div>
                         </div>
                     </aside>
@@ -353,40 +443,40 @@
                                 <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M16 11a4 4 0 1 0-3.9-5A4 4 0 0 0 16 11ZM8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 1c-2.7 0-5 1.35-5 3v1h10v-1c0-1.65-2.3-3-5-3ZM8 14c-2.2 0-4 1.1-4 2.5V18h8v-1.5C12 15.1 10.2 14 8 14Z"/>
                                 </svg>
-                                <h4 class="text-[19px] font-semibold text-[#A52A2A]">Personal Information</h4>
+                                <h4 class="text-[18px] font-semibold text-[#A52A2A]">Personal Information</h4>
                             </div>
 
                             <div class="grid grid-cols-1 xl:grid-cols-[1fr_290px] gap-7">
-                                <div class="space-y-5">
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Last Name</span>
                                         <span id="user-modal-last-name" class="text-[15px] font-medium text-gray-900">Dela Cruz</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">First Name</span>
                                         <span id="user-modal-first-name" class="text-[15px] font-medium text-gray-900">Juan</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Middle Name</span>
                                         <span id="user-modal-middle-name" class="text-[15px] font-medium text-gray-900">Amador</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Sex</span>
                                         <span id="user-modal-sex" class="text-[15px] font-medium text-gray-900">Male</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Birthday</span>
                                         <span id="user-modal-birthday" class="text-[15px] font-medium text-gray-900">November 7, 2006</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Age</span>
                                         <span id="user-modal-age" class="text-[15px] font-medium text-gray-900">19</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Email</span>
                                         <span id="user-modal-email" class="text-[15px] font-medium text-gray-900 break-all">juandelacruz@gmail.com</span>
                                     </div>
-                                    <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                    <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                         <span class="text-[15px] text-gray-400">Contact No.</span>
                                         <span id="user-modal-phone" class="text-[15px] font-medium text-gray-900">0917 123 4567</span>
                                     </div>
@@ -427,31 +517,31 @@
                                 <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/>
                                 </svg>
-                                <h4 class="text-[19px] font-semibold text-[#A52A2A]">Address</h4>
+                                <h4 class="text-[18px] font-semibold text-[#A52A2A]">Address</h4>
                             </div>
 
-                            <div class="space-y-5">
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Province</span>
                                     <span id="user-modal-province" class="text-[15px] font-medium text-gray-900">Laguna</span>
                                 </div>
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Municipality</span>
                                     <span id="user-modal-municipality" class="text-[15px] font-medium text-gray-900">Calamba</span>
                                 </div>
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Barangay</span>
                                     <span id="user-modal-barangay" class="text-[15px] font-medium text-gray-900">Masico</span>
                                 </div>
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Street</span>
                                     <span id="user-modal-street" class="text-[15px] font-medium text-gray-900">Block 2 Lot 2, San Lorenzo St.</span>
                                 </div>
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">House No.</span>
                                     <span id="user-modal-house" class="text-[15px] font-medium text-gray-900">587</span>
                                 </div>
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Zip Code</span>
                                     <span id="user-modal-zip" class="text-[15px] font-medium text-gray-900">4020</span>
                                 </div>
@@ -466,21 +556,21 @@
                                 <svg class="w-6 h-6 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9h16v10H4zM7 9V6h10v3M9 13h6"/>
                                 </svg>
-                                <h4 class="text-[19px] font-semibold text-[#A52A2A]">Business Information</h4>
+                                <h4 class="text-[18px] font-semibold text-[#A52A2A]">Business Information</h4>
                             </div>
 
-                            <div class="space-y-5">
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Business Name</span>
                                     <span id="user-modal-business-name" class="text-[15px] font-medium text-gray-900">Dela Cruz Online Boutique</span>
                                 </div>
 
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
                                     <span class="text-[15px] text-gray-400">Category</span>
                                     <span id="user-modal-business-category" class="text-[15px] font-medium text-gray-900">Fashion &amp; Apparel</span>
                                 </div>
 
-                                <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-5 items-center">
+                                <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-4 items-center">
                                     <span class="text-[15px] text-gray-400">Business Permit</span>
 
                                     <a id="user-modal-business-permit-link" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 w-fit min-w-[225px] rounded-lg border border-gray-300 px-3 py-2">
@@ -512,9 +602,26 @@
             <!-- MODAL ACTIONS -->
             <div
                 id="user-modal-actions"
-                class="px-8 pb-7 flex justify-end gap-3"
+                class="px-5 py-3 flex justify-end items-center gap-2 border-t border-gray-200 bg-white"
             >
                 <!-- Dynamically rendered based on status -->
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCUMENT VIEWER MODAL -->
+    <div id="user-document-modal" class="fixed inset-0 z-[180] hidden items-center justify-center bg-black/60 backdrop-blur-[2px] px-4 py-5" aria-hidden="true">
+        <div class="relative bg-white w-full max-w-4xl h-[82vh] rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="user-document-title">
+            <div class="h-12 px-4 flex items-center justify-between border-b border-gray-200">
+                <h3 id="user-document-title" class="text-[14px] font-semibold text-black">Document</h3>
+                <button type="button" id="close-user-document-modal" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition" aria-label="Close document">
+                    <svg class="w-[17px] h-[17px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+            </div>
+            <div class="w-full h-[calc(82vh-48px)] bg-[#F7F7F7] flex items-center justify-center p-3 overflow-auto">
+                <div id="user-document-empty" class="text-[13px] text-gray-400 hidden">Document not available.</div>
+                <img id="user-document-image" src="" alt="Document preview" class="hidden max-w-full max-h-full object-contain rounded-lg shadow-sm">
+                <iframe id="user-document-frame" title="Document preview" class="hidden w-full h-full border-0 rounded-lg bg-white"></iframe>
             </div>
         </div>
     </div>
@@ -550,32 +657,32 @@
                     <div class="mt-2 space-y-2">
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="suspend-reason" value="Violation of platform policies" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Violation of platform policies</span>
+                            <span class="text-[14px] text-gray-900">Violation of platform policies</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="suspend-reason" value="Inappropriate behavior" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Inappropriate behavior</span>
+                            <span class="text-[14px] text-gray-900">Inappropriate behavior</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="suspend-reason" value="Listing of prohibited products" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Listing of prohibited products</span>
+                            <span class="text-[14px] text-gray-900">Listing of prohibited products</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="suspend-reason" value="Fraudulent activity" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Fraudulent activity</span>
+                            <span class="text-[14px] text-gray-900">Fraudulent activity</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="suspend-reason" value="Multiple complaints from users" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Multiple complaints from users</span>
+                            <span class="text-[14px] text-gray-900">Multiple complaints from users</span>
                         </label>
 
                         <label class="flex items-center gap-3 px-3 py-1.5 cursor-pointer">
                             <input type="radio" name="suspend-reason" value="Other (please specify)" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Other (please specify)</span>
+                            <span class="text-[14px] text-gray-900">Other (please specify)</span>
                         </label>
                     </div>
                 </div>
@@ -676,27 +783,27 @@
                     <div class="mt-2 space-y-2">
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="deactivate-reason" value="Severe violation of platform policies" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Severe violation of platform policies</span>
+                            <span class="text-[14px] text-gray-900">Severe violation of platform policies</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="deactivate-reason" value="Fraudulent activity" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Fraudulent activity</span>
+                            <span class="text-[14px] text-gray-900">Fraudulent activity</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="deactivate-reason" value="Abuse or harassment" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Abuse or harassment</span>
+                            <span class="text-[14px] text-gray-900">Abuse or harassment</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="deactivate-reason" value="Request by the user" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Request by the user</span>
+                            <span class="text-[14px] text-gray-900">Request by the user</span>
                         </label>
 
                         <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition">
                             <input type="radio" name="deactivate-reason" value="Other (please specify)" class="w-[18px] h-[18px] accent-[#7B1B1B]">
-                            <span class="text-[15px] text-gray-900">Other (please specify)</span>
+                            <span class="text-[14px] text-gray-900">Other (please specify)</span>
                         </label>
                     </div>
                 </div>
@@ -735,32 +842,338 @@
         </div>
     </div>
 
-    <!-- NOTIFICATION FLASH / TOAST -->
+    <!-- =========================================================
+         ACCOUNT STATUS FLASH MESSAGE
+         Same lower-right feedback style used in Seller Compliance.
+    ========================================================== -->
     <div
         id="account-action-flash"
-        class="fixed right-6 bottom-6 z-[220] hidden w-[370px] rounded-xl border border-[#D8E8D2] bg-white shadow-xl px-4 py-3"
+        class="account-decision-flash"
         role="status"
         aria-live="polite"
+        aria-atomic="true"
     >
-        <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-full bg-[#DDF0D6] flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-[#28721B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-1">
-                <p id="account-action-flash-title" class="text-[14px] font-semibold text-gray-900">Account updated</p>
-                <p id="account-action-flash-message" class="mt-0.5 text-[12px] leading-5 text-gray-500">The user has been notified by email.</p>
-            </div>
-            <button type="button" id="close-account-action-flash" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition" aria-label="Close notification">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
-                </svg>
-            </button>
+        <div id="account-action-flash-icon" class="account-decision-flash-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12l4 4L19 6" />
+            </svg>
         </div>
+
+        <div class="account-decision-flash-copy">
+            <strong id="account-action-flash-title">Account updated</strong>
+            <span id="account-action-flash-message">The account status has been updated.</span>
+        </div>
+
+        <button
+            type="button"
+            id="close-account-action-flash"
+            class="account-decision-flash-close"
+            aria-label="Close notification"
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M6 6l12 12" />
+                <path d="M18 6L6 18" />
+            </svg>
+        </button>
     </div>
 </div>
+
+<style>
+    /* =========================================================
+       DASHBOARD-MATCHED UI TYPOGRAPHY
+    ========================================================== */
+
+    #admin-content .text-gray-900,
+    #admin-content .text-gray-800 {
+        color: #17120F;
+    }
+
+    #admin-content .text-gray-400 {
+        color: #8C8784;
+    }
+
+    #admin-content input,
+    #admin-content select,
+    #admin-content textarea,
+    #admin-content button {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+
+<style>
+/* FINAL USER MANAGEMENT TABLE FONT SIZE */
+#user-management-table tbody,
+#user-management-table tbody tr,
+#user-management-table tbody td,
+#user-management-table tbody td * {
+    font-size: 12px !important;
+}
+
+/* Compact search bar, matching Seller Compliance */
+#user-management-search {
+    width: 330px !important;
+    max-width: 100%;
+}
+
+@media (max-width: 1279px) {
+    #user-management-search {
+        width: 100% !important;
+    }
+}
+
+/* Compact Suspend Account modal */
+#suspend-account-modal > div {
+    width: min(540px, calc(100vw - 40px));
+    max-width: 540px;
+    border-radius: 22px;
+}
+
+#suspend-account-modal .px-8.pt-7.pb-6 {
+    padding: 22px 24px 18px !important;
+}
+
+#suspend-account-modal .px-8.pb-7 {
+    padding: 0 24px 22px !important;
+}
+
+#suspend-account-modal h3 {
+    font-size: 20px !important;
+}
+
+#suspend-account-modal .text-\[16px\] {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+#suspend-account-modal .text-\[17px\] {
+    font-size: 13px !important;
+}
+
+#suspend-account-modal .text-\[14px\] {
+    font-size: 12px !important;
+}
+
+#suspend-account-modal .text-\[13px\] {
+    font-size: 12px !important;
+}
+
+#suspend-account-modal .text-\[12px\] {
+    font-size: 11px !important;
+}
+
+#suspend-account-modal .mt-5 {
+    margin-top: 14px !important;
+}
+
+#suspend-account-modal .mt-4 {
+    margin-top: 12px !important;
+}
+
+#suspend-account-modal .gap-3 {
+    gap: 10px !important;
+}
+
+#suspend-account-modal .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 6px !important;
+}
+
+#suspend-account-modal label {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}
+
+#suspend-account-modal #suspension-duration-input {
+    height: 38px !important;
+    font-size: 12px !important;
+}
+
+#suspend-account-modal textarea {
+    min-height: 58px !important;
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+    font-size: 12px !important;
+}
+
+#suspend-account-modal .px-8.pb-7 button {
+    padding: 8px 18px !important;
+    font-size: 12px !important;
+}
+
+/* =========================================================
+   ACCOUNT STATUS FLASH
+   Matches the Seller Compliance lower-right moderation toast.
+========================================================== */
+.account-decision-flash {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 220;
+    width: min(370px, calc(100vw - 32px));
+    min-height: 72px;
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 14px;
+    box-sizing: border-box;
+    background: #FFFFFF;
+    border: 1px solid #E7E2DF;
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(42, 20, 15, .16);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(14px);
+    transition: opacity .08s ease, transform .08s ease, visibility .08s ease;
+}
+
+.account-decision-flash.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.account-decision-flash.activated {
+    border-color: #BFDDB8;
+}
+
+.account-decision-flash.suspended {
+    border-color: #E7A8AB;
+}
+
+.account-decision-flash.deactivated {
+    border-color: #F0C776;
+}
+
+.account-decision-flash-icon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #E7F4E3;
+    color: #28721B;
+}
+
+.account-decision-flash.suspended .account-decision-flash-icon {
+    background: #FFE3E5;
+    color: #B3262E;
+}
+
+.account-decision-flash.deactivated .account-decision-flash-icon {
+    background: #FFF1D6;
+    color: #A56500;
+}
+
+.account-decision-flash-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.account-decision-flash-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: grid;
+    gap: 3px;
+    padding-top: 1px;
+}
+
+.account-decision-flash-copy strong {
+    font-size: 13px;
+    line-height: 1.25;
+    font-weight: 600;
+    color: #17120F;
+}
+
+.account-decision-flash-copy span {
+    font-size: 11px;
+    line-height: 1.45;
+    font-weight: 400;
+    color: #77716E;
+}
+
+.account-decision-flash-close {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -2px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #AAA4A1;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.account-decision-flash-close:hover {
+    background: #F6F2F0;
+    color: #5D5754;
+}
+
+.account-decision-flash-close svg {
+    width: 15px;
+    height: 15px;
+}
+
+@media (max-width: 640px) {
+    .account-decision-flash {
+        right: 16px;
+        bottom: 16px;
+    }
+}
+</style>
 @endsection
+
+
+<style>
+    /* =========================================================
+       USER MANAGEMENT FILTER COLOR CONSISTENCY
+       Matches the Seller Compliance filter/search styling.
+    ========================================================== */
+
+    #user-management-search,
+    #user-management-type,
+    #user-management-status,
+    #user-management-date {
+        border-color: #D9D6D4 !important;
+        background-color: #FFFFFF !important;
+        color: #76716E !important;
+    }
+
+    #user-management-search::placeholder {
+        color: #76716E !important;
+        opacity: 1;
+    }
+
+    #user-management-search + svg,
+    #user-management-type + svg,
+    #user-management-status + svg,
+    #user-management-date-button {
+        color: #76716E !important;
+    }
+
+    #user-management-date::-webkit-datetime-edit,
+    #user-management-date::-webkit-datetime-edit-fields-wrapper,
+    #user-management-date::-webkit-datetime-edit-text,
+    #user-management-date::-webkit-datetime-edit-month-field,
+    #user-management-date::-webkit-datetime-edit-day-field,
+    #user-management-date::-webkit-datetime-edit-year-field {
+        color: #76716E !important;
+    }
+
+    #user-management-search:focus,
+    #user-management-type:focus,
+    #user-management-status:focus,
+    #user-management-date:focus {
+        border-color: #7B1B1B !important;
+        box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
+    }
+</style>
 
 @push('scripts')
 <script>
@@ -820,6 +1233,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const dateBtn = document.getElementById('user-management-date-button');
 
     const modal = document.getElementById('user-management-modal');
+    const documentModal = document.getElementById('user-document-modal');
+    const documentFrame = document.getElementById('user-document-frame');
+    const documentImage = document.getElementById('user-document-image');
+    const documentEmpty = document.getElementById('user-document-empty');
+    const documentTitle = document.getElementById('user-document-title');
     const suspendModal = document.getElementById('suspend-account-modal');
     const deactivateModal = document.getElementById('deactivate-account-modal');
     const actionFlash = document.getElementById('account-action-flash');
@@ -855,10 +1273,10 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="flex items-center gap-2">
             <img
                 src="${iconBase}/${icon}"
-                class="w-5 h-5 object-contain"
+                class="w-[18px] h-[18px] object-contain"
                 alt="${label}"
             >
-            <span class="text-[13px] text-gray-800">
+            <span class="text-[12px] text-gray-800">
                 ${label}
             </span>
         </div>
@@ -893,17 +1311,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tbody.innerHTML = pageItems.map(user => `
             <tr class="user-management-row cursor-pointer hover:bg-[#FFF9F7] transition" data-id="${user.id}" tabindex="0" role="button">
-                <td class="px-5 py-3">
+                <td class="px-4 py-2.5">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-[#F4D0CA] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">${initials(user.name)}</div>
-                        <span class="text-[13px] font-medium text-gray-800">${user.name}</span>
+                        <div class="w-7 h-7 rounded-full bg-[#F4D0CA] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">${initials(user.name)}</div>
+                        <span class="text-[12px] font-medium text-gray-800">${user.name}</span>
                     </div>
                 </td>
-                <td class="px-5 py-3">${typeIcon(user.type)}</td>
-                <td class="px-5 py-3 text-[13px] text-gray-400">${user.email}</td>
-                <td class="px-5 py-3 text-[13px] text-gray-800">${user.phone}</td>
-                <td class="px-5 py-3"><div class="text-[13px] text-gray-800">${user.dateLabel}</div><div class="text-[12px] text-gray-400">10:30 AM</div></td>
-                <td class="px-5 py-3">${statusBadge(user.status)}</td>
+                <td class="px-4 py-2.5">${typeIcon(user.type)}</td>
+                <td class="px-4 py-2.5 text-[12px] text-gray-400">${user.email}</td>
+                <td class="px-4 py-2.5 text-[12px] text-gray-800">${user.phone}</td>
+                <td class="px-4 py-2.5"><div class="text-[13px] text-gray-800">${user.dateLabel}</div><div class="text-[11px] text-gray-400">10:30 AM</div></td>
+                <td class="px-4 py-2.5">${statusBadge(user.status)}</td>
             </tr>
         `).join('');
 
@@ -922,7 +1340,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = page;
-            btn.className = `w-8 h-8 flex items-center justify-center rounded-md text-[12px] transition ${page === state.page ? 'bg-[#FFD1C2] text-[#7B1B1B] font-semibold' : 'hover:bg-gray-100 text-gray-700'}`;
+            btn.className = `w-7 h-7 flex items-center justify-center rounded-md text-[12px] transition ${page === state.page ? 'bg-[#FFD1C2] text-[#7B1B1B] font-semibold' : 'hover:bg-gray-100 text-gray-700'}`;
             btn.addEventListener('click', () => { state.page = page; render(); });
             pagesWrap.appendChild(btn);
         }
@@ -958,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button
                     type="button"
                     id="user-modal-suspend"
-                    class="px-7 py-2.5 rounded-lg border border-[#D41F1F] bg-[#FFE0E0] text-[#AE0000] text-[14px] font-semibold hover:bg-[#FFD1D1] transition"
+                    class="px-6 py-2 rounded-lg border border-[#D41F1F] bg-[#FFE0E0] text-[#AE0000] text-[13px] font-semibold hover:bg-[#FFD1D1] transition"
                 >
                     Suspend
                 </button>
@@ -966,7 +1384,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button
                     type="button"
                     id="user-modal-deactivate"
-                    class="px-7 py-2.5 rounded-lg border border-[#F08B4D] bg-[#FFF0E6] text-[#C96A00] text-[14px] font-semibold hover:bg-[#FFE6D8] transition"
+                    class="px-6 py-2 rounded-lg border border-[#F08B4D] bg-[#FFF0E6] text-[#C96A00] text-[13px] font-semibold hover:bg-[#FFE6D8] transition"
                 >
                     Deactivate
                 </button>
@@ -980,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button
                     type="button"
                     id="user-modal-activate"
-                    class="px-7 py-2.5 rounded-lg border border-[#79C56C] bg-[#DDF0D6] text-[#16710C] text-[14px] font-semibold hover:bg-[#D2EAC9] transition"
+                    class="px-6 py-2 rounded-lg border border-[#79C56C] bg-[#DDF0D6] text-[#16710C] text-[13px] font-semibold hover:bg-[#D2EAC9] transition"
                 >
                     Activate
                 </button>
@@ -990,7 +1408,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button
                     type="button"
                     id="user-modal-activate"
-                    class="px-7 py-2.5 rounded-lg border border-[#79C56C] bg-[#DDF0D6] text-[#16710C] text-[14px] font-semibold hover:bg-[#D2EAC9] transition"
+                    class="px-6 py-2 rounded-lg border border-[#79C56C] bg-[#DDF0D6] text-[#16710C] text-[13px] font-semibold hover:bg-[#D2EAC9] transition"
                 >
                     Activate
                 </button>
@@ -1008,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', function () {
             deactivateBtn.addEventListener('click', openDeactivateAccountModal);
         }
         if (activateBtn) {
-            activateBtn.addEventListener('click', () => updateSelectedStatus('active'));
+            activateBtn.addEventListener('click', () => updateSelectedStatus('active', true));
         }
     }
 
@@ -1070,20 +1488,58 @@ document.addEventListener('DOMContentLoaded', function () {
         deactivateModal.setAttribute('aria-hidden', 'true');
     }
 
-    function showActionFlash(title, message) {
-        document.getElementById('account-action-flash-title').textContent = title;
-        document.getElementById('account-action-flash-message').textContent = message;
+    function closeActionFlash() {
+        if (flashTimeout) {
+            clearTimeout(flashTimeout);
+            flashTimeout = null;
+        }
 
-        actionFlash.classList.remove('hidden');
-        if (flashTimeout) clearTimeout(flashTimeout);
-        flashTimeout = setTimeout(() => {
-            actionFlash.classList.add('hidden');
-        }, 4500);
+        actionFlash?.classList.remove('show');
     }
 
-    function closeActionFlash() {
-        if (flashTimeout) clearTimeout(flashTimeout);
-        actionFlash.classList.add('hidden');
+    function showActionFlash(status, user) {
+        if (!actionFlash) return;
+
+        const userName = user?.name || 'User';
+        const userEmail = user?.email || 'their registered email address';
+
+        const config = {
+            active: {
+                className: 'activated',
+                title: 'Account Activated',
+                message: `${userName}'s account has been activated. A notification will be sent to ${userEmail}.`
+            },
+            suspended: {
+                className: 'suspended',
+                title: 'Account Suspended',
+                message: `${userName}'s account has been suspended. A notification will be sent to ${userEmail}.`
+            },
+            deactivated: {
+                className: 'deactivated',
+                title: 'Account Deactivated',
+                message: `${userName}'s account has been deactivated. A notification will be sent to ${userEmail}.`
+            }
+        }[status] || {
+            className: 'activated',
+            title: 'Account Updated',
+            message: `${userName}'s account status has been updated. A notification will be sent to ${userEmail}.`
+        };
+
+        document.getElementById('account-action-flash-title').textContent = config.title;
+        document.getElementById('account-action-flash-message').textContent = config.message;
+
+        actionFlash.classList.remove('activated', 'suspended', 'deactivated');
+        actionFlash.classList.add(config.className);
+
+        if (flashTimeout) {
+            clearTimeout(flashTimeout);
+            flashTimeout = null;
+        }
+
+        // Immediate display on the same action click.
+        actionFlash.classList.add('show');
+
+        flashTimeout = setTimeout(closeActionFlash, 3800);
     }
 
     function getSelectedRadioValue(name) {
@@ -1108,15 +1564,38 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const badgeClasses = [
-            ['bg-[#FFE3E2]', 'text-[#A52A2A]'],
-            ['bg-[#DCEBD9]', 'text-[#2D6D27]'],
-        ];
+        const categoryStyles = {
+            'pet-supplies': { background: '#E7F5E9', color: '#2F6B3A' },
+            'electronics-and-gadgets': { background: '#DDEBFF', color: '#185FA3' },
+            'womens-apparel': { background: '#F9DFEA', color: '#A12763' },
+            'mens-apparel': { background: '#E6E2F8', color: '#5A4A9A' },
+            'kids-and-baby': { background: '#FFE5B8', color: '#9A5B00' },
+            'home-and-garden': { background: '#DDF3E4', color: '#27704A' },
+            'sports-and-outdoors': { background: '#DDECF2', color: '#23627A' },
+            'health-and-beauty': { background: '#FFE0DC', color: '#A63B2C' },
+            'books-and-media': { background: '#E6E8F2', color: '#3F4A68' },
+            'food-and-gourmet': { background: '#FFF0C7', color: '#8A5A00' },
+            'automotive-motorcycle': { background: '#E3E3E3', color: '#434343' },
+            'furniture-and-office-equipment': { background: '#EBDCCF', color: '#795548' },
+            'jewelry-and-watches': { background: '#F8E2B8', color: '#946B00' },
+            'office-and-school-supplies': { background: '#E2F0F7', color: '#2B617D' },
+            'default': { background: '#F1EFEE', color: '#6B6663' },
+        };
 
-        categoryValues.forEach((category, index) => {
+        const slugifyCategory = (category) => String(category || '')
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+        categoryValues.forEach((category) => {
             const badge = document.createElement('span');
-            const [backgroundClass, textClass] = badgeClasses[index % badgeClasses.length];
-            badge.className = `inline-flex items-center rounded-full px-3 py-1 text-[12px] font-medium ${backgroundClass} ${textClass}`;
+            const style = categoryStyles[slugifyCategory(category)] || categoryStyles.default;
+
+            badge.className = 'inline-flex items-center rounded-full px-3 py-1 text-[12px] font-medium';
+            badge.style.backgroundColor = style.background;
+            badge.style.color = style.color;
             badge.textContent = category;
             categories.appendChild(badge);
         });
@@ -1158,12 +1637,14 @@ document.addEventListener('DOMContentLoaded', function () {
         validId.src = details.valid_id_url || '';
         validId.classList.toggle('hidden', !details.valid_id_url);
         validIdEmpty.classList.toggle('hidden', Boolean(details.valid_id_url));
-        validIdLink.href = details.valid_id_url || '#';
-        validIdLink.classList.toggle('hidden', !details.valid_id_url);
+        validIdLink.href = '#';
+        validIdLink.dataset.url = details.valid_id_url || '';
+        validIdLink.classList.add('hidden');
 
         const permitLink = document.getElementById('user-modal-business-permit-link');
         const permitName = document.getElementById('user-modal-business-permit');
-        permitLink.href = details.business_permit_url || '#';
+        permitLink.href = '#';
+        permitLink.dataset.url = details.business_permit_url || '';
         permitLink.classList.toggle('pointer-events-none', !details.business_permit_url);
         permitName.textContent = details.upload_business_permit
             ? details.upload_business_permit.split('/').pop()
@@ -1241,41 +1722,108 @@ document.addEventListener('DOMContentLoaded', function () {
         const user = users.find(u => u.id === selectedUser.id);
         if (!user) return;
 
-        const response = await fetch(statusUrl.replace('__USER__', user.id), {
-            method: 'PATCH',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ status: newStatus, ...action })
-        });
+        const previousUserState = { ...user };
+        const previousCounts = { ...counts };
+        const previousStatus = user.status;
 
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            alert(error.message || 'Unable to update this account.');
-            return;
+        // =========================================================
+        // IMMEDIATE / OPTIMISTIC UI UPDATE
+        // Status, buttons, table and flash all change on the same click.
+        // =========================================================
+        user.status = newStatus;
+
+        if (newStatus === 'suspended') {
+            user.suspensionDays = Number(action.duration || user.suspensionDays || 7);
+        } else {
+            user.suspensionDays = 0;
         }
 
-        const result = await response.json();
-        Object.assign(user, result.user);
-        Object.assign(counts, result.counts);
+        if (previousStatus !== newStatus) {
+            if (previousStatus === 'suspended' && newStatus !== 'suspended') {
+                counts.suspended = Math.max(0, Number(counts.suspended || 0) - 1);
+            } else if (previousStatus !== 'suspended' && newStatus === 'suspended') {
+                counts.suspended = Number(counts.suspended || 0) + 1;
+            }
+        }
 
         selectedUser = user;
 
+        // Change the profile status immediately.
         document.getElementById('user-profile-status').innerHTML = statusBadge(user.status);
 
+        // Change Suspend / Deactivate / Activate buttons immediately.
         renderModalActions(user);
+
+        // Change the status shown in the table immediately.
         render();
+
+        // Update the summary card immediately when suspension count changes.
         updateCards();
 
+        // Show the color-coded flash in the same browser frame.
         if (notifyUser) {
-            const actionWord = newStatus === 'suspended' ? 'suspended' : 'deactivated';
-            showActionFlash(
-                `Account ${newStatus === 'suspended' ? 'Suspended' : 'Deactivated'}`,
-                `${user.name}'s account has been ${actionWord}. A notification has been sent to ${user.email}.`
-            );
+            showActionFlash(newStatus, user);
+        }
+
+        try {
+            const response = await fetch(statusUrl.replace('__USER__', user.id), {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ status: newStatus, ...action })
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+
+                // Revert the optimistic UI when the backend rejects the action.
+                Object.assign(user, previousUserState);
+                Object.keys(counts).forEach(key => delete counts[key]);
+                Object.assign(counts, previousCounts);
+
+                selectedUser = user;
+                document.getElementById('user-profile-status').innerHTML = statusBadge(user.status);
+                renderModalActions(user);
+                render();
+                updateCards();
+
+                closeActionFlash();
+                alert(error.message || 'Unable to update this account.');
+                return;
+            }
+
+            const result = await response.json();
+
+            // Sync with the authoritative backend result without showing another toast.
+            Object.assign(user, result.user);
+            Object.assign(counts, result.counts);
+
+            selectedUser = user;
+            document.getElementById('user-profile-status').innerHTML = statusBadge(user.status);
+            renderModalActions(user);
+            render();
+            updateCards();
+
+        } catch (error) {
+            console.error(error);
+
+            // Revert the optimistic UI if the request itself fails.
+            Object.assign(user, previousUserState);
+            Object.keys(counts).forEach(key => delete counts[key]);
+            Object.assign(counts, previousCounts);
+
+            selectedUser = user;
+            document.getElementById('user-profile-status').innerHTML = statusBadge(user.status);
+            renderModalActions(user);
+            render();
+            updateCards();
+
+            closeActionFlash();
+            alert('Something went wrong while updating the account.');
         }
     }
 
@@ -1336,6 +1884,50 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         const user = users.find(u => u.id === Number(row.dataset.id));
         if (user) openModal(user);
+    });
+
+    function openDocumentModal(url, title) {
+        if (!url) return;
+        documentTitle.textContent = title || 'Document';
+        documentEmpty.classList.add('hidden');
+        documentImage.classList.add('hidden');
+        documentFrame.classList.add('hidden');
+        documentImage.src = '';
+        documentFrame.src = 'about:blank';
+        const path = String(url).split('?')[0].toLowerCase();
+        const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path);
+        if (isImage) {
+            documentImage.src = url;
+            documentImage.classList.remove('hidden');
+        } else {
+            documentFrame.src = url;
+            documentFrame.classList.remove('hidden');
+        }
+        documentModal.classList.remove('hidden');
+        documentModal.classList.add('flex', 'is-open');
+        documentModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDocumentModal() {
+        documentModal.classList.add('hidden');
+        documentModal.classList.remove('flex', 'is-open');
+        documentModal.setAttribute('aria-hidden', 'true');
+        documentImage.src = '';
+        documentFrame.src = 'about:blank';
+    }
+
+    document.getElementById('user-modal-valid-id-preview').addEventListener('click', function () {
+        openDocumentModal(document.getElementById('user-modal-valid-id-link').dataset.url, 'Valid ID');
+    });
+
+    document.getElementById('user-modal-business-permit-link').addEventListener('click', function (event) {
+        event.preventDefault();
+        openDocumentModal(this.dataset.url, 'Business Permit');
+    });
+
+    document.getElementById('close-user-document-modal').addEventListener('click', closeDocumentModal);
+    documentModal.addEventListener('click', function (event) {
+        if (event.target === documentModal) closeDocumentModal();
     });
 
     document.getElementById('close-user-management-modal').addEventListener('click', closeModal);
@@ -1442,6 +2034,8 @@ document.addEventListener('DOMContentLoaded', function () {
             closeDeactivateAccountModal();
             return;
         }
+
+        if (!documentModal.classList.contains('hidden')) { closeDocumentModal(); return; }
 
         if (!modal.classList.contains('hidden')) closeModal();
     });

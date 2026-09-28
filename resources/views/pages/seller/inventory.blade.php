@@ -21,6 +21,266 @@
 ========================================================= --}}
 
 
+
+@php
+    /*
+     * Seller inventory categories:
+     * Only categories selected during seller registration
+     * should be available in Inventory filters / Add Product.
+     *
+     * Preferred controller variable:
+     *     $sellerCategories
+     *
+     * Compatible with the registration page data:
+     *     $sellerData['categories']
+     */
+    $rawSellerCategories =
+        $sellerCategories
+        ?? ($sellerData['categories'] ?? []);
+
+    if (is_string($rawSellerCategories)) {
+        $trimmedSellerCategories =
+            trim($rawSellerCategories);
+
+        $decodedSellerCategories =
+            json_decode(
+                $trimmedSellerCategories,
+                true
+            );
+
+        if (is_array($decodedSellerCategories)) {
+            $rawSellerCategories =
+                $decodedSellerCategories;
+        } elseif ($trimmedSellerCategories !== '') {
+            $rawSellerCategories =
+                array_values(
+                    array_filter(
+                        array_map(
+                            'trim',
+                            explode(
+                                ',',
+                                $trimmedSellerCategories
+                            )
+                        )
+                    )
+                );
+        } else {
+            $rawSellerCategories = [];
+        }
+    }
+
+    if (!is_array($rawSellerCategories)) {
+        $rawSellerCategories = [];
+    }
+
+    $inventoryCategoryDefinitions = [
+        [
+            'label' => 'Pet Supplies',
+            'slug' => 'pet-supplies',
+            'aliases' => [
+                'Pet Supplies',
+            ],
+        ],
+        [
+            'label' => 'Electronics and Gadgets',
+            'slug' => 'electronics-and-gadgets',
+            'aliases' => [
+                'Electronics and Gadgets',
+                'Electronics & Gadgets',
+            ],
+        ],
+        [
+            'label' => "Women's Apparel",
+            'slug' => 'womens-apparel',
+            'aliases' => [
+                "Women's Apparel",
+                'Women’s Apparel',
+            ],
+        ],
+        [
+            'label' => "Men's Apparel",
+            'slug' => 'mens-apparel',
+            'aliases' => [
+                "Men's Apparel",
+                'Men’s Apparel',
+            ],
+        ],
+        [
+            'label' => 'Kids and Baby',
+            'slug' => 'kids-and-baby',
+            'aliases' => [
+                'Kids and Baby',
+                'Kids & Baby',
+            ],
+        ],
+        [
+            'label' => 'Home and Garden',
+            'slug' => 'home-and-garden',
+            'aliases' => [
+                'Home and Garden',
+                'Home & Garden',
+            ],
+        ],
+        [
+            'label' => 'Sports and Outdoors',
+            'slug' => 'sports-and-outdoors',
+            'aliases' => [
+                'Sports and Outdoors',
+                'Sports & Outdoors',
+            ],
+        ],
+        [
+            'label' => 'Health and Beauty',
+            'slug' => 'health-and-beauty',
+            'aliases' => [
+                'Health and Beauty',
+                'Health & Beauty',
+            ],
+        ],
+        [
+            'label' => 'Books and Media',
+            'slug' => 'books-and-media',
+            'aliases' => [
+                'Books and Media',
+                'Books & Media',
+            ],
+        ],
+        [
+            'label' => 'Food and Gourmet',
+            'slug' => 'food-and-gourmet',
+            'aliases' => [
+                'Food and Gourmet',
+                'Food & Gourmet',
+            ],
+        ],
+        [
+            'label' => 'Automotive & Motorcycle',
+            'slug' => 'automotive-motorcycle',
+            'aliases' => [
+                'Automotive & Motorcycle',
+                'Automotive and Motorcycle',
+            ],
+        ],
+        [
+            'label' => 'Furniture and Office Equipment',
+            'slug' => 'furniture-and-office-equipment',
+            'aliases' => [
+                'Furniture and Office Equipment',
+                'Furniture & Office Equipment',
+            ],
+        ],
+        [
+            'label' => 'Jewelry and Watches',
+            'slug' => 'jewelry-and-watches',
+            'aliases' => [
+                'Jewelry and Watches',
+                'Jewelry & Watches',
+            ],
+        ],
+        [
+            'label' => 'Office and School Supplies',
+            'slug' => 'office-and-school-supplies',
+            'aliases' => [
+                'Office and School Supplies',
+                'Office & School Supplies',
+            ],
+        ],
+    ];
+
+    $normalizeSellerCategory =
+        function ($category) {
+            $value =
+                html_entity_decode(
+                    (string) $category,
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+            $value =
+                str_replace(
+                    ['’', '&'],
+                    ["'", 'and'],
+                    $value
+                );
+
+            $value =
+                preg_replace(
+                    '/\s+/',
+                    ' ',
+                    trim($value)
+                );
+
+            return strtolower($value);
+        };
+
+    $sellerInventoryCategories = [];
+
+    /*
+     * Registered seller address shown as the product's "Ships From".
+     * InventoryController already passes the logged-in Seller model as $seller.
+     */
+    $sellerShipFromAddress =
+        collect([
+            $seller->house_number ?? null,
+            $seller->street ?? null,
+            $seller->barangay ?? null,
+            $seller->municipality ?? null,
+            $seller->province ?? null,
+        ])
+        ->filter(
+            fn ($value) =>
+                filled($value)
+        )
+        ->implode(', ');
+
+    if ($sellerShipFromAddress === '') {
+        $sellerShipFromAddress =
+            'Registered seller address';
+    }
+
+    foreach ($rawSellerCategories as $selectedCategory) {
+        $normalizedSelected =
+            $normalizeSellerCategory(
+                $selectedCategory
+            );
+
+        foreach ($inventoryCategoryDefinitions as $definition) {
+            $matchesCategory = false;
+
+            foreach ($definition['aliases'] as $alias) {
+                if (
+                    $normalizeSellerCategory($alias)
+                    === $normalizedSelected
+                ) {
+                    $matchesCategory = true;
+                    break;
+                }
+            }
+
+            if (!$matchesCategory) {
+                continue;
+            }
+
+            $alreadyAdded =
+                collect(
+                    $sellerInventoryCategories
+                )->contains(
+                    'slug',
+                    $definition['slug']
+                );
+
+            if (!$alreadyAdded) {
+                $sellerInventoryCategories[] = [
+                    'label' => $definition['label'],
+                    'slug' => $definition['slug'],
+                ];
+            }
+
+            break;
+        }
+    }
+@endphp
+
 <!DOCTYPE html>
 
 <html lang="en">
@@ -33,6 +293,8 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>
         ShopEase - Inventory
@@ -65,8 +327,24 @@
     ====================================================== --}}
 
     @vite([
-        'resources/css/app.css'
+        'resources/css/app.css',
+        'resources/css/seller/inventory.css',
+        'resources/js/seller/inventory.js',
     ])
+
+    {{-- Runtime data/config for the extracted inventory JavaScript --}}
+    @php
+        $sellerInventoryConfig = [
+            'sellerRegisteredCategories' => array_column($sellerInventoryCategories, 'slug'),
+            'sellerShipFromAddress' => $sellerShipFromAddress,
+            'inventoryProducts' => $inventoryProducts ?? [],
+            'archivedProducts' => $archivedProducts ?? [],
+            'inventoryProductsUrl' => url('/seller/inventory/products'),
+            'storageUrl' => asset('storage'),
+            'storeProductUrl' => url('/seller/inventory/products'),
+        ];
+    @endphp
+    <script type="application/json" id="sellerInventoryConfig">{!! json_encode($sellerInventoryConfig, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 
 </head>
 
@@ -142,104 +420,46 @@
 
 
             {{-- =================================================
-                 PAGE HEADER
+                 INVENTORY ACTIONS
             ================================================== --}}
 
             <div
                 class="
+                    inventory-page-actions
                     flex
-                    items-end
-                    justify-between
-
-                    gap-6
-
-                    mb-[18px]
+                    items-center
+                    justify-end
+                    mb-[12px]
                 "
             >
 
-                <div>
-
-                    <h2
-                        class="
-                            text-[28px]
-                            leading-tight
-                            font-semibold
-                            text-[#17120F]
-                        "
-                    >
-                        Inventory
-                    </h2>
-
-
-                    <p
-                        class="
-                            mt-[3px]
-
-                            text-[19px]
-
-                            leading-tight
-
-                            text-[#999393]
-                        "
-                    >
-                        Manage your products, stocks, prices, and promotions.
-                    </p>
-
-                </div>
-
-
-
-                {{-- =================================================
-                     ADD PRODUCT
-                ================================================== --}}
-
                 <button
                     type="button"
-
                     id="openAddProductModal"
-
                     class="
                         shrink-0
-
                         inline-flex
                         items-center
                         justify-center
-
                         gap-2
-
                         h-[34px]
-
                         px-[16px]
-
                         rounded-[8px]
-
                         bg-[#9E241F]
-
                         text-white
-
                         text-[13px]
-
                         font-semibold
-
                         shadow-sm
-
                         transition-all
                         duration-200
-
                         hover:bg-[#861D19]
                         hover:-translate-y-[1px]
                         hover:shadow-md
-
                         active:scale-[0.98]
                     "
                 >
-
                     <span
-                        class="
-                            text-[20px]
-                            leading-none
-                            font-light
-                        "
+                        class="text-[20px] leading-none font-light"
                     >
                         +
                     </span>
@@ -247,7 +467,6 @@
                     <span>
                         Add Product
                     </span>
-
                 </button>
 
             </div>
@@ -568,61 +787,18 @@
                                 All Categories
                             </option>
 
-                            <option value="pet-supplies">
-                                Pet Supplies
-                            </option>
-
-                            <option value="electronics-and-gadgets">
-                                Electronics and Gadgets
-                            </option>
-
-                            <option value="womens-apparel">
-                                Women&#039;s Apparel
-                            </option>
-
-                            <option value="mens-apparel">
-                                Men&#039;s Apparel
-                            </option>
-
-                            <option value="kids-and-baby">
-                                Kids and Baby
-                            </option>
-
-                            <option value="home-and-garden">
-                                Home and Garden
-                            </option>
-
-                            <option value="sports-and-outdoors">
-                                Sports and Outdoors
-                            </option>
-
-                            <option value="health-and-beauty">
-                                Health and Beauty
-                            </option>
-
-                            <option value="books-and-media">
-                                Books and Media
-                            </option>
-
-                            <option value="food-and-gourmet">
-                                Food and Gourmet
-                            </option>
-
-                            <option value="automotive-motorcycle">
-                                Automotive &amp; Motorcycle
-                            </option>
-
-                            <option value="furniture-and-office-equipment">
-                                Furniture and Office Equipment
-                            </option>
-
-                            <option value="jewelry-and-watches">
-                                Jewelry and Watches
-                            </option>
-
-                            <option value="office-and-school-supplies">
-                                Office and School Supplies
-                            </option>
+                            @forelse ($sellerInventoryCategories as $category)
+                                <option value="{{ $category['slug'] }}">
+                                    {{ $category['label'] }}
+                                </option>
+                            @empty
+                                <option
+                                    value=""
+                                    disabled
+                                >
+                                    No registered categories
+                                </option>
+                            @endforelse
                         </select>
 
 
@@ -666,6 +842,14 @@
 
                             <option value="all">
                                 Status
+                            </option>
+
+                            <option value="pending">
+                                Pending
+                            </option>
+
+                            <option value="warning">
+                                Issue Warning
                             </option>
 
                             <option value="in-stock">
@@ -885,780 +1069,7 @@
                     id="allProductsTable"
 
                     class="mt-[4px]"
-                >
-
-
-                    {{-- =================================================
-                         PRODUCT 1
-                    ================================================== --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="pet-supplies"
-
-                        data-status="in-stock"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-pet-supplies">
-                                Pet Supplies
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-in-stock
-                                "
-                            >
-                                In Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div></div>
-
-                    </article>
-
-
-
-                    {{-- PRODUCT 2 --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="electronics-and-gadgets"
-
-                        data-status="in-stock"
-
-                        data-policy="true"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-electronics-and-gadgets">
-                                Electronics and Gadgets
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-in-stock
-                                "
-                            >
-                                In Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div
-                            class="
-                                flex
-                                justify-center
-                            "
-                        >
-
-                            <span
-                                class="stock-warning"
-                                title="Review stock level"
-                            >
-                                !
-                            </span>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- PRODUCT 3 --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="womens-apparel"
-
-                        data-status="low-stock"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-womens-apparel">
-                                Women&#039;s Apparel
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            5
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-low-stock
-                                "
-                            >
-                                Low Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div></div>
-
-                    </article>
-
-
-
-                    {{-- PRODUCT 4 --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="mens-apparel"
-
-                        data-status="in-stock"
-
-                        data-policy="true"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-mens-apparel">
-                                Men&#039;s Apparel
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-in-stock
-                                "
-                            >
-                                In Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div
-                            class="
-                                flex
-                                justify-center
-                            "
-                        >
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- PRODUCT 5 --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="kids-and-baby"
-
-                        data-status="out-of-stock"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-kids-and-baby">
-                                Kids and Baby
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            0
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-out-stock
-                                "
-                            >
-                                Out of Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div></div>
-
-                    </article>
-
-
-
-                    {{-- PRODUCT 6 --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="home-and-garden"
-
-                        data-status="in-stock"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-home-and-garden">
-                                Home and Garden
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-in-stock
-                                "
-                            >
-                                In Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div></div>
-
-                    </article>
-
-
-
-                    {{-- PRODUCT 7 --}}
-
-                    <article
-                        class="
-                            inventory-row
-                            product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1fr_0.18fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            px-[20px]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-
-                        data-name="Wireless Bag haha gage"
-
-                        data-category="sports-and-outdoors"
-
-                        data-status="in-stock"
-
-                        tabindex="0"
-
-                        role="button"
-                    >
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-sports-and-outdoors">
-                                Sports and Outdoors
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div>
-
-                            <span
-                                class="
-                                    status-badge
-                                    status-in-stock
-                                "
-                            >
-                                In Stock
-                            </span>
-
-                        </div>
-
-
-
-                        <div></div>
-
-                    </article>
-
-                </div>
+                ></div>
 
 
 
@@ -1670,784 +1081,7 @@
                     id="policyIssuesTable"
 
                     class="hidden"
-                >
-
-
-                    {{-- POLICY 1 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="health-and-beauty"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-health-and-beauty">
-                                Health and Beauty
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- POLICY 2 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="books-and-media"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-books-and-media">
-                                Books and Media
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- POLICY 3 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="food-and-gourmet"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-food-and-gourmet">
-                                Food and Gourmet
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            5
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- POLICY 4 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="automotive-motorcycle"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-automotive-motorcycle">
-                                Automotive &amp; Motorcycle
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- POLICY 5 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="furniture-and-office-equipment"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-furniture-and-office-equipment">
-                                Furniture and Office Equipment
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            0
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- POLICY 6 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            border-b
-                            border-[#DDD9D7]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="jewelry-and-watches"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-jewelry-and-watches">
-                                Jewelry and Watches
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    {{-- POLICY 7 --}}
-
-                    <article
-                        class="
-                            policy-row
-                            policy-product-clickable
-
-                            grid
-
-                            grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr]
-
-                            items-center
-
-                            min-h-[90px]
-
-                            cursor-pointer
-
-                            px-[20px]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FFFBF9]
-                        "
-                    
-                        data-policy="true"
-
-                        data-category="office-and-school-supplies"
-
-                        data-issue-title="Misleading product information"
-
-                        data-issue-date="March 24, 2026   10:00 AM"
-
-                        tabindex="0"
-
-                        role="button">
-
-                        <div class="product-main">
-
-                            <div class="product-thumb">
-
-                                <div class="product-bag"></div>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <h3 class="product-name">
-                                    Wireless Bag haha gage
-                                </h3>
-
-                                <p class="product-sold">
-                                    10 sold
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div>
-
-                            <span class="category-badge category-office-and-school-supplies">
-                                Office and School Supplies
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="product-number">
-                            ₱559.00
-                        </div>
-
-
-
-                        <div class="product-number">
-                            20
-                        </div>
-
-
-
-                        <div class="policy-issue">
-
-                            <span class="stock-warning">
-                                !
-                            </span>
-
-                            <div>
-
-                                <p class="issue-title">
-                                    Misleading product information...
-                                </p>
-
-                                <p class="issue-date">
-                                    March 24, 2026&nbsp;&nbsp;10:00 AM
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                </div>
-
-
+                ></div>
 
 
 
@@ -2545,10 +1179,17 @@
                         Showing
 
                         <span id="showingCount">
-                            7
+                            0
                         </span>
 
-                        out of 378 entries
+                        out of
+                        <span
+                            id="totalEntriesCount"
+                            data-base-total="0"
+                        >
+                            0
+                        </span>
+                        entries
 
                     </p>
 
@@ -2689,517 +1330,640 @@
 
 
     {{-- =========================================================
-         ADD PRODUCT MODAL
+         CREATE PRODUCT MODAL
+         Seller categories + category-aware specifications
     ========================================================== --}}
 
     <div
         id="addProductModal"
-
         class="
             fixed
             inset-0
-
             z-[100]
-
             hidden
-
             items-center
             justify-center
-
             bg-black/30
-
             backdrop-blur-[2px]
-
-            p-5
+            p-[18px]
         "
+        aria-hidden="true"
     >
 
         <div
             id="addProductModalPanel"
-
             class="
+                create-product-modal-panel
                 w-full
-
-                max-w-[560px]
-
-                rounded-[18px]
-
+                max-w-[980px]
+                rounded-[20px]
                 bg-white
-
-                shadow-2xl
-
+                shadow-[0_18px_50px_rgba(0,0,0,0.16)]
                 overflow-hidden
-
                 opacity-0
-
                 transition-all
                 duration-200
             "
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="createProductModalTitle"
         >
 
-            <div
-                class="
-                    flex
-                    items-center
-                    justify-between
-
-                    px-[24px]
-                    py-[18px]
-
-                    border-b
-                    border-[#ECE7E5]
-                "
-            >
+            {{-- HEADER --}}
+            <div class="create-product-header">
 
                 <div>
-
                     <h3
-                        class="
-                            text-[20px]
-                            font-semibold
-                            text-[#17120F]
-                        "
+                        id="createProductModalTitle"
+                        class="create-product-title"
                     >
-                        Add Product
+                        Create Product
                     </h3>
 
-
-                    <p
-                        class="
-                            mt-[2px]
-                            text-[12px]
-                            text-[#999393]
-                        "
-                    >
-                        Add a new product to your inventory.
+                    <p class="create-product-subtitle">
+                        Add product information, options, and category-specific specifications.
                     </p>
-
                 </div>
-
 
                 <button
                     type="button"
-
                     id="closeAddProductModal"
-
-                    class="
-                        flex
-                        items-center
-                        justify-center
-
-                        w-[34px]
-                        h-[34px]
-
-                        rounded-full
-
-                        text-[#77716E]
-
-                        transition-all
-                        duration-200
-
-                        hover:bg-[#FFF2EE]
-
-                        hover:text-[#6A1616]
-                    "
+                    class="create-product-close"
+                    aria-label="Close create product modal"
                 >
-
                     <svg
-                        class="w-5 h-5"
-
                         viewBox="0 0 24 24"
-
                         fill="none"
-
                         stroke="currentColor"
-
                         stroke-width="2"
-
                         stroke-linecap="round"
                     >
-
                         <path d="M6 6l12 12"/>
-
                         <path d="M18 6L6 18"/>
-
                     </svg>
-
                 </button>
 
             </div>
 
 
-
             <form
                 id="addProductForm"
-
-                class="
-                    p-[24px]
-                "
+                class="create-product-form"
             >
 
-                <div
-                    class="
-                        grid
-                        grid-cols-2
-                        gap-[16px]
-                    "
-                >
+                <div class="create-product-scroll">
 
-                    <div class="col-span-2">
+                    {{-- =====================================================
+                         PRODUCT PHOTOS
+                    ====================================================== --}}
+                    <section class="create-product-section">
+
+                        <div class="create-product-section-heading">
+                            <div>
+                                <h4>Product Photos <span class="required-mark">*</span></h4>
+                                <p>
+                                    Upload multiple product photos. The first photo will be used as the cover.
+                                </p>
+                            </div>
+
+                            <span
+                                id="productPhotoCount"
+                                class="create-product-mini-count"
+                            >
+                                0 photos
+                            </span>
+                        </div>
 
                         <label
-                            class="
-                                block
-                                mb-[6px]
-
-                                text-[13px]
-                                font-medium
-                                text-[#2F2926]
-                            "
+                            for="productPhotosInput"
+                            class="create-product-upload-zone"
+                            id="productPhotosDropZone"
                         >
-                            Product Name
+                            <input
+                                id="productPhotosInput"
+                                name="product_photos[]"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                class="hidden"
+                            >
+
+                            <span class="create-product-upload-icon">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M4 16.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2.5"/>
+                                    <path d="M12 4v11"/>
+                                    <path d="m8 8 4-4 4 4"/>
+                                </svg>
+                            </span>
+
+                            <span>
+                                <strong>Click to upload</strong> or drag and drop photos
+                            </span>
+
+                            <small>
+                                JPG, PNG or WEBP · multiple photos allowed
+                            </small>
                         </label>
 
+                        <div
+                            id="productPhotoPreviewGrid"
+                            class="create-product-photo-grid hidden"
+                        ></div>
 
-                        <input
-                            type="text"
+                    </section>
 
+
+                    {{-- =====================================================
+                         BASIC INFORMATION
+                    ====================================================== --}}
+                    <section class="create-product-section">
+
+                        <div class="create-product-section-heading">
+                            <div>
+                                <h4>Basic Information</h4>
+                                <p>
+                                    Required information buyers will see on the product listing.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="create-product-grid">
+
+                            <div class="create-field col-span-2">
+                                <label for="createProductTitle">
+                                    Product Title <span class="required-mark">*</span>
+                                </label>
+
+                                <input
+                                    id="createProductTitle"
+                                    name="title"
+                                    type="text"
+                                    maxlength="120"
+                                    required
+                                    placeholder="Enter product title"
+                                >
+                            </div>                            <div class="create-field col-span-2 create-pricing-field">
+                                <label>
+                                    Price <span class="required-mark">*</span>
+                                </label>
+
+                                <input
+                                    type="hidden"
+                                    id="productPricingMode"
+                                    name="pricing_mode"
+                                    value="fixed"
+                                >
+
+                                <div class="create-pricing-mode-row">
+
+                                    <button
+                                        type="button"
+                                        class="create-pricing-mode-button is-selected"
+                                        data-pricing-mode="fixed"
+                                    >
+                                        Fixed Price
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="create-pricing-mode-button"
+                                        data-pricing-mode="varies"
+                                    >
+                                        Price Varies
+                                    </button>
+
+                                </div>
+
+                                <div
+                                    id="fixedPricePanel"
+                                    class="create-fixed-price-panel"
+                                >
+                                    <div class="create-product-prefix-field">
+                                        <span>₱</span>
+
+                                        <input
+                                            id="createProductPrice"
+                                            name="price"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            required
+                                            placeholder="0.00"
+                                        >
+                                    </div>
+
+                                    <small>
+                                        One price applies to every buyer option.
+                                    </small>
+                                </div>
+
+                                <div
+                                    id="variablePricePanel"
+                                    class="create-variable-price-note hidden"
+                                >
+                                    <strong>Price will be based on buyer options.</strong>
+                                    <span>
+                                        Choose which option sets the actual product price. Other options can add an extra amount.
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="create-field">
+                                <label for="createProductStock">
+                                    Stock <span class="required-mark">*</span>
+                                </label>
+
+                                <input
+                                    id="createProductStock"
+                                    name="stock"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    required
+                                    placeholder="0"
+                                >
+                            </div>
+
+                            <div class="create-field">
+                                <label for="createProductSku">
+                                    SKU
+                                </label>
+
+                                <input
+                                    id="createProductSku"
+                                    name="sku"
+                                    type="text"
+                                    maxlength="80"
+                                    placeholder="Optional SKU"
+                                >
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    {{-- =====================================================
+                         BUYER OPTIONS
+                    ====================================================== --}}
+                    <section class="create-product-section">
+
+                        <div class="create-product-section-heading">
+                            <div>
+                                <h4>Buyer Options</h4>
+                                <p>
+                                    Optional. Add variations, colors, or sizes that buyers can choose from.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            id="variablePricingSetup"
+                            class="create-variable-pricing-setup hidden"
+                        >
+                            <div class="create-variable-pricing-copy">
+                                <strong>Variable Pricing</strong>
+                                <span>
+                                    Select which buyer option carries the actual item price.
+                                </span>
+                            </div>
+
+                            <input
+                                type="hidden"
+                                id="productPricingSource"
+                                name="pricing_source"
+                                value=""
+                            >
+
+                            <div class="create-pricing-source-buttons">
+                                <button
+                                    type="button"
+                                    class="create-pricing-source-button"
+                                    data-pricing-source="variations"
+                                >
+                                    Variations
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="create-pricing-source-button"
+                                    data-pricing-source="colors"
+                                >
+                                    Colors
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="create-pricing-source-button"
+                                    data-pricing-source="sizes"
+                                >
+                                    Sizes
+                                </button>
+                            </div>
+
+                            <p id="variablePricingRule">
+                                The selected group uses actual prices. Other groups use additional price (+₱).
+                            </p>
+                        </div>
+
+                        <div class="create-product-three-options">
+
+                            {{-- VARIATIONS --}}
+                            <div class="create-option-block">
+
+                                <div class="create-option-block-head">
+                                    <div>
+                                        <strong>Variations</strong>
+                                        <span>
+                                            Optional. Each variation can have its own photo and price when Price Varies is selected.
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="create-variation-entry">
+
+                                    <input
+                                        id="productVariationEntry"
+                                        type="text"
+                                        placeholder="e.g. Classic"
+                                    >
+
+                                    <label
+                                        for="productVariationPhotoInput"
+                                        id="variationPhotoPickerLabel"
+                                        class="create-variation-photo-picker"
+                                        title="Add optional variation photo"
+                                    >
+                                        <input
+                                            id="productVariationPhotoInput"
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            class="hidden"
+                                        >
+
+                                        <span id="variationPhotoPickerText">
+                                            Photo
+                                        </span>
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        id="addProductVariationButton"
+                                    >
+                                        Add
+                                    </button>
+
+                                </div>
+
+                                <div
+                                    id="productVariationsContainer"
+                                    class="create-variation-chip-list"
+                                ></div>
+
+                            </div>
+
+
+                            {{-- COLORS --}}
+                            <div class="create-option-block">
+
+                                <div class="create-option-block-head">
+                                    <div>
+                                        <strong>Colors</strong>
+                                        <span>Optional buyer color choices and price adjustments</span>
+                                    </div>
+                                </div>
+
+                                <div class="create-chip-entry">
+                                    <input
+                                        id="productColorEntry"
+                                        type="text"
+                                        placeholder="e.g. Black"
+                                    >
+
+                                    <label
+                                        for="productColorPhotoInput"
+                                        class="create-variation-photo-picker"
+                                        title="Add optional color photo"
+                                    >
+                                        <input
+                                            id="productColorPhotoInput"
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            class="hidden"
+                                        >
+                                        <span id="colorPhotoPickerText">Photo</span>
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        id="addProductColorButton"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div
+                                    id="productColorsContainer"
+                                    class="create-chip-list"
+                                ></div>
+
+                            </div>
+
+
+                            {{-- SIZES --}}
+                            <div class="create-option-block">
+
+                                <div class="create-option-block-head">
+                                    <div>
+                                        <strong>Sizes</strong>
+                                        <span>Optional buyer size choices and price adjustments</span>
+                                    </div>
+                                </div>
+
+                                <div class="create-chip-entry">
+                                    <input
+                                        id="productSizeEntry"
+                                        type="text"
+                                        placeholder="e.g. Medium"
+                                    >
+
+                                    <label
+                                        for="productSizePhotoInput"
+                                        class="create-variation-photo-picker"
+                                        title="Add optional size photo"
+                                    >
+                                        <input
+                                            id="productSizePhotoInput"
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            class="hidden"
+                                        >
+                                        <span id="sizePhotoPickerText">Photo</span>
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        id="addProductSizeButton"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div
+                                    id="productSizesContainer"
+                                    class="create-chip-list"
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    {{-- =====================================================
+                         PRODUCT CATEGORY
+                         Only categories selected during seller registration
+                    ====================================================== --}}
+                    <section class="create-product-section">
+
+                        <div class="create-product-section-heading">
+                            <div>
+                                <h4>
+                                    Product Category
+                                    <span class="required-mark">*</span>
+                                </h4>
+
+                                <p>
+                                    Choose where this product belongs. Only your registered seller categories are available.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="create-product-category-picker">
+
+                            <input
+                                type="hidden"
+                                id="addProductCategory"
+                                name="category"
+                                value=""
+                            >
+
+                            <div
+                                id="createProductCategoryPills"
+                                class="create-product-category-pills"
+                            >
+                                @forelse ($sellerInventoryCategories as $category)
+                                    <button
+                                        type="button"
+                                        class="create-category-pill"
+                                        data-category-slug="{{ $category['slug'] }}"
+                                        data-category-label="{{ $category['label'] }}"
+                                    >
+                                        {{ $category['label'] }}
+                                    </button>
+                                @empty
+                                    <div class="create-category-empty">
+                                        No registered categories available
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <small class="create-category-help">
+                                Select one category. Product specifications will appear after selection.
+                            </small>
+
+                        </div>
+
+                    </section>
+
+
+                    {{-- =====================================================
+                         PRODUCT SPECIFICATIONS
+                         Hidden until category selection
+                    ====================================================== --}}
+                    <section
+                        id="productSpecificationsSection"
+                        class="create-product-section hidden"
+                    >
+
+                        <div class="create-product-section-heading">
+                            <div>
+                                <h4 id="categorySpecificationsTitle">
+                                    Product Specifications
+                                </h4>
+
+                                <p>
+                                    Optional. These fields change depending on the product category you selected.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            id="categorySpecificationsFields"
+                            class="create-product-grid"
+                        ></div>
+
+                    </section>
+
+
+                    {{-- =====================================================
+                         PRODUCT DESCRIPTION
+                    ====================================================== --}}
+                    <section class="create-product-section">
+
+                        <div class="create-product-section-heading">
+                            <div>
+                                <h4>Product Description <span class="required-mark">*</span></h4>
+                                <p>
+                                    Describe the product clearly for buyers.
+                                </p>
+                            </div>
+
+                            <span
+                                id="createProductDescriptionCount"
+                                class="create-product-mini-count"
+                            >
+                                0/2000
+                            </span>
+                        </div>
+
+                        <textarea
+                            id="createProductDescription"
+                            name="description"
+                            maxlength="2000"
+                            rows="6"
                             required
-
-                            placeholder="Enter product name"
-
-                            class="
-                                w-full
-                                h-[44px]
-
-                                rounded-[8px]
-
-                                border
-                                border-[#D9D3D0]
-
-                                px-[12px]
-
-                                text-[13px]
-
-                                outline-none
-
-                                focus:border-[#A52A2A]
-                                focus:ring-[3px]
-                                focus:ring-[#A52A2A]/5
-                            "
-                        >
-
-                    </div>
-
-
-
-                    <div>
-
-                        <label
-                            class="
-                                block
-                                mb-[6px]
-
-                                text-[13px]
-                                font-medium
-                                text-[#2F2926]
-                            "
-                        >
-                            Category
-                        </label>
-
-
-                        <select
-                            required
-
-                            class="
-                                w-full
-                                h-[44px]
-
-                                rounded-[8px]
-
-                                border
-                                border-[#D9D3D0]
-
-                                px-[12px]
-
-                                text-[13px]
-
-                                outline-none
-                            "
-                        >
-                            <option value="">
-                                Select category
-                            </option>
-
-                            <option value="pet-supplies">
-                                Pet Supplies
-                            </option>
-
-                            <option value="electronics-and-gadgets">
-                                Electronics and Gadgets
-                            </option>
-
-                            <option value="womens-apparel">
-                                Women&#039;s Apparel
-                            </option>
-
-                            <option value="mens-apparel">
-                                Men&#039;s Apparel
-                            </option>
-
-                            <option value="kids-and-baby">
-                                Kids and Baby
-                            </option>
-
-                            <option value="home-and-garden">
-                                Home and Garden
-                            </option>
-
-                            <option value="sports-and-outdoors">
-                                Sports and Outdoors
-                            </option>
-
-                            <option value="health-and-beauty">
-                                Health and Beauty
-                            </option>
-
-                            <option value="books-and-media">
-                                Books and Media
-                            </option>
-
-                            <option value="food-and-gourmet">
-                                Food and Gourmet
-                            </option>
-
-                            <option value="automotive-motorcycle">
-                                Automotive &amp; Motorcycle
-                            </option>
-
-                            <option value="furniture-and-office-equipment">
-                                Furniture and Office Equipment
-                            </option>
-
-                            <option value="jewelry-and-watches">
-                                Jewelry and Watches
-                            </option>
-
-                            <option value="office-and-school-supplies">
-                                Office and School Supplies
-                            </option>
-                        </select>
-
-                    </div>
-
-
-
-                    <div>
-
-                        <label
-                            class="
-                                block
-                                mb-[6px]
-
-                                text-[13px]
-                                font-medium
-                                text-[#2F2926]
-                            "
-                        >
-                            Price
-                        </label>
-
-
-                        <input
-                            type="number"
-
-                            min="0"
-
-                            step="0.01"
-
-                            required
-
-                            placeholder="₱0.00"
-
-                            class="
-                                w-full
-                                h-[44px]
-
-                                rounded-[8px]
-
-                                border
-                                border-[#D9D3D0]
-
-                                px-[12px]
-
-                                text-[13px]
-
-                                outline-none
-                            "
-                        >
-
-                    </div>
-
-
-
-                    <div>
-
-                        <label
-                            class="
-                                block
-                                mb-[6px]
-
-                                text-[13px]
-                                font-medium
-                                text-[#2F2926]
-                            "
-                        >
-                            Stock
-                        </label>
-
-
-                        <input
-                            type="number"
-
-                            min="0"
-
-                            required
-
-                            placeholder="0"
-
-                            class="
-                                w-full
-                                h-[44px]
-
-                                rounded-[8px]
-
-                                border
-                                border-[#D9D3D0]
-
-                                px-[12px]
-
-                                text-[13px]
-
-                                outline-none
-                            "
-                        >
-
-                    </div>
-
-
-
-                    <div>
-
-                        <label
-                            class="
-                                block
-                                mb-[6px]
-
-                                text-[13px]
-                                font-medium
-                                text-[#2F2926]
-                            "
-                        >
-                            SKU
-                        </label>
-
-
-                        <input
-                            type="text"
-
-                            placeholder="Optional SKU"
-
-                            class="
-                                w-full
-                                h-[44px]
-
-                                rounded-[8px]
-
-                                border
-                                border-[#D9D3D0]
-
-                                px-[12px]
-
-                                text-[13px]
-
-                                outline-none
-                            "
-                        >
-
-                    </div>
+                            class="create-product-description"
+                            placeholder="Write the full product description here..."
+                        ></textarea>
+
+                    </section>
 
                 </div>
 
 
-
-                <div
-                    class="
-                        flex
-                        justify-end
-
-                        gap-[10px]
-
-                        mt-[24px]
-                    "
-                >
+                {{-- FOOTER --}}
+                <div class="create-product-footer">
 
                     <button
                         type="button"
-
                         id="cancelAddProduct"
-
-                        class="
-                            h-[42px]
-
-                            px-[18px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D9D3D0]
-
-                            bg-white
-
-                            text-[13px]
-
-                            font-medium
-
-                            text-[#625D5A]
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#FAF7F5]
-                        "
+                        class="create-product-cancel"
                     >
                         Cancel
                     </button>
 
-
                     <button
                         type="submit"
-
-                        class="
-                            h-[42px]
-
-                            px-[20px]
-
-                            rounded-[9px]
-
-                            bg-[#9E241F]
-
-                            text-[13px]
-
-                            font-semibold
-
-                            text-white
-
-                            transition-all
-                            duration-200
-
-                            hover:bg-[#861D19]
-
-                            active:scale-[0.98]
-                        "
+                        class="create-product-submit"
                     >
                         Add Product
                     </button>
@@ -3394,9 +2158,10 @@
                                 >
 
                                     <img
-                                        src="{{ asset('images/products/graphic-tshirt.png') }}"
+                                        id="productDetailsMainImage"
+                                        src=""
 
-                                        alt="Men's Graphic T-shirt"
+                                        alt="Product image"
 
                                         class="
                                             product-real-image
@@ -3420,6 +2185,7 @@
 
 
                                     <div
+                                        id="productDetailsImageFallback"
                                         class="
                                             product-shirt-fallback
 
@@ -3492,6 +2258,7 @@
                             {{-- THUMBNAILS --}}
 
                             <div
+                                id="productDetailsThumbnails"
                                 class="
                                     mt-[9px]
 
@@ -3566,6 +2333,7 @@
                                 <div>
 
                                     <h2
+                                        id="productDetailsName"
                                         class="
                                             text-[23px]
 
@@ -3581,6 +2349,7 @@
 
 
                                     <p
+                                        id="productDetailsPrice"
                                         class="
                                             mt-[8px]
 
@@ -3600,6 +2369,7 @@
 
 
                                 <div
+                                    id="productDetailsSold"
                                     class="
                                         pt-[42px]
 
@@ -3682,6 +2452,7 @@
 
 
                                 <p
+                                    id="productDetailsStock"
                                     class="
                                         mt-[4px]
 
@@ -3694,6 +2465,27 @@
                                 >
                                     154 pieces
                                 </p>
+
+                            </div>
+
+
+                            {{-- STATUS --}}
+                            <div class="mt-[16px]">
+
+                                <p class="text-[14px] text-[#8F8B89]">
+                                    Status
+                                </p>
+
+                                <span
+                                    id="productDetailsStatus"
+                                    class="
+                                        status-badge
+                                        status-pending
+                                        mt-[6px]
+                                    "
+                                >
+                                    Pending
+                                </span>
 
                             </div>
 
@@ -3725,13 +2517,14 @@
                             Uploaded:
 
                             <span
+                                id="productDetailsUploaded"
                                 class="
                                     text-[#17120F]
 
                                     font-medium
                                 "
                             >
-                                September 9, 2026&nbsp;&nbsp;2:13 PM
+                                —
                             </span>
 
                         </p>
@@ -3815,7 +2608,7 @@
                                 text-[#17120F]
                             "
                         >
-                            Misleading product information
+
                         </p>
 
                         <p
@@ -3826,7 +2619,19 @@
                                 text-[#A78E6D]
                             "
                         >
-                            March 24, 2026  10:00 AM
+
+                        </p>
+
+                        <p
+                            id="productPolicyIssueReason"
+                            class="
+                                mt-[8px]
+                                text-[13px]
+                                leading-[1.5]
+                                text-[#5F534C]
+                            "
+                        >
+
                         </p>
                     </div>
 
@@ -3991,6 +2796,8 @@
                     <input
                         type="text"
 
+                        id="productDetailBrand"
+
                         value="HangLoose"
 
                         class="
@@ -4037,6 +2844,8 @@
 
                     <input
                         type="text"
+
+                        id="productDetailMaterial"
 
                         value="100% Cotton"
 
@@ -4085,6 +2894,8 @@
                     <input
                         type="text"
 
+                        id="productDetailSizes"
+
                         value="S, M, L, XL, XXL"
 
                         class="
@@ -4132,6 +2943,8 @@
                     <input
                         type="text"
 
+                        id="productDetailColors"
+
                         value="Black, White, Gray"
 
                         class="
@@ -4172,12 +2985,14 @@
                             text-[#8D8987]
                         "
                     >
-                        Weight
+                        Quantity per Pack
                     </label>
 
 
                     <input
                         type="text"
+
+                        id="productDetailQuantity"
 
                         value="150g"
 
@@ -4226,6 +3041,8 @@
                     <input
                         type="text"
 
+                        id="productDetailCountry"
+
                         value="Philippines"
 
                         class="
@@ -4259,6 +3076,71 @@
 
             </div>
 
+
+
+
+            {{-- =================================================
+                 CREATED PRODUCT BUYER OPTIONS
+            ================================================== --}}
+
+            <div
+                id="productDetailsBuyerOptionsSection"
+                class="
+                    hidden
+                    px-[62px]
+                    pt-[16px]
+                "
+            >
+
+                <h3
+                    class="
+                        text-[17px]
+                        font-semibold
+                        text-[#17120F]
+                        mb-[10px]
+                    "
+                >
+                    Buyer Options
+                </h3>
+
+                <div
+                    id="productDetailsBuyerOptions"
+                    class="product-created-details-grid"
+                ></div>
+
+            </div>
+
+
+            {{-- =================================================
+                 CREATED PRODUCT SPECIFICATIONS
+            ================================================== --}}
+
+            <div
+                id="productDetailsSpecificationsSection"
+                class="
+                    hidden
+                    px-[62px]
+                    pt-[18px]
+                "
+            >
+
+                <h3
+                    class="
+                        text-[17px]
+                        font-semibold
+                        text-[#17120F]
+                        mb-[10px]
+                    "
+                >
+                    Product Specifications
+                </h3>
+
+                <div
+                    id="productDetailsSpecifications"
+                    class="product-created-details-grid"
+                ></div>
+
+            </div>
 
 
             {{-- =================================================
@@ -4447,6 +3329,7 @@
 
                 <div>
                     <h2
+                        id="removeProductModalTitle"
                         class="
                             text-[22px]
                             font-semibold
@@ -4458,6 +3341,7 @@
                     </h2>
 
                     <p
+                        id="removeProductModalSubtitle"
                         class="
                             mt-[10px]
                             text-[16px]
@@ -4469,7 +3353,7 @@
                     </p>
                 </div>
 
-                <div class="mt-[26px]">
+                <div id="removeReasonBlock" class="mt-[26px]">
 
                     <p
                         class="
@@ -4541,7 +3425,7 @@
 
                 </div>
 
-                <div class="mt-[27px]">
+                <div id="removeDetailsBlock" class="mt-[27px]">
 
                     <label
                         for="removeAdditionalDetails"
@@ -4736,3053 +3620,9 @@
             </p>
         </div>
     </div>
-
-    <style>
-
-
-        /* =====================================================
-           FADE-ONLY MODALS
-        ====================================================== */
-
-        #productDetailsModal,
-        #addProductModal,
-        #removeProductModal {
-
-            transform: none !important;
-            will-change: opacity;
-
-        }
-
-
-        #productDetailsModalPanel,
-        #addProductModalPanel,
-        #removeProductModalPanel {
-
-            transform: none !important;
-            will-change: opacity;
-
-        }
-
-
-        #productDetailsModal.modal-open,
-        #addProductModal.modal-open,
-        #removeProductModal.modal-open {
-
-            display: flex;
-            opacity: 1;
-
-        }
-
-
-        #productDetailsModal.modal-closing,
-        #addProductModal.modal-closing,
-        #removeProductModal.modal-closing {
-
-            display: flex;
-            opacity: 0;
-
-        }
-
-
-        #productDetailsModal.modal-open #productDetailsModalPanel,
-        #addProductModal.modal-open #addProductModalPanel,
-        #removeProductModal.modal-open #removeProductModalPanel {
-
-            opacity: 1;
-            transform: none !important;
-
-        }
-
-
-        #productDetailsModal.modal-closing #productDetailsModalPanel,
-        #addProductModal.modal-closing #addProductModalPanel,
-        #removeProductModal.modal-closing #removeProductModalPanel {
-
-            opacity: 0;
-            transform: none !important;
-
-        }
-
-
-        #productDetailsModalPanel,
-        #addProductModalPanel,
-        #removeProductModalPanel {
-
-            transition:
-                opacity
-                0.2s
-                ease-out !important;
-
-        }
-
-
-        /* =====================================================
-           POLICY ROW CLICK
-        ====================================================== */
-
-        .policy-product-clickable {
-
-            cursor: pointer;
-            outline: none;
-
-        }
-
-
-        .policy-product-clickable:focus-visible {
-
-            outline:
-                2px solid #B8B0AC;
-
-            outline-offset:
-                -2px;
-
-        }
-
-
-        /* =====================================================
-           REMOVE REASON MODAL
-        ====================================================== */
-
-        .remove-reason-radio {
-
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-
-        }
-
-
-        .remove-radio-circle {
-
-            width: 18px;
-            height: 18px;
-            flex: 0 0 18px;
-            border: 1px solid #D7D4D2;
-            border-radius: 999px;
-            background: #FFFFFF;
-            position: relative;
-
-        }
-
-
-        .remove-reason-radio:checked + .remove-radio-circle {
-
-            border-color: #A52A2A;
-
-        }
-
-
-        .remove-reason-radio:checked + .remove-radio-circle::after {
-
-            content: "";
-            position: absolute;
-            inset: 4px;
-            border-radius: 999px;
-            background: #A52A2A;
-
-        }
-
-
-        .remove-reason-option:has(.remove-reason-radio:checked) {
-
-            border-color: #D7C8C5;
-            background: #FFFDFC;
-
-        }
-
-
-
-        /* =====================================================
-           PRODUCT ROW CLICK UX
-        ====================================================== */
-
-        .product-clickable {
-
-            cursor:
-                pointer;
-
-        }
-
-
-        .product-clickable:focus-visible {
-
-            outline:
-                2px solid #A52A2A;
-
-            outline-offset:
-                -2px;
-
-        }
-
-
-
-        /* =====================================================
-           PRODUCT MAIN
-        ====================================================== */
-
-        .product-main {
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                16px;
-
-            min-width:
-                0;
-
-        }
-
-
-        .product-thumb {
-
-            width:
-                57px;
-
-            height:
-                57px;
-
-            flex-shrink:
-                0;
-
-            border:
-                1px solid #DDDAD8;
-
-            border-radius:
-                10px;
-
-            background:
-                #F8F8F8;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            overflow:
-                hidden;
-
-        }
-
-
-        .product-name {
-
-            margin:
-                0;
-
-            overflow:
-                hidden;
-
-            text-overflow:
-                ellipsis;
-
-            white-space:
-                nowrap;
-
-            font-size:
-                15px;
-
-            font-weight:
-                600;
-
-            color:
-                #181514;
-
-        }
-
-
-        .product-sold {
-
-            margin:
-                2px 0 0;
-
-            font-size:
-                12px;
-
-            color:
-                #AAA6A4;
-
-        }
-
-
-        .product-number {
-
-            font-size:
-                14px;
-
-            font-weight:
-                500;
-
-            color:
-                #17120F;
-
-        }
-
-
-
-        /* =====================================================
-           PRODUCT BAG
-        ====================================================== */
-
-        .product-bag {
-
-            position:
-                relative;
-
-            width:
-                38px;
-
-            height:
-                28px;
-
-            background:
-                #292929;
-
-            border-radius:
-                5px 5px 7px 7px;
-
-            box-shadow:
-                inset
-                0
-                -3px
-                0
-                rgba(
-                    0,
-                    0,
-                    0,
-                    0.15
-                );
-
-        }
-
-
-        .product-bag::before {
-
-            content:
-                "";
-
-            position:
-                absolute;
-
-            left:
-                9px;
-
-            top:
-                -7px;
-
-            width:
-                20px;
-
-            height:
-                10px;
-
-            border:
-                3px solid #292929;
-
-            border-bottom:
-                none;
-
-            border-radius:
-                10px 10px 0 0;
-
-        }
-
-
-        .product-bag::after {
-
-            content:
-                "";
-
-            position:
-                absolute;
-
-            left:
-                5px;
-
-            top:
-                5px;
-
-            width:
-                28px;
-
-            height:
-                4px;
-
-            border-radius:
-                999px;
-
-            background:
-                #353535;
-
-        }
-
-
-
-        /* =====================================================
-           CATEGORY
-        ====================================================== */
-
-        .category-badge,
-        .category-default {
-
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            border-radius:
-                999px;
-
-            background:
-                #D8E6FF;
-
-            padding:
-                5px 12px;
-
-            font-size:
-                11px;
-
-            font-weight:
-                500;
-
-            color:
-                #07588A;
-
-            white-space:
-                nowrap;
-
-        }
-
-
-
-
-        /* =====================================================
-           UNIQUE CATEGORY PILL COLORS
-        ====================================================== */
-
-        .category-pet-supplies { background: #E7F5E9; color: #2F6B3A; }
-        .category-electronics-and-gadgets { background: #DDEBFF; color: #185FA3; }
-        .category-womens-apparel { background: #F9DFEA; color: #A12763; }
-        .category-mens-apparel { background: #E6E2F8; color: #5A4A9A; }
-        .category-kids-and-baby { background: #FFE5B8; color: #9A5B00; }
-        .category-home-and-garden { background: #DDF3E4; color: #27704A; }
-        .category-sports-and-outdoors { background: #DDECF2; color: #23627A; }
-        .category-health-and-beauty { background: #FFE0DC; color: #A63B2C; }
-        .category-books-and-media { background: #E6E8F2; color: #3F4A68; }
-        .category-food-and-gourmet { background: #FFF0C7; color: #8A5A00; }
-        .category-automotive-motorcycle { background: #E3E3E3; color: #434343; }
-        .category-furniture-and-office-equipment { background: #EBDCCF; color: #795548; }
-        .category-jewelry-and-watches { background: #F8E2B8; color: #946B00; }
-        .category-office-and-school-supplies { background: #E2F0F7; color: #2B617D; }
-
-
-        /* =====================================================
-           STATUS
-        ====================================================== */
-
-        .status-badge {
-
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            border-radius:
-                999px;
-
-            padding:
-                4px 12px;
-
-            font-size:
-                10px;
-
-            font-weight:
-                500;
-
-            white-space:
-                nowrap;
-
-        }
-
-
-        .status-in-stock {
-
-            background:
-                #D9EED3;
-
-            color:
-                #27721F;
-
-        }
-
-
-        .status-low-stock {
-
-            background:
-                #FFE6CF;
-
-            color:
-                #B95F0A;
-
-        }
-
-
-        .status-out-stock {
-
-            background:
-                #FFD7D7;
-
-            color:
-                #BD3131;
-
-        }
-
-
-
-        /* =====================================================
-           WARNING
-        ====================================================== */
-
-        .stock-warning {
-
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            width:
-                20px;
-
-            height:
-                20px;
-
-            flex-shrink:
-                0;
-
-            clip-path:
-                polygon(
-                    50% 0,
-                    100% 100%,
-                    0 100%
-                );
-
-            background:
-                #E9A33C;
-
-            color:
-                white;
-
-            font-size:
-                11px;
-
-            font-weight:
-                700;
-
-            padding-top:
-                5px;
-
-        }
-
-
-
-        /* =====================================================
-           POLICY ISSUE
-        ====================================================== */
-
-        .policy-issue {
-
-            display:
-                flex;
-
-            align-items:
-                flex-start;
-
-            gap:
-                8px;
-
-            min-width:
-                0;
-
-        }
-
-
-        .issue-title {
-
-            margin:
-                0;
-
-            font-size:
-                13px;
-
-            line-height:
-                1.2;
-
-            color:
-                #2B2725;
-
-        }
-
-
-        .issue-date {
-
-            margin:
-                5px 0 0;
-
-            font-size:
-                11px;
-
-            color:
-                #B0AAA7;
-
-            white-space:
-                nowrap;
-
-        }
-
-
-
-
-
-        /* =====================================================
-           ARCHIVED ITEMS
-        ====================================================== */
-
-        .archived-reason-title {
-
-            margin: 0;
-            font-size: 12px;
-            font-weight: 600;
-            color: #7B1B1B;
-
-        }
-
-        .archived-reason-detail {
-
-            margin: 3px 0 0;
-            font-size: 10px;
-            line-height: 1.25;
-            color: #999393;
-
-        }
-
-        /* =====================================================
-           INVENTORY TABS
-        ====================================================== */
-
-        .inventory-tab::after {
-
-            content:
-                "";
-
-            position:
-                absolute;
-
-            left:
-                0;
-
-            right:
-                0;
-
-            bottom:
-                0;
-
-            height:
-                4px;
-
-            border-radius:
-                999px
-                999px
-                0
-                0;
-
-            background:
-                transparent;
-
-            transition:
-                background
-                0.2s
-                ease;
-
-        }
-
-
-        .inventory-tab.active {
-
-            color:
-                #9E241F;
-
-        }
-
-
-        .inventory-tab.active::after {
-
-            background:
-                #9E241F;
-
-        }
-
-
-
-        /* =====================================================
-           PAGINATION
-        ====================================================== */
-
-        .pagination-button {
-
-            width:
-                28px;
-
-            height:
-                28px;
-
-            display:
-                inline-flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            border-radius:
-                6px;
-
-            font-size:
-                11px;
-
-            color:
-                #615A57;
-
-            transition:
-                all
-                0.18s
-                ease;
-
-        }
-
-
-        .pagination-button:hover {
-
-            background:
-                #FFF2EE;
-
-            color:
-                #8D211D;
-
-        }
-
-
-        .pagination-button.current {
-
-            background:
-                #FFC8B9;
-
-            color:
-                #7B1B1B;
-
-            font-weight:
-                600;
-
-        }
-
-
-        .pagination-button.disabled {
-
-            opacity:
-                0.35;
-
-            pointer-events:
-                none;
-
-        }
-
-
-
-        /* =====================================================
-           ADD PRODUCT MODAL
-        ====================================================== */
-
-        #addProductModal.modal-open {
-
-            display:
-                flex;
-
-        }
-
-
-        #addProductModal.modal-open
-        #addProductModalPanel {
-
-            opacity:
-                1;
-
-            transform:
-                none !important;
-
-        }
-
-
-
-        /* =====================================================
-           PRODUCT DETAILS MODAL
-        ====================================================== */
-
-        /* Prevent the page scrollbar from changing the modal's
-           horizontal position when the modal opens/closes. */
-
-        html {
-
-            scrollbar-gutter:
-                stable;
-
-        }
-
-
-        #productDetailsModal {
-
-            transform:
-                none !important;
-
-            will-change:
-                opacity;
-
-        }
-
-
-        #productDetailsModalPanel {
-
-            transform:
-                none !important;
-
-            will-change:
-                opacity;
-
-            transition:
-                opacity
-                0.2s
-                ease-out !important;
-
-        }
-
-
-        #productDetailsModal.modal-open {
-
-            display:
-                flex;
-
-            opacity:
-                1;
-
-        }
-
-
-        #productDetailsModal.modal-open
-        #productDetailsModalPanel {
-
-            opacity:
-                1;
-
-            transform:
-                none !important;
-
-        }
-
-
-        .product-details-panel {
-
-            /* Keep the modal scrollable without showing a scrollbar. */
-
-            scrollbar-width:
-                none;
-
-            -ms-overflow-style:
-                none;
-
-            -webkit-overflow-scrolling:
-                touch;
-
-        }
-
-
-        .product-details-panel::-webkit-scrollbar {
-
-            width:
-                0;
-
-            height:
-                0;
-
-            display:
-                none;
-
-        }
-
-
-
-        /* =====================================================
-           PRODUCT THUMBNAILS
-        ====================================================== */
-
-        .product-thumbnail {
-
-            width:
-                36px;
-
-            height:
-                39px;
-
-            border:
-                1px solid #D4D0CE;
-
-            border-radius:
-                6px;
-
-            background:
-                white;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            overflow:
-                hidden;
-
-        }
-
-
-        .mini-shirt {
-
-            position:
-                relative;
-
-            width:
-                20px;
-
-            height:
-                24px;
-
-            background:
-                #151515;
-
-            clip-path:
-                polygon(
-                    35% 0,
-                    65% 0,
-                    76% 17%,
-                    100% 28%,
-                    85% 45%,
-                    73% 38%,
-                    73% 100%,
-                    27% 100%,
-                    27% 38%,
-                    15% 45%,
-                    0 28%,
-                    24% 17%
-                );
-
-        }
-
-
-
-        /* =====================================================
-           RESPONSIVE
-        ====================================================== */
-
-        @media (max-width: 1100px) {
-
-            #inventory-page {
-
-                margin-left:
-                    288px;
-
-            }
-
-
-            .inventory-search-wrap {
-
-                width:
-                    175px;
-
-            }
-
-        }
-
-
-
-        @media (max-width: 900px) {
-
-            .inventory-controls {
-
-                flex-wrap:
-                    wrap;
-
-                padding-top:
-                    8px;
-
-                padding-bottom:
-                    8px;
-
-            }
-
-        }
-
-
-
-        @media (max-width: 760px) {
-
-            #inventory-page {
-
-                margin-left:
-                    0 !important;
-
-            }
-
-
-            #inventory-page > div {
-
-                padding-left:
-                    18px;
-
-                padding-right:
-                    18px;
-
-            }
-
-
-            .inventory-tab {
-
-                margin-right:
-                    18px;
-
-                padding-left:
-                    3px;
-
-                padding-right:
-                    3px;
-
-                font-size:
-                    12px;
-
-            }
-
-
-            #inventoryTableHeader,
-
-            #allProductsTable,
-
-            #policyIssuesTable {
-
-                min-width:
-                    900px;
-
-            }
-
-
-            .product-details-panel {
-
-                border-radius:
-                    0;
-
-                max-height:
-                    100vh;
-
-            }
-
-        }
-
-
-
-        /* =====================================================
-           REDUCED MOTION
-        ====================================================== */
-
-        @media (prefers-reduced-motion: reduce) {
-
-            .product-clickable,
-            .inventory-tab,
-            .inventory-tab::after,
-            .pagination-button {
-
-                transition:
-                    none !important;
-
-            }
-
-        }
-
-
-        /* =====================================================
-           FLASH MESSAGE
-        ====================================================== */
-
-        .inventory-flash-message.flash-visible {
-
-            display:
-                flex;
-
-            opacity:
-                1;
-
-            transform:
-                translateY(0);
-
-        }
-
-    </style>
-
-
-
-    {{-- =========================================================
+{{-- =========================================================
          INVENTORY JAVASCRIPT
     ========================================================== --}}
-
-    <script>
-
-        document.addEventListener(
-            'DOMContentLoaded',
-            function () {
-
-
-                /* =================================================
-                   FAST SIDEBAR / PAGE ALIGNMENT
-                   Matches the seller pages with quick response:
-                   - Expanded sidebar = 288px
-                   - Collapsed sidebar = 80px
-                   - Mobile = 0px
-                   - 200ms margin transition
-                ================================================== */
-
-                const inventoryPage =
-                    document.getElementById(
-                        'inventory-page'
-                    );
-
-                const inventorySidebar =
-                    document.getElementById(
-                        'sellerSidebar'
-                    );
-
-
-                function syncInventoryPageOffset() {
-
-                    if (!inventoryPage) {
-                        return;
-                    }
-
-
-                    if (window.innerWidth <= 760) {
-
-                        inventoryPage.style.marginLeft =
-                            '0px';
-
-                        return;
-                    }
-
-
-                    const sidebarCollapsed =
-                        inventorySidebar &&
-                        inventorySidebar.classList.contains(
-                            'seller-sidebar-collapsed'
-                        );
-
-
-                    inventoryPage.style.marginLeft =
-                        sidebarCollapsed
-                            ? '80px'
-                            : '288px';
-
-                }
-
-
-                /*
-                 * Initial alignment.
-                 */
-                syncInventoryPageOffset();
-
-
-                /*
-                 * Recalculate on viewport changes.
-                 */
-                window.addEventListener(
-                    'resize',
-                    syncInventoryPageOffset
-                );
-
-
-                /*
-                 * Watch the exact class used by the seller sidebar
-                 * when it collapses/expands so Inventory responds
-                 * immediately instead of waiting for a layout measurement.
-                 */
-                if (
-                    inventorySidebar &&
-                    typeof MutationObserver !== 'undefined'
-                ) {
-
-                    const inventorySidebarObserver =
-                        new MutationObserver(
-                            function () {
-
-                                requestAnimationFrame(
-                                    syncInventoryPageOffset
-                                );
-
-                            }
-                        );
-
-
-                    inventorySidebarObserver.observe(
-                        inventorySidebar,
-                        {
-                            attributes: true,
-                            attributeFilter: ['class']
-                        }
-                    );
-
-                }
-
-
-                /*
-                 * Compatibility with the seller navbar toggle event.
-                 */
-                document.body.addEventListener(
-                    'toggle-seller-sidebar',
-                    function () {
-
-                        requestAnimationFrame(
-                            syncInventoryPageOffset
-                        );
-
-                    }
-                );
-
-
-
-
-                /* =================================================
-                   FLASH MESSAGE
-                ================================================== */
-
-                const inventoryFlashMessage =
-                    document.getElementById(
-                        'inventoryFlashMessage'
-                    );
-
-                const inventoryFlashText =
-                    document.getElementById(
-                        'inventoryFlashText'
-                    );
-
-                let inventoryFlashTimer = null;
-
-                function showInventoryFlash(message) {
-
-                    if (!inventoryFlashMessage || !inventoryFlashText) {
-                        return;
-                    }
-
-                    if (inventoryFlashTimer) {
-                        window.clearTimeout(inventoryFlashTimer);
-                    }
-
-                    inventoryFlashText.textContent = message;
-
-                    inventoryFlashMessage.classList.remove('hidden');
-
-                    void inventoryFlashMessage.offsetWidth;
-
-                    inventoryFlashMessage.classList.add('flash-visible');
-
-                    inventoryFlashTimer = window.setTimeout(function () {
-
-                        inventoryFlashMessage.classList.remove('flash-visible');
-
-                        window.setTimeout(function () {
-
-                            inventoryFlashMessage.classList.add('hidden');
-
-                        }, 200);
-
-                    }, 3000);
-
-                }
-
-                /* =================================================
-                   INVENTORY ELEMENTS
-                ================================================== */
-
-                const tabs =
-                    document.querySelectorAll(
-                        '.inventory-tab'
-                    );
-
-
-                const allHeader =
-                    document.getElementById(
-                        'allProductsHeader'
-                    );
-
-
-                const policyHeader =
-                    document.getElementById(
-                        'policyIssuesHeader'
-                    );
-
-
-                const allTable =
-                    document.getElementById(
-                        'allProductsTable'
-                    );
-
-
-                const policyTable =
-                    document.getElementById(
-                        'policyIssuesTable'
-                    );
-
-
-                const archivedTable =
-                    document.getElementById(
-                        'archivedItemsTable'
-                    );
-
-
-                const archivedEmpty =
-                    document.getElementById(
-                        'archivedItemsEmpty'
-                    );
-
-
-                const searchInput =
-                    document.getElementById(
-                        'productSearch'
-                    );
-
-
-                const categoryFilter =
-                    document.getElementById(
-                        'categoryFilter'
-                    );
-
-
-                const statusFilter =
-                    document.getElementById(
-                        'statusFilter'
-                    );
-
-
-                const showingCount =
-                    document.getElementById(
-                        'showingCount'
-                    );
-
-
-                const noResults =
-                    document.getElementById(
-                        'inventoryNoResults'
-                    );
-
-
-                const refreshButton =
-                    document.getElementById(
-                        'refreshInventory'
-                    );
-
-
-                const refreshIcon =
-                    document.getElementById(
-                        'refreshIcon'
-                    );
-
-
-
-                /* =================================================
-                   STATE
-                ================================================== */
-
-                let activeTab =
-                    'all';
-
-
-
-                /* =================================================
-                   FILTER PRODUCTS
-                ================================================== */
-
-                function filterProducts() {
-
-                    const rows =
-                        Array.from(
-                            document.querySelectorAll(
-                                '#allProductsTable .inventory-row'
-                            )
-                        );
-
-
-                    const search =
-                        (
-                            searchInput?.value ||
-                            ''
-                        )
-                        .trim()
-                        .toLowerCase();
-
-
-                    const category =
-                        categoryFilter?.value ||
-                        'all';
-
-
-                    const status =
-                        statusFilter?.value ||
-                        'all';
-
-
-                    let visible =
-                        0;
-
-
-                    rows.forEach(
-                        function (row) {
-
-                            const name =
-                                (
-                                    row.dataset.name ||
-                                    ''
-                                )
-                                .toLowerCase();
-
-
-                            const rowCategory =
-                                row.dataset.category ||
-                                '';
-
-
-                            const rowStatus =
-                                row.dataset.status ||
-                                '';
-
-
-                            const matchesSearch =
-                                !search ||
-                                name.includes(
-                                    search
-                                );
-
-
-                            const matchesCategory =
-                                category === 'all' ||
-                                rowCategory === category;
-
-
-                            const matchesStatus =
-                                status === 'all' ||
-                                rowStatus === status;
-
-
-                            const shouldShow =
-                                activeTab === 'all' &&
-                                matchesSearch &&
-                                matchesCategory &&
-                                matchesStatus;
-
-
-                            row.classList.toggle(
-                                'hidden',
-                                !shouldShow
-                            );
-
-
-                            if (
-                                shouldShow
-                            ) {
-
-                                visible++;
-
-                            }
-
-                        }
-                    );
-
-
-                    if (showingCount) {
-
-                        showingCount.textContent =
-                            visible;
-
-                    }
-
-
-                    if (noResults) {
-
-                        noResults.classList.toggle(
-                            'hidden',
-                            visible > 0
-                        );
-
-                    }
-
-                }
-
-
-
-                /* =================================================
-                   TAB VIEW
-                ================================================== */
-
-                function updateTabView() {
-
-                    allHeader?.classList.add(
-                        'hidden'
-                    );
-
-                    policyHeader?.classList.add(
-                        'hidden'
-                    );
-
-                    allTable?.classList.add(
-                        'hidden'
-                    );
-
-                    policyTable?.classList.add(
-                        'hidden'
-                    );
-
-                    archivedTable?.classList.add(
-                        'hidden'
-                    );
-
-                    archivedEmpty?.classList.add(
-                        'hidden'
-                    );
-
-                    statusFilter?.classList.remove(
-                        'hidden'
-                    );
-
-                    if (activeTab === 'policy') {
-
-                        policyHeader?.classList.remove(
-                            'hidden'
-                        );
-
-                        policyTable?.classList.remove(
-                            'hidden'
-                        );
-
-                        statusFilter?.classList.add(
-                            'hidden'
-                        );
-
-                        if (showingCount) {
-                            showingCount.textContent =
-                                document.querySelectorAll(
-                                    '#policyIssuesTable .policy-row'
-                                ).length;
-                        }
-
-                        noResults?.classList.add(
-                            'hidden'
-                        );
-
-                        return;
-                    }
-
-
-                    if (activeTab === 'archived') {
-
-                        archivedTable?.classList.remove(
-                            'hidden'
-                        );
-
-                        const archivedRows =
-                            document.querySelectorAll(
-                                '#archivedItemsTable .archived-row'
-                            );
-
-                        if (archivedRows.length === 0) {
-
-                            archivedEmpty?.classList.remove(
-                                'hidden'
-                            );
-
-                        }
-
-                        if (showingCount) {
-                            showingCount.textContent =
-                                archivedRows.length;
-                        }
-
-                        noResults?.classList.add(
-                            'hidden'
-                        );
-
-                        return;
-                    }
-
-
-                    allHeader?.classList.remove(
-                        'hidden'
-                    );
-
-                    allTable?.classList.remove(
-                        'hidden'
-                    );
-
-                    filterProducts();
-
-                }
-
-
-                /* =================================================
-                   TAB EVENTS
-                ================================================== */
-
-                tabs.forEach(
-                    function (tab) {
-
-                        tab.addEventListener(
-                            'click',
-                            function () {
-
-                                tabs.forEach(
-                                    function (item) {
-
-                                        item.classList.remove(
-                                            'active'
-                                        );
-
-                                    }
-                                );
-
-
-                                tab.classList.add(
-                                    'active'
-                                );
-
-
-                                activeTab =
-                                    tab.dataset.tab ||
-                                    'all';
-
-
-                                updateTabView();
-
-                            }
-                        );
-
-                    }
-                );
-
-
-
-                /* =================================================
-                   FILTER EVENTS
-                ================================================== */
-
-                searchInput?.addEventListener(
-                    'input',
-                    filterProducts
-                );
-
-
-                categoryFilter?.addEventListener(
-                    'change',
-                    filterProducts
-                );
-
-
-                statusFilter?.addEventListener(
-                    'change',
-                    filterProducts
-                );
-
-
-
-                /* =================================================
-                   REFRESH
-                ================================================== */
-
-                refreshButton?.addEventListener(
-                    'click',
-                    function () {
-
-                        refreshIcon?.classList.add(
-                            'animate-spin'
-                        );
-
-
-                        setTimeout(
-                            function () {
-
-                                if (searchInput) {
-
-                                    searchInput.value =
-                                        '';
-
-                                }
-
-
-                                if (categoryFilter) {
-
-                                    categoryFilter.value =
-                                        'all';
-
-                                }
-
-
-                                if (statusFilter) {
-
-                                    statusFilter.value =
-                                        'all';
-
-                                }
-
-
-                                tabs.forEach(
-                                    function (tab) {
-
-                                        tab.classList.toggle(
-                                            'active',
-
-                                            tab.dataset.tab ===
-                                                'all'
-                                        );
-
-                                    }
-                                );
-
-
-                                activeTab =
-                                    'all';
-
-
-                                updateTabView();
-
-
-                                refreshIcon?.classList.remove(
-                                    'animate-spin'
-                                );
-
-                            },
-                            450
-                        );
-
-                    }
-                );
-
-
-
-                /* =================================================
-                   PRODUCT DETAILS / POLICY / REMOVE MODALS
-                ================================================== */
-
-                const productDetailsModal =
-                    document.getElementById(
-                        'productDetailsModal'
-                    );
-
-
-                const productDetailsPanel =
-                    document.getElementById(
-                        'productDetailsModalPanel'
-                    );
-
-
-                const productRows =
-                    document.querySelectorAll(
-                        '#allProductsTable .product-clickable, #policyIssuesTable .policy-product-clickable'
-                    );
-
-
-                const cancelProductDetails =
-                    document.getElementById(
-                        'cancelProductDetails'
-                    );
-
-
-                const saveProductChanges =
-                    document.getElementById(
-                        'saveProductChanges'
-                    );
-
-
-                const removeProductButton =
-                    document.getElementById(
-                        'removeProductButton'
-                    );
-
-
-                const productDescription =
-                    document.getElementById(
-                        'productDescription'
-                    );
-
-
-                const descriptionCount =
-                    document.getElementById(
-                        'descriptionCount'
-                    );
-
-
-                const productPolicyWarning =
-                    document.getElementById(
-                        'productPolicyWarning'
-                    );
-
-                const productDetailsCategory =
-                    document.getElementById(
-                        'productDetailsCategory'
-                    );
-
-
-                const productPolicyIssueTitle =
-                    document.getElementById(
-                        'productPolicyIssueTitle'
-                    );
-
-
-                const productPolicyIssueDate =
-                    document.getElementById(
-                        'productPolicyIssueDate'
-                    );
-
-
-                const removeProductModal =
-                    document.getElementById(
-                        'removeProductModal'
-                    );
-
-
-                const removeProductModalPanel =
-                    document.getElementById(
-                        'removeProductModalPanel'
-                    );
-
-
-                const cancelRemoveProduct =
-                    document.getElementById(
-                        'cancelRemoveProduct'
-                    );
-
-
-                const confirmRemoveProduct =
-                    document.getElementById(
-                        'confirmRemoveProduct'
-                    );
-
-
-                const removeAdditionalDetails =
-                    document.getElementById(
-                        'removeAdditionalDetails'
-                    );
-
-
-                const removeDetailsCount =
-                    document.getElementById(
-                        'removeDetailsCount'
-                    );
-
-
-                let currentProductRow = null;
-
-
-                let closeDetailsTimer = null;
-
-
-                let closeRemoveTimer = null;
-
-
-                /* =================================================
-                   FADE OPEN / CLOSE HELPERS
-                ================================================== */
-
-                function fadeOpenModal(modal, panel) {
-
-                    if (!modal || !panel) {
-                        return;
-                    }
-
-                    modal.classList.remove(
-                        'hidden',
-                        'modal-closing'
-                    );
-
-                    modal.classList.add(
-                        'modal-open'
-                    );
-
-                    modal.setAttribute(
-                        'aria-hidden',
-                        'false'
-                    );
-
-                    panel.style.transform =
-                        'none';
-
-                }
-
-
-                function fadeCloseModal(
-                    modal,
-                    panel,
-                    onComplete = null
-                ) {
-
-                    if (!modal || !panel) {
-                        return;
-                    }
-
-                    modal.classList.remove(
-                        'modal-open'
-                    );
-
-                    modal.classList.add(
-                        'modal-closing'
-                    );
-
-                    modal.setAttribute(
-                        'aria-hidden',
-                        'true'
-                    );
-
-                    panel.style.transform =
-                        'none';
-
-                    window.setTimeout(
-                        function () {
-
-                            modal.classList.remove(
-                                'modal-closing'
-                            );
-
-                            modal.classList.add(
-                                'hidden'
-                            );
-
-                            if (typeof onComplete === 'function') {
-                                onComplete();
-                            }
-
-                        },
-                        200
-                    );
-
-                }
-
-
-                /* =================================================
-                   UPDATE PRODUCT DETAILS MODAL CONTENT
-                ================================================== */
-
-                function updateProductDetailsModal(row) {
-
-                    if (!row) {
-                        return;
-                    }
-
-                    const isPolicy =
-                        row.dataset.policy === 'true' ||
-                        row.classList.contains(
-                            'policy-product-clickable'
-                        );
-
-                    if (productDetailsCategory) {
-
-                        const rowCategoryBadge =
-                            row.querySelector(
-                                '.category-badge'
-                            );
-
-                        const category =
-                            rowCategoryBadge?.textContent?.trim() ||
-                            '—';
-
-                        productDetailsCategory.textContent =
-                            category;
-
-                        productDetailsCategory.className =
-                            `inline-flex items-center mt-[7px] rounded-full px-[13px] py-[4px] text-[11px] font-medium category-badge ${categoryBadgeClass(category)}`;
-
-                    }
-
-                    if (productPolicyWarning) {
-
-                        productPolicyWarning.classList.toggle(
-                            'hidden',
-                            !isPolicy
-                        );
-
-                    }
-
-                    if (isPolicy) {
-
-                        if (productPolicyIssueTitle) {
-
-                            productPolicyIssueTitle.textContent =
-                                row.dataset.issueTitle ||
-                                'Policy issue';
-
-                        }
-
-                        if (productPolicyIssueDate) {
-
-                            productPolicyIssueDate.textContent =
-                                row.dataset.issueDate ||
-                                'Review required';
-
-                        }
-
-                    }
-
-                }
-
-
-                /* =================================================
-                   OPEN PRODUCT DETAILS
-                ================================================== */
-
-                function openProductDetails(row) {
-
-                    if (!productDetailsModal) {
-                        return;
-                    }
-
-                    currentProductRow =
-                        row ||
-                        null;
-
-                    updateProductDetailsModal(
-                        currentProductRow
-                    );
-
-                    if (closeDetailsTimer) {
-                        clearTimeout(closeDetailsTimer);
-                        closeDetailsTimer = null;
-                    }
-
-                    fadeOpenModal(
-                        productDetailsModal,
-                        productDetailsPanel
-                    );
-
-                    document.body.classList.add(
-                        'overflow-hidden'
-                    );
-
-                }
-
-
-                /* =================================================
-                   CLOSE PRODUCT DETAILS
-                ================================================== */
-
-                function closeProductDetails(
-                    callback = null
-                ) {
-
-                    if (!productDetailsModal) {
-                        return;
-                    }
-
-                    if (closeDetailsTimer) {
-                        clearTimeout(closeDetailsTimer);
-                    }
-
-                    productDetailsModal.classList.remove(
-                        'modal-open'
-                    );
-
-                    productDetailsModal.classList.add(
-                        'modal-closing'
-                    );
-
-                    productDetailsModal.setAttribute(
-                        'aria-hidden',
-                        'true'
-                    );
-
-                    if (productDetailsPanel) {
-                        productDetailsPanel.style.transform =
-                            'none';
-                    }
-
-                    closeDetailsTimer =
-                        window.setTimeout(
-                            function () {
-
-                                productDetailsModal.classList.remove(
-                                    'modal-closing'
-                                );
-
-                                productDetailsModal.classList.add(
-                                    'hidden'
-                                );
-
-                                document.body.classList.remove(
-                                    'overflow-hidden'
-                                );
-
-                                currentProductRow =
-                                    null;
-
-                                if (typeof callback === 'function') {
-                                    callback();
-                                }
-
-                            },
-                            200
-                        );
-
-                }
-
-
-                /* =================================================
-                   PRODUCT ROW CLICK
-                ================================================== */
-
-                productRows.forEach(
-                    function (row) {
-
-                        row.addEventListener(
-                            'click',
-                            function (event) {
-
-                                if (
-                                    event.target.closest(
-                                        'button, input, select, textarea, a'
-                                    )
-                                ) {
-                                    return;
-                                }
-
-                                openProductDetails(row);
-
-                            }
-                        );
-
-
-                        row.addEventListener(
-                            'keydown',
-                            function (event) {
-
-                                if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                ) {
-
-                                    event.preventDefault();
-
-                                    openProductDetails(row);
-
-                                }
-
-                            }
-                        );
-
-                    }
-                );
-
-
-                /* =================================================
-                   CLOSE PRODUCT DETAILS
-                ================================================== */
-
-                cancelProductDetails?.addEventListener(
-                    'click',
-                    function () {
-                        closeProductDetails();
-                    }
-                );
-
-
-                /* =================================================
-                   CLICK OUTSIDE PRODUCT DETAILS
-                ================================================== */
-
-                productDetailsModal?.addEventListener(
-                    'click',
-                    function (event) {
-
-                        if (
-                            event.target ===
-                            productDetailsModal
-                        ) {
-
-                            closeProductDetails();
-
-                        }
-
-                    }
-                );
-
-
-                /* =================================================
-                   PRODUCT DETAILS ESC
-                ================================================== */
-
-                document.addEventListener(
-                    'keydown',
-                    function (event) {
-
-                        if (event.key !== 'Escape') {
-                            return;
-                        }
-
-                        if (
-                            removeProductModal?.classList.contains(
-                                'modal-open'
-                            )
-                        ) {
-
-                            closeRemoveProductModal();
-                            return;
-
-                        }
-
-                        if (
-                            productDetailsModal?.classList.contains(
-                                'modal-open'
-                            )
-                        ) {
-
-                            closeProductDetails();
-
-                        }
-
-                    }
-                );
-
-
-                /* =================================================
-                   DESCRIPTION COUNTER
-                ================================================== */
-
-                function updateDescriptionCount() {
-
-                    if (
-                        !productDescription ||
-                        !descriptionCount
-                    ) {
-
-                        return;
-
-                    }
-
-                    descriptionCount.textContent =
-                        `${productDescription.value.length}/300`;
-
-                }
-
-
-                productDescription?.addEventListener(
-                    'input',
-                    updateDescriptionCount
-                );
-
-
-                updateDescriptionCount();
-
-
-                /* =================================================
-                   SAVE CHANGES
-                ================================================== */
-
-                saveProductChanges?.addEventListener(
-                    'click',
-                    function () {
-
-                        const originalText =
-                            saveProductChanges.textContent;
-
-                        saveProductChanges.disabled =
-                            true;
-
-                        saveProductChanges.textContent =
-                            'Saving...';
-
-                        window.setTimeout(
-                            function () {
-
-                                saveProductChanges.disabled =
-                                    false;
-
-                                saveProductChanges.textContent =
-                                    originalText;
-
-                                closeProductDetails(
-                                    function () {
-
-                                        window.setTimeout(
-                                            function () {
-
-                                                alert(
-                                                    'Product changes saved successfully.'
-                                                );
-
-                                            },
-                                            60
-                                        );
-
-                                    }
-                                );
-
-                            },
-                            650
-                        );
-
-                    }
-                );
-
-
-                /* =================================================
-                   OPEN REMOVE PRODUCT REASON MODAL
-                ================================================== */
-
-                function openRemoveProductModal() {
-
-                    if (
-                        !removeProductModal ||
-                        !removeProductModalPanel
-                    ) {
-                        return;
-                    }
-
-                    document.querySelectorAll(
-                        'input[name="remove_reason"]'
-                    ).forEach(
-                        function (radio) {
-                            radio.checked = false;
-                        }
-                    );
-
-                    if (removeAdditionalDetails) {
-                        removeAdditionalDetails.value = '';
-                    }
-
-                    updateRemoveDetailsCount();
-
-                    fadeOpenModal(
-                        removeProductModal,
-                        removeProductModalPanel
-                    );
-
-                }
-
-
-                /* =================================================
-                   CLOSE REMOVE PRODUCT REASON MODAL
-                ================================================== */
-
-                function closeRemoveProductModal() {
-
-                    if (
-                        !removeProductModal ||
-                        !removeProductModalPanel
-                    ) {
-                        return;
-                    }
-
-                    if (closeRemoveTimer) {
-                        clearTimeout(closeRemoveTimer);
-                    }
-
-                    removeProductModal.classList.remove(
-                        'modal-open'
-                    );
-
-                    removeProductModal.classList.add(
-                        'modal-closing'
-                    );
-
-                    removeProductModal.setAttribute(
-                        'aria-hidden',
-                        'true'
-                    );
-
-                    removeProductModalPanel.style.transform =
-                        'none';
-
-                    closeRemoveTimer =
-                        window.setTimeout(
-                            function () {
-
-                                removeProductModal.classList.remove(
-                                    'modal-closing'
-                                );
-
-                                removeProductModal.classList.add(
-                                    'hidden'
-                                );
-
-                            },
-                            200
-                        );
-
-                }
-
-
-                /* =================================================
-                   REMOVE BUTTON -> REASON MODAL
-                ================================================== */
-
-                removeProductButton?.addEventListener(
-                    'click',
-                    function () {
-
-                        if (!currentProductRow) {
-                            return;
-                        }
-
-                        openRemoveProductModal();
-
-                    }
-                );
-
-
-                /* =================================================
-                   REMOVE DETAILS COUNTER
-                ================================================== */
-
-                function updateRemoveDetailsCount() {
-
-                    if (
-                        !removeAdditionalDetails ||
-                        !removeDetailsCount
-                    ) {
-                        return;
-                    }
-
-                    removeDetailsCount.textContent =
-                        `${removeAdditionalDetails.value.length}/300`;
-
-                }
-
-
-                removeAdditionalDetails?.addEventListener(
-                    'input',
-                    updateRemoveDetailsCount
-                );
-
-                updateRemoveDetailsCount();
-
-
-                /* =================================================
-                   CANCEL REMOVE REASON MODAL
-                ================================================== */
-
-                cancelRemoveProduct?.addEventListener(
-                    'click',
-                    closeRemoveProductModal
-                );
-
-
-                removeProductModal?.addEventListener(
-                    'click',
-                    function (event) {
-
-                        if (
-                            event.target ===
-                            removeProductModal
-                        ) {
-                            closeRemoveProductModal();
-                        }
-
-                    }
-                );
-
-
-                /* =================================================
-                   MOVE REMOVED PRODUCT TO ARCHIVED TAB
-                ================================================== */
-
-
-                /* =================================================
-                   CATEGORY BADGE CLASS HELPER
-                ================================================== */
-
-                function categoryBadgeClass(category) {
-
-                    const map = {
-                        'Pet Supplies': 'category-pet-supplies',
-                        'Electronics and Gadgets': 'category-electronics-and-gadgets',
-                        'Electronics & Gadgets': 'category-electronics-and-gadgets',
-                        "Women's Apparel": 'category-womens-apparel',
-                        "Women’s Apparel": 'category-womens-apparel',
-                        "Men's Apparel": 'category-mens-apparel',
-                        "Men’s Apparel": 'category-mens-apparel',
-                        'Kids and Baby': 'category-kids-and-baby',
-                        'Home and Garden': 'category-home-and-garden',
-                        'Sports and Outdoors': 'category-sports-and-outdoors',
-                        'Health and Beauty': 'category-health-and-beauty',
-                        'Books and Media': 'category-books-and-media',
-                        'Food and Gourmet': 'category-food-and-gourmet',
-                        'Automotive & Motorcycle': 'category-automotive-motorcycle',
-                        'Furniture and Office Equipment': 'category-furniture-and-office-equipment',
-                        'Jewelry and Watches': 'category-jewelry-and-watches',
-                        'Office and School Supplies': 'category-office-and-school-supplies'
-                    };
-
-                    return map[category] || 'category-default';
-                }
-
-
-                function archiveCurrentProduct(reason, details) {
-
-                    if (!currentProductRow) {
-                        return;
-                    }
-
-                    const row = currentProductRow;
-
-                    const name =
-                        row.dataset.name ||
-                        'Product';
-
-                    const category =
-                        row.querySelector('.category-badge')?.textContent?.trim() ||
-                        '—';
-
-                    const price =
-                        row.querySelector('.product-number')?.textContent?.trim() ||
-                        '—';
-
-                    const stock =
-                        row.querySelectorAll('.product-number')[1]?.textContent?.trim() ||
-                        '—';
-
-                    const archivedTable =
-                        document.getElementById(
-                            'archivedItemsTable'
-                        );
-
-                    const archivedEmpty =
-                        document.getElementById(
-                            'archivedItemsEmpty'
-                        );
-
-                    if (!archivedTable) {
-                        return;
-                    }
-
-                    const archivedRow =
-                        document.createElement(
-                            'article'
-                        );
-
-                    archivedRow.className =
-                        'archived-row grid grid-cols-[2.3fr_1.65fr_1fr_0.9fr_1.1fr] items-center min-h-[90px] px-[20px] border-b border-[#DDD9D7]';
-
-                    archivedRow.innerHTML = `
-                        <div class="product-main">
-                            <div class="product-thumb">
-                                <div class="product-bag"></div>
-                            </div>
-                            <div class="min-w-0">
-                                <h3 class="product-name">${escapeHtml(name)}</h3>
-                                <p class="product-sold">${reasonLabel(reason)}</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <span class="category-badge ${categoryBadgeClass(category)}">${escapeHtml(category)}</span>
-                        </div>
-
-                        <div class="product-number">${escapeHtml(price)}</div>
-
-                        <div class="product-number">${escapeHtml(stock)}</div>
-
-                        <div class="archived-reason">
-                            <p class="archived-reason-title">Archived</p>
-                            <p class="archived-reason-detail">${escapeHtml(details || reasonLabel(reason))}</p>
-                        </div>
-                    `;
-
-                    archivedTable.appendChild(
-                        archivedRow
-                    );
-
-                    archivedTable.classList.remove(
-                        'hidden'
-                    );
-
-                    archivedEmpty?.classList.add(
-                        'hidden'
-                    );
-
-                    row.remove();
-
-                }
-
-
-                function reasonLabel(reason) {
-
-                    const labels = {
-                        'no-longer-selling': 'No longer selling this product',
-                        'updating-listing': 'Updating or replacing the product listing',
-                        'pricing-changes': 'Pricing or cost changes',
-                        'supplier-changes': 'Supplier or sourcing changes',
-                        'low-demand': 'Product has low customer demand',
-                        'other': 'Other',
-                    };
-
-                    return labels[reason] || 'Archived product';
-
-                }
-
-
-                function escapeHtml(value) {
-
-                    return String(value)
-                        .replaceAll('&', '&amp;')
-                        .replaceAll('<', '&lt;')
-                        .replaceAll('>', '&gt;')
-                        .replaceAll('"', '&quot;')
-                        .replaceAll("'", '&#039;');
-
-                }
-
-
-                /* =================================================
-                   CONFIRM REMOVE
-                ================================================== */
-
-                confirmRemoveProduct?.addEventListener(
-                    'click',
-                    function () {
-
-                        const selectedReason =
-                            document.querySelector(
-                                'input[name="remove_reason"]:checked'
-                            );
-
-                        if (!selectedReason) {
-
-                            alert(
-                                'Please select a reason for removing the product.'
-                            );
-
-                            return;
-
-                        }
-
-                        const reason =
-                            selectedReason.value;
-
-                        const details =
-                            removeAdditionalDetails?.value?.trim() ||
-                            '';
-
-                        confirmRemoveProduct.disabled =
-                            true;
-
-                        confirmRemoveProduct.textContent =
-                            'Removing...';
-
-                        window.setTimeout(
-                            function () {
-
-                                archiveCurrentProduct(
-                                    reason,
-                                    details
-                                );
-
-                                confirmRemoveProduct.disabled =
-                                    false;
-
-                                confirmRemoveProduct.textContent =
-                                    'Remove';
-
-                                closeRemoveProductModal();
-
-                                closeProductDetails(
-                                    function () {
-
-                                        currentProductRow =
-                                            null;
-
-                                        window.setTimeout(
-                                            function () {
-
-                                                showInventoryFlash(
-                                                    'Product archived successfully and moved to Archived Items.'
-                                                );
-
-                                            },
-                                            60
-                                        );
-
-                                    }
-                                );
-
-                            },
-                            450
-                        );
-
-                    }
-                );
-
-                /* =================================================
-                   ADD PRODUCT MODAL
-                ================================================== */
-
-                const addProductModal =
-                    document.getElementById(
-                        'addProductModal'
-                    );
-
-
-                const addProductModalPanel =
-                    document.getElementById(
-                        'addProductModalPanel'
-                    );
-
-
-                const openAddProductModal =
-                    document.getElementById(
-                        'openAddProductModal'
-                    );
-
-
-                const closeAddProductModal =
-                    document.getElementById(
-                        'closeAddProductModal'
-                    );
-
-
-                const cancelAddProduct =
-                    document.getElementById(
-                        'cancelAddProduct'
-                    );
-
-
-                const addProductForm =
-                    document.getElementById(
-                        'addProductForm'
-                    );
-
-
-
-                /* OPEN ADD PRODUCT */
-
-                function openAddModal() {
-
-                    if (!addProductModal) {
-
-                        return;
-
-                    }
-
-
-                    addProductModal.classList.remove(
-                        'hidden'
-                    );
-
-
-                    addProductModal.classList.add(
-                        'modal-open'
-                    );
-
-
-                    document.body.classList.add(
-                        'overflow-hidden'
-                    );
-
-                }
-
-
-
-                /* CLOSE ADD PRODUCT */
-
-                function closeAddModal() {
-
-                    if (!addProductModal || !addProductModalPanel) {
-
-                        return;
-
-                    }
-
-                    fadeCloseModal(
-                        addProductModal,
-                        addProductModalPanel,
-                        function () {
-                            document.body.classList.remove(
-                                'overflow-hidden'
-                            );
-                        }
-                    );
-
-                }
-
-                openAddProductModal?.addEventListener(
-                    'click',
-                    openAddModal
-                );
-
-
-                closeAddProductModal?.addEventListener(
-                    'click',
-                    closeAddModal
-                );
-
-
-                cancelAddProduct?.addEventListener(
-                    'click',
-                    closeAddModal
-                );
-
-
-                addProductModal?.addEventListener(
-                    'click',
-                    function (event) {
-
-                        if (
-                            event.target ===
-                            addProductModal
-                        ) {
-
-                            closeAddModal();
-
-                        }
-
-                    }
-                );
-
-
-
-                /* =================================================
-                   ADD PRODUCT FORM
-                ================================================== */
-
-                addProductForm?.addEventListener(
-                    'submit',
-                    function (event) {
-
-                        event.preventDefault();
-
-
-                        const submitButton =
-                            addProductForm.querySelector(
-                                'button[type="submit"]'
-                            );
-
-
-                        if (submitButton) {
-
-                            submitButton.disabled =
-                                true;
-
-                            submitButton.textContent =
-                                'Adding...';
-
-                        }
-
-
-                        setTimeout(
-                            function () {
-
-                                if (submitButton) {
-
-                                    submitButton.disabled =
-                                        false;
-
-                                    submitButton.textContent =
-                                        'Add Product';
-
-                                }
-
-
-                                addProductForm.reset();
-
-
-                                closeAddModal();
-
-
-                                setTimeout(
-                                    function () {
-
-                                        alert(
-                                            'Product added successfully.'
-                                        );
-
-                                    },
-                                    250
-                                );
-
-                            },
-                            700
-                        );
-
-                    }
-                );
-
-
-
-                /* =================================================
-                   PAGINATION
-                ================================================== */
-
-                const paginationButtons =
-                    document.querySelectorAll(
-                        '.pagination-button[data-page]'
-                    );
-
-
-                const previousPage =
-                    document.getElementById(
-                        'previousPage'
-                    );
-
-
-                const nextPage =
-                    document.getElementById(
-                        'nextPage'
-                    );
-
-
-                let currentPage =
-                    1;
-
-
-                paginationButtons.forEach(
-                    function (button) {
-
-                        button.addEventListener(
-                            'click',
-                            function () {
-
-                                currentPage =
-                                    parseInt(
-                                        button.dataset.page,
-                                        10
-                                    ) || 1;
-
-
-                                paginationButtons.forEach(
-                                    function (item) {
-
-                                        item.classList.toggle(
-                                            'current',
-
-                                            parseInt(
-                                                item.dataset.page,
-                                                10
-                                            ) ===
-                                            currentPage
-                                        );
-
-                                    }
-                                );
-
-                            }
-                        );
-
-                    }
-                );
-
-
-                previousPage?.addEventListener(
-                    'click',
-                    function () {
-
-                        if (
-                            currentPage <= 1
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        currentPage--;
-
-
-                        paginationButtons.forEach(
-                            function (item) {
-
-                                item.classList.toggle(
-                                    'current',
-
-                                    parseInt(
-                                        item.dataset.page,
-                                        10
-                                    ) ===
-                                    currentPage
-                                );
-
-                            }
-                        );
-
-                    }
-                );
-
-
-                nextPage?.addEventListener(
-                    'click',
-                    function () {
-
-                        if (
-                            currentPage >= 3
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        currentPage++;
-
-
-                        paginationButtons.forEach(
-                            function (item) {
-
-                                item.classList.toggle(
-                                    'current',
-
-                                    parseInt(
-                                        item.dataset.page,
-                                        10
-                                    ) ===
-                                    currentPage
-                                );
-
-                            }
-                        );
-
-                    }
-                );
-
-
-
-                /* =================================================
-                   INITIALIZE
-                ================================================== */
-
-                updateTabView();
-
-            }
-        );
-
-    </script>
-
 </body>
 
 </html>

@@ -1,5 +1,116 @@
 
 <style>
+    /* =========================================================
+       DASHBOARD TYPOGRAPHY / FORMAT
+       Uses the same Poppins family, sizing, weights, and
+       visual hierarchy as the Dashboard.
+    ========================================================== */
+
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    #admin-content,
+    #admin-content * {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    #admin-content {
+        color: #17120F;
+    }
+
+    #admin-content h2 {
+        color: #17120F;
+        font-size: 21px;
+        line-height: 1.2;
+        font-weight: 600;
+    }
+
+    #admin-content h3 {
+        color: #17120F;
+        font-weight: 600;
+    }
+
+    /* Dashboard-style registration stat cards */
+    #admin-content .registration-stat-card {
+        min-height: 108px;
+        background: #FFFFFF;
+        border: 1px solid #F0E9E6;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+        padding: 16px;
+        box-sizing: border-box;
+    }
+
+    #admin-content .registration-stat-icon {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        object-fit: contain;
+        display: block;
+    }
+
+    #admin-content .registration-stat-number {
+        font-size: 23px;
+        line-height: 1;
+        font-weight: 600;
+        color: #17120F;
+    }
+
+    #admin-content .registration-stat-label {
+        margin-top: 5px;
+        font-size: 13px;
+        line-height: 1.15;
+        font-weight: 400;
+        color: #8C8784;
+    }
+
+    #admin-content .registration-card-link {
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 500;
+        color: #7B1B1B;
+    }
+
+    /* Match Dashboard's common text hierarchy across this page. */
+    #admin-content .text-\[23px\] { font-size: 23px; }
+    #admin-content .text-\[21px\] { font-size: 21px; }
+    #admin-content .text-\[20px\] { font-size: 20px; }
+    #admin-content .text-\[19px\] { font-size: 19px; }
+    #admin-content .text-\[18px\] { font-size: 18px; }
+    #admin-content .text-\[17px\] { font-size: 17px; }
+    #admin-content .text-\[15px\] { font-size: 15px; }
+    #admin-content .text-\[14px\] { font-size: 14px; }
+    #admin-content .text-\[13px\] { font-size: 13px; }
+    #admin-content .text-\[12px\] { font-size: 12px; }
+    #admin-content .text-\[11px\] { font-size: 11px; }
+    #admin-content .text-\[10px\] { font-size: 10px; }
+
+    #admin-content .font-semibold { font-weight: 600; }
+    #admin-content .font-medium { font-weight: 500; }
+    #admin-content .font-normal { font-weight: 400; }
+
+    /* Keep very small utility/status text readable while matching Dashboard scale. */
+    #admin-content .registration-table-text {
+        font-size: 14px;
+        line-height: 1.25;
+        font-weight: 400;
+        color: #17120F;
+    }
+
+    #admin-content .registration-muted-text {
+        font-size: 12px;
+        line-height: 1.25;
+        font-weight: 400;
+        color: #8C8784;
+    }
+
+    /* Dashboard-like buttons */
+    #admin-content button,
+    #admin-content input,
+    #admin-content select,
+    #admin-content textarea {
+        font-family: 'Poppins', sans-serif;
+    }
+
     /* Hide the visual scrollbar inside registration detail modals while keeping them scrollable. */
     .registration-detail-modal {
         display: flex;
@@ -38,6 +149,95 @@
         width: 0;
         height: 0;
     }
+
+    /* =========================================================
+       CATEGORY PILLS
+    ========================================================== */
+
+    .registration-category-pill {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        min-height: 28px;
+        padding: 5px 11px;
+        border-radius: 9999px;
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .category-pet-supplies { background: #E7F5E9; color: #2F6B3A; }
+    .category-electronics-and-gadgets { background: #DDEBFF; color: #185FA3; }
+    .category-womens-apparel { background: #F9DFEA; color: #A12763; }
+    .category-mens-apparel { background: #E6E2F8; color: #5A4A9A; }
+    .category-kids-and-baby { background: #FFE5B8; color: #9A5B00; }
+    .category-home-and-garden { background: #DDF3E4; color: #27704A; }
+    .category-sports-and-outdoors { background: #DDECF2; color: #23627A; }
+    .category-health-and-beauty { background: #FFE0DC; color: #A63B2C; }
+    .category-books-and-media { background: #E6E8F2; color: #3F4A68; }
+    .category-food-and-gourmet { background: #FFF0C7; color: #8A5A00; }
+    .category-automotive-motorcycle { background: #E3E3E3; color: #434343; }
+    .category-furniture-and-office-equipment { background: #EBDCCF; color: #795548; }
+    .category-jewelry-and-watches { background: #F8E2B8; color: #946B00; }
+    .category-office-and-school-supplies { background: #E2F0F7; color: #2B617D; }
+    .category-default { background: #F1EFEE; color: #6B6663; }
+
+
+    /* =========================================================
+       REGISTRATIONS TABLE — FINAL 12PX CONTENT
+       Keep all visible table row content at exactly 12px.
+       Table headers and controls can keep their own sizing.
+    ========================================================== */
+    #admin-content #registrations-table tbody,
+    #admin-content #registrations-table tbody tr,
+    #admin-content #registrations-table tbody td,
+    #admin-content #registrations-table tbody td span,
+    #admin-content #registrations-table tbody td div {
+        font-size: 12px !important;
+    }
+
+    #admin-content #registrations-table tbody td .text-\[10px\] {
+        font-size: 12px !important;
+    }
+
+    /* Keep the archive tables consistent too. */
+    #admin-content #approved-users-body,
+    #admin-content #approved-users-body tr,
+    #admin-content #approved-users-body td,
+    #admin-content #approved-users-body td span,
+    #admin-content #approved-users-body td div,
+    #admin-content #rejected-users-body,
+    #admin-content #rejected-users-body tr,
+    #admin-content #rejected-users-body td,
+    #admin-content #rejected-users-body td span,
+    #admin-content #rejected-users-body td div {
+        font-size: 12px !important;
+    }
+
+    /* Search bar — match the compact Seller Compliance width. */
+    #admin-content .registration-search-wrap {
+        position: relative;
+        width: 330px;
+        flex: 0 0 330px;
+    }
+
+    #admin-content #registration-search {
+        width: 100%;
+        height: 36px;
+        box-sizing: border-box;
+        border-radius: 8px;
+        padding: 0 38px 0 12px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1279px) {
+        #admin-content .registration-search-wrap {
+            width: 100%;
+            flex: 1 1 100%;
+        }
+    }
+
 </style>
 
 @extends('layouts.admin')
@@ -48,52 +248,36 @@
 
 <div
     id="admin-content"
-    class="ml-72 pt-[128px] px-6 pb-8 min-h-screen transition-all duration-300"
+    class="ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
-
-    <!-- =========================================================
-         PAGE HEADER
-    ========================================================== -->
-
-    <div class="mb-8">
-
-        <h2 class="text-[26px] font-bold text-gray-900">
-            Account Registrations
-        </h2>
-
-    </div>
-
-
     <!-- =========================================================
          REGISTRATION STAT CARDS
     ========================================================== -->
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
 
         <!-- =====================================================
              PENDING
         ====================================================== -->
 
         <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px]
+            class="registration-stat-card
                    flex flex-col justify-between
                    transition-all duration-300
                    hover:-translate-y-1 hover:shadow-md"
         >
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2.5">
 
                 <!-- Icon -->
 
                 <div
-                    class="w-14 h-14 shrink-0
-                           flex items-center justify-center"
+                    class="shrink-0 flex items-center justify-center"
                 >
 
                     <img
                         src="{{ asset('icons/admin/registrations/Pending Registrations.png') }}"
-                        class="w-14 h-14 object-contain"
+                        class="registration-stat-icon"
                         alt="Pending Registrations"
                     >
 
@@ -104,11 +288,11 @@
 
                 <div class="min-w-0">
 
-                    <p id="pending-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                    <p id="pending-count-card" class="registration-stat-number">
                         {{ $counts['pending'] }}
                     </p>
 
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                    <p class="registration-stat-label whitespace-nowrap">
                         Pending Requests
                     </p>
 
@@ -131,11 +315,9 @@
             <button
                 type="button"
                 id="rejected-users-button"
-                class="w-full bg-white rounded-xl p-5 shadow-sm border border-gray-100
-       min-h-[132px]
-       relative
-       text-left
-       flex flex-col justify-center
+                class="registration-stat-card w-full
+                       relative text-left
+                       flex flex-col justify-center
                        transition-all duration-300
                        hover:-translate-y-1 hover:shadow-md
                        hover:border-[#E9A3A3]
@@ -144,18 +326,17 @@
 
                 <div class="flex items-center justify-between">
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2.5">
 
                         <!-- Icon -->
 
                         <div
-                            class="w-14 h-14 shrink-0
-                                   flex items-center justify-center"
+                            class="shrink-0 flex items-center justify-center"
                         >
 
                             <img
                                 src="{{ asset('icons/admin/registrations/Rejected Registrations.png') }}"
-                                class="w-14 h-14 object-contain"
+                                class="registration-stat-icon"
                                 alt="Rejected Registrations"
                             >
 
@@ -166,11 +347,11 @@
 
                         <div class="min-w-0">
 
-                            <p id="rejected-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                            <p id="rejected-count-card" class="registration-stat-number">
                                 {{ $counts['rejected'] }}
                             </p>
 
-                            <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                            <p class="registration-stat-label whitespace-nowrap">
                                 Rejected Users
                             </p>
 
@@ -182,7 +363,7 @@
                     <!-- Arrow -->
 
                     <svg
-                        class="w-5 h-5 shrink-0 text-gray-400
+                        class="w-[18px] h-[18px] shrink-0 text-gray-400
                                group-hover:text-[#7B1B1B]
                                group-hover:translate-x-1
                                transition-all duration-300"
@@ -205,9 +386,9 @@
 
                 <!-- Bottom Text -->
 
-                <div class="mt-3 ml-[72px]">
+                <div class="mt-2 ml-[52px]">
 
-                    <span class="text-[12px] text-[#7B1B1B] font-medium">
+                    <span class="registration-card-link">
                         View rejected users →
                     </span>
 
@@ -227,11 +408,9 @@
             <button
                 type="button"
                 id="approved-users-button"
-                class="w-full bg-white rounded-xl p-5 shadow-sm border border-gray-100
-       min-h-[132px]
-       relative
-       text-left
-       flex flex-col justify-center
+                class="registration-stat-card w-full
+                       relative text-left
+                       flex flex-col justify-center
                        transition-all duration-300
                        hover:-translate-y-1 hover:shadow-md
                        hover:border-[#E9A3A3]
@@ -240,18 +419,17 @@
 
                 <div class="flex items-center justify-between">
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2.5">
 
                         <!-- Icon -->
 
                         <div
-                            class="w-14 h-14 shrink-0
-                                   flex items-center justify-center"
+                            class="shrink-0 flex items-center justify-center"
                         >
 
                             <img
                                 src="{{ asset('icons/admin/registrations/Approved Registrations.png') }}"
-                                class="w-14 h-14 object-contain"
+                                class="registration-stat-icon"
                                 alt="Approved Registrations"
                             >
 
@@ -262,11 +440,11 @@
 
                         <div class="min-w-0">
 
-                            <p id="approved-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                            <p id="approved-count-card" class="registration-stat-number">
                                 {{ $counts['approved'] }}
                             </p>
 
-                            <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                            <p class="registration-stat-label whitespace-nowrap">
                                 Approved Users
                             </p>
 
@@ -278,7 +456,7 @@
                     <!-- Arrow -->
 
                     <svg
-                        class="w-5 h-5 shrink-0 text-gray-400
+                        class="w-[18px] h-[18px] shrink-0 text-gray-400
                                group-hover:text-[#7B1B1B]
                                group-hover:translate-x-1
                                transition-all duration-300"
@@ -301,9 +479,9 @@
 
                 <!-- Bottom Text -->
 
-                <div class="mt-3 ml-[72px]">
+                <div class="mt-2 ml-[52px]">
 
-                    <span class="text-[12px] text-[#7B1B1B] font-medium">
+                    <span class="registration-card-link">
                         View approved users →
                     </span>
 
@@ -319,26 +497,23 @@
         ====================================================== -->
 
         <div
-            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100
-                   min-h-[132px]
-                   relative
+            class="registration-stat-card relative
                    flex flex-col justify-start
                    transition-all duration-300
                    hover:-translate-y-1 hover:shadow-md"
         >
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2.5">
 
                 <!-- Icon -->
 
                 <div
-                    class="w-14 h-14 shrink-0
-                           flex items-center justify-center"
+                    class="shrink-0 flex items-center justify-center"
                 >
 
                     <img
                         src="{{ asset('icons/admin/registrations/Total registrations.png') }}"
-                        class="w-14 h-14 object-contain"
+                        class="registration-stat-icon"
                         alt="Total Registrations"
                     >
 
@@ -349,11 +524,11 @@
 
                 <div class="min-w-0">
 
-                    <p id="total-count-card" class="text-[26px] font-bold text-gray-900 leading-none">
+                    <p id="total-count-card" class="registration-stat-number">
                         {{ $counts['total'] }}
                     </p>
 
-                    <p class="text-[14px] text-gray-400 mt-1 whitespace-nowrap">
+                    <p class="registration-stat-label whitespace-nowrap">
                         Total Registration
                     </p>
 
@@ -377,7 +552,7 @@
     >
 
         <div
-            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[85vh]
+            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[88vh]
                    overflow-y-auto rounded-2xl shadow-xl
                    transform transition-all duration-300"
         >
@@ -386,12 +561,12 @@
 
             <div
                 class="flex items-center justify-between
-                       px-6 py-5 border-b border-gray-200"
+                       px-5 py-4 border-b border-gray-200"
             >
 
                 <div>
 
-                    <h3 class="text-[21px] font-bold text-gray-900">
+                    <h3 class="text-[20px] font-bold text-gray-900">
                         Approved Users
                     </h3>
 
@@ -405,14 +580,14 @@
                 <button
                     type="button"
                     id="close-approved-users"
-                    class="w-9 h-9 flex items-center justify-center
+                    class="w-8 h-8 flex items-center justify-center
                            rounded-full text-gray-500
                            hover:bg-gray-100 hover:text-gray-800
                            transition"
                 >
 
                     <svg
-                        class="w-5 h-5"
+                        class="w-[18px] h-[18px]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -497,159 +672,6 @@
 
 
                     <tbody id="approved-users-body" class="divide-y divide-gray-200">
-
-                        <!-- APPROVED USER 1 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">JD</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Juan Dela Cruz</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                    <span class="text-[13px]">Seller</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">juan.delacruz@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0917 123 4567</td>
-                            <td class="px-6 py-4 text-[13px]">May 31, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 2 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F4E0C5] flex items-center justify-center text-[11px] font-semibold text-[#8C5A11] shrink-0">MS</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Maria Santos</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                    <span class="text-[13px]">Buyer</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">maria.santos@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0928 765 4321</td>
-                            <td class="px-6 py-4 text-[13px]">May 30, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 3 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#DCEBD9] flex items-center justify-center text-[11px] font-semibold text-[#37662E] shrink-0">JR</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Jose Ramirez</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                    <span class="text-[13px]">Buyer</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">jose.ramirez@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0906 555 7890</td>
-                            <td class="px-6 py-4 text-[13px]">May 29, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 4 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F5DAD8] flex items-center justify-center text-[11px] font-semibold text-[#8A2F28] shrink-0">AR</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Anna Reyes</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                    <span class="text-[13px]">Seller</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">anna.reyes@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0915 888 1122</td>
-                            <td class="px-6 py-4 text-[13px]">May 28, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 5 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#DFE8F4] flex items-center justify-center text-[11px] font-semibold text-[#35577A] shrink-0">PM</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Paolo Mendoza</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                    <span class="text-[13px]">Buyer</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">paolo.mendoza@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0917 642 1305</td>
-                            <td class="px-6 py-4 text-[13px]">May 27, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 6 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#E6DFF0] flex items-center justify-center text-[11px] font-semibold text-[#624A7A] shrink-0">LC</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Liza Cruz</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                    <span class="text-[13px]">Seller</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">liza.cruz@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0932 444 6677</td>
-                            <td class="px-6 py-4 text-[13px]">May 26, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 7 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F0E4D5] flex items-center justify-center text-[11px] font-semibold text-[#765832] shrink-0">DV</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Mark Dela Vega</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                    <span class="text-[13px]">Buyer</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">mark.delavega@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0910 333 2211</td>
-                            <td class="px-6 py-4 text-[13px]">May 24, 2026</td>
-                        </tr>
-
-                        <!-- APPROVED USER 8 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#DDEFEA] flex items-center justify-center text-[11px] font-semibold text-[#2E6B5D] shrink-0">PL</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Patricia Lim</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                    <span class="text-[13px]">Seller</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">patricia.lim@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0918 777 8899</td>
-                            <td class="px-6 py-4 text-[13px]">May 23, 2026</td>
-                        </tr>
-
                     </tbody>
 
                 </table>
@@ -664,8 +686,7 @@
                        flex items-center justify-between"
             >
 
-                <p id="approved-users-count" class="text-[13px] text-gray-400">
-                    8 approved users
+                <p id="approved-users-count" class="text-[12px] text-gray-400">
                 </p>
 
                 <button
@@ -698,7 +719,7 @@
     >
 
         <div
-            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[85vh]
+            class="registration-archive-modal bg-white w-full max-w-5xl max-h-[88vh]
                    overflow-y-auto rounded-2xl shadow-xl
                    transform transition-all duration-300"
         >
@@ -707,12 +728,12 @@
 
             <div
                 class="flex items-center justify-between
-                       px-6 py-5 border-b border-gray-200"
+                       px-5 py-4 border-b border-gray-200"
             >
 
                 <div>
 
-                    <h3 class="text-[21px] font-bold text-gray-900">
+                    <h3 class="text-[20px] font-bold text-gray-900">
                         Rejected Users
                     </h3>
 
@@ -726,14 +747,14 @@
                 <button
                     type="button"
                     id="close-rejected-users"
-                    class="w-9 h-9 flex items-center justify-center
+                    class="w-8 h-8 flex items-center justify-center
                            rounded-full text-gray-500
                            hover:bg-gray-100 hover:text-gray-800
                            transition"
                 >
 
                     <svg
-                        class="w-5 h-5"
+                        class="w-[18px] h-[18px]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -818,83 +839,6 @@
 
 
                     <tbody id="rejected-users-body" class="divide-y divide-gray-200">
-
-                        <!-- REJECTED USER 1 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F5D7D7] flex items-center justify-center text-[11px] font-semibold text-[#8B3030] shrink-0">KC</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Kevin Castillo</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                    <span class="text-[13px]">Seller</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">kevin.castillo@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0917 245 6310</td>
-                            <td class="px-6 py-4 text-[13px]">May 31, 2026</td>
-                        </tr>
-
-                        <!-- REJECTED USER 2 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#E8DDF0] flex items-center justify-center text-[11px] font-semibold text-[#69497A] shrink-0">JM</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Jessa Martinez</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                    <span class="text-[13px]">Buyer</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">jessa.martinez@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0921 334 8062</td>
-                            <td class="px-6 py-4 text-[13px]">May 29, 2026</td>
-                        </tr>
-
-                        <!-- REJECTED USER 3 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#F0E1CC] flex items-center justify-center text-[11px] font-semibold text-[#7B5D2D] shrink-0">RN</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Ramon Navarro</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                    <span class="text-[13px]">Seller</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">ramon.navarro@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0908 517 4423</td>
-                            <td class="px-6 py-4 text-[13px]">May 26, 2026</td>
-                        </tr>
-
-                        <!-- REJECTED USER 4 -->
-                        <tr class="hover:bg-[#FFF9F7] transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-[#DDE8F2] flex items-center justify-center text-[11px] font-semibold text-[#45657D] shrink-0">SG</div>
-                                    <span class="text-[13px] font-medium text-gray-800">Sofia Garcia</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                    <span class="text-[13px]">Buyer</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-[13px] text-gray-400">sofia.garcia@gmail.com</td>
-                            <td class="px-6 py-4 text-[13px]">0916 729 5504</td>
-                            <td class="px-6 py-4 text-[13px]">May 24, 2026</td>
-                        </tr>
-
                     </tbody>
 
                 </table>
@@ -909,8 +853,7 @@
                        flex items-center justify-between"
             >
 
-                <p id="rejected-users-count" class="text-[13px] text-gray-400">
-                    4 rejected users
+                <p id="rejected-users-count" class="text-[12px] text-gray-400">
                 </p>
 
                 <button
@@ -970,7 +913,7 @@
                         data-modal="seller-details-modal"
                         aria-label="Close seller details"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
                         </svg>
                     </button>
@@ -981,132 +924,22 @@
 
             <div class="registration-detail-body flex-1 px-7 pb-5">
 
-                <!-- Personal Information -->
-                <section>
-
-                    <div class="flex items-center gap-2 mb-6">
-                        <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M16 11a4 4 0 1 0-3.9-5A4 4 0 0 0 16 11Zm-8 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 1c-2.7 0-5 1.35-5 3v1h10v-1c0-1.65-2.3-3-5-3ZM8 14c-2.2 0-4 1.1-4 2.5V18h8v-1.5C12 15.1 10.2 14 8 14Z"/>
-                        </svg>
-                        <h4 class="text-[20px] font-semibold text-[#A52A2A]">Personal Information</h4>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-8">
-
-                        <div class="space-y-5">
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Last Name</span>
-                                <span class="text-[15px] font-medium text-gray-900">Dela Cruz</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">First Name</span>
-                                <span class="text-[15px] font-medium text-gray-900">Juan</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Middle Name</span>
-                                <span class="text-[15px] font-medium text-gray-900">Amador</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Sex</span>
-                                <span class="text-[15px] font-medium text-gray-900">Male</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Birthday</span>
-                                <span class="text-[15px] font-medium text-gray-900">November 7, 2006</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Age</span>
-                                <span class="text-[15px] font-medium text-gray-900">19</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Email</span>
-                                <span class="text-[15px] font-medium text-gray-900 break-all">juandelacruz@gmail.com</span>
-                            </div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                                <span class="text-[15px] text-gray-400">Contact No.</span>
-                                <span class="text-[15px] font-medium text-gray-900">0917 123 4567</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <p class="text-[15px] text-gray-400 mb-2">Valid ID</p>
-                            <div class="w-full h-[180px] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#f0e7d2] via-[#efe1c2] to-[#d6c49c] relative shadow-sm">
-                                <div class="absolute top-3 left-4 text-[8px] font-semibold text-[#2d3550]">REPUBLIKA NG PILIPINAS</div>
-                                <div class="absolute top-6 left-4 text-[7px] text-[#2d3550]">PHILIPPINE IDENTIFICATION CARD</div>
-                                <div class="absolute left-4 top-[44px] w-[58px] h-[76px] rounded bg-gray-300 flex items-center justify-center overflow-hidden">
-                                    <svg class="w-10 h-10 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"/></svg>
-                                </div>
-                                <div class="absolute left-[86px] top-[47px] text-[8px] text-[#4b5563]">Apelyido / Last Name</div>
-                                <div class="absolute left-[86px] top-[60px] text-[12px] font-bold text-[#111827]">DELA CRUZ</div>
-                                <div class="absolute left-[86px] top-[78px] text-[8px] text-[#4b5563]">Pangalan / First Name</div>
-                                <div class="absolute left-[86px] top-[91px] text-[12px] font-bold text-[#111827]">JUAN</div>
-                                <div class="absolute left-[86px] top-[109px] text-[8px] text-[#4b5563]">MIDDLE NAME</div>
-                                <div class="absolute left-[86px] top-[122px] text-[10px] font-semibold text-[#111827]">AMADOR</div>
-                                <div class="absolute left-[86px] bottom-4 text-[8px] text-[#4b5563]">Date of Birth: 07 NOV 2006</div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <div class="border-t border-gray-200 my-7"></div>
-
-                <!-- Address -->
-                <section>
-                    <div class="flex items-center gap-2 mb-6">
-                        <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/>
-                        </svg>
-                        <h4 class="text-[20px] font-semibold text-[#A52A2A]">Address</h4>
-                    </div>
-
-                    <div class="space-y-5">
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Province</span><span class="text-[15px] font-medium">Laguna</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Municipality</span><span class="text-[15px] font-medium">Calamba</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Barangay</span><span class="text-[15px] font-medium">Masico</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Street</span><span class="text-[15px] font-medium">Block 2 Lot 2, San Lorenzo St.</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">House No.</span><span class="text-[15px] font-medium">587</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Zip Code</span><span class="text-[15px] font-medium">4020</span></div>
-                    </div>
-                </section>
-
-                <div class="border-t border-gray-200 my-7"></div>
-
-                <!-- Business Information -->
-                <section>
-                    <div class="flex items-center gap-2 mb-6">
-                        <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M4 7h16v13H4V7Zm3-4h10l2 2H5l2-2Zm-1 8v6h2v-6H6Zm4 0v6h2v-6h-2Zm4 0v6h2v-6h-2Z"/>
-                        </svg>
-                        <h4 class="text-[20px] font-semibold text-[#A52A2A]">Business Information</h4>
-                    </div>
-
-                    <div class="space-y-5">
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Business Name</span><span class="text-[15px] font-medium">Dela Cruz Online Boutique</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Category</span><span class="text-[15px] font-medium">Fashion &amp; Apparel</span></div>
-                        <div class="grid grid-cols-[155px_1fr] items-center gap-2">
-                            <span class="text-[15px] text-gray-400">Business Permit</span>
-                            <button type="button" class="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-lg border border-gray-200 text-[13px] text-gray-700 hover:bg-[#FFF9F7] transition">
-                                <svg class="w-4 h-4 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 2h10v20H7zM9 7h6M9 11h6M9 15h4"/></svg>
-                                business_permit.png
-                            </button>
-                        </div>
-                    </div>
-                </section>
+                <div class="flex items-center justify-center min-h-[220px] text-[13px] text-gray-400">
+                    Loading registration details...
+                </div>
 
             </div>
 
             <div class="shrink-0 px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
                 <button
                     type="button"
-                    class="registration-reject px-9 py-2.5 rounded-lg bg-[#8F211F] text-white text-[14px] font-semibold hover:bg-[#741A18] transition"
+                    class="registration-reject px-9 py-2.5 rounded-lg border border-[#C92D32] bg-[#FFE6E6] text-[#A61B1B] text-[14px] font-semibold hover:bg-[#FFDADA] transition"
                 >
                     Reject
                 </button>
                 <button
                     type="button"
-                    class="registration-approve px-9 py-2.5 rounded-lg bg-[#EA7779] text-white text-[14px] font-semibold hover:bg-[#D86567] transition"
+                    class="registration-approve px-9 py-2.5 rounded-lg border border-[#4E9B46] bg-[#E7F4E3] text-[#28721B] text-[14px] font-semibold hover:bg-[#DCEFD7] transition"
                 >
                     Approve
                 </button>
@@ -1146,7 +979,7 @@
                         data-modal="buyer-details-modal"
                         aria-label="Close buyer details"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
                         </svg>
                     </button>
@@ -1155,70 +988,15 @@
 
             <div class="registration-detail-body flex-1 px-7 pb-5">
 
-                <!-- Personal Information -->
-                <section>
-                    <div class="flex items-center gap-2 mb-6">
-                        <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M16 11a4 4 0 1 0-3.9-5A4 4 0 0 0 16 11Zm-8 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 1c-2.7 0-5 1.35-5 3v1h10v-1c0-1.65-2.3-3-5-3ZM8 14c-2.2 0-4 1.1-4 2.5V18h8v-1.5C12 15.1 10.2 14 8 14Z"/>
-                        </svg>
-                        <h4 class="text-[20px] font-semibold text-[#A52A2A]">Personal Information</h4>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-8">
-                        <div class="space-y-5">
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Last Name</span><span class="text-[15px] font-medium">Dela Cruz</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">First Name</span><span class="text-[15px] font-medium">Juan</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Middle Name</span><span class="text-[15px] font-medium">Amador</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Sex</span><span class="text-[15px] font-medium">Male</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Birthday</span><span class="text-[15px] font-medium">November 7, 2006</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Age</span><span class="text-[15px] font-medium">19</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Email</span><span class="text-[15px] font-medium break-all">juandelacruz@gmail.com</span></div>
-                            <div class="grid grid-cols-[155px_1fr] items-center gap-2"><span class="text-[15px] text-gray-400">Contact No.</span><span class="text-[15px] font-medium">0917 123 4567</span></div>
-                        </div>
-
-                        <div>
-                            <p class="text-[15px] text-gray-400 mb-2">Valid ID</p>
-                            <div class="w-full h-[180px] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#f0e7d2] via-[#efe1c2] to-[#d6c49c] relative shadow-sm">
-                                <div class="absolute top-3 left-4 text-[8px] font-semibold text-[#2d3550]">REPUBLIKA NG PILIPINAS</div>
-                                <div class="absolute top-6 left-4 text-[7px] text-[#2d3550]">PHILIPPINE IDENTIFICATION CARD</div>
-                                <div class="absolute left-4 top-[44px] w-[58px] h-[76px] rounded bg-gray-300 flex items-center justify-center overflow-hidden">
-                                    <svg class="w-10 h-10 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"/></svg>
-                                </div>
-                                <div class="absolute left-[86px] top-[47px] text-[8px] text-[#4b5563]">Apelyido / Last Name</div>
-                                <div class="absolute left-[86px] top-[60px] text-[12px] font-bold text-[#111827]">DELA CRUZ</div>
-                                <div class="absolute left-[86px] top-[78px] text-[8px] text-[#4b5563]">Pangalan / First Name</div>
-                                <div class="absolute left-[86px] top-[91px] text-[12px] font-bold text-[#111827]">JUAN</div>
-                                <div class="absolute left-[86px] top-[109px] text-[8px] text-[#4b5563]">MIDDLE NAME</div>
-                                <div class="absolute left-[86px] top-[122px] text-[10px] font-semibold text-[#111827]">AMADOR</div>
-                                <div class="absolute left-[86px] bottom-4 text-[8px] text-[#4b5563]">Date of Birth: 07 NOV 2006</div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="border-t border-gray-200 my-7"></div>
-
-                <!-- Address -->
-                <section>
-                    <div class="flex items-center gap-2 mb-6">
-                        <svg class="w-6 h-6 text-[#A52A2A]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
-                        <h4 class="text-[20px] font-semibold text-[#A52A2A]">Address</h4>
-                    </div>
-                    <div class="space-y-5">
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Province</span><span class="text-[15px] font-medium">Laguna</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Municipality</span><span class="text-[15px] font-medium">Calamba</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Barangay</span><span class="text-[15px] font-medium">Masico</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Street</span><span class="text-[15px] font-medium">Block 2 Lot 2, San Lorenzo St.</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">House No.</span><span class="text-[15px] font-medium">587</span></div>
-                        <div class="grid grid-cols-[155px_1fr] gap-2"><span class="text-[15px] text-gray-400">Zip Code</span><span class="text-[15px] font-medium">4020</span></div>
-                    </div>
-                </section>
+                <div class="flex items-center justify-center min-h-[220px] text-[13px] text-gray-400">
+                    Loading registration details...
+                </div>
 
             </div>
 
             <div class="shrink-0 px-7 py-5 border-t border-gray-200 flex items-center justify-end gap-4 bg-white">
-                <button type="button" class="registration-reject px-9 py-2.5 rounded-lg bg-[#8F211F] text-white text-[14px] font-semibold hover:bg-[#741A18] transition">Reject</button>
-                <button type="button" class="registration-approve px-9 py-2.5 rounded-lg bg-[#EA7779] text-white text-[14px] font-semibold hover:bg-[#D86567] transition">Approve</button>
+                <button type="button" class="registration-reject px-9 py-2.5 rounded-lg border border-[#C92D32] bg-[#FFE6E6] text-[#A61B1B] text-[14px] font-semibold hover:bg-[#FFDADA] transition">Reject</button>
+                <button type="button" class="registration-approve px-9 py-2.5 rounded-lg border border-[#4E9B46] bg-[#E7F4E3] text-[#28721B] text-[14px] font-semibold hover:bg-[#DCEFD7] transition">Approve</button>
             </div>
 
         </div>
@@ -1342,8 +1120,8 @@
                 <button
                     type="button"
                     id="confirm-reject-registration"
-                    class="px-7 py-2.5 rounded-lg bg-[#8F211F] text-white
-                           text-[14px] font-semibold hover:bg-[#741A18] transition"
+                    class="px-7 py-2.5 rounded-lg border border-[#C92D32] bg-[#FFE6E6] text-[#A61B1B]
+                           text-[14px] font-semibold hover:bg-[#FFDADA] transition"
                 >
                     Reject
                 </button>
@@ -1356,10 +1134,10 @@
     ========================================================== -->
     <div
         id="registration-flash"
-        class="fixed bottom-6 right-6 z-[180] hidden w-[370px] rounded-xl border
-               bg-white shadow-xl px-4 py-4"
+        class="registration-decision-flash"
         role="status"
         aria-live="polite"
+        aria-atomic="true"
     >
         <div class="flex items-start gap-3">
             <div
@@ -1392,20 +1170,20 @@
 
     <div
         class="bg-white rounded-xl shadow-sm border border-gray-100
-               p-4 mb-5"
+               p-3.5 mb-4"
     >
 
-        <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
+        <div class="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5">
 
             <!-- Search -->
 
-            <div class="relative flex-1 min-w-0">
+            <div class="registration-search-wrap">
 
                 <input
                     id="registration-search"
                     type="text"
                     placeholder="Search name, email, and phone"
-                    class="w-full h-[38px] rounded-lg border border-gray-300
+                    class="w-full h-[36px] rounded-lg border border-gray-300
                            bg-white pl-4 pr-11 text-[13px] text-gray-700
                            placeholder:text-gray-300
                            outline-none
@@ -1440,8 +1218,8 @@
 
                 <select
                     id="user-type-filter"
-                    class="appearance-none w-full xl:w-[138px]
-                           h-[38px] rounded-lg border border-gray-300
+                    class="appearance-none w-full xl:w-[132px]
+                           h-[36px] rounded-lg border border-gray-300
                            bg-white px-3 pr-9 text-[13px] text-gray-700
                            outline-none cursor-pointer
                            focus:border-maroon-700
@@ -1497,8 +1275,8 @@
                 <input
                     id="date-filter"
                     type="date"
-                    class="w-full xl:w-[205px]
-                           h-[38px] rounded-lg border border-gray-300
+                    class="w-full xl:w-[195px]
+                           h-[36px] rounded-lg border border-gray-300
                            bg-white px-3 pr-10 text-[13px] text-gray-700
                            outline-none
                            focus:border-maroon-700
@@ -1515,7 +1293,7 @@
                     type="button"
                     id="date-calendar-button"
                     class="absolute right-0 top-0
-                           w-10 h-[38px]
+                           w-9 h-[36px]
                            flex items-center justify-center
                            text-gray-700
                            hover:text-[#7B1B1B]
@@ -1560,7 +1338,7 @@
 
                 <svg
                     id="registration-reload-icon"
-                    class="w-6 h-6"
+                    class="w-[18px] h-[18px]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1602,27 +1380,27 @@
 
                     <tr class="border-b border-gray-200">
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Applicant
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             User Type
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Email
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Phone
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Date Registered
                         </th>
 
-                        <th class="text-left px-5 py-4 text-[13px] font-medium text-gray-400">
+                        <th class="text-left px-4 py-3 text-[12px] font-medium text-gray-400">
                             Status
                         </th>
 
@@ -1632,1088 +1410,57 @@
 
                 <tbody class="divide-y divide-gray-200">
 
-                    @if($registrations->isNotEmpty())
-                        @foreach($registrations as $registration)
-                            <tr
-                                class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                                data-id="{{ $registration->id }}"
-                                data-name="{{ $registration->full_name }}"
-                                data-email="{{ $registration->email }}"
-                                data-phone="{{ $registration->phone }}"
-                                data-type="{{ $registration->user_type }}"
-                                data-status="{{ $registration->status }}"
-                                data-date="{{ $registration->created_at->toDateString() }}"
-                                role="button"
-                                tabindex="0"
-                            >
-                                <td class="px-5 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">
-                                            {{ collect(explode(' ', $registration->full_name))->filter()->map(fn ($part) => strtoupper(substr($part, 0, 1)))->take(2)->join('') }}
-                                        </div>
-                                        <span class="text-[13px] font-medium text-gray-800">{{ $registration->full_name }}</span>
+                    @forelse($registrations as $registration)
+                        <tr
+                            class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
+                            data-id="{{ $registration->id }}"
+                            data-name="{{ $registration->full_name }}"
+                            data-email="{{ $registration->email }}"
+                            data-phone="{{ $registration->phone }}"
+                            data-type="{{ $registration->user_type }}"
+                            data-status="{{ $registration->status }}"
+                            data-date="{{ $registration->created_at->toDateString() }}"
+                            role="button"
+                            tabindex="0"
+                        >
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-7 h-7 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">
+                                        {{ collect(explode(' ', $registration->full_name))->filter()->map(fn ($part) => strtoupper(substr($part, 0, 1)))->take(2)->join('') }}
                                     </div>
-                                </td>
-                                <td class="px-5 py-3 text-[13px] text-gray-800">{{ ucfirst($registration->user_type) }}</td>
-                                <td class="px-5 py-3 text-[13px] text-gray-400">{{ $registration->email }}</td>
-                                <td class="px-5 py-3 text-[13px] text-gray-800">{{ $registration->phone }}</td>
-                                <td class="px-5 py-3 text-[13px] text-gray-800">{{ $registration->created_at->format('F j, Y g:i A') }}</td>
-                                <td class="px-5 py-3"><span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">Pending</span></td>
-                            </tr>
-                        @endforeach
-                    @elseif(false)
-
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Juan Dela Cruz"
-                        data-email="juandelacruz@gmail.com"
-                        data-phone="0917 123 4567"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-31"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Juan Dela Cruz</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">juandelacruz@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0917 123 4567</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 31, 2026</div>
-                            <div class="text-[12px] text-gray-800">10:30 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Maria Santos"
-                        data-email="maria.santos@gmail.com"
-                        data-phone="0928 765 4321"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-31"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Maria Santos</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">maria.santos@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0928 765 4321</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 31, 2026</div>
-                            <div class="text-[12px] text-gray-800">09:15 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Jose Ramirez"
-                        data-email="jose.ramirez@gmail.com"
-                        data-phone="0906 555 7890"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-30"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Jose Ramirez</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">jose.ramirez@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0906 555 7890</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 30, 2026</div>
-                            <div class="text-[12px] text-gray-800">08:45 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Anna Reyes"
-                        data-email="anna.reyes@gmail.com"
-                        data-phone="0915 888 1122"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-30"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Anna Reyes</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">anna.reyes@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0915 888 1122</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 30, 2026</div>
-                            <div class="text-[12px] text-gray-800">06:20 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Liza Gomez"
-                        data-email="liza.gomez@gmail.com"
-                        data-phone="0932 444 6677"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-30"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Liza Gomez</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">liza.gomez@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0932 444 6677</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 30, 2026</div>
-                            <div class="text-[12px] text-gray-800">04:10 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Mark Dela Vega"
-                        data-email="mark.delavega@gmail.com"
-                        data-phone="0910 333 2211"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-29"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Mark Dela Vega</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">mark.delavega@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0910 333 2211</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 29, 2026</div>
-                            <div class="text-[12px] text-gray-800">03:35 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Patricia Lim"
-                        data-email="patricia.lim@gmail.com"
-                        data-phone="0918 777 8899"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-29"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Patricia Lim</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">patricia.lim@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0918 777 8899</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 29, 2026</div>
-                            <div class="text-[12px] text-gray-800">11:05 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Carlo Mendoza"
-                        data-email="carlo.mendoza@gmail.com"
-                        data-phone="0921 555 1199"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-28"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Carlo Mendoza</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">carlo.mendoza@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0921 555 1199</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 28, 2026</div>
-                            <div class="text-[12px] text-gray-800">04:25 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Sofia Navarro"
-                        data-email="sofia.navarro@gmail.com"
-                        data-phone="0916 222 3344"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-28"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Sofia Navarro</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">sofia.navarro@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0916 222 3344</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 28, 2026</div>
-                            <div class="text-[12px] text-gray-800">01:40 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Daniel Cruz"
-                        data-email="daniel.cruz@gmail.com"
-                        data-phone="0927 888 7766"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-27"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Daniel Cruz</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">daniel.cruz@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0927 888 7766</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 27, 2026</div>
-                            <div class="text-[12px] text-gray-800">10:12 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Nicole Bautista"
-                        data-email="nicole.bautista@gmail.com"
-                        data-phone="0919 404 1515"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-27"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Nicole Bautista</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">nicole.bautista@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0919 404 1515</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 27, 2026</div>
-                            <div class="text-[12px] text-gray-800">09:05 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Miguel Torres"
-                        data-email="miguel.torres@gmail.com"
-                        data-phone="0920 123 9090"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-26"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Miguel Torres</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">miguel.torres@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0920 123 9090</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 26, 2026</div>
-                            <div class="text-[12px] text-gray-800">05:20 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Rachel Aquino"
-                        data-email="rachel.aquino@gmail.com"
-                        data-phone="0917 678 2345"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-26"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Rachel Aquino</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">rachel.aquino@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0917 678 2345</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 26, 2026</div>
-                            <div class="text-[12px] text-gray-800">02:50 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Kevin Villanueva"
-                        data-email="kevin.villanueva@gmail.com"
-                        data-phone="0908 444 1122"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-25"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Kevin Villanueva</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">kevin.villanueva@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0908 444 1122</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 25, 2026</div>
-                            <div class="text-[12px] text-gray-800">11:30 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Angela Flores"
-                        data-email="angela.flores@gmail.com"
-                        data-phone="0916 987 6543"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-25"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Angela Flores</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">angela.flores@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0916 987 6543</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 25, 2026</div>
-                            <div class="text-[12px] text-gray-800">10:05 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Patrick Tan"
-                        data-email="patrick.tan@gmail.com"
-                        data-phone="0922 111 2233"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-24"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Patrick Tan</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">patrick.tan@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0922 111 2233</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 24, 2026</div>
-                            <div class="text-[12px] text-gray-800">03:18 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Bea Garcia"
-                        data-email="bea.garcia@gmail.com"
-                        data-phone="0918 222 4455"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-24"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Bea Garcia</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">bea.garcia@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0918 222 4455</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 24, 2026</div>
-                            <div class="text-[12px] text-gray-800">01:25 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Rico Santiago"
-                        data-email="rico.santiago@gmail.com"
-                        data-phone="0917 333 5577"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-23"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Rico Santiago</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">rico.santiago@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0917 333 5577</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 23, 2026</div>
-                            <div class="text-[12px] text-gray-800">04:42 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Jasmine Co"
-                        data-email="jasmine.co@gmail.com"
-                        data-phone="0925 555 7788"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-23"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Jasmine Co</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">jasmine.co@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0925 555 7788</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 23, 2026</div>
-                            <div class="text-[12px] text-gray-800">12:15 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Nathan Sy"
-                        data-email="nathan.sy@gmail.com"
-                        data-phone="0919 666 8899"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-22"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Nathan Sy</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">nathan.sy@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0919 666 8899</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 22, 2026</div>
-                            <div class="text-[12px] text-gray-800">09:55 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Camille Rivera"
-                        data-email="camille.rivera@gmail.com"
-                        data-phone="0917 123 8800"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-22"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Camille Rivera</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">camille.rivera@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0917 123 8800</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 22, 2026</div>
-                            <div class="text-[12px] text-gray-800">08:40 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Andrei Castillo"
-                        data-email="andrei.castillo@gmail.com"
-                        data-phone="0921 777 9911"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-21"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Andrei Castillo</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">andrei.castillo@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0921 777 9911</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 21, 2026</div>
-                            <div class="text-[12px] text-gray-800">05:30 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Mica Torres"
-                        data-email="mica.torres@gmail.com"
-                        data-phone="0918 345 6789"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-21"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Mica Torres</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">mica.torres@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0918 345 6789</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 21, 2026</div>
-                            <div class="text-[12px] text-gray-800">02:14 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Gabriel Ramos"
-                        data-email="gabriel.ramos@gmail.com"
-                        data-phone="0915 555 1212"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-20"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Gabriel Ramos</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">gabriel.ramos@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0915 555 1212</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 20, 2026</div>
-                            <div class="text-[12px] text-gray-800">03:47 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Ella Fernandez"
-                        data-email="ella.fernandez@gmail.com"
-                        data-phone="0928 111 3434"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-20"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Ella Fernandez</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">ella.fernandez@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0928 111 3434</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 20, 2026</div>
-                            <div class="text-[12px] text-gray-800">11:06 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Luis Mercado"
-                        data-email="luis.mercado@gmail.com"
-                        data-phone="0909 222 5656"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-19"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Luis Mercado</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">luis.mercado@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0909 222 5656</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 19, 2026</div>
-                            <div class="text-[12px] text-gray-800">10:45 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Trisha Ong"
-                        data-email="trisha.ong@gmail.com"
-                        data-phone="0917 888 3434"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-19"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Trisha Ong</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">trisha.ong@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0917 888 3434</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 19, 2026</div>
-                            <div class="text-[12px] text-gray-800">09:32 AM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Enzo Manalo"
-                        data-email="enzo.manalo@gmail.com"
-                        data-phone="0922 444 7676"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-18"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Enzo Manalo</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">enzo.manalo@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0922 444 7676</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 18, 2026</div>
-                            <div class="text-[12px] text-gray-800">06:05 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Claire Aquino"
-                        data-email="claire.aquino@gmail.com"
-                        data-phone="0916 222 9898"
-                        data-type="seller"
-                        data-status="pending"
-                        data-date="2026-05-18"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Claire Aquino</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-5 h-5 object-contain" alt="Seller">
-                                <span class="text-[13px] text-gray-800">Seller</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">claire.aquino@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0916 222 9898</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 18, 2026</div>
-                            <div class="text-[12px] text-gray-800">02:21 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr
-                        class="registration-row cursor-pointer hover:bg-[#FFF9F7] transition"
-                        data-name="Adrian Cruz"
-                        data-email="adrian.cruz@gmail.com"
-                        data-phone="0918 333 6767"
-                        data-type="buyer"
-                        data-status="pending"
-                        data-date="2026-05-17"
-                        role="button"
-                        tabindex="0"
-                    >
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
-                                <span class="text-[13px] font-medium text-gray-800">Adrian Cruz</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <div class="flex items-center gap-2">
-                                <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-5 h-5 object-contain" alt="Buyer">
-                                <span class="text-[13px] text-gray-800">Buyer</span>
-                            </div>
-                        </td>
-                        <td class="px-5 py-3 text-[13px] text-gray-400">adrian.cruz@gmail.com</td>
-                        <td class="px-5 py-3 text-[13px] text-gray-800">0918 333 6767</td>
-                        <td class="px-5 py-3">
-                            <div class="text-[13px] text-gray-800">May 17, 2026</div>
-                            <div class="text-[12px] text-gray-800">01:10 PM</div>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[11px] font-medium border border-[#FFD1B8]">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    @endif
+                                    <span class="text-[12px] font-medium text-gray-800">{{ $registration->full_name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-1.5">
+                                    @if(strtolower($registration->user_type) === 'seller')
+                                        <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-[18px] h-[18px] object-contain" alt="Seller">
+                                    @elseif(strtolower($registration->user_type) === 'buyer')
+                                        <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-[18px] h-[18px] object-contain" alt="Buyer">
+                                    @elseif(strtolower($registration->user_type) === 'logistics')
+                                        <img src="{{ asset('icons/admin/dashboard/body/logistics.png') }}" class="w-[18px] h-[18px] object-contain" alt="Logistics">
+                                    @elseif(strtolower($registration->user_type) === 'rider')
+                                        <img src="{{ asset('icons/admin/dashboard/body/rider.png') }}" class="w-[18px] h-[18px] object-contain" alt="Rider">
+                                    @endif
+                                    <span class="text-[12px] text-gray-800">{{ ucfirst($registration->user_type) }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2.5 text-[12px] text-gray-400">{{ $registration->email }}</td>
+                            <td class="px-4 py-2.5 text-[12px] text-gray-800">{{ $registration->phone }}</td>
+                            <td class="px-4 py-2.5 text-[12px] text-gray-800">{{ $registration->created_at->format('F j, Y g:i A') }}</td>
+                            <td class="px-4 py-2.5">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#FFE5D0] text-[#E87D22] text-[10px] font-medium border border-[#FFD1B8]">
+                                    {{ ucfirst($registration->status) }}
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-5 py-12 text-center text-[13px] text-gray-400">
+                                No registrations found.
+                            </td>
+                        </tr>
+                    @endforelse
 
                 </tbody>
 
@@ -2728,23 +1475,23 @@
 
         <div
             class="flex flex-col md:flex-row items-center justify-between
-                   gap-4 px-5 py-4 border-t border-gray-200"
+                   gap-3 px-4 py-3 border-t border-gray-200"
         >
 
             <p
                 id="registration-count"
-                class="text-[13px] text-gray-400"
+                class="text-[12px] text-gray-400"
             >
-                Showing 1–10 of 30 entries
+                Showing 0–0 of 0 entries
             </p>
 
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
 
                 <button
                     type="button"
                     id="registration-prev"
-                    class="w-7 h-7 flex items-center justify-center
+                    class="w-6 h-6 flex items-center justify-center
                            text-gray-700 hover:bg-gray-100
                            rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Previous page"
@@ -2757,7 +1504,7 @@
                 <button
                     type="button"
                     id="registration-next"
-                    class="w-7 h-7 flex items-center justify-center
+                    class="w-6 h-6 flex items-center justify-center
                            text-gray-700 hover:bg-gray-100
                            rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Next page"
@@ -2767,7 +1514,7 @@
 
                 <select
                     id="items-per-page"
-                    class="ml-2 h-8 rounded-md
+                    class="ml-2 h-7 rounded-md
                            border border-[#F0B9AC]
                            bg-[#FFF5F1]
                            px-2 text-[12px] text-gray-700
@@ -2786,6 +1533,150 @@
 
 </div>
 
+
+<!-- =========================================================
+     IMAGE PREVIEW MODAL
+========================================================== -->
+
+<div
+    id="registration-image-preview-modal"
+    class="fixed inset-0 z-[200] hidden items-center justify-center bg-black/75 backdrop-blur-[2px] px-5 py-6"
+    aria-hidden="true"
+>
+    <div
+        class="relative w-full max-w-6xl max-h-[92vh] rounded-2xl bg-white shadow-2xl overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registration-image-preview-title"
+    >
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-white">
+            <h3 id="registration-image-preview-title" class="text-[18px] font-semibold text-gray-900">Image Preview</h3>
+
+            <button
+                type="button"
+                id="registration-image-preview-close"
+                class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition"
+                aria-label="Close image preview"
+            >
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="bg-[#F5F1EF] p-5 flex items-center justify-center max-h-[calc(92vh-74px)] overflow-auto">
+            <img
+                id="registration-image-preview"
+                src=""
+                alt="Image preview"
+                class="max-w-full max-h-[calc(92vh-120px)] w-auto h-auto object-contain rounded-lg bg-white shadow-sm"
+            >
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    /* =========================================================
+       REGISTRATION ACTION FLASH
+       Same quick lower-right style used across the admin modals.
+    ========================================================== */
+    .registration-decision-flash {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 220;
+        width: min(370px, calc(100vw - 32px));
+        min-height: 72px;
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 13px 14px;
+        box-sizing: border-box;
+        background: #FFFFFF;
+        border: 1px solid #E7E2DF;
+        border-radius: 14px;
+        box-shadow: 0 14px 34px rgba(42, 20, 15, .16);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(10px);
+        transition: opacity .08s ease, transform .08s ease, visibility .08s ease;
+    }
+
+    .registration-decision-flash.show {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .registration-decision-flash.approved {
+        border-color: #BFDDB8;
+    }
+
+    .registration-decision-flash.rejected,
+    .registration-decision-flash.error {
+        border-color: #E7A8AB;
+    }
+
+    @media (max-width: 640px) {
+        .registration-decision-flash {
+            right: 16px;
+            bottom: 16px;
+        }
+    }
+</style>
+
+
+<style>
+    /* =========================================================
+       REGISTRATION FILTER COLOR CONSISTENCY
+       Matches the Seller Compliance filter/search styling.
+    ========================================================== */
+
+    /* Search, user-type filter, and date field use the same
+       neutral border/background/text colors as Seller Compliance. */
+    #registration-search,
+    #user-type-filter,
+    #date-filter {
+        border-color: #D9D6D4 !important;
+        background-color: #FFFFFF !important;
+        color: #76716E !important;
+    }
+
+    /* Match the Seller Compliance search placeholder tone. */
+    #registration-search::placeholder {
+        color: #76716E !important;
+        opacity: 1;
+    }
+
+    /* Search icon + select arrow + calendar icon. */
+    #registration-search + svg,
+    #user-type-filter + svg,
+    #date-calendar-button {
+        color: #76716E !important;
+    }
+
+    /* Keep native date text consistent across Chromium browsers. */
+    #date-filter::-webkit-datetime-edit,
+    #date-filter::-webkit-datetime-edit-fields-wrapper,
+    #date-filter::-webkit-datetime-edit-text,
+    #date-filter::-webkit-datetime-edit-month-field,
+    #date-filter::-webkit-datetime-edit-day-field,
+    #date-filter::-webkit-datetime-edit-year-field {
+        color: #76716E !important;
+    }
+
+    /* Same maroon active/focus indication used in Seller Compliance. */
+    #registration-search:focus,
+    #user-type-filter:focus,
+    #date-filter:focus {
+        border-color: #7B1B1B !important;
+        box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
+    }
+</style>
 
 @push('scripts')
 
@@ -2871,6 +1762,56 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function formatCategoryDisplay(category) {
+        return String(category ?? '—')
+            .replace(/Electronics\s+and\s+Gadgets/gi, 'Electronics & Gadgets')
+            .replace(/Women\'s\s+Apparel/gi, "Women's Apparel")
+            .replace(/Men\'s\s+Apparel/gi, "Men's Apparel")
+            .replace(/Kids\s+and\s+Baby/gi, 'Kids & Baby')
+            .replace(/Home\s+and\s+Garden/gi, 'Home & Garden')
+            .replace(/Sports\s+and\s+Outdoors/gi, 'Sports & Outdoors')
+            .replace(/Health\s+and\s+Beauty/gi, 'Health & Beauty')
+            .replace(/Books\s+and\s+Media/gi, 'Books & Media')
+            .replace(/Food\s+and\s+Gourmet/gi, 'Food & Gourmet')
+            .replace(/Furniture\s+and\s+Office\s+Equipment/gi, 'Furniture & Office Equipment')
+            .replace(/Office\s+and\s+School\s+Supplies/gi, 'Office & School Supplies');
+    }
+
+    function categoryBadgeClass(category) {
+        const normalized = formatCategoryDisplay(category);
+        const map = {
+            'Pet Supplies': 'category-pet-supplies',
+            'Electronics & Gadgets': 'category-electronics-and-gadgets',
+            "Women's Apparel": 'category-womens-apparel',
+            "Men's Apparel": 'category-mens-apparel',
+            'Kids & Baby': 'category-kids-and-baby',
+            'Home & Garden': 'category-home-and-garden',
+            'Sports & Outdoors': 'category-sports-and-outdoors',
+            'Health & Beauty': 'category-health-and-beauty',
+            'Books & Media': 'category-books-and-media',
+            'Food & Gourmet': 'category-food-and-gourmet',
+            'Automotive & Motorcycle': 'category-automotive-motorcycle',
+            'Furniture & Office Equipment': 'category-furniture-and-office-equipment',
+            'Jewelry & Watches': 'category-jewelry-and-watches',
+            'Office & School Supplies': 'category-office-and-school-supplies'
+        };
+        return map[normalized] || 'category-default';
+    }
+
+    function renderCategoryPills(categories) {
+        let values = Array.isArray(categories) ? categories : [categories];
+        values = values.filter(value => String(value ?? '').trim() !== '');
+
+        if (!values.length) {
+            return '<span class="registration-category-pill category-default">—</span>';
+        }
+
+        return values.map(value => {
+            const label = formatCategoryDisplay(value);
+            return `<span class="registration-category-pill ${categoryBadgeClass(label)}">${escapeHtml(label)}</span>`;
+        }).join(' ');
+    }
+
     function initials(name) {
         return (name || '?')
             .split(' ')
@@ -2898,16 +1839,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tr.innerHTML = `
             <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">
                         ${initials(name)}
                     </div>
-                    <span class="text-[13px] font-medium text-gray-800">${name}</span>
+                    <span class="text-[12px] font-medium text-gray-800">${name}</span>
                 </div>
             </td>
             <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                    <img src="${icon}" class="w-5 h-5 object-contain" alt="${type}">
+                <div class="flex items-center gap-1.5">
+                    <img src="${icon}" class="w-[18px] h-[18px] object-contain" alt="${type}">
                     <span class="text-[13px]">${type}</span>
                 </div>
             </td>
@@ -3000,8 +1941,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 : '—';
 
             return `<tr class="hover:bg-[#FFF9F7] transition">
-                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[11px] font-semibold text-[#7B1B1B] shrink-0">${escapeHtml(initials)}</div><span class="text-[13px] font-medium text-gray-800">${escapeHtml(name)}</span></div></td>
-                <td class="px-6 py-4"><div class="flex items-center gap-2"><img src="${iconByType[type] || iconByType.buyer}" class="w-5 h-5 object-contain" alt="${escapeHtml(type)}"><span class="text-[13px]">${escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))}</span></div></td>
+                <td class="px-6 py-4"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-full bg-[#F6D8D2] flex items-center justify-center text-[10px] font-semibold text-[#7B1B1B] shrink-0">${escapeHtml(initials)}</div><span class="text-[12px] font-medium text-gray-800">${escapeHtml(name)}</span></div></td>
+                <td class="px-6 py-4"><div class="flex items-center gap-1.5"><img src="${iconByType[type] || iconByType.buyer}" class="w-[18px] h-[18px] object-contain" alt="${escapeHtml(type)}"><span class="text-[13px]">${escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))}</span></div></td>
                 <td class="px-6 py-4 text-[13px] text-gray-400">${escapeHtml(registration.email)}</td>
                 <td class="px-6 py-4 text-[13px]">${escapeHtml(registration.phone)}</td>
                 <td class="px-6 py-4 text-[13px]">${reviewedDate}</td>
@@ -3298,6 +2239,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const sellerDetailsModal = document.getElementById('seller-details-modal');
     const buyerDetailsModal = document.getElementById('buyer-details-modal');
 
+    const registrationImagePreviewModal =
+        document.getElementById('registration-image-preview-modal');
+
+    const registrationImagePreview =
+        document.getElementById('registration-image-preview');
+
+    const registrationImagePreviewTitle =
+        document.getElementById('registration-image-preview-title');
+
+    const registrationImagePreviewClose =
+        document.getElementById('registration-image-preview-close');
+
     function openRegistrationModal(modal) {
 
         if (!modal) {
@@ -3309,6 +2262,49 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('overflow-hidden');
 
+    }
+
+
+    function openRegistrationImagePreview(imageUrl, imageTitle) {
+        if (!registrationImagePreviewModal || !registrationImagePreview) {
+            return;
+        }
+
+        registrationImagePreview.src = imageUrl || '';
+        registrationImagePreview.alt = imageTitle || 'Image preview';
+
+        if (registrationImagePreviewTitle) {
+            registrationImagePreviewTitle.textContent =
+                imageTitle || 'Image Preview';
+        }
+
+        registrationImagePreviewModal.classList.remove('hidden');
+        registrationImagePreviewModal.classList.add('flex');
+        registrationImagePreviewModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+    }
+
+
+    function closeRegistrationImagePreview() {
+        if (!registrationImagePreviewModal) {
+            return;
+        }
+
+        registrationImagePreviewModal.classList.add('hidden');
+        registrationImagePreviewModal.classList.remove('flex');
+        registrationImagePreviewModal.setAttribute('aria-hidden', 'true');
+
+        if (registrationImagePreview) {
+            registrationImagePreview.removeAttribute('src');
+        }
+
+        const anyRegistrationModalOpen =
+            (sellerDetailsModal && !sellerDetailsModal.classList.contains('hidden')) ||
+            (buyerDetailsModal && !buyerDetailsModal.classList.contains('hidden'));
+
+        if (!anyRegistrationModalOpen) {
+            document.body.classList.remove('overflow-hidden');
+        }
     }
 
 
@@ -3342,6 +2338,71 @@ document.addEventListener('DOMContentLoaded', function () {
         }[character]));
     }
 
+
+    function categoryBadgeClass(category) {
+        const normalizedCategory = String(category ?? '')
+            .replace(/\band\b/gi, '&')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        const map = {
+            'Pet Supplies': 'category-pet-supplies',
+            'Electronics & Gadgets': 'category-electronics-and-gadgets',
+            "Women's Apparel": 'category-womens-apparel',
+            "Women’s Apparel": 'category-womens-apparel',
+            "Men's Apparel": 'category-mens-apparel',
+            "Men’s Apparel": 'category-mens-apparel',
+            'Kids & Baby': 'category-kids-and-baby',
+            'Home & Garden': 'category-home-and-garden',
+            'Sports & Outdoors': 'category-sports-and-outdoors',
+            'Health & Beauty': 'category-health-and-beauty',
+            'Books & Media': 'category-books-and-media',
+            'Food & Gourmet': 'category-food-and-gourmet',
+            'Automotive & Motorcycle': 'category-automotive-motorcycle',
+            'Furniture & Office Equipment': 'category-furniture-and-office-equipment',
+            'Jewelry & Watches': 'category-jewelry-and-watches',
+            'Office & School Supplies': 'category-office-and-school-supplies'
+        };
+
+        return map[normalizedCategory] || 'category-default';
+    }
+
+
+    function renderCategoryPills(categoryValue) {
+        let categories = categoryValue;
+
+        if (typeof categories === 'string') {
+            const trimmed = categories.trim();
+
+            if (!trimmed) {
+                categories = [];
+            } else if (trimmed.startsWith('[')) {
+                try {
+                    const decoded = JSON.parse(trimmed);
+                    categories = Array.isArray(decoded) ? decoded : [trimmed];
+                } catch (error) {
+                    categories = [trimmed];
+                }
+            } else {
+                categories = trimmed.split(',').map(item => item.trim()).filter(Boolean);
+            }
+        }
+
+        if (!Array.isArray(categories)) {
+            categories = categories ? [String(categories)] : [];
+        }
+
+        if (!categories.length) {
+            return '<span class="text-[15px] text-gray-400">—</span>';
+        }
+
+        return `<div class="flex flex-wrap items-center gap-2">${categories.map(category => {
+            const safeCategory = String(category).trim();
+            const displayCategory = safeCategory.replace(/\band\b/gi, '&');
+            return `<span class="registration-category-pill ${categoryBadgeClass(safeCategory)}">${escapeHtml(displayCategory)}</span>`;
+        }).join('')}</div>`;
+    }
+
     function renderRegistrationDetails(modal, registration) {
         if (!modal) {
             return;
@@ -3357,10 +2418,20 @@ document.addEventListener('DOMContentLoaded', function () {
             ? Math.floor((Date.now() - new Date(registration.birthdate).getTime()) / 31557600000)
             : '—';
         const validId = registration.valid_id_url
-            ? `<a href="${escapeHtml(registration.valid_id_url)}" target="_blank" rel="noopener"><img src="${escapeHtml(registration.valid_id_url)}" alt="Uploaded valid ID" class="w-full max-h-[360px] object-contain rounded-lg border border-gray-200 bg-gray-50"></a>`
+            ? `<button type="button" class="registration-image-trigger group block w-full text-left" data-image-url="${escapeHtml(registration.valid_id_url)}" data-image-title="Uploaded Valid ID" aria-label="View uploaded valid ID">
+                    <div class="w-full h-[360px] rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center transition group-hover:border-[#A52A2A] group-hover:shadow-md">
+                        <img src="${escapeHtml(registration.valid_id_url)}" alt="Uploaded valid ID" class="w-full h-full object-contain bg-white">
+                    </div>
+                    <p class="mt-2 text-[12px] text-gray-400">Click the image to preview</p>
+                </button>`
             : '<div class="h-40 flex items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-400">No valid ID uploaded</div>';
         const businessPermit = registration.business_permit_url
-            ? `<a href="${escapeHtml(registration.business_permit_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 w-fit rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-700 hover:bg-[#FFF9F7] transition"><svg class="w-4 h-4 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h8l4 4v14H7zM15 3v5h5M10 13h5m-5 4h5"/></svg>${escapeHtml(registration.business_permit_path ? registration.business_permit_path.split('/').pop() : 'View business permit')}</a>`
+            ? `<button type="button" class="registration-image-trigger group block w-full text-left" data-image-url="${escapeHtml(registration.business_permit_url)}" data-image-title="Business Permit" aria-label="View business permit">
+                    <div class="w-full h-[360px] rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center transition group-hover:border-[#A52A2A] group-hover:shadow-md">
+                        <img src="${escapeHtml(registration.business_permit_url)}" alt="Business Permit" class="w-full h-full object-contain bg-white">
+                    </div>
+                    <p class="mt-2 text-[12px] text-gray-400">Click the image to preview</p>
+                </button>`
             : '<span class="text-gray-400">Business permit not provided</span>';
 
         if (body) {
@@ -3399,7 +2470,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <h4 class="text-[20px] font-semibold text-[#A52A2A] mb-6">Business Information</h4>
                         <div class="space-y-4 text-[15px]">
                             <div><span class="text-gray-400">Business Name</span><p class="font-medium">${escapeHtml(registration.business_name)}</p></div>
-                            <div><span class="text-gray-400">Category</span><p class="font-medium">${escapeHtml(registration.business_category)}</p></div>
+                            <div><span class="text-gray-400">Category</span><div class="mt-1">${renderCategoryPills(registration.business_categories ?? registration.business_category)}</div></div>
                             <div><span class="text-gray-400">Business Permit</span><div class="mt-1">${businessPermit}</div></div>
                         </div>
                     </section>` : ''}
@@ -3433,6 +2504,46 @@ document.addEventListener('DOMContentLoaded', function () {
             return false;
         }
     }
+
+
+    document.addEventListener('click', function (event) {
+        const imageTrigger = event.target.closest('.registration-image-trigger');
+
+        if (!imageTrigger) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        openRegistrationImagePreview(
+            imageTrigger.dataset.imageUrl,
+            imageTrigger.dataset.imageTitle
+        );
+    });
+
+
+    if (registrationImagePreviewClose) {
+        registrationImagePreviewClose.addEventListener('click', function () {
+            closeRegistrationImagePreview();
+        });
+    }
+
+
+    if (registrationImagePreviewModal) {
+        registrationImagePreviewModal.addEventListener('click', function (event) {
+            if (event.target === registrationImagePreviewModal) {
+                closeRegistrationImagePreview();
+            }
+        });
+    }
+
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeRegistrationImagePreview();
+        }
+    });
 
 
     document.querySelectorAll('.registration-row').forEach(row => {
@@ -3645,47 +2756,51 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const approved = type === 'approved';
+        const rejected = type === 'rejected' || type === 'reject';
+        const isError = type === 'error';
 
-        registrationFlash.classList.remove(
-            'border-[#B6D9AC]',
-            'border-[#E6B4B4]'
-        );
-
+        registrationFlash.classList.remove('approved', 'rejected', 'error');
         registrationFlash.classList.add(
-            approved ? 'border-[#B6D9AC]' : 'border-[#E6B4B4]'
+            approved ? 'approved' : (isError ? 'error' : 'rejected')
         );
 
         registrationFlashIcon.className =
             'w-9 h-9 rounded-full flex items-center justify-center shrink-0 ' +
-            (approved ? 'bg-[#DDF0D6]' : 'bg-[#FFE0E0]');
+            (approved ? 'bg-[#DDF0D6]' : 'bg-[#FFE3E5]');
 
         registrationFlashIcon.innerHTML = approved
             ? `<svg class="w-5 h-5 text-[#28721B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6"/>
                </svg>`
-            : `<svg class="w-5 h-5 text-[#A52A2A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            : `<svg class="w-5 h-5 text-[#B3262E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6 6 18"/>
                </svg>`;
 
-        registrationFlashTitle.textContent =
-            approved ? 'Registration Approved' : 'Registration Rejected';
+        if (isError) {
+            registrationFlashTitle.textContent = 'Action Failed';
+            registrationFlashMessage.textContent = name || 'Unable to update this registration.';
+        } else {
+            registrationFlashTitle.textContent =
+                approved ? 'Registration Approved' : 'Registration Rejected';
 
-        registrationFlashMessage.textContent =
-            approved
-                ? `${name}'s registration has been approved. The user has been notified via email.`
-                : `${name}'s registration has been rejected. The user has been notified via email.`;
-
-        registrationFlash.classList.remove('hidden');
+            registrationFlashMessage.textContent =
+                approved
+                    ? `${name}'s registration has been approved. The user will be notified via email.`
+                    : `${name}'s registration has been rejected. The user will be notified via email.`;
+        }
 
         clearTimeout(registrationFlashTimer);
+
+        // Show immediately on the same action click.
+        registrationFlash.classList.add('show');
+
         registrationFlashTimer = setTimeout(() => {
-            registrationFlash.classList.add('hidden');
-        }, 4500);
+            registrationFlash.classList.remove('show');
+        }, 3800);
     }
 
     async function submitRegistrationReview(row, action, payload = {}) {
         if (!row.dataset.id) {
-            showRegistrationFlash(action, row.dataset.name || 'The applicant');
             moveRegistrationToArchive(row, action);
             return true;
         }
@@ -3715,7 +2830,7 @@ document.addEventListener('DOMContentLoaded', function () {
             clearTimeout(registrationFlashTimer);
 
             if (registrationFlash) {
-                registrationFlash.classList.add('hidden');
+                registrationFlash.classList.remove('show');
             }
         });
     }
@@ -3766,6 +2881,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 activeRegistrationRow.dataset.name ||
                 'The applicant';
 
+            // Flash immediately when the Reject action is confirmed.
+            showRegistrationFlash('rejected', name);
+
             confirmRejectRegistration.disabled = true;
 
             try {
@@ -3776,7 +2894,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 closeRegistrationModal(sellerDetailsModal);
                 closeRegistrationModal(buyerDetailsModal);
                 closeRejectRegistrationModal();
-                showRegistrationFlash('rejected', name);
             } catch (error) {
                 showRegistrationFlash('error', error.message);
             } finally {
@@ -3820,13 +2937,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            // Flash immediately after the admin confirms approval.
+            showRegistrationFlash('approved', name);
+
             button.disabled = true;
 
             try {
                 await submitRegistrationReview(activeRegistrationRow, 'approve');
                 closeRegistrationModal(sellerDetailsModal);
                 closeRegistrationModal(buyerDetailsModal);
-                showRegistrationFlash('approved', name);
             } catch (error) {
                 showRegistrationFlash('error', error.message);
             } finally {
