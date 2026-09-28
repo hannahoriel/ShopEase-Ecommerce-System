@@ -424,17 +424,17 @@
                     </p>
 
                     <span class="text-[13px] bg-white/10 px-3 py-1 rounded-full">
-                        August
+                        {{ $announcementMonth }}
                     </span>
 
                 </div>
 
                 <h3 class="text-[19px] font-bold mb-2">
-                    Augzu Sale 2026!
+                    {{ $announcement?->title ?? 'No announcements yet' }}
                 </h3>
 
                 <p class="text-[14px] text-white/75 leading-relaxed max-w-[230px]">
-                    Abangan ang mga katangahan ngayong August
+                    {{ $announcement?->body ?? 'There are no active announcements at this time.' }}
                 </p>
 
 

@@ -120,6 +120,18 @@ class InventoryController extends Controller
 
                 'sellerCategories' =>
                     $sellerCategories,
+
+                'inventoryProducts' =>
+                    $seller?->products()
+                        ->where('is_archived', false)
+                        ->latest()
+                        ->get(),
+
+                'archivedProducts' =>
+                    $seller?->products()
+                        ->where('is_archived', true)
+                        ->latest()
+                        ->get(),
             ]
         );
     }

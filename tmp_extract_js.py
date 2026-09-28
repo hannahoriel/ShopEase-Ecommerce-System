@@ -1,0 +1,10 @@
+﻿import re, pathlib
+src = pathlib.Path(r'C:\Users\HP VICTUS 15\OneDrive\Desktop\ShopEase-Ecommerce-System\resources\views\pages\admin\seller-compliance.blade.php')
+text = src.read_text(encoding='utf-8')
+js = "\n\n".join(re.findall(r'<script[^>]*>(.*?)</script>', text, flags=re.S | re.I))
+js = re.sub(r'@json\([^\n]*\)', '[]', js)
+js = re.sub(r'@php\s+.*?\s*@endphp', '', js, flags=re.S)
+js = re.sub(r'\{\{[^\n]*\}\}', '""', js)
+out = pathlib.Path(r'C:\Users\HP VICTUS 15\OneDrive\Desktop\ShopEase-Ecommerce-System\tmp_js_check.js')
+out.write_text(js, encoding='utf-8')
+print(f'js_chars={len(js)}')

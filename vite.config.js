@@ -13,7 +13,9 @@ export default defineConfig({
     'resources/css/seller/order-status.css',
     'resources/css/seller/shipping-status.css',
     'resources/js/app.js',
-    'resources/js/auth.js'
+    'resources/js/auth.js',
+    'resources/js/seller/order-status.js',
+    'resources/js/seller/shipping-status.js'
 ],
             refresh: true,
             fonts: [
