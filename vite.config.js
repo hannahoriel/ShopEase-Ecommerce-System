@@ -12,6 +12,8 @@ export default defineConfig({
 
     'resources/css/admin/seller-compliance.css',
 'resources/js/admin/seller-compliance.js',
+'resources/css/seller/dashboard.css',
+'resources/js/seller/dashboard.js',
 
     'resources/css/seller/inventory.css',
     'resources/css/seller/order-status.css',
