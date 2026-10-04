@@ -355,8 +355,7 @@
                 </a>
 
                 <a
-                    href="#"
-                    onclick="return false;"
+                    href="{{ route('seller.feedback.index') }}"
                     class="
                         seller-subnav-item
                         flex items-center
