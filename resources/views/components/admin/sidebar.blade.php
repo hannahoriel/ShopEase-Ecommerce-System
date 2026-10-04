@@ -102,7 +102,7 @@
                     [
                         'label' => 'Messages',
                         'icon' => 'messages.png',
-                        'route' => null
+                        'route' => 'admin.messages'
                     ],
 
                     [
@@ -466,6 +466,21 @@
             0.6s
             forwards;
 
+    }
+
+
+    /* =========================================================
+       LOGOUT WHITE BORDER
+    ========================================================== */
+
+    .sidebar-logout {
+        border: 1px solid rgba(255, 255, 255, 0.58) !important;
+        background: transparent;
+    }
+
+    .sidebar-logout:hover {
+        border-color: rgba(255, 255, 255, 0.82) !important;
+        background: rgba(255, 255, 255, 0.08);
     }
 
 

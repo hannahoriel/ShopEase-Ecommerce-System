@@ -602,3 +602,418 @@
         transition: none !important;
     }
 }
+
+/* =========================================================
+   MOVED FROM order-status.blade.php
+   Order Status page visual overrides
+========================================================= */
+
+/* =========================================================
+   ORDER STATUS — USER MANAGEMENT VISUAL SYSTEM
+   Matches User Management's:
+   - Poppins typography
+   - font sizing / weights
+   - compact spacing
+   - rounded cards
+   - table density
+   - filters / search
+   - pagination
+   - modal typography
+========================================================== */
+
+#order-status-page,
+#order-status-page *,
+.ui-modal,
+.ui-modal * {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* PAGE SHELL — same density as User Management */
+#order-status-page {
+    background: #FCF8F6 !important;
+    padding-top: 110px !important;
+}
+
+#order-status-page > .order-status-content {
+    padding: 0 20px 28px !important;
+}
+
+/* User Management relies on navbar title, so remove oversized duplicate page title. */
+#order-status-page .order-status-page-header {
+    display: none !important;
+}
+
+/* MAIN CARD */
+#order-status-page .order-management-card {
+    background: #FFFFFF !important;
+    border: 1px solid #F0E9E6 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05) !important;
+    overflow: hidden !important;
+}
+
+/* =========================================================
+   TABS + SEARCH
+========================================================== */
+#order-status-page .order-controls {
+    min-height: 66px !important;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    gap: 16px !important;
+}
+
+#orderStatusTabs {
+    min-height: 36px !important;
+    align-items: center !important;
+}
+
+#orderStatusTabs .order-status-tab {
+    height: 36px !important;
+    padding: 0 4px !important;
+    margin-right: 28px !important;
+    font-size: 13px !important;
+    line-height: 36px !important;
+    font-weight: 500 !important;
+    color: #9CA3AF !important;
+    white-space: nowrap !important;
+}
+
+#orderStatusTabs .order-status-tab:last-child {
+    margin-right: 0 !important;
+}
+
+#orderStatusTabs .order-status-tab.active {
+    color: #7B1B1B !important;
+    font-weight: 600 !important;
+}
+
+#orderStatusTabs .order-status-tab::after {
+    height: 2px !important;
+}
+
+#orderSearch {
+    width: 290px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    border: 1px solid #D1D5DB !important;
+    padding-left: 16px !important;
+    padding-right: 42px !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: #374151 !important;
+    background: #FFFFFF !important;
+}
+
+#orderSearch::placeholder {
+    color: #D1D5DB !important;
+}
+
+#orderSearch:focus {
+    border-color: #7B1B1B !important;
+    box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.08) !important;
+}
+
+/* =========================================================
+   TABLE HEADER — same weight / sizing as User Management
+========================================================== */
+#order-status-page .order-table-header {
+    margin: 0 !important;
+    min-height: 46px !important;
+    padding: 0 16px !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+    color: #9CA3AF !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+}
+
+#order-status-page .order-table-header > div {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #9CA3AF !important;
+}
+
+/* =========================================================
+   ORDER ROWS — compact like User Management rows
+========================================================== */
+#orderStatusTable {
+    margin-top: 0 !important;
+}
+
+#orderStatusTable .order-row {
+    min-height: 68px !important;
+    padding: 9px 16px !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+}
+
+#orderStatusTable .order-row:hover {
+    background: #FFF9F7 !important;
+}
+
+#orderStatusTable .order-row > div:first-child {
+    gap: 12px !important;
+}
+
+#orderStatusTable .order-icon-box,
+#orderStatusTable .order-icon-box.new,
+#orderStatusTable .order-icon-box.preparing,
+#orderStatusTable .order-icon-box.ready {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+}
+
+#orderStatusTable .order-icon-box img {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+#orderStatusTable .order-id {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #1F2937 !important;
+}
+
+#orderStatusTable .order-status {
+    margin-top: 5px !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+}
+
+#orderStatusTable .status-dot {
+    width: 7px !important;
+    height: 7px !important;
+    margin-right: 5px !important;
+}
+
+#orderStatusTable .customer-name {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+    color: #1F2937 !important;
+}
+
+#orderStatusTable .customer-phone {
+    margin-top: 5px !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#orderStatusTable .mini-product {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    border-radius: 7px !important;
+}
+
+#orderStatusTable .more-items {
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#orderStatusTable .amount,
+#orderStatusTable .ordered-date {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+    color: #1F2937 !important;
+}
+
+#orderStatusTable .payment,
+#orderStatusTable .ordered-time {
+    margin-top: 5px !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+/* EMPTY STATE */
+#orderStatusNoResults {
+    padding: 44px 20px !important;
+}
+
+#orderStatusNoResults p:first-child {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #6B7280 !important;
+}
+
+#orderStatusNoResults p:last-child {
+    margin-top: 4px !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+/* =========================================================
+   PAGINATION — same compact sizing as User Management
+========================================================== */
+#order-status-page .order-pagination {
+    min-height: 52px !important;
+    padding: 10px 16px !important;
+    border-top: 1px solid #E5E7EB !important;
+}
+
+#order-status-page .order-pagination > p {
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#order-status-page .pagination-button {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+#itemsPerPage {
+    height: 28px !important;
+    margin-left: 8px !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+    border-color: #F0B9AC !important;
+    background: #FFF5F1 !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    color: #4B5563 !important;
+}
+
+/* =========================================================
+   MODALS — match User Management typography / compactness
+========================================================== */
+.order-details-modal-panel {
+    border-radius: 20px !important;
+}
+
+.order-details-modal-panel .modal-section {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+
+.order-details-modal-panel .modal-header-section {
+    padding-top: 14px !important;
+    padding-bottom: 10px !important;
+}
+
+#newOrderModalTitle {
+    font-size: 19px !important;
+    line-height: 1.15 !important;
+    font-weight: 500 !important;
+}
+
+.order-details-modal-panel h3 {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+}
+
+.order-details-modal-panel .modal-order-summary {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+#orderModalOrderId {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+
+#orderModalStatusText {
+    margin-top: 5px !important;
+    font-size: 11px !important;
+}
+
+.order-details-modal-panel .modal-customer-payment {
+    gap: 28px !important;
+}
+
+.order-details-modal-panel .modal-item-row {
+    min-height: 56px !important;
+}
+
+.order-details-modal-panel .modal-items-section > h3,
+.order-details-modal-panel .modal-notes-section > h3,
+.tracking-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+
+.order-modal-action-button {
+    min-height: 38px !important;
+    padding: 0 16px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+}
+
+/* Schedule modal */
+#scheduleShipmentModalPanel {
+    border-radius: 20px !important;
+}
+
+#scheduleShipmentTitle {
+    font-size: 19px !important;
+    font-weight: 500 !important;
+}
+
+#scheduleShipmentModalPanel p,
+#scheduleShipmentModalPanel label,
+#scheduleShipmentModalPanel input,
+#scheduleShipmentModalPanel select,
+#scheduleShipmentModalPanel button {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+@media (max-width: 1180px) {
+    #orderStatusTabs .order-status-tab {
+        margin-right: 18px !important;
+    }
+
+    #orderSearch {
+        width: 280px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    #order-status-page {
+        margin-left: 0 !important;
+    }
+
+    #order-status-page .order-controls {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    #orderSearch {
+        width: 100% !important;
+    }
+}

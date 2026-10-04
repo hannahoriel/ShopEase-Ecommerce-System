@@ -1,0 +1,2839 @@
+/* =====================================================
+   ROOT
+====================================================== */
+
+:root {
+
+    --maroon:
+        #7B1B1B;
+
+    --maroon-dark:
+        #5A090D;
+
+    --maroon-soft:
+        #A52A2A;
+
+    --bg:
+        #FBF8F6;
+
+    --white:
+        #FFFFFF;
+
+    --text:
+        #17120F;
+
+    --muted:
+        #8F8B89;
+
+    --line:
+        #E7E2DF;
+
+    --soft-pink:
+        #FCEAE7;
+
+    --green:
+        #0A9614;
+
+    --green-soft:
+        #DCEFD8;
+
+    --orange:
+        #FFA800;
+
+    --negative:
+        #D40000;
+
+    --negative-soft:
+        #FFE4E7;
+
+    --neutral:
+        #C65A00;
+
+    --neutral-soft:
+        #FFF0D9;
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    font-family:
+        'Poppins',
+        sans-serif;
+
+    color:
+        var(--text);
+
+    background:
+        var(--bg);
+
+    overflow-x:
+        hidden;
+}
+
+
+button,
+input,
+select {
+
+    font-family:
+        inherit;
+}
+
+
+/* =====================================================
+   PAGE SHELL
+====================================================== */
+
+.feedback-page {
+
+    min-height:
+        100vh;
+
+    margin-left:
+        270px;
+
+    padding-top:
+        140px;
+
+    padding-left:
+        20px;
+
+    padding-right:
+        25px;
+
+    padding-bottom:
+        28px;
+
+    transition:
+        margin-left .30s ease,
+        padding-left .30s ease;
+}
+
+
+.feedback-page.sidebar-collapsed,
+body.seller-sidebar-collapsed
+.feedback-page {
+
+    margin-left:
+        100px;
+}
+
+
+.feedback-content {
+
+    width:
+        100%;
+}
+
+
+/* =====================================================
+   TITLE
+====================================================== */
+
+.feedback-heading {
+
+    margin-bottom:
+        14px;
+}
+
+
+.feedback-title {
+
+    margin:
+        0;
+
+    font-size:
+        27px;
+
+    line-height:
+        1.2;
+
+    font-weight:
+        600;
+
+    color:
+        #0F0F0F;
+}
+
+
+.feedback-subtitle {
+
+    margin:
+        3px 0 0;
+
+    font-size:
+        16px;
+
+    line-height:
+        1.35;
+
+    font-weight:
+        400;
+
+    color:
+        #9B9693;
+}
+
+
+/* =====================================================
+   MAIN CARD
+====================================================== */
+
+.feedback-card {
+
+    background:
+        #FFFFFF;
+
+    border:
+        1px solid
+        #F0E9E6;
+
+    border-radius:
+        12px;
+
+    box-shadow:
+        0 2px 12px
+        rgba(
+            42,
+            20,
+            15,
+            .05
+        );
+
+    overflow:
+        hidden;
+
+    min-height:
+        790px;
+}
+
+
+/* =====================================================
+   TABS + FILTERS
+====================================================== */
+
+.feedback-toolbar {
+
+    min-height:
+        66px;
+
+    padding:
+        0 14px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        20px;
+
+    border-bottom:
+        1px solid
+        #DCD8D5;
+}
+
+
+.feedback-tabs {
+
+    display:
+        flex;
+
+    align-items:
+        stretch;
+
+    height:
+        66px;
+}
+
+
+.feedback-tab {
+
+    position:
+        relative;
+
+    min-width:
+        150px;
+
+    padding:
+        0 14px;
+
+    border:
+        0;
+
+    background:
+        transparent;
+
+    color:
+        #A29D9A;
+
+    font-size:
+        14px;
+
+    font-weight:
+        500;
+
+    cursor:
+        pointer;
+
+    transition:
+        color .18s ease;
+}
+
+
+.feedback-tab::after {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    left:
+        0;
+
+    right:
+        0;
+
+    bottom:
+        -1px;
+
+    height:
+        4px;
+
+    border-radius:
+        4px 4px 0 0;
+
+    background:
+        transparent;
+}
+
+
+.feedback-tab.active {
+
+    color:
+        #8B2B26;
+}
+
+
+.feedback-tab.active::after {
+
+    background:
+        #A52A2A;
+}
+
+
+.feedback-tools {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+}
+
+
+.feedback-search {
+
+    position:
+        relative;
+
+    width:
+        330px;
+}
+
+
+.feedback-search input {
+
+    width:
+        100%;
+
+    height:
+        36px;
+
+    padding:
+        0 42px 0 12px;
+
+    border:
+        1px solid
+        #D8D4D2;
+
+    border-radius:
+        7px;
+
+    outline:
+        none;
+
+    color:
+        #444;
+
+    font-size:
+        13px;
+
+    background:
+        #fff;
+}
+
+
+.feedback-search input::placeholder {
+
+    color:
+        #C7C3C0;
+}
+
+
+.feedback-search svg {
+
+    position:
+        absolute;
+
+    right:
+        12px;
+
+    top:
+        50%;
+
+    transform:
+        translateY(-50%);
+
+    width:
+        19px;
+
+    height:
+        19px;
+
+    color:
+        #CBC7C4;
+
+    pointer-events:
+        none;
+}
+
+
+.rating-filter {
+
+    height:
+        36px;
+
+    min-width:
+        105px;
+
+    padding:
+        0 12px;
+
+    border:
+        1px solid
+        #D8D4D2;
+
+    border-radius:
+        7px;
+
+    background:
+        #fff;
+
+    color:
+        #8E8986;
+
+    font-size:
+        13px;
+
+    outline:
+        none;
+
+    cursor:
+        pointer;
+}
+
+
+.feedback-refresh {
+
+    width:
+        34px;
+
+    height:
+        34px;
+
+    border:
+        0;
+
+    background:
+        transparent;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    cursor:
+        pointer;
+
+    color:
+        #111;
+}
+
+
+.feedback-refresh svg {
+
+    width:
+        22px;
+
+    height:
+        22px;
+}
+
+
+/* =====================================================
+   ALL FEEDBACK TABLE
+====================================================== */
+
+.feedback-table-wrap {
+
+    padding:
+        18px 14px 0;
+}
+
+
+.feedback-table-head {
+
+    min-height:
+        50px;
+
+    display:
+        grid;
+
+    grid-template-columns:
+        1.35fr
+        1.3fr
+        1.1fr
+        1.8fr
+        1.1fr;
+
+    align-items:
+        center;
+
+    padding:
+        0 90px;
+
+    border-radius:
+        10px;
+
+    background:
+        #FCEAE7;
+
+    color:
+        #681010;
+
+    font-size:
+        14px;
+
+    font-weight:
+        500;
+}
+
+
+.feedback-list {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+}
+
+
+.feedback-row {
+
+    min-height:
+        110px;
+
+    display:
+        grid;
+
+    grid-template-columns:
+        1.35fr
+        1.3fr
+        1.1fr
+        1.8fr
+        1.1fr;
+
+    align-items:
+        center;
+
+    padding:
+        12px 14px;
+
+    border-bottom:
+        1px solid
+        #D8D5D3;
+}
+
+
+.order-cell {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        66px
+        minmax(
+            0,
+            1fr
+        );
+
+    align-items:
+        center;
+
+    gap:
+        12px;
+}
+
+
+.truck-box {
+
+    width:
+        66px;
+
+    height:
+        66px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        10px;
+
+    background:
+        #D9ECD2;
+}
+
+
+.truck-box img {
+
+    width:
+        39px;
+
+    height:
+        39px;
+
+    object-fit:
+        contain;
+}
+
+
+.order-id {
+
+    margin:
+        0;
+
+    font-size:
+        17px;
+
+    line-height:
+        1.15;
+
+    font-weight:
+        600;
+
+    color:
+        #101010;
+}
+
+
+.order-date {
+
+    margin-top:
+        4px;
+
+    font-size:
+        14px;
+
+    color:
+        #111;
+}
+
+
+.delivered-label {
+
+    margin-top:
+        6px;
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    gap:
+        7px;
+
+    color:
+        var(--green);
+
+    font-size:
+        13px;
+
+    font-weight:
+        400;
+}
+
+
+.delivered-dot {
+
+    width:
+        8px;
+
+    height:
+        8px;
+
+    border-radius:
+        50%;
+
+    background:
+        var(--green);
+}
+
+
+.customer-name {
+
+    margin:
+        0;
+
+    font-size:
+        16px;
+
+    font-weight:
+        500;
+
+    color:
+        #141414;
+}
+
+
+.customer-phone {
+
+    margin-top:
+        4px;
+
+    font-size:
+        13px;
+
+    color:
+        #77726F;
+}
+
+
+.rating-cell {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        flex-start;
+
+    gap:
+        8px;
+}
+
+
+.stars {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        2px;
+
+    color:
+        var(--orange);
+
+    font-size:
+        24px;
+
+    line-height:
+        1;
+}
+
+
+.star-empty {
+
+    color:
+        #D5D5D5;
+}
+
+
+.sentiment {
+
+    min-width:
+        78px;
+
+    height:
+        18px;
+
+    padding:
+        0 12px;
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        999px;
+
+    font-size:
+        11px;
+
+    font-weight:
+        500;
+}
+
+
+.sentiment.positive {
+
+    background:
+        var(--green-soft);
+
+    color:
+        #08710E;
+}
+
+
+.sentiment.neutral {
+
+    background:
+        var(--neutral-soft);
+
+    color:
+        var(--neutral);
+}
+
+
+.sentiment.negative {
+
+    background:
+        var(--negative-soft);
+
+    color:
+        var(--negative);
+}
+
+
+.feedback-text-title {
+
+    margin:
+        0;
+
+    max-width:
+        240px;
+
+    overflow:
+        hidden;
+
+    white-space:
+        nowrap;
+
+    text-overflow:
+        ellipsis;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    color:
+        #111;
+}
+
+
+.feedback-text-body {
+
+    margin-top:
+        5px;
+
+    max-width:
+        250px;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.35;
+
+    color:
+        #6F6A67;
+}
+
+
+.feedback-photo {
+
+    margin-top:
+        6px;
+
+    width:
+        31px;
+
+    height:
+        31px;
+
+    border:
+        1px solid
+        #D8D4D2;
+
+    border-radius:
+        6px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #222,
+            #777
+        );
+
+    overflow:
+        hidden;
+}
+
+
+.feedback-photo img {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    object-fit:
+        cover;
+}
+
+
+.feedback-date {
+
+    font-size:
+        14px;
+
+    line-height:
+        1.45;
+
+    color:
+        #111;
+}
+
+
+/* =====================================================
+   PRODUCT RATINGS TAB
+====================================================== */
+
+.product-ratings-panel {
+
+    display:
+        none;
+
+    padding:
+        28px 24px;
+}
+
+
+.product-ratings-panel.active {
+
+    display:
+        block;
+}
+
+
+.product-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            155px
+        );
+
+    gap:
+        12px;
+
+    align-items:
+        start;
+}
+
+
+.product-card {
+
+    width:
+        155px;
+
+    overflow:
+        hidden;
+
+    border:
+        1px solid
+        #9F9F9F;
+
+    border-radius:
+        10px;
+
+    background:
+        #fff;
+
+    cursor:
+        pointer;
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease;
+}
+
+
+.product-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(
+            0,
+            0,
+            0,
+            .08
+        );
+}
+
+
+.product-card-image {
+
+    width:
+        100%;
+
+    height:
+        154px;
+
+    overflow:
+        hidden;
+
+    background:
+        #F3F3F3;
+}
+
+
+.product-card-image img {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    object-fit:
+        cover;
+}
+
+
+.product-card-body {
+
+    min-height:
+        68px;
+
+    padding:
+        6px 5px 8px;
+}
+
+
+.product-card-name {
+
+    min-height:
+        31px;
+
+    margin:
+        0;
+
+    font-size:
+        10px;
+
+    line-height:
+        1.25;
+
+    font-weight:
+        400;
+
+    color:
+        #111;
+}
+
+
+.product-card-stars {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        1px;
+
+    margin-top:
+        7px;
+
+    color:
+        var(--orange);
+
+    font-size:
+        20px;
+
+    line-height:
+        1;
+}
+
+
+/* =====================================================
+   FOOTER PAGINATION
+====================================================== */
+
+.feedback-footer {
+
+    margin-top:
+        auto;
+
+    min-height:
+        56px;
+
+    padding:
+        10px 18px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    border-top:
+        1px solid
+        #D8D5D3;
+}
+
+
+.feedback-count {
+
+    margin:
+        0;
+
+    font-size:
+        12px;
+
+    color:
+        #8F8B89;
+}
+
+
+.feedback-pagination {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+}
+
+
+.page-button {
+
+    min-width:
+        23px;
+
+    height:
+        23px;
+
+    border:
+        0;
+
+    border-radius:
+        5px;
+
+    background:
+        transparent;
+
+    color:
+        #333;
+
+    font-size:
+        11px;
+
+    cursor:
+        pointer;
+}
+
+
+.page-button.active {
+
+    background:
+        #FFD7CB;
+
+    color:
+        #9E4B43;
+}
+
+
+.per-page {
+
+    height:
+        31px;
+
+    padding:
+        0 10px;
+
+    border:
+        1px solid
+        #F1C8BF;
+
+    border-radius:
+        6px;
+
+    background:
+        #FFF6F3;
+
+    color:
+        #333;
+
+    font-size:
+        10px;
+}
+
+
+/* =====================================================
+   PRODUCT REVIEWS MODAL
+====================================================== */
+
+.reviews-modal {
+
+    position:
+        fixed;
+
+    inset:
+        0;
+
+    z-index:
+        1000;
+
+    display:
+        none;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    padding:
+        22px;
+
+    background:
+        rgba(
+            0,
+            0,
+            0,
+            .25
+        );
+}
+
+
+.reviews-modal.open {
+
+    display:
+        flex;
+}
+
+
+.reviews-modal-panel {
+
+    width:
+        min(
+            1095px,
+            95vw
+        );
+
+    max-height:
+        94vh;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    overflow:
+        hidden;
+
+    border-radius:
+        28px;
+
+    background:
+        #fff;
+
+    box-shadow:
+        0 18px 50px
+        rgba(
+            0,
+            0,
+            0,
+            .15
+        );
+}
+
+
+.modal-product-summary {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        175px
+        minmax(
+            0,
+            1fr
+        )
+        360px;
+
+    gap:
+        20px;
+
+    align-items:
+        center;
+
+    padding:
+        50px 44px 34px;
+
+    border-bottom:
+        1px solid
+        #D5D5D5;
+}
+
+
+.modal-product-image {
+
+    width:
+        175px;
+
+    height:
+        175px;
+
+    overflow:
+        hidden;
+
+    border:
+        1px solid
+        #BEBEBE;
+
+    border-radius:
+        10px;
+
+    background:
+        #F7F7F7;
+}
+
+
+.modal-product-image img {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    object-fit:
+        cover;
+}
+
+
+.modal-product-name {
+
+    margin:
+        0;
+
+    font-size:
+        27px;
+
+    line-height:
+        1.2;
+
+    font-weight:
+        600;
+
+    color:
+        #111;
+}
+
+
+.modal-product-price {
+
+    margin-top:
+        14px;
+
+    font-size:
+        21px;
+
+    font-weight:
+        700;
+
+    color:
+        #6A1414;
+}
+
+
+.modal-category-row {
+
+    margin-top:
+        20px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        14px;
+
+    font-size:
+        14px;
+
+    color:
+        #8E8E8E;
+}
+
+
+.category-pill {
+
+    padding:
+        4px 13px;
+
+    border-radius:
+        999px;
+
+    background:
+        #FBE0E0;
+
+    color:
+        #A52A2A;
+
+    font-size:
+        10px;
+
+    font-weight:
+        500;
+}
+
+
+.modal-rating-line {
+
+    margin-top:
+        17px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        11px;
+}
+
+
+.modal-big-star {
+
+    color:
+        var(--orange);
+
+    font-size:
+        31px;
+
+    line-height:
+        1;
+}
+
+
+.modal-rating-score {
+
+    font-size:
+        16px;
+
+    font-weight:
+        600;
+
+    color:
+        #111;
+}
+
+
+.modal-review-count {
+
+    font-size:
+        13px;
+
+    color:
+        #8E8E8E;
+}
+
+
+.rating-breakdown {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        10px;
+}
+
+
+.rating-breakdown-row {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        34px
+        18px
+        minmax(
+            0,
+            1fr
+        )
+        25px;
+
+    align-items:
+        center;
+
+    gap:
+        7px;
+
+    font-size:
+        13px;
+
+    color:
+        #111;
+}
+
+
+.rating-breakdown-row .star {
+
+    color:
+        var(--orange);
+}
+
+
+.rating-bar {
+
+    height:
+        6px;
+
+    overflow:
+        hidden;
+
+    border-radius:
+        999px;
+
+    background:
+        #DADADA;
+}
+
+
+.rating-bar-fill {
+
+    height:
+        100%;
+
+    border-radius:
+        inherit;
+
+    background:
+        var(--orange);
+}
+
+
+.modal-reviews-section {
+
+    padding:
+        30px 40px 20px;
+
+    overflow-y:
+        auto;
+}
+
+
+.modal-reviews-title {
+
+    margin:
+        0 0 14px;
+
+    font-size:
+        22px;
+
+    font-weight:
+        600;
+
+    color:
+        #111;
+}
+
+
+.review-card {
+
+    min-height:
+        156px;
+
+    margin-bottom:
+        14px;
+
+    padding:
+        18px 20px;
+
+    display:
+        grid;
+
+    grid-template-columns:
+        88px
+        minmax(
+            0,
+            1fr
+        )
+        120px;
+
+    gap:
+        18px;
+
+    align-items:
+        start;
+
+    border:
+        1px solid
+        #E0DEDC;
+
+    border-radius:
+        10px;
+
+    background:
+        #fff;
+}
+
+
+.review-avatar {
+
+    width:
+        78px;
+
+    height:
+        78px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        50%;
+
+    background:
+        #D9D9D9;
+}
+
+
+.review-avatar svg {
+
+    width:
+        42px;
+
+    height:
+        42px;
+
+    color:
+        #000;
+}
+
+
+.review-name {
+
+    margin:
+        0;
+
+    font-size:
+        20px;
+
+    font-weight:
+        600;
+
+    color:
+        #111;
+}
+
+
+.review-meta {
+
+    margin-top:
+        3px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        12px;
+
+    color:
+        #888;
+
+    font-size:
+        14px;
+}
+
+
+.review-stars {
+
+    color:
+        var(--orange);
+
+    font-size:
+        20px;
+
+    letter-spacing:
+        1px;
+}
+
+
+.review-text {
+
+    margin:
+        10px 0 0;
+
+    max-width:
+        670px;
+
+    font-size:
+        19px;
+
+    line-height:
+        1.45;
+
+    color:
+        #111;
+}
+
+
+.review-photo {
+
+    width:
+        118px;
+
+    height:
+        118px;
+
+    overflow:
+        hidden;
+
+    border-radius:
+        9px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #D3D3D3,
+            #777
+        );
+}
+
+
+.review-photo img {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    object-fit:
+        cover;
+}
+
+
+.modal-footer {
+
+    padding:
+        8px 72px 34px;
+
+    display:
+        flex;
+
+    justify-content:
+        flex-end;
+}
+
+
+.modal-close {
+
+    width:
+        123px;
+
+    height:
+        49px;
+
+    border:
+        0;
+
+    border-radius:
+        10px;
+
+    background:
+        #9C211C;
+
+    color:
+        #fff;
+
+    font-size:
+        16px;
+
+    font-weight:
+        600;
+
+    cursor:
+        pointer;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+====================================================== */
+
+@media (max-width: 1200px) {
+
+    .feedback-table-head {
+
+        padding:
+            0 30px;
+    }
+
+
+    .feedback-row {
+
+        grid-template-columns:
+            1.45fr
+            1.2fr
+            1fr
+            1.6fr
+            1fr;
+    }
+
+
+    .modal-product-summary {
+
+        grid-template-columns:
+            160px
+            minmax(
+                0,
+                1fr
+            );
+
+    }
+
+
+    .rating-breakdown {
+
+        grid-column:
+            1 / -1;
+    }
+
+}
+
+
+@media (max-width: 900px) {
+
+    .feedback-page {
+
+        margin-left:
+            0;
+
+        padding:
+            100px
+            15px
+            20px;
+    }
+
+
+    .feedback-toolbar {
+
+        align-items:
+            stretch;
+
+        flex-direction:
+            column;
+
+        padding:
+            0 14px 12px;
+    }
+
+
+    .feedback-tabs {
+
+        width:
+            100%;
+    }
+
+
+    .feedback-tools {
+
+        width:
+            100%;
+    }
+
+
+    .feedback-search {
+
+        width:
+            100%;
+    }
+
+
+    .feedback-table-wrap {
+
+        overflow-x:
+            auto;
+    }
+
+
+    .feedback-table-head,
+    .feedback-row {
+
+        min-width:
+            980px;
+    }
+
+
+    .product-grid {
+
+        grid-template-columns:
+            repeat(
+                2,
+                155px
+            );
+    }
+
+
+    .review-card {
+
+        grid-template-columns:
+            70px
+            minmax(
+                0,
+                1fr
+            );
+    }
+
+
+    .review-photo {
+
+        grid-column:
+            2;
+
+        grid-row:
+            2;
+    }
+
+}
+
+
+/* =========================================================
+   CUSTOMER FEEDBACK — SHIPPING STATUS VISUAL MATCH
+   Mirrors shipping-status.blade.php:
+   - page shell / side spacing
+   - Poppins scale and weights
+   - card radius / borders / shadows
+   - toolbar, search, tabs
+   - compact row density
+   - PNG sizing
+   - pagination
+   - modal typography / spacing
+========================================================== */
+
+#feedbackPage,
+#feedbackPage *,
+#productReviewsModal,
+#productReviewsModal * {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* ---------------------------------------------------------
+   PAGE SHELL — same as Shipping Status
+---------------------------------------------------------- */
+#feedbackPage {
+    min-height: 100vh !important;
+    margin-left: 288px !important;
+    padding: 110px 0 0 !important;
+    background: #FCF8F6 !important;
+    transition: margin .5s ease-in-out !important;
+}
+
+#feedbackPage.sidebar-collapsed,
+body.seller-sidebar-collapsed #feedbackPage {
+    margin-left: 80px !important;
+}
+
+#feedbackPage > .feedback-content {
+    width: 100% !important;
+    padding: 0 20px 28px !important;
+}
+
+/* Shipping Status uses navbar title instead of duplicate page heading. */
+#feedbackPage .feedback-heading {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------
+   MAIN CARD — same Shipping Status card
+---------------------------------------------------------- */
+#feedbackPage .feedback-card {
+    min-height: 0 !important;
+    background: #FFFFFF !important;
+    border: 1px solid #F0E9E6 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05) !important;
+    overflow: hidden !important;
+}
+
+/* ---------------------------------------------------------
+   TOOLBAR / TABS — exact shipping density
+---------------------------------------------------------- */
+#feedbackPage .feedback-toolbar {
+    min-height: 66px !important;
+    height: auto !important;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    gap: 16px !important;
+}
+
+#feedbackPage .feedback-tabs {
+    height: 36px !important;
+    min-height: 36px !important;
+    align-items: center !important;
+}
+
+#feedbackPage .feedback-tab {
+    min-width: 0 !important;
+    height: 36px !important;
+    padding: 0 4px !important;
+    margin-right: 28px !important;
+    font-size: 13px !important;
+    line-height: 36px !important;
+    font-weight: 500 !important;
+    color: #9CA3AF !important;
+    white-space: nowrap !important;
+}
+
+#feedbackPage .feedback-tab:last-child {
+    margin-right: 0 !important;
+}
+
+#feedbackPage .feedback-tab::after {
+    left: 4px !important;
+    right: 4px !important;
+    bottom: 0 !important;
+    height: 2px !important;
+    border-radius: 999px !important;
+}
+
+#feedbackPage .feedback-tab.active {
+    color: #7B1B1B !important;
+    font-weight: 600 !important;
+}
+
+#feedbackPage .feedback-tab.active::after {
+    background: #7B1B1B !important;
+}
+
+#feedbackPage .feedback-tools {
+    gap: 8px !important;
+}
+
+#feedbackPage .feedback-search {
+    width: 290px !important;
+}
+
+#feedbackPage .feedback-search input {
+    width: 100% !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    border: 1px solid #D1D5DB !important;
+    padding: 0 42px 0 16px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+    color: #374151 !important;
+    background: #FFFFFF !important;
+    box-sizing: border-box !important;
+}
+
+#feedbackPage .feedback-search input::placeholder {
+    color: #D1D5DB !important;
+}
+
+#feedbackPage .feedback-search input:focus {
+    border-color: #7B1B1B !important;
+    box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.08) !important;
+}
+
+#feedbackPage .feedback-search svg {
+    right: 12px !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: #B7B3B1 !important;
+}
+
+#feedbackPage .rating-filter {
+    height: 36px !important;
+    min-width: 105px !important;
+    padding: 0 10px !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    color: #6B7280 !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+
+#feedbackPage .feedback-refresh {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+}
+
+#feedbackPage .feedback-refresh svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* ---------------------------------------------------------
+   ALL FEEDBACK TABLE
+---------------------------------------------------------- */
+#feedbackPage .feedback-table-wrap {
+    padding: 0 !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+}
+
+#feedbackPage .feedback-table-head {
+    min-height: 46px !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    grid-template-columns:
+        1.35fr
+        1.25fr
+        1.05fr
+        1.75fr
+        1fr !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+    color: #9CA3AF !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+}
+
+#feedbackPage .feedback-row {
+    min-height: 104px !important;
+    grid-template-columns:
+        1.35fr
+        1.25fr
+        1.05fr
+        1.75fr
+        1fr !important;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+    box-sizing: border-box !important;
+    transition: background-color .2s ease !important;
+}
+
+#feedbackPage .feedback-row:hover {
+    background: #FFF9F7 !important;
+}
+
+#feedbackPage .order-cell {
+    grid-template-columns: 54px minmax(0, 1fr) !important;
+    gap: 14px !important;
+}
+
+/* Same final truck treatment as Shipping Status:
+   transparent holder + 46px PNG. */
+#feedbackPage .truck-box {
+    width: 54px !important;
+    height: 54px !important;
+    min-width: 54px !important;
+    max-width: 54px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+}
+
+#feedbackPage .truck-box img {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    max-width: 46px !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+#feedbackPage .order-id {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #1F2937 !important;
+}
+
+#feedbackPage .order-date {
+    margin-top: 5px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#feedbackPage .delivered-label {
+    margin-top: 5px !important;
+    gap: 5px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+    color: #0A9614 !important;
+}
+
+#feedbackPage .delivered-dot {
+    width: 7px !important;
+    height: 7px !important;
+}
+
+#feedbackPage .customer-name {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+    color: #1F2937 !important;
+}
+
+#feedbackPage .customer-phone {
+    margin-top: 5px !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#feedbackPage .rating-cell {
+    gap: 6px !important;
+}
+
+#feedbackPage .stars {
+    gap: 1px !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+}
+
+#feedbackPage .sentiment {
+    min-width: 72px !important;
+    height: 18px !important;
+    padding: 0 9px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 500 !important;
+}
+
+#feedbackPage .feedback-text-title {
+    max-width: 220px !important;
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #1F2937 !important;
+}
+
+#feedbackPage .feedback-text-body {
+    max-width: 235px !important;
+    margin-top: 5px !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#feedbackPage .feedback-photo {
+    width: 28px !important;
+    height: 28px !important;
+    margin-top: 6px !important;
+    border-radius: 6px !important;
+}
+
+#feedbackPage .feedback-date {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+    font-weight: 400 !important;
+    color: #4B5563 !important;
+}
+
+/* ---------------------------------------------------------
+   PRODUCT RATINGS
+---------------------------------------------------------- */
+#feedbackPage .product-ratings-panel {
+    padding: 18px 16px !important;
+}
+
+#feedbackPage .product-grid {
+    grid-template-columns: repeat(4, 150px) !important;
+    gap: 12px !important;
+}
+
+#feedbackPage .product-card {
+    width: 150px !important;
+    border: 1px solid #D8D4D2 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+}
+
+#feedbackPage .product-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(42, 20, 15, .06) !important;
+}
+
+#feedbackPage .product-card-image {
+    height: 148px !important;
+}
+
+#feedbackPage .product-card-body {
+    min-height: 62px !important;
+    padding: 6px 6px 8px !important;
+}
+
+#feedbackPage .product-card-name {
+    min-height: 29px !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    font-weight: 400 !important;
+    color: #1F2937 !important;
+}
+
+#feedbackPage .product-card-stars {
+    gap: 1px !important;
+    margin-top: 5px !important;
+    font-size: 17px !important;
+}
+
+/* ---------------------------------------------------------
+   PAGINATION — same Shipping Status sizing
+---------------------------------------------------------- */
+#feedbackPage .feedback-footer {
+    min-height: 52px !important;
+    margin-top: 0 !important;
+    padding: 10px 16px !important;
+    border-top: 1px solid #E5E7EB !important;
+}
+
+#feedbackPage .feedback-count {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#feedbackPage .feedback-pagination {
+    gap: 4px !important;
+}
+
+#feedbackPage .page-button {
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+#feedbackPage .per-page {
+    height: 28px !important;
+    margin-left: 8px !important;
+    padding: 0 8px !important;
+    border: 1px solid #F0B9AC !important;
+    border-radius: 6px !important;
+    background: #FFF5F1 !important;
+    color: #4B5563 !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+
+/* =========================================================
+   PRODUCT REVIEWS MODAL — SHIPPING MODAL TYPOGRAPHY/DENSITY
+========================================================== */
+#productReviewsModal {
+    padding: 18px !important;
+    background: rgba(0, 0, 0, .25) !important;
+}
+
+#productReviewsModal .reviews-modal-panel {
+    width: min(930px, 94vw) !important;
+    max-height: 92vh !important;
+    border-radius: 20px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, .14) !important;
+}
+
+#productReviewsModal .modal-product-summary {
+    grid-template-columns: 128px minmax(0, 1fr) 300px !important;
+    gap: 18px !important;
+    align-items: center !important;
+    padding: 18px 20px !important;
+    border-bottom: 1px solid #E5E7EB !important;
+}
+
+#productReviewsModal .modal-product-image {
+    width: 128px !important;
+    height: 128px !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 9px !important;
+}
+
+#productReviewsModal .modal-product-name {
+    margin: 0 !important;
+    font-size: 19px !important;
+    line-height: 1.15 !important;
+    font-weight: 500 !important;
+    color: #17120F !important;
+}
+
+#productReviewsModal .modal-product-price {
+    margin-top: 8px !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #7B1B1B !important;
+}
+
+#productReviewsModal .modal-category-row {
+    margin-top: 10px !important;
+    gap: 8px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#productReviewsModal .category-pill {
+    padding: 3px 9px !important;
+    font-size: 9px !important;
+    font-weight: 500 !important;
+}
+
+#productReviewsModal .modal-rating-line {
+    margin-top: 10px !important;
+    gap: 7px !important;
+}
+
+#productReviewsModal .modal-big-star {
+    font-size: 24px !important;
+}
+
+#productReviewsModal .modal-rating-score {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #1F2937 !important;
+}
+
+#productReviewsModal .modal-review-count {
+    font-size: 10px !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#productReviewsModal .rating-breakdown {
+    gap: 8px !important;
+}
+
+#productReviewsModal .rating-breakdown-row {
+    grid-template-columns: 25px 14px minmax(0, 1fr) 22px !important;
+    gap: 6px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+    color: #4B5563 !important;
+}
+
+#productReviewsModal .rating-bar {
+    height: 5px !important;
+}
+
+#productReviewsModal .modal-reviews-section {
+    padding: 16px 20px 12px !important;
+}
+
+#productReviewsModal .modal-reviews-title {
+    margin: 0 0 10px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #17120F !important;
+}
+
+#productReviewsModal .review-card {
+    min-height: 112px !important;
+    margin-bottom: 10px !important;
+    padding: 12px 14px !important;
+    grid-template-columns: 52px minmax(0, 1fr) 82px !important;
+    gap: 12px !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 9px !important;
+}
+
+#productReviewsModal .review-avatar {
+    width: 48px !important;
+    height: 48px !important;
+}
+
+#productReviewsModal .review-avatar svg {
+    width: 27px !important;
+    height: 27px !important;
+}
+
+#productReviewsModal .review-name {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+    color: #1F2937 !important;
+}
+
+#productReviewsModal .review-meta {
+    margin-top: 4px !important;
+    gap: 8px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+    color: #9CA3AF !important;
+}
+
+#productReviewsModal .review-stars {
+    font-size: 15px !important;
+    letter-spacing: 0 !important;
+}
+
+#productReviewsModal .review-text {
+    max-width: none !important;
+    margin: 7px 0 0 !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+    color: #1F2937 !important;
+}
+
+#productReviewsModal .review-photo {
+    width: 78px !important;
+    height: 78px !important;
+    border-radius: 8px !important;
+}
+
+#productReviewsModal .modal-footer {
+    padding: 8px 20px 16px !important;
+}
+
+#productReviewsModal .modal-close {
+    width: 108px !important;
+    height: 38px !important;
+    border-radius: 8px !important;
+    background: #7B1B1B !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 600 !important;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE — same breakpoint behavior as Shipping Status
+---------------------------------------------------------- */
+@media (max-width: 1180px) {
+    #feedbackPage .feedback-tab {
+        margin-right: 18px !important;
+    }
+
+    #feedbackPage .feedback-search {
+        width: 280px !important;
+    }
+
+    #productReviewsModal .modal-product-summary {
+        grid-template-columns: 120px minmax(0, 1fr) !important;
+    }
+
+    #productReviewsModal .rating-breakdown {
+        grid-column: 1 / -1 !important;
+    }
+}
+
+@media (max-width: 900px) {
+    #feedbackPage {
+        margin-left: 0 !important;
+    }
+
+    #feedbackPage .feedback-toolbar {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    #feedbackPage .feedback-search {
+        width: 100% !important;
+    }
+
+    #feedbackPage .feedback-tools {
+        width: 100% !important;
+    }
+}
+
+
+/* =========================================================
+   FINAL SHIPPING STATUS SPACING + MODAL UX MATCH
+========================================================== */
+
+/* ---------------------------------------------------------
+   PAGE / CONTENT SPACING
+   Mirrors shipping-status.blade.php:
+   expanded  = 288px sidebar offset
+   collapsed = 80px sidebar offset
+   content   = 20px left/right rhythm
+---------------------------------------------------------- */
+#feedbackPage {
+    min-height: 100vh !important;
+    margin-left: 258px !important;
+    padding: 110px 0 0 !important;
+    background: #FCF8F6 !important;
+
+    transition:
+        margin-left .5s ease-in-out !important;
+}
+
+#feedbackPage.sidebar-collapsed,
+body.seller-sidebar-collapsed #feedbackPage {
+    margin-left: 80px !important;
+}
+
+#feedbackPage > .feedback-content {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 20px 28px !important;
+}
+
+#feedbackPage .feedback-card {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Same 16px internal card rhythm used by Shipping Status. */
+#feedbackPage .feedback-toolbar,
+#feedbackPage .feedback-table-head,
+#feedbackPage .feedback-row,
+#feedbackPage .product-ratings-panel,
+#feedbackPage .feedback-footer {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+
+/* ---------------------------------------------------------
+   MODAL OPEN/CLOSE UX
+   Shipping Status-style fade-only close:
+   no scale, no slide.
+---------------------------------------------------------- */
+#productReviewsModal {
+    display: flex !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity .22s ease,
+        visibility .22s ease !important;
+}
+
+#productReviewsModal.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+#productReviewsModal.is-closing {
+    opacity: 0 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+}
+
+#productReviewsModal .reviews-modal-panel {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Same Shipping Status modal horizontal rhythm. */
+#productReviewsModal .modal-product-summary,
+#productReviewsModal .modal-reviews-section,
+#productReviewsModal .modal-footer {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+
+/* ---------------------------------------------------------
+   CLOSE BUTTON
+   Compact Shipping Status action-button feel
+---------------------------------------------------------- */
+#productReviewsModal .modal-footer {
+    min-height: 58px !important;
+    padding-top: 10px !important;
+    padding-bottom: 14px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    border-top: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+}
+
+#productReviewsModal .modal-close {
+    width: auto !important;
+    min-width: 108px !important;
+    height: 38px !important;
+    padding: 0 18px !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: 0 !important;
+    border-radius: 8px !important;
+
+    background: #7B1B1B !important;
+    color: #FFFFFF !important;
+
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 600 !important;
+
+    cursor: pointer !important;
+
+    transition:
+        background-color .18s ease,
+        transform .18s ease,
+        box-shadow .18s ease !important;
+}
+
+#productReviewsModal .modal-close:hover {
+    background: #661515 !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+        0 3px 8px
+        rgba(123, 27, 27, .18) !important;
+}
+
+#productReviewsModal .modal-close:active {
+    transform: translateY(0) !important;
+    box-shadow: none !important;
+}
+
+#productReviewsModal .modal-close:focus-visible {
+    outline: none !important;
+    box-shadow:
+        0 0 0 3px
+        rgba(123, 27, 27, .14) !important;
+}
+
+/* Same scroll behavior: content scrolls, footer stays usable. */
+#productReviewsModal .reviews-modal-panel {
+    overflow: hidden !important;
+}
+
+#productReviewsModal .modal-reviews-section {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-width: thin;
+}
+
+@media (max-width: 900px) {
+    #feedbackPage {
+        margin-left: 0 !important;
+        padding-top: 110px !important;
+    }
+
+    #feedbackPage > .feedback-content {
+        padding: 0 20px 28px !important;
+    }
+}

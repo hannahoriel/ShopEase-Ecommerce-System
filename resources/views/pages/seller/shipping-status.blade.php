@@ -77,6 +77,9 @@
         'resources/js/seller/shipping-status.js'
     ])
 
+
+    
+
 </head>
 
 
@@ -126,7 +129,7 @@
         class="
             min-h-screen
             bg-[#FCF8F6]
-            pt-[104px]
+            pt-[110px]
             ml-[288px]
 
             transition-[margin]
@@ -135,24 +138,14 @@
         "
     >
 
-        <div
-            class="
-                px-[36px]
-                pt-[42px]
-                pb-[22px]
-            "
-        >
+        <div class="shipping-status-content">
 
 
             {{-- =================================================
                  PAGE HEADER
             ================================================== --}}
 
-            <div
-                class="
-                    mb-[18px]
-                "
-            >
+            <div class="shipping-status-page-header">
 
                 <h1
                     class="
@@ -185,16 +178,7 @@
                  SHIPPING CARD
             ================================================== --}}
 
-            <section
-                class="
-                    overflow-hidden
-                    bg-white
-                    rounded-[12px]
-                    border
-                    border-[#F0E9E6]
-                    shadow-[0_2px_12px_rgba(42,20,15,0.04)]
-                "
-            >
+            <section class="shipping-management-card">
 
 
                 {{-- =================================================
@@ -1543,7 +1527,7 @@
                 ================================================== --}}
 
                 <div
-                    class="
+                    class="shipping-pagination 
                         flex
                         items-center
                         justify-between
@@ -2541,9 +2525,6 @@
         </div>
 
     </div>
-
-
-
 
 </body>
 </html>

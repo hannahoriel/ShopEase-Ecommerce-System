@@ -1,0 +1,345 @@
+/* =========================================================
+   MOVED FROM registrations.blade.php — STYLE BLOCK 1
+========================================================= */
+
+/* =========================================================
+   DASHBOARD TYPOGRAPHY / FORMAT
+   Uses the same Poppins family, sizing, weights, and
+   visual hierarchy as the Dashboard.
+========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+#admin-content,
+#admin-content * {
+    font-family: 'Poppins', sans-serif;
+}
+
+#admin-content {
+    color: #17120F;
+}
+
+#admin-content h2 {
+    color: #17120F;
+    font-size: 21px;
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+#admin-content h3 {
+    color: #17120F;
+    font-weight: 600;
+}
+
+/* Dashboard-style registration stat cards */
+#admin-content .registration-stat-card {
+    min-height: 108px;
+    background: #FFFFFF;
+    border: 1px solid #F0E9E6;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+#admin-content .registration-stat-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    object-fit: contain;
+    display: block;
+}
+
+#admin-content .registration-stat-number {
+    font-size: 23px;
+    line-height: 1;
+    font-weight: 600;
+    color: #17120F;
+}
+
+#admin-content .registration-stat-label {
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 1.15;
+    font-weight: 400;
+    color: #8C8784;
+}
+
+#admin-content .registration-card-link {
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 500;
+    color: #7B1B1B;
+}
+
+/* Match Dashboard's common text hierarchy across this page. */
+#admin-content .text-\[23px\] { font-size: 23px; }
+#admin-content .text-\[21px\] { font-size: 21px; }
+#admin-content .text-\[20px\] { font-size: 20px; }
+#admin-content .text-\[19px\] { font-size: 19px; }
+#admin-content .text-\[18px\] { font-size: 18px; }
+#admin-content .text-\[17px\] { font-size: 17px; }
+#admin-content .text-\[15px\] { font-size: 15px; }
+#admin-content .text-\[14px\] { font-size: 14px; }
+#admin-content .text-\[13px\] { font-size: 13px; }
+#admin-content .text-\[12px\] { font-size: 12px; }
+#admin-content .text-\[11px\] { font-size: 11px; }
+#admin-content .text-\[10px\] { font-size: 10px; }
+
+#admin-content .font-semibold { font-weight: 600; }
+#admin-content .font-medium { font-weight: 500; }
+#admin-content .font-normal { font-weight: 400; }
+
+/* Keep very small utility/status text readable while matching Dashboard scale. */
+#admin-content .registration-table-text {
+    font-size: 14px;
+    line-height: 1.25;
+    font-weight: 400;
+    color: #17120F;
+}
+
+#admin-content .registration-muted-text {
+    font-size: 12px;
+    line-height: 1.25;
+    font-weight: 400;
+    color: #8C8784;
+}
+
+/* Dashboard-like buttons */
+#admin-content button,
+#admin-content input,
+#admin-content select,
+#admin-content textarea {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Hide the visual scrollbar inside registration detail modals while keeping them scrollable. */
+.registration-detail-modal {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.registration-detail-modal > .registration-detail-body {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: auto;
+    scrollbar-color: #c7c7c7 #f7f7f7;
+}
+
+.registration-detail-modal > .registration-detail-body::-webkit-scrollbar {
+    width: 9px;
+}
+
+.registration-detail-modal > .registration-detail-body::-webkit-scrollbar-track {
+    background: #f7f7f7;
+}
+
+.registration-detail-modal > .registration-detail-body::-webkit-scrollbar-thumb {
+    background: #c7c7c7;
+    border-radius: 8px;
+}
+
+/* Make the entire Approved/Rejected modal content scroll as one unit. */
+.registration-archive-modal {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.registration-archive-modal::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* =========================================================
+   CATEGORY PILLS
+========================================================== */
+
+.registration-category-pill {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 28px;
+    padding: 5px 11px;
+    border-radius: 9999px;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.category-pet-supplies { background: #E7F5E9; color: #2F6B3A; }
+.category-electronics-and-gadgets { background: #DDEBFF; color: #185FA3; }
+.category-womens-apparel { background: #F9DFEA; color: #A12763; }
+.category-mens-apparel { background: #E6E2F8; color: #5A4A9A; }
+.category-kids-and-baby { background: #FFE5B8; color: #9A5B00; }
+.category-home-and-garden { background: #DDF3E4; color: #27704A; }
+.category-sports-and-outdoors { background: #DDECF2; color: #23627A; }
+.category-health-and-beauty { background: #FFE0DC; color: #A63B2C; }
+.category-books-and-media { background: #E6E8F2; color: #3F4A68; }
+.category-food-and-gourmet { background: #FFF0C7; color: #8A5A00; }
+.category-automotive-motorcycle { background: #E3E3E3; color: #434343; }
+.category-furniture-and-office-equipment { background: #EBDCCF; color: #795548; }
+.category-jewelry-and-watches { background: #F8E2B8; color: #946B00; }
+.category-office-and-school-supplies { background: #E2F0F7; color: #2B617D; }
+.category-default { background: #F1EFEE; color: #6B6663; }
+
+
+/* =========================================================
+   REGISTRATIONS TABLE — FINAL 12PX CONTENT
+   Keep all visible table row content at exactly 12px.
+   Table headers and controls can keep their own sizing.
+========================================================== */
+#admin-content #registrations-table tbody,
+#admin-content #registrations-table tbody tr,
+#admin-content #registrations-table tbody td,
+#admin-content #registrations-table tbody td span,
+#admin-content #registrations-table tbody td div {
+    font-size: 12px !important;
+}
+
+#admin-content #registrations-table tbody td .text-\[10px\] {
+    font-size: 12px !important;
+}
+
+/* Keep the archive tables consistent too. */
+#admin-content #approved-users-body,
+#admin-content #approved-users-body tr,
+#admin-content #approved-users-body td,
+#admin-content #approved-users-body td span,
+#admin-content #approved-users-body td div,
+#admin-content #rejected-users-body,
+#admin-content #rejected-users-body tr,
+#admin-content #rejected-users-body td,
+#admin-content #rejected-users-body td span,
+#admin-content #rejected-users-body td div {
+    font-size: 12px !important;
+}
+
+/* Search bar — match the compact Seller Compliance width. */
+#admin-content .registration-search-wrap {
+    position: relative;
+    width: 330px;
+    flex: 0 0 330px;
+}
+
+#admin-content #registration-search {
+    width: 100%;
+    height: 36px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    padding: 0 38px 0 12px;
+    font-size: 13px;
+}
+
+@media (max-width: 1279px) {
+    #admin-content .registration-search-wrap {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+}
+
+/* =========================================================
+   MOVED FROM registrations.blade.php — STYLE BLOCK 2
+========================================================= */
+
+/* =========================================================
+   REGISTRATION ACTION FLASH
+   Same quick lower-right style used across the admin modals.
+========================================================== */
+.registration-decision-flash {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 220;
+    width: min(370px, calc(100vw - 32px));
+    min-height: 72px;
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 14px;
+    box-sizing: border-box;
+    background: #FFFFFF;
+    border: 1px solid #E7E2DF;
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(42, 20, 15, .16);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity .08s ease, transform .08s ease, visibility .08s ease;
+}
+
+.registration-decision-flash.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.registration-decision-flash.approved {
+    border-color: #BFDDB8;
+}
+
+.registration-decision-flash.rejected,
+.registration-decision-flash.error {
+    border-color: #E7A8AB;
+}
+
+@media (max-width: 640px) {
+    .registration-decision-flash {
+        right: 16px;
+        bottom: 16px;
+    }
+}
+
+/* =========================================================
+   MOVED FROM registrations.blade.php — STYLE BLOCK 3
+========================================================= */
+
+/* =========================================================
+   REGISTRATION FILTER COLOR CONSISTENCY
+   Matches the Seller Compliance filter/search styling.
+========================================================== */
+
+/* Search, user-type filter, and date field use the same
+   neutral border/background/text colors as Seller Compliance. */
+#registration-search,
+#user-type-filter,
+#date-filter {
+    border-color: #D9D6D4 !important;
+    background-color: #FFFFFF !important;
+    color: #76716E !important;
+}
+
+/* Match the Seller Compliance search placeholder tone. */
+#registration-search::placeholder {
+    color: #76716E !important;
+    opacity: 1;
+}
+
+/* Search icon + select arrow + calendar icon. */
+#registration-search + svg,
+#user-type-filter + svg,
+#date-calendar-button {
+    color: #76716E !important;
+}
+
+/* Keep native date text consistent across Chromium browsers. */
+#date-filter::-webkit-datetime-edit,
+#date-filter::-webkit-datetime-edit-fields-wrapper,
+#date-filter::-webkit-datetime-edit-text,
+#date-filter::-webkit-datetime-edit-month-field,
+#date-filter::-webkit-datetime-edit-day-field,
+#date-filter::-webkit-datetime-edit-year-field {
+    color: #76716E !important;
+}
+
+/* Same maroon active/focus indication used in Seller Compliance. */
+#registration-search:focus,
+#user-type-filter:focus,
+#date-filter:focus {
+    border-color: #7B1B1B !important;
+    box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
+}

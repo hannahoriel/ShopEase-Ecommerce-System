@@ -26,6 +26,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/css/seller/order-status.css', 'resources/js/seller/order-status.js'])
+
+    
+
 </head>
 
 <body class="m-0 p-0 bg-[#FCF8F6] font-[Poppins,sans-serif] text-[#17120F]">
@@ -40,11 +43,11 @@
     {{-- =========================================================
          PAGE
     ========================================================== --}}
-    <main id="order-status-page" class="min-h-screen bg-[#FCF8F6] pt-[104px] ml-[288px] transition-[margin] duration-100 ease-out">
-        <div class="px-[36px] pt-[42px] pb-[22px]">
+    <main id="order-status-page" class="min-h-screen bg-[#FCF8F6] pt-[110px] ml-[288px] transition-[margin] duration-100 ease-out">
+        <div class="order-status-content">
 
             {{-- PAGE HEADER --}}
-            <div class="mb-[18px]">
+            <div class="order-status-page-header">
                 <h1 class="text-[28px] leading-tight font-semibold text-[#17120F]">Order Status</h1>
                 <p class="mt-[3px] text-[19px] leading-tight text-[#999393]">View and manage new orders from your customers.</p>
             </div>
@@ -52,10 +55,10 @@
             {{-- =====================================================
                  ORDER CARD
             ====================================================== --}}
-            <section class="overflow-hidden bg-white rounded-[12px] border border-[#F0E9E6] shadow-[0_2px_12px_rgba(42,20,15,0.04)]">
+            <section class="order-management-card">
 
                 {{-- TABS / SEARCH --}}
-                <div class="flex items-center justify-between gap-4 min-h-[58px] border-b border-[#E8E2DF] px-[12px] pl-[14px]">
+                <div class="order-controls flex items-center justify-between">
                     <div id="orderStatusTabs" class="flex items-center self-stretch shrink-0">
                         <button type="button" data-tab="all" class="order-status-tab active relative h-full px-[8px] mr-[48px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">All Orders</button>
                         <button type="button" data-tab="new" class="order-status-tab relative h-full px-[8px] mr-[48px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">New Orders</button>
@@ -73,7 +76,7 @@
                 </div>
 
                 {{-- TABLE HEADER --}}
-                <div class="mx-[12px] mt-[18px] rounded-[10px] bg-[#FBE0DD] grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[50px] px-[20px] text-[12px] font-medium text-[#60100F]">
+                <div class="order-table-header grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center">
                     <div>Order ID</div>
                     <div>Customer</div>
                     <div>Items</div>
@@ -182,7 +185,7 @@
                 </div>
 
                 {{-- PAGINATION --}}
-                <div class="flex items-center justify-between min-h-[58px] px-[18px] border-t border-[#E4DFDD]">
+                <div class="order-pagination flex items-center justify-between">
                     <p class="text-[12px] text-[#8E8885]">Showing <span id="showingCount">0</span> out of <span id="totalEntriesCount">0</span> entries</p>
                     <div class="flex items-center gap-[3px]">
                         <button type="button" id="previousPage" class="pagination-button disabled" aria-label="Previous page">‹</button>

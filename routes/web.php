@@ -2094,6 +2094,42 @@ Route::get('/seller/shipping-status', function () {
 })->middleware('auth')
   ->name('seller.shipping.status');
 
+/*
+|--------------------------------------------------------------------------
+| SELLER REPORTS
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/seller/reports', function () {
+
+    abort_unless(
+        Auth::user()->role === User::ROLE_SELLER,
+        403
+    );
+
+    return view('pages.seller.reports');
+
+})->middleware('auth')
+  ->name('seller.reports');
+
+/*
+|--------------------------------------------------------------------------
+| SELLER CUSTOMER FEEDBACK
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/seller/customer-feedback', function () {
+
+    abort_unless(
+        Auth::user()->role === User::ROLE_SELLER,
+        403
+    );
+
+    return view('pages.seller.customer-feedback');
+
+})->middleware('auth')
+  ->name('seller.feedback.index');
+
 Route::get('/admin/seller-compliance', function () {
 
     abort_unless(
@@ -2140,3 +2176,27 @@ Route::get('/admin/logistics-management', function () {
 Route::get('/admin/platform-settings', function () {
     return view('pages.admin.platform-settings');
 })->name('admin.platform.settings');
+
+Route::get('/buyer/cart', function () {
+    return view('pages.buyer.cart');
+})->name('buyer.cart');
+
+Route::get('/buyer/product', function () {
+    return view('pages.buyer.product');
+})->name('buyer.product');
+
+Route::get('/buyer/my-purchases', function () {
+    return view('pages.buyer.my-purchases');
+})->name('buyer.my-purchases');
+
+Route::get('/buyer/checkout', function () {
+    return view('pages.buyer.checkout');
+})->name('buyer.checkout');
+
+Route::get('/seller/messages', function () {
+    return view('pages.seller.messages');
+})->name('seller.messages');
+
+Route::get('/admin/messages', function () {
+    return view('pages.admin.messages');
+})->name('admin.messages');

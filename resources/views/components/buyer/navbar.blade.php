@@ -13,6 +13,11 @@
      - Existing dropdown/navigation behavior preserved
 ========================================================= --}}
 
+@vite([
+    'resources/css/buyer/components/navbar.css',
+    'resources/js/buyer/components/navbar.js',
+])
+
 <header
     id="buyer-navbar"
     class="
@@ -54,8 +59,7 @@
 
             {{-- SHOP EASE LOGO --}}
             <a
-                href="#"
-                onclick="return false;"
+                href="{{ url('/buyer/dashboard') }}"
                 class="
                     buyer-navbar-logo
                     shrink-0
@@ -109,7 +113,7 @@
                             class="
                                 w-full
                                 h-full
-                                px-[15px]
+                                px-[20px]
                                 border-none
                                 outline-none
                                 bg-transparent
@@ -169,33 +173,6 @@
                 "
             >
 
-                {{-- CHAT --}}
-                <button
-                    type="button"
-                    id="buyerChatButton"
-                    class="
-                        buyer-header-icon-button
-                        relative
-                        w-[30px]
-                        h-[38px]
-                        flex
-                        items-center
-                        justify-center
-                    "
-                    aria-label="Messages"
-                >
-                    <img
-                        src="{{ asset('icons/buyer/chats-header.png') }}"
-                        alt=""
-                        class="
-                            w-[24px]
-                            h-[24px]
-                            object-contain
-                            block
-                        "
-                    >
-                </button>
-
                 {{-- NOTIFICATIONS --}}
                 <button
                     type="button"
@@ -227,8 +204,8 @@
                 </button>
 
                 {{-- CART --}}
-                <button
-                    type="button"
+                <a
+                    href="{{ route('buyer.cart') }}"
                     id="buyerCartButton"
                     class="
                         buyer-header-icon-button
@@ -253,7 +230,7 @@
                     >
 
                     <span class="buyer-icon-badge">2</span>
-                </button>
+                </a>
 
                 {{-- BUYER ACCOUNT --}}
                 <div class="buyer-account-wrapper">
@@ -358,22 +335,97 @@
                         role="menu"
                         aria-label="Buyer account menu"
                     >
-                        <form action="{{ route('logout') }}" method="POST">
-    @csrf
+                        <a
+                            href="#"
+                            onclick="return false;"
+                            class="buyer-account-menu-link"
+                            role="menuitem"
+                        >
+                            <span class="buyer-account-menu-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <circle
+                                        cx="12"
+                                        cy="8"
+                                        r="4"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                    />
+                                    <path
+                                        d="M5 20c.8-4 3.1-6 7-6s6.2 2 7 6"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                        stroke-linecap="round"
+                                    />
+                                </svg>
+                            </span>
 
-    <button
-        type="submit"
-        class="buyer-logout-link"
-    >
-        Logout
-    </button>
-</form>
+                            <span>My Account</span>
+                        </a>
+
+                        <a
+                            href="{{ route('buyer.my-purchases') }}"
+                            class="buyer-account-menu-link"
+                            role="menuitem"
+                        >
+                            <span class="buyer-account-menu-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path
+                                        d="M6 4h12v16H6V4Z"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                        stroke-linejoin="round"
+                                    />
+                                    <path
+                                        d="M9 8h6M9 12h6M9 16h4"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                        stroke-linecap="round"
+                                    />
+                                </svg>
+                            </span>
+
+                            <span>My Purchases</span>
+                        </a>
+
+                        <div class="buyer-account-menu-divider"></div>
+
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+
+                            <button
+                                type="submit"
+                                class="buyer-account-menu-link buyer-logout-link"
+                                role="menuitem"
+                            >
+                                <span class="buyer-account-menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path
+                                            d="M10 5H5v14h5"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        />
+                                        <path
+                                            d="M13 8l4 4-4 4M17 12H9"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        />
+                                    </svg>
+                                </span>
+
+                                <span>Logout</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    @unless($hideCategories ?? false)
     {{-- =====================================================
          CATEGORY NAVIGATION
     ====================================================== --}}
@@ -437,55 +489,53 @@
                 </svg>
             </button>
 
-            {{-- CATEGORY NAVIGATION --}}
+            {{-- CATEGORY NAVIGATION / AUTO-SCROLLING TICKER --}}
             <nav
                 id="buyerCategoryNavigation"
                 class="
                     h-full
-                    flex
-                    items-center
-                    overflow-hidden
                     min-w-0
                     flex-1
+                    overflow-hidden
                 "
+                aria-label="Product categories"
             >
-                <a href="#" onclick="return false;" class="buyer-category-link">Pet Supplies</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Electronics &amp; Gadgets</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Women's Apparel</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Men's Apparel</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Kids and Baby</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Home &amp; Garden</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Sports and Outdoors</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Health and Beauty</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Books and Media</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Food and Gourmet</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Automotive &amp; Motorcycle</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Furniture and Office Equipment</a>
-                <a href="#" onclick="return false;" class="buyer-category-link">Jewelry and Watches</a>
-
-                <button
-                    type="button"
-                    id="buyerMoreCategories"
-                    class="
-                        buyer-category-link
-                        flex
-                        items-center
-                        gap-[5px]
-                    "
-                >
-                    More
-                    <svg
-                        class="w-[13px] h-[13px]"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M7 10l5 5 5-5"></path>
-                    </svg>
-                </button>
+                <div class="buyer-category-ticker">
+                    <div class="buyer-category-track">
+                        <div class="buyer-category-group">
+                            <a href="#" onclick="return false;" class="buyer-category-link">Pet Supplies</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Electronics &amp; Gadgets</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Women's Apparel</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Men's Apparel</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Kids and Baby</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Home &amp; Garden</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Sports and Outdoors</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Health and Beauty</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Books and Media</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Food and Gourmet</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Automotive &amp; Motorcycle</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Furniture and Office Equipment</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Jewelry and Watches</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link">Office and School Supplies</a>
+                        </div>
+                        <div class="buyer-category-group" aria-hidden="true">
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Pet Supplies</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Electronics &amp; Gadgets</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Women's Apparel</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Men's Apparel</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Kids and Baby</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Home &amp; Garden</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Sports and Outdoors</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Health and Beauty</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Books and Media</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Food and Gourmet</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Automotive &amp; Motorcycle</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Furniture and Office Equipment</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Jewelry and Watches</a>
+                            <a href="#" onclick="return false;" class="buyer-category-link" tabindex="-1">Office and School Supplies</a>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
     </div>
@@ -527,700 +577,5 @@
             <a href="#" onclick="return false;" class="buyer-dropdown-category">Office and School Supplies</a>
         </div>
     </div>
+    @endunless
 </header>
-
-<style>
-    /* =========================================================
-       NAVBAR BASE
-    ========================================================= */
-    #buyer-navbar {
-        font-family: Poppins, sans-serif;
-    }
-
-    #buyer-main-header {
-        width: 100%;
-        height: 70px;
-        background: linear-gradient(
-    to right,
-    #52070B 19%,
-    #71231C 100%
-);
-        border: none;
-        border-bottom-right-radius: 30px;
-        box-sizing: border-box;
-    }
-
-    #buyer-main-header-inner {
-        width: 100%;
-        height: 100%;
-        padding-left: 22px;
-        padding-right: 22px;
-        box-sizing: border-box;
-    }
-
-    /* =========================================================
-       SHOP EASE LOGO
-    ========================================================= */
-    .buyer-navbar-logo {
-        width: 190px;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        flex: 0 0 190px;
-    }
-
-    .buyer-navbar-logo-image {
-        width: 160px;
-        height: auto;
-        margin-left: 40px;
-        object-fit: contain;
-        object-position: left center;
-    }
-
-    /* =========================================================
-       SEARCH
-       Centered + longer on desktop
-    ========================================================= */
-    .buyer-navbar-search {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 540px;
-        max-width: 42vw;
-        min-width: 300px;
-    }
-
-    .buyer-search-shell {
-        box-sizing: border-box;
-        border: none;
-    }
-
-    /* Search button is transparent; icon itself is maroon */
-    #buyerSearchButton {
-        color: #650B12;
-        background: transparent !important;
-    }
-
-    #buyerSearchButton svg {
-        stroke: currentColor;
-    }
-
-    /* =========================================================
-       RIGHT ACTIONS
-    ========================================================= */
-    .buyer-navbar-actions {
-        margin-left: auto;
-    }
-
-    .buyer-header-icon-button {
-        padding: 0;
-        border: none;
-        background: transparent;
-        color: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.18s ease, transform 0.18s ease;
-    }
-
-    .buyer-header-icon-button:hover {
-        opacity: 0.82;
-        transform: translateY(-1px);
-    }
-
-    .buyer-header-icon-button:active {
-        transform: scale(0.96);
-    }
-
-    /* Notification icon is intentionally 26x26, matching the cart icon */
-    .buyer-notification-icon {
-        width: 30px !important;
-        height: auto !important;
-        object-fit: contain;
-        transform: translateY(-3px);
-    }
-
-    .buyer-icon-badge {
-        position: absolute;
-        right: -2px;
-        top: 0;
-        min-width: 16px;
-        height: 16px;
-        padding: 0 4px;
-        border-radius: 999px;
-        background: #FF3434;
-        color: white;
-        font-size: 9px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-    }
-
-    /* =========================================================
-       PROFILE
-       No white background/border on the profile container
-    ========================================================= */
-    .buyer-account-button {
-        padding: 0;
-        border: none;
-        background: transparent;
-        color: white;
-        cursor: pointer;
-    }
-
-    .buyer-account-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-
-    .buyer-account-dropdown {
-        position: absolute;
-        top: calc(100% + 10px);
-        right: 0;
-        width: 145px;
-        padding: 7px;
-        border: 1px solid #EAE3E0;
-        border-radius: 10px;
-        background: #ffffff;
-        box-shadow: 0 10px 28px rgba(41, 14, 12, 0.16);
-        z-index: 130;
-    }
-
-    .buyer-logout-link {
-        min-height: 38px;
-        display: flex;
-        align-items: center;
-        padding: 0 12px;
-        border-radius: 7px;
-        color: #650B12;
-        font-size: 11px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: background 0.18s ease, color 0.18s ease;
-    }
-
-    .buyer-logout-link:hover {
-        background: #FFF0EC;
-        color: #8B1822;
-    }
-
-    .buyer-account-button.is-open .buyer-account-chevron {
-        transform: rotate(180deg);
-    }
-
-    .buyer-profile-image {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    .buyer-profile-image img {
-        background: transparent !important;
-        mix-blend-mode: normal;
-    }
-
-    .buyer-account-chevron {
-        transition: transform 0.18s ease;
-    }
-
-    .buyer-account-button:hover .buyer-account-chevron {
-        transform: translateY(2px);
-    }
-
-    /* =========================================================
-       CATEGORY HEADER
-    ========================================================= */
-    #buyer-category-header {
-        width: 100%;
-    }
-
-    .buyer-category-link {
-        height: 100%;
-        padding: 0 17px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: #3D3431;
-        font-size: 11px;
-        font-weight: 500;
-        white-space: nowrap;
-        text-decoration: none;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: color 0.18s ease;
-    }
-
-    .buyer-category-link:hover {
-        color: #861B26;
-    }
-
-    #buyerAllCategoriesButton {
-        margin-left: 50px;
-        background: transparent;
-        border-top: none;
-        border-left: none;
-        border-bottom: none;
-        cursor: pointer;
-    }
-
-    #buyerAllCategoriesButton:hover {
-        color: #861B26;
-    }
-
-    /* =========================================================
-       DROPDOWN
-    ========================================================= */
-    .buyer-categories-dropdown {
-        position: fixed;
-        left: 0;
-        top: 0;
-        animation: buyerDropdownFade 0.16s ease-out;
-    }
-
-    @keyframes buyerDropdownFade {
-        from {
-            opacity: 0;
-            transform: translateY(-5px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .buyer-dropdown-category {
-        min-height: 38px;
-        display: flex;
-        align-items: center;
-        padding: 8px 10px;
-        border-radius: 8px;
-        color: #3E3532;
-        font-size: 11px;
-        text-decoration: none;
-        transition: background 0.18s ease, color 0.18s ease;
-    }
-
-    .buyer-dropdown-category:hover {
-        background: #FFF0EC;
-        color: #8B1822;
-    }
-
-    /* =========================================================
-       RESPONSIVE
-    ========================================================= */
-    @media (max-width: 1200px) {
-        #buyer-main-header-inner {
-            padding-left: 18px;
-            padding-right: 18px;
-            gap: 18px;
-        }
-
-        .buyer-navbar-logo {
-            width: 165px;
-            flex-basis: 165px;
-        }
-
-        .buyer-navbar-search {
-            width: 500px;
-            max-width: 42vw;
-        }
-
-        .buyer-navbar-actions {
-            gap: 13px;
-        }
-
-        .buyer-category-link {
-            padding: 0 11px;
-        }
-    }
-
-    @media (max-width: 980px) {
-        .buyer-navbar-logo {
-            width: 145px;
-            flex-basis: 145px;
-        }
-
-        .buyer-navbar-logo-image {
-            width: 125px;
-            height: 46px;
-        }
-
-        .buyer-navbar-search {
-            width: 430px;
-            max-width: 40vw;
-        }
-
-        .buyer-account-text {
-            display: none;
-        }
-
-        .buyer-account-chevron {
-            margin-left: 0;
-        }
-    }
-
-    @media (max-width: 820px) {
-        #buyer-main-header {
-            height: 64px;
-            border-bottom-right-radius: 24px;
-        }
-
-        #buyer-main-header-inner {
-            padding-left: 12px;
-            padding-right: 12px;
-            gap: 12px;
-        }
-
-        .buyer-navbar-logo {
-            width: 125px;
-            flex-basis: 125px;
-        }
-
-        .buyer-navbar-logo-image {
-            width: 112px;
-            height: 42px;
-        }
-
-        /* Return to normal flex sizing on smaller screens */
-        .buyer-navbar-search {
-            position: relative;
-            left: auto;
-            top: auto;
-            transform: none;
-            width: auto;
-            max-width: none;
-            min-width: 0;
-            flex: 1;
-        }
-
-        .buyer-search-shell {
-            height: 36px;
-        }
-
-        .buyer-search-shell input {
-            font-size: 11px;
-            padding-left: 11px;
-        }
-
-        .buyer-search-shell button {
-            height: 36px;
-            width: 42px;
-        }
-
-        .buyer-navbar-actions {
-            gap: 7px;
-        }
-
-        .buyer-header-icon-button {
-            width: 27px;
-        }
-
-        .buyer-header-icon-button img {
-            width: 21px;
-            height: 21px;
-        }
-
-        .buyer-notification-icon {
-            width: 23px !important;
-            height: 23px !important;
-        }
-
-        .buyer-profile-image {
-            width: 20px;
-            height: auto;
-        }
-
-        #buyer-category-header {
-            height: 45px;
-        }
-
-        #buyerAllCategoriesButton {
-            width: 150px;
-            padding-left: 0;
-        }
-
-        .buyer-category-link {
-            padding: 0 9px;
-            font-size: 10px;
-        }
-
-        .buyer-category-link:nth-child(n + 7) {
-            display: none;
-        }
-
-        .buyer-categories-dropdown {
-            width: calc(100vw - 24px);
-        }
-    }
-
-    @media (max-width: 560px) {
-        #buyer-main-header {
-            height: 60px;
-            border-bottom-right-radius: 20px;
-        }
-
-        #buyer-main-header-inner {
-            gap: 8px;
-        }
-
-        .buyer-navbar-logo {
-            width: 105px;
-            flex-basis: 105px;
-        }
-
-        .buyer-navbar-logo-image {
-            width: 96px;
-            height: 38px;
-        }
-
-        .buyer-search-shell {
-            height: 34px;
-        }
-
-        .buyer-search-shell button {
-            width: 36px;
-            height: 34px;
-        }
-
-        .buyer-search-shell button svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .buyer-navbar-actions {
-            gap: 4px;
-        }
-
-        .buyer-header-icon-button {
-            width: 24px;
-            height: 34px;
-        }
-
-        .buyer-header-icon-button img {
-            width: 19px;
-            height: 19px;
-        }
-
-        .buyer-notification-icon {
-            width: 21px !important;
-            height: 21px !important;
-        }
-
-        .buyer-profile-image {
-            width: 32px;
-            height: 32px;
-        }
-
-        .buyer-account-chevron {
-            display: none;
-        }
-
-        #buyer-category-header {
-            height: 42px;
-        }
-
-        #buyerAllCategoriesButton {
-            width: 135px;
-            font-size: 10px;
-        }
-
-        #buyerCategoryNavigation {
-            display: none;
-        }
-    }
-
-    /* =========================================================
-       REDUCED MOTION
-    ========================================================= */
-    @media (prefers-reduced-motion: reduce) {
-        .buyer-header-icon-button,
-        .buyer-account-chevron,
-        .buyer-category-link,
-        .buyer-dropdown-category,
-        .buyer-categories-dropdown {
-            transition: none !important;
-            animation: none !important;
-        }
-    }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    /* =================================================
-       ELEMENTS
-    ================================================== */
-    const allCategoriesButton =
-        document.getElementById('buyerAllCategoriesButton');
-
-    const allCategoriesText =
-        document.getElementById('allCategoriesText');
-
-    const categoriesDropdown =
-        document.getElementById('buyerCategoriesDropdown');
-
-    const moreCategoriesButton =
-        document.getElementById('buyerMoreCategories');
-
-    const searchButton =
-        document.getElementById('buyerSearchButton');
-
-    const searchInput =
-        document.getElementById('buyerSearchInput');
-
-    const accountButton =
-        document.getElementById('buyerAccountButton');
-
-    const accountDropdown =
-        document.getElementById('buyerAccountDropdown');
-
-    const notificationButton =
-        document.getElementById('buyerNotificationButton');
-
-    const chatButton =
-        document.getElementById('buyerChatButton');
-
-    const cartButton =
-        document.getElementById('buyerCartButton');
-
-    /* =================================================
-       CATEGORY DROPDOWN
-    ================================================== */
-    function positionCategoriesDropdown() {
-        if (!allCategoriesText || !categoriesDropdown) {
-            return;
-        }
-
-        const textRect = allCategoriesText.getBoundingClientRect();
-
-        categoriesDropdown.style.left = `${Math.round(textRect.left)}px`;
-        categoriesDropdown.style.top = `${Math.round(textRect.bottom + 1)}px`;
-    }
-
-    function toggleCategoriesDropdown() {
-        if (!categoriesDropdown) {
-            return;
-        }
-
-        positionCategoriesDropdown();
-        categoriesDropdown.classList.toggle('hidden');
-    }
-
-    allCategoriesButton?.addEventListener('click', function (event) {
-        event.stopPropagation();
-        positionCategoriesDropdown();
-        toggleCategoriesDropdown();
-    });
-
-    moreCategoriesButton?.addEventListener('click', function (event) {
-        event.stopPropagation();
-        positionCategoriesDropdown();
-        toggleCategoriesDropdown();
-    });
-
-    window.addEventListener('resize', function () {
-        if (categoriesDropdown && !categoriesDropdown.classList.contains('hidden')) {
-            positionCategoriesDropdown();
-        }
-    });
-
-    /* =================================================
-       CLICK OUTSIDE DROPDOWN
-    ================================================== */
-    document.addEventListener('click', function (event) {
-        if (
-            categoriesDropdown &&
-            !categoriesDropdown.contains(event.target) &&
-            !allCategoriesButton?.contains(event.target) &&
-            !moreCategoriesButton?.contains(event.target)
-        ) {
-            categoriesDropdown.classList.add('hidden');
-        }
-
-        if (
-            accountDropdown &&
-            !accountDropdown.contains(event.target) &&
-            !accountButton?.contains(event.target)
-        ) {
-            accountDropdown.classList.add('hidden');
-            accountButton?.classList.remove('is-open');
-            accountButton?.setAttribute('aria-expanded', 'false');
-        }
-    });
-
-    /* =================================================
-       SEARCH
-    ================================================== */
-    function runBuyerSearch() {
-        const searchTerm = searchInput?.value?.trim();
-
-        if (!searchTerm) {
-            searchInput?.focus();
-            return;
-        }
-
-        console.log('Buyer search:', searchTerm);
-    }
-
-    searchButton?.addEventListener('click', runBuyerSearch);
-
-    searchInput?.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            runBuyerSearch();
-        }
-    });
-
-    /* =================================================
-       HEADER BUTTONS
-    ================================================== */
-    notificationButton?.addEventListener('click', function () {
-        console.log('Buyer notifications opened.');
-    });
-
-    chatButton?.addEventListener('click', function () {
-        console.log('Buyer chat opened.');
-    });
-
-    cartButton?.addEventListener('click', function () {
-        console.log('Buyer cart opened.');
-    });
-
-    accountButton?.addEventListener('click', function (event) {
-        event.stopPropagation();
-
-        if (!accountDropdown) {
-            return;
-        }
-
-        const isOpen = !accountDropdown.classList.contains('hidden');
-
-        accountDropdown.classList.toggle('hidden', isOpen);
-        accountButton.classList.toggle('is-open', !isOpen);
-        accountButton.setAttribute(
-            'aria-expanded',
-            isOpen ? 'false' : 'true'
-        );
-    });
-
-    /* =================================================
-       ESCAPE
-    ================================================== */
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-            categoriesDropdown?.classList.add('hidden');
-            accountDropdown?.classList.add('hidden');
-            accountButton?.classList.remove('is-open');
-            accountButton?.setAttribute('aria-expanded', 'false');
-        }
-    });
-});
-</script>

@@ -1,4 +1,4 @@
-{{-- partials/seller_decision-modal.blade.php
+{{-- partials/seller-decision-modal.blade.php
      One partial for BOTH "Remove Product" and "Issue Warning".
      Vars: $type (remove|warn), $title, $intro, $submit, $reasons --}}
 <div id="decisionModal-{{ $type }}" class="sc-overlay sc-overlay--decision" data-decision="{{ $type }}"
