@@ -51,6 +51,7 @@
         'resources/css/app.css',
         'resources/css/seller/shipping-status.css',
         'resources/css/seller/customer-feedback.css',
+        'resources/js/seller/customer-feedback.js',
     ])
 
 
