@@ -380,64 +380,64 @@
                 </a>
             </div>
 
-
             {{-- REPORTS --}}
-            <a
-                href="#"
-                onclick="return false;"
-                class="
-                    sidebar-link
-                    sidebar-menu-item
-                    seller-menu-delay-4
-                    flex items-center
-                    gap-2.5
-                    px-3
-                    py-2.5
-                    rounded-full
-                    transition-all
-                    duration-300
-                    w-full
-                    opacity-100
-                    cursor-default
-                "
-            >
-                <span
-                    class="
-                        sidebar-icon-wrapper
-                        flex items-center justify-center
-                        shrink-0
-                        w-[18px] h-[18px]
-                    "
-                >
-                    <img
-                        src="{{ asset('icons/seller/sidebar&navbar/reports.png') }}"
-                        alt=""
-                        class="
-                            sidebar-icon
-                            w-[18px] h-[18px]
-                            object-contain
-                            shrink-0
-                        "
-                    >
-                </span>
+<a
+    href="{{ route('seller.reports') }}"
+    class="
+        sidebar-link
+        sidebar-menu-item
+        seller-menu-delay-4
+        flex items-center
+        gap-2.5
+        px-3
+        py-2.5
+        rounded-full
+        transition-all
+        duration-300
+        w-full
+        {{
+            request()->routeIs('seller.reports')
+                ? 'bg-maroon-700/60'
+                : 'hover:bg-maroon-800/50 hover:translate-x-1'
+        }}
+    "
+>
+    <span
+        class="
+            sidebar-icon-wrapper
+            flex items-center justify-center
+            shrink-0
+            w-[18px] h-[18px]
+        "
+    >
+        <img
+            src="{{ asset('icons/seller/sidebar&navbar/reports.png') }}"
+            alt=""
+            class="
+                sidebar-icon
+                w-[18px] h-[18px]
+                object-contain
+                shrink-0
+            "
+        >
+    </span>
 
-                <span
-                    class="
-                        sidebar-label
-                        text-[14px]
-                        font-medium
-                        whitespace-nowrap
-                    "
-                >
-                    Reports
-                </span>
-            </a>
+    <span
+        class="
+            sidebar-label
+            text-[14px]
+            font-medium
+            whitespace-nowrap
+        "
+    >
+        Reports
+    </span>
+</a>
 
 
             {{-- MESSAGES --}}
             <a
-                href="#"
-                onclick="return false;"
+                href="{{ route('seller.messages') }}"
                 class="
                     sidebar-link
                     sidebar-menu-item
@@ -450,8 +450,11 @@
                     transition-all
                     duration-300
                     w-full
-                    opacity-100
-                    cursor-default
+                    {{
+                        request()->routeIs('seller.messages')
+                            ? 'bg-maroon-700/60'
+                            : 'hover:bg-maroon-800/50 hover:translate-x-1'
+                    }}
                 "
             >
                 <span
@@ -678,6 +681,20 @@
             ease-out
             0.6s
             forwards;
+    }
+
+
+    /* =========================================================
+       LOGOUT WHITE BORDER
+    ========================================================== */
+    .sidebar-logout {
+        border: 1px solid rgba(255, 255, 255, 0.58) !important;
+        background: transparent;
+    }
+
+    .sidebar-logout:hover {
+        border-color: rgba(255, 255, 255, 0.78) !important;
+        background: rgba(255, 255, 255, 0.08);
     }
 
 

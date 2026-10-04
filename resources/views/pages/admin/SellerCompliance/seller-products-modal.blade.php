@@ -1,4 +1,4 @@
-{{-- partials/seller_products-modal.blade.php --}}
+{{-- partials/seller-products-modal.blade.php --}}
 <div id="sellerProductDetailsModal" class="sc-overlay sc-overlay--product" aria-hidden="true" hidden>
     <div class="seller-product-details-dialog" role="dialog" aria-modal="true" aria-labelledby="sellerProductModalTitle" tabindex="-1">
 

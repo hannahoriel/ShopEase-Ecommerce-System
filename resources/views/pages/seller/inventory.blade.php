@@ -346,6 +346,15 @@
     @endphp
     <script type="application/json" id="sellerInventoryConfig">{!! json_encode($sellerInventoryConfig, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 
+    {{-- =====================================================
+         BUYER OPTIONS LAYOUT + PRICING FIX
+         - Fixed Price: no per-choice price box
+         - Price Varies: only the seller-selected group carries base price
+         - Other groups use Additional (+₱)
+         - Compact sizing / no overlap
+    ====================================================== --}}
+    
+
 </head>
 
 
@@ -1825,6 +1834,98 @@
 
                         </div>
 
+                        {{-- CONNECT EXACT CHOICES BEFORE THE TABLE --}}
+                        <div
+                            id="variantGroupComposerSection"
+                            class="variant-group-composer-section hidden"
+                        >
+                            <div class="variant-group-composer-copy">
+                                <strong>Connect Choices</strong>
+                                <span>
+                                    Choose the exact available choices. Base Price is entered only in the selected pricing-source group above. Additional amounts are entered here per exact connected combination.
+                                </span>
+                            </div>
+
+                            <div
+                                id="variantGroupComposerFields"
+                                class="variant-group-composer-fields"
+                            ></div>
+
+                            <div
+                                id="variantContextPriceFields"
+                                class="variant-context-price-fields"
+                            ></div>
+
+                            <div class="variant-group-composer-actions">
+                                <p
+                                    id="variantGroupComposerMessage"
+                                    class="variant-builder-message"
+                                >
+                                    Add choices to at least two option groups first.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    id="addVariantGroupButton"
+                                    class="variant-add-group-button"
+                                >
+                                    + Add Group
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- CONNECTED VARIANT / SKU MATRIX --}}
+                        <div
+                            id="variantMatrixSection"
+                            class="variant-matrix-section hidden"
+                        >
+                            <div class="variant-matrix-heading">
+                                <div>
+                                    <strong>Connected Variant Stock</strong>
+                                    <span>
+                                        Each row is one exact sellable combination. Same Variation and Color values are grouped instead of repeated.
+                                    </span>
+                                </div>
+
+                                <span
+                                    id="variantCombinationCount"
+                                    class="variant-matrix-count"
+                                >
+                                    0 groups
+                                </span>
+                            </div>
+
+                            <div
+                                id="variantMatrixEmpty"
+                                class="variant-matrix-empty"
+                            >
+                                No connected groups yet. Select choices above and click Add Group.
+                            </div>
+
+                            <div
+                                id="variantMatrixTableWrap"
+                                class="variant-matrix-table-wrap hidden"
+                            >
+                                <table class="variant-matrix-table">
+                                    <thead>
+                                        <tr id="variantMatrixHeaderRow"></tr>
+                                    </thead>
+
+                                    <tbody id="variantMatrixBody"></tbody>
+                                </table>
+                            </div>
+
+                            <input
+                                type="hidden"
+                                id="variantCombinationsInput"
+                                name="variant_combinations"
+                                value="[]"
+                            >
+
+                            <p class="variant-matrix-help">
+                                Final Price = Base Price from the selected pricing-source choice + the Additional amounts entered for this exact connected group.
+                            </p>
+                        </div>
                     </section>
 
 
@@ -3623,6 +3724,51 @@
 {{-- =========================================================
          INVENTORY JAVASCRIPT
     ========================================================== --}}
+
+    {{-- =========================================================
+         BUYER OPTIONS + BASE-ONLY MASTER PRICING
+         + CONTEXTUAL ADDITIONALS
+
+         FINAL PRICING MODEL
+         ---------------------------------------------------------
+         FIXED PRICE
+         • No per-choice price input.
+         • One fixed product price applies to all combinations.
+
+         PRICE VARIES
+         • Seller explicitly chooses ONE pricing source:
+           Variations / Colors / Sizes.
+         • ONLY that selected source has a Base Price input
+           while creating master choices.
+         • Every NON-base master group has NO price input.
+         • Additional amounts are entered ONLY inside Connect Choices.
+         • Additional values are saved per exact connected combination.
+         • Therefore the same Color/Size name can have different
+           Additional amounts under different Variations.
+
+         EXAMPLE
+         ---------------------------------------------------------
+         Pricing source = Variations
+
+         Master choices:
+           Variation 1 -> Base Price ₱500
+           Variation 2 -> Base Price ₱650
+           Black       -> NO price input
+           Large       -> NO price input
+
+         Connect Choices:
+           Variation 1 + Black + Large
+             Black Additional = ₱20
+             Large Additional = ₱30
+             Final = ₱550
+
+           Variation 2 + Black + Large
+             Black Additional = ₱70
+             Large Additional = ₱10
+             Final = ₱730
+    ========================================================== --}}
+    
+
 </body>
 
 </html>

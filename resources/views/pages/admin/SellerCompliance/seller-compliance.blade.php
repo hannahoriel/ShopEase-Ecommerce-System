@@ -1,12 +1,21 @@
 {{-- resources/views/pages/admin/SellerCompliance/seller-compliance.blade.php
-     HTML only. CSS  -> resources/css/admin/seller_compliance.css
-                 JS   -> resources/js/admin/seller_compliance.js
-                 Data -> $initialComplianceData (controller) + config/seller_compliance.php
+     HTML only. CSS  -> resources/css/admin/seller-compliance.css
+                 JS   -> resources/js/admin/seller-compliance.js
+                 Data -> $initialComplianceData (controller) + config/seller-compliance.php
 --}}
 
 @php
-    $config  = config('admin.seller_compliance');
-    $data    = $initialComplianceData ?? ['data' => [], 'summary' => []];
+    $config = config('seller-compliance', []);
+
+    $config = array_merge([
+        'default_per_page' => 10,
+        'per_page_options' => [10, 20, 50],
+        'categories' => [],
+        'statuses' => [],
+        'remove_reasons' => [],
+        'warning_reasons' => [],
+    ], is_array($config) ? $config : []);
+    $data = $initialComplianceData ?? ['data' => [], 'summary' => []];
     $summary = $data['summary'] ?? [];
 
     $statCards = [
@@ -42,15 +51,13 @@
         ],
     ];
 
-    // Everything the JS needs.
-    // Read from <script type="application/json">.
     $clientConfig = [
-    'apiUrl'     => url('/admin/seller-compliance/data'),
-    'perPage'    => $config['default_per_page'],
-    'categories' => $config['categories'],
-    'statuses'   => $config['statuses'],
-    'initial'    => $data,
-];
+        'apiUrl'     => url('/admin/seller-compliance/data'),
+        'perPage'    => $config['default_per_page'] ?? 10,
+        'categories' => $config['categories'] ?? [],
+        'statuses'   => $config['statuses'] ?? [],
+        'initial'    => $data,
+    ];
 @endphp
 
 <!DOCTYPE html>
@@ -88,14 +95,14 @@
     {{-- Vite --}}
     {{-- IMPORTANT:
          Actual filenames:
-         resources/css/admin/seller_compliance.css
-         resources/js/admin/seller_compliance.js
+         resources/css/admin/seller-compliance.css
+         resources/js/admin/seller-compliance.js
     --}}
     @vite([
         'resources/css/app.css',
-        'resources/css/admin/seller_compliance.css',
+        'resources/css/admin/seller-compliance.css',
         'resources/js/app.js',
-        'resources/js/admin/seller_compliance.js',
+        'resources/js/admin/seller-compliance.js',
     ])
 </head>
 
@@ -226,7 +233,7 @@
                         All Categories
                     </option>
 
-                    @foreach ($config['categories'] as $slug => $label)
+                    @foreach (($config['categories'] ?? []) as $slug => $label)
 
                         <option value="{{ $slug }}">
                             {{ $label }}
@@ -248,7 +255,7 @@
                         All Compliance
                     </option>
 
-                    @foreach ($config['statuses'] as $value => $status)
+                    @foreach (($config['statuses'] ?? []) as $value => $status)
 
                         <option value="{{ $value }}">
                             {{ $status['label'] }}
@@ -398,11 +405,11 @@
                             aria-label="Items per page"
                         >
 
-                            @foreach ($config['per_page_options'] as $option)
+                            @foreach (($config['per_page_options'] ?? [10, 20, 50]) as $option)
 
                                 <option
                                     value="{{ $option }}"
-                                    @selected($option === $config['default_per_page'])
+                                    @selected($option === ($config['default_per_page'] ?? 10))
                                 >
                                     Items per page: {{ $option }}
                                 </option>
@@ -424,37 +431,37 @@
                  Actual files:
                  resources/views/pages/admin/SellerCompliance/
 
-                 seller_modal.blade.php
-                 seller_products_modal.blade.php
-                 seller_decision_modal.blade.php
-            ====================================================== --}}
+                 seller-modal.blade.php
+                 seller-products-modal.blade.php
+                 seller-decision-modal.blade.php
+            ====================================================== }}
 
 
             {{-- SELLER MODAL --}}
-            @include('pages.admin.SellerCompliance.seller_modal')
+            @include('pages.admin.SellerCompliance.seller-modal')
 
 
             {{-- SELLER PRODUCTS MODAL --}}
-            @include('pages.admin.SellerCompliance.seller_products_modal')
+            @include('pages.admin.SellerCompliance.seller-products-modal')
 
 
             {{-- REMOVE PRODUCT DECISION MODAL --}}
-            @include('pages.admin.SellerCompliance.seller_decision_modal', [
+            @include('pages.admin.SellerCompliance.seller-decision-modal', [
                 'type'    => 'remove',
                 'title'   => 'Remove Product',
                 'intro'   => "You are about to remove this product from the seller's store.",
                 'submit'  => 'Remove',
-                'reasons' => $config['remove_reasons'],
+                'reasons' => $config['remove_reasons'] ?? [],
             ])
 
 
             {{-- WARNING DECISION MODAL --}}
-            @include('pages.admin.SellerCompliance.seller_decision_modal', [
+            @include('pages.admin.SellerCompliance.seller-decision-modal', [
                 'type'    => 'warn',
                 'title'   => 'Issue Warning',
                 'intro'   => "You are about to issue a warning for this product due to a violation of ShopEase's platform policies.",
                 'submit'  => 'Issue Warning',
-                'reasons' => $config['warning_reasons'],
+                'reasons' => $config['warning_reasons'] ?? [],
             ])
 
 

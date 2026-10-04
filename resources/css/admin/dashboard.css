@@ -1,0 +1,94 @@
+/* =========================================================
+   MOVED FROM Dashboard.blade.php — STYLE BLOCK 1
+========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+#admin-content,
+#admin-content * {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* =========================================================
+   MOVED FROM Dashboard.blade.php — STYLE BLOCK 2
+========================================================= */
+
+/* =========================================================
+   DASHBOARD STAT CARDS
+   Matches Seller Compliance stat-card structure/format.
+========================================================== */
+
+.dashboard-stat-card {
+    min-height: 108px;
+    background: #FFFFFF;
+    border: 1px solid #F0E9E6;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(42, 20, 15, 0.05);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.dashboard-stat-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/*
+ * The PNG contains its own visual background.
+ * No extra icon wrapper is added.
+ */
+.dashboard-stat-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    object-fit: contain;
+    display: block;
+}
+
+.dashboard-stat-content {
+    min-width: 0;
+}
+
+.dashboard-stat-number {
+    font-size: 23px;
+    line-height: 1;
+    font-weight: 600;
+    color: #17120F;
+}
+
+.dashboard-stat-label {
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 1.15;
+    font-weight: 400;
+    color: #8C8784;
+}
+
+.dashboard-stat-growth {
+    margin-top: 15px;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 400;
+    color: #8C8784;
+    white-space: nowrap;
+}
+
+.dashboard-stat-growth strong {
+    color: #11951B;
+    font-weight: 500;
+    margin-right: 2px;
+}
+
+.dashboard-growth-arrow {
+    color: #11951B;
+    font-size: 16px;
+    vertical-align: -1px;
+    margin-right: 2px;
+}
+
+@media (max-width: 640px) {
+    .dashboard-stat-card {
+        min-height: 104px;
+    }
+}

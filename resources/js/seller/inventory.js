@@ -11239,3 +11239,2646 @@ document.addEventListener(
         );
 
 })();
+        document.addEventListener('DOMContentLoaded', () => {
+            const modeInput =
+                document.getElementById('productPricingMode');
+
+            const sourceInput =
+                document.getElementById('productPricingSource');
+
+            const fixedPriceInput =
+                document.getElementById('createProductPrice');
+
+            const fixedPanel =
+                document.getElementById('fixedPricePanel');
+
+            const variablePanel =
+                document.getElementById('variablePricePanel');
+
+            const variableSetup =
+                document.getElementById('variablePricingSetup');
+
+            const modeButtons =
+                Array.from(
+                    document.querySelectorAll(
+                        '.create-pricing-mode-button'
+                    )
+                );
+
+            const sourceButtons =
+                Array.from(
+                    document.querySelectorAll(
+                        '.create-pricing-source-button'
+                    )
+                );
+
+            const containers = {
+                variations:
+                    document.getElementById(
+                        'productVariationsContainer'
+                    ),
+
+                colors:
+                    document.getElementById(
+                        'productColorsContainer'
+                    ),
+
+                sizes:
+                    document.getElementById(
+                        'productSizesContainer'
+                    ),
+            };
+
+            const groupOrder = [
+                'variations',
+                'colors',
+                'sizes',
+            ];
+
+            const groupLabels = {
+                variations: 'Variation',
+                colors: 'Color',
+                sizes: 'Size',
+            };
+
+            const addOptionButtons = [
+                document.getElementById(
+                    'addProductVariationButton'
+                ),
+
+                document.getElementById(
+                    'addProductColorButton'
+                ),
+
+                document.getElementById(
+                    'addProductSizeButton'
+                ),
+            ].filter(Boolean);
+
+            const composerSection =
+                document.getElementById(
+                    'variantGroupComposerSection'
+                );
+
+            const composerFields =
+                document.getElementById(
+                    'variantGroupComposerFields'
+                );
+
+            const contextPriceFields =
+                document.getElementById(
+                    'variantContextPriceFields'
+                );
+
+            const composerMessage =
+                document.getElementById(
+                    'variantGroupComposerMessage'
+                );
+
+            const addGroupButton =
+                document.getElementById(
+                    'addVariantGroupButton'
+                );
+
+            const matrixSection =
+                document.getElementById(
+                    'variantMatrixSection'
+                );
+
+            const matrixEmpty =
+                document.getElementById(
+                    'variantMatrixEmpty'
+                );
+
+            const matrixTableWrap =
+                document.getElementById(
+                    'variantMatrixTableWrap'
+                );
+
+            const matrixHeader =
+                document.getElementById(
+                    'variantMatrixHeaderRow'
+                );
+
+            const matrixBody =
+                document.getElementById(
+                    'variantMatrixBody'
+                );
+
+            const matrixCount =
+                document.getElementById(
+                    'variantCombinationCount'
+                );
+
+            const matrixInput =
+                document.getElementById(
+                    'variantCombinationsInput'
+                );
+
+            const form =
+                document.getElementById(
+                    'addProductForm'
+                );
+
+            const validSources =
+                new Set(groupOrder);
+
+            let pricingMode =
+                modeInput?.value === 'varies'
+                    ? 'varies'
+                    : 'fixed';
+
+            /*
+             * IMPORTANT:
+             * This changes ONLY when seller clicks one of the
+             * Variations / Colors / Sizes pricing-source buttons.
+             */
+            let pricingSource = '';
+
+            /*
+             * Base-price persistence.
+             *
+             * We store ONLY values belonging to a group while that
+             * group is the selected Base Price source.
+             *
+             * key example:
+             *   variations::Variation 1
+             */
+            const basePriceState =
+                new Map();
+
+            /*
+             * Connected groups store their own contextual Additional
+             * values. This is what allows:
+             *
+             *   Variation 1 + Black => Black +₱20
+             *   Variation 2 + Black => Black +₱60
+             */
+            let connectedGroups = [];
+
+            let applyingRules = false;
+
+            function show(element) {
+                element?.classList.remove(
+                    'hidden'
+                );
+            }
+
+            function hide(element) {
+                element?.classList.add(
+                    'hidden'
+                );
+            }
+
+            function setComposerMessage(
+                message,
+                isError = false
+            ) {
+                if (!composerMessage) {
+                    return;
+                }
+
+                composerMessage.textContent =
+                    message;
+
+                composerMessage.classList.toggle(
+                    'is-error',
+                    isError
+                );
+            }
+
+            function money(value) {
+                const amount =
+                    Number.isFinite(
+                        Number(value)
+                    )
+                        ? Number(value)
+                        : 0;
+
+                return `₱${amount.toLocaleString(
+                    'en-PH',
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    }
+                )}`;
+            }
+
+            function numericValue(input) {
+                const parsed =
+                    Number.parseFloat(
+                        input?.value ?? ''
+                    );
+
+                return Number.isFinite(parsed)
+                    ? parsed
+                    : 0;
+            }
+
+            function basePriceKey(
+                groupName,
+                choiceName
+            ) {
+                return `${groupName}::${choiceName}`;
+            }
+
+            function syncPricingUI() {
+                if (modeInput) {
+                    modeInput.value =
+                        pricingMode;
+                }
+
+                if (sourceInput) {
+                    sourceInput.value =
+                        pricingMode === 'varies'
+                            ? pricingSource
+                            : '';
+                }
+
+                modeButtons.forEach(
+                    (button) => {
+                        button.classList.toggle(
+                            'is-selected',
+                            button.dataset
+                                .pricingMode ===
+                                pricingMode
+                        );
+                    }
+                );
+
+                sourceButtons.forEach(
+                    (button) => {
+                        button.classList.toggle(
+                            'is-selected',
+                            pricingMode ===
+                                'varies' &&
+                            button.dataset
+                                .pricingSource ===
+                                pricingSource
+                        );
+                    }
+                );
+
+                if (pricingMode === 'fixed') {
+                    show(fixedPanel);
+                    hide(variablePanel);
+                    hide(variableSetup);
+
+                    if (fixedPriceInput) {
+                        fixedPriceInput.disabled =
+                            false;
+
+                        fixedPriceInput.required =
+                            true;
+                    }
+                } else {
+                    hide(fixedPanel);
+                    show(variablePanel);
+                    show(variableSetup);
+
+                    if (fixedPriceInput) {
+                        fixedPriceInput.disabled =
+                            true;
+
+                        fixedPriceInput.required =
+                            false;
+                    }
+                }
+            }
+
+            function closestDirectChild(
+                row,
+                element
+            ) {
+                if (!row || !element) {
+                    return null;
+                }
+
+                let current = element;
+
+                while (
+                    current &&
+                    current.parentElement &&
+                    current.parentElement !== row
+                ) {
+                    current =
+                        current.parentElement;
+                }
+
+                return (
+                    current?.parentElement === row
+                        ? current
+                        : null
+                );
+            }
+
+            function findRowParts(row) {
+                const labels =
+                    Array.from(
+                        row.querySelectorAll(
+                            'label'
+                        )
+                    );
+
+                const priceLabel =
+                    labels.find((label) => {
+                        const value =
+                            label.textContent
+                                .trim()
+                                .toLowerCase();
+
+                        return (
+                            value.includes(
+                                'item price'
+                            ) ||
+                            value.includes(
+                                'base price'
+                            ) ||
+                            value.includes(
+                                'additional'
+                            ) ||
+                            value === 'price'
+                        );
+                    });
+
+                const stockLabel =
+                    labels.find((label) =>
+                        label.textContent
+                            .trim()
+                            .toLowerCase()
+                            .includes('stock')
+                    );
+
+                let priceField =
+                    priceLabel
+                        ? closestDirectChild(
+                            row,
+                            priceLabel
+                        )
+                        : null;
+
+                let stockField =
+                    stockLabel
+                        ? closestDirectChild(
+                            row,
+                            stockLabel
+                        )
+                        : null;
+
+                const children =
+                    Array.from(
+                        row.children
+                    );
+
+                /*
+                 * Existing generated row fallback:
+                 * choice | price | stock | remove
+                 */
+                if (
+                    !priceField &&
+                    children.length >= 4
+                ) {
+                    priceField =
+                        children[
+                            children.length - 3
+                        ];
+                }
+
+                if (
+                    !stockField &&
+                    children.length >= 3
+                ) {
+                    stockField =
+                        children[
+                            children.length - 2
+                        ];
+                }
+
+                return {
+                    priceField,
+                    stockField,
+                };
+            }
+
+            function getPriceInput(field) {
+                return (
+                    field?.querySelector(
+                        'input[type="number"]'
+                    ) ||
+                    field?.querySelector(
+                        'input:not([type="file"])'
+                    ) ||
+                    null
+                );
+            }
+
+            function getPricePrefix(field) {
+                return (
+                    field?.querySelector(
+                        '.create-product-prefix-field > span'
+                    ) ||
+                    field?.querySelector(
+                        '.create-option-price-prefix'
+                    ) ||
+                    null
+                );
+            }
+
+            function getChoiceName(row) {
+                const dataName =
+                    row.dataset.optionName ||
+                    row.dataset.value ||
+                    row.dataset.name;
+
+                if (
+                    typeof dataName === 'string' &&
+                    dataName.trim() !== ''
+                ) {
+                    return dataName.trim();
+                }
+
+                const first =
+                    row.children[0];
+
+                if (!first) {
+                    return '';
+                }
+
+                const input =
+                    first.querySelector?.(
+                        'input[type="text"]'
+                    );
+
+                if (
+                    input &&
+                    input.value.trim() !== ''
+                ) {
+                    return input.value.trim();
+                }
+
+                return first.textContent
+                    .replace(/×/g, '')
+                    .trim();
+            }
+
+            function getChoiceRows(
+                groupName
+            ) {
+                const container =
+                    containers[
+                        groupName
+                    ];
+
+                if (!container) {
+                    return [];
+                }
+
+                return Array.from(
+                    container.children
+                )
+                    .map((row) => ({
+                        row,
+                        name:
+                            getChoiceName(row),
+                    }))
+                    .filter(
+                        (choice) =>
+                            choice.name !== ''
+                    );
+            }
+
+            function getActiveGroups() {
+                return groupOrder
+                    .map((groupName) => ({
+                        groupName,
+                        choices:
+                            getChoiceRows(
+                                groupName
+                            ),
+                    }))
+                    .filter(
+                        (group) =>
+                            group.choices.length >
+                            0
+                    );
+            }
+
+            /*
+             * Save Base Price values only from the currently selected
+             * Base Price group.
+             */
+            function captureBasePrices() {
+                if (
+                    pricingMode !== 'varies' ||
+                    !pricingSource
+                ) {
+                    return;
+                }
+
+                getChoiceRows(
+                    pricingSource
+                ).forEach(
+                    ({
+                        row,
+                        name,
+                    }) => {
+                        const {
+                            priceField,
+                        } =
+                            findRowParts(
+                                row
+                            );
+
+                        const input =
+                            getPriceInput(
+                                priceField
+                            );
+
+                        if (
+                            !input ||
+                            input.value === ''
+                        ) {
+                            return;
+                        }
+
+                        basePriceState.set(
+                            basePriceKey(
+                                pricingSource,
+                                name
+                            ),
+                            input.value
+                        );
+                    }
+                );
+            }
+
+            function configureMasterPriceField(
+                field,
+                groupName,
+                choiceName
+            ) {
+                if (!field) {
+                    return;
+                }
+
+                field.classList.add(
+                    'buyer-option-price-field'
+                );
+
+                const label =
+                    field.querySelector(
+                        'label'
+                    );
+
+                const input =
+                    getPriceInput(field);
+
+                const prefix =
+                    getPricePrefix(field);
+
+                /*
+                 * Only the selected Base Price group may show
+                 * a price input.
+                 */
+                const showBaseInput =
+                    pricingMode === 'varies' &&
+                    Boolean(
+                        pricingSource
+                    ) &&
+                    groupName ===
+                        pricingSource;
+
+                if (!showBaseInput) {
+                    field.style.setProperty(
+                        'display',
+                        'none',
+                        'important'
+                    );
+
+                    field.classList.add(
+                        'is-hidden'
+                    );
+
+                    field.removeAttribute(
+                        'data-price-kind'
+                    );
+
+                    if (input) {
+                        input.disabled =
+                            true;
+
+                        input.required =
+                            false;
+                    }
+
+                    return;
+                }
+
+                field.style.removeProperty(
+                    'display'
+                );
+
+                field.classList.remove(
+                    'is-hidden'
+                );
+
+                field.dataset.priceKind =
+                    'base';
+
+                if (label) {
+                    label.textContent =
+                        'Base Price';
+                }
+
+                if (prefix) {
+                    prefix.textContent =
+                        '₱';
+                }
+
+                if (input) {
+                    const key =
+                        basePriceKey(
+                            groupName,
+                            choiceName
+                        );
+
+                    if (
+                        basePriceState.has(
+                            key
+                        )
+                    ) {
+                        input.value =
+                            basePriceState.get(
+                                key
+                            );
+                    }
+
+                    input.disabled =
+                        false;
+
+                    input.required =
+                        false;
+
+                    input.placeholder =
+                        '0.00';
+
+                    input.dataset.priceRole =
+                        'base';
+
+                    input.dataset.priceGroup =
+                        groupName;
+
+                    input.dataset.choiceName =
+                        choiceName;
+                }
+            }
+
+            function configureChoiceRows(
+                activeGroups
+            ) {
+                const matrixOwnsStock =
+                    activeGroups.length >= 2;
+
+                Object.entries(
+                    containers
+                ).forEach(
+                    ([
+                        groupName,
+                        container,
+                    ]) => {
+                        if (!container) {
+                            return;
+                        }
+
+                        Array.from(
+                            container.children
+                        ).forEach(
+                            (row) => {
+                                const choiceName =
+                                    getChoiceName(
+                                        row
+                                    );
+
+                                const {
+                                    priceField,
+                                    stockField,
+                                } =
+                                    findRowParts(
+                                        row
+                                    );
+
+                                configureMasterPriceField(
+                                    priceField,
+                                    groupName,
+                                    choiceName
+                                );
+
+                                if (
+                                    stockField
+                                ) {
+                                    stockField
+                                        .classList
+                                        .add(
+                                            'buyer-option-stock-field'
+                                        );
+
+                                    stockField
+                                        .classList
+                                        .toggle(
+                                            'stock-managed-by-matrix',
+                                            matrixOwnsStock
+                                        );
+
+                                    const stockInput =
+                                        stockField.querySelector(
+                                            'input[type="number"]'
+                                        );
+
+                                    if (
+                                        stockInput
+                                    ) {
+                                        stockInput.disabled =
+                                            matrixOwnsStock;
+                                    }
+                                }
+
+                                /*
+                                 * Layout classes:
+                                 * Fixed/no source/non-base = no master price.
+                                 */
+                                const noMasterPrice =
+                                    pricingMode ===
+                                        'fixed' ||
+                                    !pricingSource ||
+                                    groupName !==
+                                        pricingSource;
+
+                                row.classList.toggle(
+                                    'buyer-option-fixed-row',
+                                    pricingMode ===
+                                        'fixed'
+                                );
+
+                                row.classList.toggle(
+                                    'buyer-option-awaiting-source',
+                                    pricingMode ===
+                                        'varies' &&
+                                        !pricingSource
+                                );
+
+                                row.classList.toggle(
+                                    'buyer-option-no-master-price',
+                                    noMasterPrice
+                                );
+                            }
+                        );
+                    }
+                );
+            }
+
+            function findChoiceRow(
+                groupName,
+                choiceName
+            ) {
+                return (
+                    getChoiceRows(
+                        groupName
+                    ).find(
+                        (choice) =>
+                            choice.name ===
+                            choiceName
+                    )?.row || null
+                );
+            }
+
+            function getBaseChoicePrice(
+                groupName,
+                choiceName
+            ) {
+                const key =
+                    basePriceKey(
+                        groupName,
+                        choiceName
+                    );
+
+                if (
+                    basePriceState.has(
+                        key
+                    )
+                ) {
+                    return Number(
+                        basePriceState.get(
+                            key
+                        )
+                    ) || 0;
+                }
+
+                const row =
+                    findChoiceRow(
+                        groupName,
+                        choiceName
+                    );
+
+                if (!row) {
+                    return 0;
+                }
+
+                const {
+                    priceField,
+                } =
+                    findRowParts(
+                        row
+                    );
+
+                const amount =
+                    numericValue(
+                        getPriceInput(
+                            priceField
+                        )
+                    );
+
+                basePriceState.set(
+                    key,
+                    String(amount)
+                );
+
+                return amount;
+            }
+
+            function makeGroupKey(
+                choices,
+                activeGroups =
+                    getActiveGroups()
+            ) {
+                return activeGroups
+                    .map(
+                        ({
+                            groupName,
+                        }) =>
+                            `${groupName}=${
+                                choices[
+                                    groupName
+                                ] || ''
+                            }`
+                    )
+                    .join('|');
+            }
+
+            function purgeInvalidGroups(
+                activeGroups
+            ) {
+                const valid =
+                    {};
+
+                activeGroups.forEach(
+                    ({
+                        groupName,
+                        choices,
+                    }) => {
+                        valid[
+                            groupName
+                        ] =
+                            new Set(
+                                choices.map(
+                                    (choice) =>
+                                        choice.name
+                                )
+                            );
+                    }
+                );
+
+                connectedGroups =
+                    connectedGroups.filter(
+                        (group) =>
+                            activeGroups.every(
+                                ({
+                                    groupName,
+                                }) =>
+                                    valid[
+                                        groupName
+                                    ]?.has(
+                                        group.choices[
+                                            groupName
+                                        ]
+                                    )
+                            )
+                    );
+            }
+
+            function composerSelections() {
+                const values =
+                    {};
+
+                Array.from(
+                    composerFields
+                        ?.querySelectorAll(
+                            'select[data-composer-group]'
+                        ) || []
+                ).forEach(
+                    (select) => {
+                        values[
+                            select.dataset
+                                .composerGroup
+                        ] =
+                            select.value;
+                    }
+                );
+
+                return values;
+            }
+
+            function rebuildComposer(
+                activeGroups
+            ) {
+                if (
+                    !composerSection ||
+                    !composerFields ||
+                    !contextPriceFields ||
+                    !addGroupButton
+                ) {
+                    return;
+                }
+
+                const previousSelections =
+                    composerSelections();
+
+                const previousAdditionals =
+                    {};
+
+                Array.from(
+                    contextPriceFields.querySelectorAll(
+                        'input[data-context-additional-group]'
+                    )
+                ).forEach(
+                    (input) => {
+                        previousAdditionals[
+                            input.dataset
+                                .contextAdditionalGroup
+                        ] =
+                            input.value;
+                    }
+                );
+
+                const canConnect =
+                    activeGroups.length >= 2;
+
+                composerSection.classList.toggle(
+                    'hidden',
+                    !canConnect
+                );
+
+                matrixSection?.classList.toggle(
+                    'hidden',
+                    !canConnect
+                );
+
+                composerFields.innerHTML =
+                    '';
+
+                contextPriceFields.innerHTML =
+                    '';
+
+                if (!canConnect) {
+                    addGroupButton.disabled =
+                        true;
+
+                    setComposerMessage(
+                        'Add choices to at least two option groups first.'
+                    );
+
+                    return;
+                }
+
+                activeGroups.forEach(
+                    ({
+                        groupName,
+                        choices,
+                    }) => {
+                        const field =
+                            document.createElement(
+                                'div'
+                            );
+
+                        field.className =
+                            'variant-composer-field';
+
+                        const label =
+                            document.createElement(
+                                'label'
+                            );
+
+                        label.textContent =
+                            groupLabels[
+                                groupName
+                            ];
+
+                        const select =
+                            document.createElement(
+                                'select'
+                            );
+
+                        select.dataset
+                            .composerGroup =
+                            groupName;
+
+                        const placeholder =
+                            document.createElement(
+                                'option'
+                            );
+
+                        placeholder.value =
+                            '';
+
+                        placeholder.textContent =
+                            `Select ${
+                                groupLabels[
+                                    groupName
+                                ]
+                            }`;
+
+                        select.appendChild(
+                            placeholder
+                        );
+
+                        choices.forEach(
+                            (choice) => {
+                                const option =
+                                    document.createElement(
+                                        'option'
+                                    );
+
+                                option.value =
+                                    choice.name;
+
+                                option.textContent =
+                                    choice.name;
+
+                                select.appendChild(
+                                    option
+                                );
+                            }
+                        );
+
+                        const oldValue =
+                            previousSelections[
+                                groupName
+                            ];
+
+                        if (
+                            oldValue &&
+                            choices.some(
+                                (choice) =>
+                                    choice.name ===
+                                    oldValue
+                            )
+                        ) {
+                            select.value =
+                                oldValue;
+                        }
+
+                        select.addEventListener(
+                            'change',
+                            () => {
+                                rebuildContextPricing(
+                                    getActiveGroups()
+                                );
+                            }
+                        );
+
+                        field.append(
+                            label,
+                            select
+                        );
+
+                        composerFields.appendChild(
+                            field
+                        );
+                    }
+                );
+
+                rebuildContextPricing(
+                    activeGroups,
+                    previousAdditionals
+                );
+
+                const pricingReady =
+                    pricingMode ===
+                        'fixed' ||
+                    Boolean(
+                        pricingSource
+                    );
+
+                addGroupButton.disabled =
+                    !pricingReady;
+
+                if (
+                    pricingMode ===
+                        'varies' &&
+                    !pricingSource
+                ) {
+                    setComposerMessage(
+                        'Select which buyer option carries the Base Price first.'
+                    );
+                } else {
+                    setComposerMessage(
+                        'Select the exact choices, enter Additional amounts for the non-base options, then click Add Group.'
+                    );
+                }
+            }
+
+            function contextGridColumn(
+                groupName
+            ) {
+                const index =
+                    groupOrder.indexOf(
+                        groupName
+                    );
+
+                return index >= 0
+                    ? String(index + 1)
+                    : '1';
+            }
+
+            /*
+             * Connect Choices pricing editor.
+             *
+             * IMPORTANT:
+             * Base Price is NOT editable here.
+             * It was already entered in the selected master group.
+             *
+             * Only non-base options receive Additional inputs here.
+             */
+            function rebuildContextPricing(
+                activeGroups,
+                preservedValues = {}
+            ) {
+                if (!contextPriceFields) {
+                    return;
+                }
+
+                Array.from(
+                    contextPriceFields.querySelectorAll(
+                        'input[data-context-additional-group]'
+                    )
+                ).forEach(
+                    (input) => {
+                        preservedValues[
+                            input.dataset
+                                .contextAdditionalGroup
+                        ] =
+                            input.value;
+                    }
+                );
+
+                contextPriceFields.innerHTML =
+                    '';
+
+                if (
+                    pricingMode !==
+                        'varies' ||
+                    !pricingSource
+                ) {
+                    return;
+                }
+
+                const selections =
+                    composerSelections();
+
+                /*
+                 * Optional Base Price summary only.
+                 * No editable Base Price input in Connect Choices.
+                 */
+                const baseChoice =
+                    selections[
+                        pricingSource
+                    ];
+
+                const baseSummary =
+                    document.createElement(
+                        'div'
+                    );
+
+                baseSummary.className =
+                    'variant-context-base-summary';
+
+                const baseLabel =
+                    document.createElement(
+                        'strong'
+                    );
+
+                baseLabel.textContent =
+                    `${groupLabels[
+                        pricingSource
+                    ]} Base Price`;
+
+                const baseValue =
+                    document.createElement(
+                        'span'
+                    );
+
+                baseValue.textContent =
+                    baseChoice
+                        ? money(
+                            getBaseChoicePrice(
+                                pricingSource,
+                                baseChoice
+                            )
+                        )
+                        : 'Select choice';
+
+                baseSummary.append(
+                    baseLabel,
+                    baseValue
+                );
+
+                /*
+                 * Keep Base Price directly under its source selector.
+                 * Variation = col 1, Color = col 2, Size = col 3.
+                 */
+                baseSummary.style.gridColumn =
+                    contextGridColumn(
+                        pricingSource
+                    );
+
+                baseSummary.style.gridRow =
+                    '1';
+
+                contextPriceFields.appendChild(
+                    baseSummary
+                );
+
+                /*
+                 * ONLY non-base option groups get editable
+                 * Additional inputs.
+                 */
+                activeGroups.forEach(
+                    ({
+                        groupName,
+                    }) => {
+                        if (
+                            groupName ===
+                            pricingSource
+                        ) {
+                            return;
+                        }
+
+                        const selectedChoice =
+                            selections[
+                                groupName
+                            ];
+
+                        const card =
+                            document.createElement(
+                                'div'
+                            );
+
+                        card.className =
+                            'variant-context-price-card is-additional';
+
+                        const label =
+                            document.createElement(
+                                'label'
+                            );
+
+                        label.textContent =
+                            `${groupLabels[
+                                groupName
+                            ]} Additional`;
+
+                        const wrap =
+                            document.createElement(
+                                'div'
+                            );
+
+                        wrap.className =
+                            'variant-context-price-wrap';
+
+                        const prefix =
+                            document.createElement(
+                                'span'
+                            );
+
+                        prefix.textContent =
+                            '+₱';
+
+                        const input =
+                            document.createElement(
+                                'input'
+                            );
+
+                        input.type =
+                            'number';
+
+                        input.min =
+                            '0';
+
+                        input.step =
+                            '0.01';
+
+                        input.placeholder =
+                            '0.00';
+
+                        input.dataset
+                            .contextAdditionalGroup =
+                            groupName;
+
+                        const preserved =
+                            preservedValues[
+                                groupName
+                            ];
+
+                        if (
+                            preserved !==
+                            undefined
+                        ) {
+                            input.value =
+                                preserved;
+                        } else {
+                            /*
+                             * No global Additional defaults anymore.
+                             * Additional begins at 0 for each exact group.
+                             */
+                            input.value =
+                                '0';
+                        }
+
+                        const help =
+                            document.createElement(
+                                'small'
+                            );
+
+                        help.className =
+                            'variant-context-price-help';
+
+                        help.textContent =
+                            selectedChoice
+                                ? `Additional for ${selectedChoice} in this exact connected group only.`
+                                : `Select ${groupLabels[
+                                    groupName
+                                ]} first.`;
+
+                        wrap.append(
+                            prefix,
+                            input
+                        );
+
+                        card.append(
+                            label,
+                            wrap,
+                            help
+                        );
+
+                        /*
+                         * Keep each Additional field directly under
+                         * the corresponding selector column.
+                         */
+                        card.style.gridColumn =
+                            contextGridColumn(
+                                groupName
+                            );
+
+                        card.style.gridRow =
+                            '1';
+
+                        contextPriceFields.appendChild(
+                            card
+                        );
+                    }
+                );
+            }
+
+            function contextualAdditionValues() {
+                const additions =
+                    {};
+
+                Array.from(
+                    contextPriceFields
+                        ?.querySelectorAll(
+                            'input[data-context-additional-group]'
+                        ) || []
+                ).forEach(
+                    (input) => {
+                        additions[
+                            input.dataset
+                                .contextAdditionalGroup
+                        ] =
+                            numericValue(
+                                input
+                            );
+                    }
+                );
+
+                return additions;
+            }
+
+            function resetComposerAfterAdd() {
+                Array.from(
+                    composerFields
+                        ?.querySelectorAll(
+                            'select[data-composer-group]'
+                        ) || []
+                ).forEach(
+                    (select) => {
+                        select.value =
+                            '';
+                    }
+                );
+
+                contextPriceFields.innerHTML =
+                    '';
+
+                rebuildContextPricing(
+                    getActiveGroups()
+                );
+            }
+
+            function addConnectedGroup() {
+                captureBasePrices();
+
+                const activeGroups =
+                    getActiveGroups();
+
+                if (
+                    activeGroups.length < 2
+                ) {
+                    setComposerMessage(
+                        'Add choices to at least two option groups first.',
+                        true
+                    );
+
+                    return;
+                }
+
+                if (
+                    pricingMode ===
+                        'varies' &&
+                    !pricingSource
+                ) {
+                    setComposerMessage(
+                        'Choose which buyer option carries the Base Price first.',
+                        true
+                    );
+
+                    return;
+                }
+
+                const choices =
+                    composerSelections();
+
+                const missing =
+                    activeGroups.find(
+                        ({
+                            groupName,
+                        }) =>
+                            !choices[
+                                groupName
+                            ]
+                    );
+
+                if (missing) {
+                    setComposerMessage(
+                        `Select ${
+                            groupLabels[
+                                missing
+                                    .groupName
+                            ]
+                        } first.`,
+                        true
+                    );
+
+                    return;
+                }
+
+                if (
+                    pricingMode ===
+                        'varies'
+                ) {
+                    const baseChoice =
+                        choices[
+                            pricingSource
+                        ];
+
+                    const baseKey =
+                        basePriceKey(
+                            pricingSource,
+                            baseChoice
+                        );
+
+                    if (
+                        !basePriceState.has(
+                            baseKey
+                        ) &&
+                        getBaseChoicePrice(
+                            pricingSource,
+                            baseChoice
+                        ) === 0
+                    ) {
+                        setComposerMessage(
+                            `Enter the Base Price for ${baseChoice} first.`,
+                            true
+                        );
+
+                        return;
+                    }
+                }
+
+                const key =
+                    makeGroupKey(
+                        choices,
+                        activeGroups
+                    );
+
+                if (
+                    connectedGroups.some(
+                        (group) =>
+                            group.key ===
+                            key
+                    )
+                ) {
+                    setComposerMessage(
+                        'That exact connected group already exists.',
+                        true
+                    );
+
+                    return;
+                }
+
+                const additions =
+                    pricingMode ===
+                        'varies'
+                        ? contextualAdditionValues()
+                        : {};
+
+                const basePrice =
+                    pricingMode ===
+                        'fixed'
+                        ? numericValue(
+                            fixedPriceInput
+                        )
+                        : getBaseChoicePrice(
+                            pricingSource,
+                            choices[
+                                pricingSource
+                            ]
+                        );
+
+                connectedGroups.push({
+                    key,
+
+                    choices: {
+                        ...choices,
+                    },
+
+                    basePrice,
+
+                    additions: {
+                        ...additions,
+                    },
+
+                    stock: 0,
+                });
+
+                setComposerMessage(
+                    'Group added. Its Additional amounts are saved only for this exact combination.'
+                );
+
+                resetComposerAfterAdd();
+
+                renderConnectedTable(
+                    activeGroups
+                );
+            }
+
+            function calculateSavedGroupPrice(
+                group
+            ) {
+                if (
+                    pricingMode ===
+                    'fixed'
+                ) {
+                    const price =
+                        numericValue(
+                            fixedPriceInput
+                        );
+
+                    return {
+                        basePrice:
+                            price,
+
+                        additionalPrice:
+                            0,
+
+                        finalPrice:
+                            price,
+
+                        breakdown:
+                            `Fixed ${money(
+                                price
+                            )}`,
+                    };
+                }
+
+                const baseChoice =
+                    group.choices[
+                        pricingSource
+                    ];
+
+                /*
+                 * Base prices keep following their master-choice value,
+                 * so correcting a Base Price updates all linked groups.
+                 */
+                const basePrice =
+                    baseChoice
+                        ? getBaseChoicePrice(
+                            pricingSource,
+                            baseChoice
+                        )
+                        : group.basePrice ||
+                            0;
+
+                let additionalPrice =
+                    0;
+
+                const parts = [
+                    `${groupLabels[
+                        pricingSource
+                    ]} ${baseChoice}: ${money(
+                        basePrice
+                    )}`,
+                ];
+
+                groupOrder.forEach(
+                    (groupName) => {
+                        if (
+                            groupName ===
+                            pricingSource
+                        ) {
+                            return;
+                        }
+
+                        const choice =
+                            group.choices[
+                                groupName
+                            ];
+
+                        if (!choice) {
+                            return;
+                        }
+
+                        const amount =
+                            Number(
+                                group.additions?.[
+                                    groupName
+                                ] || 0
+                            );
+
+                        additionalPrice +=
+                            amount;
+
+                        parts.push(
+                            `${groupLabels[
+                                groupName
+                            ]} ${choice}: +${money(
+                                amount
+                            )}`
+                        );
+                    }
+                );
+
+                return {
+                    basePrice,
+
+                    additionalPrice,
+
+                    finalPrice:
+                        basePrice +
+                        additionalPrice,
+
+                    breakdown:
+                        parts.join(
+                            ' + '
+                        ),
+                };
+            }
+
+            function sortConnectedGroups(
+                groups,
+                activeGroups
+            ) {
+                const names =
+                    activeGroups.map(
+                        ({
+                            groupName,
+                        }) =>
+                            groupName
+                    );
+
+                return [...groups].sort(
+                    (a, b) => {
+                        for (
+                            const name
+                            of names
+                        ) {
+                            const compare =
+                                (
+                                    a.choices[
+                                        name
+                                    ] || ''
+                                ).localeCompare(
+                                    b.choices[
+                                        name
+                                    ] || ''
+                                );
+
+                            if (
+                                compare !==
+                                0
+                            ) {
+                                return compare;
+                            }
+                        }
+
+                        return 0;
+                    }
+                );
+            }
+
+            function prefixRowspan(
+                groups,
+                startIndex,
+                activeNames,
+                prefixLength
+            ) {
+                const start =
+                    groups[
+                        startIndex
+                    ];
+
+                let count = 1;
+
+                for (
+                    let index =
+                        startIndex + 1;
+                    index <
+                    groups.length;
+                    index += 1
+                ) {
+                    const same =
+                        activeNames
+                            .slice(
+                                0,
+                                prefixLength
+                            )
+                            .every(
+                                (name) =>
+                                    groups[
+                                        index
+                                    ].choices[
+                                        name
+                                    ] ===
+                                    start.choices[
+                                        name
+                                    ]
+                            );
+
+                    if (!same) {
+                        break;
+                    }
+
+                    count +=
+                        1;
+                }
+
+                return count;
+            }
+
+            function shouldRenderPrefix(
+                groups,
+                index,
+                activeNames,
+                prefixLength
+            ) {
+                if (index === 0) {
+                    return true;
+                }
+
+                return !activeNames
+                    .slice(
+                        0,
+                        prefixLength
+                    )
+                    .every(
+                        (name) =>
+                            groups[
+                                index
+                            ].choices[
+                                name
+                            ] ===
+                            groups[
+                                index - 1
+                            ].choices[
+                                name
+                            ]
+                    );
+            }
+
+            function renderPriceCell(
+                group
+            ) {
+                const td =
+                    document.createElement(
+                        'td'
+                    );
+
+                td.className =
+                    'variant-price-cell';
+
+                const pricing =
+                    calculateSavedGroupPrice(
+                        group
+                    );
+
+                const final =
+                    document.createElement(
+                        'span'
+                    );
+
+                final.className =
+                    'variant-final-price';
+
+                final.textContent =
+                    money(
+                        pricing.finalPrice
+                    );
+
+                const breakdown =
+                    document.createElement(
+                        'span'
+                    );
+
+                breakdown.className =
+                    'variant-price-breakdown';
+
+                breakdown.textContent =
+                    pricing.breakdown;
+
+                td.append(
+                    final,
+                    breakdown
+                );
+
+                return td;
+            }
+
+            function syncPayload() {
+                if (!matrixInput) {
+                    return;
+                }
+
+                const payload =
+                    connectedGroups.map(
+                        (group) => {
+                            const pricing =
+                                calculateSavedGroupPrice(
+                                    group
+                                );
+
+                            return {
+                                ...group.choices,
+
+                                pricing_mode:
+                                    pricingMode,
+
+                                pricing_source:
+                                    pricingMode ===
+                                        'varies'
+                                        ? pricingSource
+                                        : null,
+
+                                base_price:
+                                    pricing.basePrice,
+
+                                additions: {
+                                    ...(
+                                        group.additions ||
+                                        {}
+                                    ),
+                                },
+
+                                additional_price:
+                                    pricing
+                                        .additionalPrice,
+
+                                final_price:
+                                    pricing.finalPrice,
+
+                                stock:
+                                    Number(
+                                        group.stock ||
+                                        0
+                                    ),
+
+                                available:
+                                    true,
+                            };
+                        }
+                    );
+
+                matrixInput.value =
+                    JSON.stringify(
+                        payload
+                    );
+            }
+
+            function purgeInvalidGroups(
+                activeGroups
+            ) {
+                const valid =
+                    {};
+
+                activeGroups.forEach(
+                    ({
+                        groupName,
+                        choices,
+                    }) => {
+                        valid[
+                            groupName
+                        ] =
+                            new Set(
+                                choices.map(
+                                    (choice) =>
+                                        choice.name
+                                )
+                            );
+                    }
+                );
+
+                connectedGroups =
+                    connectedGroups.filter(
+                        (group) =>
+                            activeGroups.every(
+                                ({
+                                    groupName,
+                                }) =>
+                                    valid[
+                                        groupName
+                                    ]?.has(
+                                        group.choices[
+                                            groupName
+                                        ]
+                                    )
+                            )
+                    );
+            }
+
+            function renderConnectedTable(
+                activeGroups =
+                    getActiveGroups()
+            ) {
+                if (
+                    !matrixHeader ||
+                    !matrixBody
+                ) {
+                    return;
+                }
+
+                purgeInvalidGroups(
+                    activeGroups
+                );
+
+                const groups =
+                    sortConnectedGroups(
+                        connectedGroups,
+                        activeGroups
+                    );
+
+                if (matrixCount) {
+                    matrixCount.textContent =
+                        `${groups.length} ${
+                            groups.length ===
+                            1
+                                ? 'group'
+                                : 'groups'
+                        }`;
+                }
+
+                matrixEmpty?.classList.toggle(
+                    'hidden',
+                    groups.length > 0
+                );
+
+                matrixTableWrap?.classList.toggle(
+                    'hidden',
+                    groups.length === 0
+                );
+
+                matrixHeader.innerHTML =
+                    '';
+
+                matrixBody.innerHTML =
+                    '';
+
+                const activeNames =
+                    activeGroups.map(
+                        ({
+                            groupName,
+                        }) =>
+                            groupName
+                    );
+
+                activeGroups.forEach(
+                    ({
+                        groupName,
+                    }) => {
+                        const th =
+                            document.createElement(
+                                'th'
+                            );
+
+                        th.textContent =
+                            groupLabels[
+                                groupName
+                            ];
+
+                        matrixHeader.appendChild(
+                            th
+                        );
+                    }
+                );
+
+                const priceTh =
+                    document.createElement(
+                        'th'
+                    );
+
+                priceTh.textContent =
+                    'Final Price';
+
+                matrixHeader.appendChild(
+                    priceTh
+                );
+
+                const stockTh =
+                    document.createElement(
+                        'th'
+                    );
+
+                stockTh.textContent =
+                    'Stock';
+
+                matrixHeader.appendChild(
+                    stockTh
+                );
+
+                const actionTh =
+                    document.createElement(
+                        'th'
+                    );
+
+                matrixHeader.appendChild(
+                    actionTh
+                );
+
+                groups.forEach(
+                    (
+                        group,
+                        rowIndex
+                    ) => {
+                        const tr =
+                            document.createElement(
+                                'tr'
+                            );
+
+                        activeNames.forEach(
+                            (
+                                groupName,
+                                columnIndex
+                            ) => {
+                                const isLast =
+                                    columnIndex ===
+                                    activeNames.length -
+                                        1;
+
+                                const prefixLength =
+                                    columnIndex +
+                                    1;
+
+                                if (
+                                    !isLast &&
+                                    !shouldRenderPrefix(
+                                        groups,
+                                        rowIndex,
+                                        activeNames,
+                                        prefixLength
+                                    )
+                                ) {
+                                    return;
+                                }
+
+                                const td =
+                                    document.createElement(
+                                        'td'
+                                    );
+
+                                if (
+                                    !isLast
+                                ) {
+                                    td.rowSpan =
+                                        prefixRowspan(
+                                            groups,
+                                            rowIndex,
+                                            activeNames,
+                                            prefixLength
+                                        );
+
+                                    td.className =
+                                        columnIndex ===
+                                            0
+                                            ? 'variant-grouped-parent-cell'
+                                            : 'variant-grouped-secondary-cell';
+                                }
+
+                                const pill =
+                                    document.createElement(
+                                        'span'
+                                    );
+
+                                pill.className =
+                                    'variant-value-pill';
+
+                                pill.textContent =
+                                    group.choices[
+                                        groupName
+                                    ] || '—';
+
+                                td.appendChild(
+                                    pill
+                                );
+
+                                tr.appendChild(
+                                    td
+                                );
+                            }
+                        );
+
+                        tr.appendChild(
+                            renderPriceCell(
+                                group
+                            )
+                        );
+
+                        const stockTd =
+                            document.createElement(
+                                'td'
+                            );
+
+                        const stockInput =
+                            document.createElement(
+                                'input'
+                            );
+
+                        stockInput.type =
+                            'number';
+
+                        stockInput.min =
+                            '0';
+
+                        stockInput.step =
+                            '1';
+
+                        stockInput.className =
+                            'variant-stock-input';
+
+                        stockInput.value =
+                            group.stock ??
+                            0;
+
+                        stockInput.addEventListener(
+                            'input',
+                            () => {
+                                group.stock =
+                                    Number(
+                                        stockInput
+                                            .value ||
+                                        0
+                                    );
+
+                                syncPayload();
+                            }
+                        );
+
+                        stockTd.appendChild(
+                            stockInput
+                        );
+
+                        tr.appendChild(
+                            stockTd
+                        );
+
+                        const actionTd =
+                            document.createElement(
+                                'td'
+                            );
+
+                        const remove =
+                            document.createElement(
+                                'button'
+                            );
+
+                        remove.type =
+                            'button';
+
+                        remove.className =
+                            'variant-remove-group-button';
+
+                        remove.textContent =
+                            '×';
+
+                        remove.title =
+                            'Remove this exact connected group';
+
+                        remove.addEventListener(
+                            'click',
+                            () => {
+                                connectedGroups =
+                                    connectedGroups.filter(
+                                        (item) =>
+                                            item.key !==
+                                            group.key
+                                    );
+
+                                renderConnectedTable(
+                                    activeGroups
+                                );
+                            }
+                        );
+
+                        actionTd.appendChild(
+                            remove
+                        );
+
+                        tr.appendChild(
+                            actionTd
+                        );
+
+                        matrixBody.appendChild(
+                            tr
+                        );
+                    }
+                );
+
+                syncPayload();
+            }
+
+            function applyRules() {
+                if (
+                    applyingRules
+                ) {
+                    return;
+                }
+
+                applyingRules =
+                    true;
+
+                try {
+                    captureBasePrices();
+
+                    syncPricingUI();
+
+                    const activeGroups =
+                        getActiveGroups();
+
+                    configureChoiceRows(
+                        activeGroups
+                    );
+
+                    rebuildComposer(
+                        activeGroups
+                    );
+
+                    renderConnectedTable(
+                        activeGroups
+                    );
+                } finally {
+                    applyingRules =
+                        false;
+                }
+            }
+
+            /*
+             * PRICING MODE
+             */
+            modeButtons.forEach(
+                (button) => {
+                    button.addEventListener(
+                        'click',
+                        (event) => {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            captureBasePrices();
+
+                            pricingMode =
+                                button.dataset
+                                    .pricingMode ===
+                                'varies'
+                                    ? 'varies'
+                                    : 'fixed';
+
+                            pricingSource =
+                                '';
+
+                            /*
+                             * Contextual additionals depend on the
+                             * chosen variable-pricing model.
+                             */
+                            connectedGroups =
+                                connectedGroups.map(
+                                    (group) => ({
+                                        ...group,
+                                        additions:
+                                            {},
+                                    })
+                                );
+
+                            applyRules();
+                        },
+                        true
+                    );
+                }
+            );
+
+            /*
+             * BASE PRICE SOURCE
+             *
+             * Only this explicit seller click sets the source.
+             */
+            sourceButtons.forEach(
+                (button) => {
+                    button.addEventListener(
+                        'click',
+                        (event) => {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            captureBasePrices();
+
+                            const source =
+                                button.dataset
+                                    .pricingSource;
+
+                            if (
+                                !validSources.has(
+                                    source
+                                )
+                            ) {
+                                return;
+                            }
+
+                            pricingMode =
+                                'varies';
+
+                            const changed =
+                                pricingSource !==
+                                source;
+
+                            pricingSource =
+                                source;
+
+                            /*
+                             * Existing contextual Additionals were defined
+                             * relative to the previous base source.
+                             */
+                            if (changed) {
+                                connectedGroups =
+                                    connectedGroups.map(
+                                        (group) => ({
+                                            ...group,
+                                            additions:
+                                                {},
+                                        })
+                                    );
+                            }
+
+                            applyRules();
+                        },
+                        true
+                    );
+                }
+            );
+
+            /*
+             * Base Price persistence.
+             */
+            Object.entries(
+                containers
+            ).forEach(
+                ([
+                    groupName,
+                    container,
+                ]) => {
+                    container?.addEventListener(
+                        'input',
+                        (event) => {
+                            const input =
+                                event.target;
+
+                            if (
+                                !input.matches(
+                                    'input[type="number"]'
+                                )
+                            ) {
+                                return;
+                            }
+
+                            if (
+                                pricingMode !==
+                                    'varies' ||
+                                groupName !==
+                                    pricingSource
+                            ) {
+                                return;
+                            }
+
+                            const row =
+                                Array.from(
+                                    container.children
+                                ).find(
+                                    (child) =>
+                                        child.contains(
+                                            input
+                                        )
+                                );
+
+                            if (!row) {
+                                return;
+                            }
+
+                            const {
+                                priceField,
+                            } =
+                                findRowParts(
+                                    row
+                                );
+
+                            if (
+                                !priceField ||
+                                !priceField.contains(
+                                    input
+                                )
+                            ) {
+                                return;
+                            }
+
+                            const choiceName =
+                                getChoiceName(
+                                    row
+                                );
+
+                            if (!choiceName) {
+                                return;
+                            }
+
+                            basePriceState.set(
+                                basePriceKey(
+                                    groupName,
+                                    choiceName
+                                ),
+                                input.value
+                            );
+
+                            rebuildContextPricing(
+                                getActiveGroups()
+                            );
+
+                            renderConnectedTable(
+                                getActiveGroups()
+                            );
+                        },
+                        true
+                    );
+                }
+            );
+
+            /*
+             * Existing option-add handlers may rebuild rows.
+             * Reapply our Base Price-only rule afterwards.
+             */
+            addOptionButtons.forEach(
+                (button) => {
+                    button.addEventListener(
+                        'click',
+                        () => {
+                            const lockedMode =
+                                pricingMode;
+
+                            const lockedSource =
+                                pricingSource;
+
+                            const restore =
+                                () => {
+                                    pricingMode =
+                                        lockedMode;
+
+                                    pricingSource =
+                                        lockedSource;
+
+                                    applyRules();
+                                };
+
+                            setTimeout(
+                                restore,
+                                0
+                            );
+
+                            setTimeout(
+                                restore,
+                                30
+                            );
+
+                            setTimeout(
+                                restore,
+                                120
+                            );
+                        },
+                        true
+                    );
+                }
+            );
+
+            addGroupButton?.addEventListener(
+                'click',
+                addConnectedGroup
+            );
+
+            fixedPriceInput?.addEventListener(
+                'input',
+                () => {
+                    renderConnectedTable(
+                        getActiveGroups()
+                    );
+                }
+            );
+
+            const observer =
+                new MutationObserver(
+                    () => {
+                        queueMicrotask(
+                            applyRules
+                        );
+                    }
+                );
+
+            Object.values(
+                containers
+            ).forEach(
+                (container) => {
+                    if (!container) {
+                        return;
+                    }
+
+                    observer.observe(
+                        container,
+                        {
+                            childList:
+                                true,
+                            subtree:
+                                true,
+                        }
+                    );
+                }
+            );
+
+            form?.addEventListener(
+                'submit',
+                () => {
+                    captureBasePrices();
+                    applyRules();
+                    syncPayload();
+                },
+                true
+            );
+
+            form?.addEventListener(
+                'reset',
+                () => {
+                    pricingMode =
+                        'fixed';
+
+                    pricingSource =
+                        '';
+
+                    connectedGroups =
+                        [];
+
+                    basePriceState.clear();
+
+                    setTimeout(
+                        applyRules,
+                        0
+                    );
+                }
+            );
+
+            applyRules();
+        });

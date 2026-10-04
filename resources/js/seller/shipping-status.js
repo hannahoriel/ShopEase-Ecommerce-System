@@ -433,3 +433,159 @@ document.addEventListener('DOMContentLoaded', function () {
 
     filterShippingRows();
 });
+document.addEventListener('DOMContentLoaded', () => {
+            const tabs = Array.from(
+                document.querySelectorAll(
+                    '#shippingStatusTabs .shipping-status-tab'
+                )
+            );
+
+            const rows = Array.from(
+                document.querySelectorAll(
+                    '#shippingTable .shipping-row'
+                )
+            );
+
+            const searchInput =
+                document.getElementById('shippingSearch');
+
+            const noResults =
+                document.getElementById('shippingNoResults');
+
+            const showingCount =
+                document.getElementById('shippingShowingCount');
+
+            const totalEntriesCount =
+                document.getElementById('shippingTotalEntriesCount');
+
+            let activeTab = 'all';
+
+            function normalizedStatus(row) {
+                return (
+                    row.dataset.status || ''
+                )
+                    .trim()
+                    .toLowerCase();
+            }
+
+            function rowMatchesTab(row) {
+                const status =
+                    normalizedStatus(row);
+
+                if (activeTab === 'all') {
+                    return true;
+                }
+
+                if (activeTab === 'in-transit') {
+                    /*
+                     * Shipping flow:
+                     * In Transit tab should include both:
+                     * - in-transit
+                     * - out-for-delivery
+                     */
+                    return (
+                        status === 'in-transit' ||
+                        status === 'out-for-delivery'
+                    );
+                }
+
+                if (activeTab === 'delivered') {
+                    return status === 'delivered';
+                }
+
+                return true;
+            }
+
+            function rowMatchesSearch(row) {
+                const query =
+                    (
+                        searchInput?.value || ''
+                    )
+                        .trim()
+                        .toLowerCase();
+
+                if (!query) {
+                    return true;
+                }
+
+                const haystack =
+                    (
+                        row.dataset.search ||
+                        row.textContent ||
+                        ''
+                    )
+                        .toLowerCase();
+
+                return haystack.includes(query);
+            }
+
+            function applyShippingFilter() {
+                let visibleCount = 0;
+
+                rows.forEach((row) => {
+                    const visible =
+                        rowMatchesTab(row) &&
+                        rowMatchesSearch(row);
+
+                    row.classList.toggle(
+                        'hidden',
+                        !visible
+                    );
+
+                    row.style.display =
+                        visible
+                            ? ''
+                            : 'none';
+
+                    if (visible) {
+                        visibleCount += 1;
+                    }
+                });
+
+                if (showingCount) {
+                    showingCount.textContent =
+                        String(visibleCount);
+                }
+
+                if (totalEntriesCount) {
+                    totalEntriesCount.textContent =
+                        String(rows.length);
+                }
+
+                noResults?.classList.toggle(
+                    'hidden',
+                    visibleCount !== 0
+                );
+            }
+
+            tabs.forEach((tab) => {
+                tab.addEventListener(
+                    'click',
+                    (event) => {
+                        event.preventDefault();
+
+                        activeTab =
+                            tab.dataset.tab ||
+                            'all';
+
+                        tabs.forEach(
+                            (item) => {
+                                item.classList.toggle(
+                                    'active',
+                                    item === tab
+                                );
+                            }
+                        );
+
+                        applyShippingFilter();
+                    }
+                );
+            });
+
+            searchInput?.addEventListener(
+                'input',
+                applyShippingFilter
+            );
+
+            applyShippingFilter();
+        });
