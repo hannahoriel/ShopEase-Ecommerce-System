@@ -10,7 +10,8 @@ export default defineConfig({
     'resources/css/app.css',
     'resources/css/auth.css',
 
-    'resources/css/admin/seller_compliance.css',
+    'resources/css/admin/seller-compliance.css',
+'resources/js/admin/seller-compliance.js',
 
     'resources/css/seller/inventory.css',
     'resources/css/seller/order-status.css',
@@ -19,7 +20,7 @@ export default defineConfig({
     'resources/js/app.js',
     'resources/js/auth.js',
 
-    'resources/js/admin/seller_compliance.js',
+    'resources/js/admin/seller-compliance.js',
 
     'resources/js/seller/inventory.js',
     'resources/js/seller/order-status.js',

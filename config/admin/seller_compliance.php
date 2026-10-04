@@ -1,7 +1,7 @@
 <?php
 
 /*
- * config/admin/seller_compliance.php
+ * config/admin/seller-compliance.php
  * Single source of truth for Seller Compliance labels/options.
  * Used by the Blade views AND passed to JS (no more duplicated lists).
  */
