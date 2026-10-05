@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('province');
             $table->string('municipality');
             $table->string('barangay');
-            $table->string('street');
-            $table->string('house_number');
+            $table->string('street')->nullable();
+            $table->string('house_number')->nullable();
             $table->string('upload_id')->nullable();
             $table->string('registration_status', 20)->default('pending');
             $table->timestamp('approved_at')->nullable();

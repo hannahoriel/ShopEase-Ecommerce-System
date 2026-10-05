@@ -8525,15 +8525,25 @@ document.addEventListener(
                         return;
                     }
 
-                    const totalStock = getPricingGroupItems(pricingSource)
+                    const totalStock = ['variations', 'colors', 'sizes']
                         .reduce(
-                            function (total, item) {
-                                return total + (Number.parseInt(item.stock, 10) || 0);
+                            function (sum, group) {
+                                return sum + getPricingGroupItems(group).reduce(
+                                    function (total, item) {
+                                        return total + (Number.parseInt(item.stock, 10) || 0);
+                                    },
+                                    0
+                                );
                             },
                             0
                         );
 
                     createProductStock.value = String(totalStock);
+
+                    const stockDisplay = document.getElementById('categorySpec_stock_display');
+                    if (stockDisplay) {
+                        stockDisplay.value = String(totalStock);
+                    }
                 }
 
                 function getPricingGroupLabel(group) {
@@ -8822,8 +8832,11 @@ document.addEventListener(
                     }
 
                     if (createProductStock) {
-                        createProductStock.disabled =
+                        createProductStock.readOnly =
                             isVariable;
+
+                        createProductStock.disabled =
+                            false;
 
                         createProductStock.required =
                             !isVariable;

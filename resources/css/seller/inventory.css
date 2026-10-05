@@ -4677,3 +4677,10 @@
 > * > button {
     align-self: end !important;
 }
+
+/* Auto-computed stock field (varies pricing mode) */
+#createProductStock[readonly] {
+    background: #F5F2F1;
+    color: #77716E;
+    cursor: not-allowed;
+}

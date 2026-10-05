@@ -264,6 +264,14 @@ Route::get('/admin/registrations/rejected/list', [
     ->name('admin.registrations.rejected.list');
 
 
+Route::get('/admin/registrations/{registration}/approve', function () {
+    return redirect()
+        ->route('admin.registrations')
+        ->with('error', 'Approvals must be submitted from the registration review page.');
+})->middleware('auth')
+    ->name('admin.registrations.approve.get');
+
+
 Route::post('/admin/registrations/{registration}/approve', [
     RegistrationController::class,
     'approve',
