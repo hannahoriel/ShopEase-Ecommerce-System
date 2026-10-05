@@ -101,6 +101,47 @@ class SellerInventoryTest extends TestCase
         ]);
     }
 
+    public function test_variable_price_product_uses_and_persists_buyer_option_price_and_stock(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('variable-price@example.com');
+
+        $response = $this->actingAs($sellerUser)->postJson('/seller/inventory/products', [
+            'title' => 'Variable price product',
+            'sku' => 'VARIABLE-1',
+            'pricing_mode' => 'varies',
+            'pricing_source' => 'variations',
+            'variation_items' => [
+                [
+                    'name' => 'Small',
+                    'price' => 125.50,
+                    'price_type' => 'base',
+                    'stock' => 4,
+                ],
+                [
+                    'name' => 'Large',
+                    'price' => 175.00,
+                    'price_type' => 'base',
+                    'stock' => 3,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('price', '125.50')
+            ->assertJsonPath('stock_quantity', 7)
+            ->assertJsonPath('variations.0.name', 'Small')
+            ->assertJsonPath('variations.1.stock', 3);
+
+        $this->assertDatabaseHas('products', [
+            'seller_id' => $seller->id,
+            'sku' => 'VARIABLE-1',
+            'pricing_mode' => 'varies',
+            'pricing_source' => 'variations',
+            'price' => 125.50,
+            'stock_quantity' => 7,
+        ]);
+    }
+
     public function test_inventory_validates_duplicate_sku_for_the_same_seller(): void
     {
         [$sellerUser, $seller] = $this->createSeller('seller@example.com');
