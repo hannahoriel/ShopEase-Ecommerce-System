@@ -169,11 +169,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const sellerFollowers = document.getElementById('sellerFollowers');
         const seller = p.seller || {};
         const joinedYears = Number(seller.joined_years || 0);
+        const joinedMonths = Number(seller.joined_months || 0);
         if (sellerName) sellerName.textContent = p.seller?.store_name || '—';
         if (sellerLogo) sellerLogo.innerHTML   = escapeHtml((p.seller?.store_name || 'S').slice(0, 2).toUpperCase()) + '<small>STORE</small>';
         if (sellerRatings) sellerRatings.textContent = Number(seller.ratings || 0) === 0 ? '0%' : compactCount(seller.ratings);
         if (sellerResponseRate) sellerResponseRate.textContent = seller.response_rate || '—';
-        if (sellerJoined) sellerJoined.textContent = `${joinedYears} ${joinedYears === 1 ? 'year' : 'years'} ago`;
+        if (sellerJoined) {
+            sellerJoined.textContent = joinedYears > 0
+                ? `${joinedYears} ${joinedYears === 1 ? 'year' : 'years'} ago`
+                : `${joinedMonths} ${joinedMonths === 1 ? 'month' : 'months'} ago`;
+        }
         if (sellerProducts) sellerProducts.textContent = compactCount(seller.product_count);
         if (sellerResponseTime) sellerResponseTime.textContent = seller.response_time || '—';
         if (sellerFollowers) sellerFollowers.textContent = compactCount(seller.followers);
@@ -181,16 +186,94 @@ document.addEventListener('DOMContentLoaded', function () {
         // Specifications
         const specsCard = document.getElementById('specsCard');
         const specGrid  = document.getElementById('specGrid');
-        const specs = p.specifications || {};
-        const specEntries = Object.entries(specs);
-        if (specEntries.length && specGrid && specsCard) {
+        const rawSpecs = p.specifications || {};
+        const specSource = Array.isArray(rawSpecs)
+            ? rawSpecs
+                .filter((item) => item && typeof item === 'object')
+                .map((item) => [
+                    item.key || item.name || '',
+                    item.value ?? item.label ?? '',
+                ])
+            : Object.entries(rawSpecs && typeof rawSpecs === 'object' ? rawSpecs : {});
+        const specs = Object.fromEntries(specSource
+            .map(([rawKey, value]) => {
+                const wrappedKey = String(rawKey).match(/^category_specifications\[([^\]]+)\]$/);
+                return [wrappedKey ? wrappedKey[1] : String(rawKey), value];
+            })
+            .filter(([key, value]) => key && hasSpecificationValue(value)));
+
+        function hasSpecificationValue(value) {
+            if (Array.isArray(value)) {
+                return value.some(hasSpecificationValue);
+            }
+            if (value && typeof value === 'object') {
+                return hasSpecificationValue(value.value ?? value.label ?? value.name ?? '');
+            }
+            const text = String(value ?? '').trim();
+            return text !== '' && !['null', 'undefined', '—'].includes(text.toLowerCase());
+        }
+
+        function specificationText(value) {
+            if (Array.isArray(value)) {
+                return value.map(specificationText).filter(Boolean).join(', ');
+            }
+            if (value && typeof value === 'object') {
+                return specificationText(value.value ?? value.label ?? value.name ?? '');
+            }
+            return hasSpecificationValue(value) ? String(value).trim() : '';
+        }
+
+        function optionNames(options) {
+            if (!Array.isArray(options)) return '';
+            return options
+                .map((option) => typeof option === 'object'
+                    ? option?.name || option?.label || option?.value || ''
+                    : option)
+                .map(specificationText)
+                .filter(Boolean)
+                .join(', ');
+        }
+
+        const detailKeys = [
+            'brand', 'material', 'sizes', 'size', 'colors', 'color',
+            'quantity_per_pack', 'weight', 'item_weight',
+            'country_of_origin', 'origin', 'country', 'subcategory',
+        ];
+        const specificationRows = [];
+        const addSpecification = (label, value) => {
+            const text = specificationText(value);
+            if (text) specificationRows.push([label, text]);
+        };
+        const specValue = (...keys) => {
+            const key = keys.find((candidate) => hasSpecificationValue(specs[candidate]));
+            return key ? specs[key] : '';
+        };
+
+        addSpecification('Brand', specValue('brand'));
+        addSpecification('Material', specValue('material'));
+        addSpecification('Sizes', optionNames(p.sizes) || specValue('sizes', 'size'));
+        addSpecification('Colors', optionNames(p.colors) || specValue('colors', 'color'));
+        addSpecification('Quantity per Pack', specValue('quantity_per_pack', 'weight', 'item_weight'));
+        addSpecification('Country of Origin', specValue('country_of_origin', 'origin', 'country'));
+
+        Object.entries(specs)
+            .filter(([key]) => !detailKeys.includes(key))
+            .forEach(([key, value]) => {
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
+                addSpecification(label, value);
+            });
+
+        if (specificationRows.length && specGrid && specsCard) {
             specsCard.style.display = '';
-            const half = Math.ceil(specEntries.length / 2);
-            const col1 = specEntries.slice(0, half);
-            const col2 = specEntries.slice(half);
-            const renderCol = (entries) => entries.map(([k, v]) =>
-                `<div><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`).join('');
-            specGrid.innerHTML = `<div class="spec-column">${renderCol(col1)}</div><div class="spec-column">${renderCol(col2)}</div>`;
+            const half = Math.ceil(specificationRows.length / 2);
+            const renderCol = (entries) => entries.map(([label, value]) =>
+                `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+            specGrid.innerHTML = `
+                <div class="spec-column">${renderCol(specificationRows.slice(0, half))}</div>
+                <div class="spec-column">${renderCol(specificationRows.slice(half))}</div>`;
+        } else if (specsCard && specGrid) {
+            specsCard.style.display = 'none';
+            specGrid.innerHTML = '';
         }
 
         // Description

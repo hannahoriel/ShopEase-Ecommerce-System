@@ -71,6 +71,9 @@ class DashboardController extends Controller
                 'joined_years'  => $product->seller->approved_at
                     ? (int) $product->seller->approved_at->diffInYears(now())
                     : 0,
+                'joined_months' => $product->seller->approved_at
+                    ? (int) $product->seller->approved_at->diffInMonths(now())
+                    : 0,
                 'product_count' => $product->seller->products()
                     ->where('status', 'active')
                     ->where('is_archived', false)
