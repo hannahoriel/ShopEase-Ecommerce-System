@@ -182,7 +182,6 @@ Route::get('/admin/dashboard', function () {
 */
 
 foreach ([
-    'buyer' => User::ROLE_BUYER,
     'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
 ] as $dashboard => $role) {
@@ -209,6 +208,12 @@ foreach ([
         ->name("$dashboard.dashboard");
 
 }
+
+Route::get('/buyer/dashboard', function () {
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $token = Auth::user()->createToken('buyer-dashboard')->plainTextToken;
+    return view('pages.buyer.dashboard', ['apiToken' => $token]);
+})->middleware('auth')->name('buyer.dashboard');
 
 Route::get('/seller/dashboard', [SellerDashboardController::class, 'index'])
     ->middleware('auth')
@@ -2186,12 +2191,14 @@ Route::get('/admin/platform-settings', function () {
 })->name('admin.platform.settings');
 
 Route::get('/buyer/cart', function () {
-    return view('pages.buyer.cart');
-})->name('buyer.cart');
+    $apiToken = Auth::check() ? Auth::user()->createToken('buyer-cart')->plainTextToken : '';
+    return view('pages.buyer.cart', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.cart');
 
 Route::get('/buyer/product', function () {
-    return view('pages.buyer.product');
-})->name('buyer.product');
+    $apiToken = Auth::check() ? Auth::user()->createToken('buyer-product')->plainTextToken : '';
+    return view('pages.buyer.product', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.product');
 
 Route::get('/buyer/my-purchases', function () {
     return view('pages.buyer.my-purchases');

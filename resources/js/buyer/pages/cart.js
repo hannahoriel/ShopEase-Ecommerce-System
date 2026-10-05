@@ -1,11 +1,154 @@
 document.addEventListener('DOMContentLoaded', function () {
-            const selectAll =
-                document.getElementById('selectAllCart');
+            /* ─── Config ─────────────────────────────────────────── */
+            const configEl = document.getElementById('buyerCartConfig');
+            const config   = configEl ? JSON.parse(configEl.textContent) : {};
+            const cartUrl  = config.cartUrl  || '/api/v1/buyer/cart';
+            const apiToken = config.apiToken || '';
 
-            const cartGroups =
-                Array.from(
-                    document.querySelectorAll('.cart-shop-card')
-                );
+            function apiFetch(url, options = {}) {
+                return fetch(url, {
+                    ...options,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        ...(apiToken ? { 'Authorization': 'Bearer ' + apiToken } : {}),
+                        ...(options.headers || {}),
+                    },
+                    credentials: 'same-origin',
+                });
+            }
+
+            /* ─── Load cart from API and render ─────────────────── */
+            function loadCart() {
+                if (!apiToken) {
+                    console.warn('[Cart] No apiToken — skipping loadCart');
+                    return;
+                }
+
+                apiFetch(cartUrl)
+                    .then((res) => {
+                        if (!res.ok) {
+                            return res.text().then(t => { throw new Error(res.status + ': ' + t); });
+                        }
+                        return res.json();
+                    })
+                    .then((json) => renderCartFromApi(json.data || []))
+                    .catch((err) => console.error('[Cart] loadCart failed:', err));
+            }
+
+            function escapeHtml(str) {
+                return String(str ?? '')
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            function renderCartFromApi(items) {
+                const cartGroupsEl = document.getElementById('cartGroups');
+                if (!cartGroupsEl) return;
+
+                if (!items.length) {
+                    cartGroupsEl.innerHTML = '<p style="padding:24px;color:#888;">Your cart is empty.</p>';
+                    updateTotals();
+                    return;
+                }
+
+                // Group by seller
+                const groups = {};
+                items.forEach((item) => {
+                    const key = item.product.seller.id;
+                    if (!groups[key]) groups[key] = { shop: item.product.seller.store_name, items: [] };
+                    groups[key].items.push(item);
+                });
+
+                cartGroupsEl.innerHTML = Object.values(groups).map((group, gi) => `
+                    <section class="cart-shop-card" data-shop-index="${gi}">
+                        <div class="cart-shop-header">
+                            <label class="cart-check-wrap" aria-label="Select ${escapeHtml(group.shop)}">
+                                <input type="checkbox" class="cart-checkbox shop-checkbox" checked>
+                                <span class="cart-checkmark"></span>
+                            </label>
+                            <span class="cart-shop-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1-5H5L4 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5 9v10h14V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="cart-shop-name">${escapeHtml(group.shop)}</span>
+                        </div>
+                        ${group.items.map((item) => {
+                            const img = item.product.image_url
+                                ? `<img src="${escapeHtml(item.product.image_url)}" alt="${escapeHtml(item.product.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
+                                : `<svg viewBox="0 0 180 150"><rect width="180" height="150" rx="14" fill="#E9E8E2"/></svg>`;
+                            const optionParts = [item.variation, item.color, item.size].filter(Boolean);
+                            return `
+                            <article class="cart-item-row" data-cart-item data-item-id="${item.id}" data-api-item-id="${item.id}" data-price="${item.product.price}">
+                                <div class="cart-item-product">
+                                    <label class="cart-check-wrap">
+                                        <input type="checkbox" class="cart-checkbox item-checkbox" checked>
+                                        <span class="cart-checkmark"></span>
+                                    </label>
+                                    <div class="cart-product-image cart-product-link">${img}</div>
+                                    <div class="cart-product-copy">
+                                        <h3>${escapeHtml(item.product.name)}</h3>
+                                        ${optionParts.length ? `<div class="cart-selected-variation"><p><span>${escapeHtml(optionParts.join(' · '))}</span></p></div>` : ''}
+                                        <strong>₱${Number(item.product.price).toLocaleString('en-PH', {minimumFractionDigits:2})}</strong>
+                                    </div>
+                                </div>
+                                <div class="cart-item-quantity">
+                                    <div class="quantity-control">
+                                        <button type="button" class="quantity-button quantity-minus" aria-label="Decrease">−</button>
+                                        <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="99" readonly>
+                                        <button type="button" class="quantity-button quantity-plus" aria-label="Increase">+</button>
+                                    </div>
+                                </div>
+                                <div class="cart-item-total">₱${(item.product.price * item.quantity).toLocaleString('en-PH', {minimumFractionDigits:2})}</div>
+                                <div class="cart-item-action">
+                                    <button type="button" class="remove-cart-item" aria-label="Remove ${escapeHtml(item.product.name)}">
+                                        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
+                                </div>
+                            </article>`;
+                        }).join('')}
+                    </section>`).join('');
+
+                // Re-bind shop checkboxes after render
+                rebindShopCheckboxes();
+                updateTotals();
+            }
+
+            /* ─── API: update quantity ───────────────────────────── */
+            function apiUpdateQuantity(itemId, quantity) {
+                apiFetch(`${cartUrl}/${itemId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ quantity }),
+                }).catch(() => {});
+            }
+
+            /* ─── API: remove item ───────────────────────────────── */
+            function apiRemoveItem(itemId) {
+                apiFetch(`${cartUrl}/${itemId}`, { method: 'DELETE' }).catch(() => {});
+            }
+
+            const selectAll = document.getElementById('selectAllCart');
+
+            function rebindShopCheckboxes() {
+                document.querySelectorAll('.cart-shop-card').forEach((shopCard) => {
+                    const shopCheckbox = shopCard.querySelector('.shop-checkbox');
+                    shopCheckbox?.addEventListener('change', function () {
+                        shopCard.querySelectorAll('.item-checkbox').forEach((cb) => { cb.checked = shopCheckbox.checked; });
+                        shopCheckbox.indeterminate = false;
+                        updateTotals();
+                    });
+                    shopCard.querySelectorAll('.item-checkbox').forEach((checkbox) => {
+                        checkbox.addEventListener('change', function () {
+                            syncShopCheckbox(shopCard);
+                            updateTotals();
+                        });
+                    });
+                });
+            }
+
+            function getCartGroups() {
+                return Array.from(document.querySelectorAll('.cart-shop-card'));
+            }
 
             const shippingFee =
                 80;
@@ -80,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const groups = [];
 
-                cartGroups.forEach(shopCard => {
+                getCartGroups().forEach(shopCard => {
                     if (
                         shopCard.classList.contains('is-empty')
                     ) {
@@ -403,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             );
 
-            cartGroups.forEach(shopCard => {
+            getCartGroups().forEach(shopCard => {
                 const shopCheckbox =
                     shopCard.querySelector('.shop-checkbox');
 
@@ -656,12 +799,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         updateTotals();
 
+                        const apiItemId = row?.dataset.apiItemId;
+                        if (apiItemId) apiUpdateQuantity(apiItemId, quantity);
+
                         return;
                     }
 
                     if (remove) {
                         const row =
                             remove.closest('[data-cart-item]');
+
+                        const apiItemId = row?.dataset.apiItemId;
+                        if (apiItemId) apiRemoveItem(apiItemId);
 
                         removeCartRow(row);
                     }
@@ -690,4 +839,5 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
             updateTotals();
+            loadCart();
         });
