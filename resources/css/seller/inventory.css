@@ -2853,15 +2853,15 @@
         }
 
         .create-option-price-wrap {
-            min-width: 95px;
+            min-width: 0;
         }
 
         .create-option-price-label {
             display: block;
             margin-bottom: 3px;
             color: #9A8D88;
-            font-size: 7px;
-            line-height: 1;
+            font-size: 9px;
+            line-height: 1.2;
             font-weight: 500;
         }
 
@@ -2881,14 +2881,14 @@
 
         .create-option-price-input {
             width: 100%;
-            height: 27px;
+            height: 30px;
             padding: 0 6px 0 25px;
             border: 1px solid #DDD3CF;
             border-radius: 6px;
             background: #fff;
             color: #423A37;
             font-family: 'Poppins', sans-serif;
-            font-size: 8px;
+            font-size: 10px;
             font-weight: 500;
             outline: none;
         }
@@ -2904,11 +2904,11 @@
         }
 
         .create-variation-chip.has-option-price {
-            grid-template-columns: minmax(0,1fr) 105px 105px 20px !important;
+            grid-template-columns: minmax(0,1fr) 82px 96px 20px !important;
         }
 
         .create-variation-chip.no-photo.has-option-price {
-            grid-template-columns: minmax(0,1fr) 105px 105px 20px !important;
+            grid-template-columns: minmax(0,1fr) 82px 96px 20px !important;
         }
 
         .create-priced-option-row {
@@ -4565,403 +4565,122 @@
 
 
 /* =========================================================
-   BASE-PRICE-ONLY MASTER CHOICES
-   ---------------------------------------------------------
-   In Price Varies mode, ONLY the selected pricing-source
-   group has a price input. Other groups do not show any
-   price input at the master-choice level.
-========================================================== */
+   BUYER OPTION ROWS: ITEM/BASE PRICE + STOCK (FINAL)
+========================================================= */
 
-#productVariationsContainer > *.buyer-option-no-master-price,
-#productColorsContainer > *.buyer-option-no-master-price,
-#productSizesContainer > *.buyer-option-no-master-price {
-    grid-template-columns:
-        minmax(0, 1fr)
-        46px
-        16px !important;
+/* A. Price Varies, napiling source: choice | Base Price | Stock | × */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source) {
+    grid-template-columns: minmax(40px, 1fr) 112px 64px 16px !important;
+    column-gap: 6px !important;
+    align-items: end !important;
 }
 
-.buyer-option-no-master-price .buyer-option-price-field {
-    display: none !important;
+/* B. Fixed Price: choice | Item Price | Stock | × */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-fixed-row {
+    grid-template-columns: minmax(40px, 1fr) 112px 64px 16px !important;
+    column-gap: 6px !important;
+    align-items: end !important;
 }
 
-/* Contextual pricing in Connect Choices:
-   only non-base groups get editable Additional inputs. */
-.variant-context-price-card.is-additional {
-    background: #FFFFFF;
-    border-color: #E7D8D4;
+/* B2. Fixed + stock hidden (matrix): choice | Item Price | × */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-fixed-row:has(.stock-managed-by-matrix) {
+    grid-template-columns: minmax(40px, 1fr) 112px 16px !important;
 }
 
-.variant-context-price-card.is-additional label {
-    color: #7D6761;
+/* C. Walang price (non-base / naghihintay ng source): choice | Stock | × */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-no-master-price,
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-awaiting-source {
+    grid-template-columns: minmax(0, 1fr) 64px 16px !important;
+    column-gap: 6px !important;
+    align-items: end !important;
 }
 
-.variant-context-base-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #E7C8C2;
-    border-radius: 8px;
-    background: #FFF8F6;
-    box-sizing: border-box;
+/* C2. Non-base + stock hidden (matrix): choice | × */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-no-master-price:has(.stock-managed-by-matrix),
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-awaiting-source:has(.stock-managed-by-matrix) {
+    grid-template-columns: minmax(0, 1fr) 16px !important;
 }
 
-.variant-context-base-summary strong {
-    font-size: 9px;
-    font-weight: 600;
-    color: #7B1B1B;
-}
-
-.variant-context-base-summary span {
-    font-size: 10px;
-    font-weight: 700;
-    color: #7B1B1B;
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   FINAL LAYOUT FIX
-   - Base Price input never overlaps with ₱ prefix
-   - Connect Choices pricing cards stay under their own columns
-========================================================== */
-
-/* Base-price row gets a little more room for the price field. */
-#productVariationsContainer > *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source),
-#productColorsContainer > *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source),
-#productSizesContainer > *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source) {
-    grid-template-columns:
-        minmax(72px, 1fr)
-        128px
-        16px !important;
-    column-gap: 8px !important;
-    align-items: center !important;
-}
-
-/* When connected stock is active, stock is hidden, so the
-   base-price row becomes: choice | base price | remove. */
-#productVariationsContainer > * .buyer-option-stock-field.stock-managed-by-matrix,
-#productColorsContainer > * .buyer-option-stock-field.stock-managed-by-matrix,
-#productSizesContainer > * .buyer-option-stock-field.stock-managed-by-matrix {
-    display: none !important;
-}
-
-.buyer-option-price-field {
-    width: 128px !important;
-    min-width: 128px !important;
-    max-width: 128px !important;
-    overflow: visible !important;
-}
-
-.buyer-option-price-field label {
+/* Item Price laging kita sa Fixed row */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> *.buyer-option-fixed-row .buyer-option-price-field {
     display: block !important;
-    width: 100% !important;
-    margin: 0 0 4px 0 !important;
-    padding: 0 !important;
-    font-size: 8px !important;
-    line-height: 1.1 !important;
-    text-align: left !important;
-    white-space: nowrap !important;
 }
 
-/* Force the price control to behave as one clean bordered field. */
-.buyer-option-price-field .create-product-prefix-field {
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-    width: 128px !important;
-    min-width: 128px !important;
-    max-width: 128px !important;
+/* Sukat */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+.buyer-option-price-field {
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+}
+
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+.buyer-option-stock-field {
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+}
+
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+.buyer-option-price-field .create-option-price-box input {
+    padding-left: 24px !important;
+    padding-right: 6px !important;
+}
+
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+.buyer-option-stock-field input {
     height: 34px !important;
-    padding: 0 !important;
-    border: 1px solid #DCCBC6 !important;
-    border-radius: 8px !important;
-    background: #FFFFFF !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-}
-
-.buyer-option-price-field .create-product-prefix-field > span {
-    position: static !important;
-    inset: auto !important;
-    transform: none !important;
-    flex: 0 0 24px !important;
-    width: 24px !important;
-    min-width: 24px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    text-align: right !important;
-    font-size: 9px !important;
-    line-height: 34px !important;
-    color: #6F5D58 !important;
-    pointer-events: none !important;
-}
-
-.buyer-option-price-field .create-product-prefix-field input {
-    position: static !important;
-    inset: auto !important;
-    transform: none !important;
-    flex: 1 1 auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: 32px !important;
-    margin: 0 !important;
-    padding: 0 8px 0 5px !important;
-    border: 0 !important;
-    outline: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
+    padding: 0 6px !important;
+    text-align: center !important;
     font-size: 10px !important;
-    line-height: 32px !important;
-    color: #332C29 !important;
-    box-sizing: border-box !important;
 }
 
-/* If the generated field has no prefix wrapper, still keep it tidy. */
-.buyer-option-price-field > input[type="number"] {
-    width: 128px !important;
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+.buyer-option-price-field input {
     height: 34px !important;
-    padding: 0 9px !important;
-    border: 1px solid #DCCBC6 !important;
-    border-radius: 8px !important;
-    background: #FFFFFF !important;
-    box-sizing: border-box !important;
+    font-size: 10px !important;
 }
 
-/* Remove browser number-input visual crowding where supported. */
+/* Read-only look ng Item Price (Fixed) */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+.buyer-option-fixed-row .create-option-price-input:disabled {
+    background: #F5F2F1 !important;
+    color: #77716E !important;
+    cursor: not-allowed;
+}
+
+/* Alisin ang spinner arrows */
+.buyer-option-stock-field input[type="number"],
 .buyer-option-price-field input[type="number"] {
-    appearance: textfield;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
+.buyer-option-stock-field input[type="number"]::-webkit-inner-spin-button,
+.buyer-option-stock-field input[type="number"]::-webkit-outer-spin-button,
 .buyer-option-price-field input[type="number"]::-webkit-inner-spin-button,
 .buyer-option-price-field input[type="number"]::-webkit-outer-spin-button {
-    margin: 0;
     -webkit-appearance: none;
+    margin: 0;
 }
 
-/* ---------------------------------------------------------
-   Connect Choices: exact 3-column alignment.
-   Variation = column 1
-   Color     = column 2
-   Size      = column 3
----------------------------------------------------------- */
-.variant-context-price-fields {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 9px !important;
-    align-items: stretch !important;
-    width: 100% !important;
+/* × button nasa parehong row */
+:is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> * > button {
+    align-self: end !important;
 }
 
-.variant-context-price-card,
-.variant-context-base-summary {
-    min-width: 0 !important;
-    width: 100% !important;
-    min-height: 96px !important;
-    box-sizing: border-box !important;
-}
-
-.variant-context-base-summary {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    gap: 7px !important;
-    padding: 10px 12px !important;
-}
-
-.variant-context-base-summary strong {
-    display: block !important;
-    width: 100% !important;
-    font-size: 9px !important;
-}
-
-.variant-context-base-summary span {
-    display: block !important;
-    width: 100% !important;
-    font-size: 11px !important;
-    text-align: left !important;
-}
-
-.variant-context-price-card {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-}
-
-.variant-context-price-wrap {
-    width: 100% !important;
-    height: 34px !important;
-}
-
-.variant-context-price-wrap span {
-    flex: 0 0 24px !important;
-    width: 24px !important;
-    min-width: 24px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    text-align: right !important;
-    line-height: 34px !important;
-}
-
-.variant-context-price-wrap input {
-    width: auto !important;
-    min-width: 0 !important;
-    height: 32px !important;
-    padding: 0 8px 0 5px !important;
-}
-
-@media (max-width: 760px) {
-    .variant-context-price-fields {
-        grid-template-columns: 1fr !important;
-    }
-
-    .variant-context-price-card,
-    .variant-context-base-summary {
-        grid-column: 1 !important;
-    }
-}
-
-
-/* =========================================================
-   FINAL V2: BASE PRICE + CONNECT CHOICES ALIGNMENT
-========================================================== */
-
-/* Make the selected master Base Price field wider and keep
-   the peso sign physically separated from the numeric value. */
-.buyer-option-price-field[data-price-kind="base"] {
-    width: 136px !important;
-    min-width: 136px !important;
-    max-width: 136px !important;
-    overflow: visible !important;
-}
-
-.buyer-option-price-field[data-price-kind="base"] .create-product-prefix-field {
-    position: relative !important;
-    display: block !important;
-    width: 136px !important;
-    min-width: 136px !important;
-    max-width: 136px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    border: 1px solid #DCCBC6 !important;
-    border-radius: 8px !important;
-    background: #FFFFFF !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-}
-
-.buyer-option-price-field[data-price-kind="base"] .create-product-prefix-field > span {
-    position: absolute !important;
-    left: 10px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 14px !important;
-    min-width: 14px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    text-align: left !important;
-    font-size: 9px !important;
-    line-height: 1 !important;
-    color: #6F5D58 !important;
-    pointer-events: none !important;
-    z-index: 2 !important;
-}
-
-.buyer-option-price-field[data-price-kind="base"] .create-product-prefix-field input {
-    position: static !important;
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    height: 34px !important;
-    margin: 0 !important;
-    padding: 0 10px 0 32px !important;
-    border: 0 !important;
-    outline: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-    font-size: 10px !important;
-    line-height: 34px !important;
-    color: #332C29 !important;
-    text-align: left !important;
-}
-
-/* If inventory.js generates a plain numeric input instead of a
-   prefix wrapper, still leave enough room at the left side. */
-.buyer-option-price-field[data-price-kind="base"] > input[type="number"] {
-    width: 136px !important;
-    height: 36px !important;
-    padding: 0 10px 0 14px !important;
-    border: 1px solid #DCCBC6 !important;
-    border-radius: 8px !important;
-    background: #FFFFFF !important;
-    box-sizing: border-box !important;
-}
-
-/* Visually force the selected master field label to Base Price
-   even if the legacy inventory.js writes "Item Price" later. */
-.buyer-option-price-field[data-price-kind="base"] > label {
-    font-size: 0 !important;
-    line-height: 1 !important;
-    min-height: 9px !important;
-}
-
-.buyer-option-price-field[data-price-kind="base"] > label::after {
-    content: "Base Price";
-    font-size: 8px !important;
-    line-height: 1.1 !important;
-    color: #7B1B1B !important;
-    font-weight: 600 !important;
-}
-
-/* Base-price master row = choice | base price | remove
-   when connected stock owns the stock input. */
-#productVariationsContainer > *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source),
-#productColorsContainer > *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source),
-#productSizesContainer > *:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source) {
-    grid-template-columns:
-        minmax(76px, 1fr)
-        136px
-        16px !important;
-    column-gap: 8px !important;
-    align-items: center !important;
-}
-
-/* ---------------------------------------------------------
-   Connect Choices pricing cards:
-   all cards must occupy THE SAME ROW as each other.
-   Their column follows Variation / Color / Size.
----------------------------------------------------------- */
-.variant-context-price-fields {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: auto !important;
-    gap: 9px !important;
-    align-items: stretch !important;
-    width: 100% !important;
-}
-
-.variant-context-base-summary,
-.variant-context-price-card {
-    grid-row: 1 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 96px !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-}
-
-@media (max-width: 760px) {
-    .variant-context-base-summary,
-    .variant-context-price-card {
-        grid-column: 1 !important;
-        grid-row: auto !important;
-    }
+/* Auto-computed stock field (varies pricing mode) */
+#createProductStock[readonly] {
+    background: #F5F2F1;
+    color: #77716E;
+    cursor: not-allowed;
 }

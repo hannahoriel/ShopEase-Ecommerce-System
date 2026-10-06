@@ -50,6 +50,44 @@ class MultiStepRegistrationPersistenceTest extends TestCase
         ]);
     }
 
+    public function test_buyer_can_complete_registration_without_street_or_house_number(): void
+    {
+        $response = $this->withSession([
+            'buyer_registration' => [
+                'last_name' => 'Tan',
+                'first_name' => 'Sean',
+                'middle_initial' => 'B.',
+                'sex' => 'male',
+                'email' => 'sean.buyer@example.com',
+                'contact_no' => '09123456789',
+                'birthday' => '2000-02-05',
+                'province' => 'Agusan Del Norte',
+                'municipality' => 'Carmen',
+                'barangay' => 'Cahayagan',
+                'street' => null,
+                'house_no' => null,
+                'password' => 'Password123!',
+                'password_confirmation' => 'Password123!',
+            ],
+            'buyer_registration_verification' => [
+                'email' => 'sean.buyer@example.com',
+                'code' => Hash::make('123456'),
+                'expires_at' => now()->addMinutes(10),
+                'verified' => true,
+            ],
+        ])->post(route('buyer.register.complete'));
+
+        $response->assertRedirect(route('login'));
+        $user = User::where('email', 'sean.buyer@example.com')->firstOrFail();
+
+        $this->assertDatabaseHas('buyers', [
+            'user_id' => $user->id,
+            'street' => '',
+            'house_number' => '',
+            'registration_status' => 'pending',
+        ]);
+    }
+
     public function test_underage_buyer_cannot_complete_registration(): void
     {
         $response = $this->withSession([

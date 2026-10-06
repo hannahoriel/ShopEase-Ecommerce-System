@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\UploadedFile;
 
 class InventoryController extends Controller
 {
@@ -53,6 +54,42 @@ class InventoryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $seller = $this->sellerForAuthUser($request->user());
+        $optionGroups = [
+            'variations' => ['input' => 'variation_items', 'type' => 'variation'],
+            'colors' => ['input' => 'color_items', 'type' => 'color'],
+            'sizes' => ['input' => 'size_items', 'type' => 'size'],
+        ];
+        $pricingMode = $request->input('pricing_mode', 'fixed');
+        $pricingSource = $request->input('pricing_source');
+
+        if ($pricingMode === 'varies') {
+            if (!isset($optionGroups[$pricingSource]) || !$request->input($optionGroups[$pricingSource]['input'])) {
+                foreach ($optionGroups as $source => $group) {
+                    if ($request->input($group['input'])) {
+                        $pricingSource = $source;
+                        break;
+                    }
+                }
+            }
+
+            if (isset($optionGroups[$pricingSource])) {
+                $groupInput = $optionGroups[$pricingSource]['input'];
+                $sourceOptions = $request->input($groupInput, []);
+                $baseOption = collect($sourceOptions)->first(
+                    fn ($option) => is_array($option)
+                        && isset($option['price'])
+                        && is_numeric($option['price'])
+                );
+
+                $request->merge([
+                    'pricing_source' => $pricingSource,
+                    'price' => $baseOption['price'] ?? $request->input('price'),
+                    'stock_quantity' => collect($sourceOptions)->sum(
+                        fn ($option) => (int) ($option['stock'] ?? 0)
+                    ),
+                ]);
+            }
+        }
 
         if ($request->has('title') || $request->has('name')) {
             $request->merge([
@@ -77,10 +114,30 @@ class InventoryController extends Controller
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock_quantity' => ['required', 'integer', 'min:0'],
+            'pricing_mode' => ['nullable', Rule::in(['fixed', 'varies'])],
+            'pricing_source' => [Rule::requiredIf($pricingMode === 'varies'), 'nullable', Rule::in(['variations', 'colors', 'sizes'])],
             'status' => ['nullable', 'string', 'max:50'],
             'category' => ['nullable', 'string', 'max:255'],
             'photos' => ['sometimes', 'array'],
             'photos.*' => ['nullable', 'string'],
+            'variation_items' => ['sometimes', 'array'],
+            'variation_items.*.name' => ['required', 'string', 'max:120'],
+            'variation_items.*.price' => ['required', 'numeric', 'min:0'],
+            'variation_items.*.stock' => ['required', 'integer', 'min:0'],
+            'variation_items.*.price_type' => ['nullable', Rule::in(['base', 'addon'])],
+            'variation_items.*.photo' => ['nullable'],
+            'color_items' => ['sometimes', 'array'],
+            'color_items.*.name' => ['required', 'string', 'max:120'],
+            'color_items.*.price' => ['required', 'numeric', 'min:0'],
+            'color_items.*.stock' => ['required', 'integer', 'min:0'],
+            'color_items.*.price_type' => ['nullable', Rule::in(['base', 'addon'])],
+            'color_items.*.photo' => ['nullable'],
+            'size_items' => ['sometimes', 'array'],
+            'size_items.*.name' => ['required', 'string', 'max:120'],
+            'size_items.*.price' => ['required', 'numeric', 'min:0'],
+            'size_items.*.stock' => ['required', 'integer', 'min:0'],
+            'size_items.*.price_type' => ['nullable', Rule::in(['base', 'addon'])],
+            'size_items.*.photo' => ['nullable'],
         ]);
 
         $product = $seller->products()->create([
@@ -88,12 +145,34 @@ class InventoryController extends Controller
             'sku' => $validated['sku'] ?? null,
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
+            'pricing_mode' => $validated['pricing_mode'] ?? 'fixed',
+            'pricing_source' => $validated['pricing_source'] ?? null,
             'stock_quantity' => (int) $validated['stock_quantity'],
             'status' => $validated['status'] ?? 'pending',
             'category' => $validated['category'] ?? null,
             'photos' => $this->normalizePhotos($validated['photos'] ?? $request->input('photos')),
             'is_archived' => false,
         ]);
+
+        foreach ($optionGroups as $group) {
+            foreach ($validated[$group['input']] ?? [] as $index => $option) {
+                $photo = $option['photo'] ?? null;
+
+                if ($photo instanceof UploadedFile) {
+                    $photo = $photo->store('product-options', 'public');
+                }
+
+                $product->options()->create([
+                    'type' => $group['type'],
+                    'name' => $option['name'],
+                    'price' => $option['price'],
+                    'stock' => $option['stock'],
+                    'price_type' => $option['price_type'] ?? 'addon',
+                    'photo' => is_string($photo) ? $photo : null,
+                    'sort_order' => $index,
+                ]);
+            }
+        }
 
         return response()->json($this->serializeProduct($product), 201);
     }

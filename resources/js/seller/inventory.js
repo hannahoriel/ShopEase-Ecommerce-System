@@ -8520,6 +8520,32 @@ document.addEventListener(
                     return [];
                 }
 
+                function syncVariableProductStock() {
+                    if (!createProductStock || pricingMode !== 'varies') {
+                        return;
+                    }
+
+                    const totalStock = ['variations', 'colors', 'sizes']
+                        .reduce(
+                            function (sum, group) {
+                                return sum + getPricingGroupItems(group).reduce(
+                                    function (total, item) {
+                                        return total + (Number.parseInt(item.stock, 10) || 0);
+                                    },
+                                    0
+                                );
+                            },
+                            0
+                        );
+
+                    createProductStock.value = String(totalStock);
+
+                    const stockDisplay = document.getElementById('categorySpec_stock_display');
+                    if (stockDisplay) {
+                        stockDisplay.value = String(totalStock);
+                    }
+                }
+
                 function getPricingGroupLabel(group) {
                     if (group === 'variations') return 'Variations';
                     if (group === 'colors') return 'Colors';
@@ -8597,6 +8623,10 @@ document.addEventListener(
                         label:
                             pricingMode === 'fixed'
                                 ? 'Item Price'
+                                : group === 'variations'
+                                ? isPrimary
+                                    ? 'Variation Price'
+                                    : 'Variation Add-on'
                                 : isPrimary
                                 ? 'Item Price'
                                 : 'Additional',
@@ -8722,6 +8752,7 @@ document.addEventListener(
 
                     input.addEventListener('input', function () {
                         item.stock = input.value;
+                        syncVariableProductStock();
                     });
 
                     box.appendChild(input);
@@ -8745,6 +8776,8 @@ document.addEventListener(
                         productSizes,
                         'sizes'
                     );
+
+                    syncVariableProductStock();
                 }
 
                 function applyPricingMode(mode) {
@@ -8796,6 +8829,17 @@ document.addEventListener(
                             createProductPrice.value =
                                 '';
                         }
+                    }
+
+                    if (createProductStock) {
+                        createProductStock.readOnly =
+                            isVariable;
+
+                        createProductStock.disabled =
+                            false;
+
+                        createProductStock.required =
+                            !isVariable;
                     }
 
                     if (isVariable) {

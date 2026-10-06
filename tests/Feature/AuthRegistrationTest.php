@@ -209,6 +209,41 @@ class AuthRegistrationTest extends TestCase
             ->assertSee('registration-search');
     }
 
+    public function test_getting_approval_url_redirects_without_approving_registration(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $registration = Registration::create([
+            'user_type' => User::ROLE_BUYER,
+            'last_name' => 'Buyer',
+            'first_name' => 'Pending',
+            'sex' => 'female',
+            'birthdate' => '2000-01-15',
+            'email' => 'pending.buyer@example.com',
+            'phone' => '09170000001',
+            'password' => Hash::make('Password123!'),
+            'province' => 'Cebu',
+            'municipality' => 'Cebu City',
+            'barangay' => 'Lahug',
+            'street' => 'Main Street',
+            'house_no' => '10',
+            'zip_code' => '6000',
+            'valid_id_path' => 'ids/buyer.jpg',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.approve.get', $registration))
+            ->assertRedirect(route('admin.registrations'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('registrations', [
+            'id' => $registration->id,
+            'status' => 'pending',
+        ]);
+    }
+
     public function test_rejected_user_cannot_login_even_with_valid_credentials(): void
     {
         $password = 'Password123!';

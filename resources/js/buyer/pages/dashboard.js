@@ -1,5 +1,52 @@
 document.addEventListener('DOMContentLoaded', () => {
-            /* My Purchases card navigation */
+            /* ─── Config ─────────────────────────────────────────── */
+            const configEl = document.getElementById('buyerDashboardConfig');
+            const config = configEl ? JSON.parse(configEl.textContent) : {};
+            const productsUrl    = config.productsUrl   || '';
+            const productBaseUrl = config.productBaseUrl || '/buyer/product';
+            const cartUrl        = config.cartUrl        || '/api/v1/buyer/cart';
+            const apiToken       = config.apiToken       || '';
+            const cartIconUrl    = '/icons/buyer/product-cart.png';
+
+            /* ─── API helper ─────────────────────────────────────── */
+            function apiFetch(url, options = {}) {
+                return fetch(url, {
+                    ...options,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        ...(apiToken ? { 'Authorization': 'Bearer ' + apiToken } : {}),
+                        ...(options.headers || {}),
+                    },
+                    credentials: 'same-origin',
+                });
+            }
+
+            /* ─── Add to cart ────────────────────────────────────── */
+            function addToCart(productId, button) {
+                if (!cartUrl || !apiToken) return;
+
+                button.disabled = true;
+
+                apiFetch(cartUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ product_id: productId, quantity: 1 }),
+                })
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed');
+                        return res.json();
+                    })
+                    .then(() => {
+                        window.location.href = '/buyer/cart';
+                    })
+                    .catch(() => {
+                        button.disabled = false;
+                        button.innerHTML = `<img src="${escapeHtml(cartIconUrl)}" alt="" class="clean-icon" data-clean-bg="true">`;
+                    });
+            }
+
+            /* ─── My Purchases card navigation ───────────────────── */
             const buyerPurchasesCard =
                 document.getElementById('buyerPurchasesCard');
 
@@ -32,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const recommendedProducts = document.getElementById('recommendedProducts');
 
-            /* Announcement carousel */
+            /* ─── Announcement carousel ──────────────────────────── */
             const announcementCarousel =
                 document.getElementById('buyerAnnouncementCarousel');
 
@@ -149,18 +196,28 @@ document.addEventListener('DOMContentLoaded', () => {
             showAnnouncement(0);
             startAnnouncementAutoPlay();
 
-            /* Category selection */
+            /* ─── Category selection ─────────────────────────────── */
             const categoryCards = document.querySelectorAll('.category-card');
+            let activeCategory = '';
 
             categoryCards.forEach((card) => {
                 card.addEventListener('click', () => {
+                    const isAlreadySelected = card.classList.contains('selected');
+
                     categoryCards.forEach((item) => item.classList.remove('selected'));
-                    card.classList.add('selected');
-                    console.log('Selected category:', card.dataset.category || '');
+
+                    if (isAlreadySelected) {
+                        activeCategory = '';
+                    } else {
+                        card.classList.add('selected');
+                        activeCategory = card.dataset.category || '';
+                    }
+
+                    loadProducts({ category: activeCategory });
                 });
             });
 
-            /* View all categories */
+            /* ─── View all categories ────────────────────────────── */
             document.getElementById('viewAllCategories')?.addEventListener('click', () => {
                 document.getElementById('buyerCategories')?.scrollIntoView({
                     behavior: 'smooth',
@@ -168,47 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            /* Favorites */
-            document.querySelectorAll('.favorite-button').forEach((button) => {
-                button.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                    const active = button.classList.toggle('is-favorite');
-                    button.textContent = active ? '♥' : '♡';
-                    button.setAttribute('aria-pressed', active ? 'true' : 'false');
-                });
-            });
-
-            /* Add to cart */
-            document.querySelectorAll('.product-cart-button').forEach((button) => {
-                button.addEventListener('click', (event) => {
-                    event.stopPropagation();
-
-                    const image = button.querySelector('img');
-                    const originalSrc = image?.getAttribute('src');
-
-                    button.classList.add('added');
-                    button.innerHTML = '<span style="font-size:12px;font-weight:700;color:#477B4E;">✓</span>';
-
-                    window.setTimeout(() => {
-                        button.classList.remove('added');
-                        button.innerHTML = '';
-
-                        if (originalSrc) {
-                            const newImage = document.createElement('img');
-                            newImage.src = originalSrc;
-                            newImage.alt = '';
-                            newImage.width = 18;
-                            newImage.height = 18;
-                            newImage.className = 'clean-icon';
-                            newImage.dataset.cleanBg = 'true';
-                            button.appendChild(newImage);
-                            removePngBackground(newImage);
-                        }
-                    }, 900);
-                });
-            });
-
-            /* Latest notifications */
+            /* ─── Latest notifications ───────────────────────────── */
             document.querySelectorAll('.notification-row').forEach((notification) => {
                 notification.addEventListener('click', () => {
                     notification.classList.remove('is-unread');
@@ -220,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            /* Purchase status navigation */
+            /* ─── Purchase status navigation ─────────────────────── */
             document.querySelectorAll('.purchase-card').forEach((card) => {
                 card.addEventListener('click', (event) => {
                     event.stopPropagation();
@@ -234,10 +251,142 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
+            /* ─── Product rendering ──────────────────────────────── */
+            function escapeHtml(str) {
+                return String(str ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function formatPrice(price) {
+                return '\u20b1' + Number(price).toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            }
+
+            function buildProductCard(product) {
+                const productUrl = productBaseUrl + '?id=' + encodeURIComponent(product.id);
+                const hasImage   = product.image_url && !product.image_url.startsWith('data:');
+
+                const imageHtml = hasImage
+                    ? `<img src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
+                    : `<div class="product-art-placeholder" aria-hidden="true"></div>`;
+
+                return `
+                    <a href="${escapeHtml(productUrl)}" class="product-card">
+                        <div class="product-image-box">
+                            <button type="button" class="favorite-button" aria-label="Add to favorites" data-product-id="${escapeHtml(product.id)}">♡</button>
+                            ${imageHtml}
+                        </div>
+                        <h3>${escapeHtml(product.name)}</h3>
+                        <p class="product-rating">
+                            <span class="rating-star">★</span>
+                            <span class="sold-count">${escapeHtml(product.seller?.store_name || '')}</span>
+                        </p>
+                        <div class="product-bottom-row">
+                            <strong>${escapeHtml(formatPrice(product.price))}</strong>
+                            <button type="button" class="product-cart-button" aria-label="Add ${escapeHtml(product.name)} to cart" data-product-id="${escapeHtml(product.id)}">
+                                <img src="${escapeHtml(cartIconUrl)}" alt="" class="clean-icon" data-clean-bg="true">
+                            </button>
+                        </div>
+                    </a>`;
+            }
+
+            function renderProducts(products) {
+                if (!recommendedProducts) return;
+
+                if (!products.length) {
+                    recommendedProducts.innerHTML =
+                        '<p class="products-empty-state">No products available yet. Check back soon!</p>';
+                    return;
+                }
+
+                recommendedProducts.innerHTML = products
+                    .map(buildProductCard)
+                    .join('');
+
+                attachProductCardListeners();
+            }
+
+            function attachProductCardListeners() {
+                recommendedProducts?.querySelectorAll('.favorite-button').forEach((button) => {
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const active = button.classList.toggle('is-favorite');
+                        button.textContent = active ? '\u2665' : '\u2661';
+                        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+                    });
+                });
+
+                recommendedProducts?.querySelectorAll('.product-cart-button').forEach((button) => {
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const pid = button.dataset.productId;
+                        if (pid) window.location.href = productBaseUrl + '?id=' + encodeURIComponent(pid);
+                    });
+                });
+            }
+
+            /* ─── Fetch products from API ────────────────────────── */
+            function loadProducts(params = {}) {
+                if (!productsUrl || !recommendedProducts) return;
+
+                const loadingEl = document.getElementById('recommendedProductsLoading');
+
+                if (loadingEl) {
+                    loadingEl.style.display = 'block';
+                }
+
+                recommendedProducts.innerHTML =
+                    '<div id="recommendedProductsLoading" class="products-loading-state">Loading products…</div>';
+
+                const url = new URL(productsUrl, window.location.origin);
+
+                if (params.category) {
+                    url.searchParams.set('category', params.category);
+                }
+
+                if (params.search) {
+                    url.searchParams.set('search', params.search);
+                }
+
+                url.searchParams.set('per_page', '24');
+
+                fetch(url.toString(), {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        ...(apiToken ? { 'Authorization': 'Bearer ' + apiToken } : {}),
+                    },
+                    credentials: 'same-origin',
+                })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error('Failed to load products.');
+                        }
+                        return response.json();
+                    })
+                    .then((json) => {
+                        renderProducts(json.data || []);
+                    })
+                    .catch(() => {
+                        if (recommendedProducts) {
+                            recommendedProducts.innerHTML =
+                                '<p class="products-empty-state">Could not load products. Please refresh the page.</p>';
+                        }
+                    });
+            }
+
+            /* ─── Initial load ───────────────────────────────────── */
+            loadProducts();
+
             /*
              * Remove a baked square/pastel background from supplied PNG icons.
-             * It samples the edge/background color and flood-fills only connected
-             * pixels close to that color, preserving the central icon artwork.
              */
             function removePngBackground(img) {
                 if (!img || img.dataset.cleaned === 'true') return;

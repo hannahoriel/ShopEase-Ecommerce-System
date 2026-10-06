@@ -353,7 +353,7 @@
          - Other groups use Additional (+₱)
          - Compact sizing / no overlap
     ====================================================== --}}
-    
+
 
 </head>
 
@@ -1418,6 +1418,7 @@
             <form
                 id="addProductForm"
                 class="create-product-form"
+                novalidate
             >
 
                 <div class="create-product-scroll">
@@ -1595,7 +1596,6 @@
                                     type="number"
                                     min="0"
                                     step="1"
-                                    required
                                     placeholder="0"
                                 >
                             </div>
@@ -3767,7 +3767,7 @@
              Large Additional = ₱10
              Final = ₱730
     ========================================================== --}}
-    
+
 
 </body>
 

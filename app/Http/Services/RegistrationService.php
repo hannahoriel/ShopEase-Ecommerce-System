@@ -193,8 +193,8 @@ class RegistrationService
                 'province' => $data['province'],
                 'municipality' => $data['municipality'],
                 'barangay' => $data['barangay'],
-                'street' => $data['street'] ?? null,
-                'house_number' => $data['house_number'] ?? null,
+                'street' => $data['street'] ?? '',
+                'house_number' => $data['house_number'] ?? '',
                 'upload_id' => $data['valid_id_path'] ?? null,
                 'registration_status' => 'pending',
             ]);

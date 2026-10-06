@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
+use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 
 Route::prefix('v1')->group(function () {
 
@@ -51,6 +53,18 @@ Route::prefix('v1')->group(function () {
                 Route::post('products/{product}/warn', 'warnProduct');
                 Route::post('products/{product}/remove', 'removeProduct');
             });
+        });
+
+        Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
+            Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
+
+            // Cart
+            Route::get('/cart', [BuyerCartController::class, 'index'])->name('buyer.api.cart.index');
+            Route::post('/cart', [BuyerCartController::class, 'store'])->name('buyer.api.cart.store');
+            Route::patch('/cart/{item}', [BuyerCartController::class, 'update'])->name('buyer.api.cart.update');
+            Route::delete('/cart/{item}', [BuyerCartController::class, 'destroy'])->name('buyer.api.cart.destroy');
+            Route::delete('/cart', [BuyerCartController::class, 'clear'])->name('buyer.api.cart.clear');
         });
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
