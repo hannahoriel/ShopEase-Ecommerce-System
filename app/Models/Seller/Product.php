@@ -43,6 +43,7 @@ class Product extends Model
         'colors',
         'sizes',
         'specifications',
+        'connected_variants',
     ];
 
     public function seller(): BelongsTo
@@ -58,6 +59,29 @@ class Product extends Model
     public function productSpecifications(): HasMany
     {
         return $this->hasMany(ProductSpecification::class)->orderBy('sort_order');
+    }
+
+    public function connectedVariants(): HasMany
+    {
+        return $this->hasMany(ProductVariantCombination::class)->orderBy('sort_order');
+    }
+
+    public function getConnectedVariantsAttribute(): array
+    {
+        return $this->connectedVariants()
+            ->get()
+            ->map(fn (ProductVariantCombination $variant) => [
+                ...($variant->choices ?? []),
+                'pricing_mode' => $variant->pricing_mode,
+                'pricing_source' => $variant->pricing_source,
+                'base_price' => (float) $variant->base_price,
+                'additions' => $variant->additions ?? [],
+                'additional_price' => (float) $variant->additional_price,
+                'final_price' => (float) $variant->final_price,
+                'stock' => $variant->stock,
+                'available' => $variant->available,
+            ])
+            ->all();
     }
 
     public function reviews(): HasMany
