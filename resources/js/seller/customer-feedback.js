@@ -47,6 +47,70 @@ document.addEventListener('DOMContentLoaded', () => {
         ).join('');
     }
 
+    function categoryPillClass(category) {
+        const slug = String(category || '')
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+        const aliases = {
+            'electronics-gadgets': 'electronics-and-gadgets',
+            'automotive-and-motorcycle': 'automotive-motorcycle',
+        };
+        const normalized = aliases[slug] || slug;
+        const knownCategories = [
+            'pet-supplies',
+            'electronics-and-gadgets',
+            'womens-apparel',
+            'mens-apparel',
+            'kids-and-baby',
+            'home-and-garden',
+            'sports-and-outdoors',
+            'health-and-beauty',
+            'books-and-media',
+            'food-and-gourmet',
+            'automotive-motorcycle',
+            'furniture-and-office-equipment',
+            'jewelry-and-watches',
+            'office-and-school-supplies',
+        ];
+        return knownCategories.includes(normalized)
+            ? `category-${normalized}`
+            : 'category-default';
+    }
+
+    function categoryDisplayName(category) {
+        const slug = String(category || '')
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+        const aliases = {
+            'electronics-gadgets': 'electronics-and-gadgets',
+            'automotive-and-motorcycle': 'automotive-motorcycle',
+        };
+        const labels = {
+            'pet-supplies': 'Pet Supplies',
+            'electronics-and-gadgets': 'Electronics and Gadgets',
+            'womens-apparel': "Women's Apparel",
+            'mens-apparel': "Men's Apparel",
+            'kids-and-baby': 'Kids and Baby',
+            'home-and-garden': 'Home and Garden',
+            'sports-and-outdoors': 'Sports and Outdoors',
+            'health-and-beauty': 'Health and Beauty',
+            'books-and-media': 'Books and Media',
+            'food-and-gourmet': 'Food and Gourmet',
+            'automotive-motorcycle': 'Automotive & Motorcycle',
+            'furniture-and-office-equipment': 'Furniture and Office Equipment',
+            'jewelry-and-watches': 'Jewelry and Watches',
+            'office-and-school-supplies': 'Office and School Supplies',
+        };
+        const normalized = aliases[slug] || slug;
+        return labels[normalized] || String(category || '').trim().replace(/-/g, ' ');
+    }
+
     function renderFeedbackRow(review) {
         const sentiment = review.rating >= 4 ? 'positive' : (review.rating === 3 ? 'neutral' : 'negative');
         const date = formatDate(review.created_at);
@@ -200,6 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const payload = await apiFetch(`${config.url}/products/${productId}`);
             if (name) name.textContent = payload.product.name;
+            const category = document.getElementById('modalProductCategory');
+            if (category) {
+                category.textContent = categoryDisplayName(payload.product.category) || 'Uncategorized';
+                const pill = category.closest('.category-pill');
+                if (pill) {
+                    pill.className = `category-pill ${categoryPillClass(payload.product.category)}`;
+                }
+            }
             const summary = payload.summary;
             if (score) score.textContent = `${Number(summary.average_rating).toFixed(1)} out of 5`;
             if (count) count.textContent = `(${summary.total_reviews} reviews)`;

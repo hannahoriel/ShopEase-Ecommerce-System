@@ -90,6 +90,7 @@ class CustomerFeedbackController extends Controller
             'product' => [
                 'id' => $product->id,
                 'name' => $product->name,
+                'category' => $product->category,
                 'image_url' => $this->productImage($product),
             ],
             'summary' => [

@@ -22,6 +22,18 @@ document.addEventListener('DOMContentLoaded', function () {
         })[character]);
     }
 
+    function productImageUrl(item) {
+        const photos = item.product?.photos;
+        const photo = Array.isArray(photos)
+            ? photos.find((value) => typeof value === 'string' && value.trim())
+            : null;
+        if (!photo) return null;
+        if (/^(data:|https?:\/\/)/i.test(photo)) return photo;
+
+        const path = photo.replace(/^\/+/, '').replace(/^storage\//, '');
+        return path ? `/storage/${path.split('/').map(encodeURIComponent).join('/')}` : null;
+    }
+
     function renderOrderRows(orders) {
         if (!orderTable) return;
 
@@ -43,17 +55,25 @@ document.addEventListener('DOMContentLoaded', function () {
             const items = order.items || [];
             const itemNames = items.map((item) => item.product_name);
             const createdAt = order.created_at ? new Date(order.created_at) : null;
+            const pickupDate = order.pickup_date_display || '';
+            const pickupTime = order.pickup_time_display || '';
             const orderNumber = order.order_number || `ORD-${order.id}`;
             const customer = order.delivery_name || order.buyer?.name || 'Customer';
             const phone = order.delivery_phone || order.buyer?.contact_no || '';
-            const date = createdAt && !Number.isNaN(createdAt.getTime())
+            const date = pickupDate && ['to_ship', 'to-ship'].includes(order.status)
+                ? formatDateDisplay(pickupDate)
+                : (createdAt && !Number.isNaN(createdAt.getTime())
                 ? new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(createdAt)
-                : '';
-            const time = createdAt && !Number.isNaN(createdAt.getTime())
+                : '');
+            const time = pickupTime && ['to_ship', 'to-ship'].includes(order.status)
+                ? formatTimeDisplay(pickupTime)
+                : (createdAt && !Number.isNaN(createdAt.getTime())
                 ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(createdAt)
-                : '';
+                : '');
             const itemPreview = items.slice(0, 2).map((item) =>
-                `<div class="mini-product" title="${escapeHtml(item.product_name)}"><div class="product-bag"></div></div>`
+                `<div class="mini-product" title="${escapeHtml(item.product_name)}">${productImageUrl(item)
+                    ? `<img src="${escapeHtml(productImageUrl(item))}" alt="${escapeHtml(item.product_name)}">`
+                    : '<div class="product-bag"></div>'}</div>`
             ).join('');
             const moreItems = items.length > 2
                 ? `<span class="more-items">+${items.length - 2} more</span>`
@@ -64,8 +84,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     data-order-id="${Number(order.id)}"
                     data-status="${escapeHtml(order.status === 'pending' ? 'new' : (order.status === 'to_ship' ? 'to-ship' : order.status))}"
                     data-tab="${escapeHtml(order.status === 'pending' ? 'new' : (order.status === 'to_ship' ? 'to-ship' : order.status))}"
-                    data-pickup-date="${escapeHtml(order.pickup_date || '')}"
-                    data-pickup-time="${escapeHtml(order.pickup_time || '')}"
+                    data-pickup-date="${escapeHtml(pickupDate)}"
+                    data-pickup-time="${escapeHtml(pickupTime)}"
                     data-search="${escapeHtml(`${orderNumber} ${customer} ${phone} ${itemNames.join(' ')}`)}">
                     <div class="flex items-center gap-[22px] min-w-0">
                         <div class="order-icon-box ${status.style}"><img src="/icons/seller/order-status/${status.icon}" alt="${escapeHtml(status.label)}"></div>
@@ -412,7 +432,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     return `
                         <div class="modal-item-row">
                             <div class="flex items-center gap-[16px]">
-                                <div class="modal-product-image"><div class="modal-product-bag"></div></div>
+                                <div class="modal-product-image">${productImageUrl(item)
+                                    ? `<img src="${escapeHtml(productImageUrl(item))}" alt="${escapeHtml(item.product_name)}">`
+                                    : '<div class="modal-product-bag"></div>'}</div>
                                 <span class="text-[14px] font-semibold text-[#17120F]">
                                     ${escapeHtml(item.product_name)}${options ? `<small class="block font-normal">${escapeHtml(options)}</small>` : ''}
                                 </span>
@@ -451,6 +473,39 @@ document.addEventListener('DOMContentLoaded', function () {
             setTrackingEvents(row, events);
             renderTrackingHistory(row);
         }
+    }
+
+    async function saveOrderStatus(orderId, payload, method = 'PATCH') {
+        const response = await fetch(
+            method === 'POST'
+                ? `${config.ordersUrl}/${orderId}/schedule`
+                : `${config.ordersUrl}/${orderId}/status`,
+            {
+                method,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+            },
+        );
+
+        let result = {};
+        try {
+            result = await response.json();
+        } catch {
+            // Surface the HTTP status if the API did not return JSON.
+        }
+
+        if (!response.ok) {
+            const validationMessage = Object.values(result.errors || {}).flat()[0];
+            throw new Error(validationMessage || result.message || `Could not save order changes (${response.status}).`);
+        }
+
+        return result;
     }
 
     const trackingHistorySection =
@@ -1170,6 +1225,22 @@ document.addEventListener('DOMContentLoaded', function () {
         lastFocusedElement =
             document.activeElement;
 
+        const itemsSection = document.querySelector('.modal-items-section');
+        if (itemsSection) {
+            itemsSection.innerHTML = '<p class="py-4 text-[13px] text-[#77716E]">Loading order items…</p>';
+        }
+        [
+            'orderModalCustomerName',
+            'orderModalCustomerEmail',
+            'orderModalCustomerPhone',
+            'orderModalCustomerAddress',
+            'orderModalPaymentMethod',
+            'orderModalPaymentDescription',
+        ].forEach((id) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = 'Loading…';
+        });
+
         syncOrderModalFromRow(
             row
         );
@@ -1387,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     orderModalActionButton?.addEventListener(
         'click',
-        function () {
+        async function () {
             if (
                 !selectedOrderRow
             ) {
@@ -1409,8 +1480,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 orderModalActionLabel.textContent =
                     'Preparing...';
 
-                setTimeout(
-                    function () {
+                try {
+                    await saveOrderStatus(
+                        selectedOrderRow.dataset.orderId,
+                        { status: 'preparing', notes: 'Seller started preparing the order.' },
+                    );
                         const stamp =
                             nowTrackingStamp();
 
@@ -1492,9 +1566,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         syncOrderModalFromRow(
                             selectedOrderRow
                         );
-                    },
-                    400
-                );
+                } catch (error) {
+                    alert(error.message);
+                    orderModalActionButton.disabled = false;
+                    orderModalActionLabel.textContent = 'Prepare Order';
+                }
 
                 return;
             }
@@ -1545,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     confirmScheduleShipmentButton?.addEventListener(
         'click',
-        function () {
+        async function () {
             if (
                 !selectedOrderRow
             ) {
@@ -1571,17 +1647,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const scheduledStamp =
-                nowTrackingStamp();
-
             confirmScheduleShipmentButton.disabled =
                 true;
 
             confirmScheduleShipmentButton.textContent =
                 'Scheduling...';
 
-            setTimeout(
-                function () {
+            try {
+                    await saveOrderStatus(
+                        selectedOrderRow.dataset.orderId,
+                        {
+                            pickup_date: pickupDate,
+                            pickup_time: pickupTime,
+                            notes: 'Seller scheduled shipment pickup.',
+                        },
+                        'POST',
+                    );
+                    const scheduledStamp =
+                        nowTrackingStamp();
                     const row =
                         selectedOrderRow;
 
@@ -1727,9 +1810,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     confirmScheduleShipmentButton.textContent =
                         'Schedule Pickup';
-                },
-                400
-            );
+            } catch (error) {
+                alert(error.message);
+                confirmScheduleShipmentButton.disabled = false;
+                confirmScheduleShipmentButton.textContent = 'Schedule Pickup';
+            }
         }
     );
 

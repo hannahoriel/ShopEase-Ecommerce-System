@@ -25,6 +25,7 @@ class ProductReviewTest extends TestCase
         $product = Product::create([
             'seller_id' => $seller->id,
             'name' => 'Canvas tote bag',
+            'category' => 'Electronics & Gadgets',
             'price' => 500,
             'stock_quantity' => 8,
             'status' => 'active',
@@ -61,6 +62,7 @@ class ProductReviewTest extends TestCase
         $this->actingAs($sellerUser)
             ->getJson("/api/v1/seller/feedback/products/{$product->id}")
             ->assertOk()
+            ->assertJsonPath('product.category', 'Electronics & Gadgets')
             ->assertJsonPath('summary.average_rating', 5)
             ->assertJsonPath('data.0.customer', $buyer->name);
 

@@ -30,6 +30,7 @@ class SellerOrderStatusSeederTest extends TestCase
             'seller_id' => $seller->id,
             'name' => 'Actual catalog product',
             'price' => 749.50,
+            'photos' => ['products/actual-catalog-product.jpg'],
             'status' => 'active',
             'is_archived' => false,
         ]);
@@ -84,12 +85,19 @@ class SellerOrderStatusSeederTest extends TestCase
             ->assertOk()
             ->assertJsonPath('items.0.product_id', $product->id)
             ->assertJsonPath('items.0.product_name', 'Actual catalog product')
+            ->assertJsonPath('items.0.product.photos.0', 'products/actual-catalog-product.jpg')
             ->assertJsonPath('buyer.id', $seededReviews[2]->buyer_id);
 
         $this->get('/seller/order-status')
             ->assertOk()
             ->assertSee('sellerOrderStatusConfig')
+            ->assertSee('/storage/products/actual-catalog-product.jpg')
             ->assertSee('Actual catalog product');
+
+        $css = file_get_contents(resource_path('css/seller/order-status.css'));
+        $this->assertIsString($css);
+        $this->assertStringContainsString('text-overflow: ellipsis !important;', $css);
+        $this->assertStringContainsString('minmax(0, 1.45fr)', $css);
     }
 
     public function test_it_does_not_seed_orders_when_no_active_product_exists(): void

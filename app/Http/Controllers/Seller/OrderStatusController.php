@@ -12,7 +12,7 @@ class OrderStatusController extends ApiOrderStatusController
     {
         $seller = $this->sellerFor($request->user());
         $orders = Order::where('seller_id', $seller->id)
-            ->with(['buyer:id,name,email,contact_no', 'items'])
+            ->with(['buyer:id,name,email,contact_no', 'items.product:id,name,photos'])
             ->latest()
             ->get();
         $apiToken = $request->user()->createToken('seller-order-status')->plainTextToken;

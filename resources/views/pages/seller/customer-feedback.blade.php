@@ -900,7 +900,7 @@
                         </span>
 
                         <span class="category-pill">
-                            <span id="modalProductCategory">Product ratings</span>
+                            <span id="modalProductCategory">Uncategorized</span>
                         </span>
 
                     </div>

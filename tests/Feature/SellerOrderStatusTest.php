@@ -70,10 +70,26 @@ class SellerOrderStatusTest extends TestCase
         $this->assertSame('2026-09-18', $scheduledOrder->pickup_date->toDateString());
         $this->assertSame('14:30', $scheduledOrder->pickup_time->format('H:i'));
         $this->assertSame(1, OrderStatusHistory::where('order_id', $order->id)->count());
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/order-status')
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'to_ship')
+            ->assertJsonPath('data.0.pickup_date_display', '2026-09-18')
+            ->assertJsonPath('data.0.pickup_time_display', '14:30');
 
         $this->actingAs($sellerUser)
             ->patchJson("/api/v1/seller/orders/{$order->id}/status", ['status' => 'delivered'])
             ->assertStatus(422);
+
+        $newOrder = $this->order($seller, $buyer, 'pending', 559);
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$newOrder->id}/schedule", [
+                'pickup_date' => '2026-09-18',
+                'pickup_time' => '14:30',
+            ])
+            ->assertStatus(422);
+        $this->assertNull($newOrder->fresh()->pickup_date);
+        $this->assertSame('pending', $newOrder->fresh()->status);
     }
 
     private function seller(string $name): array

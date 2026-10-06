@@ -133,7 +133,21 @@
                             <div class="min-w-0"><p class="customer-name">{{ $customer }}</p><p class="customer-phone">{{ $phone }}</p></div>
                             <div class="flex items-center gap-[10px] min-w-0">
                                 @forelse ($order->items->take(2) as $item)
-                                    <div class="mini-product" title="{{ $item->product_name }}"><div class="product-bag"></div></div>
+                                    @php
+                                        $photo = collect($item->product?->photos ?? [])->first(fn ($value) => is_string($value) && trim($value) !== '');
+                                        $photoUrl = $photo
+                                            ? (str_starts_with($photo, 'data:') || str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')
+                                                ? $photo
+                                                : asset('storage/' . ltrim(preg_replace('/^storage\//', '', $photo), '/')))
+                                            : null;
+                                    @endphp
+                                    <div class="mini-product" title="{{ $item->product_name }}">
+                                        @if ($photoUrl)
+                                            <img src="{{ $photoUrl }}" alt="{{ $item->product_name }}">
+                                        @else
+                                            <div class="product-bag"></div>
+                                        @endif
+                                    </div>
                                 @empty
                                     <span class="text-[12px] text-[#8A8582]">No item details</span>
                                 @endforelse

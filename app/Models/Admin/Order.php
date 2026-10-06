@@ -36,6 +36,21 @@ class Order extends Model
         'pickup_time' => 'datetime:H:i',
     ];
 
+    protected $appends = [
+        'pickup_date_display',
+        'pickup_time_display',
+    ];
+
+    public function getPickupDateDisplayAttribute(): ?string
+    {
+        return $this->pickup_date?->format('Y-m-d');
+    }
+
+    public function getPickupTimeDisplayAttribute(): ?string
+    {
+        return $this->pickup_time?->format('H:i');
+    }
+
     public function buyer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'buyer_id');

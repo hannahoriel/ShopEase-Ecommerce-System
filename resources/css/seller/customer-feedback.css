@@ -2496,6 +2496,26 @@ body.seller-sidebar-collapsed #feedbackPage {
     font-weight: 500 !important;
 }
 
+#productReviewsModal .category-pill.category-default {
+    background: #D8E6FF;
+    color: #07588A;
+}
+
+#productReviewsModal .category-pill.category-pet-supplies { background: #E7F5E9; color: #2F6B3A; }
+#productReviewsModal .category-pill.category-electronics-and-gadgets { background: #DDEBFF; color: #185FA3; }
+#productReviewsModal .category-pill.category-womens-apparel { background: #F9DFEA; color: #A12763; }
+#productReviewsModal .category-pill.category-mens-apparel { background: #E6E2F8; color: #5A4A9A; }
+#productReviewsModal .category-pill.category-kids-and-baby { background: #FFE5B8; color: #9A5B00; }
+#productReviewsModal .category-pill.category-home-and-garden { background: #EEF0D8; color: #596126; }
+#productReviewsModal .category-pill.category-sports-and-outdoors { background: #DDECF2; color: #23627A; }
+#productReviewsModal .category-pill.category-health-and-beauty { background: #FFE0DC; color: #A63B2C; }
+#productReviewsModal .category-pill.category-books-and-media { background: #E6E8F2; color: #3F4A68; }
+#productReviewsModal .category-pill.category-food-and-gourmet { background: #FFF0C7; color: #8A5A00; }
+#productReviewsModal .category-pill.category-automotive-motorcycle { background: #E3E3E3; color: #434343; }
+#productReviewsModal .category-pill.category-furniture-and-office-equipment { background: #EBDCCF; color: #795548; }
+#productReviewsModal .category-pill.category-jewelry-and-watches { background: #F8E2B8; color: #946B00; }
+#productReviewsModal .category-pill.category-office-and-school-supplies { background: #E2F0F7; color: #2B617D; }
+
 #productReviewsModal .modal-rating-line {
     margin-top: 10px !important;
     gap: 7px !important;

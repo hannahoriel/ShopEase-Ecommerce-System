@@ -8,6 +8,7 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,7 @@ class OrderStatusController extends Controller
         $seller = $this->sellerFor($request->user());
         $query = Order::query()
             ->where('seller_id', $seller->id)
-            ->with('buyer:id,name,email,contact_no');
+            ->with(['buyer:id,name,email,contact_no', 'items.product:id,name,photos']);
 
         if ($request->filled('status')) {
             $query->whereIn('status', (array) $request->input('status'));
@@ -57,7 +58,7 @@ class OrderStatusController extends Controller
     {
         $this->ownedOrder($request->user(), $order)->load([
             'buyer:id,name,email,contact_no',
-            'items',
+            'items.product:id,name,photos',
             'statusHistory.changedBy:id,name',
         ]);
 
@@ -86,15 +87,17 @@ class OrderStatusController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if (! in_array($order->status, ['preparing', 'pending', 'new'], true)) {
-            abort(422, 'Only preparing or new orders can be scheduled for pickup.');
+        if ($order->status !== 'preparing') {
+            abort(422, 'Prepare the order before scheduling pickup.');
         }
 
-        $order->update([
-            'pickup_date' => $validated['pickup_date'],
-            'pickup_time' => $validated['pickup_time'],
-        ]);
-        $this->changeStatus($order, 'to_ship', $request->user(), $validated['notes'] ?? null);
+        DB::transaction(function () use ($order, $validated, $request): void {
+            $order->update([
+                'pickup_date' => $validated['pickup_date'],
+                'pickup_time' => $validated['pickup_time'],
+            ]);
+            $this->changeStatus($order, 'to_ship', $request->user(), $validated['notes'] ?? null);
+        });
 
         return response()->json($order->fresh(['statusHistory']));
     }

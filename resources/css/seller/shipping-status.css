@@ -984,6 +984,7 @@
 
 .shipping-modal-footer {
     display: flex;
+    gap: 10px;
     justify-content: flex-end;
     padding: 8px 35px 18px;
 }
@@ -1002,6 +1003,21 @@
 
 .shipping-modal-footer button:hover {
     background: #FAF7F5;
+}
+
+#shippingAdvanceButton {
+    border-color: #7B1B1B;
+    background: #7B1B1B;
+    color: #FFFFFF;
+}
+
+#shippingAdvanceButton:hover {
+    background: #641414;
+}
+
+#shippingAdvanceButton:disabled {
+    cursor: wait;
+    opacity: .7;
 }
 
 /* =====================================================

@@ -21,13 +21,21 @@ class SellerShippingStatusTest extends TestCase
         [, $otherSeller] = $this->seller('Other Seller');
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         $order = $this->order($seller, $buyer, 'to_ship');
+        $inTransitOrder = $this->order($seller, $buyer, 'in_transit');
+        $this->order($seller, $buyer, 'preparing');
+        $this->order($seller, $buyer, 'new');
         $otherOrder = $this->order($otherSeller, $buyer, 'to_ship');
 
         $this->actingAs($sellerUser)
             ->getJson('/api/v1/seller/shipping-status?per_page=10')
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $order->id);
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $order->id, 'status' => 'to_ship'])
+            ->assertJsonFragment(['id' => $inTransitOrder->id, 'status' => 'in_transit']);
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/shipping-status?status=in_transit')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
 
         $this->actingAs($sellerUser)
             ->patchJson("/api/v1/seller/shipping/{$order->id}/status", [
@@ -43,6 +51,17 @@ class SellerShippingStatusTest extends TestCase
         $shipment = Shipment::where('order_id', $order->id)->firstOrFail();
         $this->assertStringStartsWith('SE-', $shipment->tracking_number);
         $this->assertNotNull($shipment->picked_up_at);
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/shipping-status')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $order->id, 'status' => 'in_transit'])
+            ->assertJsonFragment(['id' => $inTransitOrder->id, 'status' => 'in_transit']);
+        $this->actingAs($sellerUser)
+            ->getJson("/api/v1/seller/shipping/{$order->id}")
+            ->assertOk()
+            ->assertJsonPath('shipment.tracking_number', $shipment->tracking_number)
+            ->assertJsonPath('status_history.0.to_status', 'in_transit');
 
         $this->actingAs($sellerUser)
             ->patchJson("/api/v1/seller/shipping/{$order->id}/status", ['status' => 'out_for_delivery'])
@@ -55,6 +74,11 @@ class SellerShippingStatusTest extends TestCase
             ->assertJsonPath('status', 'delivered');
 
         $this->assertNotNull($shipment->fresh()->delivered_at);
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/shipping-status')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $order->id, 'status' => 'delivered']);
 
         $this->actingAs($sellerUser)
             ->getJson("/api/v1/seller/shipping/{$otherOrder->id}")
@@ -66,6 +90,9 @@ class SellerShippingStatusTest extends TestCase
         [$sellerUser, $seller] = $this->seller('Seller One');
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         $order = $this->order($seller, $buyer, 'to_ship');
+        $this->order($seller, $buyer, 'in_transit');
+        $this->order($seller, $buyer, 'preparing');
+        $this->order($seller, $buyer, 'new');
 
         $this->actingAs($sellerUser)
             ->patchJson("/api/v1/seller/shipping/{$order->id}/status", ['status' => 'delivered'])
@@ -74,7 +101,12 @@ class SellerShippingStatusTest extends TestCase
         $this->actingAs($sellerUser)
             ->get(route('seller.shipping.status'))
             ->assertOk()
-            ->assertViewIs('pages.seller.shipping-status');
+            ->assertViewIs('pages.seller.shipping-status')
+            ->assertSee('SE-TEST-' . $seller->id . '-TO_SHIP')
+            ->assertSee('SE-TEST-' . $seller->id . '-IN_TRANSIT')
+            ->assertDontSee('SE-TEST-' . $seller->id . '-PREPARING', false)
+            ->assertDontSee('SE-TEST-' . $seller->id . '-NEW', false)
+            ->assertSee('sellerShippingStatusConfig');
 
         $this->actingAs($buyer = User::factory()->create(['role' => User::ROLE_BUYER]))
             ->getJson('/api/v1/seller/shipping-status')
@@ -98,6 +130,7 @@ class SellerShippingStatusTest extends TestCase
         return Order::create([
             'buyer_id' => $buyer->id,
             'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-' . $seller->id . '-' . strtoupper($status),
             'total' => 559,
             'status' => $status,
         ]);

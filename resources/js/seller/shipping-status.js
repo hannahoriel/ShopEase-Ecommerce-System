@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const configElement = document.getElementById('sellerShippingStatusConfig');
+    const config = configElement ? JSON.parse(configElement.textContent) : {};
     const sidebar = document.getElementById('sellerSidebar');
     const page = document.getElementById('shipping-status-page');
     const tabs = document.querySelectorAll('.shipping-status-tab');
@@ -48,9 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (activeTab === 'in-transit') {
                 statusMatches = status === 'in-transit' || status === 'out-for-delivery';
-            }
-
-            if (activeTab === 'delivered') {
+            } else if (activeTab === 'delivered') {
                 statusMatches = status === 'delivered';
             }
 
@@ -127,8 +127,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const progressLine1 = document.getElementById('modalProgressLine1');
     const progressLine2 = document.getElementById('modalProgressLine2');
     const closeButton = document.getElementById('closeShippingModal');
+    const advanceButton = document.getElementById('shippingAdvanceButton');
 
     let selectedRow = null;
+    let selectedOrder = null;
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[character]);
+    }
+
+    function statusDisplay(status) {
+        return ({
+            new: 'Order Placed',
+            pending: 'Order Placed',
+            preparing: 'Preparing',
+            to_ship: 'Ready to Ship',
+            in_transit: 'In Transit',
+            out_for_delivery: 'Out for Delivery',
+            delivered: 'Delivered',
+        })[status] || 'Shipping';
+    }
+
+    async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                Accept: 'application/json',
+                ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+                Authorization: `Bearer ${config.apiToken || ''}`,
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(options.headers || {}),
+            },
+            credentials: 'same-origin',
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.message || `Shipping request failed (${response.status}).`);
+        }
+        return payload;
+    }
 
     function trackingIcon(type, active, green) {
         const stroke = active ? '#FFFFFF' : (green ? '#2A8B36' : '#185B8C');
@@ -208,103 +247,49 @@ document.addEventListener('DOMContentLoaded', function () {
         return '';
     }
 
-    function getTrackingHistory(row) {
-        const status = row.dataset.status || 'in-transit';
-        const events = [
-            {
-                type: 'prepared',
-                date: row.dataset.preparedDate || row.dataset.orderDate || 'May 22, 2026',
-                time: row.dataset.preparedTime || '11:45 AM',
-                title: 'Order Prepared',
-                description: 'The seller prepared the order for shipment.'
-            },
-            {
-                type: 'ready',
-                date: row.dataset.readyDate || row.dataset.orderDate || 'May 22, 2026',
-                time: row.dataset.readyTime || '12:05 PM',
-                title: 'Ready to Ship',
-                description: 'The order is ready for courier pickup.'
-            },
-            {
-                type: 'picked',
-                date: row.dataset.pickedDate || 'May 23, 2026',
-                time: row.dataset.pickedTime || '9:15 AM',
-                title: 'Picked Up',
-                description: 'Ease Express has picked up the parcel.'
-            },
-            {
-                type: 'sorting',
-                date: row.dataset.sorting1Date || 'May 23, 2026',
-                time: row.dataset.sorting1Time || '2:10 PM',
-                title: 'Arrived at Sta. Cruz Sorting Center',
-                description: 'The parcel arrived at the sorting center.'
-            },
-            {
-                type: 'sorting',
-                date: row.dataset.sorting2Date || 'May 24, 2026',
-                time: row.dataset.sorting2Time || '8:35 AM',
-                title: 'Arrived at Lumban Sorting Center',
-                description: 'The parcel was transferred to the next sorting center.'
-            },
-            {
-                type: 'transit',
-                date: row.dataset.transitDate || 'May 24, 2026',
-                time: row.dataset.transitTime || '1:20 PM',
-                title: 'In Transit',
-                description: 'The parcel is currently on its way to the destination.'
-            }
-        ];
-
-        if (status === 'out-for-delivery' || status === 'delivered') {
-            events.push({
-                type: 'out',
-                date: row.dataset.outDate || 'May 25, 2026',
-                time: row.dataset.outTime || '8:05 AM',
-                title: 'Out for Delivery',
-                description: 'The courier is on the way to deliver the parcel.'
-            });
-        }
-
-        if (status === 'delivered') {
-            events.push({
-                type: 'delivered',
-                date: row.dataset.deliveredDate || 'May 25, 2026',
-                time: row.dataset.deliveredTime || '9:32 AM',
-                title: 'Delivered',
-                description: 'The order has been successfully delivered.'
-            });
-        }
-
-        return events;
-    }
-
-    function renderTrackingHistory(row) {
+    function renderTrackingHistory(order, row) {
         if (!trackingList) return;
 
-        const events = getTrackingHistory(row);
+        const events = [...(order.status_history || [])].reverse();
         trackingList.innerHTML = '';
+        if (!events.length) {
+            trackingList.textContent = 'No status history has been recorded yet.';
+            return;
+        }
 
         events.forEach(function (event, index) {
             const isLast = index === events.length - 1;
-            const isDelivered = row.dataset.status === 'delivered';
+            const status = event.to_status;
+            const type = status === 'new' || status === 'pending' || status === 'preparing' ? 'prepared'
+                : status === 'to_ship' ? 'ready'
+                    : status === 'in_transit' ? 'transit'
+                        : status === 'out_for_delivery' ? 'out'
+                            : status === 'delivered' ? 'delivered' : 'sorting';
+            const changedAt = event.created_at ? new Date(event.created_at) : null;
+            const date = changedAt && !Number.isNaN(changedAt.getTime())
+                ? changedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                : '—';
+            const time = changedAt && !Number.isNaN(changedAt.getTime())
+                ? changedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                : '';
             const item = document.createElement('div');
             item.className = 'shipping-history-item';
 
-            const iconClass = isLast ? (isDelivered ? 'active green-active' : 'active') : '';
+            const iconClass = isLast ? (status === 'delivered' ? 'active green-active' : 'active') : '';
 
             item.innerHTML = `
                 <div class="shipping-history-icon ${iconClass}">
-                    ${trackingIcon(event.type, isLast, isDelivered)}
+                    ${trackingIcon(type, isLast, status === 'delivered')}
                 </div>
 
                 <div class="shipping-history-time">
-                    <span class="date">${event.date}</span>
-                    <span class="time">${event.time}</span>
+                    <span class="date">${escapeHtml(date)}</span>
+                    <span class="time">${escapeHtml(time)}</span>
                 </div>
 
                 <div class="shipping-history-content">
-                    <strong>${event.title}</strong>
-                    <p>${event.description}</p>
+                    <strong>${escapeHtml(statusDisplay(status))}</strong>
+                    <p>${escapeHtml(event.notes || `Order status changed to ${statusDisplay(status)}.`)}</p>
                 </div>
             `;
 
@@ -315,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateProgress(status) {
         if (!progressTransit || !progressOut || !progressDelivered) return;
 
-        if (status === 'in-transit') {
+        if (status === 'to_ship' || status === 'in_transit') {
             progressTransit.src = '/icons/seller/shipping-status/in-transit-blue.png';
             progressOut.src = '/icons/seller/shipping-status/out-for-delivery-gray.png';
             progressDelivered.src = '/icons/seller/shipping-status/delivered-gray.png';
@@ -324,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (status === 'out-for-delivery') {
+        if (status === 'out_for_delivery') {
             progressTransit.src = '/icons/seller/shipping-status/in-transit-check.png';
             progressOut.src = '/icons/seller/shipping-status/out-for-delivery.png';
             progressDelivered.src = '/icons/seller/shipping-status/delivered-gray.png';
@@ -342,51 +327,116 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function openShippingModal(row) {
+    async function openShippingModal(row) {
         if (!modal || !row) return;
 
         selectedRow = row;
+        selectedOrder = null;
+        if (advanceButton) advanceButton.hidden = true;
 
-        const status = row.dataset.status || 'in-transit';
-        const orderId = row.dataset.orderId || '#ORD-2025';
-        const customer = row.dataset.customer || 'Juan Dela Cruz';
-        const phone = row.dataset.phone || '0917 123 4567';
-        const orderDate = row.dataset.orderDate || 'May 22, 2026';
-        const orderTime = row.dataset.orderTime || '10:34 AM';
-        const estimated = row.dataset.estimated || 'May 25, 2026';
-        const tracking = row.dataset.tracking || 'T23430583RHEFBW';
+        const id = row.dataset.orderId;
+        modalOrderId.textContent = `#${row.dataset.orderNumber}`;
+        modalCustomer.textContent = row.dataset.customer;
+        modalPhone.textContent = row.dataset.phone || '—';
+        modalTracking.textContent = row.dataset.tracking || 'Pending';
+        modalEstimated.textContent = row.dataset.estimated || 'Not scheduled';
 
-        modalOrderId.textContent = orderId;
-        modalCustomer.textContent = customer;
-        modalPhone.textContent = phone;
-        modalOrderDate.textContent = orderDate;
-        modalOrderTime.textContent = orderTime;
-        modalEstimated.textContent = estimated;
-        modalTracking.textContent = tracking;
-
-        if (status === 'delivered') {
-            modalStatusLabel.textContent = 'Delivered';
-            modalStatusDot.className = 'modal-status-dot green-dot';
-            modalIconBox.className = 'shipping-modal-status-box green-modal';
-            modalIcon.src = '/icons/seller/shipping-status/delivered.png';
-        } else if (status === 'out-for-delivery') {
-            modalStatusLabel.textContent = 'Out for Delivery';
-            modalStatusDot.className = 'modal-status-dot orange-dot';
-            modalIconBox.className = 'shipping-modal-status-box blue-modal';
-            modalIcon.src = '/icons/seller/shipping-status/in-transit.png';
-        } else {
-            modalStatusLabel.textContent = 'In Transit';
-            modalStatusDot.className = 'modal-status-dot blue-dot';
-            modalIconBox.className = 'shipping-modal-status-box blue-modal';
-            modalIcon.src = '/icons/seller/shipping-status/in-transit.png';
-        }
-
-        modalIcon.alt = modalStatusLabel.textContent;
-        updateProgress(status);
-        renderTrackingHistory(row);
         modal.classList.add('modal-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('overflow-hidden');
+
+        try {
+            const order = await requestJson(`${config.ordersUrl}/${id}`);
+            if (selectedRow !== row) return;
+            selectedOrder = order;
+            const status = order.status;
+            const shipment = order.shipment || {};
+            const createdAt = order.created_at ? new Date(order.created_at) : null;
+            const labels = {
+                to_ship: ['blue-dot', 'blue-modal', 'in-transit.png'],
+                in_transit: ['blue-dot', 'blue-modal', 'in-transit.png'],
+                out_for_delivery: ['orange-dot', 'blue-modal', 'in-transit.png'],
+                delivered: ['green-dot', 'green-modal', 'delivered.png'],
+            };
+            const [dotClass, boxClass, iconName] = labels[status] || labels.to_ship;
+
+            modalOrderId.textContent = `#${order.order_number || `ORD-${order.id}`}`;
+            modalCustomer.textContent = order.delivery_name || order.buyer?.name || 'Customer';
+            modalPhone.textContent = order.delivery_phone || order.buyer?.contact_no || '—';
+            document.getElementById('shippingModalAddress').textContent = order.delivery_address || '—';
+            document.getElementById('shippingModalPaymentMethod').textContent = order.payment_method || 'COD';
+            document.getElementById('shippingModalPaymentDescription').textContent =
+                String(order.payment_method || 'COD').toLowerCase().includes('cash')
+                    ? 'Payment upon Delivery'
+                    : 'Payment details';
+            document.getElementById('shippingModalNotes').textContent = order.customer_notes || 'No customer notes provided.';
+            modalOrderDate.textContent = createdAt && !Number.isNaN(createdAt.getTime())
+                ? createdAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                : '—';
+            modalOrderTime.textContent = createdAt && !Number.isNaN(createdAt.getTime())
+                ? createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                : '';
+            const estimatedDelivery = shipment.estimated_delivery
+                ? String(shipment.estimated_delivery).slice(0, 10)
+                : '';
+            modalEstimated.textContent = estimatedDelivery
+                ? new Date(`${estimatedDelivery}T00:00:00`).toLocaleDateString('en-US', {
+                    month: 'long', day: 'numeric', year: 'numeric',
+                })
+                : 'Not scheduled';
+            modalTracking.textContent = shipment.tracking_number || 'Pending';
+            modalStatusLabel.textContent = statusDisplay(status);
+            modalStatusDot.className = `modal-status-dot ${dotClass}`;
+            modalIconBox.className = `shipping-modal-status-box ${boxClass}`;
+            modalIcon.src = `/icons/seller/shipping-status/${iconName}`;
+            modalIcon.alt = statusDisplay(status);
+            updateProgress(status);
+            renderTrackingHistory(order, row);
+
+            const itemsList = document.getElementById('shippingModalItemsList');
+            if (itemsList) {
+                const items = order.items || [];
+                const subtotal = items.reduce((sum, item) =>
+                    sum + Number(item.unit_price || 0) * Number(item.quantity || 0), 0);
+                const shippingFee = Number(shipment.shipping_fee || 0);
+                const money = (amount) => `₱${amount.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}`;
+                itemsList.innerHTML = `
+                    <div class="shipping-item-header"><span>Item</span><span>Price</span><span>Quantity</span><span>Subtotal</span></div>
+                    ${items.length ? items.map((item) => `
+                        <div class="shipping-item-row">
+                            <div class="shipping-item-name">
+                                <div class="shipping-item-image"><div class="modal-product-bag"></div></div>
+                                <span>${escapeHtml(item.product_name || 'Product')}</span>
+                            </div>
+                            <span>${money(Number(item.unit_price || 0))}</span>
+                            <span>${Number(item.quantity || 0)}</span>
+                            <span>${money(Number(item.unit_price || 0) * Number(item.quantity || 0))}</span>
+                        </div>`).join('') : '<p>No items were recorded for this order.</p>'}
+                    <div class="shipping-modal-totals">
+                        <div><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
+                        <div><span>Shipping Fee</span><strong>${money(shippingFee)}</strong></div>
+                        <div><span>Total Amount</span><b>${money(Number(order.total || 0))}</b></div>
+                    </div>`;
+            }
+
+            if (advanceButton) {
+                const next = ({
+                    to_ship: ['in_transit', 'Mark In Transit'],
+                    in_transit: ['out_for_delivery', 'Mark Out for Delivery'],
+                    out_for_delivery: ['delivered', 'Mark Delivered'],
+                })[status];
+                advanceButton.dataset.nextStatus = next?.[0] || '';
+                advanceButton.hidden = !next;
+                advanceButton.disabled = !next;
+                if (next) advanceButton.textContent = next[1];
+            }
+        } catch (error) {
+            trackingList.textContent = error.message;
+            if (advanceButton) advanceButton.hidden = true;
+        }
     }
 
     function closeShippingModal() {
@@ -419,6 +469,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeButton?.addEventListener('click', closeShippingModal);
 
+    advanceButton?.addEventListener('click', async function () {
+        if (!selectedRow || !advanceButton.dataset.nextStatus) return;
+
+        const nextStatus = advanceButton.dataset.nextStatus;
+        const originalLabel = advanceButton.textContent;
+        advanceButton.disabled = true;
+        advanceButton.textContent = 'Saving...';
+
+        try {
+            await requestJson(`${config.ordersUrl}/${selectedRow.dataset.orderId}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    status: nextStatus,
+                    notes: `Shipping status updated to ${statusDisplay(nextStatus)}.`,
+                }),
+            });
+            window.location.reload();
+        } catch (error) {
+            window.alert(error.message);
+            advanceButton.disabled = false;
+            advanceButton.textContent = originalLabel;
+        }
+    });
+
     modal?.addEventListener('click', function (event) {
         if (event.target === modal) {
             closeShippingModal();
@@ -433,159 +507,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
     filterShippingRows();
 });
-document.addEventListener('DOMContentLoaded', () => {
-            const tabs = Array.from(
-                document.querySelectorAll(
-                    '#shippingStatusTabs .shipping-status-tab'
-                )
-            );
-
-            const rows = Array.from(
-                document.querySelectorAll(
-                    '#shippingTable .shipping-row'
-                )
-            );
-
-            const searchInput =
-                document.getElementById('shippingSearch');
-
-            const noResults =
-                document.getElementById('shippingNoResults');
-
-            const showingCount =
-                document.getElementById('shippingShowingCount');
-
-            const totalEntriesCount =
-                document.getElementById('shippingTotalEntriesCount');
-
-            let activeTab = 'all';
-
-            function normalizedStatus(row) {
-                return (
-                    row.dataset.status || ''
-                )
-                    .trim()
-                    .toLowerCase();
-            }
-
-            function rowMatchesTab(row) {
-                const status =
-                    normalizedStatus(row);
-
-                if (activeTab === 'all') {
-                    return true;
-                }
-
-                if (activeTab === 'in-transit') {
-                    /*
-                     * Shipping flow:
-                     * In Transit tab should include both:
-                     * - in-transit
-                     * - out-for-delivery
-                     */
-                    return (
-                        status === 'in-transit' ||
-                        status === 'out-for-delivery'
-                    );
-                }
-
-                if (activeTab === 'delivered') {
-                    return status === 'delivered';
-                }
-
-                return true;
-            }
-
-            function rowMatchesSearch(row) {
-                const query =
-                    (
-                        searchInput?.value || ''
-                    )
-                        .trim()
-                        .toLowerCase();
-
-                if (!query) {
-                    return true;
-                }
-
-                const haystack =
-                    (
-                        row.dataset.search ||
-                        row.textContent ||
-                        ''
-                    )
-                        .toLowerCase();
-
-                return haystack.includes(query);
-            }
-
-            function applyShippingFilter() {
-                let visibleCount = 0;
-
-                rows.forEach((row) => {
-                    const visible =
-                        rowMatchesTab(row) &&
-                        rowMatchesSearch(row);
-
-                    row.classList.toggle(
-                        'hidden',
-                        !visible
-                    );
-
-                    row.style.display =
-                        visible
-                            ? ''
-                            : 'none';
-
-                    if (visible) {
-                        visibleCount += 1;
-                    }
-                });
-
-                if (showingCount) {
-                    showingCount.textContent =
-                        String(visibleCount);
-                }
-
-                if (totalEntriesCount) {
-                    totalEntriesCount.textContent =
-                        String(rows.length);
-                }
-
-                noResults?.classList.toggle(
-                    'hidden',
-                    visibleCount !== 0
-                );
-            }
-
-            tabs.forEach((tab) => {
-                tab.addEventListener(
-                    'click',
-                    (event) => {
-                        event.preventDefault();
-
-                        activeTab =
-                            tab.dataset.tab ||
-                            'all';
-
-                        tabs.forEach(
-                            (item) => {
-                                item.classList.toggle(
-                                    'active',
-                                    item === tab
-                                );
-                            }
-                        );
-
-                        applyShippingFilter();
-                    }
-                );
-            });
-
-            searchInput?.addEventListener(
-                'input',
-                applyShippingFilter
-            );
-
-            applyShippingFilter();
-        });
