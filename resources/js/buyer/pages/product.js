@@ -99,11 +99,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (metaEl) {
             metaEl.innerHTML = `
                 <div class="product-rating-value">
-                    <strong>4.5</strong>
-                    <span class="stars">★★★★★</span>
+                    <strong id="productMetaRating">0.0</strong>
+                    <span class="stars" id="productMetaStars">☆☆☆☆☆</span>
                 </div>
                 <span class="meta-divider"></span>
-                <span>No ratings yet</span>
+                <span id="productMetaReviewCount">0 reviews</span>
                 <span class="meta-divider"></span>
                 <span>0 Sold</span>
                 <span class="meta-divider"></span>
@@ -408,14 +408,128 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(() => { this.disabled = false; });
     });
 
-    /* ── Rating filters (static UI) ─────────────────────────── */
-    document.querySelectorAll('.rating-filter').forEach((btn) => {
-        btn.addEventListener('click', function () {
-            document.querySelectorAll('.rating-filter').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    /* ── Product feedback ───────────────────────────────────── */
+    let activeReviewRating = 'all';
+
+    function renderProductReviews(reviews) {
+        const list = document.getElementById('ratingsReviewList');
+        const empty = document.getElementById('ratingsFilterEmpty');
+        if (!list || !empty) return;
+
+        list.innerHTML = reviews.map((review) => {
+            const stars = '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating));
+            const date = review.created_at
+                ? new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(review.created_at))
+                : '';
+            return `
+                <article class="review-item">
+                    <div class="review-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"></circle><path d="M4 21v-2a8 8 0 0 1 16 0v2z"></path></svg>
+                    </div>
+                    <div class="review-content">
+                        <strong>${escapeHtml(review.buyer_name)}</strong>
+                        <div class="review-stars">${stars}</div>
+                        <small>${escapeHtml(date)}</small>
+                        ${review.title ? `<p><strong>${escapeHtml(review.title)}</strong></p>` : ''}
+                        <p>${escapeHtml(review.body)}</p>
+                    </div>
+                </article>`;
+        }).join('');
+        empty.style.display = reviews.length ? 'none' : 'block';
+        if (!reviews.length) empty.textContent = activeReviewRating === 'all' ? 'No reviews yet.' : 'No reviews for this rating yet.';
+    }
+
+    function updateReviewSummary(summary) {
+        const average = Number(summary.average_rating || 0);
+        const total = Number(summary.total_reviews || 0);
+        const score = document.getElementById('productRatingAverage');
+        const stars = document.getElementById('productRatingStars');
+        const count = document.getElementById('productReviewCount');
+        const metaRating = document.getElementById('productMetaRating');
+        const metaStars = document.getElementById('productMetaStars');
+        const metaCount = document.getElementById('productMetaReviewCount');
+        const starText = '★'.repeat(Math.round(average)) + '☆'.repeat(5 - Math.round(average));
+        if (score) score.innerHTML = `${average.toFixed(1)} <small>out of 5</small>`;
+        if (stars) stars.textContent = starText;
+        if (count) count.textContent = `${total} ${total === 1 ? 'review' : 'reviews'}`;
+        if (metaRating) metaRating.textContent = average.toFixed(1);
+        if (metaStars) metaStars.textContent = starText;
+        if (metaCount) metaCount.textContent = `${total} ${total === 1 ? 'review' : 'reviews'}`;
+    }
+
+    async function loadProductReviews() {
+        if (!productId || !apiToken) return;
+        const empty = document.getElementById('ratingsFilterEmpty');
+        if (empty) {
+            empty.textContent = 'Loading reviews…';
+            empty.style.display = 'block';
+        }
+        const url = `${config.reviewsUrl || '/api/v1/buyer/products'}/${productId}/reviews`;
+        const query = activeReviewRating === 'all' ? '' : `?rating=${encodeURIComponent(activeReviewRating)}`;
+        try {
+            const response = await apiFetch(url + query);
+            if (!response.ok) throw new Error(`Unable to load reviews (${response.status}).`);
+            const payload = await response.json();
+            updateReviewSummary(payload.summary);
+            renderProductReviews(payload.data || []);
+        } catch (error) {
+            if (empty) {
+                empty.textContent = error.message;
+                empty.style.display = 'block';
+            }
+        }
+    }
+
+    document.querySelectorAll('.rating-filter').forEach((button) => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.rating-filter').forEach((item) => item.classList.toggle('active', item === button));
+            activeReviewRating = button.dataset.ratingFilter || 'all';
+            loadProductReviews();
         });
+    });
+
+    document.getElementById('productReviewForm')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const submitButton = document.getElementById('submitProductReview');
+        const message = document.getElementById('productReviewMessage');
+        const formData = new FormData(form);
+        const payload = {
+            rating: Number(formData.get('rating')),
+            title: String(formData.get('title') || '').trim() || null,
+            body: String(formData.get('body') || '').trim(),
+        };
+        if (!productId || !apiToken) {
+            if (message) message.textContent = 'Sign in as a buyer to leave a review.';
+            return;
+        }
+
+        if (submitButton) submitButton.disabled = true;
+        if (message) message.textContent = 'Submitting your review…';
+        try {
+            const response = await apiFetch(`${config.reviewsUrl || '/api/v1/buyer/products'}/${productId}/reviews`, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const validationMessage = Object.values(result.errors || {}).flat()[0];
+                throw new Error(validationMessage || result.message || 'Unable to submit your review.');
+            }
+            form.reset();
+            activeReviewRating = 'all';
+            document.querySelectorAll('.rating-filter').forEach((item) => item.classList.toggle('active', item.dataset.ratingFilter === 'all'));
+            if (message) message.textContent = 'Thank you. Your review has been saved.';
+            updateReviewSummary(result.summary);
+            await loadProductReviews();
+        } catch (error) {
+            if (message) message.textContent = error.message;
+        } finally {
+            if (submitButton) submitButton.disabled = false;
+        }
     });
 
     /* ── Boot ───────────────────────────────────────────────── */
     loadProduct();
+    loadProductReviews();
 });

@@ -60,6 +60,11 @@ class Product extends Model
         return $this->hasMany(ProductSpecification::class)->orderBy('sort_order');
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function getVariationsAttribute(): array
     {
         return $this->optionPayload('variation');

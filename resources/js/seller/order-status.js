@@ -1,8 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const configElement = document.getElementById('sellerOrderStatusConfig');
+    const config = configElement ? JSON.parse(configElement.textContent) : {};
     const sidebar = document.getElementById('sellerSidebar');
     const page = document.getElementById('order-status-page');
     const tabs = document.querySelectorAll('.order-status-tab');
-    const rows = Array.from(document.querySelectorAll('.order-row'));
+    const orderTable = document.getElementById('orderStatusTable');
+    let rows = [];
     const searchInput = document.getElementById('orderSearch');
     const noResults = document.getElementById('orderStatusNoResults');
     const showingCount = document.getElementById('showingCount');
@@ -12,6 +15,77 @@ document.addEventListener('DOMContentLoaded', function () {
     const pageButtons = document.querySelectorAll('.pagination-button[data-page]');
 
     let activeTab = 'all';
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[character]);
+    }
+
+    function renderOrderRows(orders) {
+        if (!orderTable) return;
+
+        const statusInfo = {
+            new: { label: 'New Order', style: 'new', icon: 'new-order.png' },
+            pending: { label: 'New Order', style: 'new', icon: 'new-order.png' },
+            preparing: { label: 'Preparing', style: 'preparing', icon: 'processing.png' },
+            to_ship: { label: 'Ready to Ship', style: 'ready', icon: 'ready-to-ship.png' },
+            'to-ship': { label: 'Ready to Ship', style: 'ready', icon: 'ready-to-ship.png' },
+        };
+        const money = (value) => `₱${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+
+        orderTable.innerHTML = orders.map((order) => {
+            const status = statusInfo[order.status] || {
+                label: String(order.status || 'unknown').replaceAll('_', ' '),
+                style: 'new',
+                icon: 'new-order.png',
+            };
+            const items = order.items || [];
+            const itemNames = items.map((item) => item.product_name);
+            const createdAt = order.created_at ? new Date(order.created_at) : null;
+            const orderNumber = order.order_number || `ORD-${order.id}`;
+            const customer = order.delivery_name || order.buyer?.name || 'Customer';
+            const phone = order.delivery_phone || order.buyer?.contact_no || '';
+            const date = createdAt && !Number.isNaN(createdAt.getTime())
+                ? new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(createdAt)
+                : '';
+            const time = createdAt && !Number.isNaN(createdAt.getTime())
+                ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(createdAt)
+                : '';
+            const itemPreview = items.slice(0, 2).map((item) =>
+                `<div class="mini-product" title="${escapeHtml(item.product_name)}"><div class="product-bag"></div></div>`
+            ).join('');
+            const moreItems = items.length > 2
+                ? `<span class="more-items">+${items.length - 2} more</span>`
+                : (items.length === 1 ? `<span class="text-[12px] text-[#625D5A] truncate">${escapeHtml(items[0].product_name)}</span>` : '');
+
+            return `
+                <article class="order-row grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[99px] px-[20px] border-b border-[#DDD9D7] transition-all duration-200 ease-out hover:bg-[#FFFBF9]"
+                    data-order-id="${Number(order.id)}"
+                    data-status="${escapeHtml(order.status === 'pending' ? 'new' : (order.status === 'to_ship' ? 'to-ship' : order.status))}"
+                    data-tab="${escapeHtml(order.status === 'pending' ? 'new' : (order.status === 'to_ship' ? 'to-ship' : order.status))}"
+                    data-pickup-date="${escapeHtml(order.pickup_date || '')}"
+                    data-pickup-time="${escapeHtml(order.pickup_time || '')}"
+                    data-search="${escapeHtml(`${orderNumber} ${customer} ${phone} ${itemNames.join(' ')}`)}">
+                    <div class="flex items-center gap-[22px] min-w-0">
+                        <div class="order-icon-box ${status.style}"><img src="/icons/seller/order-status/${status.icon}" alt="${escapeHtml(status.label)}"></div>
+                        <div class="min-w-0">
+                            <h3 class="order-id">#${escapeHtml(orderNumber)}</h3>
+                            <p class="order-status ${status.style}-text"><span class="status-dot ${status.style}-dot"></span>${escapeHtml(status.label)}</p>
+                        </div>
+                    </div>
+                    <div class="min-w-0"><p class="customer-name">${escapeHtml(customer)}</p><p class="customer-phone">${escapeHtml(phone)}</p></div>
+                    <div class="flex items-center gap-[10px] min-w-0">${itemPreview}${moreItems || (items.length === 0 ? '<span class="text-[12px] text-[#8A8582]">No item details</span>' : '')}</div>
+                    <div><p class="amount">${money(order.total)}</p><p class="payment">Payment: ${escapeHtml(order.payment_method || 'Cash on Delivery')}</p></div>
+                    <div><p class="ordered-date">${escapeHtml(date)}</p><p class="ordered-time">${escapeHtml(time)}</p></div>
+                </article>`;
+        }).join('');
+
+        rows = Array.from(orderTable.querySelectorAll('.order-row'));
+        rows.forEach(ensureInitialTracking);
+    }
+
+    renderOrderRows(config.orders || []);
 
     function syncPageOffset() {
         if (!page) return;
@@ -277,6 +351,107 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(
             'orderModalOrderedTime'
         );
+    function formatCurrency(value) {
+        return `₱${Number(value || 0).toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`;
+    }
+
+    async function loadOrderDetails(row) {
+        const response = await fetch(`${config.ordersUrl}/${row.dataset.orderId}`, {
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${config.apiToken || ''}`,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+        if (!response.ok) throw new Error(`Unable to load order details (${response.status}).`);
+
+        const order = await response.json();
+        const buyer = order.buyer || {};
+        const items = order.items || [];
+        const subtotal = items.reduce((sum, item) =>
+            sum + (Number(item.unit_price) * Number(item.quantity)), 0
+        );
+        const setText = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value || '—';
+        };
+        const createdAt = order.created_at ? new Date(order.created_at) : null;
+
+        setText('orderModalCustomerName', order.delivery_name || buyer.name);
+        setText('orderModalCustomerEmail', buyer.email);
+        setText('orderModalCustomerPhone', order.delivery_phone || buyer.contact_no);
+        setText('orderModalCustomerAddress', order.delivery_address);
+        setText('orderModalPaymentMethod', order.payment_method || 'Cash on Delivery');
+        setText(
+            'orderModalPaymentDescription',
+            (order.payment_method || '').toLowerCase().includes('cash') ? 'Payment upon Delivery' : 'Payment details',
+        );
+        if (createdAt && !Number.isNaN(createdAt.getTime())) {
+            setText('orderModalOrderedDate', new Intl.DateTimeFormat('en-US', {
+                month: 'long', day: 'numeric', year: 'numeric',
+            }).format(createdAt));
+            setText('orderModalOrderedTime', new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric', minute: '2-digit',
+            }).format(createdAt));
+        }
+
+        const itemsSection = document.querySelector('.modal-items-section');
+        if (itemsSection) {
+            itemsSection.innerHTML = `
+                <h3 class="text-[15px] font-semibold text-[#17120F]">Items Ordered</h3>
+                <div class="mt-[5px] h-[42px] rounded-[11px] bg-[#FBEDED] grid grid-cols-[2.25fr_1fr_1fr_1fr] items-center px-[24px] text-[12px] font-medium text-[#60100F]">
+                    <div>Item</div><div>Price</div><div>Quantity</div><div>Subtotal</div>
+                </div>
+                ${items.length ? items.map((item) => {
+                    const itemSubtotal = Number(item.unit_price) * Number(item.quantity);
+                    const options = [item.variation, item.color, item.size].filter(Boolean).join(' · ');
+                    return `
+                        <div class="modal-item-row">
+                            <div class="flex items-center gap-[16px]">
+                                <div class="modal-product-image"><div class="modal-product-bag"></div></div>
+                                <span class="text-[14px] font-semibold text-[#17120F]">
+                                    ${escapeHtml(item.product_name)}${options ? `<small class="block font-normal">${escapeHtml(options)}</small>` : ''}
+                                </span>
+                            </div>
+                            <div class="text-[13px] text-[#17120F]">${formatCurrency(item.unit_price)}</div>
+                            <div class="text-[13px] text-[#17120F] text-center">${Number(item.quantity)}</div>
+                            <div class="text-[13px] text-[#17120F]">${formatCurrency(itemSubtotal)}</div>
+                        </div>`;
+                }).join('') : '<p class="py-4 text-[13px] text-[#77716E]">No item details are saved for this order.</p>'}
+                <div class="flex justify-end pt-[10px]"><div class="w-[320px]">
+                    <div class="flex items-center justify-between"><span class="text-[13px] text-[#85807D]">Subtotal</span><span class="text-[13px] text-[#17120F]">${formatCurrency(subtotal)}</span></div>
+                    <div class="mt-[10px] flex items-center justify-between"><span class="text-[13px] text-[#85807D]">Shipping Fee</span><span class="text-[13px] text-[#17120F]">${formatCurrency(0)}</span></div>
+                    <div class="mt-[12px] flex items-center justify-between"><span class="text-[13px] font-medium text-[#17120F]">Total Amount</span><span class="text-[20px] font-bold text-[#721313]">${formatCurrency(order.total)}</span></div>
+                </div></div>`;
+        }
+
+        const notesSection = document.querySelector('.modal-notes-section');
+        if (notesSection) notesSection.hidden = true;
+
+        if (Array.isArray(order.status_history)) {
+            const history = [...order.status_history].reverse();
+            const events = history
+                .filter((event) => ['preparing', 'to_ship'].includes(event.to_status))
+                .map((event) => {
+                    const eventDate = event.created_at ? new Date(event.created_at) : null;
+                    return {
+                        type: event.to_status === 'to_ship' ? 'ready' : 'prepared',
+                        date: eventDate && !Number.isNaN(eventDate.getTime())
+                            ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(eventDate)
+                            : '',
+                        time: eventDate && !Number.isNaN(eventDate.getTime())
+                            ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(eventDate)
+                            : '',
+                    };
+                });
+            setTrackingEvents(row, events);
+            renderTrackingHistory(row);
+        }
+    }
 
     const trackingHistorySection =
         document.getElementById(
@@ -1012,6 +1187,10 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
         lockBody();
+        loadOrderDetails(row).catch((error) => {
+            const items = document.getElementById('orderModalItems');
+            if (items) items.innerHTML = `<p class="py-4 text-[13px] text-red-700">${escapeHtml(error.message)}</p>`;
+        });
     }
 
     function closeOrderDetailsModal(

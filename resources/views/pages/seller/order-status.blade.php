@@ -27,7 +27,13 @@
 
     @vite(['resources/css/app.css', 'resources/css/seller/order-status.css', 'resources/js/seller/order-status.js'])
 
-    
+    <script id="sellerOrderStatusConfig" type="application/json">
+        {!! json_encode([
+            'ordersUrl' => '/api/v1/seller/orders',
+            'apiToken' => $apiToken ?? '',
+            'orders' => $orders,
+        ]) !!}
+    </script>
 
 </head>
 
@@ -86,7 +92,65 @@
 
                 {{-- ORDER TABLE --}}
                 <div id="orderStatusTable" class="mt-[4px]">
+                    @forelse ($orders as $order)
+                        @php
+                            $displayStatus = match ($order->status) {
+                                'pending' => 'new',
+                                'to_ship' => 'to-ship',
+                                default => $order->status,
+                            };
+                            $statusLabel = match ($displayStatus) {
+                                'new' => 'New Order',
+                                'preparing' => 'Preparing',
+                                'to-ship' => 'Ready to Ship',
+                                default => str($displayStatus)->replace('_', ' ')->title(),
+                            };
+                            $statusStyle = in_array($displayStatus, ['new', 'preparing', 'to-ship'], true)
+                                ? $displayStatus
+                                : 'new';
+                            $statusIcon = match ($statusStyle) {
+                                'preparing' => 'processing.png',
+                                'to-ship' => 'ready-to-ship.png',
+                                default => 'new-order.png',
+                            };
+                            $orderNumber = $order->order_number ?: 'ORD-' . $order->id;
+                            $customer = $order->delivery_name ?: ($order->buyer?->name ?? 'Customer');
+                            $phone = $order->delivery_phone ?: ($order->buyer?->contact_no ?? '');
+                            $searchText = $orderNumber . ' ' . $customer . ' ' . $phone . ' ' . $order->items->pluck('product_name')->implode(' ');
+                        @endphp
+                        <article class="order-row grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[99px] px-[20px] border-b border-[#DDD9D7] transition-all duration-200 ease-out hover:bg-[#FFFBF9]"
+                            data-order-id="{{ $order->id }}"
+                            data-status="{{ $displayStatus }}"
+                            data-tab="{{ $displayStatus }}"
+                            data-search="{{ $searchText }}">
+                            <div class="flex items-center gap-[22px] min-w-0">
+                                <div class="order-icon-box {{ $statusStyle }}"><img src="{{ asset('icons/seller/order-status/' . $statusIcon) }}" alt="{{ $statusLabel }}"></div>
+                                <div class="min-w-0">
+                                    <h3 class="order-id">#{{ $orderNumber }}</h3>
+                                    <p class="order-status {{ $statusStyle }}-text"><span class="status-dot {{ $statusStyle }}-dot"></span>{{ $statusLabel }}</p>
+                                </div>
+                            </div>
+                            <div class="min-w-0"><p class="customer-name">{{ $customer }}</p><p class="customer-phone">{{ $phone }}</p></div>
+                            <div class="flex items-center gap-[10px] min-w-0">
+                                @forelse ($order->items->take(2) as $item)
+                                    <div class="mini-product" title="{{ $item->product_name }}"><div class="product-bag"></div></div>
+                                @empty
+                                    <span class="text-[12px] text-[#8A8582]">No item details</span>
+                                @endforelse
+                                @if ($order->items->count() > 2)
+                                    <span class="more-items">+{{ $order->items->count() - 2 }} more</span>
+                                @elseif ($order->items->count() === 1)
+                                    <span class="text-[12px] text-[#625D5A] truncate">{{ $order->items->first()->product_name }}</span>
+                                @endif
+                            </div>
+                            <div><p class="amount">₱{{ number_format((float) $order->total, 2) }}</p><p class="payment">Payment: {{ $order->payment_method ?: 'Cash on Delivery' }}</p></div>
+                            <div><p class="ordered-date">{{ $order->created_at?->format('M d, Y') }}</p><p class="ordered-time">{{ $order->created_at?->format('g:i A') }}</p></div>
+                        </article>
+                    @empty
+                        <p class="px-[20px] py-[36px] text-center text-[13px] text-[#8A8582]">No orders for this seller yet.</p>
+                    @endforelse
 
+                    @if (false)
                     {{-- ROW 1 --}}
                     <article class="order-row grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[99px] px-[20px] border-b border-[#DDD9D7] transition-all duration-200 ease-out hover:bg-[#FFFBF9]" data-status="new" data-tab="new" data-search="#ORD-2026 Juan Dela Cruz 0917-123-4567">
                         <div class="flex items-center gap-[22px] min-w-0">
@@ -176,6 +240,7 @@
                         <div><p class="amount">₱559.00</p><p class="payment">Payment: COD</p></div>
                         <div><p class="ordered-date">May 24, 2026</p><p class="ordered-time">4:30 PM</p></div>
                     </article>
+                    @endif
                 </div>
 
                 {{-- NO RESULTS --}}
@@ -251,17 +316,17 @@
                 <div>
                     <h3 class="text-[16px] font-semibold text-[#17120F]">Customer Information</h3>
                     <div class="mt-[13px] space-y-[9px]">
-                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" fill="#000"></circle><circle cx="16" cy="8" r="3" fill="#000"></circle><path d="M2 19c.8-3 3-5 6-5s5.2 2 6 5H2Z" fill="#000"></path><path d="M12 19c.7-2.5 2.5-4 5-4 2.7 0 4.5 1.5 5 4h-10Z" fill="#000"></path></svg><span class="text-[12px] text-[#17120F]">Juan Dela Cruz</span></div>
-                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M3 7l9 7 9-7"></path></svg><span class="text-[12px] text-[#17120F]">juandelacruz@gmail.com</span></div>
-                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5c.5 0 1 .3 1.3.8l1.7 3.1c.2.4.2 1-.1 1.4l-1.2 1.4a13 13 0 0 0 3.6 3.6l1.4-1.2c.4-.3 1-.4 1.4-.1l3.1 1.7c.5.3.8.8.8 1.3V19c0 .8-.7 1.5-1.5 1.5C10.6 20.5 3.5 13.4 3.5 4.5 3.5 3.7 4.2 3 5 3h2.5c0 .5 0 1 0 1.5Z"></path></svg><span class="text-[12px] text-[#17120F]">0917 123 4567</span></div>
-                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-12a7 7 0 1 0-14 0c0 6.4 7 12 7 12Z"></path><circle cx="12" cy="9" r="2.3"></circle></svg><span class="text-[12px] text-[#17120F]">Calamba, Laguna</span></div>
+                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" fill="#000"></circle><circle cx="16" cy="8" r="3" fill="#000"></circle><path d="M2 19c.8-3 3-5 6-5s5.2 2 6 5H2Z" fill="#000"></path><path d="M12 19c.7-2.5 2.5-4 5-4 2.7 0 4.5 1.5 5 4h-10Z" fill="#000"></path></svg><span id="orderModalCustomerName" class="text-[12px] text-[#17120F]">—</span></div>
+                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M3 7l9 7 9-7"></path></svg><span id="orderModalCustomerEmail" class="text-[12px] text-[#17120F]">—</span></div>
+                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5c.5 0 1 .3 1.3.8l1.7 3.1c.2.4.2 1-.1 1.4l-1.2 1.4a13 13 0 0 0 3.6 3.6l1.4-1.2c.4-.3 1-.4 1.4-.1l3.1 1.7c.5.3.8.8.8 1.3V19c0 .8-.7 1.5-1.5 1.5C10.6 20.5 3.5 13.4 3.5 4.5 3.5 3.7 4.2 3 5 3h2.5c0 .5 0 1 0 1.5Z"></path></svg><span id="orderModalCustomerPhone" class="text-[12px] text-[#17120F]">—</span></div>
+                        <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-12a7 7 0 1 0-14 0c0 6.4 7 12 7 12Z"></path><circle cx="12" cy="9" r="2.3"></circle></svg><span id="orderModalCustomerAddress" class="text-[12px] text-[#17120F]">—</span></div>
                     </div>
                 </div>
                 <div>
                     <h3 class="text-[16px] font-semibold text-[#17120F]">Payment Method</h3>
                     <div class="mt-[18px] flex items-start gap-[15px]">
                         <svg class="w-[19px] h-[19px] mt-[1px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18"></path><path d="M7 14h4"></path></svg>
-                        <div><p class="text-[14px] leading-tight text-[#17120F]">Payment: <span class="text-[#F07E23]">COD</span></p><p class="mt-[7px] text-[13px] leading-tight text-[#77716E]">Payment upon Delivery</p></div>
+                        <div><p class="text-[14px] leading-tight text-[#17120F]">Payment: <span id="orderModalPaymentMethod" class="text-[#F07E23]">—</span></p><p id="orderModalPaymentDescription" class="mt-[7px] text-[13px] leading-tight text-[#77716E]">—</p></div>
                     </div>
                 </div>
             </div>

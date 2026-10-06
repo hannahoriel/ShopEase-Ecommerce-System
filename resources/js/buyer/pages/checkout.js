@@ -1,4 +1,10 @@
+import QRCode from 'qrcode';
+
 const checkoutConfig = {
+    api: (() => {
+        const element = document.getElementById('buyerCheckoutConfig');
+        return element ? JSON.parse(element.textContent) : {};
+    })(),
     registrationAddress: {
         name: document.body?.dataset?.registrationAddressName || 'Buyer',
         phone: document.body?.dataset?.registrationAddressPhone || '',
@@ -9,6 +15,193 @@ const checkoutConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+            const checkoutApiFetch = async (url, options = {}) => {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        ...(checkoutConfig.api.apiToken
+                            ? { Authorization: `Bearer ${checkoutConfig.api.apiToken}` }
+                            : {}),
+                        ...(options.headers || {}),
+                    },
+                    credentials: 'same-origin',
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const validationMessage = Object.values(payload.errors || {}).flat()[0];
+                    throw new Error(validationMessage || payload.message || `Request failed (${response.status}).`);
+                }
+                return payload;
+            };
+
+            const checkoutGroupsElement = document.getElementById('checkoutGroups');
+            const checkoutMessage = document.getElementById('checkoutMessage');
+            const placeOrderButton = document.getElementById('placeOrderButton');
+            let cartItems = [];
+
+            const escapeCheckoutHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            })[character]);
+
+            const money = value => `₱${Number(value || 0).toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+
+            function renderCheckoutCart(items) {
+                cartItems = items;
+                if (!checkoutGroupsElement) return;
+                if (!items.length) {
+                    checkoutGroupsElement.innerHTML = '<p class="checkout-empty-cart">Your cart is empty. Add products before placing an order.</p>';
+                    placeOrderButton.disabled = true;
+                    return;
+                }
+
+                const groups = new Map();
+                items.forEach(item => {
+                    const sellerId = item.product.seller.id;
+                    if (!groups.has(sellerId)) {
+                        groups.set(sellerId, { shop: item.product.seller.store_name || 'Shop', items: [] });
+                    }
+                    groups.get(sellerId).items.push(item);
+                });
+
+                checkoutGroupsElement.innerHTML = [...groups.values()].map(group => {
+                    const subtotal = group.items.reduce((total, item) => total + Number(item.product.price) * Number(item.quantity), 0);
+                    const quantity = group.items.reduce((total, item) => total + Number(item.quantity), 0);
+                    return `
+                        <section class="checkout-shop-group">
+                            <div class="checkout-shop-header">
+                                <div class="checkout-shop-name-wrap">
+                                    <span class="checkout-shop-icon" aria-hidden="true">▣</span>
+                                    <strong>${escapeCheckoutHtml(group.shop)}</strong>
+                                </div>
+                            </div>
+                            ${group.items.map(item => {
+                                const options = [item.variation, item.color, item.size].filter(Boolean).join(' · ');
+                                const image = item.product.image_url
+                                    ? `<img src="${escapeCheckoutHtml(item.product.image_url)}" alt="${escapeCheckoutHtml(item.product.name)}">`
+                                    : '<span class="checkout-product-placeholder" aria-hidden="true">No image</span>';
+                                return `
+                                    <article class="checkout-product-row">
+                                        <div class="checkout-product-cell">
+                                            <div class="checkout-product-image">${image}</div>
+                                            <div class="checkout-product-copy">
+                                                <strong>${escapeCheckoutHtml(item.product.name)}</strong>
+                                                <span>${options ? `Variation: ${escapeCheckoutHtml(options)}` : 'Standard'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="checkout-unit-price">${money(item.product.price)}</div>
+                                        <div class="checkout-quantity">${item.quantity}</div>
+                                        <div class="checkout-item-subtotal">${money(item.product.price * item.quantity)}</div>
+                                    </article>`;
+                            }).join('')}
+                            <div class="shop-checkout-options">
+                                <div class="shipping-option">
+                                    <div><strong>Shipping Option</strong><span>Shipping fee will be confirmed by the seller.</span><small>Standard Local</small></div>
+                                    <strong class="shipping-fee">${money(0)}</strong>
+                                </div>
+                            </div>
+                            <div class="shop-total-row">
+                                <span>Order Total (${quantity} ${quantity === 1 ? 'item' : 'items'}):</span>
+                                <strong>${money(subtotal)}</strong>
+                            </div>
+                        </section>`;
+                }).join('');
+
+                const merchandiseTotal = items.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0);
+                document.getElementById('checkoutMerchandiseSubtotal').textContent = money(merchandiseTotal);
+                document.getElementById('checkoutShippingSubtotal').textContent = money(0);
+                document.getElementById('checkoutTotalPayment').textContent = money(merchandiseTotal);
+                placeOrderButton.disabled = false;
+            }
+
+            async function loadCheckoutCart() {
+                if (!checkoutConfig.api.apiToken) {
+                    renderCheckoutCart([]);
+                    if (checkoutMessage) checkoutMessage.textContent = 'Your session expired. Sign in again before placing your order.';
+                    return;
+                }
+                try {
+                    const payload = await checkoutApiFetch(checkoutConfig.api.cartUrl || '/api/v1/buyer/cart');
+                    renderCheckoutCart(payload.data || []);
+                } catch (error) {
+                    if (checkoutGroupsElement) checkoutGroupsElement.textContent = error.message;
+                    placeOrderButton.disabled = true;
+                }
+            }
+
+            function renderPlacedOrders(orders) {
+                const results = document.getElementById('checkoutOrderResults');
+                if (!results) return;
+                results.replaceChildren();
+                orders.forEach(order => {
+                    const card = document.createElement('article');
+                    card.className = 'checkout-placed-order';
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 176;
+                    canvas.height = 176;
+                    const copy = document.createElement('div');
+                    copy.className = 'checkout-placed-order-copy';
+                    const heading = document.createElement('strong');
+                    heading.textContent = order.order_number;
+                    const shop = document.createElement('span');
+                    shop.textContent = order.shop;
+                    const total = document.createElement('span');
+                    total.textContent = `Total: ${money(order.total)}`;
+                    const note = document.createElement('small');
+                    note.textContent = 'Scan this QR to verify your order number.';
+                    copy.append(heading, shop, total, note);
+                    card.append(canvas, copy);
+                    results.append(card);
+                    QRCode.toCanvas(canvas, order.qr_payload, {
+                        width: 176,
+                        margin: 1,
+                        errorCorrectionLevel: 'M',
+                    }).catch(error => {
+                        const failure = document.createElement('small');
+                        failure.textContent = `QR could not be generated: ${error.message}`;
+                        copy.append(failure);
+                    });
+                });
+            }
+
+            async function placeBuyerOrder() {
+                if (!cartItems.length || placeOrderButton.disabled) return;
+                const address = getSavedAddress() || registrationAddress;
+                if (!address?.name || !address?.phone || !address?.address) {
+                    if (checkoutMessage) checkoutMessage.textContent = 'Please choose a complete delivery address before placing your order.';
+                    return;
+                }
+                placeOrderButton.disabled = true;
+                placeOrderButton.textContent = 'Placing order…';
+                if (checkoutMessage) checkoutMessage.textContent = '';
+                try {
+                    const response = await checkoutApiFetch(checkoutConfig.api.ordersUrl || '/api/v1/buyer/orders', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            delivery_name: address.name,
+                            delivery_phone: address.phone,
+                            delivery_address: address.address,
+                            payment_method: paymentMethodLabel?.textContent || 'Cash on Delivery',
+                        }),
+                    });
+                    renderPlacedOrders(response.orders || []);
+                    if (!response.orders?.length) throw new Error('The order was not created. Please try again.');
+                    if (checkoutSuccessModal) checkoutSuccessModal.hidden = false;
+                    setPageBlurred(true);
+                } catch (error) {
+                    if (checkoutMessage) checkoutMessage.textContent = error.message;
+                    placeOrderButton.disabled = false;
+                    placeOrderButton.textContent = 'Place Order';
+                }
+            }
+
+            loadCheckoutCart();
+
             const pageContent =
                 document.getElementById('checkoutPageContent');
 
@@ -841,13 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .getElementById('placeOrderButton')
                 ?.addEventListener(
                     'click',
-                    () => {
-                        if (checkoutSuccessModal) {
-                            checkoutSuccessModal.hidden = false;
-                        }
-
-                        setPageBlurred(true);
-                    }
+                    placeBuyerOrder
                 );
 
             checkoutSuccessOkay?.addEventListener(

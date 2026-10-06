@@ -29,6 +29,12 @@
         'resources/css/buyer/pages/my-purchases.css',
         'resources/js/buyer/pages/my-purchases.js',
     ])
+    <script id="buyerPurchasesConfig" type="application/json">
+        {!! json_encode([
+            'ordersUrl' => '/api/v1/buyer/orders',
+            'apiToken' => $apiToken ?? '',
+        ]) !!}
+    </script>
 </head>
 
 <body class="buyer-purchases-page" data-active-purchase-tab="{{ $activePurchaseTab ?? request('tab', 'all') }}">
@@ -47,92 +53,7 @@
             ['key' => 'cancelled',          'label' => 'Cancelled'],
         ];
 
-        $orders = [
-            [
-                'order_id' => 'SE-20261004-001',
-                'shop' => 'The Shop PH',
-                'product' => 'Wireless Earbuds Pro',
-                'variant' => 'White · Standard',
-                'price' => 1499,
-                'quantity' => 1,
-                'total' => 1499,
-                'status' => 'to-ship',
-                'status_label' => 'To Ship',
-                'art' => 'earbuds',
-                'additional_products' => 2,
-                'estimated_delivery' => 'Oct 7–8, 2026',
-            ],
-            [
-                'order_id' => 'SE-20261003-014',
-                'shop' => 'Tech Haven',
-                'product' => 'Smart Watch Series 8',
-                'variant' => 'Black · 44mm',
-                'price' => 2199,
-                'quantity' => 1,
-                'total' => 2199,
-                'status' => 'in-transit',
-                'status_label' => 'In Transit',
-                'art' => 'watch',
-                'additional_products' => 1,
-                'estimated_delivery' => 'Oct 6–7, 2026',
-            ],
-            [
-                'order_id' => 'SE-20260928-008',
-                'shop' => 'Mia Boutique',
-                'product' => 'Classic Shoulder Bag',
-                'variant' => 'Brown · Medium',
-                'price' => 899,
-                'quantity' => 1,
-                'total' => 899,
-                'status' => 'delivered',
-                'status_label' => 'Delivered',
-                'art' => 'bag',
-                'additional_products' => 3,
-                'estimated_delivery' => 'Delivered Oct 2, 2026',
-            ],
-            [
-                'order_id' => 'SE-20260924-021',
-                'shop' => 'Active Steps',
-                'product' => 'Running Shoes for Men',
-                'variant' => 'Black · Size 42',
-                'price' => 1899,
-                'quantity' => 1,
-                'total' => 1899,
-                'status' => 'processing',
-                'status_label' => 'Processing',
-                'art' => 'shoes',
-                'additional_products' => 0,
-                'estimated_delivery' => 'Oct 8–9, 2026',
-            ],
-            [
-                'order_id' => 'SE-20260918-011',
-                'shop' => 'Glow Essentials',
-                'product' => 'Daily Glow Skincare Kit',
-                'variant' => 'Complete Set',
-                'price' => 1099,
-                'quantity' => 1,
-                'total' => 1099,
-                'status' => 'cancelled',
-                'status_label' => 'Cancelled',
-                'art' => 'skincare',
-                'additional_products' => 1,
-                'estimated_delivery' => '—',
-            ],
-            [
-                'order_id' => 'SE-20260912-005',
-                'shop' => 'Home Select',
-                'product' => 'Non-Stick Cookware Set',
-                'variant' => '6-piece Set',
-                'price' => 1299,
-                'quantity' => 1,
-                'total' => 1299,
-                'status' => 'delivered',
-                'status_label' => 'Delivered',
-                'art' => 'cookware',
-                'additional_products' => 2,
-                'estimated_delivery' => 'Delivered Sep 30, 2026',
-            ],
-        ];
+        $orders = [];
     @endphp
 
     <main class="purchases-main">
@@ -174,7 +95,7 @@
                         </div>
 
                         <div class="buyer-profile-copy">
-                            <strong>Buyer</strong>
+                            <strong>{{ auth()->user()->name }}</strong>
                             <button type="button" class="buyer-edit-profile">
                                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path

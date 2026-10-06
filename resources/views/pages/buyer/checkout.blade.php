@@ -28,6 +28,14 @@
         rel="stylesheet"
     >
 
+    <script id="buyerCheckoutConfig" type="application/json">
+        {!! json_encode([
+            'cartUrl' => '/api/v1/buyer/cart',
+            'ordersUrl' => '/api/v1/buyer/orders',
+            'apiToken' => $apiToken ?? '',
+        ]) !!}
+    </script>
+
     @vite([
         'resources/css/app.css',
         'resources/css/buyer/pages/checkout.css',
@@ -36,65 +44,19 @@
 </head>
 
     @php
-        /*
-         * Temporary UI data.
-         * Replace these arrays with your authenticated buyer/address/order
-         * records once the checkout backend is connected.
-         */
+        $buyer = auth()->user();
+        $buyerProfile = $buyer->buyerProfile;
         $registrationAddress = [
-            'name' => 'Buyer',
-            'phone' => '+63 912 345 6789',
-            'address' => 'House No., Street, Barangay, City, Province 0000',
+            'name' => trim(($buyerProfile?->first_name ?? '') . ' ' . ($buyerProfile?->last_name ?? '')) ?: $buyer->name,
+            'phone' => $buyerProfile?->contact_no ?? '',
+            'address' => collect([
+                $buyerProfile?->house_number,
+                $buyerProfile?->street,
+                $buyerProfile?->barangay,
+                $buyerProfile?->municipality,
+                $buyerProfile?->province,
+            ])->filter()->implode(', '),
         ];
-
-        $checkoutGroups = [
-            [
-                'shop' => 'The Shop PH',
-                'shipping' => 'Standard Local',
-                'delivery' => 'Oct 7–8, 2026',
-                'shipping_fee' => 58,
-                'items' => [
-                    [
-                        'name' => 'Wireless Earbuds Pro',
-                        'variant' => 'White · Standard',
-                        'price' => 1499,
-                        'quantity' => 1,
-                        'art' => 'earbuds',
-                    ],
-                    [
-                        'name' => 'Portable Charging Case',
-                        'variant' => 'White',
-                        'price' => 399,
-                        'quantity' => 1,
-                        'art' => 'case',
-                    ],
-                ],
-            ],
-            [
-                'shop' => 'Tech Haven',
-                'shipping' => 'Standard Local',
-                'delivery' => 'Oct 8–9, 2026',
-                'shipping_fee' => 65,
-                'items' => [
-                    [
-                        'name' => 'Smart Watch Series 8',
-                        'variant' => 'Black · 44mm',
-                        'price' => 2199,
-                        'quantity' => 1,
-                        'art' => 'watch',
-                    ],
-                ],
-            ],
-        ];
-
-        $merchandiseSubtotal = collect($checkoutGroups)
-            ->flatMap(fn ($group) => $group['items'])
-            ->sum(fn ($item) => $item['price'] * $item['quantity']);
-
-        $shippingSubtotal = collect($checkoutGroups)
-            ->sum('shipping_fee');
-
-        $totalPayment = $merchandiseSubtotal + $shippingSubtotal;
     @endphp
 
 <body
@@ -202,7 +164,8 @@
                         <div>Item Subtotal</div>
                     </div>
 
-                    @foreach ($checkoutGroups as $groupIndex => $group)
+                    <div id="checkoutGroups">
+                    @foreach ([] as $groupIndex => $group)
                         <section
                             class="checkout-shop-group"
                             data-checkout-shop="{{ $groupIndex }}"
@@ -354,6 +317,7 @@
                             </div>
                         </section>
                     @endforeach
+                    </div>
                 </section>
 
                 {{-- PAYMENT --}}
@@ -389,21 +353,21 @@
                         <div class="checkout-summary-row">
                             <span>Merchandise Subtotal</span>
                             <strong>
-                                ₱{{ number_format($merchandiseSubtotal, 2) }}
+                                <span id="checkoutMerchandiseSubtotal">₱0.00</span>
                             </strong>
                         </div>
 
                         <div class="checkout-summary-row">
                             <span>Shipping Subtotal</span>
                             <strong>
-                                ₱{{ number_format($shippingSubtotal, 2) }}
+                                <span id="checkoutShippingSubtotal">₱0.00</span>
                             </strong>
                         </div>
 
                         <div class="checkout-summary-row checkout-summary-total">
                             <span>Total Payment</span>
                             <strong>
-                                ₱{{ number_format($totalPayment, 2) }}
+                                <span id="checkoutTotalPayment">₱0.00</span>
                             </strong>
                         </div>
                     </div>
@@ -422,6 +386,7 @@
                             Place Order
                         </button>
                     </div>
+                    <p id="checkoutMessage" class="checkout-message" role="status" aria-live="polite"></p>
                 </section>
 
             </div>
@@ -838,9 +803,9 @@
             </h2>
 
             <p class="checkout-success-text">
-                Your order has been placed and is now being processed.
-                You can track its status anytime in My Purchases.
+                Save this QR code and order number. Scan the code to verify your order.
             </p>
+            <div id="checkoutOrderResults" class="checkout-order-results"></div>
 
             <button
                 type="button"

@@ -17,11 +17,16 @@ class Order extends Model
     protected $fillable = [
         'buyer_id',
         'seller_id',
+        'order_number',
         'total',
         'commission_amount',
         'status',
         'pickup_date',
         'pickup_time',
+        'delivery_name',
+        'delivery_phone',
+        'delivery_address',
+        'payment_method',
     ];
 
     protected $casts = [
@@ -44,6 +49,11 @@ class Order extends Model
     public function statusHistory(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->latest();
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
     public function shipment(): HasOne

@@ -2138,7 +2138,9 @@ Route::get('/seller/customer-feedback', function () {
         403
     );
 
-    return view('pages.seller.customer-feedback');
+    $apiToken = Auth::user()->createToken('seller-feedback')->plainTextToken;
+
+    return view('pages.seller.customer-feedback', ['apiToken' => $apiToken]);
 
 })->middleware('auth')
   ->name('seller.feedback.index');
@@ -2196,17 +2198,22 @@ Route::get('/buyer/cart', function () {
 })->middleware('auth')->name('buyer.cart');
 
 Route::get('/buyer/product', function () {
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
     $apiToken = Auth::check() ? Auth::user()->createToken('buyer-product')->plainTextToken : '';
     return view('pages.buyer.product', ['apiToken' => $apiToken]);
 })->middleware('auth')->name('buyer.product');
 
 Route::get('/buyer/my-purchases', function () {
-    return view('pages.buyer.my-purchases');
-})->name('buyer.my-purchases');
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $apiToken = Auth::user()->createToken('buyer-purchases')->plainTextToken;
+    return view('pages.buyer.my-purchases', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.my-purchases');
 
 Route::get('/buyer/checkout', function () {
-    return view('pages.buyer.checkout');
-})->name('buyer.checkout');
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $apiToken = Auth::user()->createToken('buyer-checkout')->plainTextToken;
+    return view('pages.buyer.checkout', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.checkout');
 
 Route::get('/seller/messages', function () {
     return view('pages.seller.messages');

@@ -675,6 +675,66 @@
             line-height: 1.4;
         }
 
+        .checkout-message {
+            margin: 8px 22px 14px;
+            color: #A32626;
+            font-size: 11px;
+        }
+
+        .checkout-empty-cart {
+            padding: 28px;
+            color: #7F7774;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .checkout-product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .checkout-product-placeholder {
+            color: #8A827F;
+            font-size: 10px;
+        }
+
+        .checkout-placed-order {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px solid #ECE3E0;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .checkout-placed-order canvas {
+            flex: 0 0 112px;
+            width: 112px;
+            height: 112px;
+        }
+
+        .checkout-placed-order-copy {
+            min-width: 0;
+            display: grid;
+            gap: 5px;
+            color: #554A47;
+            font-size: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .checkout-placed-order-copy strong {
+            color: #7A1620;
+            font-size: 12px;
+        }
+
+        .checkout-placed-order-copy small {
+            color: #8A827F;
+            line-height: 1.4;
+        }
+
         .place-order-button {
             width: 205px;
             height: 42px;
@@ -1158,7 +1218,7 @@
         }
 
         .checkout-success-modal {
-            width: min(420px, 100%);
+            width: min(520px, 100%);
             padding: 30px 28px 26px;
             text-align: center;
         }
@@ -1194,6 +1254,12 @@
             color: #7F7774;
             font-size: 11px;
             line-height: 1.55;
+        }
+
+        .checkout-order-results {
+            max-height: 40vh;
+            margin-top: 10px;
+            overflow-y: auto;
         }
 
         .checkout-success-button {

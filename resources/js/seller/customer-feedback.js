@@ -1,552 +1,320 @@
-document.addEventListener(
-            'DOMContentLoaded',
-            function () {
-
-                const tabs =
-                    document.querySelectorAll(
-                        '.feedback-tab'
-                    );
-
-
-                const allFeedbackPanel =
-                    document.getElementById(
-                        'allFeedbackPanel'
-                    );
-
-
-                const productRatingsPanel =
-                    document.getElementById(
-                        'productRatingsPanel'
-                    );
-
-
-                const searchInput =
-                    document.getElementById(
-                        'feedbackSearch'
-                    );
-
-
-                const ratingFilter =
-                    document.getElementById(
-                        'feedbackRatingFilter'
-                    );
-
-
-                const refreshButton =
-                    document.getElementById(
-                        'feedbackRefresh'
-                    );
-
-
-                const subtitle =
-                    document.getElementById(
-                        'feedbackSubtitle'
-                    );
-
-
-                const modal =
-                    document.getElementById(
-                        'productReviewsModal'
-                    );
-
-
-                const closeModalButton =
-                    document.getElementById(
-                        'closeShippingModal'
-                    );
-
-
-                let currentTab =
-                    'feedback';
-
-
-                /* =================================================
-                   TABS
-                ================================================== */
-
-                tabs.forEach(
-                    function (tab) {
-
-                        tab.addEventListener(
-                            'click',
-                            function () {
-
-                                tabs.forEach(
-                                    function (item) {
-
-                                        item.classList.remove(
-                                            'active'
-                                        );
-
-                                    }
-                                );
-
-
-                                tab.classList.add(
-                                    'active'
-                                );
-
-
-                                currentTab =
-                                    tab.dataset.tab;
-
-
-                                const showFeedback =
-                                    currentTab ===
-                                    'feedback';
-
-
-                                allFeedbackPanel.style.display =
-                                    showFeedback
-                                        ? 'block'
-                                        : 'none';
-
-
-                                productRatingsPanel.classList.toggle(
-                                    'active',
-                                    !showFeedback
-                                );
-
-
-                                ratingFilter.style.display =
-                                    showFeedback
-                                        ? ''
-                                        : 'none';
-
-
-                                refreshButton.style.display =
-                                    showFeedback
-                                        ? ''
-                                        : 'none';
-
-
-                                searchInput.placeholder =
-                                    showFeedback
-                                        ? 'Search order ID or customer name'
-                                        : 'Search Product';
-
-
-                                subtitle.textContent =
-                                    showFeedback
-                                        ? 'View feedbacks from your customers.'
-                                        : 'View and manage new orders from your customers.';
-
-
-                                searchInput.value =
-                                    '';
-
-
-                                ratingFilter.value =
-                                    'all';
-
-
-                                applyFilters();
-
-                            }
-                        );
-
-                    }
-                );
-
-
-                /* =================================================
-                   FILTERING
-                ================================================== */
-
-                function applyFilters() {
-
-                    const query =
-                        searchInput.value
-                            .trim()
-                            .toLowerCase();
-
-
-                    if (
-                        currentTab ===
-                        'feedback'
-                    ) {
-
-                        const rows =
-                            document.querySelectorAll(
-                                '.feedback-row'
-                            );
-
-
-                        const selectedRating =
-                            ratingFilter.value;
-
-
-                        rows.forEach(
-                            function (row) {
-
-                                const matchSearch =
-                                    !query ||
-                                    (
-                                        row.dataset.search ||
-                                        ''
-                                    ).includes(
-                                        query
-                                    );
-
-
-                                const matchRating =
-                                    selectedRating ===
-                                    'all' ||
-                                    row.dataset.rating ===
-                                    selectedRating;
-
-
-                                row.style.display =
-                                    matchSearch &&
-                                    matchRating
-                                        ? ''
-                                        : 'none';
-
-                            }
-                        );
-
-                    } else {
-
-                        const cards =
-                            document.querySelectorAll(
-                                '.product-card'
-                            );
-
-
-                        cards.forEach(
-                            function (card) {
-
-                                const match =
-                                    !query ||
-                                    (
-                                        card.dataset.search ||
-                                        ''
-                                    ).includes(
-                                        query
-                                    );
-
-
-                                card.style.display =
-                                    match
-                                        ? ''
-                                        : 'none';
-
-                            }
-                        );
-
-                    }
-
-                }
-
-
-                searchInput.addEventListener(
-                    'input',
-                    applyFilters
-                );
-
-
-                ratingFilter.addEventListener(
-                    'change',
-                    applyFilters
-                );
-
-
-                refreshButton.addEventListener(
-                    'click',
-                    function () {
-
-                        searchInput.value =
-                            '';
-
-                        ratingFilter.value =
-                            'all';
-
-                        applyFilters();
-
-
-                        refreshButton.animate(
-                            [
-                                {
-                                    transform:
-                                        'rotate(0deg)'
-                                },
-
-                                {
-                                    transform:
-                                        'rotate(360deg)'
-                                }
-                            ],
-                            {
-                                duration:
-                                    400,
-
-                                easing:
-                                    'ease'
-                            }
-                        );
-
-                    }
-                );
-
-
-                /* =================================================
-                   PRODUCT MODAL
-                ================================================== */
-
-                document
-                    .querySelectorAll(
-                        '.product-card'
-                    )
-                    .forEach(
-                        function (card) {
-
-                            card.addEventListener(
-                                'click',
-                                function () {
-
-                                    if (modalCloseTimer) {
-
-                                        window.clearTimeout(
-                                            modalCloseTimer
-                                        );
-
-                                        modalCloseTimer =
-                                            null;
-
-                                    }
-
-
-                                    modal.classList.remove(
-                                        'is-closing'
-                                    );
-
-
-                                    modal.classList.add(
-                                        'open'
-                                    );
-
-
-                                    modal.setAttribute(
-                                        'aria-hidden',
-                                        'false'
-                                    );
-
-
-                                    document.body.style.overflow =
-                                        'hidden';
-
-                                }
-                            );
-
-                        }
-                    );
-
-
-                let modalCloseTimer =
-                    null;
-
-
-                function closeModal() {
-
-                    if (
-                        !modal ||
-                        !modal.classList.contains(
-                            'open'
-                        )
-                    ) {
-                        return;
-                    }
-
-
-                    if (modalCloseTimer) {
-
-                        window.clearTimeout(
-                            modalCloseTimer
-                        );
-
-                    }
-
-
-                    /*
-                     * Shipping Status-style closing:
-                     * fade only, no scale/slide.
-                     */
-                    modal.classList.add(
-                        'is-closing'
-                    );
-
-
-                    modalCloseTimer =
-                        window.setTimeout(
-                            function () {
-
-                                modal.classList.remove(
-                                    'open',
-                                    'is-closing'
-                                );
-
-
-                                modal.setAttribute(
-                                    'aria-hidden',
-                                    'true'
-                                );
-
-
-                                document.body.style.overflow =
-                                    '';
-
-
-                                modalCloseTimer =
-                                    null;
-
-                            },
-                            220
-                        );
-
-                }
-
-
-                closeModalButton.addEventListener(
-                    'click',
-                    closeModal
-                );
-
-
-                modal.addEventListener(
-                    'click',
-                    function (event) {
-
-                        if (
-                            event.target ===
-                            modal
-                        ) {
-
-                            closeModal();
-
-                        }
-
-                    }
-                );
-
-
-                document.addEventListener(
-                    'keydown',
-                    function (event) {
-
-                        if (
-                            event.key ===
-                            'Escape' &&
-                            modal.classList.contains(
-                                'open'
-                            )
-                        ) {
-
-                            closeModal();
-
-                        }
-
-                    }
-                );
-
-
-                /* =================================================
-                   SIDEBAR COLLAPSE SYNC
-                   Same expanded/collapsed content spacing as Shipping.
-                ================================================== */
-
-                const feedbackPage =
-                    document.getElementById(
-                        'feedbackPage'
-                    );
-
-
-                const sellerSidebar =
-                    document.getElementById(
-                        'sellerSidebar'
-                    );
-
-
-                function syncFeedbackSidebarState(
-                    collapsed
-                ) {
-
-                    feedbackPage
-                        ?.classList.toggle(
-                            'sidebar-collapsed',
-                            Boolean(
-                                collapsed
-                            )
-                        );
-
-                }
-
-
-                document.body.addEventListener(
-                    'seller-sidebar-state-changed',
-                    function (event) {
-
-                        syncFeedbackSidebarState(
-                            event.detail
-                                ?.collapsed
-                        );
-
-                    }
-                );
-
-
-                /*
-                 * Also sync on initial load so the content spacing
-                 * is correct even when the sidebar was already
-                 * collapsed before this page finished loading.
-                 */
-                if (sellerSidebar) {
-
-                    const getSidebarCollapsedState =
-                        function () {
-
-                            return (
-                                sellerSidebar.classList.contains(
-                                    'seller-sidebar-collapsed'
-                                ) ||
-                                sellerSidebar.classList.contains(
-                                    'w-20'
-                                )
-                            );
-
-                        };
-
-
-                    syncFeedbackSidebarState(
-                        getSidebarCollapsedState()
-                    );
-
-
-                    const sidebarObserver =
-                        new MutationObserver(
-                            function () {
-
-                                syncFeedbackSidebarState(
-                                    getSidebarCollapsedState()
-                                );
-
-                            }
-                        );
-
-
-                    sidebarObserver.observe(
-                        sellerSidebar,
-                        {
-                            attributes:
-                                true,
-
-                            attributeFilter:
-                                [
-                                    'class'
-                                ]
-                        }
-                    );
-
-                }
-
+document.addEventListener('DOMContentLoaded', () => {
+    const configElement = document.getElementById('sellerFeedbackConfig');
+    if (!configElement) return;
+
+    const config = JSON.parse(configElement.textContent);
+    const modal = document.getElementById('productReviewsModal');
+    const feedbackList = document.getElementById('feedbackList');
+    const productGrid = document.getElementById('productGrid');
+    const searchInput = document.getElementById('feedbackSearch');
+    const ratingFilter = document.getElementById('feedbackRatingFilter');
+    const perPageSelect = document.getElementById('feedbackPerPage');
+    const pagination = document.querySelector('.feedback-pagination');
+    const tabs = [...document.querySelectorAll('.feedback-tab')];
+    let currentTab = 'feedback';
+    let currentPage = 1;
+    let totalPages = 1;
+    let closeTimer = null;
+
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[character]);
+
+    const formatDate = (value) => {
+        if (!value) return '—';
+        return new Intl.DateTimeFormat('en-PH', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        }).format(new Date(value));
+    };
+
+    async function apiFetch(url) {
+        const response = await fetch(url, {
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${config.apiToken}`,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+        if (!response.ok) throw new Error(`Feedback request failed (${response.status}).`);
+        return response.json();
+    }
+
+    function renderStars(rating) {
+        return Array.from({ length: 5 }, (_, index) =>
+            `<span class="${index >= rating ? 'star-empty' : ''}">★</span>`
+        ).join('');
+    }
+
+    function renderFeedbackRow(review) {
+        const sentiment = review.rating >= 4 ? 'positive' : (review.rating === 3 ? 'neutral' : 'negative');
+        const date = formatDate(review.created_at);
+        return `
+            <div class="feedback-row" data-rating="${review.rating}" data-search="${escapeHtml(`${review.customer} ${review.product} ${review.title} ${review.body}`.toLowerCase())}">
+                <div class="order-cell">
+                    <div class="truck-box"><img src="/icons/seller/shipping-status/delivered.png" alt="Customer review"></div>
+                    <div>
+                        <p class="order-id">${escapeHtml(review.product || 'Product')}</p>
+                        <div class="order-date">Product feedback</div>
+                        <div class="delivered-label"><span class="delivered-dot"></span>Reviewed</div>
+                    </div>
+                </div>
+                <div>
+                    <p class="customer-name">${escapeHtml(review.customer)}</p>
+                    <div class="customer-phone">${escapeHtml(review.phone || '')}</div>
+                </div>
+                <div class="rating-cell">
+                    <div class="stars">${renderStars(review.rating)}</div>
+                    <span class="sentiment ${sentiment}">${sentiment[0].toUpperCase()}${sentiment.slice(1)}</span>
+                </div>
+                <div>
+                    <p class="feedback-text-title">${escapeHtml(review.title)}</p>
+                    <div class="feedback-text-body">${escapeHtml(review.body)}</div>
+                    <div class="feedback-photo"></div>
+                </div>
+                <div class="feedback-date"><div>${escapeHtml(date)}</div></div>
+            </div>`;
+    }
+
+    function renderPagination(feedback) {
+        const count = document.getElementById('feedbackCount');
+        const first = feedback.total ? ((feedback.current_page - 1) * feedback.per_page) + 1 : 0;
+        const last = Math.min(feedback.current_page * feedback.per_page, feedback.total);
+        if (count) count.textContent = `Showing ${first}–${last} out of ${feedback.total} entries`;
+        totalPages = feedback.last_page;
+
+        const buttons = [];
+        if (totalPages > 1) {
+            buttons.push(`<button type="button" class="page-button" data-page="${Math.max(1, currentPage - 1)}" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`);
+            for (let page = 1; page <= totalPages; page += 1) {
+                buttons.push(`<button type="button" class="page-button ${page === currentPage ? 'active' : ''}" data-page="${page}">${page}</button>`);
             }
-        );
+            buttons.push(`<button type="button" class="page-button" data-page="${Math.min(totalPages, currentPage + 1)}" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`);
+        }
+        pagination?.querySelectorAll('.page-button').forEach((button) => button.remove());
+        pagination?.insertAdjacentHTML('afterbegin', buttons.join(''));
+        pagination?.querySelectorAll('[data-page]').forEach((button) => {
+            button.addEventListener('click', () => {
+                currentPage = Number(button.dataset.page);
+                loadFeedback();
+            });
+        });
+    }
+
+    function renderProducts(products) {
+        if (!productGrid) return;
+        if (!products.length) {
+            productGrid.innerHTML = '<p class="feedback-empty">No product reviews yet.</p>';
+            return;
+        }
+
+        productGrid.innerHTML = products.map((product) => `
+            <article class="product-card" data-product-id="${product.id}" data-search="${escapeHtml(product.name.toLowerCase())}">
+                <div class="product-card-image">
+                    ${product.image_url
+                        ? `<img src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.name)}">`
+                        : '<div class="feedback-product-placeholder" aria-hidden="true">No image</div>'}
+                </div>
+                <div class="product-card-body">
+                    <p class="product-card-name">${escapeHtml(product.name)}</p>
+                    <div class="product-card-stars">${renderStars(Math.round(product.average_rating))}</div>
+                    <small>${Number(product.average_rating).toFixed(1)} · ${product.total_reviews} reviews</small>
+                </div>
+            </article>`).join('');
+    }
+
+    async function loadFeedback() {
+        if (!feedbackList) return;
+        feedbackList.innerHTML = '<p class="feedback-empty">Loading customer feedback…</p>';
+        const url = new URL(config.url, window.location.origin);
+        url.searchParams.set('page', currentPage);
+        url.searchParams.set('per_page', perPageSelect?.value || '7');
+        if (searchInput?.value.trim()) url.searchParams.set('search', searchInput.value.trim());
+        if (ratingFilter?.value && ratingFilter.value !== 'all') url.searchParams.set('rating', ratingFilter.value);
+
+        try {
+            const payload = await apiFetch(url);
+            const feedback = payload.feedback;
+            feedbackList.innerHTML = feedback.data.length
+                ? feedback.data.map(renderFeedbackRow).join('')
+                : '<p class="feedback-empty">No feedback matches your search.</p>';
+            renderPagination(feedback);
+            renderProducts(payload.products || []);
+            applyProductSearch();
+        } catch (error) {
+            feedbackList.innerHTML = `<p class="feedback-empty">${escapeHtml(error.message)} Please refresh and try again.</p>`;
+            const count = document.getElementById('feedbackCount');
+            if (count) count.textContent = 'Feedback could not be loaded.';
+        }
+    }
+
+    function applyProductSearch() {
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        productGrid?.querySelectorAll('.product-card').forEach((card) => {
+            card.style.display = !query || card.dataset.search.includes(query) ? '' : 'none';
+        });
+    }
+
+    function renderModalReview(review) {
+        const date = formatDate(review.created_at);
+        return `
+            <article class="review-card">
+                <div class="review-avatar" aria-hidden="true">👤</div>
+                <div>
+                    <h4 class="review-name">${escapeHtml(review.customer)}</h4>
+                    <div class="review-meta">
+                        <span class="review-stars">${renderStars(review.rating)}</span>
+                        <span>${escapeHtml(date)}</span>
+                    </div>
+                    ${review.title ? `<strong>${escapeHtml(review.title)}</strong>` : ''}
+                    <p class="review-text">${escapeHtml(review.body)}</p>
+                </div>
+            </article>`;
+    }
+
+    async function openProductReviews(productId) {
+        if (!modal) return;
+        if (closeTimer) {
+            window.clearTimeout(closeTimer);
+            closeTimer = null;
+        }
+        modal.classList.remove('is-closing');
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        const name = document.getElementById('modalProductName');
+        const score = document.getElementById('modalRatingScore');
+        const count = document.getElementById('modalReviewCount');
+        const title = document.getElementById('modalReviewsTitle');
+        const breakdown = document.getElementById('modalRatingBreakdown');
+        const reviewsSection = document.querySelector('.modal-reviews-section');
+        const reviewList = document.getElementById('modalReviewsList');
+        if (name) name.textContent = 'Loading reviews…';
+        if (score) score.textContent = '—';
+        if (count) count.textContent = '(0 reviews)';
+        if (title) title.textContent = 'Customer Reviews';
+        if (reviewList) reviewList.innerHTML = '';
+
+        try {
+            const payload = await apiFetch(`${config.url}/products/${productId}`);
+            if (name) name.textContent = payload.product.name;
+            const summary = payload.summary;
+            if (score) score.textContent = `${Number(summary.average_rating).toFixed(1)} out of 5`;
+            if (count) count.textContent = `(${summary.total_reviews} reviews)`;
+            if (title) title.textContent = `Customer Reviews (${summary.total_reviews})`;
+            if (breakdown) {
+                breakdown.innerHTML = [5, 4, 3, 2, 1].map((rating) => {
+                    const ratingCount = summary.rating_counts[rating] || 0;
+                    const width = summary.total_reviews ? (ratingCount / summary.total_reviews) * 100 : 0;
+                    return `<div class="rating-breakdown-row"><span>${rating}</span><span class="star">★</span><div class="rating-bar"><div class="rating-bar-fill" style="width:${width}%"></div></div><span>${ratingCount}</span></div>`;
+                }).join('');
+            }
+            if (reviewList) {
+                reviewList.innerHTML = payload.data.length
+                    ? payload.data.map(renderModalReview).join('')
+                    : '<p class="feedback-empty">No reviews yet.</p>';
+            } else if (reviewsSection) {
+                reviewsSection.insertAdjacentHTML('beforeend', '<div id="modalReviewsList"></div>');
+            }
+            const image = document.querySelector('.modal-product-image');
+            if (image) {
+                image.innerHTML = payload.product.image_url
+                    ? `<img src="${escapeHtml(payload.product.image_url)}" alt="${escapeHtml(payload.product.name)}">`
+                    : '<div class="feedback-product-placeholder">No image</div>';
+            }
+        } catch (error) {
+            if (name) name.textContent = 'Unable to load product reviews';
+            if (reviewList) reviewList.textContent = error.message;
+        }
+    }
+
+    function closeModal() {
+        if (!modal?.classList.contains('open')) return;
+        modal.classList.add('is-closing');
+        closeTimer = window.setTimeout(() => {
+            modal.classList.remove('open', 'is-closing');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            closeTimer = null;
+        }, 220);
+    }
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            tabs.forEach((item) => item.classList.toggle('active', item === tab));
+            currentTab = tab.dataset.tab;
+            const showFeedback = currentTab === 'feedback';
+            document.getElementById('allFeedbackPanel').style.display = showFeedback ? 'block' : 'none';
+            document.getElementById('productRatingsPanel').classList.toggle('active', !showFeedback);
+            ratingFilter.style.display = showFeedback ? '' : 'none';
+            document.getElementById('feedbackRefresh').style.display = showFeedback ? '' : 'none';
+            if (pagination) pagination.style.display = showFeedback ? '' : 'none';
+            searchInput.placeholder = showFeedback ? 'Search order ID or customer name' : 'Search Product';
+            document.getElementById('feedbackSubtitle').textContent = showFeedback
+                ? 'View feedbacks from your customers.'
+                : 'View ratings and reviews for your products.';
+            searchInput.value = '';
+            ratingFilter.value = 'all';
+            currentPage = 1;
+            if (showFeedback) loadFeedback();
+            else applyProductSearch();
+        });
+    });
+
+    let searchTimer;
+    searchInput?.addEventListener('input', () => {
+        currentPage = 1;
+        if (currentTab === 'feedback') {
+            window.clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(loadFeedback, 250);
+        } else {
+            applyProductSearch();
+        }
+    });
+    ratingFilter?.addEventListener('change', () => {
+        currentPage = 1;
+        loadFeedback();
+    });
+    perPageSelect?.addEventListener('change', () => {
+        currentPage = 1;
+        loadFeedback();
+    });
+    document.getElementById('feedbackRefresh')?.addEventListener('click', () => {
+        searchInput.value = '';
+        ratingFilter.value = 'all';
+        currentPage = 1;
+        loadFeedback();
+    });
+    productGrid?.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card');
+        if (card) openProductReviews(card.dataset.productId);
+    });
+    document.getElementById('closeShippingModal')?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeModal();
+    });
+
+    const feedbackPage = document.getElementById('feedbackPage');
+    const sellerSidebar = document.getElementById('sellerSidebar');
+    const syncSidebar = () => feedbackPage?.classList.toggle(
+        'sidebar-collapsed',
+        Boolean(sellerSidebar?.classList.contains('seller-sidebar-collapsed') || sellerSidebar?.classList.contains('w-20')),
+    );
+    document.body.addEventListener('seller-sidebar-state-changed', (event) => {
+        feedbackPage?.classList.toggle('sidebar-collapsed', Boolean(event.detail?.collapsed));
+    });
+    if (sellerSidebar) {
+        syncSidebar();
+        new MutationObserver(syncSidebar).observe(sellerSidebar, {
+            attributes: true,
+            attributeFilter: ['class'],
+        });
+    }
+
+    loadFeedback();
+});

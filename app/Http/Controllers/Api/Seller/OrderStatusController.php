@@ -55,7 +55,11 @@ class OrderStatusController extends Controller
 
     public function show(Request $request, Order $order): JsonResponse
     {
-        $this->ownedOrder($request->user(), $order)->load(['buyer:id,name,email,contact_no', 'statusHistory.changedBy:id,name']);
+        $this->ownedOrder($request->user(), $order)->load([
+            'buyer:id,name,email,contact_no',
+            'items',
+            'statusHistory.changedBy:id,name',
+        ]);
 
         return response()->json($order);
     }

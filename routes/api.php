@@ -13,11 +13,15 @@ use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
+use App\Http\Controllers\Api\Buyer\ProductReviewController;
+use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
 
 Route::prefix('v1')->group(function () {
 
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::get('/orders/verify/{orderNumber}', [BuyerOrderController::class, 'verify'])->name('buyer.api.orders.verify');
 
     Route::prefix('locations')->group(function () {
         Route::get('/provinces', [LocationController::class, 'provinces']);
@@ -56,8 +60,12 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
+            Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
+            Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
+            Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
 
             // Cart
             Route::get('/cart', [BuyerCartController::class, 'index'])->name('buyer.api.cart.index');
@@ -69,6 +77,8 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
+            Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
+            Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
             Route::get('/order-status', [OrderStatusController::class, 'index']);
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);

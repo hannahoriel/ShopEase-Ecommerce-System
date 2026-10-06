@@ -76,5 +76,8 @@ class DatabaseSeeder extends Seeder
                 $account
             );
         }
+
+        $this->call(ProductReviewSeeder::class);
+        $this->call(SellerOrderStatusSeeder::class);
     }
 }
