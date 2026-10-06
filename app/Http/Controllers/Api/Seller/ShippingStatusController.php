@@ -48,7 +48,7 @@ class ShippingStatusController extends Controller
 
         return response()->json($order->load([
             'buyer:id,name,email,contact_no',
-            'items',
+            'items.product:id,name,photos',
             'shipment',
             'statusHistory.changedBy:id,name',
         ]));
@@ -113,7 +113,12 @@ class ShippingStatusController extends Controller
     {
         return Order::query()
             ->where('seller_id', $sellerId)
-            ->with(['buyer:id,name,email,contact_no', 'items', 'shipment', 'statusHistory']);
+            ->with([
+                'buyer:id,name,email,contact_no',
+                'items.product:id,name,photos',
+                'shipment',
+                'statusHistory',
+            ]);
     }
 
     protected function sellerFor(User $user): Seller

@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderItem;
 use App\Models\Admin\Shipment;
+use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
@@ -93,6 +95,19 @@ class SellerShippingStatusTest extends TestCase
         $this->order($seller, $buyer, 'in_transit');
         $this->order($seller, $buyer, 'preparing');
         $this->order($seller, $buyer, 'new');
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Canvas Tote',
+            'price' => 559,
+            'photos' => ['products/canvas-tote.jpg'],
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => 559,
+        ]);
 
         $this->actingAs($sellerUser)
             ->patchJson("/api/v1/seller/shipping/{$order->id}/status", ['status' => 'delivered'])
@@ -106,7 +121,14 @@ class SellerShippingStatusTest extends TestCase
             ->assertSee('SE-TEST-' . $seller->id . '-IN_TRANSIT')
             ->assertDontSee('SE-TEST-' . $seller->id . '-PREPARING', false)
             ->assertDontSee('SE-TEST-' . $seller->id . '-NEW', false)
+            ->assertSee('storage/products/canvas-tote.jpg')
+            ->assertSee('shipping-product-photo', false)
             ->assertSee('sellerShippingStatusConfig');
+
+        $this->actingAs($sellerUser)
+            ->getJson("/api/v1/seller/shipping/{$order->id}")
+            ->assertOk()
+            ->assertJsonPath('items.0.product.photos.0', 'products/canvas-tote.jpg');
 
         $this->actingAs($buyer = User::factory()->create(['role' => User::ROLE_BUYER]))
             ->getJson('/api/v1/seller/shipping-status')

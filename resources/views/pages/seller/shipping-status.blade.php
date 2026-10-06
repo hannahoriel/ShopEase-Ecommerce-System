@@ -406,6 +406,23 @@
                                 $shipment = $order->shipment;
                                 $trackingNumber = $shipment?->tracking_number ?? 'Pending';
                                 $createdAt = $order->created_at;
+                                $productPhoto = null;
+                                $productName = null;
+                                foreach ($order->items as $item) {
+                                    $photos = $item->product?->photos;
+                                    $productPhoto = is_array($photos)
+                                        ? collect($photos)->first(fn ($photo) => is_string($photo) && trim($photo) !== '')
+                                        : null;
+                                    if ($productPhoto) {
+                                        $productName = $item->product?->name ?: $item->product_name;
+                                        break;
+                                    }
+                                }
+                                $productPhotoUrl = $productPhoto && \Illuminate\Support\Str::startsWith($productPhoto, ['data:', 'http://', 'https://'])
+                                    ? $productPhoto
+                                    : ($productPhoto
+                                        ? url('/storage/' . implode('/', array_map('rawurlencode', explode('/', preg_replace('#^/?storage/#', '', ltrim($productPhoto, '/'))))))
+                                        : null);
                             @endphp
                             <article
                                 class="shipping-row"
@@ -423,10 +440,14 @@
                             >
                                 <div class="order-info">
                                     <div class="order-product-icon {{ $order->status === 'delivered' ? 'green-bg' : 'blue-bg' }}">
-                                        <img
-                                            src="{{ asset('icons/seller/shipping-status/' . ($order->status === 'delivered' ? 'delivered.png' : 'in-transit.png')) }}"
-                                            alt="{{ $shippingLabel }}"
-                                        >
+                                        @if ($productPhotoUrl)
+                                            <img class="shipping-product-photo" src="{{ $productPhotoUrl }}" alt="{{ $productName }}">
+                                        @else
+                                            <img
+                                                src="{{ asset('icons/seller/shipping-status/' . ($order->status === 'delivered' ? 'delivered.png' : 'in-transit.png')) }}"
+                                                alt="{{ $shippingLabel }}"
+                                            >
+                                        @endif
                                     </div>
                                     <div class="order-details">
                                         <h3>#{{ $order->order_number ?: 'ORD-' . $order->id }}</h3>

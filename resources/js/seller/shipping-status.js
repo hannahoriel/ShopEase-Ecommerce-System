@@ -15,6 +15,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let activeTab = 'all';
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[character]);
+    }
+
+    function productImageUrl(item) {
+        const photos = item.product?.photos;
+        const photo = Array.isArray(photos)
+            ? photos.find((value) => typeof value === 'string' && value.trim())
+            : null;
+        if (!photo) return null;
+        if (/^(data:|https?:\/\/)/i.test(photo)) return photo;
+
+        const path = photo.replace(/^\/+/, '').replace(/^storage\//, '');
+        return path ? `/storage/${path.split('/').map(encodeURIComponent).join('/')}` : null;
+    }
+
     function syncPageOffset() {
         if (!page) return;
 
@@ -408,7 +426,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     ${items.length ? items.map((item) => `
                         <div class="shipping-item-row">
                             <div class="shipping-item-name">
-                                <div class="shipping-item-image"><div class="modal-product-bag"></div></div>
+                                <div class="shipping-item-image">${productImageUrl(item)
+                                    ? `<img src="${escapeHtml(productImageUrl(item))}" alt="${escapeHtml(item.product?.name || item.product_name || 'Product')}">`
+                                    : '<div class="modal-product-bag"></div>'}</div>
                                 <span>${escapeHtml(item.product_name || 'Product')}</span>
                             </div>
                             <span>${money(Number(item.unit_price || 0))}</span>
