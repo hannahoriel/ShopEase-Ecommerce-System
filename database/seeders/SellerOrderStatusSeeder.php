@@ -61,8 +61,21 @@ class SellerOrderStatusSeeder extends Seeder
             ],
         ];
 
+        for ($number = 1; $number <= 6; $number++) {
+            $createdAt = $now->copy()->subHours($number + 2);
+            $fixtures[] = [
+                'order_number' => sprintf('SE-DEMO-ORDER-STATUS-NEW-%02d', $number),
+                'status' => 'new',
+                'created_at' => $createdAt,
+                'pickup_date' => null,
+                'history' => [
+                    [null, 'new', 'buyer', 'Order placed by buyer.', $createdAt],
+                ],
+            ];
+        }
+
         foreach ($fixtures as $index => $fixture) {
-            $review = $reviews[$index];
+            $review = $reviews[$index % $reviews->count()];
             $product = $review->product;
             $seller = $product->seller;
             $price = (float) $product->price;
@@ -94,6 +107,14 @@ class SellerOrderStatusSeeder extends Seeder
                     'unit_price' => $price,
                 ],
             );
+
+            $expectedHistoryStatuses = collect($fixture['history'])
+                ->pluck(1)
+                ->all();
+            OrderStatusHistory::query()
+                ->where('order_id', $order->id)
+                ->whereNotIn('to_status', $expectedHistoryStatuses)
+                ->delete();
 
             foreach ($fixture['history'] as [$fromStatus, $toStatus, $actor, $notes, $changedAt]) {
                 OrderStatusHistory::updateOrCreate(

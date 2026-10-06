@@ -403,8 +403,25 @@
 .modal-footer-section {
     padding: 4px 35px 18px;
     display: flex;
+    align-items: center;
+    gap: 12px;
     justify-content: flex-end;
 }
+
+.print-waybill-button {
+    height: 45px;
+    padding: 0 22px;
+    border: 1px solid #9E241F;
+    border-radius: 9px;
+    color: #9E241F;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.print-waybill-button:hover { background: #fff6f4; }
+.print-waybill-button:disabled { opacity: .6; cursor: wait; }
 
 .order-modal-action-button {
     height: 45px;

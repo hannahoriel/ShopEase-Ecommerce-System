@@ -370,6 +370,7 @@
 
             {{-- ACTION --}}
             <div class="modal-section modal-footer-section">
+                <button type="button" id="printOrderWaybillButton" class="print-waybill-button" hidden>Print Waybill</button>
                 <button type="button" id="orderModalActionButton" class="order-modal-action-button new-action"><span id="orderModalActionLabel">Prepare Order</span></button>
             </div>
         </div>

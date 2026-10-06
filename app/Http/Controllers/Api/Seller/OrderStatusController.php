@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Admin\Shipment;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class OrderStatusController extends Controller
 {
@@ -100,6 +102,42 @@ class OrderStatusController extends Controller
         });
 
         return response()->json($order->fresh(['statusHistory']));
+    }
+
+    public function waybill(Request $request, Order $order): JsonResponse
+    {
+        $order = $this->ownedOrder($request->user(), $order);
+        abort_unless(
+            in_array($order->status, ['new', 'pending'], true),
+            422,
+            'A waybill can only be printed while the order is new.'
+        );
+
+        $shipment = Shipment::firstOrCreate(
+            ['order_id' => $order->id],
+            [
+                'tracking_number' => 'SE-' . Str::upper(Str::random(10)),
+                'scan_token' => Str::random(64),
+                'courier' => 'Ease Express',
+                'estimated_delivery' => $order->pickup_date?->copy()->addDays(3) ?? now()->addDays(3)->toDateString(),
+            ]
+        );
+
+        if (! $shipment->scan_token) {
+            $shipment->update(['scan_token' => Str::random(64)]);
+        }
+
+        $order->load([
+            'buyer:id,name,email,contact_no',
+            'seller:id,store_name,province,municipality,barangay,street,house_number',
+            'items.product:id,name,photos',
+        ]);
+
+        return response()->json([
+            'scan_url' => route('parcel.scan.show', ['token' => $shipment->scan_token]),
+            'order' => $order,
+            'shipment' => $shipment->fresh(),
+        ]);
     }
 
     protected function sellerFor(User $user): Seller

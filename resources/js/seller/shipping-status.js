@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let statusMatches = true;
 
             if (activeTab === 'in-transit') {
-                statusMatches = status === 'in-transit' || status === 'out-for-delivery';
+                statusMatches = status === 'in-transit';
             } else if (activeTab === 'delivered') {
                 statusMatches = status === 'delivered';
             }
@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalOrderTime = document.getElementById('shippingModalOrderTime');
     const modalEstimated = document.getElementById('shippingModalEstimated');
     const modalTracking = document.getElementById('shippingModalTrackingNumber');
+    const modalCurrentLocation = document.getElementById('shippingModalCurrentLocation');
     const modalStatusLabel = document.getElementById('shippingModalStatusLabel');
     const modalStatusDot = document.getElementById('shippingModalStatusDot');
     const modalIconBox = document.getElementById('shippingModalIconBox');
@@ -357,6 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalCustomer.textContent = row.dataset.customer;
         modalPhone.textContent = row.dataset.phone || '—';
         modalTracking.textContent = row.dataset.tracking || 'Pending';
+        if (modalCurrentLocation) modalCurrentLocation.textContent = 'Loading…';
         modalEstimated.textContent = row.dataset.estimated || 'Not scheduled';
 
         modal.classList.add('modal-open');
@@ -369,6 +371,9 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedOrder = order;
             const status = order.status;
             const shipment = order.shipment || {};
+            if (modalCurrentLocation) {
+                modalCurrentLocation.textContent = shipment.current_location || 'Not scanned yet';
+            }
             const createdAt = order.created_at ? new Date(order.created_at) : null;
             const labels = {
                 to_ship: ['blue-dot', 'blue-modal', 'in-transit.png'],

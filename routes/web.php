@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
+use App\Http\Controllers\ParcelScanController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Api\Seller\InventoryController as ApiSellerInventoryController;
 use App\Models\User;
@@ -31,6 +32,13 @@ Route::get('/', function () {
     return view('pages.landing-page');
 
 })->name('landing.page');
+
+Route::get('/parcel/scan/{token}', [ParcelScanController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->name('parcel.scan.show');
+Route::post('/parcel/scan/{token}', [ParcelScanController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('parcel.scan.store');
 
 
 Route::get('/auth/login', function () {

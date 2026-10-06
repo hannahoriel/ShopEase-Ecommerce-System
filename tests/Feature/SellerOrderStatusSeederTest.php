@@ -43,13 +43,42 @@ class SellerOrderStatusSeederTest extends TestCase
             ->get();
 
         $this->seed(SellerOrderStatusSeeder::class);
+        $newDemoOrder = Order::query()
+            ->where('order_number', 'SE-DEMO-ORDER-STATUS-NEW-01')
+            ->firstOrFail();
+        foreach (['preparing', 'to_ship'] as $staleStatus) {
+            OrderStatusHistory::create([
+                'order_id' => $newDemoOrder->id,
+                'from_status' => $staleStatus === 'preparing' ? 'new' : 'preparing',
+                'to_status' => $staleStatus,
+                'changed_by' => $productOwner->id,
+                'notes' => 'Stale status history.',
+            ]);
+        }
         $this->seed(SellerOrderStatusSeeder::class);
 
-        $this->assertDatabaseCount('orders', 3);
-        $this->assertDatabaseCount('order_items', 3);
-        $this->assertDatabaseCount('order_status_histories', 6);
+        $this->assertDatabaseCount('orders', 9);
+        $this->assertDatabaseCount('order_items', 9);
+        $this->assertDatabaseCount('order_status_histories', 12);
         $this->assertSame(
-            ['new', 'preparing', 'to_ship'],
+            7,
+            Order::query()->where('status', 'new')->count(),
+        );
+        $this->assertSame(
+            6,
+            Order::query()->where('order_number', 'like', 'SE-DEMO-ORDER-STATUS-NEW-%')->count(),
+        );
+        $this->assertSame('new', $newDemoOrder->fresh()->status);
+        $this->assertDatabaseMissing('order_status_histories', [
+            'order_id' => $newDemoOrder->id,
+            'to_status' => 'preparing',
+        ]);
+        $this->assertDatabaseMissing('order_status_histories', [
+            'order_id' => $newDemoOrder->id,
+            'to_status' => 'to_ship',
+        ]);
+        $this->assertSame(
+            ['new', 'preparing', 'to_ship', 'new', 'new', 'new', 'new', 'new', 'new'],
             Order::query()->where('seller_id', $seller->id)->orderBy('id')->pluck('status')->all(),
         );
         $this->assertDatabaseHas('orders', [
@@ -63,11 +92,23 @@ class SellerOrderStatusSeederTest extends TestCase
             'unit_price' => 749.50,
         ]);
         $this->assertSame(
-            $seededReviews->pluck('buyer_id')->all(),
+            array_merge(
+                $seededReviews->pluck('buyer_id')->all(),
+                array_map(
+                    fn (int $index): int => $seededReviews[$index % $seededReviews->count()]->buyer_id,
+                    range(0, 5),
+                ),
+            ),
             Order::query()->orderBy('id')->pluck('buyer_id')->all(),
         );
         $this->assertSame(
-            $seededReviews->pluck('product_id')->all(),
+            array_merge(
+                $seededReviews->pluck('product_id')->all(),
+                array_map(
+                    fn (int $index): int => $seededReviews[$index % $seededReviews->count()]->product_id,
+                    range(0, 5),
+                ),
+            ),
             OrderItem::query()->orderBy('id')->pluck('product_id')->all(),
         );
         $this->assertDatabaseMissing('users', ['email' => 'buyer@shopease.test']);
@@ -75,7 +116,7 @@ class SellerOrderStatusSeederTest extends TestCase
         $this->actingAs($productOwner)
             ->getJson('/api/v1/seller/order-status?per_page=10')
             ->assertOk()
-            ->assertJsonCount(3, 'data')
+            ->assertJsonCount(9, 'data')
             ->assertJsonPath('data.0.seller_id', $seller->id);
 
         $toShipOrder = Order::query()->where('status', 'to_ship')->firstOrFail();

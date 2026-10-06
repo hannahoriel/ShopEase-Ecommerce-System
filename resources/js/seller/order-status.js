@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+
 document.addEventListener('DOMContentLoaded', function () {
     const configElement = document.getElementById('sellerOrderStatusConfig');
     const config = configElement ? JSON.parse(configElement.textContent) : {};
@@ -102,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
 
         rows = Array.from(orderTable.querySelectorAll('.order-row'));
-        rows.forEach(ensureInitialTracking);
     }
 
     renderOrderRows(config.orders || []);
@@ -331,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(
             'orderModalActionLabel'
         );
+    const printWaybillButton = document.getElementById('printOrderWaybillButton');
 
     const orderModalIconBox =
         document.getElementById(
@@ -377,6 +379,133 @@ document.addEventListener('DOMContentLoaded', function () {
             maximumFractionDigits: 2,
         })}`;
     }
+
+    function waybillDocument(order, shipment, scanUrl) {
+        const items = order.items || [];
+        const itemRows = items.map((item) => `
+            <tr>
+                <td>${escapeHtml(item.product_name || item.product?.name || 'Product')}${[item.variation, item.color, item.size].filter(Boolean).length
+                    ? `<small>${escapeHtml([item.variation, item.color, item.size].filter(Boolean).join(' · '))}</small>`
+                    : ''}</td>
+                <td class="qty">${Number(item.quantity || 0)}</td>
+            </tr>`).join('');
+        const customerName = order.delivery_name || order.buyer?.name || 'Customer';
+        const buyerContact = order.delivery_phone || order.buyer?.contact_no || 'Not provided';
+        const sellerName = order.seller?.store_name || 'ShopEase Seller';
+        const sellerAddress = [
+            order.seller?.house_number,
+            order.seller?.street,
+            order.seller?.barangay,
+            order.seller?.municipality,
+            order.seller?.province,
+        ].filter((part) => typeof part === 'string' && part.trim()).join(', ') || 'Seller address not provided';
+        const address = order.delivery_address || '—';
+        const trackingNumber = shipment.tracking_number || order.order_number || `ORD-${order.id}`;
+        const paymentMethod = order.payment_method || 'Cash on Delivery';
+        const isCod = /cash|cod/i.test(paymentMethod);
+        const amountLabel = isCod ? 'COLLECT' : 'ORDER TOTAL';
+        const routeHint = (order.delivery_address || '').split(',').slice(-2).join(',').trim() || 'PHILIPPINES';
+
+        return `<!DOCTYPE html>
+            <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Waybill ${escapeHtml(trackingNumber)}</title>
+            <style>
+                @page { size: 100mm 150mm; margin: 0; }
+                * { box-sizing: border-box; }
+                body { margin: 0; color: #111; background: #fff; font: 10px Arial, Helvetica, sans-serif; }
+                .label { width: 100mm; min-height: 150mm; margin: 0 auto; border: 1px solid #111; }
+                .topbar { display: flex; justify-content: space-between; align-items: center; padding: 3mm; border-bottom: 1px solid #111; }
+                .brand { font-size: 18px; font-weight: 900; letter-spacing: -.6px; }
+                .courier { text-align: right; font-size: 12px; font-weight: 800; }
+                .service { margin-top: 2px; font-size: 8px; font-weight: 700; letter-spacing: 1px; }
+                .route { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 2.5mm 3mm; border-bottom: 1px solid #111; background: #f1f1f1; }
+                .route-label { font-size: 8px; font-weight: 700; text-transform: uppercase; }
+                .route-code { font-size: 15px; font-weight: 900; text-transform: uppercase; }
+                .order-ref { font-size: 8px; font-weight: 700; text-align: right; }
+                section { padding: 2.5mm 3mm; border-bottom: 1px solid #111; }
+                .section-title { margin-bottom: 1.5mm; font-size: 8px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; }
+                .recipient-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; }
+                .recipient { font-size: 16px; font-weight: 900; }
+                .phone { white-space: nowrap; font-size: 12px; font-weight: 800; }
+                .buyer-contact { margin-top: 1mm; font-size: 9px; }
+                .buyer-contact strong { text-transform: uppercase; font-size: 8px; }
+                .address { margin-top: 1.5mm; line-height: 1.35; overflow-wrap: anywhere; }
+                .tracking-block { display: grid; grid-template-columns: 1fr 27mm; gap: 3mm; align-items: center; }
+                .tracking { margin: 1mm 0; font-size: 16px; font-weight: 900; letter-spacing: .4px; overflow-wrap: anywhere; }
+                .qr { width: 27mm; height: 27mm; padding: 1mm; border: 1px solid #111; }
+                .qr img { display: block; width: 100%; height: 100%; }
+                .scan-caption { margin-top: 1mm; font-size: 7px; font-weight: 700; text-align: center; }
+                .from { display: flex; justify-content: space-between; gap: 5px; }
+                .from-name { font-size: 11px; font-weight: 800; }
+                .payment { display: flex; justify-content: space-between; align-items: center; }
+                .payment-badge { padding: 1.5mm 2mm; border: 1px solid #111; font-size: 10px; font-weight: 900; }
+                .amount { font-size: 18px; font-weight: 900; text-align: right; white-space: nowrap; }
+                .amount-caption { font-size: 7px; font-weight: 800; text-align: right; }
+                table { width: 100%; border-collapse: collapse; }
+                td { padding: 1.2mm 0; border-top: 1px solid #bbb; vertical-align: top; }
+                td small { display: block; margin-top: 1px; color: #444; font-size: 8px; }
+                .qty { width: 12mm; text-align: right; font-weight: 800; }
+                .footer { padding: 2mm 3mm; font-size: 7px; text-align: center; }
+                @media screen { body { padding: 16px; background: #e8e8e8; } .label { box-shadow: 0 2px 12px #0002; } }
+                @media print { .label { break-inside: avoid; } }
+            </style></head><body>
+            <main class="label">
+                <div class="topbar"><div class="brand">ShopEase</div><div class="courier">${escapeHtml(shipment.courier || 'Ease Express')}<div class="service">STANDARD DELIVERY</div></div></div>
+                <div class="route"><div><div class="route-label">Destination</div><div class="route-code">${escapeHtml(routeHint)}</div></div><div class="order-ref">ORDER<br>${escapeHtml(order.order_number || `ORD-${order.id}`)}</div></div>
+                <section><div class="section-title">Buyer</div><div class="recipient">${escapeHtml(customerName)}</div><div class="buyer-contact"><strong>Contact number:</strong> ${escapeHtml(buyerContact)}</div><div class="address">${escapeHtml(address)}</div></section>
+                <section class="tracking-block"><div><div class="section-title">Tracking number</div><div class="tracking">${escapeHtml(trackingNumber)}</div><div class="section-title">Parcel tracking QR</div></div><div><div class="qr"><img src="${escapeHtml(scanUrl)}" alt="Scannable parcel tracking QR code"></div><div class="scan-caption">SCAN FOR PARCEL UPDATES</div></div></section>
+                <section class="from"><div><div class="section-title">Seller</div><div class="from-name">${escapeHtml(sellerName)}</div><div class="address">${escapeHtml(sellerAddress)}</div></div><div style="text-align:right"><div class="section-title">Payment</div><div class="payment-badge">${isCod ? 'COD' : 'PAID'}</div></div></section>
+                <section class="payment"><div><div class="section-title">Parcel contents</div><table><tbody>${itemRows || '<tr><td>Order parcel</td><td class="qty">1</td></tr>'}</tbody></table></div><div><div class="amount-caption">${amountLabel}</div><div class="amount">${formatCurrency(order.total)}</div></div></section>
+                <div class="footer">Handle with care · Keep this waybill attached to the parcel</div>
+            </main></body></html>`;
+    }
+
+    async function printWaybill() {
+        if (!selectedOrderRow || !printWaybillButton) return;
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Please allow pop-ups to print the waybill.');
+            return;
+        }
+
+        printWaybillButton.disabled = true;
+        printWaybillButton.textContent = 'Preparing Waybill…';
+        printWindow.document.write('<!doctype html><title>Preparing waybill</title><p style="font:16px Arial;padding:24px">Preparing your waybill…</p>');
+
+        try {
+            const response = await fetch(`${config.ordersUrl}/${selectedOrderRow.dataset.orderId}/waybill`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || `Unable to create waybill (${response.status}).`);
+
+            const qrImage = await QRCode.toDataURL(result.scan_url, {
+                errorCorrectionLevel: 'H',
+                margin: 2,
+                width: 320,
+            });
+            printWindow.document.open();
+            printWindow.document.write(waybillDocument(result.order, result.shipment, qrImage));
+            printWindow.document.close();
+            printWindow.addEventListener('load', () => {
+                printWindow.focus();
+                printWindow.print();
+            }, { once: true });
+        } catch (error) {
+            printWindow.close();
+            alert(error.message);
+        } finally {
+            printWaybillButton.disabled = false;
+            printWaybillButton.textContent = 'Print Waybill';
+        }
+    }
+
+    printWaybillButton?.addEventListener('click', printWaybill);
 
     async function loadOrderDetails(row) {
         const response = await fetch(`${config.ordersUrl}/${row.dataset.orderId}`, {
@@ -455,9 +584,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (notesSection) notesSection.hidden = true;
 
         if (Array.isArray(order.status_history)) {
-            const history = [...order.status_history].reverse();
+            const statusHistoryOrder = {
+                new: [],
+                pending: [],
+                preparing: ['preparing'],
+                to_ship: ['preparing', 'to_ship'],
+                in_transit: ['preparing', 'to_ship'],
+                out_for_delivery: ['preparing', 'to_ship'],
+                delivered: ['preparing', 'to_ship'],
+            };
+            const eligibleStatuses = statusHistoryOrder[order.status] || [];
+            const history = [...order.status_history]
+                .filter((event) => eligibleStatuses.includes(event.to_status))
+                .reverse();
             const events = history
-                .filter((event) => ['preparing', 'to_ship'].includes(event.to_status))
                 .map((event) => {
                     const eventDate = event.created_at ? new Date(event.created_at) : null;
                     return {
@@ -762,71 +902,6 @@ document.addEventListener('DOMContentLoaded', function () {
             );
     }
 
-    function ensureInitialTracking(
-        row
-    ) {
-        const status =
-            row.dataset.status;
-
-        if (
-            status ===
-                'preparing' &&
-            !getTrackingEvents(
-                row
-            ).length
-        ) {
-            setTrackingEvents(
-                row,
-                [
-                    makeTrackingEvent(
-                        'prepared',
-                        'May 22, 2026',
-                        '11:45 PM'
-                    )
-                ]
-            );
-        }
-
-        if (
-            status ===
-                'to-ship' &&
-            !getTrackingEvents(
-                row
-            ).length
-        ) {
-            setTrackingEvents(
-                row,
-                [
-                    makeTrackingEvent(
-                        'prepared',
-                        'May 22, 2026',
-                        '11:45 PM'
-                    ),
-
-                    makeTrackingEvent(
-                        'ready',
-
-                        row.querySelector(
-                            '.ordered-date'
-                        )?.textContent
-                            ?.trim() ||
-                            'May 22, 2026',
-
-                        row.querySelector(
-                            '.ordered-time'
-                        )?.textContent
-                            ?.trim() ||
-                            '11:45 PM'
-                    )
-                ]
-            );
-        }
-    }
-
-    rows.forEach(
-        ensureInitialTracking
-    );
-
     function trackingIcon(
         type,
         active
@@ -1013,6 +1088,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const isReady =
             status ===
             'to-ship';
+
+        const isNewOrder =
+            status === 'new' || status === 'pending';
+        if (printWaybillButton) printWaybillButton.hidden = !isNewOrder;
 
         if (
             orderModalOrderId
@@ -1485,6 +1564,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         selectedOrderRow.dataset.orderId,
                         { status: 'preparing', notes: 'Seller started preparing the order.' },
                     );
+
                         const stamp =
                             nowTrackingStamp();
 

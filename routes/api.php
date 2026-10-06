@@ -83,6 +83,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
             Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
+            Route::post('/orders/{order}/waybill', [OrderStatusController::class, 'waybill']);
             Route::get('/shipping-status', [ShippingStatusController::class, 'index']);
             Route::get('/shipping/{order}', [ShippingStatusController::class, 'show']);
             Route::patch('/shipping/{order}/status', [ShippingStatusController::class, 'update']);

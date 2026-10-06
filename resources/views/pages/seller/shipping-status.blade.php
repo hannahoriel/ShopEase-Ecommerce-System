@@ -2056,6 +2056,8 @@
                     >
                         T23430583RHEFBW
                     </span>
+                    <p class="modal-tracking-label">Current Parcel Location</p>
+                    <span id="shippingModalCurrentLocation" class="modal-tracking-value">Not scanned yet</span>
 
                 </div>
 

@@ -1330,6 +1330,10 @@
     transition: background-color .2s ease !important;
 }
 
+#shippingTable .shipping-row.hidden {
+    display: none !important;
+}
+
 #shippingTable .shipping-row:hover {
     background: #FFF9F7 !important;
 }

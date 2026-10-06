@@ -49,7 +49,7 @@ class ShippingStatusController extends Controller
         return response()->json($order->load([
             'buyer:id,name,email,contact_no',
             'items.product:id,name,photos',
-            'shipment',
+            'shipment.scans',
             'statusHistory.changedBy:id,name',
         ]));
     }
