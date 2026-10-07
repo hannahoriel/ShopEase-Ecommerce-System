@@ -125,6 +125,16 @@ document.addEventListener('DOMContentLoaded', function () {
             .toLowerCase();
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
+
     /* =========================================================
        DATE PICKER
     ========================================================== */
@@ -319,14 +329,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr>
                     <td>
                         <div class="commission-date-cell">
-                            ${row.date_label}<br>
-                            ${row.time}
+                            ${escapeHtml(row.date_label)}<br>
+                            ${escapeHtml(row.time)}
                         </div>
                     </td>
 
                     <td>
                         <span class="commission-order-id">
-                            ${row.order_id}
+                            ${escapeHtml(row.order_id)}
                         </span>
                     </td>
 
@@ -336,11 +346,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             <span class="commission-seller-copy">
                                 <span class="commission-seller-name">
-                                    ${row.seller}
+                                    ${escapeHtml(row.seller)}
                                 </span>
 
                                 <span class="commission-seller-owner">
-                                    ${row.seller_owner}
+                                    ${escapeHtml(row.seller_owner)}
                                 </span>
                             </span>
                         </div>

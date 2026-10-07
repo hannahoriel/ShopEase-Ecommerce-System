@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin\Order;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
@@ -50,10 +51,10 @@ class BuyerOrderPlacementTest extends TestCase
         $orderNumbers = collect($response->json('orders'))->pluck('order_number');
         $this->assertCount(2, $orderNumbers->unique());
         $this->assertStringContainsString(
-            '/api/v1/orders/verify/' . $orderNumbers->first(),
+            '/api/v1/orders/verify/'.$orderNumbers->first(),
             $response->json('orders.0.qr_payload')
         );
-        $verified = $this->getJson('/api/v1/orders/verify/' . $orderNumbers->first());
+        $verified = $this->getJson('/api/v1/orders/verify/'.$orderNumbers->first());
         $verified->assertOk()
             ->assertJsonPath('valid', true)
             ->assertJsonPath('order_number', $orderNumbers->first())
@@ -63,8 +64,18 @@ class BuyerOrderPlacementTest extends TestCase
             'buyer_id' => $buyer->id,
             'seller_id' => $firstSeller->id,
             'total' => 2400,
+            'commission_amount' => 240,
             'delivery_address' => '1 Main Street, Manila',
         ]);
+        $this->assertDatabaseHas('commission_transactions', [
+            'order_id' => Order::where('order_number', $orderNumbers->first())->value('id'),
+            'seller_id' => $firstSeller->id,
+            'order_amount' => 2400,
+            'commission_rate' => 10,
+            'commission_amount' => 240,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseCount('commission_transactions', 2);
         $this->assertDatabaseHas('order_items', [
             'product_id' => $firstProduct->id,
             'product_name' => 'Wireless Earbuds',

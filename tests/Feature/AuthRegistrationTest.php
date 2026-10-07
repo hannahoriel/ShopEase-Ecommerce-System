@@ -133,6 +133,42 @@ class AuthRegistrationTest extends TestCase
         ]);
     }
 
+    public function test_logistics_registration_saves_company_name_for_admin_management(): void
+    {
+        $response = $this->post(route('register.attempt'), [
+            'role' => User::ROLE_LOGISTICS,
+            'last_name' => 'Cruz',
+            'first_name' => 'Andrea',
+            'sex' => 'female',
+            'email' => 'logistics.reg@example.com',
+            'contact_no' => '09171234567',
+            'birthday' => '1995-05-20',
+            'province' => 'Laguna',
+            'municipality' => 'Biñan',
+            'barangay' => 'Canlalay',
+            'street' => 'Southwoods',
+            'house_number' => '2',
+            'business_name' => 'Flash Express Laguna',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $userId = User::where('email', 'logistics.reg@example.com')->value('id');
+
+        $this->assertDatabaseHas('logistics', [
+            'user_id' => $userId,
+            'business_name' => 'Flash Express Laguna',
+            'registration_status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('registrations', [
+            'user_id' => $userId,
+            'business_name' => 'Flash Express Laguna',
+            'user_type' => User::ROLE_LOGISTICS,
+            'status' => 'pending',
+        ]);
+    }
+
     public function test_underage_users_cannot_register_for_any_role(): void
     {
         foreach ([
@@ -147,7 +183,7 @@ class AuthRegistrationTest extends TestCase
                     'last_name' => 'Applicant',
                     'first_name' => 'Young',
                     'sex' => 'other',
-                    'email' => $role . '.underage@example.com',
+                    'email' => $role.'.underage@example.com',
                     'contact_no' => '09170000000',
                     'birthday' => now()->subYears(17)->toDateString(),
                     'province' => 'Cebu',
@@ -165,7 +201,7 @@ class AuthRegistrationTest extends TestCase
 
             $response->assertSessionHasErrors('birthday');
             $this->assertDatabaseMissing('users', [
-                'email' => $role . '.underage@example.com',
+                'email' => $role.'.underage@example.com',
             ]);
         }
     }

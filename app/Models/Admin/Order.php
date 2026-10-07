@@ -14,6 +14,18 @@ class Order extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (Order $order): void {
+            $order->commission_amount = round(
+                (float) $order->total * (CommissionTransaction::DEFAULT_RATE / 100),
+                2
+            );
+        });
+
+        static::saved(fn (Order $order) => CommissionTransaction::syncFromOrder($order));
+    }
+
     protected $fillable = [
         'buyer_id',
         'seller_id',
@@ -69,6 +81,16 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class)->latest();
+    }
+
+    public function commissionTransaction(): HasOne
+    {
+        return $this->hasOne(CommissionTransaction::class);
     }
 
     public function shipment(): HasOne

@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const count = document.getElementById('complaints-count');
     const empty = document.getElementById('complaints-empty');
+    const statOpen = document.getElementById('complaint-stat-open');
+    const statInProgress = document.getElementById('complaint-stat-in-progress');
+    const statResolved = document.getElementById('complaint-stat-resolved');
+    const statTotal = document.getElementById('complaint-stat-total');
 
     const workspace = document.getElementById('complaints-workspace');
     const detailCard = document.getElementById('complaints-detail-card');
@@ -377,24 +381,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return update;
     }
 
-    function buildStatusTrackingMessage(previousStatus, newStatus) {
-        const previousLabel =
-            statusLabels[previousStatus] || previousStatus;
-
-        const newLabel =
-            statusLabels[newStatus] || newStatus;
-
-        if (newStatus === 'resolved') {
-            return 'You marked the complaint as Resolved.';
-        }
-
-        if (newStatus === 'open') {
-            return 'You reopened the complaint and marked it as Open.';
-        }
-
-        return `You updated the status from “${previousLabel}” to “${newLabel}”.`;
-    }
-
     function syncStatusUi(complaint, newStatus, row) {
         complaint.status =
             newStatus;
@@ -416,9 +402,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         detailStatus.textContent =
             statusLabels[newStatus];
+
+        if (statOpen) {
+            statOpen.textContent = complaints.filter(item => item.status === 'open').length;
+            statInProgress.textContent = complaints.filter(item => item.status === 'in-progress').length;
+            statResolved.textContent = complaints.filter(item => item.status === 'resolved').length;
+            statTotal.textContent = complaints.length;
+        }
     }
 
-    function applyComplaintStatusChange(newStatus) {
+    async function applyComplaintStatusChange(newStatus) {
         const complaint =
             complaints[activeIndex];
 
@@ -440,26 +433,48 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const csrfToken =
+            document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        try {
+            const response = await fetch(
+                `/admin/complaints-disputes/${complaint.databaseId}/status`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ status: newStatus }),
+                }
+            );
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.message || 'Complaint status could not be updated.');
+            }
+
+            if (payload.data.update) {
+                complaint.updates = [
+                    payload.data.update,
+                    ...(complaint.updates || []),
+                ];
+            }
+        } catch (error) {
+            window.alert(error.message);
+            return;
+        }
+
         syncStatusUi(
             complaint,
             newStatus,
             row
         );
 
-        createComplaintUpdate(
-            complaint,
-            {
-                type: 'status',
-                message: buildStatusTrackingMessage(
-                    previousStatus,
-                    newStatus
-                ),
-                meta: {
-                    previousStatus,
-                    newStatus
-                }
-            }
-        );
+        complaint.lastUpdated = new Date().toISOString();
+        renderComplaintUpdates(complaint);
 
         syncComplaintModal(
             complaint
@@ -663,35 +678,25 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    function getComplaintModalData(complaint, index) {
-        const number = 2089 + Number(index || 0);
-
+    function getComplaintModalData(complaint) {
         return {
-            orderId: complaint.orderId || `ORD-${number}`,
+            orderId: complaint.orderId || '—',
             lastUpdated: getComplaintLastUpdated(complaint),
-            orderDate: complaint.orderDate || 'May 28, 2026 10:00 PM',
-            paymentMethod: complaint.paymentMethod || 'Cash On Delivery',
-            paymentStatus: complaint.paymentStatus || 'Paid',
-            shippingMethod: complaint.shippingMethod || 'J&T Express',
-            orderStatus: complaint.orderStatus || 'Completed',
-            orderTotal: complaint.orderTotal || '₱1,249.00',
-            productName: complaint.productName || 'Smart Watch Series X',
-            productVariant: complaint.productVariant || 'Black',
-            productPrice: complaint.productPrice || '₱1,249.00',
-            productQuantity: complaint.productQuantity || 'x1',
-            productCategory: complaint.productCategory || 'Electronics & Gadgets',
-            shopName: complaint.shopName || complaint.party2 || 'DelaCruzShop',
-            shopOwner: complaint.shopOwner || 'Juan Dela Cruz',
-            party1Email: complaint.party1Email || (
-                complaint.party1 === 'JunjunDura'
-                    ? 'junjun@gmail.com'
-                    : `${String(complaint.party1 || 'user').replace(/\s+/g, '').toLowerCase()}@gmail.com`
-            ),
-            party2Email: complaint.party2Email || (
-                complaint.party2 === 'DelaCruzShop'
-                    ? 'juandelacruz@gmail.com'
-                    : `${String(complaint.party2 || 'seller').replace(/\s+/g, '').toLowerCase()}@gmail.com`
-            )
+            orderDate: complaint.orderDate || '—',
+            paymentMethod: complaint.paymentMethod || '—',
+            paymentStatus: complaint.paymentStatus || '—',
+            shippingMethod: complaint.shippingMethod || '—',
+            orderStatus: complaint.orderStatus || '—',
+            orderTotal: complaint.orderTotal || '—',
+            productName: complaint.productName || '—',
+            productVariant: complaint.productVariant || '—',
+            productPrice: complaint.productPrice || '—',
+            productQuantity: complaint.productQuantity || '—',
+            productCategory: complaint.productCategory || '—',
+            shopName: complaint.shopName || complaint.party2 || '—',
+            shopOwner: complaint.shopOwner || '—',
+            party1Email: complaint.party1Email || '—',
+            party2Email: complaint.party2Email || '—',
         };
     }
 

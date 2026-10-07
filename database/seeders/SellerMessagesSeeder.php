@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
+use App\Models\Admin\CommissionTransaction;
 use App\Models\Admin\OrderItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
@@ -129,7 +130,7 @@ class SellerMessagesSeeder extends Seeder
                     'buyer_id' => $buyer->id,
                     'seller_id' => $seller->id,
                     'total' => 1250 + ($index * 250),
-                    'commission_amount' => 62.50 + ($index * 12.50),
+                    'commission_amount' => round((1250 + ($index * 250)) * (CommissionTransaction::DEFAULT_RATE / 100), 2),
                     'status' => $fixture['order_status'],
                     'delivery_name' => $buyer->name,
                     'delivery_phone' => '0917000000'.($index + 1),

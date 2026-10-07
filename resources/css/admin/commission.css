@@ -275,10 +275,10 @@
 }
 
 .commission-table th:nth-child(1) { width: 15%; }
-.commission-table th:nth-child(2) { width: 18%; }
-.commission-table th:nth-child(3) { width: 24%; }
-.commission-table th:nth-child(4) { width: 19%; }
-.commission-table th:nth-child(5) { width: 24%; }
+.commission-table th:nth-child(2) { width: 20%; }
+.commission-table th:nth-child(3) { width: 26%; }
+.commission-table th:nth-child(4) { width: 18%; }
+.commission-table th:nth-child(5) { width: 21%; }
 
 .commission-table tbody tr {
     border-bottom: 1px solid #E5E7EB;
@@ -296,6 +296,7 @@
     font-size: 12px;
     line-height: 1.25;
     font-weight: 400;
+    overflow: hidden;
 }
 
 .commission-date-cell {
@@ -307,6 +308,10 @@
 }
 
 .commission-order-id {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: #17120F;
     font-size: 12px;
     line-height: 1.25;

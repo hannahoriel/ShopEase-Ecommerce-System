@@ -509,6 +509,13 @@
             font-weight: 600;
         }
 
+        .purchase-complaint-submitted {
+            color: #6D1B25;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
         .purchase-row {
             min-height: 118px;
             padding: 15px 16px;

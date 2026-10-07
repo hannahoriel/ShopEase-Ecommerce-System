@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\CommissionController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LogisticsManagementController;
 use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
+use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\Seller\InventoryController as ApiSellerInventoryController;
 use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
@@ -1991,17 +1995,35 @@ Route::middleware('auth')->group(function () {
         ->name('admin.seller.compliance.remove');
 });
 
-Route::get('/admin/complaints-disputes', function () {
-    return view('pages.admin.complaints-disputes');
-})->name('admin.complaints.disputes');
+Route::get('/admin/complaints-disputes', [AdminComplaintController::class, 'page'])
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.complaints.disputes');
+Route::patch('/admin/complaints-disputes/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.complaints.disputes.status');
 
-Route::get('/admin/commission', function () {
-    return view('pages.admin.commission');
-})->name('admin.commission');
+Route::get('/admin/commission', [CommissionController::class, 'page'])
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.commission');
 
-Route::get('/admin/logistics-management', function () {
-    return view('pages.admin.logistics-management');
-})->name('admin.logistics.management');
+Route::middleware(['auth', 'role:admin'])->prefix('admin/logistics-management')->group(function () {
+    Route::get('/', [LogisticsManagementController::class, 'page'])->name('admin.logistics.management');
+    Route::get('/api', [LogisticsManagementController::class, 'index'])->name('admin.logistics.management.api');
+    Route::post('/api/registrations/{registration}/approve', [LogisticsManagementController::class, 'approve'])
+        ->whereNumber('registration')
+        ->name('admin.logistics.management.approve');
+    Route::post('/api/registrations/{registration}/reject', [LogisticsManagementController::class, 'reject'])
+        ->whereNumber('registration')
+        ->name('admin.logistics.management.reject');
+    Route::get('/api/companies/{logistics}/branches', [LogisticsManagementController::class, 'branches'])
+        ->name('admin.logistics.management.branches.index');
+    Route::post('/api/companies/{logistics}/branches', [LogisticsManagementController::class, 'storeBranch'])
+        ->name('admin.logistics.management.branches.store');
+    Route::patch('/api/branches/{branch}', [LogisticsManagementController::class, 'updateBranch'])
+        ->name('admin.logistics.management.branches.update');
+    Route::delete('/api/branches/{branch}', [LogisticsManagementController::class, 'destroyBranch'])
+        ->name('admin.logistics.management.branches.destroy');
+});
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin/platform-settings')->group(function () {
     Route::get('/', [PlatformSettingsController::class, 'page'])->name('admin.platform.settings');
@@ -2052,6 +2074,18 @@ Route::get('/seller/messages', function () {
 })->middleware('auth')
     ->name('seller.messages');
 
+Route::middleware(['auth', 'role:admin'])->prefix('/admin/messages/api')->controller(AdminMessagesController::class)->group(function () {
+    Route::get('/', 'index')->name('admin.messages.api.index');
+    Route::get('/contacts', 'contacts')->name('admin.messages.api.contacts');
+    Route::post('/conversations', 'storeConversation')->name('admin.messages.api.conversations.store');
+    Route::get('/conversations/{conversation}', 'show')->name('admin.messages.api.conversations.show');
+    Route::post('/conversations/{conversation}/messages', 'send')->name('admin.messages.api.send');
+    Route::get('/conversations/{conversation}/messages/{message}/attachment', 'attachment')
+        ->name('admin.messages.api.attachment');
+});
+
 Route::get('/admin/messages', function () {
+    abort_unless(Auth::user()->role === User::ROLE_ADMIN, 403);
+
     return view('pages.admin.messages');
-})->name('admin.messages');
+})->middleware('auth')->name('admin.messages');

@@ -9,10 +9,10 @@ use App\Models\Admin\Shipment;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class OrderStatusController extends Controller
 {
@@ -116,7 +116,7 @@ class OrderStatusController extends Controller
         $shipment = Shipment::firstOrCreate(
             ['order_id' => $order->id],
             [
-                'tracking_number' => 'SE-' . Str::upper(Str::random(10)),
+                'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
                 'scan_token' => Str::random(64),
                 'courier' => 'Ease Express',
                 'estimated_delivery' => $order->pickup_date?->copy()->addDays(3) ?? now()->addDays(3)->toDateString(),
