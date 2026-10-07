@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\RegistrationApproved;
 use App\Models\Admin\Registration;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
@@ -59,6 +60,12 @@ class AdminLogisticsManagementTest extends TestCase
             ->postJson("/admin/logistics-management/api/registrations/{$pending['registration']->id}/approve")
             ->assertOk()
             ->assertJsonPath('counts.approved', 1);
+
+        Mail::assertSent(RegistrationApproved::class, function (RegistrationApproved $mail): bool {
+            $this->assertStringContainsString('Welcome to ShopEase', $mail->render());
+
+            return true;
+        });
 
         $this->assertDatabaseHas('logistics', [
             'id' => $pending['profile']->id,
@@ -163,9 +170,9 @@ class AdminLogisticsManagementTest extends TestCase
         $this->seed(LogisticsManagementSeeder::class);
         $this->seed(LogisticsManagementSeeder::class);
 
-        $this->assertDatabaseCount('registrations', 3);
-        $this->assertDatabaseCount('logistics', 3);
-        $this->assertDatabaseCount('logistics_branches', 2);
+        $this->assertDatabaseCount('registrations', 9);
+        $this->assertDatabaseCount('logistics', 9);
+        $this->assertDatabaseCount('logistics_branches', 4);
         $this->assertDatabaseCount('riders', 1);
 
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
@@ -173,12 +180,15 @@ class AdminLogisticsManagementTest extends TestCase
         $this->actingAs($admin)
             ->getJson('/api/v1/admin/logistics-management')
             ->assertOk()
-            ->assertJsonCount(1, 'pendingRequests')
-            ->assertJsonCount(1, 'companies')
-            ->assertJsonCount(1, 'rejectedArchive')
+            ->assertJsonCount(3, 'pendingRequests')
+            ->assertJsonCount(3, 'companies')
+            ->assertJsonCount(3, 'rejectedArchive')
             ->assertJsonPath('companies.0.company', 'Demo Logistics - Active')
             ->assertJsonPath('companies.0.branches', 2)
-            ->assertJsonPath('companies.0.riders', 1);
+            ->assertJsonPath('companies.0.riders', 1)
+            ->assertJsonPath('stats.pending_requests', 3)
+            ->assertJsonPath('stats.accepted_logistics', 3)
+            ->assertJsonPath('stats.rejected_logistics', 3);
     }
 
     /**
