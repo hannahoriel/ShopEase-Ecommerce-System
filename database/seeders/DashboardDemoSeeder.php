@@ -53,7 +53,7 @@ class DashboardDemoSeeder extends Seeder
             return Seller::create([
                 'user_id' => $user->id,
                 'store_name' => $user->name . "'s Store",
-                'commission_rate' => 5,
+                'commission_rate' => 10,
                 'status' => $user->status,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,

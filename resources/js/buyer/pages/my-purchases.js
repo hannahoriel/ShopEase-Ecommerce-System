@@ -3,6 +3,92 @@ import QRCode from 'qrcode';
 document.addEventListener('DOMContentLoaded', () => {
             const configElement = document.getElementById('buyerPurchasesConfig');
             const purchasesConfig = configElement ? JSON.parse(configElement.textContent) : {};
+            const complaintModal = document.getElementById('buyerComplaintModal');
+            const complaintForm = document.getElementById('buyerComplaintForm');
+            const complaintError = document.getElementById('buyerComplaintError');
+            const complaintSubmit = document.getElementById('buyerComplaintSubmit');
+            const complaintOrderId = document.getElementById('buyerComplaintOrderId');
+            const complaintOrderLabel = document.getElementById('buyerComplaintOrderLabel');
+
+            const closeComplaintModal = () => {
+                complaintModal?.classList.add('hidden');
+                complaintModal?.classList.remove('flex');
+                complaintModal?.setAttribute('aria-hidden', 'true');
+            };
+
+            document.addEventListener('click', event => {
+                const reportButton = event.target.closest('[data-buyer-complaint-order]');
+                if (reportButton) {
+                    complaintOrderId.value = reportButton.dataset.buyerComplaintOrder;
+                    complaintOrderLabel.textContent = `Order ${reportButton.dataset.orderNumber || ''}`;
+                    complaintError.hidden = true;
+                    complaintForm.reset();
+                    complaintOrderId.value = reportButton.dataset.buyerComplaintOrder;
+                    complaintModal.classList.remove('hidden');
+                    complaintModal.classList.add('flex');
+                    complaintModal.setAttribute('aria-hidden', 'false');
+                    document.getElementById('buyerComplaintType')?.focus();
+                    return;
+                }
+
+                if (event.target.closest('#buyerComplaintClose, #buyerComplaintCancel') ||
+                    event.target === complaintModal) {
+                    closeComplaintModal();
+                }
+            });
+
+            complaintForm?.addEventListener('submit', async event => {
+                event.preventDefault();
+                complaintError.hidden = true;
+                complaintSubmit.disabled = true;
+                complaintSubmit.textContent = 'Submitting…';
+
+                try {
+                    const response = await fetch(
+                        `${purchasesConfig.complaintsUrl || '/api/v1/buyer/orders'}/${encodeURIComponent(complaintOrderId.value)}/complaints`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${purchasesConfig.apiToken || ''}`,
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                type: document.getElementById('buyerComplaintType').value,
+                                description: document.getElementById('buyerComplaintDescription').value,
+                            }),
+                        }
+                    );
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        const validationMessage = Object.values(payload.errors || {}).flat()[0];
+                        throw new Error(validationMessage || payload.message || 'Your complaint could not be submitted.');
+                    }
+
+                    const orderCard = Array.from(document.querySelectorAll('[data-purchase-row]'))
+                        .find(card => card.querySelector(`[data-buyer-complaint-order="${CSS.escape(complaintOrderId.value)}"]`));
+
+                    if (orderCard) {
+                        orderCard.querySelector('[data-buyer-complaint-order]')?.remove();
+                        const badge = document.createElement('span');
+                        badge.className = 'purchase-complaint-submitted';
+                        badge.textContent = `Complaint ${payload.data.reference} · Open`;
+                        orderCard.querySelector('.purchase-shop-order-meta')?.append(badge);
+                    }
+
+                    window.alert(`${payload.message} Reference: ${payload.data.reference}`);
+                    closeComplaintModal();
+                } catch (error) {
+                    complaintError.textContent = error.message;
+                    complaintError.hidden = false;
+                } finally {
+                    complaintSubmit.disabled = false;
+                    complaintSubmit.textContent = 'Submit complaint';
+                }
+            });
+
             const sideTabs =
                 Array.from(document.querySelectorAll('[data-side-panel]'));
 
@@ -200,6 +286,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="purchase-shop-order-meta">
                                             <strong class="purchase-shop-order-id">Order No: ${escapeHtml(order.order_number)}</strong>
                                             <span class="purchase-shop-placed-at">Placed ${escapeHtml(placedAt)}</span>
+                                            <button type="button" class="purchase-message-seller" data-buyer-chat-order="${escapeHtml(order.id)}">Message seller</button>
+                                            ${order.complaint
+                                                ? `<span class="purchase-complaint-submitted">Complaint ${escapeHtml(order.complaint.reference)} · ${escapeHtml(order.complaint.status.replace('-', ' '))}</span>`
+                                                : `<button type="button" class="purchase-message-seller" data-buyer-complaint-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Report a problem</button>`}
                                         </div>
                                     </div>
                                     <div class="purchase-row">
@@ -293,4 +383,5 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             applyPurchaseFilters();
+            tabs.find(tab => tab.dataset.purchaseTab === activeTab)?.click();
         });

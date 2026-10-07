@@ -7,11 +7,14 @@ use App\Mail\RegistrationApproved;
 use App\Mail\RegistrationRejected;
 use App\Models\Admin\Registration;
 use App\Models\Buyer\Buyer;
+use App\Models\Logistics\Logistics;
+use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
 use App\Models\User;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -31,7 +34,13 @@ class RegistrationController extends Controller
         'Does not meet platform requirements.',
         'Prohibited or restricted business/category.',
         'Duplicate account.',
+        'DTI or Business Permit is invalid, expired, or unverifiable.',
+        'Company information is inconsistent or cannot be verified.',
+        'Does not meet ShopEase logistics partnership requirements.',
+        'Insufficient delivery coverage or operational capacity.',
+        'Duplicate or existing logistics partner account.',
         'Other (please specify)',
+        'Other',
     ];
 
     /**
@@ -233,12 +242,14 @@ class RegistrationController extends Controller
     private function updateRoleProfileStatus(
         User $user,
         string $status,
-        ?\Carbon\Carbon $approvedAt = null,
-        ?\Carbon\Carbon $rejectedAt = null,
+        ?Carbon $approvedAt = null,
+        ?Carbon $rejectedAt = null,
     ): void {
         $profile = match ($user->role) {
             User::ROLE_BUYER => Buyer::where('user_id', $user->id)->first(),
             User::ROLE_SELLER => Seller::where('user_id', $user->id)->first(),
+            User::ROLE_LOGISTICS => Logistics::where('user_id', $user->id)->first(),
+            User::ROLE_RIDER => Rider::where('user_id', $user->id)->first(),
             default => null,
         };
 

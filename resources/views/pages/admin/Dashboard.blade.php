@@ -314,7 +314,7 @@
 
 
         <!-- Announcement -->
-        <div class="bg-maroon-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div class="dashboard-announcement-card bg-maroon-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
 
             <!-- Decorative circles -->
             <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-peach-dark/10"></div>
@@ -330,25 +330,9 @@
             <!-- Content -->
             <div class="relative z-10">
 
-                <div class="flex items-center justify-between mb-3">
-
-                    <p class="text-[13px] font-medium text-peach-dark uppercase tracking-wider">
-                        Announcement
-                    </p>
-
-                    <span class="text-[13px] bg-white/10 px-3 py-1 rounded-full">
-                        {{ $announcementMonth }}
-                    </span>
-
-                </div>
-
-                <h3 class="text-[19px] font-bold mb-2">
-                    {{ $announcement?->title ?? 'No announcements yet' }}
-                </h3>
-
-                <p class="text-[14px] text-white/75 leading-relaxed max-w-[230px]">
-                    {{ $announcement?->body ?? 'There are no active announcements at this time.' }}
-                </p>
+                @include('components.dashboard-announcement-carousel', [
+                    'dashboardAnnouncementVariant' => 'admin',
+                ])
 
 
                 <!-- Bottom accent -->

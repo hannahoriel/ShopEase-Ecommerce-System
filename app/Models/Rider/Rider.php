@@ -2,6 +2,7 @@
 
 namespace App\Models\Rider;
 
+use App\Models\Logistics\LogisticsBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ class Rider extends Model
 
     protected $fillable = [
         'user_id',
+        'logistics_branch_id',
         'last_name',
         'first_name',
         'middle_initial',
@@ -43,5 +45,10 @@ class Rider extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function logisticsBranch(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsBranch::class);
     }
 }

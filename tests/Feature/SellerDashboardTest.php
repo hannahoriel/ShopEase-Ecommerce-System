@@ -41,6 +41,27 @@ class SellerDashboardTest extends TestCase
             'badge_label' => 'Notice',
             'is_active' => true,
         ]);
+        Announcement::create([
+            'title' => 'Seller-specific update',
+            'body' => 'Seller-only information.',
+            'audience' => 'Sellers',
+            'status' => 'Published',
+            'is_active' => true,
+        ]);
+        Announcement::create([
+            'title' => 'Logistics update',
+            'body' => 'Logistics-only information.',
+            'audience' => 'Logistics',
+            'status' => 'Published',
+            'is_active' => true,
+        ]);
+        Announcement::create([
+            'title' => 'Buyer update',
+            'body' => 'Buyer-only information.',
+            'audience' => 'Buyers',
+            'status' => 'Published',
+            'is_active' => true,
+        ]);
 
         Product::create([
             'seller_id' => $seller->id,
@@ -108,7 +129,8 @@ class SellerDashboardTest extends TestCase
             ->assertJsonPath('recent_orders.0.buyer_name', $buyer->name)
             ->assertJsonCount(1, 'low_stock_products')
             ->assertJsonPath('low_stock_products.0.name', 'Low stock item')
-            ->assertJsonPath('announcement.title', 'Seller update');
+            ->assertJsonPath('announcement.title', 'Seller-specific update')
+            ->assertJsonCount(2, 'announcements');
 
         $this->assertEquals(100, array_sum($response->json('sales_chart.month.current')));
         $this->assertEquals(100, array_sum($response->json('sales_chart.year.current')));
@@ -122,7 +144,13 @@ class SellerDashboardTest extends TestCase
             ->assertSee('ORD-', false)
             ->assertSee('Low stock item')
             ->assertSee('Seller update')
-            ->assertSee('Store operations update.');
+            ->assertSee('Store operations update.')
+            ->assertSee('Seller-specific update')
+            ->assertSee('dashboard-announcement-card bg-maroon-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden', false)
+            ->assertSee('bg-white/10 px-3 py-1 rounded-full', false)
+            ->assertSee('data-dashboard-announcement-carousel', false)
+            ->assertDontSee('Buyer update')
+            ->assertDontSee('Logistics update');
     }
 
     public function test_non_sellers_cannot_access_the_seller_dashboard(): void

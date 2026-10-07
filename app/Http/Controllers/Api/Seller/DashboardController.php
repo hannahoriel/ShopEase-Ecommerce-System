@@ -89,7 +89,7 @@ class DashboardController extends Controller
                 ->get(['id', 'buyer_id', 'total', 'status', 'order_number', 'payment_method', 'created_at'])
                 ->map(fn (Order $order) => [
                     'id' => $order->id,
-                    'order_number' => $order->order_number ?: 'ORD-' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
+                    'order_number' => $order->order_number ?: 'ORD-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
                     'buyer_id' => $order->buyer_id,
                     'buyer_name' => $order->buyer?->name ?? 'Buyer',
                     'total' => (float) $order->total,
@@ -111,10 +111,14 @@ class DashboardController extends Controller
                 ])
                 ->values()
                 ->all(),
-            'announcement' => Announcement::query()
-                ->where('is_active', true)
-                ->latest()
-                ->first(['title', 'body', 'badge_label']),
+            'announcements' => Announcement::publishedForAudience([
+                'All Users',
+                'Sellers',
+            ])->get(),
+            'announcement' => Announcement::publishedForAudience([
+                'All Users',
+                'Sellers',
+            ])->first(['title', 'body', 'badge_label']),
         ];
     }
 
@@ -127,7 +131,7 @@ class DashboardController extends Controller
         }
 
         return [
-            'value' => number_format(abs($percent), 0) . '%',
+            'value' => number_format(abs($percent), 0).'%',
             'direction' => $percent >= 0 ? 'up' : 'down',
         ];
     }
@@ -271,7 +275,7 @@ class DashboardController extends Controller
 
     private function productPhotoUrl(?string $photo): ?string
     {
-        if (!$photo) {
+        if (! $photo) {
             return null;
         }
 

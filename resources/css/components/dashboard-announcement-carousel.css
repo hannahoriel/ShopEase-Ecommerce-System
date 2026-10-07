@@ -1,0 +1,158 @@
+[data-dashboard-announcement-carousel] {
+    position: relative;
+}
+
+.dashboard-announcement-card {
+    display: flex;
+    min-height: 220px;
+}
+
+.dashboard-announcement-card > .relative.z-10 {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+}
+
+.dashboard-announcement-card .dashboard-announcement-carousel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.dashboard-announcement-card .dashboard-announcement-slides {
+    flex: 1;
+}
+
+.logistics-dashboard {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #241a18;
+    font-family: Arial, sans-serif;
+}
+
+.logistics-announcement-card {
+    max-width: 480px;
+    min-height: 210px;
+    margin: 24px 0;
+    padding: 24px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #84241f;
+    color: #fff;
+    box-shadow: 0 8px 24px rgb(74 10 10 / 12%);
+}
+
+.dashboard-announcement-slide {
+    display: none;
+}
+
+.dashboard-announcement-slide.is-active {
+    display: block;
+    animation: dashboard-announcement-enter .25s ease-out;
+}
+
+.dashboard-announcement-label,
+.dashboard-announcement-title,
+.dashboard-announcement-body,
+.dashboard-announcement-date {
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-announcement-label {
+    margin: 0 0 14px;
+    color: rgb(255 255 255 / 70%);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.dashboard-announcement-title {
+    margin: 12px 0;
+    color: inherit;
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.dashboard-announcement-body {
+    margin: 0;
+    color: rgb(255 255 255 / 82%);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.dashboard-announcement-date {
+    color: rgb(255 255 255 / 76%);
+    font-size: 12px;
+}
+
+.dashboard-announcement-controls {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+.dashboard-announcement-controls > button {
+    width: 25px;
+    height: 25px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: .8;
+}
+
+.dashboard-announcement-controls > button:hover,
+.dashboard-announcement-controls > button:focus-visible {
+    opacity: 1;
+}
+
+.dashboard-announcement-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dashboard-announcement-dots button {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: currentColor;
+    cursor: pointer;
+    opacity: .35;
+}
+
+.dashboard-announcement-dots button.is-active {
+    width: 17px;
+    opacity: .9;
+}
+
+@keyframes dashboard-announcement-enter {
+    from {
+        opacity: .5;
+        transform: translateX(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-announcement-slide.is-active {
+        animation: none;
+    }
+}

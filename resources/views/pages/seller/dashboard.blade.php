@@ -49,6 +49,8 @@
         'resources/css/app.css',
         'resources/css/seller/dashboard.css',
         'resources/js/seller/dashboard.js',
+        'resources/css/components/dashboard-announcement-carousel.css',
+        'resources/js/components/dashboard-announcement-carousel.js',
     ])
 
 
@@ -724,46 +726,24 @@
                      ANNOUNCEMENT
                 ================================================== --}}
 
-                <div class="announcement-card">
+                <div class="dashboard-announcement-card bg-maroon-900 text-white rounded-2xl p-4 shadow-sm relative overflow-hidden">
 
-                    <p class="announcement-label">
-                        {{ $dashboard['announcement']?->badge_label ?: 'Announcement' }}
-                    </p>
+                    <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-peach-dark/10"></div>
+                    <div class="absolute -right-5 -bottom-12 w-28 h-28 rounded-full bg-peach-dark/10"></div>
+                    <div class="absolute right-6 top-6 w-2 h-2 rounded-full bg-peach-dark/50"></div>
+                    <div class="absolute right-12 top-12 w-1.5 h-1.5 rounded-full bg-peach-dark/40"></div>
 
+                    <div class="relative z-10">
+                        @include('components.dashboard-announcement-carousel', [
+                            'dashboardAnnouncementVariant' => 'admin',
+                        ])
 
-                    <h3 class="announcement-title">
-                        {{ $dashboard['announcement']?->title ?: 'No active announcements' }}
-                    </h3>
-
-
-                    <p class="announcement-text">
-                        {{ $dashboard['announcement']?->body ?: 'Check back later for seller updates.' }}
-                    </p>
-
-
-                    <div class="announcement-icon">
-
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                        >
-
-                            <path
-                                d="M4 9v6h4l5 4V5L8 9H4z"
-                            />
-
-                            <path
-                                d="M16 8.5a4.5 4.5 0 0 1 0 7"
-                            />
-
-                            <path
-                                d="M18 6a8 8 0 0 1 0 12"
-                            />
-
-                        </svg>
-
+                        <div class="mt-4 flex items-center gap-2">
+                            <span class="w-8 h-1 rounded-full bg-peach-dark"></span>
+                            <span class="w-2 h-1 rounded-full bg-white/30"></span>
+                            <span class="w-2 h-1 rounded-full bg-white/20"></span>
+                        </div>
                     </div>
-
                 </div>
 
             </section>

@@ -7,98 +7,8 @@
 @vite('resources/css/admin/platform-settings.css')
 
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | DEMO / FALLBACK DATA
-    |--------------------------------------------------------------------------
-    | Replace these arrays later with controller data.
-    */
-
-    $announcements = $announcements ?? [
-        [
-            'title' => 'Scheduled Maintenance Notice',
-            'description' => 'We will be conducting a system maintenance on June 2, 2026 from 12:00 AM to 4:00 AM. Some features may be unavailable...',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'megaphone',
-            'theme' => 'red',
-        ],
-        [
-            'title' => 'New Feature: Order Tracking',
-            'description' => 'You can now track your orders in real-time! Go to “My Orders” to check your delivery status anytime.',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'box',
-            'theme' => 'yellow',
-        ],
-        [
-            'title' => 'Beware of Scammers',
-            'description' => 'Shop safely. Do not share your OTP or account details with anyone. ShopEase will never ask for this information.',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'shield',
-            'theme' => 'blue',
-        ],
-        [
-            'title' => 'Policy Update: Prohibited Items',
-            'description' => 'We’ve updated our list of prohibited items. Please review the updated policy for more information.',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'document',
-            'theme' => 'purple',
-        ],
-    ];
-
-    $policies = $policies ?? [
-        [
-            'title' => 'Prohibited and Restricted Items',
-            'description' => 'We will be conducting a system maintenance on June 2, 2026 from 12:00 AM to 4:00 AM. Some features may be unavailable...',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'shield',
-            'theme' => 'red',
-        ],
-        [
-            'title' => 'User Code of Conduct',
-            'description' => 'You can now track your orders in real-time! Go to “My Orders” to check your delivery status anytime.',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'document',
-            'theme' => 'yellow',
-        ],
-        [
-            'title' => 'Shipping and Delivery Policy',
-            'description' => 'Shop safely. Do not share your OTP or account details with anyone. ShopEase will never ask for this information.',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'truck',
-            'theme' => 'blue',
-        ],
-        [
-            'title' => 'Privacy Policy',
-            'description' => 'We’ve updated our list of prohibited items. Please review the updated policy for more information.',
-            'audience' => 'All Users',
-            'status' => 'Published',
-            'date' => 'August 8, 2026',
-            'time' => '6:23 AM',
-            'icon' => 'document',
-            'theme' => 'purple',
-        ],
-    ];
+    $announcements = $announcements ?? [];
+    $policies = $policies ?? [];
 @endphp
 
 
@@ -290,7 +200,7 @@
             role="tabpanel"
             aria-labelledby="policies-tab"
         >
-            <div class="platform-grid">
+            <div id="policies-grid" class="platform-grid">
 
                 @foreach ($policies as $item)
                     <article class="platform-card">
@@ -980,27 +890,51 @@
                     </div>
 
 
-                    <div class="platform-form-group policy-modal-datetime">
+                    <div class="platform-form-group">
+                        <span class="platform-form-label">
+                            Publish
+                        </span>
+
+                        <div class="platform-option-grid">
+                            <label class="platform-option-card is-selected">
+                                <input
+                                    type="radio"
+                                    name="policy_publish_status"
+                                    value="Publish Now"
+                                    checked
+                                >
+                                <span class="platform-option-title">Publish Now</span>
+                                <span class="platform-option-description">Make this policy available as soon as it is added.</span>
+                            </label>
+
+                            <label class="platform-option-card">
+                                <input
+                                    type="radio"
+                                    name="policy_publish_status"
+                                    value="Schedule"
+                                >
+                                <span class="platform-option-title">Schedule</span>
+                                <span class="platform-option-description">Choose a future date and time to publish this policy.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div
+                        id="policy-schedule-fields"
+                        class="platform-form-group policy-modal-datetime"
+                        hidden
+                    >
                         <label class="platform-form-label">
                             Publish Date &amp; Time<span class="platform-required">*</span>
                         </label>
 
                         <div class="platform-datetime-row">
-                            <input
-                                id="policy-date-input"
-                                type="date"
-                                class="platform-input"
-                            >
-
-                            <input
-                                id="policy-time-input"
-                                type="time"
-                                class="platform-input"
-                            >
+                            <input id="policy-date-input" type="date" class="platform-input">
+                            <input id="policy-time-input" type="time" class="platform-input">
                         </div>
 
                         <p class="platform-help-text" style="margin-top:28px;">
-                            Choose when this announcement will be published.
+                            Choose when this policy will be published.
                         </p>
                     </div>
 
@@ -1041,6 +975,9 @@
 @php
     $platformSettingsClientConfig = [
         'announcements' => $announcements,
+        'policies' => $policies,
+        'apiUrl' => url('/admin/platform-settings/api'),
+        'csrfToken' => csrf_token(),
     ];
 @endphp
 

@@ -30,6 +30,7 @@
     <script id="buyerDashboardConfig" type="application/json">
         {!! json_encode([
             'productsUrl'    => '/api/v1/buyer/dashboard/products',
+            'announcementsUrl' => '/api/v1/buyer/dashboard/announcements',
             'productBaseUrl' => '/buyer/product',
             'cartUrl'        => '/api/v1/buyer/cart',
             'apiToken'       => $apiToken ?? '',

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
+use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\Seller\SellerConversation;
 use App\Models\Seller\SellerMessage;
@@ -67,7 +68,7 @@ class SellerMessagesTest extends TestCase
             ->assertJsonPath('data.badge', 'Admin')
             ->assertJsonPath('data.messages.0.sender', 'admin');
 
-        $this->assertSame(13, SellerMessage::query()->count());
+        $this->assertSame(14, SellerMessage::query()->count());
         $this->assertNotEmpty($buyerThreads->json('data'));
     }
 
@@ -147,6 +148,99 @@ class SellerMessagesTest extends TestCase
         $this->actingAs($otherSeller)
             ->getJson("/api/v1/seller/messages/conversations/{$conversation->id}")
             ->assertNotFound();
+    }
+
+    public function test_buyer_product_questions_get_product_replies_and_unrelated_questions_use_fallback(): void
+    {
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Product Answers Store',
+            'registration_status' => 'active',
+        ]);
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Canvas Tote',
+            'description' => 'A lightweight cotton tote bag.',
+            'category' => 'Bags',
+            'sku' => 'TEST-CANVAS-TOTE',
+            'price' => 850,
+            'stock_quantity' => 6,
+            'status' => 'active',
+            'is_archived' => false,
+        ]);
+        $product->options()->create([
+            'type' => 'color',
+            'name' => 'Black',
+            'stock' => 3,
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/messages/conversations', ['product_id' => $product->id])
+            ->assertCreated()
+            ->assertJsonPath('data.product_name', 'Canvas Tote');
+
+        $conversation = SellerConversation::query()->firstOrFail();
+        $this->postJson("/api/v1/buyer/messages/conversations/{$conversation->id}/messages", [
+            'body' => 'Is this product still available?',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.auto_reply', true)
+            ->assertJsonPath('data.messages.1.sender', 'seller')
+            ->assertJsonPath('data.messages.1.text', 'Yes, Canvas Tote is available. There are 6 unit(s) in stock.');
+
+        $this->postJson("/api/v1/buyer/messages/conversations/{$conversation->id}/messages", [
+            'body' => 'Is black still available?',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.messages.1.text', 'Yes, Canvas Tote is available in Black. There are 3 unit(s) of this option in stock.');
+
+        $this->postJson("/api/v1/buyer/messages/conversations/{$conversation->id}/messages", [
+            'body' => 'Can you help me reset my email password?',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.messages.1.text', "Can't answer the question because it isn't related to the product or your order. Please ask about this product or your order.");
+
+        $this->assertDatabaseCount('seller_messages', 6);
+    }
+
+    public function test_buyer_order_questions_get_current_shipment_details(): void
+    {
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Shipment Answers Store',
+            'registration_status' => 'active',
+        ]);
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'AUTO-REPLY-SHIP-001',
+            'total' => 500,
+            'status' => 'to_ship',
+        ]);
+        $order->shipment()->create([
+            'tracking_number' => 'TRACK-AUTO-001',
+            'courier' => 'Ease Express',
+            'estimated_delivery' => now()->addDays(2)->toDateString(),
+            'current_location' => 'Calamba Hub',
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/messages/conversations', ['order_id' => $order->id])
+            ->assertCreated();
+
+        $conversation = SellerConversation::query()->firstOrFail();
+        $this->postJson("/api/v1/buyer/messages/conversations/{$conversation->id}/messages", [
+            'body' => 'Kailan dadating ang order ko?',
+        ])
+            ->assertCreated()
+            ->assertJsonPath(
+                'data.messages.1.text',
+                'Your order #AUTO-REPLY-SHIP-001 is currently To Ship. Shipment details — courier: Ease Express; tracking number: TRACK-AUTO-001; estimated delivery: '.now()->addDays(2)->format('M j, Y').'; latest location: Calamba Hub.',
+            );
     }
 
     public function test_seller_can_send_and_download_an_attachment_up_to_15_mb(): void
@@ -280,9 +374,11 @@ class SellerMessagesTest extends TestCase
         $this->seed(SellerMessagesSeeder::class);
 
         $this->assertDatabaseCount('seller_conversations', 5);
-        $this->assertDatabaseCount('seller_messages', 12);
+        $this->assertDatabaseCount('seller_messages', 13);
         $this->assertDatabaseCount('complaints', 2);
         $this->assertDatabaseCount('orders', 3);
+        $this->assertDatabaseHas('products', ['sku' => 'SE-DEMO-MESSAGE-PRODUCT']);
+        $this->assertDatabaseCount('order_items', 3);
         $this->assertDatabaseHas('seller_conversations', [
             'type' => 'buyers',
             'order_id' => Order::query()->where('order_number', 'SE-DEMO-MESSAGE-ORDER-2028')->value('id'),
@@ -293,5 +389,34 @@ class SellerMessagesTest extends TestCase
                 ->where('subject', 'like', 'SE-DEMO-MESSAGE-COMPLAINT-0148%')
                 ->value('id'),
         ]);
+    }
+
+    public function test_message_seeder_attaches_demo_threads_to_an_existing_seller_account(): void
+    {
+        $sellerUser = User::factory()->create([
+            'email' => 'shop-owner@example.test',
+            'role' => User::ROLE_SELLER,
+        ]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Existing Shop',
+            'registration_status' => 'active',
+        ]);
+
+        $this->seed(SellerMessagesSeeder::class);
+
+        $this->assertDatabaseCount('seller_conversations', 5);
+        $this->assertDatabaseHas('seller_conversations', [
+            'seller_id' => $seller->id,
+            'seed_key' => 'seller-messages-buyer-1',
+        ]);
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/messages?type=buyers')
+            ->assertOk()
+            ->assertJsonCount(3, 'data');
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/messages?type=complaints')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
     }
 }

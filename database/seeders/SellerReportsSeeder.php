@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderItem;
+use App\Models\Admin\CommissionTransaction;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Admin\ShipmentScan;
@@ -64,7 +65,7 @@ class SellerReportsSeeder extends Seeder
                         'buyer_id' => $buyer->id,
                         'seller_id' => $seller->id,
                         'total' => $total,
-                        'commission_amount' => round($total * 0.05, 2),
+                        'commission_amount' => round($total * (CommissionTransaction::DEFAULT_RATE / 100), 2),
                         'status' => $fixture['status'],
                         'pickup_date' => in_array($fixture['status'], ['to_ship', 'in_transit', 'out_for_delivery', 'delivered', 'completed'], true)
                             ? $createdAt->copy()->addDay()->toDateString()

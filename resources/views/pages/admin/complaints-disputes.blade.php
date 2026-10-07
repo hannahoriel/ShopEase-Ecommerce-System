@@ -9,93 +9,6 @@
 
 
 @php
-    $complaintRows = [
-        [
-            'id' => 'AS2026041',
-            'party1' => 'JunjunDura',
-            'role1' => 'Buyer',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Seller',
-            'type' => 'Wrong Item',
-            'status' => 'open',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'Mali-mali yung pinapadala ng seller. Grabe kayo lumaban kayo ng patas. Sayang pera.',
-        ],
-        [
-            'id' => 'AS2026042',
-            'party1' => 'Greg Zotomayor',
-            'role1' => 'Buyer',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Seller',
-            'type' => 'Rude Seller',
-            'status' => 'resolved',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'The buyer reported inappropriate communication from the seller.',
-        ],
-        [
-            'id' => 'AS2026043',
-            'party1' => 'Faith Oriel',
-            'role1' => 'Seller',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Courier',
-            'type' => 'Late Delivery',
-            'status' => 'in-progress',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'The order arrived later than the expected delivery period.',
-        ],
-        [
-            'id' => 'AS2026044',
-            'party1' => 'JunjunDura',
-            'role1' => 'Buyer',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Seller',
-            'type' => 'Wrong product',
-            'status' => 'open',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'The delivered product does not match the item ordered by the buyer.',
-        ],
-        [
-            'id' => 'AS2026045',
-            'party1' => 'JunjunDura',
-            'role1' => 'Buyer',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Seller',
-            'type' => 'Rude Seller',
-            'status' => 'in-progress',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'The complaint is currently being reviewed by the admin team.',
-        ],
-        [
-            'id' => 'AS2026046',
-            'party1' => 'JunjunDura',
-            'role1' => 'Buyer',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Seller',
-            'type' => 'Missing Item',
-            'status' => 'in-progress',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'One item from the order was not included in the delivered package.',
-        ],
-        [
-            'id' => 'AS2026047',
-            'party1' => 'JunjunDura',
-            'role1' => 'Buyer',
-            'party2' => 'DelaCruzShop',
-            'role2' => 'Seller',
-            'type' => 'Wrong size',
-            'status' => 'open',
-            'date' => 'May 31, 2026',
-            'time' => '10:30 AM',
-            'description' => 'The product size received by the buyer is different from the selected size.',
-        ],
-    ];
-
     $statusLabels = [
         'open' => 'Open',
         'in-progress' => 'In progress',
@@ -120,20 +33,11 @@
                 >
 
                 <div class="complaint-stat-content">
-                    <p class="complaint-stat-number">12</p>
+                    <p id="complaint-stat-open" class="complaint-stat-number">{{ $complaintCounts['open'] }}</p>
                     <p class="complaint-stat-label">Open</p>
                 </div>
             </div>
 
-            <div class="complaint-stat-growth">
-                <span class="complaint-stat-growth-value">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 19V5m0 0-5 5m5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    12%
-                </span>
-                <span>from last week</span>
-            </div>
         </div>
 
         <!-- In progress -->
@@ -146,20 +50,11 @@
 >
 
                 <div class="complaint-stat-content">
-                    <p class="complaint-stat-number">328</p>
+                    <p id="complaint-stat-in-progress" class="complaint-stat-number">{{ $complaintCounts['in_progress'] }}</p>
                     <p class="complaint-stat-label">In progress</p>
                 </div>
             </div>
 
-            <div class="complaint-stat-growth">
-                <span class="complaint-stat-growth-value">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 19V5m0 0-5 5m5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    12%
-                </span>
-                <span>from last week</span>
-            </div>
         </div>
 
         <!-- Resolved -->
@@ -172,20 +67,11 @@
                 >
 
                 <div class="complaint-stat-content">
-                    <p class="complaint-stat-number">105</p>
+                    <p id="complaint-stat-resolved" class="complaint-stat-number">{{ $complaintCounts['resolved'] }}</p>
                     <p class="complaint-stat-label">Resolved</p>
                 </div>
             </div>
 
-            <div class="complaint-stat-growth">
-                <span class="complaint-stat-growth-value">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 19V5m0 0-5 5m5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    12%
-                </span>
-                <span>from last week</span>
-            </div>
         </div>
 
         <!-- Total -->
@@ -198,7 +84,7 @@
                 >
 
                 <div class="complaint-stat-content">
-                    <p class="complaint-stat-number">105</p>
+                    <p id="complaint-stat-total" class="complaint-stat-number">{{ $complaintCounts['total'] }}</p>
                     <p class="complaint-stat-label">Total Complaints</p>
                 </div>
             </div>
@@ -316,6 +202,7 @@
                             <tr
                                 class="complaint-row"
                                 data-index="{{ $index }}"
+                                data-database-id="{{ $complaint['databaseId'] }}"
                                 data-id="{{ strtolower($complaint['id']) }}"
                                 data-name="{{ strtolower($complaint['party1'] . ' ' . $complaint['party2']) }}"
                                 data-type="{{ $complaint['type'] }}"
@@ -792,11 +679,7 @@
                     <h4 class="complaints-modal-card-title">Supporting Evidence</h4>
 
                     <div class="complaints-modal-evidence-list">
-                        <span class="complaints-modal-evidence-thumb"></span>
-                        <span class="complaints-modal-evidence-thumb"></span>
-                        <span class="complaints-modal-evidence-thumb"></span>
-                        <span class="complaints-modal-evidence-thumb"></span>
-                        <span class="complaints-modal-evidence-thumb complaints-modal-evidence-more">+2</span>
+                        <span>No evidence attached.</span>
                     </div>
                 </section>
 
@@ -810,13 +693,13 @@
                         </svg>
 
                         <div class="complaints-modal-response-copy">
-                            <strong id="modal-response-title">Awaiting seller response</strong>
-                            <span id="modal-response-message">The seller has been notified about this complaint.</span>
+                            <strong id="modal-response-title">No seller response</strong>
+                            <span id="modal-response-message">A seller response has not been recorded.</span>
                         </div>
                     </div>
 
                     <p id="modal-response-empty" class="complaints-modal-no-response">
-                        No response yet.
+                        No response recorded.
                     </p>
                 </section>
             </div>

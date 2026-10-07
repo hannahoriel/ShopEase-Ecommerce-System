@@ -621,6 +621,18 @@
         background: #FFFFFF;
     }
 
+    #buyerFloatingChatStatus {
+        margin: 0;
+        padding: 7px 10px;
+        background: #FFF4F1;
+        color: #7A2630;
+        font-size: 9px;
+    }
+
+    #buyerFloatingChatStatus[hidden] {
+        display: none;
+    }
+
     .buyer-floating-chat-composer input {
         width: 100%;
         height: 34px;

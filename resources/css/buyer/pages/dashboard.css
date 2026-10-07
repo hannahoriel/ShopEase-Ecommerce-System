@@ -102,6 +102,26 @@
             z-index: 1;
         }
 
+        .buyer-admin-announcement .announcement-copy {
+            max-width: 72%;
+        }
+
+        .buyer-admin-announcement .announcement-copy p {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+
+        .buyer-admin-announcement-image {
+            position: absolute;
+            inset: 0 0 0 auto;
+            width: 38%;
+            height: 100%;
+            object-fit: cover;
+            mask-image: linear-gradient(to right, transparent, #000 35%);
+        }
+
         .buyer-hero-image {
             position: absolute;
             inset: 0;

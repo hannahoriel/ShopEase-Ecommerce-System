@@ -2,7 +2,7 @@
 
 namespace App\Http\Services;
 
-use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController; // not used, remove if present
+// not used, remove if present
 use App\Models\Admin\Registration;
 use App\Models\Buyer\Buyer;
 use App\Models\Logistics\Logistics;
@@ -49,7 +49,7 @@ class RegistrationService
         $rules = [
             'role' => [
                 'required',
-                'in:' . implode(',', [
+                'in:'.implode(',', [
                     User::ROLE_BUYER,
                     User::ROLE_SELLER,
                     User::ROLE_LOGISTICS,
@@ -82,6 +82,11 @@ class RegistrationService
             $rules['upload_business_permit'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
         }
 
+        if ($role === User::ROLE_LOGISTICS) {
+            $rules['business_name'] = ['nullable', 'string', 'max:255'];
+            $rules['upload_business_permit'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
+        }
+
         if ($role === User::ROLE_RIDER) {
             $rules['vehicle'] = ['required', 'string', 'max:255'];
             $rules['plate_number'] = ['required', 'string', 'max:50'];
@@ -93,7 +98,7 @@ class RegistrationService
         $birthday = $request->date('birthday');
 
         $profile = [
-            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
+            'name' => trim($validated['first_name'].' '.$validated['last_name']),
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'middle_initial' => $validated['middle_initial'] ?? null,
@@ -118,6 +123,10 @@ class RegistrationService
             $profile['line_of_business'] = $validated['line_of_business'];
         }
 
+        if ($role === User::ROLE_LOGISTICS && ! empty($validated['business_name'])) {
+            $profile['business_name'] = $validated['business_name'];
+        }
+
         if ($role === User::ROLE_RIDER) {
             $profile['vehicle'] = $validated['vehicle'];
             $profile['plate_number'] = $validated['plate_number'];
@@ -127,6 +136,10 @@ class RegistrationService
         $profile['upload_id_license'] = $this->storeRegistrationFile($request, 'upload_id_license');
 
         if ($role === User::ROLE_SELLER) {
+            $profile['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
+        }
+
+        if ($role === User::ROLE_LOGISTICS) {
             $profile['upload_business_permit'] = $this->storeRegistrationFile($request, 'upload_business_permit');
         }
 
@@ -254,7 +267,7 @@ class RegistrationService
         }
 
         $attributes = [
-            'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+            'name' => trim($data['first_name'].' '.$data['last_name']),
             'email' => $data['email'],
             'password' => Hash::make($data['password'] ?? Str::random(40)),
             'role' => $role,
@@ -374,7 +387,7 @@ class RegistrationService
     {
         return [
             'required', 'date', 'before_or_equal:today',
-            'before_or_equal:' . now()->subYears(18)->toDateString(),
+            'before_or_equal:'.now()->subYears(18)->toDateString(),
         ];
     }
 

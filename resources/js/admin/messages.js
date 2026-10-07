@@ -437,9 +437,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     let activeTab = 'logistics';
-    let activeThreadId = 'logistics-1';
+    let activeThreadId = null;
     let activeComplaintParty = 'buyer';
+    const apiBase = '/admin/messages/api';
+    const attachmentInput = document.getElementById('adminMessageAttachment');
+    const photoInput = document.getElementById('adminMessagePhoto');
+    const newConversationDialog = document.getElementById('adminNewConversationDialog');
+    const newConversationContact = document.getElementById('adminNewConversationContact');
 
+    async function request(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.set('Accept', 'application/json');
+        headers.set('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]')?.content || '');
+        const response = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'same-origin'
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload.message || Object.values(payload.errors || {}).flat()[0] || 'The request failed.');
+        }
+        return payload;
+    }
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -633,12 +653,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const isAdmin =
                     message.sender === 'admin';
+                const attachment = message.attachment
+                    ? `<a href="${escapeHtml(message.attachment.url)}" target="_blank" rel="noopener">${escapeHtml(message.attachment.name || 'Download attachment')}</a>`
+                    : '';
 
                 return `
                     <div class="admin-chat-message-row ${isAdmin ? 'is-admin' : ''}">
                         <div class="admin-chat-bubble-wrap">
                             <div class="admin-chat-bubble">
                                 ${escapeHtml(message.text)}
+                                ${attachment ? `<div class="admin-message-attachment">${attachment}</div>` : ''}
                             </div>
 
                             <div class="admin-message-meta">
@@ -851,17 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateComplaintPartyTabs();
         }
 
-        const first =
-            conversations[activeTab][0];
-
-        if (first) {
-            activeThreadId =
-                first.id;
-
-            renderThread(first);
-        } else {
-            renderThreadList();
-        }
+        loadConversations();
     }
 
 
@@ -918,6 +932,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMessageBody(thread);
         renderThreadList();
         updateCounts();
+        const conversationId = thread.parties?.[activeComplaintParty]?.conversationId;
+        if (conversationId) {
+            request(`${apiBase}/conversations/${conversationId}`)
+                .then(() => loadConversations(thread.id))
+                .catch(error => alert(error.message));
+        }
     }
 
 
@@ -980,12 +1000,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function sendMessage() {
+    async function sendMessage() {
         const text =
             (composerInput?.value || '')
                 .trim();
-
-        if (!text) {
+        const attachment = attachmentInput?.files?.[0] || photoInput?.files?.[0];
+        if (!text && !attachment) {
             composerInput?.focus();
             return;
         }
@@ -997,51 +1017,93 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const now =
-            new Intl.DateTimeFormat(
-                'en-US',
-                {
-                    hour: 'numeric',
-                    minute: '2-digit'
-                }
-            ).format(new Date());
-
-        const message = {
-            sender: 'admin',
-            text,
-            time: now,
-            seen: false
-        };
-
-        if (thread.type === 'complaints') {
-            thread
-                .parties?.[activeComplaintParty]
-                ?.messages
-                ?.push(message);
-
-            thread.preview =
-                activeComplaintParty === 'buyer'
-                    ? `Admin replied to buyer: ${text}`
-                    : `Admin replied to seller: ${text}`;
-        } else {
-            thread.messages.push(
-                message
-            );
-
-            thread.preview =
-                text;
+        const conversationId = thread.type === 'complaints'
+            ? thread.parties?.[activeComplaintParty]?.conversationId
+            : thread.id;
+        if (!conversationId) {
+            alert('This complaint party does not have a conversation yet.');
+            return;
         }
 
-        thread.time =
-            'Now';
+        const formData = new FormData();
+        formData.set('body', text);
+        if (attachment) {
+            formData.set('attachment', attachment);
+        }
+        try {
+            const { data } = await request(
+                `${apiBase}/conversations/${conversationId}/messages`,
+                { method: 'POST', body: formData }
+            );
+            if (thread.type === 'complaints') {
+                thread.parties[activeComplaintParty].messages.push(data);
+                thread.parties[activeComplaintParty].unread = 0;
+            } else {
+                thread.messages.push(data);
+            }
+            thread.preview = text || attachment.name;
+            thread.time = 'Now';
+            composerInput.value = '';
+            composerInput.style.height = 'auto';
+            if (attachmentInput) attachmentInput.value = '';
+            if (photoInput) photoInput.value = '';
+            renderThread(thread);
+        } catch (error) {
+            alert(error.message);
+        }
+    }
 
-        composerInput.value =
-            '';
+    async function loadConversations(preferredId = null) {
+        try {
+            const { data } = await request(apiBase);
+            Object.values(conversations).forEach(items => items.splice(0, items.length));
+            data.forEach(thread => conversations[thread.type]?.push(thread));
+            const activeItems = conversations[activeTab];
+            const preferred = allThreads().find(thread => thread.id === preferredId);
+            const next = preferred || activeItems[0] || allThreads()[0] || null;
+            if (next) {
+                if (next.type !== activeTab) {
+                    activeTab = next.type;
+                    tabs.forEach(tab => {
+                        const active = tab.dataset.adminMessageTab === activeTab;
+                        tab.classList.toggle('is-active', active);
+                        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                    });
+                }
+                if (next.type === 'complaints') {
+                    activeComplaintParty = next.parties?.buyer ? 'buyer' : 'seller';
+                    updateComplaintPartyTabs();
+                }
+                renderThread(next);
+            } else {
+                activeThreadId = null;
+                renderThreadList();
+                updateCounts();
+                if (chatBody) chatBody.textContent = 'No conversations yet. Start a conversation to contact a user.';
+            }
+        } catch (error) {
+            if (chatBody) chatBody.textContent = `Unable to load messages: ${error.message}`;
+        }
+    }
 
-        composerInput.style.height =
-            'auto';
-
-        renderThread(thread);
+    async function openNewConversation() {
+        try {
+            const { data } = await request(`${apiBase}/contacts?type=${encodeURIComponent(activeTab)}`);
+            newConversationContact.replaceChildren();
+            data.forEach(contact => {
+                const option = document.createElement('option');
+                option.value = JSON.stringify(contact);
+                option.textContent = contact.label;
+                newConversationContact.append(option);
+            });
+            if (data.length === 0) {
+                alert('There are no available contacts in this category.');
+                return;
+            }
+            newConversationDialog.showModal();
+        } catch (error) {
+            alert(error.message);
+        }
     }
 
 
@@ -1093,9 +1155,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateComplaintPartyTabs();
             }
 
-            renderThread(
-                thread
-            );
+            if (thread) {
+                renderThread(thread);
+                const conversationId = thread.type === 'complaints'
+                    ? thread.parties?.[activeComplaintParty]?.conversationId
+                    : thread.id;
+                if (conversationId) {
+                    request(`${apiBase}/conversations/${conversationId}`)
+                        .then(() => loadConversations(thread.id))
+                        .catch(error => alert(error.message));
+                }
+            }
         }
     );
 
@@ -1149,28 +1219,34 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-    document
-        .getElementById('adminAttachButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                alert(
-                    'File attachment UI is ready for backend/file-upload integration.'
-                );
-            }
-        );
+    document.getElementById('adminAttachButton')?.addEventListener('click', () => attachmentInput?.click());
 
-
-    document
-        .getElementById('adminPhotoButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                alert(
-                    'Photo attachment UI is ready for backend/file-upload integration.'
-                );
-            }
-        );
+    document.getElementById('adminPhotoButton')?.addEventListener('click', () => photoInput?.click());
+    document.getElementById('adminNewConversationButton')?.addEventListener('click', openNewConversation);
+    document.getElementById('adminCancelNewConversation')?.addEventListener('click', () => newConversationDialog.close());
+    document.getElementById('adminNewConversationForm')?.addEventListener('submit', async event => {
+        event.preventDefault();
+        const contact = JSON.parse(newConversationContact.value);
+        try {
+            const { data: created } = await request(`${apiBase}/conversations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: activeTab,
+                    user_id: contact.user_id,
+                    complaint_id: contact.complaint_id,
+                    complaint_party: contact.complaint_party
+                })
+            });
+            newConversationDialog.close();
+            const threadId = activeTab === 'complaints'
+                ? `complaint-${contact.complaint_id}`
+                : created.id;
+            await loadConversations(threadId);
+        } catch (error) {
+            alert(error.message);
+        }
+    });
 
 
     viewContextButton?.addEventListener(
@@ -1183,16 +1259,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            alert(
-                `Open ${thread.contextValue}`
-            );
+            if (thread.contextUrl) {
+                window.location.assign(thread.contextUrl);
+            }
         }
     );
 
 
     updateCounts();
-    renderThreadList();
-    renderThread(
-        getThread(activeThreadId)
-    );
+    loadConversations();
 });

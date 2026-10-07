@@ -383,6 +383,37 @@ document.addEventListener('DOMContentLoaded', function () {
             .replaceAll("'", '&#039;');
     }
 
+    async function submitLogisticsDecision(registrationId, decision, payload = {}) {
+        const csrfToken =
+            document.querySelector('meta[name="csrf-token"]')?.content;
+
+        const response = await fetch(
+            `/admin/logistics-management/api/registrations/${registrationId}/${decision}`,
+            {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || ''
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const validationMessage =
+                Object.values(result.errors || {}).flat()[0];
+
+            throw new Error(
+                validationMessage || result.message || 'Unable to update this logistics request.'
+            );
+        }
+
+        return result;
+    }
+
     function getPageNumbers(currentPage, totalPages) {
         if (totalPages <= 5) {
             return Array.from(
@@ -1126,29 +1157,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function formatDecisionDate() {
-        return new Intl.DateTimeFormat(
-            'en-US',
-            {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            }
-        ).format(new Date());
-    }
-
-    function formatDecisionTime() {
-        return new Intl.DateTimeFormat(
-            'en-US',
-            {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            }
-        ).format(new Date());
-    }
-
-    function approveActivePendingRequest() {
+    async function approveActivePendingRequest() {
         if (
             activePendingRequestIndex === null
         ) {
@@ -1173,101 +1182,20 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        /*
-         * Match Registrations: show the decision flash immediately
-         * after the admin confirms the action.
-         */
-        showLogisticsFlash(
-            'approved',
-            request.company
-        );
+        pendingReviewApprove.disabled = true;
 
-        /*
-         * Front-end demo behavior.
-         * Replace with the real approval endpoint when backend review
-         * routes are connected.
-         */
-        const approvedCompany = {
-            company:
-                request.company,
-
-            branches:
-                0,
-
-            riders:
-                0,
-
-            contact_number:
-                request.phone || '—',
-
-            company_email:
-                request.email || '—',
-
-            office_address:
-                request.office_address || '—',
-
-            description:
-                request.description || '',
-
-            dti_permit:
-                request.dti_permit || '',
-
-            business_permit:
-                request.business_permit || '',
-
-            partnership_since:
-                new Date().getFullYear(),
-
-            account_created_date:
-                formatDecisionDate(),
-
-            account_created_time:
-                formatDecisionTime(),
-
-            logo:
-                request.logo || '',
-
-            branches_data:
-                []
-        };
-
-        pendingLogisticsRequests.splice(
-            activePendingRequestIndex,
-            1
-        );
-
-        logisticsCompanies.unshift(
-            approvedCompany
-        );
-
-        pendingOriginalTotalEntries =
-            Math.max(
-                0,
-                pendingOriginalTotalEntries - 1
-            );
-
-        originalTotalEntries += 1;
-
-        pendingStatValue =
-            Math.max(
-                0,
-                pendingStatValue - 1
-            );
-
-        acceptedStatValue += 1;
-        totalStatValue += 1;
-
-        closePendingReview();
-
-        pendingCurrentPage = 1;
-        currentPage = 1;
-
-        renderPending();
-        render();
-        renderLogisticsStats();
+        try {
+            await submitLogisticsDecision(request.id, 'approve');
+            showLogisticsFlash('approved', request.company);
+            window.setTimeout(() => window.location.reload(), 900);
+        } catch (error) {
+            showLogisticsFlash('error', error.message);
+        } finally {
+            pendingReviewApprove.disabled = false;
+        }
     }
 
-    function rejectActivePendingRequest() {
+    async function rejectActivePendingRequest() {
         if (
             activePendingRequestIndex === null
         ) {
@@ -1294,77 +1222,22 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        /*
-         * Same immediate rejection flash behavior as Registrations.
-         */
-        showLogisticsFlash(
-            'rejected',
-            request.company
-        );
+        confirmLogisticsReject.disabled = true;
 
-        /*
-         * Keep the selected rejection data on the object before it
-         * leaves the pending list. This can later be sent to the API.
-         */
-        request.rejection_reason =
-            reason;
-
-        request.rejection_details =
-            logisticsRejectAdditionalDetails.value.trim();
-
-        request.rejected_at =
-            `${formatDecisionDate()} ${formatDecisionTime()}`;
-
-        rejectedLogisticsArchive.unshift({
-            company:
-                request.company || '—',
-
-            email:
-                request.email || '—',
-
-            phone:
-                request.phone || '—',
-
-            contact_person:
-                request.contact_person || '—',
-
-            rejected_display:
-                formatDecisionDate(),
-
-            rejection_reason:
-                request.rejection_reason,
-
-            rejection_details:
-                request.rejection_details
-        });
-
-        pendingLogisticsRequests.splice(
-            activePendingRequestIndex,
-            1
-        );
-
-        pendingOriginalTotalEntries =
-            Math.max(
-                0,
-                pendingOriginalTotalEntries - 1
-            );
-
-        pendingStatValue =
-            Math.max(
-                0,
-                pendingStatValue - 1
-            );
-
-        rejectedStatValue += 1;
-
-        closeLogisticsRejectModal();
-        closePendingReview();
-
-        pendingCurrentPage = 1;
-
-        renderPending();
-        renderLogisticsStats();
-        renderRejectedLogisticsArchive();
+        try {
+            await submitLogisticsDecision(request.id, 'reject', {
+                reason,
+                details: logisticsRejectAdditionalDetails.value.trim()
+            });
+            showLogisticsFlash('rejected', request.company);
+            closeLogisticsRejectModal();
+            closePendingReview();
+            window.setTimeout(() => window.location.reload(), 900);
+        } catch (error) {
+            showLogisticsFlash('error', error.message);
+        } finally {
+            confirmLogisticsReject.disabled = false;
+        }
     }
 
     function renderPending() {

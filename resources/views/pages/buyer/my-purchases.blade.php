@@ -32,6 +32,7 @@
     <script id="buyerPurchasesConfig" type="application/json">
         {!! json_encode([
             'ordersUrl' => '/api/v1/buyer/orders',
+            'complaintsUrl' => '/api/v1/buyer/orders',
             'apiToken' => $apiToken ?? '',
         ]) !!}
     </script>
@@ -535,6 +536,43 @@
             </div>
         </div>
     </main>
+
+    <div id="buyerComplaintModal" class="fixed inset-0 z-[220] hidden items-center justify-center bg-black/40 px-4 py-6" aria-hidden="true">
+        <section class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="buyerComplaintTitle">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 id="buyerComplaintTitle" class="text-xl font-bold text-gray-900">Report an order problem</h2>
+                    <p id="buyerComplaintOrderLabel" class="mt-1 text-sm text-gray-500"></p>
+                </div>
+                <button type="button" id="buyerComplaintClose" class="rounded-full p-2 text-gray-500 hover:bg-gray-100" aria-label="Close complaint form">×</button>
+            </div>
+            <form id="buyerComplaintForm" class="mt-5 space-y-4">
+                <input id="buyerComplaintOrderId" type="hidden">
+                <label class="block text-sm font-medium text-gray-700" for="buyerComplaintType">
+                    Complaint type
+                    <select id="buyerComplaintType" name="type" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2">
+                        <option value="">Select a reason</option>
+                        <option>Wrong Item</option>
+                        <option>Missing Item</option>
+                        <option>Damaged Item</option>
+                        <option>Late Delivery</option>
+                        <option>Order Not Received</option>
+                        <option>Seller Conduct</option>
+                        <option>Other</option>
+                    </select>
+                </label>
+                <label class="block text-sm font-medium text-gray-700" for="buyerComplaintDescription">
+                    Tell us what happened
+                    <textarea id="buyerComplaintDescription" name="description" rows="5" minlength="10" maxlength="2000" required class="mt-1 block w-full resize-y rounded-lg border border-gray-300 px-3 py-2" placeholder="Describe the issue with your order (10-2000 characters)."></textarea>
+                </label>
+                <p id="buyerComplaintError" class="text-sm text-red-600" role="alert" hidden></p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="buyerComplaintCancel" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Cancel</button>
+                    <button id="buyerComplaintSubmit" type="submit" class="rounded-lg bg-[#7B1B1B] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Submit complaint</button>
+                </div>
+            </form>
+        </section>
+    </div>
 
     {{-- Shared Buyer Footer --}}
     @include('components.buyer.footer')

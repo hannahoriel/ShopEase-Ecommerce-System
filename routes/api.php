@@ -1,23 +1,28 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\CommissionController;
+use App\Http\Controllers\Admin\LogisticsManagementController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
-use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
-use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
-use App\Http\Controllers\Api\Seller\OrderStatusController;
-use App\Http\Controllers\Api\Seller\ShippingStatusController;
+use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
+use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
-use App\Http\Controllers\LocationController;
-use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
-use App\Http\Controllers\Api\Buyer\ProductReviewController;
+use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
+use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
+use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
 use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
+use App\Http\Controllers\Api\Seller\OrderStatusController;
+use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
+use App\Http\Controllers\Api\Seller\ShippingStatusController;
+use App\Http\Controllers\LocationController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
@@ -41,6 +46,29 @@ Route::prefix('v1')->group(function () {
         ]));
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/messages', [AdminMessagesController::class, 'index'])->name('admin.api.messages.index');
+            Route::get('/messages/contacts', [AdminMessagesController::class, 'contacts'])->name('admin.api.messages.contacts');
+            Route::post('/messages/conversations', [AdminMessagesController::class, 'storeConversation'])->name('admin.api.messages.conversations.store');
+            Route::get('/messages/conversations/{conversation}', [AdminMessagesController::class, 'show'])->name('admin.api.messages.conversations.show');
+            Route::post('/messages/conversations/{conversation}/messages', [AdminMessagesController::class, 'send'])->name('admin.api.messages.send');
+            Route::get('/messages/conversations/{conversation}/messages/{message}/attachment', [AdminMessagesController::class, 'attachment'])
+                ->name('admin.api.messages.attachment');
+            Route::get('/commissions', [CommissionController::class, 'index'])->name('admin.api.commissions.index');
+            Route::get('/logistics-management', [LogisticsManagementController::class, 'index'])->name('admin.api.logistics.index');
+            Route::post('/logistics-management/registrations/{registration}/approve', [LogisticsManagementController::class, 'approve'])
+                ->name('admin.api.logistics.approve');
+            Route::post('/logistics-management/registrations/{registration}/reject', [LogisticsManagementController::class, 'reject'])
+                ->name('admin.api.logistics.reject');
+            Route::get('/logistics-management/companies/{logistics}/branches', [LogisticsManagementController::class, 'branches'])
+                ->name('admin.api.logistics.branches.index');
+            Route::post('/logistics-management/companies/{logistics}/branches', [LogisticsManagementController::class, 'storeBranch'])
+                ->name('admin.api.logistics.branches.store');
+            Route::patch('/logistics-management/branches/{branch}', [LogisticsManagementController::class, 'updateBranch'])
+                ->name('admin.api.logistics.branches.update');
+            Route::delete('/logistics-management/branches/{branch}', [LogisticsManagementController::class, 'destroyBranch'])
+                ->name('admin.api.logistics.branches.destroy');
+            Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('admin.api.complaints.index');
+            Route::patch('/complaints/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])->name('admin.api.complaints.status');
             Route::get('/registrations', [RegistrationController::class, 'list']);
             Route::get('/registrations/approved', [RegistrationController::class, 'approvedArchive']);
             Route::get('/registrations/rejected', [RegistrationController::class, 'rejectedArchive']);
@@ -62,12 +90,18 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/dashboard/announcements', [BuyerDashboardController::class, 'announcements'])->name('buyer.api.dashboard.announcements');
+            Route::get('/messages', [BuyerMessagesController::class, 'index'])->name('buyer.api.messages.index');
+            Route::post('/messages/conversations', [BuyerMessagesController::class, 'storeConversation'])->name('buyer.api.messages.conversations.store');
+            Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
+            Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
             Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
             Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
+            Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
 
             // Cart
             Route::get('/cart', [BuyerCartController::class, 'index'])->name('buyer.api.cart.index');

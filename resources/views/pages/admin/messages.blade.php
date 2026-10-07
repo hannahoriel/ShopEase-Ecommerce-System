@@ -19,6 +19,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>ShopEase - Admin Messages</title>
 
@@ -100,6 +101,10 @@
                             <span class="admin-tab-count" id="sellersTabCount">2</span>
                         </button>
                     </div>
+
+                    <button type="button" class="admin-new-conversation-button" id="adminNewConversationButton">
+                        New conversation
+                    </button>
 
                     <div class="admin-messages-search-wrap">
                         <label class="admin-messages-search">
@@ -401,7 +406,7 @@
                             <textarea
                                 id="adminMessageInput"
                                 rows="1"
-                                maxlength="1000"
+                                maxlength="5000"
                                 placeholder="Type a message..."
                                 aria-label="Message"
                             ></textarea>
@@ -435,6 +440,21 @@
             </section>
         </div>
     </main>
+
+    <dialog id="adminNewConversationDialog">
+        <form id="adminNewConversationForm">
+            <h2>Start a conversation</h2>
+            <label for="adminNewConversationContact">Contact</label>
+            <select id="adminNewConversationContact" required></select>
+            <div>
+                <button type="button" id="adminCancelNewConversation">Cancel</button>
+                <button type="submit">Start conversation</button>
+            </div>
+        </form>
+    </dialog>
+
+    <input type="file" id="adminMessageAttachment" hidden>
+    <input type="file" id="adminMessagePhoto" accept="image/*" hidden>
 
 </body>
 </html>

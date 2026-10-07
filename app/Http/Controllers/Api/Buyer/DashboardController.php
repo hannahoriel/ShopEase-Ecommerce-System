@@ -3,12 +3,40 @@
 namespace App\Http\Controllers\Api\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Announcement;
 use App\Models\Seller\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
+    public function announcements(): JsonResponse
+    {
+        Announcement::query()
+            ->where('status', 'Scheduled')
+            ->where('published_at', '<=', now())
+            ->update(['status' => 'Published', 'is_active' => true]);
+
+        $announcements = Announcement::publishedForAudience([
+            'All Users',
+            'Buyers',
+        ])
+            ->get()
+            ->map(fn (Announcement $announcement) => [
+                'id' => $announcement->id,
+                'type' => $announcement->type ?? 'Announcement',
+                'title' => $announcement->title,
+                'description' => $announcement->body,
+                'banner_url' => $announcement->banner_path
+                    ? Storage::disk('public')->url($announcement->banner_path)
+                    : null,
+            ])
+            ->values();
+
+        return response()->json(['data' => $announcements]);
+    }
+
     public function products(Request $request): JsonResponse
     {
         $query = Product::with(['seller', 'options', 'productSpecifications'])
@@ -32,18 +60,18 @@ class DashboardController extends Controller
         $products = $query->latest()->paginate($perPage);
 
         return response()->json([
-            'data'         => $products->map(fn (Product $p) => $this->serializeProduct($p))->values(),
-            'total'        => $products->total(),
-            'per_page'     => $products->perPage(),
+            'data' => $products->map(fn (Product $p) => $this->serializeProduct($p))->values(),
+            'total' => $products->total(),
+            'per_page' => $products->perPage(),
             'current_page' => $products->currentPage(),
-            'last_page'    => $products->lastPage(),
+            'last_page' => $products->lastPage(),
         ]);
     }
 
     public function show(Product $product): JsonResponse
     {
         abort_unless(
-            !$product->is_archived && $product->status === 'active',
+            ! $product->is_archived && $product->status === 'active',
             404
         );
 
@@ -57,18 +85,18 @@ class DashboardController extends Controller
         $photos = $this->resolvePhotos($product->photos ?? []);
 
         $data = [
-            'id'            => $product->id,
-            'name'          => $product->name,
-            'price'         => (float) $product->price,
-            'stock'         => $product->stock_quantity,
-            'category'      => $product->category,
-            'photos'        => $photos,
-            'image_url'     => $photos[0] ?? null,
-            'pricing_mode'  => $product->pricing_mode,
+            'id' => $product->id,
+            'name' => $product->name,
+            'price' => (float) $product->price,
+            'stock' => $product->stock_quantity,
+            'category' => $product->category,
+            'photos' => $photos,
+            'image_url' => $photos[0] ?? null,
+            'pricing_mode' => $product->pricing_mode,
             'seller' => [
-                'id'            => $product->seller->id,
-                'store_name'    => $product->seller->store_name,
-                'joined_years'  => $product->seller->approved_at
+                'id' => $product->seller->id,
+                'store_name' => $product->seller->store_name,
+                'joined_years' => $product->seller->approved_at
                     ? (int) $product->seller->approved_at->diffInYears(now())
                     : 0,
                 'joined_months' => $product->seller->approved_at
@@ -78,21 +106,21 @@ class DashboardController extends Controller
                     ->where('status', 'active')
                     ->where('is_archived', false)
                     ->count(),
-                'ratings'       => 0,
-                'followers'     => 0,
+                'ratings' => 0,
+                'followers' => 0,
                 'response_rate' => '100%',
                 'response_time' => 'within minutes',
             ],
         ];
 
         if ($full) {
-            $data['description']      = $product->description;
-            $data['sku']              = $product->sku;
-            $data['pricing_source']   = $product->pricing_source;
-            $data['variations']       = $product->variations;
-            $data['colors']           = $product->colors;
-            $data['sizes']            = $product->sizes;
-            $data['specifications']   = $product->specifications;
+            $data['description'] = $product->description;
+            $data['sku'] = $product->sku;
+            $data['pricing_source'] = $product->pricing_source;
+            $data['variations'] = $product->variations;
+            $data['colors'] = $product->colors;
+            $data['sizes'] = $product->sizes;
+            $data['specifications'] = $product->specifications;
         }
 
         return $data;
@@ -101,7 +129,7 @@ class DashboardController extends Controller
     private function resolvePhotos(array $photos): array
     {
         return array_values(array_filter(array_map(function ($photo): ?string {
-            if (!is_string($photo) || trim($photo) === '') {
+            if (! is_string($photo) || trim($photo) === '') {
                 return null;
             }
 
@@ -117,7 +145,7 @@ class DashboardController extends Controller
 
             $path = ltrim(preg_replace('/^storage\//', '', $value), '/');
 
-            return $path !== '' ? \Illuminate\Support\Facades\Storage::disk('public')->url($path) : null;
+            return $path !== '' ? Storage::disk('public')->url($path) : null;
         }, $photos)));
     }
 }

@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Api\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\CommissionTransaction;
+use App\Models\Admin\Complaint;
+use App\Models\Admin\ComplaintUpdate;
 use App\Models\Admin\Order;
 use App\Models\Buyer\CartItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
@@ -17,7 +21,7 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('buyer_id', $request->user()->id)
-            ->with(['seller:id,store_name', 'items'])
+            ->with(['seller:id,store_name', 'items', 'complaints'])
             ->latest()
             ->paginate(50);
 
@@ -25,11 +29,16 @@ class OrderController extends Controller
             'data' => $orders->getCollection()->map(fn (Order $order): array => [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
-                'qr_payload' => url('/api/v1/orders/verify/' . rawurlencode($order->order_number)),
+                'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
                 'status' => $order->status,
                 'created_at' => $order->created_at?->toISOString(),
+                'complaint' => $order->complaints->first() ? [
+                    'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
+                    'type' => $order->complaints->first()->type,
+                    'status' => str_replace('_', '-', $order->complaints->first()->status),
+                ] : null,
                 'items' => $order->items->map(fn ($item): array => [
                     'product_name' => $item->product_name,
                     'quantity' => $item->quantity,
@@ -41,6 +50,55 @@ class OrderController extends Controller
             ])->values(),
             'total' => $orders->total(),
         ]);
+    }
+
+    public function storeComplaint(Request $request, Order $order): JsonResponse
+    {
+        abort_unless($order->buyer_id === $request->user()->id, 404);
+
+        $validated = $request->validate([
+            'type' => ['required', Rule::in([
+                'Wrong Item',
+                'Missing Item',
+                'Damaged Item',
+                'Late Delivery',
+                'Order Not Received',
+                'Seller Conduct',
+                'Other',
+            ])],
+            'description' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $complaint = DB::transaction(function () use ($request, $order, $validated): Complaint {
+            $complaint = Complaint::create([
+                'user_id' => $request->user()->id,
+                'order_id' => $order->id,
+                'subject' => $validated['type'],
+                'type' => $validated['type'],
+                'description' => $validated['description'],
+                'status' => 'open',
+            ]);
+
+            ComplaintUpdate::create([
+                'complaint_id' => $complaint->id,
+                'user_id' => $request->user()->id,
+                'type' => 'submitted',
+                'message' => 'Complaint submitted by '.$request->user()->name.'.',
+            ]);
+
+            return $complaint;
+        });
+
+        return response()->json([
+            'message' => 'Your complaint has been submitted to ShopEase Support.',
+            'data' => [
+                'id' => $complaint->id,
+                'reference' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
+                'type' => $complaint->type,
+                'status' => 'open',
+                'created_at' => $complaint->created_at?->toISOString(),
+            ],
+        ], 201);
     }
 
     public function verify(string $orderNumber): JsonResponse
@@ -106,6 +164,7 @@ class OrderController extends Controller
                         'seller_id' => $seller->id,
                         'order_number' => $this->newOrderNumber(),
                         'total' => $total,
+                        'commission_amount' => round($total * (CommissionTransaction::DEFAULT_RATE / 100), 2),
                         'status' => 'pending',
                         'delivery_name' => $validated['delivery_name'],
                         'delivery_phone' => $validated['delivery_phone'],
@@ -137,7 +196,7 @@ class OrderController extends Controller
             'orders' => $orders->map(fn (Order $order): array => [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
-                'qr_payload' => url('/api/v1/orders/verify/' . rawurlencode($order->order_number)),
+                'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
                 'status' => $order->status,
@@ -154,7 +213,7 @@ class OrderController extends Controller
     private function newOrderNumber(): string
     {
         do {
-            $number = 'SE-' . now()->format('Ymd') . '-' . Str::upper(Str::random(8));
+            $number = 'SE-'.now()->format('Ymd').'-'.Str::upper(Str::random(8));
         } while (Order::where('order_number', $number)->exists());
 
         return $number;
