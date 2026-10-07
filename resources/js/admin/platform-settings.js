@@ -4,7 +4,8 @@ const platformSettingsConfigElement =
 const platformSettingsConfig = platformSettingsConfigElement
     ? JSON.parse(platformSettingsConfigElement.textContent)
     : {
-        announcements: []
+        announcements: [],
+        policies: []
     };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -26,8 +27,14 @@ document.addEventListener('DOMContentLoaded', function () {
             'announcements-grid'
         );
 
-    const defaultAnnouncementData =
+    let announcementItems =
         platformSettingsConfig.announcements || [];
+
+    let policyItems =
+        platformSettingsConfig.policies || [];
+
+    const policiesGrid =
+        document.getElementById('policies-grid');
 
     const policiesPanel =
         document.getElementById(
@@ -78,10 +85,44 @@ document.addEventListener('DOMContentLoaded', function () {
         'announcements';
 
     let editingAnnouncementId = null;
-    let editingAnnouncementSource = null;
+    let editingPolicyId = null;
 
     let currentAnnouncementBannerDataUrl = '';
     let currentAnnouncementBannerName = '';
+    let currentAnnouncementBannerFile = null;
+
+    async function requestPlatformApi(path, options = {}) {
+        const headers = {
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': platformSettingsConfig.csrfToken,
+            ...options.headers
+        };
+
+        const response = await fetch(
+            `${platformSettingsConfig.apiUrl}${path}`,
+            {
+                credentials: 'same-origin',
+                ...options,
+                headers
+            }
+        );
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const validationMessage = payload.errors
+                ? Object.values(payload.errors).flat()[0]
+                : null;
+
+            throw new Error(
+                validationMessage ||
+                payload.message ||
+                'Unable to save platform settings. Please try again.'
+            );
+        }
+
+        return payload;
+    }
 
 
     /* =========================================================
@@ -198,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         currentAnnouncementBannerDataUrl = '';
         currentAnnouncementBannerName = '';
+        currentAnnouncementBannerFile = null;
 
         document
             .querySelectorAll(
@@ -313,6 +355,9 @@ document.addEventListener('DOMContentLoaded', function () {
             category.value = '';
         }
 
+        setPolicyPublishStatus('Publish Now');
+        updatePolicyScheduleFields();
+
         const counts = {
             'policy-title-count': '0/80',
             'policy-description-count': '0/500',
@@ -331,6 +376,47 @@ document.addEventListener('DOMContentLoaded', function () {
                         value;
                 }
             });
+
+        const heading =
+            document.getElementById('add-policy-title');
+
+        if (heading) {
+            heading.textContent = 'Add New Policy';
+        }
+
+        if (submitPolicy) {
+            submitPolicy.textContent = 'Add';
+        }
+    }
+
+    function setPolicyPublishStatus(status) {
+        document.querySelectorAll('input[name="policy_publish_status"]')
+            .forEach(input => {
+                input.checked = input.value === status;
+                input.closest('.platform-option-card')
+                    ?.classList.toggle('is-selected', input.checked);
+            });
+    }
+
+    function updatePolicyScheduleFields() {
+        const scheduleFields =
+            document.getElementById('policy-schedule-fields');
+        const isScheduled =
+            document.querySelector('input[name="policy_publish_status"]:checked')
+                ?.value === 'Schedule';
+
+        if (scheduleFields) {
+            scheduleFields.hidden = !isScheduled;
+        }
+
+        ['policy-date-input', 'policy-time-input'].forEach(id => {
+            const input = document.getElementById(id);
+
+            if (input) {
+                input.required = isScheduled;
+                input.disabled = !isScheduled;
+            }
+        });
     }
 
 
@@ -391,11 +477,11 @@ document.addEventListener('DOMContentLoaded', function () {
             resetAnnouncementModal();
 
             editingAnnouncementId = null;
-            editingAnnouncementSource = null;
         }
 
         if (modal === policyModal) {
             resetPolicyModal();
+            editingPolicyId = null;
         }
 
         if (
@@ -416,7 +502,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 'announcements'
             ) {
                 editingAnnouncementId = null;
-                editingAnnouncementSource = null;
 
                 setAnnouncementModalMode(
                     'create'
@@ -1107,6 +1192,7 @@ document.addEventListener('DOMContentLoaded', function () {
             'Preparing cover photo...';
 
         try {
+            currentAnnouncementBannerFile = file;
             currentAnnouncementBannerDataUrl =
                 await optimizeBannerImage(
                     file
@@ -1128,6 +1214,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentAnnouncementBannerName =
                 '';
+            currentAnnouncementBannerFile = null;
 
             bannerFile.textContent =
                 'Unable to preview this image.';
@@ -1203,18 +1290,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     /* =========================================================
-       NEW ANNOUNCEMENT CARDS
-       Front-end demo persistence until backend/database is connected.
+       PERSISTED PLATFORM SETTINGS
     ========================================================== */
-    const LOCAL_ANNOUNCEMENTS_KEY =
-        'shopease_platform_announcements';
-
-    const DEFAULT_ANNOUNCEMENT_OVERRIDES_KEY =
-        'shopease_platform_default_announcement_overrides';
-
-    const HIDDEN_DEFAULT_ANNOUNCEMENTS_KEY =
-        'shopease_platform_hidden_default_announcements';
-
     function escapePlatformHtml(value) {
         return String(value ?? '')
             .replace(/&/g, '&amp;')
@@ -1259,12 +1336,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function getAnnouncementCardMedia(item) {
-        if (item.bannerDataUrl) {
+        const bannerUrl =
+            item.bannerUrl || item.bannerDataUrl;
+
+        if (bannerUrl) {
             return `
                 <div class="platform-card-cover">
                     <img
                         src="${escapePlatformHtml(
-                            item.bannerDataUrl
+                            bannerUrl
                         )}"
                         alt="${escapePlatformHtml(
                             item.title || 'Announcement'
@@ -1414,147 +1494,8 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     }
 
-    function getStoredAnnouncements() {
-        try {
-            const stored =
-                JSON.parse(
-                    localStorage.getItem(
-                        LOCAL_ANNOUNCEMENTS_KEY
-                    ) || '[]'
-                );
-
-            return Array.isArray(stored)
-                ? stored
-                : [];
-        } catch (error) {
-            return [];
-        }
-    }
-
-    function saveStoredAnnouncements(items) {
-        try {
-            localStorage.setItem(
-                LOCAL_ANNOUNCEMENTS_KEY,
-                JSON.stringify(items)
-            );
-        } catch (error) {
-            // Front-end demo remains usable without localStorage.
-        }
-    }
-
-    function getDefaultAnnouncementOverrides() {
-        try {
-            const value =
-                JSON.parse(
-                    localStorage.getItem(
-                        DEFAULT_ANNOUNCEMENT_OVERRIDES_KEY
-                    ) || '{}'
-                );
-
-            return (
-                value &&
-                typeof value === 'object' &&
-                !Array.isArray(value)
-            )
-                ? value
-                : {};
-        } catch (error) {
-            return {};
-        }
-    }
-
-    function saveDefaultAnnouncementOverrides(value) {
-        try {
-            localStorage.setItem(
-                DEFAULT_ANNOUNCEMENT_OVERRIDES_KEY,
-                JSON.stringify(value)
-            );
-        } catch (error) {
-            // Ignore storage failures in the front-end demo.
-        }
-    }
-
-    function getHiddenDefaultAnnouncementIds() {
-        try {
-            const value =
-                JSON.parse(
-                    localStorage.getItem(
-                        HIDDEN_DEFAULT_ANNOUNCEMENTS_KEY
-                    ) || '[]'
-                );
-
-            return Array.isArray(value)
-                ? value.map(String)
-                : [];
-        } catch (error) {
-            return [];
-        }
-    }
-
-    function saveHiddenDefaultAnnouncementIds(value) {
-        try {
-            localStorage.setItem(
-                HIDDEN_DEFAULT_ANNOUNCEMENTS_KEY,
-                JSON.stringify(value)
-            );
-        } catch (error) {
-            // Ignore storage failures in the front-end demo.
-        }
-    }
-
-    function normalizeDefaultAnnouncements() {
-        const overrides =
-            getDefaultAnnouncementOverrides();
-
-        const hidden =
-            new Set(
-                getHiddenDefaultAnnouncementIds()
-            );
-
-        return defaultAnnouncementData
-            .map((item, index) => {
-                const id =
-                    `default-${index}`;
-
-                const base = {
-                    ...item,
-                    id,
-                    source: 'default',
-                    type:
-                        item.icon === 'document'
-                            ? 'Policy Update'
-                            : 'Announcement',
-                    rawDate: '',
-                    rawTime: ''
-                };
-
-                return {
-                    ...base,
-                    ...(overrides[id] || {}),
-                    id,
-                    source: 'default'
-                };
-            })
-            .filter(item =>
-                !hidden.has(
-                    String(item.id)
-                )
-            );
-    }
-
     function getAllAnnouncements() {
-        const stored =
-            getStoredAnnouncements()
-                .map(item => ({
-                    ...item,
-                    id: String(item.id),
-                    source: 'local'
-                }));
-
-        return [
-            ...stored,
-            ...normalizeDefaultAnnouncements()
-        ];
+        return announcementItems;
     }
 
     function renderAllAnnouncementCards() {
@@ -1593,6 +1534,113 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function buildPolicyCard(item) {
+        const safeId = escapePlatformHtml(item.id);
+        const safeTitle = escapePlatformHtml(item.title);
+        const safeDescription = escapePlatformHtml(item.description);
+        const safeCategory = escapePlatformHtml(item.category);
+        const safeStatus = escapePlatformHtml(item.status);
+        const safeDate = escapePlatformHtml(item.date);
+        const safeTime = escapePlatformHtml(item.time);
+
+        return `
+            <article class="platform-card platform-card-dynamic" data-policy-id="${safeId}">
+                <div class="platform-card-main">
+                    <div class="platform-card-icon theme-purple">
+                        <svg viewBox="0 0 64 64" fill="currentColor" aria-hidden="true">
+                            <path d="M32 7 11 15v15c0 13 8 23 21 29 13-6 21-16 21-29V15L32 7Zm-2 43c-8-5-12-11-13-19V20l13-5v35Zm4 0V15l13 5v11c-1 8-5 14-13 19Z"/>
+                        </svg>
+                    </div>
+                    <h3 class="platform-card-title">${safeTitle}</h3>
+                    <p class="platform-card-description">${safeDescription}</p>
+                </div>
+                <div class="platform-card-footer">
+                    <div class="platform-card-audience">${safeCategory}</div>
+                    <div class="platform-card-meta">
+                        <span class="platform-status" style="${getAnnouncementStatusStyle(item.status)}">${safeStatus}</span>
+                        <div class="platform-card-date"><div>${safeDate}</div><div>${safeTime}</div></div>
+                        <div class="platform-more-wrap">
+                            <button type="button" class="platform-more js-policy-more" aria-label="More policy actions" aria-expanded="false">
+                                <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                                </svg>
+                            </button>
+                            <div class="platform-action-menu">
+                                <button type="button" class="platform-action-item" data-policy-action="edit"><span>Edit</span></button>
+                                <button type="button" class="platform-action-item delete" data-policy-action="delete"><span>Delete</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    function renderAllPolicyCards() {
+        if (!policiesGrid) {
+            return;
+        }
+
+        policiesGrid.innerHTML =
+            policyItems.map(buildPolicyCard).join('');
+
+        for (let index = policyItems.length; index < 8; index += 1) {
+            policiesGrid.insertAdjacentHTML(
+                'beforeend',
+                '<div class="platform-empty-card" aria-hidden="true"></div>'
+            );
+        }
+    }
+
+    function openPolicyEditor(item) {
+        editingPolicyId = String(item.id);
+        resetPolicyModal();
+        editingPolicyId = String(item.id);
+        setPolicyPublishStatus(
+            item.status === 'Scheduled' ? 'Schedule' : 'Publish Now'
+        );
+        updatePolicyScheduleFields();
+
+        document.getElementById('policy-title-input').value = item.title || '';
+        document.getElementById('policy-category-input').value = item.category || '';
+        document.getElementById('policy-description-input').value = item.description || '';
+        document.getElementById('policy-content-input').value = item.content || '';
+        document.getElementById('policy-date-input').value = item.rawDate || '';
+        document.getElementById('policy-time-input').value = item.rawTime || '';
+
+        [
+            ['policy-title-count', item.title, 80],
+            ['policy-description-count', item.description, 500],
+            ['policy-content-count', item.content, 500]
+        ].forEach(([id, value, max]) => {
+            document.getElementById(id).textContent =
+                `${(value || '').length}/${max}`;
+        });
+
+        document.getElementById('add-policy-title').textContent = 'Edit Policy';
+        submitPolicy.textContent = 'Save Changes';
+        openPlatformModal(policyModal, false);
+    }
+
+    async function deletePolicy(item) {
+        if (!window.confirm(`Delete "${item.title}"?`)) {
+            return;
+        }
+
+        try {
+            await requestPlatformApi(
+                `/policies/${encodeURIComponent(item.id)}`,
+                { method: 'DELETE' }
+            );
+            policyItems = policyItems.filter(entry =>
+                String(entry.id) !== String(item.id)
+            );
+            renderAllPolicyCards();
+        } catch (error) {
+            window.alert(error.message);
+        }
+    }
+
     function findAnnouncementById(id) {
         const stringId =
             String(id);
@@ -1623,28 +1671,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     'false'
                 );
             });
-    }
-
-    function formatCreatedAnnouncementDate(date) {
-        return new Intl.DateTimeFormat(
-            'en-US',
-            {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-            }
-        ).format(date);
-    }
-
-    function formatCreatedAnnouncementTime(date) {
-        return new Intl.DateTimeFormat(
-            'en-US',
-            {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            }
-        ).format(date);
     }
 
     function setAnnouncementModalMode(mode) {
@@ -1852,10 +1878,11 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
         currentAnnouncementBannerDataUrl =
-            item.bannerDataUrl || '';
+            item.bannerUrl || '';
 
         currentAnnouncementBannerName =
             item.bannerName || '';
+        currentAnnouncementBannerFile = null;
 
         const bannerFileElement =
             document.getElementById(
@@ -1909,20 +1936,10 @@ document.addEventListener('DOMContentLoaded', function () {
         editingAnnouncementId =
             String(item.id);
 
-        editingAnnouncementSource =
-            item.source || 'local';
-
         resetAnnouncementModal();
 
-        /*
-         * resetAnnouncementModal restores create defaults,
-         * so set edit state again before prefilling.
-         */
         editingAnnouncementId =
             String(item.id);
-
-        editingAnnouncementSource =
-            item.source || 'local';
 
         setAnnouncementModalMode(
             'edit'
@@ -1971,12 +1988,6 @@ document.addEventListener('DOMContentLoaded', function () {
         let status =
             'Published';
 
-        let date =
-            '';
-
-        let time =
-            '';
-
         if (selectedStatus === 'Schedule') {
             if (
                 !announcementDateInput.value ||
@@ -1992,117 +2003,27 @@ document.addEventListener('DOMContentLoaded', function () {
             status =
                 'Scheduled';
 
-            date =
-                formatPreviewDate(
-                    announcementDateInput.value
-                );
-
-            time =
-                formatPreviewTime(
-                    announcementTimeInput.value
-                );
-        } else {
-            const now =
-                new Date();
-
-            date =
-                formatCreatedAnnouncementDate(
-                    now
-                );
-
-            time =
-                formatCreatedAnnouncementTime(
-                    now
-                );
         }
 
         return {
-            id:
-                editingAnnouncementId ||
-                String(Date.now()),
-
-            source:
-                editingAnnouncementSource ||
-                'local',
-
             type,
             title,
             description,
             audience,
             status,
-            date,
-            time,
-
-            rawDate:
+            publish_date:
                 selectedStatus === 'Schedule'
                     ? announcementDateInput.value
                     : '',
 
-            rawTime:
+            publish_time:
                 selectedStatus === 'Schedule'
                     ? announcementTimeInput.value
                     : '',
-
-            bannerDataUrl:
-                currentAnnouncementBannerDataUrl,
-
-            bannerName:
-                currentAnnouncementBannerName
         };
     }
 
-
-    function saveAnnouncementChanges(item) {
-        const id =
-            String(item.id);
-
-        if (
-            editingAnnouncementSource ===
-            'default'
-        ) {
-            const overrides =
-                getDefaultAnnouncementOverrides();
-
-            overrides[id] = {
-                ...item,
-                id,
-                source: 'default'
-            };
-
-            saveDefaultAnnouncementOverrides(
-                overrides
-            );
-        } else {
-            const stored =
-                getStoredAnnouncements();
-
-            const index =
-                stored.findIndex(entry =>
-                    String(entry.id) === id
-                );
-
-            const nextItem = {
-                ...item,
-                id,
-                source: 'local'
-            };
-
-            if (index >= 0) {
-                stored[index] =
-                    nextItem;
-            } else {
-                stored.unshift(
-                    nextItem
-                );
-            }
-
-            saveStoredAnnouncements(
-                stored
-            );
-        }
-    }
-
-    function deleteAnnouncement(item) {
+    async function deleteAnnouncement(item) {
         if (!item) {
             return;
         }
@@ -2116,36 +2037,23 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const id =
-            String(item.id);
-
-        if (
-            item.source === 'default'
-        ) {
-            const hidden =
-                getHiddenDefaultAnnouncementIds();
-
-            if (!hidden.includes(id)) {
-                hidden.push(id);
-            }
-
-            saveHiddenDefaultAnnouncementIds(
-                hidden
+        try {
+            await requestPlatformApi(
+                `/announcements/${encodeURIComponent(item.id)}`,
+                { method: 'DELETE' }
             );
-        } else {
-            const stored =
-                getStoredAnnouncements()
-                    .filter(entry =>
-                        String(entry.id) !== id
-                    );
 
-            saveStoredAnnouncements(
-                stored
-            );
+            announcementItems =
+                announcementItems.filter(entry =>
+                    String(entry.id) !== String(item.id)
+                );
+
+            renderAllAnnouncementCards();
+        } catch (error) {
+            window.alert(error.message);
         }
 
         closeAllAnnouncementMenus();
-        renderAllAnnouncementCards();
     }
 
     if (announcementsGrid) {
@@ -2243,6 +2151,53 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
+    if (policiesGrid) {
+        policiesGrid.addEventListener('click', function (event) {
+            const trigger = event.target.closest('.js-policy-more');
+
+            if (trigger) {
+                event.stopPropagation();
+                const menu = trigger.closest('.platform-more-wrap')
+                    ?.querySelector('.platform-action-menu');
+                const wasOpen = menu?.classList.contains('is-open');
+
+                policiesGrid.querySelectorAll('.platform-action-menu.is-open')
+                    .forEach(openMenu => openMenu.classList.remove('is-open'));
+
+                if (menu && !wasOpen) {
+                    menu.classList.add('is-open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
+                return;
+            }
+
+            const actionButton = event.target.closest('[data-policy-action]');
+
+            if (!actionButton) {
+                return;
+            }
+
+            event.stopPropagation();
+            const card = actionButton.closest('[data-policy-id]');
+            const item = policyItems.find(entry =>
+                String(entry.id) === String(card?.dataset.policyId)
+            );
+
+            if (!item) {
+                return;
+            }
+
+            policiesGrid.querySelectorAll('.platform-action-menu.is-open')
+                .forEach(openMenu => openMenu.classList.remove('is-open'));
+
+            if (actionButton.dataset.policyAction === 'edit') {
+                openPolicyEditor(item);
+            } else if (actionButton.dataset.policyAction === 'delete') {
+                deletePolicy(item);
+            }
+        });
+    }
+
     document.addEventListener(
         'click',
         function (event) {
@@ -2252,18 +2207,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 )
             ) {
                 closeAllAnnouncementMenus();
+                policiesGrid
+                    ?.querySelectorAll('.platform-action-menu.is-open')
+                    .forEach(menu => {
+                        menu.classList.remove('is-open');
+                        menu.parentElement
+                            ?.querySelector('.js-policy-more')
+                            ?.setAttribute('aria-expanded', 'false');
+                    });
             }
         }
     );
 
 
     /* =========================================================
-       DEMO SUBMIT BUTTONS
-       Front-end only until backend routes are connected.
+       SAVE PLATFORM SETTINGS
     ========================================================== */
     submitAnnouncement.addEventListener(
         'click',
-        function () {
+        async function () {
             const announcement =
                 collectAnnouncementFormData();
 
@@ -2271,50 +2233,112 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            if (editingAnnouncementId) {
-                saveAnnouncementChanges(
-                    announcement
-                );
-            } else {
-                const stored =
-                    getStoredAnnouncements();
+            const body = new FormData();
+            Object.entries(announcement).forEach(([key, value]) => {
+                body.append(key, value);
+            });
 
-                stored.unshift({
-                    ...announcement,
-                    id: String(
-                        announcement.id
-                    ),
-                    source: 'local'
-                });
-
-                saveStoredAnnouncements(
-                    stored
-                );
+            if (currentAnnouncementBannerFile) {
+                body.append('banner', currentAnnouncementBannerFile);
             }
 
-            editingAnnouncementId = null;
-            editingAnnouncementSource = null;
+            const path = editingAnnouncementId
+                ? `/announcements/${encodeURIComponent(editingAnnouncementId)}`
+                : '/announcements';
 
-            renderAllAnnouncementCards();
+            if (editingAnnouncementId) {
+                body.append('_method', 'PATCH');
+            }
 
-            switchPlatformTab(
-                'announcements'
-            );
+            try {
+                const result = await requestPlatformApi(path, {
+                    method: 'POST',
+                    body
+                });
+                const savedItem = result.announcement;
 
-            closePlatformModal(
-                announcementModal
-            );
+                if (editingAnnouncementId) {
+                    announcementItems = announcementItems.map(item =>
+                        String(item.id) === String(savedItem.id)
+                            ? savedItem
+                            : item
+                    );
+                } else {
+                    announcementItems.unshift(savedItem);
+                }
+
+                renderAllAnnouncementCards();
+                switchPlatformTab('announcements');
+                closePlatformModal(announcementModal);
+            } catch (error) {
+                window.alert(error.message);
+            }
         }
     );
 
     submitPolicy.addEventListener(
         'click',
-        function () {
-            closePlatformModal(
-                policyModal
-            );
+        async function () {
+            const date = document.getElementById('policy-date-input').value;
+            const time = document.getElementById('policy-time-input').value;
+            const publishStatus =
+                document.querySelector('input[name="policy_publish_status"]:checked')
+                    ?.value || 'Publish Now';
+            const policy = {
+                title: document.getElementById('policy-title-input').value.trim(),
+                category: document.getElementById('policy-category-input').value,
+                description: document.getElementById('policy-description-input').value.trim(),
+                content: document.getElementById('policy-content-input').value.trim(),
+                status: publishStatus === 'Schedule' ? 'Scheduled' : 'Published',
+                publish_at: publishStatus === 'Schedule' ? `${date}T${time}:00` : null
+            };
+
+            if (
+                !policy.title ||
+                !policy.category ||
+                !policy.description ||
+                !policy.content ||
+                (publishStatus === 'Schedule' && (!date || !time))
+            ) {
+                window.alert('Please complete all required policy fields.');
+                return;
+            }
+
+            const path = editingPolicyId
+                ? `/policies/${encodeURIComponent(editingPolicyId)}`
+                : '/policies';
+
+            try {
+                const result = await requestPlatformApi(path, {
+                    method: editingPolicyId ? 'PATCH' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(policy)
+                });
+                const savedItem = result.policy;
+
+                if (editingPolicyId) {
+                    policyItems = policyItems.map(item =>
+                        String(item.id) === String(savedItem.id)
+                            ? savedItem
+                            : item
+                    );
+                } else {
+                    policyItems.unshift(savedItem);
+                }
+
+                renderAllPolicyCards();
+                switchPlatformTab('policies');
+                closePlatformModal(policyModal);
+            } catch (error) {
+                window.alert(error.message);
+            }
         }
     );
+
+    document.querySelectorAll('input[name="policy_publish_status"]')
+        .forEach(input => {
+            input.addEventListener('change', updatePolicyScheduleFields);
+        });
 
 
     /* =========================================================
@@ -2360,7 +2384,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     resetAnnouncementModal();
     resetPolicyModal();
+    updatePolicyScheduleFields();
     updateAnnouncementScheduleFields();
     renderAllAnnouncementCards();
+    renderAllPolicyCards();
 
 });

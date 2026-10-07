@@ -1,24 +1,24 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
-use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
-use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
-use App\Http\Controllers\Api\Seller\OrderStatusController;
-use App\Http\Controllers\Api\Seller\ShippingStatusController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
-use App\Http\Controllers\LocationController;
-use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
-use App\Http\Controllers\Api\Buyer\ProductReviewController;
-use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
+use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
+use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
 use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
+use App\Http\Controllers\Api\Seller\OrderStatusController;
+use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
+use App\Http\Controllers\Api\Seller\ShippingStatusController;
+use App\Http\Controllers\LocationController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/dashboard/announcements', [BuyerDashboardController::class, 'announcements'])->name('buyer.api.dashboard.announcements');
             Route::get('/messages', [BuyerMessagesController::class, 'index'])->name('buyer.api.messages.index');
             Route::post('/messages/conversations', [BuyerMessagesController::class, 'storeConversation'])->name('buyer.api.messages.conversations.store');
             Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');

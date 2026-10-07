@@ -92,6 +92,13 @@ class DashboardTest extends TestCase
             'badge_label' => 'Test',
             'is_active' => true,
         ]);
+        Announcement::create([
+            'title' => 'Seller Dashboard Announcement',
+            'body' => 'Relevant to seller dashboard.',
+            'audience' => 'Sellers',
+            'status' => 'Published',
+            'is_active' => true,
+        ]);
 
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
 
@@ -107,9 +114,12 @@ class DashboardTest extends TestCase
             ->assertViewHas('complaints', ['open' => 1, 'in_progress' => 0, 'resolved' => 2])
             ->assertViewHas('pendingBreakdown', ['sellers' => 1, 'buyers' => 1])
             ->assertViewHas('announcementMonth', 'September 2026')
-            ->assertViewHas('announcement', fn (Announcement $announcement) => $announcement->title === 'Test Announcement')
+            ->assertViewHas('announcement', fn (Announcement $announcement) => $announcement->title === 'Seller Dashboard Announcement')
             ->assertSee('₱100.00')
             ->assertSee('Test Announcement')
-            ->assertSee('Dashboard test announcement');
+            ->assertSee('Dashboard test announcement')
+            ->assertSee('Seller Dashboard Announcement')
+            ->assertSee('dashboard-announcement-card bg-maroon-900', false)
+            ->assertViewHas('dashboardAnnouncements', fn ($announcements) => $announcements->count() === 2);
     }
 }

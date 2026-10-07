@@ -57,7 +57,7 @@ class DashboardController extends Controller
             ],
             [
                 'icon' => 'total-commision.png',
-                'value' => '₱' . number_format(Order::completed()->sum('commission_amount'), 2),
+                'value' => '₱'.number_format(Order::completed()->sum('commission_amount'), 2),
                 'label' => 'Total Commission',
                 'change' => $this->percentChange($commissionYesterday, $commissionToday),
             ],
@@ -73,9 +73,9 @@ class DashboardController extends Controller
         $averageOrderValue = $completedOrders > 0 ? $grossSales / $completedOrders : 0;
 
         $salesSummary = [
-            'gross_sales' => '₱' . number_format($grossSales, 2),
+            'gross_sales' => '₱'.number_format($grossSales, 2),
             'total_orders' => number_format($totalOrders),
-            'average_order_value' => '₱' . number_format($averageOrderValue, 2),
+            'average_order_value' => '₱'.number_format($averageOrderValue, 2),
             'completed_orders' => number_format($completedOrders),
             'returns_refunds' => number_format($refunds),
         ];
@@ -104,7 +104,13 @@ class DashboardController extends Controller
         // ---------------------------------------------------------------
         // ANNOUNCEMENT
         // ---------------------------------------------------------------
-        $announcement = Announcement::where('is_active', true)->latest()->first();
+        $dashboardAnnouncements = Announcement::publishedForAudience([
+            'All Users',
+            'Buyers',
+            'Sellers',
+            'Logistics',
+        ])->get();
+        $announcement = $dashboardAnnouncements->first();
         $announcementMonth = Carbon::now()->format('F Y');
 
         // ---------------------------------------------------------------
@@ -118,6 +124,7 @@ class DashboardController extends Controller
             'complaints',
             'pendingBreakdown',
             'announcement',
+            'dashboardAnnouncements',
             'announcementMonth',
             'overviewChart'
         ));
@@ -186,7 +193,12 @@ class DashboardController extends Controller
                 'sellers' => Registration::pending()->where('user_type', 'seller')->count(),
                 'buyers' => Registration::pending()->where('user_type', 'buyer')->count(),
             ],
-            'announcement' => Announcement::where('is_active', true)->latest()->first(),
+            'announcement' => Announcement::publishedForAudience([
+                'All Users',
+                'Buyers',
+                'Sellers',
+                'Logistics',
+            ])->first(),
             'overview_chart' => $this->buildOverviewChart(),
         ]);
     }
@@ -205,7 +217,7 @@ class DashboardController extends Controller
         }
 
         return [
-            'value' => number_format(abs($percent), 0) . '%',
+            'value' => number_format(abs($percent), 0).'%',
             'direction' => $percent >= 0 ? 'up' : 'down',
         ];
     }

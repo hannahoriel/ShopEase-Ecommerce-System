@@ -9,8 +9,10 @@ export default defineConfig({
             input: [
                 // Global
                 'resources/css/app.css',
+                'resources/css/components/dashboard-announcement-carousel.css',
                 'resources/css/auth.css',
                 'resources/js/app.js',
+                'resources/js/components/dashboard-announcement-carousel.js',
                 'resources/js/auth.js',
 
                 // =========================

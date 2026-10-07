@@ -1,6 +1,8 @@
 <?php
 
 use App\Mail\AccountStatusChanged;
+use App\Models\Admin\Announcement;
+use App\Models\Admin\PlatformPolicy;
 use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -28,7 +30,7 @@ Artisan::command('users:reactivate-expired', function () {
             'account_action_details' => null,
         ]);
 
-        $user->email && Mail::to($user->email)->send(new \App\Mail\AccountStatusChanged(
+        $user->email && Mail::to($user->email)->send(new AccountStatusChanged(
             user: $user,
             status: 'active',
             reason: null,
@@ -43,3 +45,17 @@ Artisan::command('users:reactivate-expired', function () {
 })->purpose('Reactivate users whose suspension period has ended');
 
 Schedule::command('users:reactivate-expired')->everyMinute();
+
+Artisan::command('platform-settings:publish-scheduled', function () {
+    $announcements = Announcement::where('status', 'Scheduled')
+        ->where('published_at', '<=', now())
+        ->update(['status' => 'Published', 'is_active' => true]);
+
+    $policies = PlatformPolicy::where('status', 'Scheduled')
+        ->where('published_at', '<=', now())
+        ->update(['status' => 'Published']);
+
+    $this->info("Published {$announcements} announcement(s) and {$policies} policy/policies.");
+})->purpose('Publish platform announcements and policies when their schedule is due');
+
+Schedule::command('platform-settings:publish-scheduled')->everyMinute();

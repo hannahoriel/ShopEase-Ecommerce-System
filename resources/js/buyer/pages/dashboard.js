@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const configEl = document.getElementById('buyerDashboardConfig');
             const config = configEl ? JSON.parse(configEl.textContent) : {};
             const productsUrl    = config.productsUrl   || '';
+            const announcementsUrl = config.announcementsUrl || '';
             const productBaseUrl = config.productBaseUrl || '/buyer/product';
             const cartUrl        = config.cartUrl        || '/api/v1/buyer/cart';
             const apiToken       = config.apiToken       || '';
@@ -83,12 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const announcementCarousel =
                 document.getElementById('buyerAnnouncementCarousel');
 
-            const announcementSlides =
+            let announcementSlides =
                 Array.from(
                     document.querySelectorAll('[data-announcement-slide]')
                 );
 
-            const announcementDots =
+            let announcementDots =
                 Array.from(
                     document.querySelectorAll('[data-announcement-dot]')
                 );
@@ -140,10 +141,82 @@ document.addEventListener('DOMContentLoaded', () => {
             const startAnnouncementAutoPlay = () => {
                 stopAnnouncementAutoPlay();
 
+                if (announcementSlides.length < 2) return;
+
                 announcementTimer = window.setInterval(() => {
                     showAnnouncement(announcementIndex + 1);
                 }, 1900);
             };
+
+            const appendPublishedAnnouncement = (announcement) => {
+                const track = announcementCarousel?.querySelector('.buyer-announcement-track');
+                const dotContainer = announcementCarousel?.querySelector('.hero-dots');
+
+                if (!track || !dotContainer) return;
+
+                const index = track.querySelectorAll('[data-announcement-slide]').length;
+                const slide = document.createElement('article');
+                slide.className = 'buyer-announcement-slide buyer-admin-announcement';
+                slide.dataset.announcementSlide = String(index);
+                slide.setAttribute('aria-hidden', 'true');
+
+                const image = announcement.banner_url
+                    ? `<img class="buyer-admin-announcement-image" src="${escapeHtml(announcement.banner_url)}" alt="" loading="lazy">`
+                    : '';
+                const badge = announcement.type === 'Policy Update'
+                    ? 'Policy Update'
+                    : 'ShopEase Announcement';
+
+                slide.innerHTML = `
+                    <div class="announcement-slide-content announcement-slide-content--soft">
+                        <div class="announcement-copy">
+                            <span class="hero-pill">${escapeHtml(badge)}</span>
+                            <h1>${escapeHtml(announcement.title)}</h1>
+                            <p>${escapeHtml(announcement.description)}</p>
+                        </div>
+                        ${image}
+                    </div>
+                `;
+
+                track.append(slide);
+
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'dot';
+                dot.dataset.announcementDot = String(index);
+                dot.setAttribute('aria-label', `Show announcement ${index + 1}`);
+                dot.setAttribute('aria-selected', 'false');
+                dot.addEventListener('click', () => {
+                    showAnnouncement(index);
+                    startAnnouncementAutoPlay();
+                });
+                dotContainer.append(dot);
+
+                announcementSlides = Array.from(
+                    track.querySelectorAll('[data-announcement-slide]')
+                );
+                announcementDots = Array.from(
+                    dotContainer.querySelectorAll('[data-announcement-dot]')
+                );
+                startAnnouncementAutoPlay();
+            };
+
+            if (announcementsUrl && apiToken) {
+                apiFetch(announcementsUrl)
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error('Unable to load announcements.');
+                        }
+
+                        return response.json();
+                    })
+                    .then((payload) => {
+                        (payload.data || []).forEach(appendPublishedAnnouncement);
+                    })
+                    .catch((error) => {
+                        console.error('[Buyer dashboard] Announcement load failed:', error);
+                    });
+            }
 
             announcementPrev?.addEventListener('click', () => {
                 showAnnouncement(announcementIndex - 1);
