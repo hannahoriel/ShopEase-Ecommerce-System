@@ -131,7 +131,7 @@
                 {{-- =====================================================
                      RIGHT: ACTIVE CONVERSATION
                 ====================================================== --}}
-                <section class="messages-chat-panel">
+                <section class="messages-chat-panel is-no-chat-selected" id="messagesChatPanel">
 
                     <header class="messages-chat-header">
                         <div class="messages-chat-person">
@@ -239,7 +239,15 @@
                         class="messages-chat-body"
                         id="messagesChatBody"
                         aria-live="polite"
-                    ></div>
+                    >
+                        <div
+                            class="messages-no-selected-chat"
+                            id="messagesNoSelectedChat"
+                        >
+                            <strong>No selected chat</strong>
+                            <span>Selected chat will appear here.</span>
+                        </div>
+                    </div>
 
                     <p id="messagesStatus" class="messages-status" role="status" aria-live="polite" hidden></p>
 
@@ -365,20 +373,12 @@
                             id="sendMessageButton"
                             aria-label="Send message"
                         >
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path
-                                    d="m21 3-8.2 18-2.1-7.7L3 11.2 21 3Z"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linejoin="round"
-                                />
-                                <path
-                                    d="M10.7 13.3 21 3"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
+                            <img
+                                src="{{ asset('icons/buyer/send.png') }}"
+                                alt=""
+                                class="messages-send-icon"
+                                aria-hidden="true"
+                            >
                         </button>
                     </footer>
 
@@ -409,6 +409,42 @@
             </dialog>
         </div>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const panel = document.getElementById('messagesChatPanel');
+            const title = document.getElementById('activeConversationTitle');
+
+            if (!panel || !title) {
+                return;
+            }
+
+            const syncSelectedChatState = function () {
+                const text = (title.textContent || '').trim().toLowerCase();
+
+                const hasSelectedChat =
+                    text !== '' &&
+                    text !== 'select a conversation' &&
+                    text !== 'no selected chat';
+
+                panel.classList.toggle(
+                    'is-no-chat-selected',
+                    !hasSelectedChat
+                );
+            };
+
+            syncSelectedChatState();
+
+            new MutationObserver(syncSelectedChatState).observe(
+                title,
+                {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                }
+            );
+        });
+    </script>
 
     <script>
         window.sellerMessagesConfig = {!! json_encode([

@@ -705,7 +705,10 @@
                                 </div>
 
                             @empty
-                                <div class="top-product-row">No product sales found for this period.</div>
+                                <div class="reports-empty-state top-products-empty-state">
+                                    <strong>No product sales found.</strong>
+                                    <span>Product sales will appear here for the selected period.</span>
+                                </div>
                             @endforelse
                             </div>
 
@@ -795,7 +798,14 @@
                                     <td>₱{{ number_format($order['profit'], 2) }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6">No completed orders found for this period.</td></tr>
+                                <tr class="report-empty-row">
+                                    <td colspan="6">
+                                        <div class="reports-empty-state order-summary-empty-state">
+                                            <strong>No completed orders found.</strong>
+                                            <span>Completed orders will appear here for the selected period.</span>
+                                        </div>
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
 

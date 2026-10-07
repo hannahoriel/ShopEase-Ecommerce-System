@@ -761,6 +761,83 @@
             display: none;
         }
 
+
+
+        /* =========================================================
+           EMPTY CART / RECOMMENDED PRODUCT STATES
+           Product card layout is untouched.
+        ========================================================== */
+
+        .cart-empty-state,
+        .recommended-products-empty {
+            min-height: 190px;
+            padding: 32px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            color: #847B78;
+            text-align: center;
+        }
+
+        .cart-empty-state[hidden],
+        .recommended-products-empty[hidden] {
+            display: none !important;
+        }
+
+        .cart-empty-state {
+            margin-top: 12px;
+        }
+
+        .cart-empty-icon,
+        .recommended-empty-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #FFF1EE;
+            color: #7A1620;
+        }
+
+        .cart-empty-icon svg,
+        .recommended-empty-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .cart-empty-state strong,
+        .recommended-products-empty strong {
+            color: #4A3A36;
+            font-size: 13px;
+            line-height: 1.3;
+            font-weight: 700;
+        }
+
+        .cart-empty-state span,
+        .recommended-products-empty span {
+            max-width: 360px;
+            color: #918885;
+            font-size: 12px;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .recommended-products-empty {
+            min-height: 170px;
+            margin-top: 8px;
+        }
+
+        .also-like-grid:empty {
+            display: none;
+        }
+
         @media (max-width: 1150px) {
             .cart-layout {
                 grid-template-columns: minmax(0, 1fr) 330px;

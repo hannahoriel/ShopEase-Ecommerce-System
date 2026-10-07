@@ -2576,3 +2576,178 @@
                 flex-wrap: wrap !important;
             }
         }
+
+
+/* =========================================================
+   REPORTS — EMPTY STATES MATCH SHIPPING STATUS
+   Exact typography/spacing/color language from shipping-status.css
+========================================================= */
+
+/* Shared empty-state */
+.reports-empty-state {
+    width: 100% !important;
+    min-height: 160px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 0 !important;
+
+    margin: 0 !important;
+    padding: 44px 20px !important;
+
+    box-sizing: border-box !important;
+    text-align: center !important;
+    background: #FFFFFF !important;
+}
+
+.reports-empty-state > strong {
+    display: block !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+
+    color: #6B7280 !important;
+}
+
+.reports-empty-state > span {
+    display: block !important;
+
+    margin: 4px 0 0 !important;
+    padding: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+
+    color: #9CA3AF !important;
+}
+
+/* ---------------------------------------------------------
+   TOP SELLING PRODUCTS EMPTY STATE
+--------------------------------------------------------- */
+
+.top-products-card:has(.top-products-empty-state) {
+    min-height: 356px !important;
+}
+
+.top-products-card:has(.top-products-empty-state) .top-products-content {
+    padding: 8px 14px 14px !important;
+}
+
+.top-products-card:has(.top-products-empty-state) .top-products-table {
+    min-height: 242px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border: 1px solid #F0ECE9 !important;
+    border-radius: 9px !important;
+    background: #FFFFFF !important;
+}
+
+.top-products-card:has(.top-products-empty-state) .top-products-head {
+    flex: 0 0 34px !important;
+}
+
+#reportTopProducts:has(.top-products-empty-state) {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    align-items: stretch !important;
+}
+
+.top-products-empty-state {
+    min-height: 207px !important;
+    flex: 1 1 auto !important;
+}
+
+/* ---------------------------------------------------------
+   ORDER SUMMARY EMPTY STATE
+--------------------------------------------------------- */
+
+.order-summary-card:has(.report-empty-row) .order-summary-table-wrap {
+    padding-top: 7px !important;
+}
+
+.order-summary-card:has(.report-empty-row) .order-summary-table tbody td {
+    height: auto !important;
+    padding: 0 !important;
+    border-bottom: 0 !important;
+    background: #FFFFFF !important;
+    white-space: normal !important;
+}
+
+.order-summary-card:has(.report-empty-row) .report-empty-row:hover td {
+    background: #FFFFFF !important;
+}
+
+.order-summary-empty-state {
+    min-height: 160px !important;
+}
+
+/* Keep header visually intact and seamless. */
+.order-summary-card:has(.report-empty-row) .order-summary-table thead th {
+    border-bottom: 1px solid #E5E7EB !important;
+}
+
+/* Footer aligned to Shipping Status empty pagination. */
+.order-summary-card:has(.report-empty-row) .order-summary-footer {
+    min-height: 52px !important;
+    padding: 10px 16px !important;
+    border-top: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+}
+
+.order-summary-card:has(.report-empty-row) .order-summary-count {
+    margin: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+
+    color: #9CA3AF !important;
+}
+
+.order-summary-card:has(.report-empty-row) .report-page-button {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+
+    border-radius: 6px !important;
+
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 500 !important;
+}
+
+.order-summary-card:has(.report-empty-row) .report-page-button.active {
+    background: #FFC8B9 !important;
+    color: #7B1B1B !important;
+    font-weight: 600 !important;
+}
+
+.order-summary-card:has(.report-empty-row) #reportItemsPerPage {
+    height: 28px !important;
+
+    margin-left: 8px !important;
+    padding: 0 8px !important;
+
+    border: 1px solid #F0B9AC !important;
+    border-radius: 6px !important;
+
+    background: #FFF5F1 !important;
+    color: #4B5563 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+}

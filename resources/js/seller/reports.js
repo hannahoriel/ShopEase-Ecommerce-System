@@ -450,9 +450,22 @@ document.addEventListener(
                 orderRows.replaceChildren();
                 if (!orders.data?.length) {
                     const row = document.createElement('tr');
+                    row.className = 'report-empty-row';
+
                     const empty = document.createElement('td');
                     empty.colSpan = 6;
-                    empty.textContent = 'No completed orders found for this period.';
+
+                    const state = document.createElement('div');
+                    state.className = 'reports-empty-state order-summary-empty-state';
+
+                    const title = document.createElement('strong');
+                    title.textContent = 'No completed orders found.';
+
+                    const subtitle = document.createElement('span');
+                    subtitle.textContent = 'Completed orders will appear here for the selected period.';
+
+                    state.append(title, subtitle);
+                    empty.append(state);
                     row.append(empty);
                     orderRows.append(row);
                 } else {
@@ -487,8 +500,15 @@ document.addEventListener(
                 topProducts.replaceChildren();
                 if (!reportData.top_products?.length) {
                     const empty = document.createElement('div');
-                    empty.className = 'top-product-row';
-                    empty.textContent = 'No product sales found for this period.';
+                    empty.className = 'reports-empty-state top-products-empty-state';
+
+                    const title = document.createElement('strong');
+                    title.textContent = 'No product sales found.';
+
+                    const subtitle = document.createElement('span');
+                    subtitle.textContent = 'Product sales will appear here for the selected period.';
+
+                    empty.append(title, subtitle);
                     topProducts.append(empty);
                 } else {
                     reportData.top_products.forEach((product) => {
@@ -520,8 +540,8 @@ document.addEventListener(
 
                 const count = document.getElementById('reportOrderCount');
                 count.textContent = orders.total
-                    ? `Showing ${orders.from} to ${orders.to} of ${orders.total} entries`
-                    : 'Showing 0 entries';
+                    ? `Showing ${orders.from}–${orders.to} out of ${orders.total} entries`
+                    : 'Showing 0 out of 0 entries';
 
                 const start = reportStartDate.value;
                 const end = reportEndDate.value;

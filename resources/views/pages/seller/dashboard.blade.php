@@ -657,7 +657,10 @@
                                 </div>
                             </a>
                         @empty
-                            <p class="dashboard-empty-state">You don't have any orders yet.</p>
+                            <div class="dashboard-empty-state dashboard-empty-state--orders">
+                                <strong>No recent orders found.</strong>
+                                <span>New customer orders will appear here.</span>
+                            </div>
                         @endforelse
 
                     </div>
@@ -708,7 +711,10 @@
                                 </div>
                             </div>
                         @empty
-                            <p class="dashboard-empty-state">No low-stock products.</p>
+                            <div class="dashboard-empty-state dashboard-empty-state--stock">
+                                <strong>No low-stock products found.</strong>
+                                <span>Products running low on stock will appear here.</span>
+                            </div>
                         @endforelse
 
                     </div>

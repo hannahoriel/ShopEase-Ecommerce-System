@@ -5,6 +5,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const cartUrl  = config.cartUrl  || '/api/v1/buyer/cart';
             const apiToken = config.apiToken || '';
 
+            const cartEmptyState =
+                document.getElementById('cartEmptyState');
+
+            const recommendedProductsGrid =
+                document.getElementById('recommendedProductsGrid');
+
+            const recommendedProductsEmpty =
+                document.getElementById('recommendedProductsEmpty');
+
             function apiFetch(url, options = {}) {
                 return fetch(url, {
                     ...options,
@@ -43,13 +52,53 @@ document.addEventListener('DOMContentLoaded', function () {
                     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
 
+
+            function syncCartProductsEmptyState() {
+                const cartGroupsEl =
+                    document.getElementById('cartGroups');
+
+                if (!cartGroupsEl || !cartEmptyState) {
+                    return;
+                }
+
+                const hasProducts =
+                    cartGroupsEl.querySelector('[data-cart-item]') !== null;
+
+                cartGroupsEl.hidden =
+                    !hasProducts;
+
+                cartEmptyState.hidden =
+                    hasProducts;
+            }
+
+            function syncRecommendedProductsEmptyState() {
+                if (
+                    !recommendedProductsGrid ||
+                    !recommendedProductsEmpty
+                ) {
+                    return;
+                }
+
+                const hasRecommendedProducts =
+                    recommendedProductsGrid
+                        .querySelector('.recommendation-card') !== null;
+
+                recommendedProductsGrid.hidden =
+                    !hasRecommendedProducts;
+
+                recommendedProductsEmpty.hidden =
+                    hasRecommendedProducts;
+            }
+
             function renderCartFromApi(items) {
                 const cartGroupsEl = document.getElementById('cartGroups');
                 if (!cartGroupsEl) return;
 
                 if (!items.length) {
-                    cartGroupsEl.innerHTML = '<p style="padding:24px;color:#888;">Your cart is empty.</p>';
+                    cartGroupsEl.innerHTML = '';
+
                     updateTotals();
+                    syncCartProductsEmptyState();
                     return;
                 }
 
@@ -112,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Re-bind shop checkboxes after render
                 rebindShopCheckboxes();
                 updateTotals();
+                syncCartProductsEmptyState();
             }
 
             /* ─── API: update quantity ───────────────────────────── */
@@ -206,14 +256,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     shopCard &&
                     remainingRows === 0
                 ) {
-                    shopCard.classList.add('is-empty');
-                }
-
-                if (shopCard) {
+                    shopCard.remove();
+                } else if (shopCard) {
                     syncShopCheckbox(shopCard);
                 }
 
                 updateTotals();
+                syncCartProductsEmptyState();
             }
 
             function renderSelectedProductsSummary() {
@@ -839,5 +888,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
             updateTotals();
+            syncCartProductsEmptyState();
+            syncRecommendedProductsEmptyState();
             loadCart();
         });

@@ -364,7 +364,7 @@
                             aria-label="Send message"
                         >
                             <img
-                                src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}"
+                                src="{{ asset('icons/buyer/send.png') }}"
                                 alt=""
                                 class="buyer-floating-chat-send-image"
                             >

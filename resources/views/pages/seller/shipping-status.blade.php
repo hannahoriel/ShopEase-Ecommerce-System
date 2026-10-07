@@ -516,7 +516,6 @@
                                 </div>
                             </article>
                         @empty
-                            <p class="feedback-empty">No orders are currently in the shipping flow.</p>
                         @endforelse
 
                         @if (false)
