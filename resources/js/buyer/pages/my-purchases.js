@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="purchase-shop-order-meta">
                                             <strong class="purchase-shop-order-id">Order No: ${escapeHtml(order.order_number)}</strong>
                                             <span class="purchase-shop-placed-at">Placed ${escapeHtml(placedAt)}</span>
+                                            <button type="button" class="purchase-message-seller" data-buyer-chat-order="${escapeHtml(order.id)}">Message seller</button>
                                         </div>
                                     </div>
                                     <div class="purchase-row">

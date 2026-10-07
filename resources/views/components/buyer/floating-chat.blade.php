@@ -327,20 +327,9 @@
                         id="buyerFloatingChatMessages"
                         class="buyer-floating-chat-messages"
                     >
-                        <div class="buyer-floating-chat-message is-seller">
-                            <span>
-                                Hi! Your order has been prepared and is ready to ship.
-                            </span>
-                            <time>2:14 PM</time>
-                        </div>
-
-                        <div class="buyer-floating-chat-message is-buyer">
-                            <span>
-                                Thank you! Please let me know once it has been picked up.
-                            </span>
-                            <time>2:16 PM</time>
-                        </div>
                     </div>
+
+                    <p id="buyerFloatingChatStatus" role="status" aria-live="polite" hidden></p>
 
                     <form
                         id="buyerFloatingChatComposer"
@@ -382,6 +371,14 @@
                         </button>
                     </form>
                 </div>
+
+                <script>
+                    window.buyerMessagesConfig = {!! json_encode([
+                        'apiUrl' => '/api/v1/buyer/messages',
+                        'apiToken' => $apiToken ?? '',
+                        'productId' => request()->integer('id') ?: null,
+                    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!};
+                </script>
             </section>
         </div>
     </section>

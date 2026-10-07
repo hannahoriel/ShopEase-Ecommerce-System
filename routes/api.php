@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardControll
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
 use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
 
@@ -62,6 +63,10 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/messages', [BuyerMessagesController::class, 'index'])->name('buyer.api.messages.index');
+            Route::post('/messages/conversations', [BuyerMessagesController::class, 'storeConversation'])->name('buyer.api.messages.conversations.store');
+            Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
+            Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');

@@ -499,6 +499,16 @@
             white-space: nowrap;
         }
 
+        .purchase-message-seller {
+            padding: 3px 0;
+            border: 0;
+            background: transparent;
+            color: #7A2630;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
         .purchase-row {
             min-height: 118px;
             padding: 15px 16px;

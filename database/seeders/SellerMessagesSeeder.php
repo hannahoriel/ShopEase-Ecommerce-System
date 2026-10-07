@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderItem;
+use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\Seller\SellerConversation;
 use App\Models\Seller\SellerMessage;
@@ -16,21 +18,31 @@ class SellerMessagesSeeder extends Seeder
 {
     public function run(): void
     {
-        $sellerUser = User::firstOrCreate(
-            ['email' => 'seller@shopease.test'],
-            [
-                'name' => 'Seller User',
-                'role' => User::ROLE_SELLER,
-                'password' => Hash::make('seller123'),
-            ],
-        );
-        $seller = Seller::firstOrCreate(
-            ['user_id' => $sellerUser->id],
-            [
-                'store_name' => 'ShopEase Demo Store',
-                'registration_status' => 'active',
-            ],
-        );
+        $seller = Seller::query()
+            ->whereHas('user', fn ($users) => $users->where('role', User::ROLE_SELLER))
+            ->orderByRaw("CASE WHEN registration_status = 'active' THEN 0 ELSE 1 END")
+            ->orderBy('id')
+            ->first();
+
+        if ($seller) {
+            $sellerUser = $seller->user;
+        } else {
+            $sellerUser = User::firstOrCreate(
+                ['email' => 'seller@shopease.test'],
+                [
+                    'name' => 'Seller User',
+                    'role' => User::ROLE_SELLER,
+                    'password' => Hash::make('seller123'),
+                ],
+            );
+            $seller = Seller::firstOrCreate(
+                ['user_id' => $sellerUser->id],
+                [
+                    'store_name' => 'ShopEase Demo Store',
+                    'registration_status' => 'active',
+                ],
+            );
+        }
         $admin = User::query()->where('role', User::ROLE_ADMIN)->orderBy('id')->first()
             ?? User::firstOrCreate(
                 ['email' => 'admin@shopease.test'],
@@ -42,6 +54,28 @@ class SellerMessagesSeeder extends Seeder
             );
 
         $now = Carbon::now();
+        $product = Product::updateOrCreate(
+            ['sku' => 'SE-DEMO-MESSAGE-PRODUCT'],
+            [
+                'seller_id' => $seller->id,
+                'name' => 'Classic Everyday Backpack',
+                'description' => 'A durable everyday backpack with a padded laptop sleeve and water-resistant fabric.',
+                'category' => 'Bags',
+                'price' => 1250,
+                'stock_quantity' => 8,
+                'status' => 'active',
+                'is_archived' => false,
+            ],
+        );
+        $product->options()->updateOrCreate(
+            ['type' => 'color', 'name' => 'Black'],
+            ['stock' => 4, 'price' => 0, 'price_type' => 'addon'],
+        );
+        $product->options()->updateOrCreate(
+            ['type' => 'color', 'name' => 'Navy'],
+            ['stock' => 4, 'price' => 0, 'price_type' => 'addon'],
+        );
+
         $buyerFixtures = [
             [
                 'name' => 'Juan Dela Cruz',
@@ -53,6 +87,7 @@ class SellerMessagesSeeder extends Seeder
                     ['buyer', 'Hi! Is this still available in black?', 12],
                     ['seller', 'Hi Juan! Yes, the black variant is still available.', 10],
                     ['buyer', 'Great. If I order today, when can you ship it?', 7],
+                    ['seller', 'Your order is currently New. Shipment tracking will be available once it has been handed to the courier.', 6],
                 ],
             ],
             [
@@ -106,6 +141,17 @@ class SellerMessagesSeeder extends Seeder
                 'created_at' => $fixture['created_at'],
                 'updated_at' => $fixture['created_at'],
             ])->saveQuietly();
+            OrderItem::updateOrCreate(
+                ['order_id' => $order->id, 'product_id' => $product->id],
+                [
+                    'product_name' => $product->name,
+                    'variation' => null,
+                    'color' => $index === 0 ? 'Black' : 'Navy',
+                    'size' => null,
+                    'quantity' => 1,
+                    'unit_price' => $product->price,
+                ],
+            );
 
             $conversation = SellerConversation::updateOrCreate(
                 ['seed_key' => 'seller-messages-buyer-'.($index + 1)],
@@ -114,6 +160,7 @@ class SellerMessagesSeeder extends Seeder
                     'type' => SellerConversation::TYPE_BUYER,
                     'buyer_id' => $buyer->id,
                     'order_id' => $order->id,
+                    'product_id' => $product->id,
                 ],
             );
 
@@ -171,7 +218,7 @@ class SellerMessagesSeeder extends Seeder
             $this->seedMessages($conversation, $fixture['messages'], $sellerUser, $admin, $now, 'complaint-'.($index + 1));
         }
 
-        $this->command?->info('Seller message demo conversations seeded for seller@shopease.test.');
+        $this->command?->info("Seller message demo conversations seeded for {$sellerUser->email}.");
     }
 
     private function seedMessages(
