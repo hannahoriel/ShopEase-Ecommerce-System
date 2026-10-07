@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
 use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
 use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
@@ -77,6 +78,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
+            Route::get('/reports', [SellerReportsController::class, 'data'])->name('seller.api.reports');
             Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
             Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
             Route::get('/order-status', [OrderStatusController::class, 'index']);

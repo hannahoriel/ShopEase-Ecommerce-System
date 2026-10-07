@@ -314,7 +314,7 @@
                     <div class="stat-bottom">
 
                         <span class="stat-growth-arrow">
-                            {{ $dashboard['stats']['changes']['low_stock_products']['direction'] === 'up' ? '↑' : '↓' }}
+                            →
                         </span>
 
                         <span class="stat-change">
@@ -322,7 +322,7 @@
                         </span>
 
                         <span>
-                            from yesterday
+                            current inventory
                         </span>
 
                     </div>
@@ -462,7 +462,7 @@
                                     class="status-total"
                                     id="statusTotal"
                                 >
-                                    129
+                                    {{ array_sum($dashboard['orders_by_status_period']['week']) }}
                                 </span>
 
 
@@ -491,8 +491,8 @@
                                     New Orders
                                 </span>
 
-                                <span class="status-count">
-                                    23
+                                <span class="status-count" data-status="new_orders">
+                                    {{ $dashboard['orders_by_status_period']['week']['new_orders'] }}
                                 </span>
 
                             </div>
@@ -509,8 +509,8 @@
                                     Preparing
                                 </span>
 
-                                <span class="status-count">
-                                    31
+                                <span class="status-count" data-status="preparing">
+                                    {{ $dashboard['orders_by_status_period']['week']['preparing'] }}
                                 </span>
 
                             </div>
@@ -527,8 +527,8 @@
                                     To Ship
                                 </span>
 
-                                <span class="status-count">
-                                    28
+                                <span class="status-count" data-status="to_ship">
+                                    {{ $dashboard['orders_by_status_period']['week']['to_ship'] }}
                                 </span>
 
                             </div>
@@ -545,8 +545,8 @@
                                     In Transit
                                 </span>
 
-                                <span class="status-count">
-                                    34
+                                <span class="status-count" data-status="in_transit">
+                                    {{ $dashboard['orders_by_status_period']['week']['in_transit'] }}
                                 </span>
 
                             </div>
@@ -563,8 +563,8 @@
                                     Delivered
                                 </span>
 
-                                <span class="status-count">
-                                    13
+                                <span class="status-count" data-status="delivered">
+                                    {{ $dashboard['orders_by_status_period']['week']['delivered'] }}
                                 </span>
 
                             </div>
@@ -601,7 +601,7 @@
 
 
                         <a
-                            href="#"
+                            href="{{ route('seller.order.status') }}"
                             class="card-header-link"
                         >
                             View all
@@ -613,376 +613,50 @@
                     <div class="orders-list">
 
 
-                        {{-- =================================================
-                             ORDER 1 - NEW ORDER
-                        ================================================== --}}
-
-                        <div class="order-row">
-
-                            <div class="order-status-icon">
-
-                                <img
-                                    src="{{ asset('icons/seller/dashboard/new-order.png') }}"
-                                    class="order-status-image"
-                                    alt="New Order"
-                                >
-
-                            </div>
-
-
-                            <div class="order-info">
-
-                                <div class="order-id-row">
-
-                                    <span class="order-id">
-                                        ORD-2089
-                                    </span>
-
-                                    <span class="status-pill new">
-                                        New Order
-                                    </span>
-
-                                </div>
-
-
-                                <span class="order-date">
-                                    May 26, 2026
-                                    &nbsp;&nbsp;
-                                    10:30 AM
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-price">
-
-                                ₱1,250.00
-
-                                <span class="order-payment">
-                                    COD
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-arrow">
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-
-                                    <path
-                                        d="M9 18l6-6-6-6"
-                                    />
-
-                                </svg>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- =================================================
-                             ORDER 2 - PROCESSING
-                        ================================================== --}}
-
-                        <div class="order-row">
-
-                            <div class="order-status-icon">
-
-                                <img
-                                    src="{{ asset('icons/seller/dashboard/processing.png') }}"
-                                    class="order-status-image"
-                                    alt="Preparing"
-                                >
-
-                            </div>
-
-
-                            <div class="order-info">
-
-                                <div class="order-id-row">
-
-                                    <span class="order-id">
-                                        ORD-2089
-                                    </span>
-
-                                    <span
-                                        class="status-pill preparing"
+                        @forelse ($dashboard['recent_orders'] as $order)
+                            @php
+                                $orderStatus = strtolower($order['status']);
+                                $statusPresentation = match ($orderStatus) {
+                                    'pending', 'new' => ['New Order', 'new', 'new-order'],
+                                    'preparing' => ['Preparing', 'preparing', 'processing'],
+                                    'to_ship', 'ready_to_ship' => ['To Ship', 'to-ship', 'to-ship'],
+                                    'in_transit', 'out_for_delivery' => ['In Transit', 'in-transit', 'in-transit'],
+                                    'delivered', 'completed' => ['Delivered', 'delivered', 'delivered'],
+                                    default => [str($orderStatus)->replace('_', ' ')->title(), 'new', 'new-order'],
+                                };
+                            @endphp
+                            <a class="order-row" href="{{ route('seller.order.status') }}">
+                                <div class="order-status-icon">
+                                    <img
+                                        src="{{ asset('icons/seller/dashboard/' . $statusPresentation[2] . '.png') }}"
+                                        class="order-status-image"
+                                        alt="{{ $statusPresentation[0] }}"
                                     >
-                                        Preparing
-                                    </span>
-
                                 </div>
-
-
-                                <span class="order-date">
-                                    May 26, 2026
-                                    &nbsp;&nbsp;
-                                    10:30 AM
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-price">
-
-                                ₱1,250.00
-
-                                <span class="order-payment">
-                                    COD
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-arrow">
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-
-                                    <path
-                                        d="M9 18l6-6-6-6"
-                                    />
-
-                                </svg>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- =================================================
-                             ORDER 3 - TO SHIP
-                        ================================================== --}}
-
-                        <div class="order-row">
-
-                            <div class="order-status-icon">
-
-                                <img
-                                    src="{{ asset('icons/seller/dashboard/to-ship.png') }}"
-                                    class="order-status-image"
-                                    alt="To Ship"
-                                >
-
-                            </div>
-
-
-                            <div class="order-info">
-
-                                <div class="order-id-row">
-
-                                    <span class="order-id">
-                                        ORD-2026
+                                <div class="order-info">
+                                    <div class="order-id-row">
+                                        <span class="order-id">{{ $order['order_number'] }}</span>
+                                        <span class="status-pill {{ $statusPresentation[1] }}">{{ $statusPresentation[0] }}</span>
+                                    </div>
+                                    <span class="order-date">
+                                        {{ \Illuminate\Support\Carbon::parse($order['created_at'])->format('M d, Y') }}
+                                        &nbsp;&nbsp;
+                                        {{ \Illuminate\Support\Carbon::parse($order['created_at'])->format('g:i A') }}
                                     </span>
-
-                                    <span
-                                        class="status-pill to-ship"
-                                    >
-                                        To Ship
-                                    </span>
-
                                 </div>
-
-
-                                <span class="order-date">
-                                    May 26, 2026
-                                    &nbsp;&nbsp;
-                                    10:30 AM
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-price">
-
-                                ₱1,250.00
-
-                                <span class="order-payment">
-                                    COD
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-arrow">
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                >
-
-                                    <path
-                                        d="M9 18l6-6-6-6"
-                                    />
-
-                                </svg>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- =================================================
-                             ORDER 4 - IN TRANSIT
-                        ================================================== --}}
-
-                        <div class="order-row">
-
-                            <div class="order-status-icon">
-
-                                <img
-                                    src="{{ asset('icons/seller/dashboard/in-transit.png') }}"
-                                    class="order-status-image"
-                                    alt="In Transit"
-                                >
-
-                            </div>
-
-
-                            <div class="order-info">
-
-                                <div class="order-id-row">
-
-                                    <span class="order-id">
-                                        ORD-2026
-                                    </span>
-
-                                    <span
-                                        class="status-pill in-transit"
-                                    >
-                                        In Transit
-                                    </span>
-
+                                <div class="order-price">
+                                    ₱{{ number_format($order['total'], 2) }}
+                                    <span class="order-payment">{{ $order['payment_method'] }}</span>
                                 </div>
-
-
-                                <span class="order-date">
-                                    May 26, 2026
-                                    &nbsp;&nbsp;
-                                    10:30 AM
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-price">
-
-                                ₱1,250.00
-
-                                <span class="order-payment">
-                                    COD
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-arrow">
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                >
-
-                                    <path
-                                        d="M9 18l6-6-6-6"
-                                    />
-
-                                </svg>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- =================================================
-                             ORDER 5 - DELIVERED
-                        ================================================== --}}
-
-                        <div class="order-row">
-
-                            <div class="order-status-icon">
-
-                                <img
-                                    src="{{ asset('icons/seller/dashboard/delivered.png') }}"
-                                    class="order-status-image"
-                                    alt="Delivered"
-                                >
-
-                            </div>
-
-
-                            <div class="order-info">
-
-                                <div class="order-id-row">
-
-                                    <span class="order-id">
-                                        ORD-2026
-                                    </span>
-
-                                    <span
-                                        class="status-pill delivered"
-                                    >
-                                        Delivered
-                                    </span>
-
+                                <div class="order-arrow" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M9 18l6-6-6-6" />
+                                    </svg>
                                 </div>
-
-
-                                <span class="order-date">
-                                    May 26, 2026
-                                    &nbsp;&nbsp;
-                                    10:30 AM
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-price">
-
-                                ₱1,250.00
-
-                                <span class="order-payment">
-                                    COD
-                                </span>
-
-                            </div>
-
-
-                            <div class="order-arrow">
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                >
-
-                                    <path
-                                        d="M9 18l6-6-6-6"
-                                    />
-
-                                </svg>
-
-                            </div>
-
-                        </div>
+                            </a>
+                        @empty
+                            <p class="dashboard-empty-state">You don't have any orders yet.</p>
+                        @endforelse
 
                     </div>
 
@@ -1005,7 +679,7 @@
 
 
                         <a
-                            href="#"
+                            href="{{ route('seller.inventory') }}"
                             class="card-header-link"
                         >
                             View all
@@ -1017,94 +691,23 @@
                     <div class="stock-list">
 
 
-                        {{-- PRODUCT 1 --}}
-
-                        <div class="stock-row">
-
-                            <div class="stock-image">
-
-                                <span
-                                    class="stock-placeholder"
-                                >
-                                    🎧
-                                </span>
-
+                        @forelse ($dashboard['low_stock_products'] as $product)
+                            <div class="stock-row">
+                                <div class="stock-image">
+                                    @if ($product['photo'])
+                                        <img src="{{ $product['photo'] }}" alt="{{ $product['name'] }}" class="stock-product-image">
+                                    @else
+                                        <span class="stock-placeholder" aria-hidden="true">📦</span>
+                                    @endif
+                                </div>
+                                <div class="stock-info">
+                                    <p class="stock-name">{{ $product['name'] }}</p>
+                                    <span class="stock-number">Stock: {{ $product['stock'] }}</span>
+                                </div>
                             </div>
-
-
-                            <div class="stock-info">
-
-                                <p class="stock-name">
-                                    Wireless Headphones
-                                </p>
-
-                                <span class="stock-number">
-                                    Stock: 10
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- PRODUCT 2 --}}
-
-                        <div class="stock-row">
-
-                            <div class="stock-image">
-
-                                <span
-                                    class="stock-placeholder"
-                                >
-                                    🎧
-                                </span>
-
-                            </div>
-
-
-                            <div class="stock-info">
-
-                                <p class="stock-name">
-                                    Wireless Headphones
-                                </p>
-
-                                <span class="stock-number">
-                                    Stock: 10
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- PRODUCT 3 --}}
-
-                        <div class="stock-row">
-
-                            <div class="stock-image">
-
-                                <span
-                                    class="stock-placeholder"
-                                >
-                                    🎧
-                                </span>
-
-                            </div>
-
-
-                            <div class="stock-info">
-
-                                <p class="stock-name">
-                                    Wireless Headphones
-                                </p>
-
-                                <span class="stock-number">
-                                    Stock: 10
-                                </span>
-
-                            </div>
-
-                        </div>
+                        @empty
+                            <p class="dashboard-empty-state">No low-stock products.</p>
+                        @endforelse
 
                     </div>
 
@@ -1118,18 +721,17 @@
                 <div class="announcement-card">
 
                     <p class="announcement-label">
-                        Announcement
+                        {{ $dashboard['announcement']?->badge_label ?: 'Announcement' }}
                     </p>
 
 
                     <h3 class="announcement-title">
-                        AugZtu Sale 2026!
+                        {{ $dashboard['announcement']?->title ?: 'No active announcements' }}
                     </h3>
 
 
                     <p class="announcement-text">
-                        Abangan ang mga katangahan
-                        ngayong August
+                        {{ $dashboard['announcement']?->body ?: 'Check back later for seller updates.' }}
                     </p>
 
 
@@ -1165,11 +767,10 @@
     </div>
 
 
-    {{-- =====================================================
-         DASHBOARD JAVASCRIPT
-    ====================================================== --}}
-
-    
+    <script id="sellerDashboardData" type="application/json">@json([
+        'sales' => $dashboard['sales_chart'],
+        'statuses' => $dashboard['orders_by_status_period'],
+    ])</script>
 
 
 </body>

@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Api\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Announcement;
 use App\Models\Admin\Order;
+use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -33,7 +37,17 @@ class DashboardController extends Controller
         $yesterdayOrders = (clone $orders)->whereDate('created_at', $yesterday)->count();
         $todayPendingOrders = (clone $orders)->where('status', 'pending')->whereDate('created_at', $today)->count();
         $yesterdayPendingOrders = (clone $orders)->where('status', 'pending')->whereDate('created_at', $yesterday)->count();
-        $lowStockProducts = $seller->products()->where('stock_quantity', '<=', 5)->count();
+        $lowStockQuery = $seller->products()
+            ->where('is_archived', false)
+            ->where('stock_quantity', '<=', 5);
+        $lowStockProducts = (clone $lowStockQuery)->count();
+        $statusGroups = [
+            'new_orders' => ['pending', 'new'],
+            'preparing' => ['preparing'],
+            'to_ship' => ['to_ship', 'ready_to_ship'],
+            'in_transit' => ['in_transit', 'out_for_delivery'],
+            'delivered' => ['delivered', 'completed'],
+        ];
 
         return [
             'seller' => [
@@ -50,7 +64,7 @@ class DashboardController extends Controller
                     'total_sales' => $this->percentChange($yesterdaySales, $todaySales),
                     'total_orders' => $this->percentChange($yesterdayOrders, $todayOrders),
                     'pending_orders' => $this->percentChange($yesterdayPendingOrders, $todayPendingOrders),
-                    'low_stock_products' => $this->unavailableChange(),
+                    'low_stock_products' => ['value' => '—', 'direction' => 'flat'],
                 ],
             ],
             'sales_summary' => [
@@ -65,20 +79,42 @@ class DashboardController extends Controller
                 ->pluck('total', 'status')
                 ->map(fn ($total) => (int) $total)
                 ->all(),
+            'orders_by_status_period' => $this->ordersByStatusPeriod($seller->id, $statusGroups),
+            'sales_chart' => $this->salesChart($seller->id),
             'sales_overview' => $this->salesOverview($seller->id),
             'recent_orders' => (clone $orders)
+                ->with('buyer:id,name')
                 ->latest()
                 ->limit(5)
-                ->get(['id', 'buyer_id', 'total', 'status', 'created_at'])
+                ->get(['id', 'buyer_id', 'total', 'status', 'order_number', 'payment_method', 'created_at'])
                 ->map(fn (Order $order) => [
                     'id' => $order->id,
+                    'order_number' => $order->order_number ?: 'ORD-' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
                     'buyer_id' => $order->buyer_id,
+                    'buyer_name' => $order->buyer?->name ?? 'Buyer',
                     'total' => (float) $order->total,
                     'status' => $order->status,
+                    'payment_method' => $order->payment_method,
                     'created_at' => $order->created_at?->toISOString(),
                 ])
                 ->values()
                 ->all(),
+            'low_stock_products' => (clone $lowStockQuery)
+                ->orderBy('stock_quantity')
+                ->limit(5)
+                ->get(['id', 'name', 'photos', 'stock_quantity'])
+                ->map(fn (Product $product) => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'photo' => $this->productPhotoUrl($product->photos[0] ?? null),
+                    'stock' => $product->stock_quantity,
+                ])
+                ->values()
+                ->all(),
+            'announcement' => Announcement::query()
+                ->where('is_active', true)
+                ->latest()
+                ->first(['title', 'body', 'badge_label']),
         ];
     }
 
@@ -96,12 +132,154 @@ class DashboardController extends Controller
         ];
     }
 
-    private function unavailableChange(): array
+    private function ordersByStatusPeriod(int $sellerId, array $statusGroups): array
     {
+        $now = Carbon::now();
+
         return [
-            'value' => '0%',
-            'direction' => 'up',
+            'week' => $this->periodStatusCounts(
+                $sellerId,
+                $now->copy()->startOfWeek(),
+                $now->copy()->endOfWeek(),
+                $statusGroups
+            ),
+            'month' => $this->periodStatusCounts(
+                $sellerId,
+                $now->copy()->startOfMonth(),
+                $now->copy()->endOfMonth(),
+                $statusGroups
+            ),
+            'year' => $this->periodStatusCounts(
+                $sellerId,
+                $now->copy()->startOfYear(),
+                $now->copy()->endOfYear(),
+                $statusGroups
+            ),
         ];
+    }
+
+    private function periodStatusCounts(int $sellerId, Carbon $start, Carbon $end, array $statusGroups): array
+    {
+        $counts = Order::where('seller_id', $sellerId)
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return collect($statusGroups)
+            ->map(fn (array $statuses) => collect($statuses)->sum(fn (string $status) => (int) $counts->get($status, 0)))
+            ->all();
+    }
+
+    private function salesChart(int $sellerId): array
+    {
+        $now = Carbon::now();
+
+        $weekStart = $now->copy()->startOfWeek();
+        $monthStart = $now->copy()->startOfMonth();
+        $yearStart = $now->copy()->startOfYear();
+
+        $weekCurrent = $this->completedSalesByDate($sellerId, $weekStart, $now->copy()->endOfWeek());
+        $weekPreviousStart = $weekStart->copy()->subWeek();
+        $weekPrevious = $this->completedSalesByDate($sellerId, $weekPreviousStart, $weekStart->copy()->subDay()->endOfDay());
+
+        $monthCurrent = $this->completedSalesByDate($sellerId, $monthStart, $now->copy()->endOfMonth());
+        $monthPreviousStart = $monthStart->copy()->subMonthNoOverflow();
+        $monthPrevious = $this->completedSalesByDate($sellerId, $monthPreviousStart, $monthStart->copy()->subDay()->endOfDay());
+
+        $yearCurrent = $this->completedSalesByDate($sellerId, $yearStart, $now->copy()->endOfYear());
+        $yearPreviousStart = $yearStart->copy()->subYear();
+        $yearPrevious = $this->completedSalesByDate($sellerId, $yearPreviousStart, $yearStart->copy()->subDay()->endOfDay());
+
+        $weekLabels = [];
+        $weekCurrentValues = [];
+        $weekPreviousValues = [];
+        foreach (CarbonPeriod::create($weekStart, $weekStart->copy()->addDays(6)) as $date) {
+            $weekLabels[] = $date->format('D');
+            $weekCurrentValues[] = $weekCurrent[$date->toDateString()] ?? 0;
+            $weekPreviousValues[] = $weekPrevious[$date->copy()->subWeek()->toDateString()] ?? 0;
+        }
+
+        [$monthLabels, $monthCurrentValues] = $this->monthlySalesBuckets($monthCurrent, $monthStart);
+        [, $monthPreviousValues] = $this->monthlySalesBuckets($monthPrevious, $monthPreviousStart);
+
+        $yearLabels = [];
+        $yearCurrentValues = [];
+        $yearPreviousValues = [];
+        for ($month = 1; $month <= 11; $month += 2) {
+            $currentPeriodStart = $yearStart->copy()->month($month)->startOfMonth();
+            $previousPeriodStart = $yearPreviousStart->copy()->month($month)->startOfMonth();
+            $yearLabels[] = $currentPeriodStart->format('M');
+            $yearCurrentValues[] = $this->sumSalesBetweenDates(
+                $yearCurrent,
+                $currentPeriodStart,
+                $currentPeriodStart->copy()->addMonth()->endOfMonth()
+            );
+            $yearPreviousValues[] = $this->sumSalesBetweenDates(
+                $yearPrevious,
+                $previousPeriodStart,
+                $previousPeriodStart->copy()->addMonth()->endOfMonth()
+            );
+        }
+
+        return [
+            'week' => ['labels' => $weekLabels, 'current' => $weekCurrentValues, 'previous' => $weekPreviousValues],
+            'month' => ['labels' => $monthLabels, 'current' => $monthCurrentValues, 'previous' => $monthPreviousValues],
+            'year' => ['labels' => $yearLabels, 'current' => $yearCurrentValues, 'previous' => $yearPreviousValues],
+        ];
+    }
+
+    private function completedSalesByDate(int $sellerId, Carbon $start, Carbon $end): array
+    {
+        return Order::where('seller_id', $sellerId)
+            ->completed()
+            ->whereBetween('created_at', [$start, $end])
+            ->get(['total', 'created_at'])
+            ->groupBy(fn (Order $order) => $order->created_at->toDateString())
+            ->map(fn ($orders) => round((float) $orders->sum('total'), 2))
+            ->all();
+    }
+
+    private function monthlySalesBuckets(array $sales, Carbon $monthStart): array
+    {
+        $daysInMonth = $monthStart->daysInMonth;
+        $labels = [];
+        $values = [];
+        $bucketStarts = [1, 6, 11, 16, 21, 26, $daysInMonth];
+
+        foreach ($bucketStarts as $index => $day) {
+            $bucketStart = $monthStart->copy()->day($day)->startOfDay();
+            $bucketEndDay = match ($index) {
+                5 => $daysInMonth - 1,
+                6 => $daysInMonth,
+                default => min($day + 4, $daysInMonth - 1),
+            };
+            $bucketEnd = $monthStart->copy()->day(max($day, $bucketEndDay))->endOfDay();
+
+            $labels[] = $bucketStart->format('M j');
+            $values[] = $this->sumSalesBetweenDates($sales, $bucketStart, $bucketEnd);
+        }
+
+        return [$labels, $values];
+    }
+
+    private function sumSalesBetweenDates(array $sales, Carbon $start, Carbon $end): float
+    {
+        return round((float) collect(CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay()))
+            ->sum(fn (Carbon $date) => $sales[$date->toDateString()] ?? 0), 2);
+    }
+
+    private function productPhotoUrl(?string $photo): ?string
+    {
+        if (!$photo) {
+            return null;
+        }
+
+        if (str_starts_with($photo, 'data:') || str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
+            return $photo;
+        }
+
+        return Storage::disk('public')->url(preg_replace('/^storage\//', '', ltrim($photo, '/')));
     }
 
     private function salesOverview(int $sellerId): array

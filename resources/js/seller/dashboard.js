@@ -32,110 +32,16 @@ document.addEventListener(
            SALES DATA
         ================================================== */
 
-        const salesData = {
+        const dashboardDataElement =
+            document.getElementById('sellerDashboardData');
 
-            month: {
+        const dashboardData =
+            dashboardDataElement
+                ? JSON.parse(dashboardDataElement.textContent || '{}')
+                : {};
 
-                labels: [
-                    'May 1',
-                    'May 6',
-                    'May 11',
-                    'May 16',
-                    'May 21',
-                    'May 26',
-                    'May 31'
-                ],
-
-                previous: [
-                    2400,
-                    5600,
-                    2300,
-                    5500,
-                    4200,
-                    5800,
-                    14000
-                ],
-
-                current: [
-                    4700,
-                    8900,
-                    5100,
-                    13200,
-                    7900,
-                    11800,
-                    21600
-                ]
-
-            },
-
-
-            week: {
-
-                labels: [
-                    'Mon',
-                    'Tue',
-                    'Wed',
-                    'Thu',
-                    'Fri',
-                    'Sat',
-                    'Sun'
-                ],
-
-                previous: [
-                    1800,
-                    2500,
-                    2100,
-                    2900,
-                    3200,
-                    4100,
-                    3900
-                ],
-
-                current: [
-                    2600,
-                    3400,
-                    2950,
-                    4300,
-                    4700,
-                    5900,
-                    5200
-                ]
-
-            },
-
-
-            year: {
-
-                labels: [
-                    'Jan',
-                    'Mar',
-                    'May',
-                    'Jul',
-                    'Sep',
-                    'Nov'
-                ],
-
-                previous: [
-                    12000,
-                    15000,
-                    18000,
-                    21000,
-                    23000,
-                    27000
-                ],
-
-                current: [
-                    15000,
-                    19000,
-                    24000,
-                    26000,
-                    30000,
-                    35000
-                ]
-
-            }
-
-        };
+        const salesData =
+            dashboardData.sales || {};
 
 
         /* =================================================
@@ -255,6 +161,9 @@ document.addEventListener(
                                     fill:
                                         true,
 
+                                    spanGaps:
+                                        true,
+
                                     tension:
                                         0.4,
 
@@ -296,6 +205,9 @@ document.addEventListener(
                                         2,
 
                                     fill:
+                                        true,
+
+                                    spanGaps:
                                         true,
 
                                     tension:
@@ -465,6 +377,9 @@ document.addEventListener(
                                         color:
                                             '#777777',
 
+                                        maxTicksLimit:
+                                            6,
+
                                         font: {
 
                                             family:
@@ -480,26 +395,35 @@ document.addEventListener(
 
                                         callback:
                                             function (
-                                                value
+                                                value,
+                                                index,
+                                                ticks
                                             ) {
 
-                                                if (
-                                                    value === 0
-                                                ) {
+                                                const amount =
+                                                    Number(value);
 
-                                                    return '0';
+                                                if (!Number.isFinite(amount)) {
+
+                                                    return '';
 
                                                 }
 
+                                                const highestTick =
+                                                    Number(ticks[ticks.length - 1]?.value || 0);
 
-                                                return (
-                                                    '₱' +
-                                                    (
-                                                        value /
-                                                        1000
-                                                    ) +
-                                                    'k'
-                                                );
+                                                if (Math.abs(highestTick) >= 1000) {
+
+                                                    return '₱' + (amount / 1000).toLocaleString('en-PH', {
+                                                        minimumFractionDigits: 1,
+                                                        maximumFractionDigits: 1
+                                                    }) + 'k';
+
+                                                }
+
+                                                return '₱' + amount.toLocaleString('en-PH', {
+                                                    maximumFractionDigits: 2
+                                                });
 
                                             }
 
@@ -607,33 +531,16 @@ document.addEventListener(
             null;
 
 
-        const statusData = {
+        const statusData =
+            dashboardData.statuses || {};
 
-            week: [
-                23,
-                31,
-                28,
-                34,
-                13
-            ],
-
-            month: [
-                74,
-                96,
-                87,
-                121,
-                63
-            ],
-
-            year: [
-                311,
-                420,
-                395,
-                502,
-                277
-            ]
-
-        };
+        const statusKeys = [
+            'new_orders',
+            'preparing',
+            'to_ship',
+            'in_transit',
+            'delivered'
+        ];
 
 
         function renderStatusChart(
@@ -645,8 +552,13 @@ document.addEventListener(
             }
 
 
+            const periodData =
+                statusData[period] || {};
+
             const data =
-                statusData[period];
+                statusKeys.map(
+                    (status) => Number(periodData[status] || 0)
+                );
 
 
             const total =
@@ -669,6 +581,13 @@ document.addEventListener(
                     total.toLocaleString();
 
             }
+
+            document.querySelectorAll('.status-count[data-status]').forEach(
+                function (element) {
+                    element.textContent =
+                        Number(periodData[element.dataset.status] || 0).toLocaleString();
+                }
+            );
 
 
             const ctx =

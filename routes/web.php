@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
 use App\Http\Controllers\ParcelScanController;
@@ -2121,17 +2122,13 @@ Route::get('/seller/shipping-status', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/seller/reports', function () {
-
-    abort_unless(
-        Auth::user()->role === User::ROLE_SELLER,
-        403
-    );
-
-    return view('pages.seller.reports');
-
-})->middleware('auth')
+Route::get('/seller/reports', [SellerReportsController::class, 'page'])
+  ->middleware('auth', 'role:seller')
   ->name('seller.reports');
+
+Route::get('/seller/reports/data', [SellerReportsController::class, 'data'])
+  ->middleware('auth', 'role:seller')
+  ->name('seller.reports.data');
 
 /*
 |--------------------------------------------------------------------------
