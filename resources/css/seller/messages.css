@@ -1160,3 +1160,152 @@ body.seller-sidebar-collapsed .seller-messages-page {
         scroll-behavior: auto !important;
     }
 }
+
+
+/* =========================================================
+   SELLER MESSAGES — SEND PNG ONLY
+   public/icons/buyer/send.png
+========================================================= */
+
+.messages-send-button {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+    background-image: none !important;
+
+    color: inherit !important;
+
+    box-shadow: none !important;
+
+    cursor: pointer !important;
+
+    transition:
+        opacity .15s ease !important;
+}
+
+.messages-send-button:hover {
+    background: transparent !important;
+    background-image: none !important;
+
+    transform: none !important;
+    box-shadow: none !important;
+
+    opacity: .78 !important;
+}
+
+.messages-send-button:active {
+    background: transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+
+    opacity: .62 !important;
+}
+
+.messages-send-button:disabled {
+    background: transparent !important;
+    opacity: .38 !important;
+    cursor: not-allowed !important;
+
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Remove old inline SVG completely if an older cached Blade is ever rendered. */
+.messages-send-button svg {
+    display: none !important;
+}
+
+.messages-send-icon {
+    width: 24px !important;
+    height: 24px !important;
+
+    display: block !important;
+    object-fit: contain !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+
+    pointer-events: none !important;
+}
+
+
+/* =========================================================
+   SELLER MESSAGES — NO SELECTED CHAT INITIAL STATE
+========================================================= */
+
+.messages-no-selected-chat {
+    display: none;
+}
+
+.messages-chat-panel.is-no-chat-selected {
+    grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.messages-chat-panel.is-no-chat-selected .messages-chat-header,
+.messages-chat-panel.is-no-chat-selected .messages-chat-context,
+.messages-chat-panel.is-no-chat-selected .messages-status,
+.messages-chat-panel.is-no-chat-selected .messages-typing,
+.messages-chat-panel.is-no-chat-selected .messages-composer {
+    display: none !important;
+}
+
+.messages-chat-panel.is-no-chat-selected .messages-chat-body {
+    min-height: 100% !important;
+    height: 100% !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 32px !important;
+
+    overflow: hidden !important;
+
+    background: #FFFEFD !important;
+}
+
+.messages-chat-panel.is-no-chat-selected .messages-no-selected-chat {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 5px !important;
+
+    text-align: center !important;
+}
+
+.messages-no-selected-chat strong {
+    margin: 0 !important;
+
+    color: #5C514E !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    font-weight: 600 !important;
+}
+
+.messages-no-selected-chat span {
+    margin: 0 !important;
+
+    color: #A19996 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+}

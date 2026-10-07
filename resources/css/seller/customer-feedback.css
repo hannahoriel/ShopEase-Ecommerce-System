@@ -2857,3 +2857,336 @@ body.seller-sidebar-collapsed #feedbackPage {
         padding: 0 20px 28px !important;
     }
 }
+
+
+/* =====================================================
+   EMPTY STATE — SHIPPING STATUS STYLE
+====================================================== */
+
+/*
+ * When All Feedback is empty, keep the toolbar at the top,
+ * center the message in a clean white body, and keep the footer below.
+ */
+.feedback-card.is-feedback-empty {
+    min-height: 0 !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-table-wrap {
+    padding: 0 !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-table-head {
+    display: none !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-list {
+    min-height: 160px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 28px 20px !important;
+}
+
+.feedback-empty-state {
+    width: 100% !important;
+    min-height: 150px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 6px !important;
+
+    padding: 28px 20px !important;
+
+    color: #918A87 !important;
+    text-align: center !important;
+}
+
+.feedback-empty-state strong {
+    margin: 0 !important;
+
+    color: #5F5754 !important;
+
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    font-weight: 500 !important;
+}
+
+.feedback-empty-state span {
+    margin: 0 !important;
+
+    color: #AAA2A0 !important;
+
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    font-weight: 400 !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-footer {
+    margin-top: 0 !important;
+    min-height: 58px !important;
+    padding: 10px 20px !important;
+    border-top: 1px solid #E4DEDB !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-count {
+    font-size: 12px !important;
+    color: #9A9390 !important;
+}
+
+/* Keep the page-size select visible just like Shipping Status. */
+.feedback-card.is-feedback-empty .feedback-pagination {
+    margin-left: auto !important;
+}
+
+/* Product Ratings uses the same empty-state visual. */
+.product-rating-empty-state {
+    grid-column: 1 / -1 !important;
+    min-height: 190px !important;
+}
+
+/* Existing loading/error fallback remains clean. */
+.feedback-empty {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 42px 20px !important;
+    color: #99918E !important;
+    text-align: center !important;
+    font-size: 13px !important;
+}
+
+.feedback-loading {
+    min-height: 150px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+
+/* =========================================================
+   CUSTOMER FEEDBACK — EMPTY STATE MATCH SHIPPING STATUS
+   Exact spacing / typography / colors from shipping-status.css
+========================================================= */
+
+/*
+ * Shipping Status reference:
+ * - empty state padding: 44px 20px
+ * - title: 13px / 500 / #6B7280
+ * - subtitle: 12px / 400 / #9CA3AF / margin-top 4px
+ * - pagination: min-height 52px / padding 10px 16px
+ * - divider: #E5E7EB
+ */
+.feedback-card.is-feedback-empty {
+    min-height: 0 !important;
+    background: #FFFFFF !important;
+    border: 1px solid #F0E9E6 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 12px rgba(42, 20, 15, .05) !important;
+    overflow: hidden !important;
+}
+
+/* Keep the existing feedback toolbar untouched and seamless. */
+.feedback-card.is-feedback-empty .feedback-table-wrap {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-table-head {
+    display: none !important;
+}
+
+/* Exact empty body proportions from Shipping Status. */
+.feedback-card.is-feedback-empty .feedback-list {
+    min-height: 160px !important;
+    height: 160px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: #FFFFFF !important;
+}
+
+/* The message itself uses the exact Shipping Status empty-state padding. */
+.feedback-card.is-feedback-empty .feedback-empty-state {
+    width: 100% !important;
+    min-height: 160px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 0 !important;
+
+    margin: 0 !important;
+    padding: 44px 20px !important;
+
+    box-sizing: border-box !important;
+
+    text-align: center !important;
+    background: #FFFFFF !important;
+}
+
+/* Exact Shipping Status title typography. */
+.feedback-card.is-feedback-empty .feedback-empty-state > strong {
+    display: block !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+
+    color: #6B7280 !important;
+}
+
+/* Exact Shipping Status subtitle typography. */
+.feedback-card.is-feedback-empty .feedback-empty-state > span {
+    display: block !important;
+
+    margin: 4px 0 0 !important;
+    padding: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+
+    color: #9CA3AF !important;
+}
+
+/* Footer/pagination matches Shipping Status exactly. */
+.feedback-card.is-feedback-empty .feedback-footer {
+    min-height: 52px !important;
+
+    margin: 0 !important;
+    padding: 10px 16px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+
+    border-top: 1px solid #E5E7EB !important;
+    background: #FFFFFF !important;
+}
+
+.feedback-card.is-feedback-empty .feedback-count {
+    margin: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+
+    color: #9CA3AF !important;
+}
+
+/* Same compact controls as Shipping Status pagination. */
+.feedback-card.is-feedback-empty .feedback-pagination {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-left: auto !important;
+}
+
+.feedback-card.is-feedback-empty .page-button {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+
+    color: #615A57 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 500 !important;
+}
+
+.feedback-card.is-feedback-empty .page-button.active {
+    background: #FFC8B9 !important;
+    color: #7B1B1B !important;
+    font-weight: 600 !important;
+}
+
+.feedback-card.is-feedback-empty .page-button:disabled {
+    opacity: .35 !important;
+    pointer-events: none !important;
+}
+
+.feedback-card.is-feedback-empty .per-page {
+    height: 28px !important;
+
+    margin-left: 8px !important;
+    padding: 0 8px !important;
+
+    border: 1px solid #F0B9AC !important;
+    border-radius: 6px !important;
+
+    background: #FFF5F1 !important;
+    color: #4B5563 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+}
+
+/* Make the Product Ratings empty state follow the same exact visual language. */
+.product-ratings-panel .product-rating-empty-state {
+    grid-column: 1 / -1 !important;
+
+    width: 100% !important;
+    min-height: 160px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 44px 20px !important;
+
+    box-sizing: border-box !important;
+    text-align: center !important;
+    background: #FFFFFF !important;
+}
+
+.product-ratings-panel .product-rating-empty-state > strong {
+    margin: 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
+
+    color: #6B7280 !important;
+}
+
+.product-ratings-panel .product-rating-empty-state > span {
+    margin: 4px 0 0 !important;
+
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+
+    color: #9CA3AF !important;
+}

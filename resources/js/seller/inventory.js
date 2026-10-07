@@ -3934,6 +3934,16 @@ document.addEventListener(
                         'productDetailsPrice'
                     );
 
+                const productDetailsPriceLabel =
+                    document.getElementById(
+                        'productDetailsPriceLabel'
+                    );
+
+                const productDetailsPriceHelp =
+                    document.getElementById(
+                        'productDetailsPriceHelp'
+                    );
+
                 const productDetailsStock =
                     document.getElementById(
                         'productDetailsStock'
@@ -4012,6 +4022,190 @@ document.addEventListener(
                 const productDetailsSpecifications =
                     document.getElementById(
                         'productDetailsSpecifications'
+                    );
+
+
+                const productDetailsPricingMode =
+                    document.getElementById(
+                        'productDetailsPricingMode'
+                    );
+
+                const productDetailsPricingSource =
+                    document.getElementById(
+                        'productDetailsPricingSource'
+                    );
+
+                const productDetailsSku =
+                    document.getElementById(
+                        'productDetailsSku'
+                    );
+
+                const closeProductDetailsModal =
+                    document.getElementById(
+                        'closeProductDetailsModal'
+                    );
+
+                const productDetailsTabButtons =
+                    Array.from(
+                        document.querySelectorAll(
+                            '.product-details-tab[data-product-details-tab]'
+                        )
+                    );
+
+                const productDetailsInfoPanel =
+                    document.getElementById(
+                        'productDetailsInfoPanel'
+                    );
+
+                const productDetailsStocksPanel =
+                    document.getElementById(
+                        'productDetailsStocksPanel'
+                    );
+
+                const productDetailsVariationsPanel =
+                    document.getElementById(
+                        'productDetailsVariationsPanel'
+                    );
+
+                const productDetailsStockHistoryPanel =
+                    document.getElementById(
+                        'productDetailsStockHistoryPanel'
+                    );
+
+                const productDetailsPriceHistoryPanel =
+                    document.getElementById(
+                        'productDetailsPriceHistoryPanel'
+                    );
+
+                const productDetailsStockHistory =
+                    document.getElementById(
+                        'productDetailsStockHistory'
+                    );
+
+                const productDetailsPriceHistory =
+                    document.getElementById(
+                        'productDetailsPriceHistory'
+                    );
+
+                const productDetailsStockDisplay =
+                    document.getElementById(
+                        'productDetailsStockDisplay'
+                    );
+
+                const productDetailsVariationCount =
+                    document.getElementById(
+                        'productDetailsVariationCount'
+                    );
+
+                const productDetailsNameDisplay =
+                    document.getElementById(
+                        'productDetailsNameDisplay'
+                    );
+
+                const productDetailsSkuDisplay =
+                    document.getElementById(
+                        'productDetailsSkuDisplay'
+                    );
+
+                const productDetailsCategoryDisplay =
+                    document.getElementById(
+                        'productDetailsCategoryDisplay'
+                    );
+
+                const productDetailsPriceDisplay =
+                    document.getElementById(
+                        'productDetailsPriceDisplay'
+                    );
+
+                const productDetailsPricingTypeView =
+                    document.getElementById(
+                        'productDetailsPricingTypeView'
+                    );
+
+                const productDetailsPricingSourceView =
+                    document.getElementById(
+                        'productDetailsPricingSourceView'
+                    );
+
+                const productDetailsVariationsDisplay =
+                    document.getElementById(
+                        'productDetailsVariationsDisplay'
+                    );
+
+                const productDetailsColorsDisplay =
+                    document.getElementById(
+                        'productDetailsColorsDisplay'
+                    );
+
+                const productDetailsSizesDisplay =
+                    document.getElementById(
+                        'productDetailsSizesDisplay'
+                    );
+
+                const productDetailsPhotoInput =
+                    document.getElementById(
+                        'productDetailsPhotoInput'
+                    );
+
+                const productDescriptionDisplay =
+                    document.getElementById(
+                        'productDescriptionDisplay'
+                    );
+
+                const productDetailsAddPhoto =
+                    document.getElementById(
+                        'productDetailsAddPhoto'
+                    );
+
+                let productDetailsPhotoDraft = null;
+
+                const productDetailsSubcategoryBadge =
+                    document.getElementById(
+                        'productDetailsSubcategoryBadge'
+                    );
+
+                const productDetailsPricingModeDisplay =
+                    document.getElementById(
+                        'productDetailsPricingModeDisplay'
+                    );
+
+                const productDetailsPricingSourceDisplay =
+                    document.getElementById(
+                        'productDetailsPricingSourceDisplay'
+                    );
+
+                let productDetailsEditing = false;
+                let productDetailsPriceSnapshot = null;
+
+                const productDetailsStockRows =
+                    document.getElementById(
+                        'productDetailsStockRows'
+                    );
+
+                const productDetailsStockEmpty =
+                    document.getElementById(
+                        'productDetailsStockEmpty'
+                    );
+
+                const productDetailsStockTotal =
+                    document.getElementById(
+                        'productDetailsStockTotal'
+                    );
+
+                const productDetailsStockMessage =
+                    document.getElementById(
+                        'productDetailsStockMessage'
+                    );
+
+
+                const productDetailsCompleteInfo =
+                    document.getElementById(
+                        'productDetailsCompleteInfo'
+                    );
+
+
+                const saveProductStockChanges =                    document.getElementById(
+                        'saveProductStockChanges'
                     );
 
 
@@ -4418,7 +4612,7 @@ document.addEventListener(
                     product
                 ) {
 
-                    const photos =
+                    const storedPhotos =
                         (
                             Array.isArray(
                                 product.photos
@@ -4433,6 +4627,14 @@ document.addEventListener(
                                     ]
                                     : []
                             );
+
+                    const photos =
+                        productDetailsEditing &&
+                        Array.isArray(
+                            productDetailsPhotoDraft
+                        )
+                            ? productDetailsPhotoDraft
+                            : storedPhotos;
 
                     if (productDetailsMainImage) {
 
@@ -4505,6 +4707,54 @@ document.addEventListener(
                                 image
                             );
 
+                            if (productDetailsEditing) {
+
+                                const remove =
+                                    document.createElement(
+                                        'span'
+                                    );
+
+                                remove.className =
+                                    'created-detail-thumb-remove';
+
+                                remove.textContent =
+                                    '×';
+
+                                remove.setAttribute(
+                                    'role',
+                                    'button'
+                                );
+
+                                remove.setAttribute(
+                                    'aria-label',
+                                    `Remove photo ${index + 1}`
+                                );
+
+                                remove.addEventListener(
+                                    'click',
+                                    function (event) {
+
+                                        event.preventDefault();
+                                        event.stopPropagation();
+
+                                        productDetailsPhotoDraft.splice(
+                                            index,
+                                            1
+                                        );
+
+                                        renderCreatedProductPhotos(
+                                            product
+                                        );
+
+                                    }
+                                );
+
+                                thumb.appendChild(
+                                    remove
+                                );
+
+                            }
+
                             thumb.addEventListener(
                                 'click',
                                 function () {
@@ -4543,6 +4793,1244 @@ document.addEventListener(
                 }
 
 
+                productDetailsAddPhoto?.addEventListener(
+                    'click',
+                    function () {
+
+                        if (!productDetailsEditing) {
+                            return;
+                        }
+
+                        productDetailsPhotoInput?.click();
+
+                    }
+                );
+
+
+                productDetailsPhotoInput?.addEventListener(
+                    'change',
+                    async function () {
+
+                        const product =
+                            getCreatedProductFromRow(
+                                currentProductRow
+                            );
+
+                        if (
+                            !product ||
+                            !productDetailsEditing
+                        ) {
+                            productDetailsPhotoInput.value =
+                                '';
+                            return;
+                        }
+
+                        const files =
+                            Array.from(
+                                productDetailsPhotoInput.files ||
+                                []
+                            )
+                            .filter(
+                                function (file) {
+                                    return [
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp'
+                                    ].includes(
+                                        file.type
+                                    );
+                                }
+                            );
+
+                        if (!files.length) {
+                            productDetailsPhotoInput.value =
+                                '';
+                            return;
+                        }
+
+                        if (
+                            !Array.isArray(
+                                productDetailsPhotoDraft
+                            )
+                        ) {
+                            productDetailsPhotoDraft =
+                                (
+                                    Array.isArray(
+                                        product.photos
+                                    )
+                                        ? product.photos
+                                        : []
+                                ).slice();
+                        }
+
+                        for (const file of files) {
+
+                            const compact =
+                                await createCompactCoverDataUrl(
+                                    file
+                                );
+
+                            if (compact) {
+                                productDetailsPhotoDraft.push(
+                                    compact
+                                );
+                            }
+
+                        }
+
+                        productDetailsPhotoInput.value =
+                            '';
+
+                        renderCreatedProductPhotos(
+                            product
+                        );
+
+                    }
+                );
+
+
+                function productDetailsGroupLabel(
+                    group
+                ) {
+
+                    const labels = {
+                        variations:
+                            'Variations',
+                        colors:
+                            'Colors',
+                        sizes:
+                            'Sizes'
+                    };
+
+                    return labels[group] ||
+                        createdProductLabelFromKey(
+                            group
+                        );
+
+                }
+
+
+
+                function resolveProductPricingMode(
+                    product
+                ) {
+
+                    if (!product) {
+                        return 'fixed';
+                    }
+
+                    const connectedVariants =
+                        Array.isArray(
+                            product.connectedVariants
+                        )
+                            ? product.connectedVariants
+                            : Array.isArray(
+                                product.connected_variants
+                            )
+                                ? product.connected_variants
+                                : [];
+
+                    /*
+                     * Add Product writes pricing_mode into every grouped row.
+                     * Prefer that exact saved value over old/local fallbacks.
+                     */
+                    const connectedMode =
+                        connectedVariants
+                            .map(
+                                function (variant) {
+                                    return String(
+                                        variant?.pricing_mode ??
+                                        variant?.pricingMode ??
+                                        ''
+                                    )
+                                    .trim()
+                                    .toLowerCase();
+                                }
+                            )
+                            .find(
+                                function (mode) {
+                                    return [
+                                        'varies',
+                                        'variable',
+                                        'price varies',
+                                        'price_varies',
+                                        'variable_price',
+                                        'fixed',
+                                        'fixed price',
+                                        'fixed_price'
+                                    ].includes(mode);
+                                }
+                            );
+
+                    if (
+                        [
+                            'varies',
+                            'variable',
+                            'price varies',
+                            'price_varies',
+                            'variable_price'
+                        ].includes(
+                            connectedMode
+                        )
+                    ) {
+                        return 'varies';
+                    }
+
+                    if (
+                        [
+                            'fixed',
+                            'fixed price',
+                            'fixed_price'
+                        ].includes(
+                            connectedMode
+                        )
+                    ) {
+                        return 'fixed';
+                    }
+
+                    const rawMode =
+                        String(
+                            product.listingSnapshot?.originalPricingMode ??
+                            product.listingSnapshot?.pricingMode ??
+                            product.listingSnapshot?.pricing_mode ??
+                            product.pricingMode ??
+                            product.pricing_mode ??
+                            product.pricingType ??
+                            product.pricing_type ??
+                            product.priceType ??
+                            product.price_type ??
+                            ''
+                        )
+                        .trim()
+                        .toLowerCase();
+
+                    if (
+                        [
+                            'varies',
+                            'variable',
+                            'price varies',
+                            'price_varies',
+                            'variable_price'
+                        ].includes(rawMode)
+                    ) {
+                        return 'varies';
+                    }
+
+                    if (
+                        [
+                            'fixed',
+                            'fixed price',
+                            'fixed_price'
+                        ].includes(rawMode)
+                    ) {
+                        return 'fixed';
+                    }
+
+                    const optionGroups = [
+                        'variations',
+                        'colors',
+                        'sizes'
+                    ];
+
+                    const hasBaseTaggedOption =
+                        optionGroups.some(
+                            function (group) {
+
+                                return (
+                                    Array.isArray(
+                                        product[group]
+                                    ) &&
+                                    product[group].some(
+                                        function (item) {
+
+                                            const type =
+                                                String(
+                                                    item?.priceType ??
+                                                    item?.price_type ??
+                                                    ''
+                                                )
+                                                .trim()
+                                                .toLowerCase();
+
+                                            return (
+                                                type === 'base' ||
+                                                type === 'primary'
+                                            );
+                                        }
+                                    )
+                                );
+
+                            }
+                        );
+
+                    if (hasBaseTaggedOption) {
+                        return 'varies';
+                    }
+
+                    const hasConnectedPricingSource =
+                        connectedVariants.some(
+                            function (variant) {
+                                return Boolean(
+                                    String(
+                                        variant?.pricing_source ??
+                                        variant?.pricingSource ??
+                                        ''
+                                    ).trim()
+                                );
+                            }
+                        );
+
+                    if (hasConnectedPricingSource) {
+                        return 'varies';
+                    }
+
+                    return 'fixed';
+
+                }
+
+
+                function resolveProductPricingSource(
+                    product
+                ) {
+
+                    if (!product) {
+                        return '';
+                    }
+
+                    const aliases = {
+                        variation:
+                            'variations',
+                        variations:
+                            'variations',
+                        color:
+                            'colors',
+                        colours:
+                            'colors',
+                        colour:
+                            'colors',
+                        colors:
+                            'colors',
+                        size:
+                            'sizes',
+                        sizes:
+                            'sizes'
+                    };
+
+                    const connectedVariants =
+                        Array.isArray(
+                            product.connectedVariants
+                        )
+                            ? product.connectedVariants
+                            : Array.isArray(
+                                product.connected_variants
+                            )
+                                ? product.connected_variants
+                                : [];
+
+                    /*
+                     * Exact source saved by Add Product on the grouped rows.
+                     */
+                    const connectedSource =
+                        connectedVariants
+                            .map(
+                                function (variant) {
+                                    return String(
+                                        variant?.pricing_source ??
+                                        variant?.pricingSource ??
+                                        ''
+                                    )
+                                    .trim()
+                                    .toLowerCase();
+                                }
+                            )
+                            .find(
+                                function (source) {
+                                    return Boolean(
+                                        aliases[source]
+                                    );
+                                }
+                            );
+
+                    if (
+                        connectedSource &&
+                        aliases[connectedSource]
+                    ) {
+                        return aliases[
+                            connectedSource
+                        ];
+                    }
+
+                    const rawSource =
+                        String(
+                            product.listingSnapshot?.originalPricingSource ??
+                            product.listingSnapshot?.pricingSource ??
+                            product.listingSnapshot?.pricing_source ??
+                            product.pricingSource ??
+                            product.pricing_source ??
+                            product.basePriceSource ??
+                            product.base_price_source ??
+                            product.priceSource ??
+                            product.price_source ??
+                            ''
+                        )
+                        .trim()
+                        .toLowerCase();
+
+                    if (aliases[rawSource]) {
+                        return aliases[
+                            rawSource
+                        ];
+                    }
+
+                    const optionGroups = [
+                        'variations',
+                        'colors',
+                        'sizes'
+                    ];
+
+                    const taggedGroup =
+                        optionGroups.find(
+                            function (group) {
+
+                                const items =
+                                    Array.isArray(
+                                        product[group]
+                                    )
+                                        ? product[group]
+                                        : [];
+
+                                return items.some(
+                                    function (item) {
+
+                                        const type =
+                                            String(
+                                                item?.priceType ??
+                                                item?.price_type ??
+                                                ''
+                                            )
+                                            .trim()
+                                            .toLowerCase();
+
+                                        return (
+                                            type === 'base' ||
+                                            type === 'primary'
+                                        );
+                                    }
+                                );
+
+                            }
+                        );
+
+                    if (taggedGroup) {
+                        return taggedGroup;
+                    }
+
+                    const pricedGroup =
+                        optionGroups.find(
+                            function (group) {
+
+                                const items =
+                                    Array.isArray(
+                                        product[group]
+                                    )
+                                        ? product[group]
+                                        : [];
+
+                                return items.some(
+                                    function (item) {
+
+                                        return (
+                                            Number(
+                                                item?.price ??
+                                                item?.base_price ??
+                                                item?.basePrice ??
+                                                0
+                                            ) > 0
+                                        );
+
+                                    }
+                                );
+
+                            }
+                        );
+
+                    return pricedGroup ||
+                        '';
+
+                }
+
+
+                function productDetailsLowestBasePrice(
+                    product
+                ) {
+
+                    const mode =
+                        resolveProductPricingMode(
+                            product
+                        );
+
+                    if (mode !== 'varies') {
+
+                        return Number(
+                            product?.basePrice ??
+                            product?.base_price ??
+                            product?.price ??
+                            0
+                        );
+
+                    }
+
+                    const source =
+                        resolveProductPricingSource(
+                            product
+                        );
+
+                    const items =
+                        source &&
+                        Array.isArray(product?.[source])
+                            ? product[source]
+                            : [];
+
+                    const prices =
+                        items
+                            .map(
+                                function (item) {
+
+                                    return Number(
+                                        item?.basePrice ??
+                                        item?.base_price ??
+                                        item?.price ??
+                                        0
+                                    );
+
+                                }
+                            )
+                            .filter(
+                                function (value) {
+                                    return (
+                                        Number.isFinite(value) &&
+                                        value >= 0
+                                    );
+                                }
+                            );
+
+                    return prices.length
+                        ? Math.min(...prices)
+                        : Number(
+                            product?.basePrice ??
+                            product?.base_price ??
+                            product?.price ??
+                            0
+                        );
+
+                }
+
+
+                function productDetailsConnectedChoice(
+                    variant,
+                    group
+                ) {
+
+                    if (!variant) {
+                        return '';
+                    }
+
+                    const singular = {
+                        variations:
+                            'variation',
+                        colors:
+                            'color',
+                        sizes:
+                            'size'
+                    }[group];
+
+                    return (
+                        variant[group] ??
+                        variant[singular] ??
+                        variant?.choices?.[group] ??
+                        variant?.choices?.[singular] ??
+                        ''
+                    );
+
+                }
+
+
+                function productDetailsResolvePhoto(
+                    value
+                ) {
+
+                    const raw =
+                        String(
+                            value ||
+                            ''
+                        ).trim();
+
+                    if (!raw) {
+                        return '';
+                    }
+
+                    if (
+                        raw.startsWith('http') ||
+                        raw.startsWith('data:') ||
+                        raw.startsWith('blob:')
+                    ) {
+                        return raw;
+                    }
+
+                    const storageBase =
+                        String(
+                            inventoryConfig.storageUrl ||
+                            ''
+                        ).replace(
+                            /\/+$/,
+                            ''
+                        );
+
+                    const relative =
+                        raw
+                            .replace(
+                                /^\/+/,
+                                ''
+                            )
+                            .replace(
+                                /^storage\//,
+                                ''
+                            );
+
+                    return storageBase
+                        ? `${storageBase}/${relative}`
+                        : `/${relative}`;
+
+                }
+
+
+                function productDetailsVariantPhoto(
+                    variant
+                ) {
+
+                    return productDetailsResolvePhoto(
+                        variant?.photoData ||
+                        variant?.photo_data ||
+                        variant?.photoUrl ||
+                        variant?.photo_url ||
+                        variant?.image ||
+                        variant?.image_url ||
+                        variant?.photo ||
+                        ''
+                    );
+
+                }
+
+
+
+                function ensureProductHistoryArrays(product) {
+
+                    if (!product) {
+                        return;
+                    }
+
+                    if (!Array.isArray(product.stockHistory)) {
+                        product.stockHistory = [];
+                    }
+
+                    if (!Array.isArray(product.priceHistory)) {
+                        product.priceHistory = [];
+                    }
+
+                }
+
+
+                function currentProductPriceNumber(
+                    product
+                ) {
+
+                    if (!product) {
+                        return 0;
+                    }
+
+                    if (
+                        resolveProductPricingMode(
+                            product
+                        ) !== 'varies'
+                    ) {
+
+                        return Math.max(
+                            0,
+                            Number(
+                                product.basePrice ??
+                                product.base_price ??
+                                product.listingSnapshot?.basePrice ??
+                                product.listingSnapshot?.base_price ??
+                                product.price ??
+                                0
+                            ) || 0
+                        );
+
+                    }
+
+                    const connectedVariants =
+                        Array.isArray(
+                            product.connectedVariants
+                        )
+                            ? product.connectedVariants
+                            : Array.isArray(
+                                product.connected_variants
+                            )
+                                ? product.connected_variants
+                                : [];
+
+                    const finalPrices =
+                        connectedVariants
+                            .filter(
+                                function (variant) {
+                                    return (
+                                        variant?.available !==
+                                        false
+                                    );
+                                }
+                            )
+                            .map(
+                                function (variant) {
+                                    return calculateConnectedVariantFullPrice(
+                                        product,
+                                        variant
+                                    );
+                                }
+                            )
+                            .filter(
+                                function (price) {
+                                    return (
+                                        Number.isFinite(
+                                            price
+                                        ) &&
+                                        price >= 0
+                                    );
+                                }
+                            );
+
+                    if (finalPrices.length) {
+
+                        return Math.min(
+                            ...finalPrices
+                        );
+
+                    }
+
+                    return productDetailsLowestBasePrice(
+                        product
+                    );
+
+                }
+
+
+                function productDetailsBreakdownLine(
+                    product,
+                    variant
+                ) {
+
+                    if (!product || !variant) {
+                        return '';
+                    }
+
+                    const mode =
+                        resolveProductPricingMode(
+                            product
+                        );
+
+                    const source =
+                        resolveProductPricingSource(
+                            product
+                        );
+
+                    const order = [
+                        'variations',
+                        'colors',
+                        'sizes'
+                    ];
+
+                    const labels = {
+                        variations:
+                            'Variation',
+                        colors:
+                            'Color',
+                        sizes:
+                            'Size'
+                    };
+
+                    const additions =
+                        variant?.additions ||
+                        {};
+
+                    return order
+                        .map(
+                            function (group) {
+
+                                const choice =
+                                    productDetailsConnectedChoice(
+                                        variant,
+                                        group
+                                    );
+
+                                if (!choice) {
+                                    return null;
+                                }
+
+                                if (mode === 'fixed') {
+
+                                    return `${labels[group]} ${choice}: ${formatMoney(
+                                        Number(
+                                            product.basePrice ||
+                                            variant.base_price ||
+                                            0
+                                        )
+                                    )}`;
+
+                                }
+
+                                if (group === source) {
+
+                                    const items =
+                                        Array.isArray(
+                                            product?.[group]
+                                        )
+                                            ? product[group]
+                                            : [];
+
+                                    const entry =
+                                        items.find(
+                                            function (item) {
+                                                return (
+                                                    String(
+                                                        item?.name ||
+                                                        ''
+                                                    ) ===
+                                                    String(choice)
+                                                );
+                                            }
+                                        );
+
+                                    const amount =
+                                        Number(
+                                            variant.base_price ??
+                                            variant.basePrice ??
+                                            entry?.price ??
+                                            entry?.base_price ??
+                                            entry?.basePrice ??
+                                            0
+                                        );
+
+                                    return `${labels[group]} ${choice}: ${formatMoney(
+                                        amount
+                                    )}`;
+
+                                }
+
+                                const amount =
+                                    Number(
+                                        additions?.[group] ??
+                                        0
+                                    );
+
+                                return `${labels[group]} ${choice}: +${formatMoney(
+                                    amount
+                                )}`;
+
+                            }
+                        )
+                        .filter(Boolean)
+                        .join(' + ');
+
+                }
+
+
+                function setProductDetailsEditMode(
+                    editing
+                ) {
+
+                    productDetailsEditing =
+                        Boolean(editing);
+
+                    const panel =
+                        productDetailsPanel;
+
+                    panel?.classList.toggle(
+                        'product-details-edit-mode',
+                        productDetailsEditing
+                    );
+
+                    panel?.classList.toggle(
+                        'product-details-view-mode',
+                        !productDetailsEditing
+                    );
+
+                    const product =
+                        getCreatedProductFromRow(
+                            currentProductRow
+                        );
+
+                    const controls = [
+                        productDetailsName,
+                        productDetailsSku,
+                        productDetailsPricingMode,
+                        productDetailsPricingSource,
+                        productDetailsPrice,
+                        productDescription
+                    ];
+
+                    if (productDetailsCategory) {
+                        productDetailsCategory.disabled =
+                            true;
+                    }
+
+                    controls.forEach(
+                        function (control) {
+
+                            if (!control) {
+                                return;
+                            }
+
+                            if (
+                                control.tagName === 'SELECT'
+                            ) {
+                                control.disabled =
+                                    !productDetailsEditing;
+                            } else {
+                                control.readOnly =
+                                    !productDetailsEditing;
+                            }
+
+                        }
+                    );
+
+                    /*
+                     * Price Varies is computed from base-price choices.
+                     * Keep the headline price readonly even in edit mode.
+                     */
+                    if (
+                        productDetailsEditing &&
+                        product &&
+                        resolveProductPricingMode(
+                            product
+                        ) === 'varies' &&
+                        productDetailsPrice
+                    ) {
+                        productDetailsPrice.readOnly =
+                            true;
+                    }
+
+                    productDetailsSpecifications
+                        ?.querySelectorAll(
+                            'input, select, textarea'
+                        )
+                        .forEach(
+                            function (control) {
+
+                                if (
+                                    control.tagName ===
+                                    'SELECT'
+                                ) {
+                                    control.disabled =
+                                        !productDetailsEditing;
+                                } else {
+                                    control.readOnly =
+                                        !productDetailsEditing;
+                                }
+
+                            }
+                        );
+
+                    productDetailsBuyerOptions
+                        ?.querySelectorAll(
+                            'input:not([data-variant-stock-input]), select, textarea'
+                        )
+                        .forEach(
+                            function (control) {
+
+                                if (
+                                    control.tagName ===
+                                    'SELECT'
+                                ) {
+                                    control.disabled =
+                                        !productDetailsEditing;
+                                } else {
+                                    control.readOnly =
+                                        !productDetailsEditing;
+                                }
+
+                            }
+                        );
+
+                    if (saveProductChanges) {
+                        saveProductChanges.textContent =
+                            productDetailsEditing
+                                ? 'Save changes'
+                                : 'Edit product';
+                    }
+
+                    if (!productDetailsEditing) {
+                        productDetailsPhotoDraft =
+                            null;
+                    }
+
+                    if (
+                        productDetailsEditing &&
+                        product
+                    ) {
+
+                        productDetailsPhotoDraft =
+                            (
+                                Array.isArray(
+                                    product.photos
+                                )
+                                    ? product.photos
+                                    : []
+                            ).slice();
+
+                        renderCreatedProductPhotos(
+                            product
+                        );
+
+                        productDetailsPriceSnapshot = {
+                            value:
+                                currentProductPriceNumber(
+                                    product
+                                ),
+                            pricingMode:
+                                resolveProductPricingMode(
+                                    product
+                                ),
+                            pricingSource:
+                                resolveProductPricingSource(
+                                    product
+                                )
+                        };
+                    }
+
+                }
+
+
+                function renderProductStockHistory(
+                    product
+                ) {
+
+                    if (!productDetailsStockHistory) {
+                        return;
+                    }
+
+                    productDetailsStockHistory.innerHTML =
+                        '';
+
+                    ensureProductHistoryArrays(
+                        product
+                    );
+
+                    const history =
+                        product?.stockHistory ||
+                        [];
+
+                    const header =
+                        document.createElement(
+                            'div'
+                        );
+
+                    header.className =
+                        'product-details-history-row is-header';
+
+                    header.innerHTML =
+                        '<span>When / by</span><span>Movement</span><span>Before → after</span>';
+
+                    productDetailsStockHistory.appendChild(
+                        header
+                    );
+
+                    if (!history.length) {
+
+                        const empty =
+                            document.createElement(
+                                'div'
+                            );
+
+                        empty.className =
+                            'product-details-history-empty';
+
+                        empty.textContent =
+                            'No stock movement has been recorded yet.';
+
+                        productDetailsStockHistory.appendChild(
+                            empty
+                        );
+
+                        return;
+                    }
+
+                    [...history]
+                        .reverse()
+                        .forEach(
+                            function (entry) {
+
+                                const row =
+                                    document.createElement(
+                                        'div'
+                                    );
+
+                                row.className =
+                                    'product-details-history-row';
+
+                                row.innerHTML =
+                                    `
+                                        <div>
+                                            <strong>${escapeHtml(
+                                                formatCreatedProductDate(
+                                                    entry.at
+                                                )
+                                            )}</strong>
+                                            <small>${escapeHtml(
+                                                entry.by ||
+                                                'Seller'
+                                            )}</small>
+                                        </div>
+                                        <div>
+                                            <strong>${escapeHtml(
+                                                entry.label ||
+                                                'Stock update'
+                                            )}</strong>
+                                            <small>${escapeHtml(
+                                                entry.variant ||
+                                                ''
+                                            )}</small>
+                                        </div>
+                                        <div>
+                                            <strong>${Number(
+                                                entry.before ||
+                                                0
+                                            ).toLocaleString('en-PH')} → ${Number(
+                                                entry.after ||
+                                                0
+                                            ).toLocaleString('en-PH')}</strong>
+                                        </div>
+                                    `;
+
+                                productDetailsStockHistory.appendChild(
+                                    row
+                                );
+
+                            }
+                        );
+
+                }
+
+
+                function renderProductPriceHistory(
+                    product
+                ) {
+
+                    if (!productDetailsPriceHistory) {
+                        return;
+                    }
+
+                    productDetailsPriceHistory.innerHTML =
+                        '';
+
+                    ensureProductHistoryArrays(
+                        product
+                    );
+
+                    const history =
+                        product?.priceHistory ||
+                        [];
+
+                    const header =
+                        document.createElement(
+                            'div'
+                        );
+
+                    header.className =
+                        'product-details-history-row is-header';
+
+                    header.innerHTML =
+                        '<span>When / by</span><span>Price change</span><span>Before → after</span>';
+
+                    productDetailsPriceHistory.appendChild(
+                        header
+                    );
+
+                    if (!history.length) {
+
+                        const empty =
+                            document.createElement(
+                                'div'
+                            );
+
+                        empty.className =
+                            'product-details-history-empty';
+
+                        empty.textContent =
+                            'No price change has been recorded yet.';
+
+                        productDetailsPriceHistory.appendChild(
+                            empty
+                        );
+
+                        return;
+                    }
+
+                    [...history]
+                        .reverse()
+                        .forEach(
+                            function (entry) {
+
+                                const row =
+                                    document.createElement(
+                                        'div'
+                                    );
+
+                                row.className =
+                                    'product-details-history-row';
+
+                                row.innerHTML =
+                                    `
+                                        <div>
+                                            <strong>${escapeHtml(
+                                                formatCreatedProductDate(
+                                                    entry.at
+                                                )
+                                            )}</strong>
+                                            <small>${escapeHtml(
+                                                entry.by ||
+                                                'Seller'
+                                            )}</small>
+                                        </div>
+                                        <div>
+                                            <strong>${escapeHtml(
+                                                entry.label ||
+                                                'Price updated'
+                                            )}</strong>
+                                            <small>${escapeHtml(
+                                                entry.note ||
+                                                ''
+                                            )}</small>
+                                        </div>
+                                        <div>
+                                            <strong>${formatMoney(
+                                                entry.before ||
+                                                0
+                                            )} → ${formatMoney(
+                                                entry.after ||
+                                                0
+                                            )}</strong>
+                                        </div>
+                                    `;
+
+                                productDetailsPriceHistory.appendChild(
+                                    row
+                                );
+
+                            }
+                        );
+
+                }
+
+
                 function renderCreatedBuyerOptions(
                     product
                 ) {
@@ -4557,143 +6045,566 @@ document.addEventListener(
                     productDetailsBuyerOptions.innerHTML =
                         '';
 
-                    const connectedVariants =
-                        Array.isArray(product.connectedVariants)
-                            ? product.connectedVariants
-                            : Array.isArray(product.connected_variants)
-                                ? product.connected_variants
-                                : [];
-
-                    if (connectedVariants.length) {
-                        const groupLabels = {
-                            variations: 'Variation',
-                            colors: 'Color',
-                            sizes: 'Size'
-                        };
-                        const rows = connectedVariants.map(
-                            function (variant) {
-                                const choices = Object.entries(groupLabels)
-                                    .filter(([key]) => variant[key])
-                                    .map(([key, label]) => `${label}: ${variant[key]}`)
-                                    .join(' · ');
-                                const availability = variant.available === false
-                                    ? ' — Unavailable'
-                                    : '';
-
-                                return `${choices} — ${formatMoney(variant.final_price)} — Stock: ${Number(variant.stock || 0)}${availability}`;
-                            }
-                        );
-
-                        productDetailsBuyerOptions.appendChild(
-                            makeCreatedDetailItem(
-                                'Connected Variants',
-                                rows,
-                                true
-                            )
-                        );
-
-                        productDetailsBuyerOptionsSection.classList.remove(
-                            'hidden'
-                        );
-
-                        return;
-                    }
-
                     const groups = [
                         {
-                            label:
-                                'Variations',
                             key:
-                                'variations'
+                                'variations',
+                            label:
+                                'Variation'
                         },
                         {
-                            label:
-                                'Colors',
                             key:
-                                'colors'
+                                'colors',
+                            label:
+                                'Color'
                         },
                         {
-                            label:
-                                'Sizes',
                             key:
-                                'sizes'
+                                'sizes',
+                            label:
+                                'Size'
                         }
                     ];
 
-                    let hasAny =
-                        false;
+                    const connectedVariants =
+                        Array.isArray(
+                            product?.connectedVariants
+                        )
+                            ? product.connectedVariants
+                            : Array.isArray(
+                                product?.connected_variants
+                            )
+                                ? product.connected_variants
+                                : [];
 
-                    groups.forEach(
-                        function (group) {
+                    if (productDetailsVariationCount) {
+                        productDetailsVariationCount.textContent =
+                            String(
+                                connectedVariants.length
+                            );
+                    }
 
-                            const values =
-                                Array.isArray(
-                                    product[group.key]
-                                )
-                                    ? product[group.key]
-                                    : [];
-
-                            if (!values.length) {
-                                return;
+                    const activeGroups =
+                        groups.filter(
+                            function (group) {
+                                return (
+                                    Array.isArray(
+                                        product?.[group.key]
+                                    ) &&
+                                    product[group.key].length
+                                );
                             }
+                        );
 
-                            hasAny =
-                                true;
+                    const variationStats =
+                        document.createElement(
+                            'div'
+                        );
 
-                            const rows =
-                                values.map(
-                                    function (entry) {
+                    variationStats.className =
+                        'product-details-variation-stats';
 
-                                        const numericPrice =
-                                            Number(
-                                                entry.price ||
-                                                0
-                                            );
+                    const outOfStockCount =
+                        connectedVariants.filter(
+                            function (variant) {
+                                return (
+                                    Number(
+                                        variant?.stock ||
+                                        0
+                                    ) <= 0
+                                );
+                            }
+                        ).length;
 
-                                        const priceText =
-                                            product.pricingMode ===
-                                                'varies'
-                                                ? (
-                                                    entry.priceType ===
-                                                        'base'
-                                                        ? formatMoney(
-                                                            numericPrice
-                                                        )
-                                                        : `+${formatMoney(
-                                                            numericPrice
-                                                        )}`
-                                                )
-                                                : '';
+                    [
+                        {
+                            label:
+                                'Variation types',
+                            value:
+                                activeGroups.length
+                        },
+                        {
+                            label:
+                                'Combinations',
+                            value:
+                                connectedVariants.length
+                        },
+                        {
+                            label:
+                                'Total stock',
+                            value:
+                                Number(
+                                    product?.stock ||
+                                    0
+                                )
+                        },
+                        {
+                            label:
+                                'Out of stock',
+                            value:
+                                outOfStockCount
+                        }
+                    ].forEach(
+                        function (item) {
 
-                                        const photoNote =
-                                            entry.photoData || entry.photo
-                                                ? ' 📷'
-                                                : '';
-
-                                        const stockText =
-                                            `Stock: ${Number(entry.stock || 0)}`;
-
-                                        return priceText
-                                            ? `${entry.name}${photoNote} — ${priceText} — ${stockText}`
-                                            : `${entry.name}${photoNote} — ${stockText}`;
-
-                                    }
+                            const card =
+                                document.createElement(
+                                    'div'
                                 );
 
-                            productDetailsBuyerOptions.appendChild(
-                                makeCreatedDetailItem(
-                                    group.label,
-                                    rows,
-                                    true
-                                )
+                            card.className =
+                                'product-details-stat-card';
+
+                            const statLabel =
+                                document.createElement(
+                                    'span'
+                                );
+
+                            statLabel.textContent =
+                                item.label;
+
+                            const statValue =
+                                document.createElement(
+                                    'strong'
+                                );
+
+                            statValue.textContent =
+                                Number(
+                                    item.value ||
+                                    0
+                                ).toLocaleString(
+                                    'en-PH'
+                                );
+
+                            card.append(
+                                statLabel,
+                                statValue
+                            );
+
+                            variationStats.appendChild(
+                                card
                             );
 
                         }
                     );
 
+                    productDetailsBuyerOptions.appendChild(
+                        variationStats
+                    );
+
+
+                    activeGroups.forEach(
+                        function (group) {
+
+                            const line =
+                                document.createElement(
+                                    'div'
+                                );
+
+                            line.className =
+                                'product-details-choice-line';
+
+                            const label =
+                                document.createElement(
+                                    'strong'
+                                );
+
+                            label.textContent =
+                                group.label;
+
+                            const choices =
+                                document.createElement(
+                                    'div'
+                                );
+
+                            choices.className =
+                                'product-details-choice-pills';
+
+                            product[group.key].forEach(
+                                function (
+                                    item,
+                                    index
+                                ) {
+
+                                    const display =
+                                        document.createElement(
+                                            'span'
+                                        );
+
+                                    display.className =
+                                        'product-details-choice-view product-details-view-value';
+
+                                    display.textContent =
+                                        item?.name ||
+                                        '—';
+
+                                    const input =
+                                        document.createElement(
+                                            'input'
+                                        );
+
+                                    input.type =
+                                        'text';
+
+                                    input.value =
+                                        item?.name ||
+                                        '';
+
+                                    input.dataset.productOptionName =
+                                        'true';
+
+                                    input.dataset.optionGroup =
+                                        group.key;
+
+                                    input.dataset.optionIndex =
+                                        String(index);
+
+                                    input.dataset.originalName =
+                                        item?.name ||
+                                        '';
+
+                                    input.className =
+                                        'product-details-choice-edit product-details-edit-control';
+
+                                    input.addEventListener(
+                                        'input',
+                                        function () {
+                                            display.textContent =
+                                                input.value ||
+                                                '—';
+                                        }
+                                    );
+
+                                    choices.append(
+                                        display,
+                                        input
+                                    );
+
+                                }
+                            );
+
+                            line.append(
+                                label,
+                                choices
+                            );
+
+                            productDetailsBuyerOptions.appendChild(
+                                line
+                            );
+
+                        }
+                    );
+
+                    const list =
+                        document.createElement(
+                            'div'
+                        );
+
+                    list.className =
+                        'product-details-variant-card-list';
+
+                    connectedVariants.forEach(
+                        function (
+                            variant,
+                            index
+                        ) {
+
+                            const card =
+                                document.createElement(
+                                    'article'
+                                );
+
+                            card.className =
+                                'product-details-variant-card';
+
+                            card.dataset.variantIndex =
+                                String(index);
+
+                            const identity =
+                                activeGroups
+                                    .map(
+                                        function (group) {
+                                            return productDetailsConnectedChoice(
+                                                variant,
+                                                group.key
+                                            );
+                                        }
+                                    )
+                                    .filter(Boolean);
+
+                            const title =
+                                identity.join(
+                                    ' / '
+                                ) ||
+                                `Variant ${index + 1}`;
+
+                            const photo =
+                                productDetailsVariantPhoto(
+                                    variant
+                                );
+
+                            const finalPrice =
+                                Number(
+                                    variant?.final_price ??
+                                    variant?.finalPrice ??
+                                    0
+                                );
+
+                            const stock =
+                                Number(
+                                    variant?.stock ||
+                                    0
+                                );
+
+                            const breakdown =
+                                productDetailsBreakdownLine(
+                                    product,
+                                    variant
+                                );
+
+                            card.innerHTML =
+                                `
+                                    <div class="product-details-variant-thumb">
+                                        ${
+                                            photo
+                                                ? `<img src="${escapeHtml(photo)}" alt="">`
+                                                : '<span></span>'
+                                        }
+                                    </div>
+
+                                    <div class="product-details-variant-copy">
+                                        <strong>${escapeHtml(title)}</strong>
+                                        <span class="product-details-variant-breakdown">${escapeHtml(
+                                            breakdown
+                                        )}</span>
+                                    </div>
+
+                                    <div class="product-details-variant-number">
+                                        <span>Price</span>
+                                        <strong>${formatMoney(
+                                            finalPrice
+                                        )}</strong>
+                                    </div>
+
+                                    <div class="product-details-variant-number product-details-variant-stock-cell">
+                                        <span>Stock</span>
+                                        <strong data-variant-stock-text>${stock.toLocaleString(
+                                            'en-PH'
+                                        )}</strong>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value="${stock}"
+                                            data-variant-stock-input
+                                            disabled
+                                        >
+                                    </div>
+
+                                    <div class="product-details-variant-actions">
+                                        <span class="product-details-variant-status ${
+                                            stock > 0
+                                                ? 'is-stock'
+                                                : 'is-out'
+                                        }">
+                                            ${
+                                                stock > 0
+                                                    ? 'In Stock'
+                                                    : 'Out of Stock'
+                                            }
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            class="product-details-inline-restock"
+                                            data-inline-restock
+                                        >
+                                            Restock
+                                        </button>
+                                    </div>
+                                `;
+
+                            const restockButton =
+                                card.querySelector(
+                                    '[data-inline-restock]'
+                                );
+
+                            const stockInput =
+                                card.querySelector(
+                                    '[data-variant-stock-input]'
+                                );
+
+                            restockButton?.addEventListener(
+                                'click',
+                                function () {
+
+                                    const isEditing =
+                                        card.classList.toggle(
+                                            'is-restocking'
+                                        );
+
+                                    stockInput.disabled =
+                                        !isEditing;
+
+                                    restockButton.textContent =
+                                        isEditing
+                                            ? 'Save'
+                                            : 'Restock';
+
+                                    if (isEditing) {
+
+                                        stockInput.focus();
+                                        stockInput.select();
+                                        return;
+
+                                    }
+
+                                    const productNow =
+                                        getCreatedProductFromRow(
+                                            currentProductRow
+                                        );
+
+                                    if (!productNow) {
+                                        return;
+                                    }
+
+                                    const variants =
+                                        Array.isArray(
+                                            productNow.connectedVariants
+                                        )
+                                            ? productNow.connectedVariants
+                                            : [];
+
+                                    const target =
+                                        variants[index];
+
+                                    if (!target) {
+                                        return;
+                                    }
+
+                                    const before =
+                                        Math.max(
+                                            0,
+                                            Number(
+                                                target.stock ||
+                                                0
+                                            )
+                                        );
+
+                                    const after =
+                                        Math.max(
+                                            0,
+                                            Math.floor(
+                                                Number(
+                                                    stockInput.value ||
+                                                    0
+                                                )
+                                            )
+                                        );
+
+                                    target.stock =
+                                        after;
+
+                                    ensureProductHistoryArrays(
+                                        productNow
+                                    );
+
+                                    if (before !== after) {
+
+                                        productNow.stockHistory.push(
+                                            {
+                                                at:
+                                                    new Date().toISOString(),
+                                                by:
+                                                    'Seller',
+                                                label:
+                                                    after > before
+                                                        ? `Restock: +${after - before}`
+                                                        : `Stock correction: ${after - before}`,
+                                                variant:
+                                                    title,
+                                                before,
+                                                after
+                                            }
+                                        );
+
+                                    }
+
+                                    productNow.stock =
+                                        variants.reduce(
+                                            function (
+                                                total,
+                                                entry
+                                            ) {
+                                                return (
+                                                    total +
+                                                    Math.max(
+                                                        0,
+                                                        Number(
+                                                            entry?.stock ||
+                                                            0
+                                                        )
+                                                    )
+                                                );
+                                            },
+                                            0
+                                        );
+
+                                    productNow.updatedAt =
+                                        new Date().toISOString();
+
+                                    saveCreatedProducts();
+
+                                    updateProductRowAfterStockSave(
+                                        productNow
+                                    );
+
+                                    renderCreatedBuyerOptions(
+                                        productNow
+                                    );
+
+                                    renderProductStockHistory(
+                                        productNow
+                                    );
+
+                                    if (
+                                        productDetailsStockDisplay
+                                    ) {
+                                        productDetailsStockDisplay.textContent =
+                                            `${Number(
+                                                productNow.stock ||
+                                                0
+                                            ).toLocaleString(
+                                                'en-PH'
+                                            )} units`;
+                                    }
+
+                                    showInventoryFlash(
+                                        'Variant stock updated.'
+                                    );
+
+                                }
+                            );
+
+                            list.appendChild(
+                                card
+                            );
+
+                        }
+                    );
+
+                    productDetailsBuyerOptions.appendChild(
+                        list
+                    );
+
                     productDetailsBuyerOptionsSection.classList.toggle(
                         'hidden',
-                        !hasAny
+                        !activeGroups.length &&
+                        !connectedVariants.length
+                    );
+
+                    setProductDetailsEditMode(
+                        productDetailsEditing
                     );
 
                 }
@@ -4709,12 +6620,20 @@ document.addEventListener(
                     const labels =
                         {};
 
+                    const snapshotDisplay =
+                        Array.isArray(
+                            product?.listingSnapshot?.specificationDisplay
+                        )
+                            ? product.listingSnapshot.specificationDisplay
+                            : [];
+
                     const source =
                         Array.isArray(
                             product?.specificationDisplay
-                        )
+                        ) &&
+                        product.specificationDisplay.length
                             ? product.specificationDisplay
-                            : [];
+                            : snapshotDisplay;
 
                     source.forEach(
                         function (item) {
@@ -4733,6 +6652,48 @@ document.addEventListener(
                                 createdProductLabelFromKey(
                                     item.key
                                 );
+
+                        }
+                    );
+
+                    Object.entries(
+                        product?.listingSnapshot?.specifications ||
+                        {}
+                    ).forEach(
+                        function ([
+                            rawKey,
+                            value
+                        ]) {
+
+                            const key =
+                                String(
+                                    rawKey
+                                )
+                                .replace(
+                                    /^category_specifications\[/,
+                                    ''
+                                )
+                                .replace(
+                                    /\]$/,
+                                    ''
+                                );
+
+                            if (
+                                draft[key] ===
+                                undefined
+                            ) {
+                                draft[key] =
+                                    normalizeOptionalProductValue(
+                                        value
+                                    );
+                            }
+
+                            if (!labels[key]) {
+                                labels[key] =
+                                    createdProductLabelFromKey(
+                                        key
+                                    );
+                            }
 
                         }
                     );
@@ -4988,6 +6949,12 @@ document.addEventListener(
                                     field.key
                                 );
 
+                            displayValue.textContent =
+                                normalizeOptionalProductValue(
+                                    control.value
+                                ) ||
+                                '—';
+
                         };
 
                     control.addEventListener(
@@ -5000,8 +6967,28 @@ document.addEventListener(
                         updateDraft
                     );
 
+                    const displayValue =
+                        document.createElement(
+                            type === 'textarea'
+                                ? 'div'
+                                : 'strong'
+                        );
+
+                    displayValue.className =
+                        'product-created-spec-display product-details-view-value';
+
+                    displayValue.textContent =
+                        normalizeOptionalProductValue(
+                            value
+                        ) ||
+                        '—';
+
                     wrapper.appendChild(
                         label
+                    );
+
+                    wrapper.appendChild(
+                        displayValue
                     );
 
                     wrapper.appendChild(
@@ -5046,29 +7033,40 @@ document.addEventListener(
                         );
 
                     wrapper.className =
-                        'product-created-spec-field';
+                        'product-created-detail-field product-created-detail-select-field product-details-locked-spec';
 
                     const label =
                         document.createElement(
                             'label'
                         );
 
-                    label.htmlFor =
-                        'detailsSpec_subcategory';
-
                     label.textContent =
                         'Subcategory';
+
+                    const selected =
+                        currentCreatedSpecificationDraft
+                            .subcategory ||
+                        '';
+
+                    const displayValue =
+                        document.createElement(
+                            'strong'
+                        );
+
+                    displayValue.className =
+                        'product-created-spec-display product-details-view-value product-details-locked-value';
+
+                    displayValue.textContent =
+                        selected ||
+                        '—';
 
                     const select =
                         document.createElement(
                             'select'
                         );
 
-                    select.id =
-                        'detailsSpec_subcategory';
-
                     select.className =
-                        'product-created-spec-select';
+                        'product-created-spec-select product-details-locked-control';
 
                     select.dataset.createdSpecKey =
                         'subcategory';
@@ -5076,19 +7074,25 @@ document.addEventListener(
                     select.dataset.createdSpecLabel =
                         'Subcategory';
 
-                    const empty =
+                    select.hidden =
+                        true;
+
+                    select.disabled =
+                        true;
+
+                    const blank =
                         document.createElement(
                             'option'
                         );
 
-                    empty.value =
+                    blank.value =
                         '';
 
-                    empty.textContent =
-                        'Select subcategory';
+                    blank.textContent =
+                        'No subcategory';
 
                     select.appendChild(
-                        empty
+                        blank
                     );
 
                     Object.keys(
@@ -5108,6 +7112,9 @@ document.addEventListener(
                             option.textContent =
                                 subcategory;
 
+                            option.selected =
+                                subcategory === selected;
+
                             select.appendChild(
                                 option
                             );
@@ -5115,43 +7122,9 @@ document.addEventListener(
                         }
                     );
 
-                    select.value =
-                        currentCreatedSpecificationDraft
-                            .subcategory ||
-                        '';
-
-                    select.addEventListener(
-                        'change',
-                        function () {
-
-                            /*
-                             * First collect any unsaved values from the current
-                             * dynamic specification fields, then re-render so
-                             * the newly selected subcategory gets its own fields.
-                             */
-                            collectCreatedSpecificationInputs();
-
-                            currentCreatedSpecificationDraft
-                                .subcategory =
-                                select.value;
-
-                            currentCreatedSpecificationLabels
-                                .subcategory =
-                                'Subcategory';
-
-                            renderCreatedSpecifications(
-                                product,
-                                false
-                            );
-
-                        }
-                    );
-
-                    wrapper.appendChild(
-                        label
-                    );
-
-                    wrapper.appendChild(
+                    wrapper.append(
+                        label,
+                        displayValue,
                         select
                     );
 
@@ -5245,6 +7218,7 @@ document.addEventListener(
                             );
 
                         return;
+
                     }
 
                     productDetailsSpecificationsSection
@@ -5252,47 +7226,76 @@ document.addEventListener(
                             'hidden'
                         );
 
-                    productDetailsSpecifications.appendChild(
-                        makeCreatedSpecificationHeading(
-                            `General ${config.label} Specifications`,
-                            'You can still edit these values before or after product approval.'
-                        )
+                    const columns =
+                        document.createElement(
+                            'div'
+                        );
+
+                    columns.className =
+                        'product-details-spec-columns';
+
+                    const left =
+                        document.createElement(
+                            'section'
+                        );
+
+                    left.className =
+                        'product-details-spec-column';
+
+                    const right =
+                        document.createElement(
+                            'section'
+                        );
+
+                    right.className =
+                        'product-details-spec-column';
+
+                    const leftTitle =
+                        document.createElement(
+                            'h4'
+                        );
+
+                    leftTitle.className =
+                        'product-details-spec-column-title';
+
+                    leftTitle.textContent =
+                        'General Specifications';
+
+                    const selectedSubcategory =
+                        currentCreatedSpecificationDraft
+                            .subcategory ||
+                        '';
+
+                    const rightTitle =
+                        document.createElement(
+                            'h4'
+                        );
+
+                    rightTitle.className =
+                        'product-details-spec-column-title';
+
+                    rightTitle.textContent =
+                        selectedSubcategory
+                            ? `${selectedSubcategory} Specifications`
+                            : 'Category Specifications';
+
+                    left.appendChild(
+                        leftTitle
                     );
 
-                    /*
-                     * Subcategory remains editable. Changing it updates the
-                     * category-specific fields shown underneath.
-                     */
-                    productDetailsSpecifications.appendChild(
+                    right.appendChild(
+                        rightTitle
+                    );
+
+                    left.appendChild(
                         makeCreatedSubcategoryField(
                             product,
                             config
                         )
                     );
 
-                    /*
-                     * Brand / Material / Quantity per Pack / Country of Origin
-                     * already have editable fields in Product Details above,
-                     * so they are not duplicated here.
-                     */
-                    const duplicateCommonKeys =
-                        new Set([
-                            'brand',
-                            'material',
-                            'quantity_per_pack',
-                            'country_of_origin'
-                        ]);
-
                     commonProductSpecificationFields.forEach(
                         function (field) {
-
-                            if (
-                                duplicateCommonKeys.has(
-                                    field.key
-                                )
-                            ) {
-                                return;
-                            }
 
                             const result =
                                 makeCreatedSpecificationField(
@@ -5304,7 +7307,7 @@ document.addEventListener(
                                     ''
                                 );
 
-                            productDetailsSpecifications.appendChild(
+                            left.appendChild(
                                 result.wrapper
                             );
 
@@ -5326,17 +7329,12 @@ document.addEventListener(
                                     ''
                                 );
 
-                            productDetailsSpecifications.appendChild(
+                            left.appendChild(
                                 result.wrapper
                             );
 
                         }
                     );
-
-                    const selectedSubcategory =
-                        currentCreatedSpecificationDraft
-                            .subcategory ||
-                        '';
 
                     const subcategoryFields =
                         config.subcategories?.[
@@ -5344,38 +7342,123 @@ document.addEventListener(
                         ] ||
                         [];
 
-                    if (
-                        selectedSubcategory &&
-                        subcategoryFields.length
-                    ) {
+                    subcategoryFields.forEach(
+                        function (field) {
 
-                        productDetailsSpecifications.appendChild(
-                            makeCreatedSpecificationHeading(
-                                `${selectedSubcategory} Specifications`,
-                                'These fields are specific to the selected subcategory.'
-                            )
-                        );
-
-                        subcategoryFields.forEach(
-                            function (field) {
-
-                                const result =
-                                    makeCreatedSpecificationField(
-                                        field,
-                                        currentCreatedSpecificationDraft[
-                                            field.key
-                                        ] ??
-                                        ''
-                                    );
-
-                                productDetailsSpecifications.appendChild(
-                                    result.wrapper
+                            const result =
+                                makeCreatedSpecificationField(
+                                    field,
+                                    currentCreatedSpecificationDraft[
+                                        field.key
+                                    ] ??
+                                    ''
                                 );
 
-                            }
+                            right.appendChild(
+                                result.wrapper
+                            );
+
+                        }
+                    );
+
+                    const knownKeys =
+                        new Set([
+                            'subcategory',
+                            ...commonProductSpecificationFields.map(
+                                function (field) {
+                                    return field.key;
+                                }
+                            ),
+                            ...(config.generalFields || []).map(
+                                function (field) {
+                                    return field.key;
+                                }
+                            ),
+                            ...subcategoryFields.map(
+                                function (field) {
+                                    return field.key;
+                                }
+                            )
+                        ]);
+
+                    Object.entries(
+                        currentCreatedSpecificationDraft
+                    )
+                    .filter(
+                        function ([
+                            key,
+                            value
+                        ]) {
+
+                            return (
+                                key &&
+                                key !== 'selected_category' &&
+                                !knownKeys.has(key) &&
+                                value !== '' &&
+                                value !== null &&
+                                value !== undefined
+                            );
+
+                        }
+                    )
+                    .forEach(
+                        function ([
+                            key,
+                            value
+                        ]) {
+
+                            const result =
+                                makeCreatedSpecificationField(
+                                    {
+                                        key,
+                                        label:
+                                            currentCreatedSpecificationLabels[
+                                                key
+                                            ] ||
+                                            createdProductLabelFromKey(
+                                                key
+                                            )
+                                    },
+                                    value
+                                );
+
+                            right.appendChild(
+                                result.wrapper
+                            );
+
+                        }
+                    );
+
+                    if (
+                        right.children.length ===
+                        1
+                    ) {
+
+                        const empty =
+                            document.createElement(
+                                'p'
+                            );
+
+                        empty.className =
+                            'product-details-spec-empty';
+
+                        empty.textContent =
+                            'No additional category-specific information.';
+
+                        right.appendChild(
+                            empty
                         );
 
                     }
+
+                    columns.append(
+                        left,
+                        right
+                    );
+
+                    productDetailsSpecifications.appendChild(
+                        columns
+                    );
 
                 }
 
@@ -5390,217 +7473,1493 @@ document.addEventListener(
 
                     collectCreatedSpecificationInputs();
 
-                    /*
-                     * Sync the editable common Product Details fields into the
-                     * same specification model used by Create Product.
-                     */
-                    currentCreatedSpecificationDraft.brand =
-                        productDetailBrand?.value?.trim() ||
+                    product.title =
+                        productDetailsName?.value?.trim() ||
+                        product.title ||
+                        'Product';
+
+                    product.category =
+                        product.category ||
+                        product.listingSnapshot?.category ||
                         '';
 
-                    currentCreatedSpecificationLabels.brand =
-                        'Brand';
-
-                    currentCreatedSpecificationDraft.material =
-                        productDetailMaterial?.value?.trim() ||
+                    product.categoryLabel =
+                        product.categoryLabel ||
+                        product.listingSnapshot?.categoryLabel ||
+                        productSpecificationLibrary[product.category]?.label ||
+                        product.category ||
                         '';
 
-                    currentCreatedSpecificationLabels.material =
-                        'Material';
-
-                    currentCreatedSpecificationDraft
-                        .quantity_per_pack =
-                        productDetailQuantity?.value?.trim() ||
+                    product.sku =
+                        productDetailsSku?.value?.trim() ||
                         '';
 
-                    currentCreatedSpecificationLabels
-                        .quantity_per_pack =
-                        'Quantity per Pack';
+                    product.pricingMode =
+                        productDetailsPricingMode?.value === 'varies'
+                            ? 'varies'
+                            : 'fixed';
 
-                    currentCreatedSpecificationDraft
-                        .country_of_origin =
-                        productDetailCountry?.value?.trim() ||
+                    product.pricing_mode =
+                        product.pricingMode;
+
+                    product.pricingSource =
+                        product.pricingMode === 'varies'
+                            ? (productDetailsPricingSource?.value || '')
+                            : '';
+
+                    product.pricing_source =
+                        product.pricingSource;
+
+                    if (product.pricingMode === 'fixed') {
+                        product.basePrice = Math.max(
+                            0,
+                            Number(productDetailsPrice?.value || 0) || 0
+                        );
+                        product.base_price = product.basePrice;
+                    }
+
+                    const optionNameInputs = Array.from(
+                        productDetailsBuyerOptions?.querySelectorAll(
+                            'input[data-product-option-name]'
+                        ) || []
+                    );
+
+                    optionNameInputs.forEach(
+                        function (input) {
+                            const group = input.dataset.optionGroup;
+                            const index = Number(input.dataset.optionIndex);
+                            const values = Array.isArray(product?.[group])
+                                ? product[group]
+                                : [];
+
+                            if (!values[index]) {
+                                return;
+                            }
+
+                            const oldName = String(
+                                values[index].name ||
+                                input.dataset.originalName ||
+                                ''
+                            );
+                            const newName = input.value.trim();
+
+                            if (!newName) {
+                                input.value = oldName;
+                                return;
+                            }
+
+                            values[index].name = newName;
+
+                            const connectedVariants = Array.isArray(
+                                product.connectedVariants
+                            ) ? product.connectedVariants : [];
+
+                            connectedVariants.forEach(
+                                function (variant) {
+                                    const possibleKeys = {
+                                        variations: ['variation', 'variations'],
+                                        colors: ['color', 'colors'],
+                                        sizes: ['size', 'sizes']
+                                    }[group] || [];
+
+                                    possibleKeys.forEach(
+                                        function (key) {
+                                            if (
+                                                String(variant?.[key] || '') === oldName
+                                            ) {
+                                                variant[key] = newName;
+                                            }
+                                        }
+                                    );
+
+                                    if (
+                                        variant?.choices &&
+                                        String(variant.choices[group] || '') === oldName
+                                    ) {
+                                        variant.choices[group] = newName;
+                                    }
+                                }
+                            );
+                        }
+                    );
+
+                    Array.from(
+                        productDetailsBuyerOptions?.querySelectorAll(
+                            'input[data-product-option-price]'
+                        ) || []
+                    ).forEach(
+                        function (input) {
+                            const group = input.dataset.optionGroup;
+                            const index = Number(input.dataset.optionIndex);
+                            const values = Array.isArray(product?.[group])
+                                ? product[group]
+                                : [];
+
+                            if (!values[index]) {
+                                return;
+                            }
+
+                            values[index].price = Math.max(
+                                0,
+                                Number(input.value || 0) || 0
+                            );
+                            values[index].priceType = 'base';
+                        }
+                    );
+
+                    const connectedVariants = Array.isArray(
+                        product.connectedVariants
+                    ) ? product.connectedVariants : [];
+
+                    Array.from(
+                        productDetailsBuyerOptions?.querySelectorAll(
+                            'input[data-variant-additional]'
+                        ) || []
+                    ).forEach(
+                        function (input) {
+                            const index = Number(input.dataset.variantIndex);
+                            const variant = connectedVariants[index];
+
+                            if (!variant) {
+                                return;
+                            }
+
+                            const additional = Math.max(
+                                0,
+                                Number(input.value || 0) || 0
+                            );
+
+                            const sourceChoice =
+                                product.pricingSource
+                                    ? productDetailsConnectedChoice(
+                                        variant,
+                                        product.pricingSource
+                                    )
+                                    : '';
+
+                            const sourceEntry =
+                                Array.isArray(product?.[product.pricingSource])
+                                    ? product[product.pricingSource].find(
+                                        function (item) {
+                                            return String(item?.name || '') ===
+                                                String(sourceChoice || '');
+                                        }
+                                    )
+                                    : null;
+
+                            const base =
+                                product.pricingMode === 'fixed'
+                                    ? Number(product.basePrice || 0)
+                                    : Number(sourceEntry?.price || 0);
+
+                            variant.base_price = base;
+                            variant.basePrice = base;
+                            variant.additional_price = additional;
+                            variant.additionalPrice = additional;
+                            variant.final_price = base + additional;
+                            variant.finalPrice = base + additional;
+                        }
+                    );
+
+                    currentCreatedSpecificationDraft.selected_category =
+                        product.categoryLabel ||
+                        productSpecificationLibrary[product.category]?.label ||
+                        product.category ||
                         '';
 
-                    currentCreatedSpecificationLabels
-                        .country_of_origin =
-                        'Country of Origin';
+                    currentCreatedSpecificationLabels.selected_category =
+                        'Category';
 
-                    /*
-                     * Keep category and stock as system values rather than
-                     * seller-editable specification fields.
-                     */
-                    currentCreatedSpecificationDraft
-                        .selected_category =
+                    const specificationDisplay = Object.entries(
+                        currentCreatedSpecificationDraft
+                    )
+                    .filter(
+                        function ([key, value]) {
+                            return (
+                                key &&
+                                value !== '' &&
+                                value !== null &&
+                                value !== undefined
+                            );
+                        }
+                    )
+                    .map(
+                        function ([key, value]) {
+                            return {
+                                key,
+                                label:
+                                    currentCreatedSpecificationLabels[key] ||
+                                    createdProductLabelFromKey(key),
+                                value: String(value)
+                            };
+                        }
+                    );
+
+                    const specifications = {};
+                    specificationDisplay.forEach(
+                        function (item) {
+                            specifications[
+                                `category_specifications[${item.key}]`
+                            ] = item.value;
+                        }
+                    );
+
+                    product.specificationDisplay = specificationDisplay;
+                    product.specifications = specifications;
+                    product.description =
+                        productDescription?.value?.trim() || '';
+
+                    product.listingSnapshot = {
+                        ...(product.listingSnapshot || {}),
+                        title: product.title,
+                        category: product.category,
+                        categoryLabel: product.categoryLabel,
+                        sku: product.sku,
+                        pricingMode: product.pricingMode,
+                        originalPricingMode:
+                            product.listingSnapshot?.originalPricingMode ??
+                            product.pricingMode,
+                        pricingSource: product.pricingSource,
+                        originalPricingSource:
+                            product.listingSnapshot?.originalPricingSource ??
+                            product.pricingSource,
+                        basePrice: product.basePrice,
+                        stock: product.stock,
+                        description: product.description,
+                        specificationDisplay: product.specificationDisplay
+                    };
+
+                    saveCreatedProducts();
+
+                }
+
+
+                function showProductDetailsTab(
+                    tabName = 'details'
+                ) {
+
+                    const allowed =
+                        new Set([
+                            'details',
+                            'variations',
+                            'stock-history',
+                            'price-history'
+                        ]);
+
+                    const activeTab =
+                        allowed.has(tabName)
+                            ? tabName
+                            : 'details';
+
+                    productDetailsTabButtons.forEach(
+                        function (button) {
+
+                            const selected =
+                                button.dataset.productDetailsTab ===
+                                activeTab;
+
+                            button.classList.toggle(
+                                'is-active',
+                                selected
+                            );
+
+                            button.setAttribute(
+                                'aria-selected',
+                                selected
+                                    ? 'true'
+                                    : 'false'
+                            );
+
+                        }
+                    );
+
+                    const panels = {
+                        details:
+                            productDetailsInfoPanel,
+                        variations:
+                            productDetailsVariationsPanel,
+                        'stock-history':
+                            productDetailsStockHistoryPanel,
+                        'price-history':
+                            productDetailsPriceHistoryPanel
+                    };
+
+                    Object.entries(
+                        panels
+                    ).forEach(
+                        function ([name, panel]) {
+
+                            panel?.classList.toggle(
+                                'hidden',
+                                name !== activeTab
+                            );
+
+                        }
+                    );
+
+                    const product =
+                        getCreatedProductFromRow(
+                            currentProductRow
+                        );
+
+                    if (
+                        activeTab ===
+                        'stock-history'
+                    ) {
+                        renderProductStockHistory(
+                            product
+                        );
+                    }
+
+                    if (
+                        activeTab ===
+                        'price-history'
+                    ) {
+                        renderProductPriceHistory(
+                            product
+                        );
+                    }
+
+                }
+
+
+                productDetailsPricingMode?.addEventListener(
+                    'change',
+                    function () {
+                        const product =
+                            getCreatedProductFromRow(
+                                currentProductRow
+                            );
+
+                        if (product) {
+                            product.pricingMode =
+                                productDetailsPricingMode.value === 'varies'
+                                    ? 'varies'
+                                    : 'fixed';
+
+                            if (product.pricingMode === 'fixed') {
+                                productDetailsPricingSource.value = '';
+                            }
+
+                            renderCreatedBuyerOptions(product);
+                        }
+
+                        syncProductDetailsPricingEditor(product);
+                    }
+                );
+
+
+                productDetailsPricingSource?.addEventListener(
+                    'change',
+                    function () {
+                        const product =
+                            getCreatedProductFromRow(
+                                currentProductRow
+                            );
+
+                        if (!product) {
+                            return;
+                        }
+
+                        product.pricingSource =
+                            productDetailsPricingSource.value || '';
+
+                        renderCreatedBuyerOptions(product);
+                        syncProductDetailsPricingEditor(product);
+                    }
+                );
+
+
+                productDetailsTabButtons.forEach(
+                    function (button) {
+
+                        button.addEventListener(
+                            'click',
+                            function () {
+
+                                showProductDetailsTab(
+                                    button.dataset.productDetailsTab
+                                );
+
+                            }
+                        );
+
+                    }
+                );
+
+
+                function renderProductDetailsCompleteInfo(
+                    product
+                ) {
+
+                    if (!productDetailsCompleteInfo) {
+                        return;
+                    }
+
+                    productDetailsCompleteInfo.innerHTML =
+                        '';
+
+                    if (!product) {
+                        return;
+                    }
+
+                    const snapshot =
+                        product.listingSnapshot ||
+                        {};
+
+                    const pricingModeValue =
+                        resolveProductPricingMode(
+                            product
+                        );
+
+                    const pricingSourceValue =
+                        resolveProductPricingSource(
+                            product
+                        );
+
+                    const categoryLabel =
                         product.categoryLabel ||
                         productSpecificationLibrary[
                             product.category
                         ]?.label ||
                         product.category ||
-                        '';
+                        '—';
 
-                    currentCreatedSpecificationLabels
-                        .selected_category =
-                        'Category';
+                    const rows = [
+                        [
+                            'Product Title',
+                            product.title ||
+                            snapshot.title ||
+                            '—'
+                        ],
+                        [
+                            'Product Category',
+                            categoryLabel
+                        ],
+                        [
+                            'Pricing Type',
+                            pricingModeValue === 'varies'
+                                ? 'Price Varies'
+                                : 'Fixed Price'
+                        ],
+                        [
+                            pricingModeValue === 'varies'
+                                ? 'Lowest Base Price'
+                                : 'Fixed Price',
+                            calculateCreatedProductPrice(
+                                product
+                            )
+                        ],
+                        [
+                            'Base Price Source',
+                            pricingModeValue === 'varies'
+                                ? (
+                                    pricingSourceValue
+                                        ? productDetailsGroupLabel(
+                                            pricingSourceValue
+                                        )
+                                        : 'Not set'
+                                )
+                                : 'Not applicable'
+                        ],
+                        [
+                            'Total Stock',
+                            `${Number(
+                                product.stock ??
+                                snapshot.stock ??
+                                0
+                            ).toLocaleString(
+                                'en-PH'
+                            )} pieces`
+                        ],
+                        [
+                            'SKU',
+                            product.sku ||
+                            snapshot.sku ||
+                            '—'
+                        ],
+                        [
+                            'Product Photos',
+                            `${
+                                (
+                                    Array.isArray(product.photos)
+                                        ? product.photos
+                                        : []
+                                ).length
+                            } uploaded`
+                        ]
+                    ];
 
-                    currentCreatedSpecificationDraft
-                        .stock_display =
-                        String(
-                            product.stock ??
-                            0
+                    const infoGrid =
+                        document.createElement(
+                            'div'
                         );
 
-                    currentCreatedSpecificationLabels
-                        .stock_display =
-                        'Stock';
+                    infoGrid.className =
+                        'product-details-complete-info-grid';
 
-                    const specificationDisplay =
-                        Object.entries(
-                            currentCreatedSpecificationDraft
-                        )
-                        .filter(
-                            function ([
+                    rows.forEach(
+                        function ([label, value]) {
+
+                            const item =
+                                document.createElement(
+                                    'div'
+                                );
+
+                            item.className =
+                                'product-details-complete-info-item';
+
+                            const key =
+                                document.createElement(
+                                    'span'
+                                );
+
+                            key.textContent =
+                                label;
+
+                            const content =
+                                document.createElement(
+                                    'strong'
+                                );
+
+                            content.textContent =
+                                String(
+                                    value ?? '—'
+                                );
+
+                            item.append(
                                 key,
-                                value
-                            ]) {
+                                content
+                            );
 
-                                return (
-                                    key &&
-                                    value !== '' &&
-                                    value !== null &&
-                                    value !== undefined
+                            infoGrid.appendChild(
+                                item
+                            );
+
+                        }
+                    );
+
+                    productDetailsCompleteInfo.appendChild(
+                        infoGrid
+                    );
+
+                    const specificationItems =
+                        Array.isArray(
+                            product.specificationDisplay
+                        )
+                            ? product.specificationDisplay
+                            : Array.isArray(
+                                snapshot.specificationDisplay
+                            )
+                                ? snapshot.specificationDisplay
+                                : [];
+
+                    if (specificationItems.length) {
+
+                        const divider =
+                            document.createElement(
+                                'div'
+                            );
+
+                        divider.className =
+                            'product-details-complete-info-divider';
+
+                        divider.textContent =
+                            'Product Specifications';
+
+                        productDetailsCompleteInfo.appendChild(
+                            divider
+                        );
+
+                        const specGrid =
+                            document.createElement(
+                                'div'
+                            );
+
+                        specGrid.className =
+                            'product-details-complete-info-grid';
+
+                        specificationItems.forEach(
+                            function (item) {
+
+                                const value =
+                                    String(
+                                        item?.value ??
+                                        ''
+                                    ).trim();
+
+                                if (!value) {
+                                    return;
+                                }
+
+                                const card =
+                                    document.createElement(
+                                        'div'
+                                    );
+
+                                card.className =
+                                    'product-details-complete-info-item';
+
+                                const key =
+                                    document.createElement(
+                                        'span'
+                                    );
+
+                                key.textContent =
+                                    item?.label ||
+                                    createdProductLabelFromKey(
+                                        item?.key ||
+                                        ''
+                                    );
+
+                                const content =
+                                    document.createElement(
+                                        'strong'
+                                    );
+
+                                content.textContent =
+                                    value;
+
+                                card.append(
+                                    key,
+                                    content
+                                );
+
+                                specGrid.appendChild(
+                                    card
                                 );
 
                             }
-                        )
-                        .map(
-                            function ([
-                                key,
-                                value
-                            ]) {
+                        );
+
+                        productDetailsCompleteInfo.appendChild(
+                            specGrid
+                        );
+
+                    }
+
+                }
+
+
+                function productStockRowsForDetails(
+                    product
+                ) {
+
+                    if (!product) {
+                        return [];
+                    }
+
+                    const connectedVariants =
+                        Array.isArray(product.connectedVariants)
+                            ? product.connectedVariants
+                            : Array.isArray(product.connected_variants)
+                                ? product.connected_variants
+                                : [];
+
+                    if (connectedVariants.length) {
+
+                        return connectedVariants.map(
+                            function (variant, index) {
+
+                                const parts =
+                                    [
+                                        [
+                                            'variations',
+                                            'Variation'
+                                        ],
+                                        [
+                                            'colors',
+                                            'Color'
+                                        ],
+                                        [
+                                            'sizes',
+                                            'Size'
+                                        ]
+                                    ]
+                                    .map(
+                                        function ([
+                                            key,
+                                            label
+                                        ]) {
+
+                                            const value =
+                                                productDetailsConnectedChoice(
+                                                    variant,
+                                                    key
+                                                );
+
+                                            return value
+                                                ? `${label}: ${value}`
+                                                : '';
+
+                                        }
+                                    )
+                                    .filter(Boolean);
 
                                 return {
-                                    key,
+                                    kind:
+                                        'connected',
+
+                                    index,
+
+                                    group:
+                                        '',
+
                                     label:
-                                        currentCreatedSpecificationLabels[
-                                            key
-                                        ] ||
-                                        createdProductLabelFromKey(
-                                            key
-                                        ),
-                                    value:
-                                        String(
-                                            value
+                                        parts.join(
+                                            ' · '
+                                        ) ||
+                                        `Grouped Variant ${index + 1}`,
+
+                                    currentStock:
+                                        Math.max(
+                                            0,
+                                            Number(
+                                                variant?.stock ||
+                                                0
+                                            )
                                         )
                                 };
 
                             }
                         );
 
-                    const specifications =
-                        {};
+                    }
 
-                    specificationDisplay.forEach(
-                        function (item) {
+                    const optionGroups = {
+                        variations:
+                            Array.isArray(product.variations)
+                                ? product.variations
+                                : [],
 
-                            specifications[
-                                `category_specifications[${item.key}]`
-                            ] =
-                                item.value;
+                        colors:
+                            Array.isArray(product.colors)
+                                ? product.colors
+                                : [],
 
-                        }
-                    );
-
-                    product.specificationDisplay =
-                        specificationDisplay;
-
-                    product.specifications =
-                        specifications;
-
-                    product.description =
-                        productDescription?.value?.trim() ||
-                        '';
+                        sizes:
+                            Array.isArray(product.sizes)
+                                ? product.sizes
+                                : []
+                    };
 
                     /*
-                     * Product Details already exposes Colors and Sizes as
-                     * editable comma-separated fields. Keep those edits too
-                     * while retaining their previous price values where names
-                     * still match.
+                     * When there is no connected matrix, stock belongs to
+                     * one option group. Prefer the pricing source, otherwise
+                     * use the first populated option group.
                      */
-                    const syncNamedOptions =
-                        function (
-                            rawValue,
-                            existing,
-                            group
-                        ) {
+                    const resolvedPricingSource =
+                        resolveProductPricingSource(
+                            product
+                        );
 
-                            const names =
-                                String(
-                                    rawValue ||
-                                    ''
-                                )
-                                .split(',')
-                                .map(
-                                    function (value) {
-                                        return value.trim();
-                                    }
-                                )
-                                .filter(Boolean);
+                    const preferredGroup =
+                        (
+                            resolvedPricingSource &&
+                            optionGroups[
+                                resolvedPricingSource
+                            ]?.length
+                        )
+                            ? resolvedPricingSource
+                            : [
+                                'variations',
+                                'colors',
+                                'sizes'
+                            ].find(
+                                function (group) {
 
-                            return names.map(
-                                function (name) {
-
-                                    const previous =
-                                        (
-                                            existing ||
-                                            []
-                                        )
-                                        .find(
-                                            function (item) {
-                                                return (
-                                                    String(
-                                                        item.name ||
-                                                        ''
-                                                    ).toLowerCase() ===
-                                                    name.toLowerCase()
-                                                );
-                                            }
-                                        );
-
-                                    return {
-                                        name,
-                                        price:
-                                            previous?.price ||
-                                            0,
-                                        priceType:
-                                            product.pricingMode ===
-                                                'varies' &&
-                                            product.pricingSource ===
-                                                group
-                                                ? 'base'
-                                                : 'addon'
-                                    };
+                                    return optionGroups[
+                                        group
+                                    ].length;
 
                                 }
                             );
 
-                        };
+                    if (preferredGroup) {
 
-                    product.colors =
-                        syncNamedOptions(
-                            productDetailColors?.value,
-                            product.colors,
-                            'colors'
+                        return optionGroups[
+                            preferredGroup
+                        ].map(
+                            function (item, index) {
+
+                                return {
+                                    kind:
+                                        'option',
+
+                                    index,
+
+                                    group:
+                                        preferredGroup,
+
+                                    label:
+                                        `${productDetailsGroupLabel(
+                                            preferredGroup
+                                        ).replace(
+                                            /s$/,
+                                            ''
+                                        )}: ${
+                                            item?.name ||
+                                            `Choice ${index + 1}`
+                                        }`,
+
+                                    currentStock:
+                                        Math.max(
+                                            0,
+                                            Number(
+                                                item?.stock ||
+                                                0
+                                            )
+                                        )
+                                };
+
+                            }
                         );
 
-                    product.sizes =
-                        syncNamedOptions(
-                            productDetailSizes?.value,
-                            product.sizes,
-                            'sizes'
+                    }
+
+                    return [
+                        {
+                            kind:
+                                'main',
+
+                            index:
+                                0,
+
+                            group:
+                                '',
+
+                            label:
+                                'Main Product',
+
+                            currentStock:
+                                Math.max(
+                                    0,
+                                    Number(
+                                        product.stock ||
+                                        0
+                                    )
+                                )
+                        }
+                    ];
+
+                }
+
+
+                function updateProductStockProjectedTotal() {
+
+                    if (
+                        !productDetailsStockRows ||
+                        !productDetailsStockTotal
+                    ) {
+                        return;
+                    }
+
+                    const rows =
+                        Array.from(
+                            productDetailsStockRows.querySelectorAll(
+                                '.product-details-stock-row'
+                            )
                         );
 
-                    saveCreatedProducts();
+                    const projected =
+                        rows.reduce(
+                            function (
+                                total,
+                                row
+                            ) {
+
+                                const current =
+                                    Number(
+                                        row.dataset.currentStock ||
+                                        0
+                                    );
+
+                                const input =
+                                    row.querySelector(
+                                        'input[data-stock-add]'
+                                    );
+
+                                const add =
+                                    Math.max(
+                                        0,
+                                        Number(
+                                            input?.value ||
+                                            0
+                                        )
+                                    );
+
+                                return total +
+                                    current +
+                                    add;
+
+                            },
+                            0
+                        );
+
+                    productDetailsStockTotal.textContent =
+                        projected.toLocaleString(
+                            'en-PH'
+                        );
+
+                }
+
+
+                function renderProductStockTab(
+                    product
+                ) {
+                    /*
+                     * Restock is handled inline per variation card.
+                     * Kept as a compatibility no-op for older calls.
+                     */
+                    return;
+                }
+
+
+                function updateProductRowAfterStockSave(
+                    product
+                ) {
+
+                    if (
+                        !product ||
+                        !currentProductRow
+                    ) {
+                        return;
+                    }
+
+                    const numbers =
+                        currentProductRow.querySelectorAll(
+                            '.product-number'
+                        );
+
+                    if (numbers[1]) {
+                        numbers[1].textContent =
+                            Number(
+                                product.stock ||
+                                0
+                            ).toLocaleString(
+                                'en-PH'
+                            );
+                    }
+
+                    const status =
+                        getCreatedProductStatus(
+                            product.stock,
+                            product.approvalStatus
+                        );
+
+                    currentProductRow.dataset.status =
+                        status.slug;
+
+                    const badge =
+                        currentProductRow.querySelector(
+                            '.status-badge'
+                        );
+
+                    if (badge) {
+
+                        badge.textContent =
+                            status.label;
+
+                        badge.className =
+                            `status-badge ${status.className}`;
+
+                    }
+
+                    if (productDetailsStock) {
+                        productDetailsStock.value =
+                            `${Number(
+                                product.stock ||
+                                0
+                            ).toLocaleString(
+                                'en-PH'
+                            )} pieces`;
+                    }
+
+                    if (productDetailsStatus) {
+
+                        productDetailsStatus.textContent =
+                            status.label;
+
+                        productDetailsStatus.className =
+                            `status-badge ${status.className}`;
+
+                    }
+
+                }
+
+
+                saveProductStockChanges?.addEventListener(
+                    'click',
+                    function () {
+
+                        const product =
+                            getCreatedProductFromRow(
+                                currentProductRow
+                            );
+
+                        if (!product) {
+
+                            if (productDetailsStockMessage) {
+                                productDetailsStockMessage.textContent =
+                                    'Stock changes are available for saved ShopEase products.';
+                            }
+
+                            return;
+                        }
+
+                        const rows =
+                            Array.from(
+                                productDetailsStockRows?.querySelectorAll(
+                                    '.product-details-stock-row'
+                                ) ||
+                                []
+                            );
+
+                        let changed =
+                            false;
+
+                        const connectedVariants =
+                            Array.isArray(
+                                product.connectedVariants
+                            )
+                                ? product.connectedVariants
+                                : Array.isArray(
+                                    product.connected_variants
+                                )
+                                    ? product.connected_variants
+                                    : [];
+
+                        rows.forEach(
+                            function (row) {
+
+                                const input =
+                                    row.querySelector(
+                                        'input[data-stock-add]'
+                                    );
+
+                                const addition =
+                                    Math.max(
+                                        0,
+                                        Math.floor(
+                                            Number(
+                                                input?.value ||
+                                                0
+                                            )
+                                        )
+                                    );
+
+                                if (!addition) {
+                                    return;
+                                }
+
+                                changed =
+                                    true;
+
+                                const index =
+                                    Number(
+                                        row.dataset.stockIndex ||
+                                        0
+                                    );
+
+                                const kind =
+                                    row.dataset.stockKind;
+
+                                if (
+                                    kind ===
+                                        'connected' &&
+                                    connectedVariants[
+                                        index
+                                    ]
+                                ) {
+
+                                    connectedVariants[
+                                        index
+                                    ].stock =
+                                        Math.max(
+                                            0,
+                                            Number(
+                                                connectedVariants[
+                                                    index
+                                                ].stock ||
+                                                0
+                                            )
+                                        ) +
+                                        addition;
+
+                                    return;
+
+                                }
+
+                                if (
+                                    kind ===
+                                    'option'
+                                ) {
+
+                                    const group =
+                                        row.dataset.stockGroup;
+
+                                    const item =
+                                        product?.[
+                                            group
+                                        ]?.[
+                                            index
+                                        ];
+
+                                    if (item) {
+
+                                        item.stock =
+                                            Math.max(
+                                                0,
+                                                Number(
+                                                    item.stock ||
+                                                    0
+                                                )
+                                            ) +
+                                            addition;
+
+                                    }
+
+                                    return;
+
+                                }
+
+                                product.stock =
+                                    Math.max(
+                                        0,
+                                        Number(
+                                            product.stock ||
+                                            0
+                                        )
+                                    ) +
+                                    addition;
+
+                            }
+                        );
+
+                        if (!changed) {
+
+                            if (productDetailsStockMessage) {
+                                productDetailsStockMessage.textContent =
+                                    'Enter a stock quantity to add first.';
+                            }
+
+                            return;
+                        }
+
+                        if (
+                            connectedVariants.length
+                        ) {
+
+                            product.connectedVariants =
+                                connectedVariants;
+
+                            product.stock =
+                                connectedVariants.reduce(
+                                    function (
+                                        total,
+                                        variant
+                                    ) {
+
+                                        return total +
+                                            Math.max(
+                                                0,
+                                                Number(
+                                                    variant?.stock ||
+                                                    0
+                                                )
+                                            );
+
+                                    },
+                                    0
+                                );
+
+                        } else {
+
+                            const stockRows =
+                                productStockRowsForDetails(
+                                    product
+                                );
+
+                            if (
+                                stockRows.length &&
+                                stockRows[0].kind ===
+                                    'option'
+                            ) {
+
+                                const group =
+                                    stockRows[0].group;
+
+                                product.stock =
+                                    (
+                                        product[
+                                            group
+                                        ] ||
+                                        []
+                                    )
+                                    .reduce(
+                                        function (
+                                            total,
+                                            item
+                                        ) {
+
+                                            return total +
+                                                Math.max(
+                                                    0,
+                                                    Number(
+                                                        item?.stock ||
+                                                        0
+                                                    )
+                                                );
+
+                                        },
+                                        0
+                                    );
+
+                            }
+
+                        }
+
+                        product.updatedAt =
+                            new Date().toISOString();
+
+                        saveCreatedProducts();
+
+                        updateProductRowAfterStockSave(
+                            product
+                        );
+
+                        renderCreatedBuyerOptions(
+                            product
+                        );
+
+                        renderProductStockTab(
+                            product
+                        );
+
+                        if (productDetailsStockMessage) {
+                            productDetailsStockMessage.textContent =
+                                'Stock changes saved.';
+                        }
+
+                        if (
+                            typeof showInventoryFlash ===
+                            'function'
+                        ) {
+
+                            showInventoryFlash(
+                                'Product stock updated successfully.'
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                function productDetailsLowestBasePrice(
+                    product
+                ) {
+
+                    if (!product) {
+                        return 0;
+                    }
+
+                    const mode =
+                        resolveProductPricingMode(
+                            product
+                        );
+
+                    if (mode !== 'varies') {
+
+                        return Math.max(
+                            0,
+                            Number(
+                                product.listingSnapshot?.basePrice ??
+                                product.listingSnapshot?.base_price ??
+                                product.basePrice ??
+                                product.base_price ??
+                                product.price ??
+                                0
+                            ) || 0
+                        );
+
+                    }
+
+                    /*
+                     * Exact Add Product source of truth:
+                     * each connected/grouped variant stores the calculated
+                     * base_price before additional prices are added.
+                     */
+                    const connectedVariants =
+                        Array.isArray(
+                            product.connectedVariants
+                        )
+                            ? product.connectedVariants
+                            : Array.isArray(
+                                product.connected_variants
+                            )
+                                ? product.connected_variants
+                                : [];
+
+                    const groupedBasePrices =
+                        connectedVariants
+                            .map(
+                                function (variant) {
+
+                                    return Number(
+                                        variant?.base_price ??
+                                        variant?.basePrice
+                                    );
+
+                                }
+                            )
+                            .filter(
+                                function (value) {
+
+                                    return (
+                                        Number.isFinite(
+                                            value
+                                        ) &&
+                                        value >= 0
+                                    );
+
+                                }
+                            );
+
+                    if (groupedBasePrices.length) {
+
+                        return Math.min(
+                            ...groupedBasePrices
+                        );
+
+                    }
+
+                    /*
+                     * Fallback for older products where only the base-price
+                     * option group was preserved.
+                     */
+                    const source =
+                        resolveProductPricingSource(
+                            product
+                        );
+
+                    const items =
+                        source &&
+                        Array.isArray(
+                            product?.[source]
+                        )
+                            ? product[source]
+                            : [];
+
+                    const prices =
+                        items
+                            .map(
+                                function (item) {
+
+                                    return Number(
+                                        item?.price ??
+                                        item?.base_price ??
+                                        item?.basePrice
+                                    );
+
+                                }
+                            )
+                            .filter(
+                                function (value) {
+
+                                    return (
+                                        Number.isFinite(
+                                            value
+                                        ) &&
+                                        value >= 0
+                                    );
+
+                                }
+                            );
+
+                    if (prices.length) {
+
+                        return Math.min(
+                            ...prices
+                        );
+
+                    }
+
+                    return Math.max(
+                        0,
+                        Number(
+                            product.listingSnapshot?.basePrice ??
+                            product.listingSnapshot?.base_price ??
+                            product.basePrice ??
+                            product.base_price ??
+                            product.price ??
+                            0
+                        ) || 0
+                    );
+
+                }
+
+
+                function syncProductDetailsPricingEditor(
+                    product = null
+                ) {
+
+                    const mode =
+                        productDetailsPricingMode?.value ||
+                        resolveProductPricingMode(
+                            product
+                        ) ||
+                        'fixed';
+
+                    const isVaries =
+                        mode === 'varies';
+
+                    if (productDetailsPricingSource) {
+
+                        productDetailsPricingSource.disabled =
+                            !isVaries;
+
+                        if (!isVaries) {
+                            productDetailsPricingSource.value =
+                                '';
+                        }
+
+                    }
+
+                    if (productDetailsPrice) {
+
+                        productDetailsPrice.readOnly =
+                            isVaries;
+
+                        productDetailsPrice.classList.toggle(
+                            'is-readonly-price',
+                            isVaries
+                        );
+
+                        if (isVaries && product) {
+                            productDetailsPrice.value =
+                                currentProductPriceNumber(
+                                    product
+                                ).toFixed(
+                                    2
+                                );
+                        }
+
+                    }
+
+                    if (productDetailsPriceLabel) {
+                        productDetailsPriceLabel.textContent =
+                            isVaries
+                                ? 'Lowest Final Price'
+                                : 'Fixed Price';
+                    }
+
+                    if (productDetailsPriceHelp) {
+                        productDetailsPriceHelp.textContent =
+                            isVaries
+                                ? 'Lowest full grouped-variant price after base price and additional charges.'
+                                : 'One price applies to every buyer option.';
+                    }
 
                 }
 
@@ -5652,21 +9011,23 @@ document.addEventListener(
                             '—';
 
                         if (productDetailsName) {
-                            productDetailsName.textContent =
+                            productDetailsName.value =
                                 createdProduct.title ||
                                 'Product';
                         }
 
                         if (productDetailsPrice) {
-                            productDetailsPrice.textContent =
-                                calculateCreatedProductPrice(
+                            productDetailsPrice.value =
+                                currentProductPriceNumber(
                                     createdProduct
-                                );
+                                ).toFixed(2);
                         }
 
                         if (productDetailsStock) {
-                            productDetailsStock.textContent =
-                                `${createdProduct.stock ?? 0} pieces`;
+                            productDetailsStock.value =
+                                `${Number(
+                                    createdProduct.stock ?? 0
+                                ).toLocaleString('en-PH')} pieces`;
                         }
 
                         if (productDetailsStatus) {
@@ -5692,18 +9053,226 @@ document.addEventListener(
 
                         if (productDetailsCategory) {
 
-                            productDetailsCategory.textContent =
-                                category;
+                            productDetailsCategory.value =
+                                createdProduct.category || '';
 
-                            productDetailsCategory.className =
-                                `inline-flex items-center mt-[7px] rounded-full px-[13px] py-[4px] text-[11px] font-medium category-badge ${categoryBadgeClass(category)}`;
+                        }
 
+                        if (productDetailsPricingMode) {
+
+                            const resolvedPricingMode =
+                                resolveProductPricingMode(
+                                    createdProduct
+                                );
+
+                            productDetailsPricingMode.value =
+                                resolvedPricingMode === 'varies'
+                                    ? 'varies'
+                                    : 'fixed';
+
+                        }
+
+                        if (productDetailsPricingSource) {
+
+                            const resolvedPricingMode =
+                                resolveProductPricingMode(
+                                    createdProduct
+                                );
+
+                            const source =
+                                resolveProductPricingSource(
+                                    createdProduct
+                                );
+
+                            productDetailsPricingSource.value =
+                                resolvedPricingMode === 'varies'
+                                    ? (source || '')
+                                    : '';
+
+                        }
+
+                        if (productDetailsSku) {
+
+                            productDetailsSku.value =
+                                createdProduct.sku ||
+                                '';
+
+                        }
+
+                        syncProductDetailsPricingEditor(
+                            createdProduct
+                        );
+
+                        if (productDetailsNameDisplay) {
+                            productDetailsNameDisplay.textContent =
+                                createdProduct.title ||
+                                'Product';
+                        }
+
+                        if (productDetailsSkuDisplay) {
+                            productDetailsSkuDisplay.textContent =
+                                createdProduct.sku ||
+                                '—';
+                        }
+
+                        if (productDetailsCategoryDisplay) {
+                            productDetailsCategoryDisplay.textContent =
+                                category ||
+                                '—';
+
+                            productDetailsCategoryDisplay.className =
+                                `product-details-view-value product-details-category-display category-badge ${categoryBadgeClass(
+                                    category
+                                )}`;
+                        }
+
+                        if (productDetailsPriceDisplay) {
+                            productDetailsPriceDisplay.textContent =
+                                formatMoney(
+                                    currentProductPriceNumber(
+                                        createdProduct
+                                    )
+                                );
+                        }
+
+                        if (productDetailsPricingTypeView) {
+                            productDetailsPricingTypeView.textContent =
+                                resolveProductPricingMode(
+                                    createdProduct
+                                ) === 'varies'
+                                    ? 'Price Varies'
+                                    : 'Fixed Price';
+                        }
+
+                        if (productDetailsPricingSourceView) {
+                            const source =
+                                resolveProductPricingSource(
+                                    createdProduct
+                                );
+
+                            productDetailsPricingSourceView.textContent =
+                                source
+                                    ? productDetailsGroupLabel(
+                                        source
+                                    )
+                                    : 'Not applicable';
+                        }
+
+                        if (productDetailsVariationsDisplay) {
+                            productDetailsVariationsDisplay.textContent =
+                                (
+                                    createdProduct.variations ||
+                                    []
+                                )
+                                .map(
+                                    function (item) {
+                                        return item?.name;
+                                    }
+                                )
+                                .filter(Boolean)
+                                .join(', ') ||
+                                '—';
+                        }
+
+                        if (productDetailsColorsDisplay) {
+                            productDetailsColorsDisplay.textContent =
+                                (
+                                    createdProduct.colors ||
+                                    []
+                                )
+                                .map(
+                                    function (item) {
+                                        return item?.name;
+                                    }
+                                )
+                                .filter(Boolean)
+                                .join(', ') ||
+                                '—';
+                        }
+
+                        if (productDetailsSizesDisplay) {
+                            productDetailsSizesDisplay.textContent =
+                                (
+                                    createdProduct.sizes ||
+                                    []
+                                )
+                                .map(
+                                    function (item) {
+                                        return item?.name;
+                                    }
+                                )
+                                .filter(Boolean)
+                                .join(', ') ||
+                                '—';
+                        }
+
+                        if (productDetailsPricingModeDisplay) {
+                            productDetailsPricingModeDisplay.textContent =
+                                resolveProductPricingMode(
+                                    createdProduct
+                                ) === 'varies'
+                                    ? 'Price Varies'
+                                    : 'Fixed Price';
+                        }
+
+                        if (productDetailsPricingSourceDisplay) {
+                            const source =
+                                resolveProductPricingSource(
+                                    createdProduct
+                                );
+
+                            productDetailsPricingSourceDisplay.textContent =
+                                source
+                                    ? productDetailsGroupLabel(
+                                        source
+                                    )
+                                    : 'Not applicable';
+                        }
+
+                        if (productDetailsSubcategoryBadge) {
+
+                            const subcategoryItem =
+                                (
+                                    createdProduct.specificationDisplay ||
+                                    []
+                                ).find(
+                                    function (item) {
+                                        return (
+                                            String(
+                                                item?.key ||
+                                                ''
+                                            ).toLowerCase() ===
+                                                'subcategory' ||
+                                            String(
+                                                item?.label ||
+                                                ''
+                                            ).toLowerCase() ===
+                                                'subcategory'
+                                        );
+                                    }
+                                );
+
+                            productDetailsSubcategoryBadge.textContent =
+                                subcategoryItem?.value ||
+                                'No subcategory';
                         }
 
                         if (productDescription) {
                             productDescription.value =
                                 createdProduct.description ||
                                 '';
+
+                            productDescription.style.height =
+                                'auto';
+
+                            productDescription.style.height =
+                                `${productDescription.scrollHeight}px`;
+                        }
+
+                        if (productDescriptionDisplay) {
+                            productDescriptionDisplay.textContent =
+                                createdProduct.description ||
+                                'No product description.';
                         }
 
                         const archiveReason =
@@ -5847,6 +9416,44 @@ document.addEventListener(
                             createdProduct
                         );
 
+                        renderProductStockTab(
+                            createdProduct
+                        );
+
+                        renderProductDetailsCompleteInfo(
+                            createdProduct
+                        );
+
+                        ensureProductHistoryArrays(
+                            createdProduct
+                        );
+
+                        renderProductStockHistory(
+                            createdProduct
+                        );
+
+                        renderProductPriceHistory(
+                            createdProduct
+                        );
+
+                        if (productDetailsStockDisplay) {
+                            productDetailsStockDisplay.textContent =
+                                `${Number(
+                                    createdProduct.stock ||
+                                    0
+                                ).toLocaleString(
+                                    'en-PH'
+                                )} units`;
+                        }
+
+                        setProductDetailsEditMode(
+                            false
+                        );
+
+                        showProductDetailsTab(
+                            'details'
+                        );
+
                         updateDescriptionCount();
 
                         return;
@@ -5874,19 +9481,20 @@ document.addEventListener(
                         );
 
                     if (productDetailsName) {
-                        productDetailsName.textContent =
+                        productDetailsName.value =
                             row.dataset.name ||
                             'Product';
                     }
 
                     if (productDetailsPrice) {
-                        productDetailsPrice.textContent =
-                            rowNumbers[0]?.textContent?.trim() ||
-                            '—';
+                        productDetailsPrice.value =
+                            String(
+                                rowNumbers[0]?.textContent?.trim() || ''
+                            ).replace(/[^0-9.]/g, '');
                     }
 
                     if (productDetailsStock) {
-                        productDetailsStock.textContent =
+                        productDetailsStock.value =
                             `${rowNumbers[1]?.textContent?.trim() || '0'} pieces`;
                     }
 
@@ -5919,13 +9527,44 @@ document.addEventListener(
 
                     if (productDetailsCategory) {
 
-                        productDetailsCategory.textContent =
-                            category;
+                        const matchingCategory =
+                            Array.from(productDetailsCategory.options).find(
+                                function (option) {
+                                    return option.textContent.trim() === category;
+                                }
+                            );
 
-                        productDetailsCategory.className =
-                            `inline-flex items-center mt-[7px] rounded-full px-[13px] py-[4px] text-[11px] font-medium category-badge ${categoryBadgeClass(category)}`;
+                        productDetailsCategory.value =
+                            matchingCategory?.value || '';
 
                     }
+
+                    if (productDetailsPricingMode) {
+                        productDetailsPricingMode.value =
+                            'fixed';
+                    }
+
+                    if (productDetailsPricingSource) {
+                        productDetailsPricingSource.value =
+                            '';
+                    }
+
+                    if (productDetailsSku) {
+                        productDetailsSku.value =
+                            '';
+                    }
+
+                    syncProductDetailsPricingEditor(
+                        null
+                    );
+
+                    renderProductStockTab(
+                        null
+                    );
+
+                    renderProductDetailsCompleteInfo(
+                        null
+                    );
 
                     productDetailsBuyerOptionsSection?.classList.add(
                         'hidden'
@@ -5993,6 +9632,10 @@ document.addEventListener(
 
                     updateProductDetailsModal(
                         currentProductRow
+                    );
+
+                    showProductDetailsTab(
+                        'details'
                     );
 
                     if (closeDetailsTimer) {
@@ -6154,6 +9797,14 @@ document.addEventListener(
                 );
 
 
+                closeProductDetailsModal?.addEventListener(
+                    'click',
+                    function () {
+                        closeProductDetails();
+                    }
+                );
+
+
                 /* =================================================
                    CLICK OUTSIDE PRODUCT DETAILS
                 ================================================== */
@@ -6228,9 +9879,29 @@ document.addEventListener(
                     }
 
                     descriptionCount.textContent =
-                        `${productDescription.value.length}/300`;
+                        `${productDescription.value.length}/2000`;
 
                 }
+
+
+                productDescription?.addEventListener(
+                    'input',
+                    function () {
+
+                        productDescription.style.height =
+                            'auto';
+
+                        productDescription.style.height =
+                            `${productDescription.scrollHeight}px`;
+
+                        if (productDescriptionDisplay) {
+                            productDescriptionDisplay.textContent =
+                                productDescription.value ||
+                                'No product description.';
+                        }
+
+                    }
+                );
 
 
                 productDescription?.addEventListener(
@@ -6338,13 +10009,36 @@ document.addEventListener(
                     'click',
                     function () {
 
-                        const originalText =
-                            saveProductChanges.textContent;
-
                         const createdProduct =
                             getCreatedProductFromRow(
                                 currentProductRow
                             );
+
+                        if (
+                            createdProduct &&
+                            !productDetailsEditing
+                        ) {
+
+                            const rowForEdit =
+                                currentProductRow;
+
+                            closeProductDetails(
+                                function () {
+
+                                    openEditProductModal(
+                                        createdProduct,
+                                        rowForEdit
+                                    );
+
+                                }
+                            );
+
+                            return;
+
+                        }
+
+                        const originalText =
+                            saveProductChanges.textContent;
 
                         const isArchived =
                             currentProductRow?.classList.contains(
@@ -6394,9 +10088,311 @@ document.addEventListener(
                          */
                         if (createdProduct) {
 
+                            if (
+                                Array.isArray(
+                                    productDetailsPhotoDraft
+                                )
+                            ) {
+
+                                createdProduct.photos =
+                                    productDetailsPhotoDraft.slice();
+
+                                createdProduct.coverPhoto =
+                                    createdProduct.photos[0] ||
+                                    '';
+
+                            }
+
                             saveCreatedProductSpecificationChanges(
                                 createdProduct
                             );
+
+                            ensureProductHistoryArrays(
+                                createdProduct
+                            );
+
+                            const newPrice =
+                                currentProductPriceNumber(
+                                    createdProduct
+                                );
+
+                            if (
+                                productDetailsPriceSnapshot &&
+                                (
+                                    Math.abs(
+                                        Number(
+                                            productDetailsPriceSnapshot.value ||
+                                            0
+                                        ) -
+                                        Number(
+                                            newPrice ||
+                                            0
+                                        )
+                                    ) > 0.004 ||
+                                    productDetailsPriceSnapshot.pricingMode !==
+                                        resolveProductPricingMode(
+                                            createdProduct
+                                        ) ||
+                                    productDetailsPriceSnapshot.pricingSource !==
+                                        resolveProductPricingSource(
+                                            createdProduct
+                                        )
+                                )
+                            ) {
+
+                                createdProduct.priceHistory.push(
+                                    {
+                                        at:
+                                            new Date().toISOString(),
+                                        by:
+                                            'Seller',
+                                        label:
+                                            'Listing price updated',
+                                        note:
+                                            `${resolveProductPricingMode(
+                                                createdProduct
+                                            ) === 'varies'
+                                                ? 'Lowest base price'
+                                                : 'Fixed price'}`,
+                                        before:
+                                            Number(
+                                                productDetailsPriceSnapshot.value ||
+                                                0
+                                            ),
+                                        after:
+                                            Number(
+                                                newPrice ||
+                                                0
+                                            )
+                                    }
+                                );
+
+                                saveCreatedProducts();
+
+                            }
+
+                            setProductDetailsEditMode(
+                                false
+                            );
+
+                            renderProductPriceHistory(
+                                createdProduct
+                            );
+
+                            if (productDetailsPricingModeDisplay) {
+                                productDetailsPricingModeDisplay.textContent =
+                                    resolveProductPricingMode(
+                                        createdProduct
+                                    ) === 'varies'
+                                        ? 'Price Varies'
+                                        : 'Fixed Price';
+                            }
+
+                            if (productDetailsPricingSourceDisplay) {
+                                const source =
+                                    resolveProductPricingSource(
+                                        createdProduct
+                                    );
+
+                                productDetailsPricingSourceDisplay.textContent =
+                                    source
+                                        ? productDetailsGroupLabel(
+                                            source
+                                        )
+                                        : 'Not applicable';
+                            }
+
+                            if (productDetailsNameDisplay) {
+                                productDetailsNameDisplay.textContent =
+                                    createdProduct.title ||
+                                    'Product';
+                            }
+
+                            if (productDetailsSkuDisplay) {
+                                productDetailsSkuDisplay.textContent =
+                                    createdProduct.sku ||
+                                    '—';
+                            }
+
+                            if (productDetailsCategoryDisplay) {
+
+                                const categoryLabel =
+                                    createdProduct.categoryLabel ||
+                                    createdProduct.category ||
+                                    '—';
+
+                                productDetailsCategoryDisplay.textContent =
+                                    categoryLabel;
+
+                                productDetailsCategoryDisplay.className =
+                                    `product-details-view-value product-details-category-display category-badge ${categoryBadgeClass(
+                                        categoryLabel
+                                    )}`;
+                            }
+
+                            if (productDetailsPriceDisplay) {
+                                productDetailsPriceDisplay.textContent =
+                                    formatMoney(
+                                        currentProductPriceNumber(
+                                            createdProduct
+                                        )
+                                    );
+                            }
+
+                            if (productDetailsPricingTypeView) {
+                                productDetailsPricingTypeView.textContent =
+                                    resolveProductPricingMode(
+                                        createdProduct
+                                    ) === 'varies'
+                                        ? 'Price Varies'
+                                        : 'Fixed Price';
+                            }
+
+                            if (productDetailsPricingSourceView) {
+                                const source =
+                                    resolveProductPricingSource(
+                                        createdProduct
+                                    );
+
+                                productDetailsPricingSourceView.textContent =
+                                    source
+                                        ? productDetailsGroupLabel(
+                                            source
+                                        )
+                                        : 'Not applicable';
+                            }
+
+                            if (productDetailsVariationsDisplay) {
+                                productDetailsVariationsDisplay.textContent =
+                                    (
+                                        createdProduct.variations ||
+                                        []
+                                    )
+                                    .map(
+                                        function (item) {
+                                            return item?.name;
+                                        }
+                                    )
+                                    .filter(Boolean)
+                                    .join(', ') ||
+                                    '—';
+                            }
+
+                            if (productDetailsColorsDisplay) {
+                                productDetailsColorsDisplay.textContent =
+                                    (
+                                        createdProduct.colors ||
+                                        []
+                                    )
+                                    .map(
+                                        function (item) {
+                                            return item?.name;
+                                        }
+                                    )
+                                    .filter(Boolean)
+                                    .join(', ') ||
+                                    '—';
+                            }
+
+                            if (productDetailsSizesDisplay) {
+                                productDetailsSizesDisplay.textContent =
+                                    (
+                                        createdProduct.sizes ||
+                                        []
+                                    )
+                                    .map(
+                                        function (item) {
+                                            return item?.name;
+                                        }
+                                    )
+                                    .filter(Boolean)
+                                    .join(', ') ||
+                                    '—';
+                            }
+
+                            renderCreatedProductPhotos(
+                                createdProduct
+                            );
+
+                            if (productDescriptionDisplay) {
+                                productDescriptionDisplay.textContent =
+                                    createdProduct.description ||
+                                    'No product description.';
+                            }
+
+                            const rowName =
+                                currentProductRow?.querySelector(
+                                    '.product-name'
+                                );
+
+                            if (rowName) {
+                                rowName.textContent =
+                                    createdProduct.title ||
+                                    'Product';
+                            }
+
+                            const rowNumbers =
+                                currentProductRow?.querySelectorAll(
+                                    '.product-number'
+                                );
+
+                            if (rowNumbers?.[0]) {
+                                rowNumbers[0].textContent =
+                                    calculateCreatedProductPrice(
+                                        createdProduct
+                                    );
+                            }
+
+                            currentProductRow.dataset.name =
+                                createdProduct.title || '';
+
+                            currentProductRow.dataset.category =
+                                createdProduct.category || '';
+
+                            /*
+                             * Seller edits require admin approval again.
+                             */
+                            createdProduct.approvalStatus =
+                                'pending';
+
+                            createdProduct.status =
+                                'pending';
+
+                            createdProduct.updatedAt =
+                                new Date().toISOString();
+
+                            if (
+                                createdProduct.listingSnapshot
+                            ) {
+                                createdProduct.listingSnapshot.approvalStatus =
+                                    'pending';
+                            }
+
+                            saveCreatedProducts();
+
+                            currentProductRow.dataset.status =
+                                'pending';
+
+                            const rowStatusBadge =
+                                currentProductRow.querySelector(
+                                    '.status-badge'
+                                );
+
+                            if (rowStatusBadge) {
+                                rowStatusBadge.textContent =
+                                    'Pending Approval';
+
+                                rowStatusBadge.className =
+                                    'status-badge status-pending';
+                            }
+
+                            if (productDetailsStatus) {
+                                productDetailsStatus.textContent =
+                                    'Pending Approval';
+
+                                productDetailsStatus.className =
+                                    'status-badge status-pending';
+                            }
 
                             /*
                              * Re-render the dynamic Product Specifications
@@ -6431,7 +10427,7 @@ document.addEventListener(
 
                                                     showInventoryFlash(
                                                         createdProduct
-                                                            ? 'Product details and specifications updated successfully.'
+                                                            ? 'Changes saved and submitted for admin approval.'
                                                             : 'Product changes saved successfully.'
                                                     );
 
@@ -6439,7 +10435,7 @@ document.addEventListener(
 
                                                     window.alert(
                                                         createdProduct
-                                                            ? 'Product details and specifications updated successfully.'
+                                                            ? 'Changes saved and submitted for admin approval.'
                                                             : 'Product changes saved successfully.'
                                                     );
 
@@ -7114,9 +11110,29 @@ document.addEventListener(
                         categoryLabel: categoryDisplayLabel(
                             product.categoryLabel || product.category
                         ),
-                        pricingMode: product.pricingMode || product.pricing_mode || 'fixed',
-                        pricingSource: product.pricingSource || product.pricing_source || '',
-                        basePrice: product.basePrice ?? product.price ?? 0,
+                        pricingMode:
+                            product.pricingMode ||
+                            product.pricing_mode ||
+                            product.pricingType ||
+                            product.pricing_type ||
+                            product.priceType ||
+                            product.price_type ||
+                            '',
+
+                        pricingSource:
+                            product.pricingSource ||
+                            product.pricing_source ||
+                            product.basePriceSource ||
+                            product.base_price_source ||
+                            product.priceSource ||
+                            product.price_source ||
+                            '',
+
+                        basePrice:
+                            product.basePrice ??
+                            product.base_price ??
+                            product.price ??
+                            0,
                         stock: product.stock ?? product.stock_quantity ?? 0,
                         variations: Array.isArray(product.variations) ? product.variations : [],
                         colors: Array.isArray(product.colors) ? product.colors : [],
@@ -7159,11 +11175,71 @@ document.addEventListener(
                     })
                 ];
 
+                const localCreatedProducts =
+                    loadCreatedProducts();
+
+                /*
+                 * Keep seller-side edits made in Product Details (including
+                 * stock additions) when the same server product is loaded
+                 * again. Server policy/admin state still wins.
+                 */
+                const mergedServerCreatedProducts =
+                    serverCreatedProducts.map(
+                        function (serverProduct) {
+
+                            const localProduct =
+                                localCreatedProducts.find(
+                                    function (item) {
+
+                                        return (
+                                            String(item.id) ===
+                                            String(serverProduct.id)
+                                        );
+
+                                    }
+                                );
+
+                            if (!localProduct) {
+                                return serverProduct;
+                            }
+
+                            return {
+                                ...serverProduct,
+                                ...localProduct,
+
+                                approvalStatus:
+                                    serverProduct.approvalStatus,
+
+                                warningReason:
+                                    serverProduct.warningReason ||
+                                    localProduct.warningReason ||
+                                    '',
+
+                                warningDetails:
+                                    serverProduct.warningDetails ||
+                                    localProduct.warningDetails ||
+                                    '',
+
+                                archivedByAdmin:
+                                    Boolean(
+                                        serverProduct.archivedByAdmin ||
+                                        localProduct.archivedByAdmin
+                                    ),
+
+                                archiveReason:
+                                    serverProduct.archiveReason ||
+                                    localProduct.archiveReason ||
+                                    ''
+                            };
+
+                        }
+                    );
+
                 let createdInventoryProducts = [
-                    ...serverCreatedProducts,
-                    ...loadCreatedProducts().filter(function (localProduct) {
+                    ...mergedServerCreatedProducts,
+                    ...localCreatedProducts.filter(function (localProduct) {
                         return !serverCreatedProducts.some(function (serverProduct) {
-                            return serverProduct.id === String(localProduct.id);
+                            return String(serverProduct.id) === String(localProduct.id);
                         }) && !archivedInventoryProducts.some(function (archivedProduct) {
                             return String(archivedProduct.id) === String(localProduct.id);
                         });
@@ -7268,136 +11344,158 @@ document.addEventListener(
                 }
 
 
+                function calculateConnectedVariantFullPrice(
+                    product,
+                    variant
+                ) {
+
+                    if (!variant) {
+                        return 0;
+                    }
+
+                    const mode =
+                        resolveProductPricingMode(
+                            product
+                        );
+
+                    if (mode !== 'varies') {
+
+                        return Math.max(
+                            0,
+                            Number(
+                                product?.basePrice ??
+                                product?.base_price ??
+                                product?.listingSnapshot?.basePrice ??
+                                product?.price ??
+                                0
+                            ) || 0
+                        );
+
+                    }
+
+                    const source =
+                        resolveProductPricingSource(
+                            product
+                        );
+
+                    const sourceChoice =
+                        source
+                            ? productDetailsConnectedChoice(
+                                variant,
+                                source
+                            )
+                            : '';
+
+                    const sourceItems =
+                        source &&
+                        Array.isArray(
+                            product?.[source]
+                        )
+                            ? product[source]
+                            : [];
+
+                    const sourceEntry =
+                        sourceItems.find(
+                            function (item) {
+                                return (
+                                    String(
+                                        item?.name ||
+                                        ''
+                                    ) ===
+                                    String(
+                                        sourceChoice ||
+                                        ''
+                                    )
+                                );
+                            }
+                        );
+
+                    let base =
+                        Number(
+                            variant?.base_price ??
+                            variant?.basePrice
+                        );
+
+                    if (
+                        !Number.isFinite(base) ||
+                        (
+                            base <= 0 &&
+                            Number(
+                                sourceEntry?.price ??
+                                sourceEntry?.base_price ??
+                                sourceEntry?.basePrice ??
+                                0
+                            ) > 0
+                        )
+                    ) {
+
+                        base =
+                            Number(
+                                sourceEntry?.price ??
+                                sourceEntry?.base_price ??
+                                sourceEntry?.basePrice ??
+                                0
+                            ) || 0;
+
+                    }
+
+                    let additional =
+                        Number(
+                            variant?.additional_price ??
+                            variant?.additionalPrice
+                        );
+
+                    if (!Number.isFinite(additional)) {
+
+                        additional =
+                            Object.values(
+                                variant?.additions ||
+                                {}
+                            ).reduce(
+                                function (
+                                    total,
+                                    value
+                                ) {
+                                    return (
+                                        total +
+                                        Math.max(
+                                            0,
+                                            Number(
+                                                value ||
+                                                0
+                                            ) || 0
+                                        )
+                                    );
+                                },
+                                0
+                            );
+
+                    }
+
+                    const calculated =
+                        Math.max(
+                            0,
+                            base
+                        ) +
+                        Math.max(
+                            0,
+                            additional
+                        );
+
+                    return calculated;
+
+                }
+
+
                 function calculateCreatedProductPrice(
                     product
                 ) {
 
-                    const connectedVariants =
-                        Array.isArray(product.connectedVariants)
-                            ? product.connectedVariants
-                            : [];
-
-                    if (connectedVariants.length) {
-                        const prices = connectedVariants
-                            .filter((variant) => variant.available !== false)
-                            .map((variant) => Number(variant.final_price))
-                            .filter(Number.isFinite);
-
-                        if (prices.length) {
-                            const minimum = Math.min(...prices);
-                            const maximum = Math.max(...prices);
-
-                            return Math.abs(maximum - minimum) < 0.005
-                                ? formatMoney(minimum)
-                                : `${formatMoney(minimum)} – ${formatMoney(maximum)}`;
-                        }
-                    }
-
-                    if (
-                        product.pricingMode !==
-                        'varies'
-                    ) {
-                        return formatMoney(
-                            product.basePrice
-                        );
-                    }
-
-                    const groups = {
-                        variations:
-                            product.variations ||
-                            [],
-
-                        colors:
-                            product.colors ||
-                            [],
-
-                        sizes:
-                            product.sizes ||
-                            []
-                    };
-
-                    const primary =
-                        groups[
-                            product.pricingSource
-                        ] ||
-                        [];
-
-                    if (!primary.length) {
-                        return 'Price varies';
-                    }
-
-                    const basePrices =
-                        primary.map(
-                            function (item) {
-                                return Number(
-                                    item.price ||
-                                    0
-                                );
-                            }
-                        );
-
-                    let minimum =
-                        Math.min(
-                            ...basePrices
-                        );
-
-                    let maximum =
-                        Math.max(
-                            ...basePrices
-                        );
-
-                    Object.entries(
-                        groups
-                    ).forEach(
-                        function ([
-                            group,
-                            items
-                        ]) {
-
-                            if (
-                                group ===
-                                    product.pricingSource ||
-                                !items.length
-                            ) {
-                                return;
-                            }
-
-                            const additions =
-                                items.map(
-                                    function (item) {
-                                        return Number(
-                                            item.price ||
-                                            0
-                                        );
-                                    }
-                                );
-
-                            minimum +=
-                                Math.min(
-                                    ...additions
-                                );
-
-                            maximum +=
-                                Math.max(
-                                    ...additions
-                                );
-
-                        }
+                    return formatMoney(
+                        currentProductPriceNumber(
+                            product
+                        )
                     );
-
-                    if (
-                        Math.abs(
-                            maximum -
-                            minimum
-                        ) <
-                        0.005
-                    ) {
-                        return formatMoney(
-                            minimum
-                        );
-                    }
-
-                    return `${formatMoney(minimum)} – ${formatMoney(maximum)}`;
 
                 }
 
@@ -8117,6 +12215,20 @@ document.addEventListener(
                         'addProductModalPanel'
                     );
 
+                const editProductModal =
+                    document.getElementById(
+                        'editProductModal'
+                    );
+
+                let isEditProductFlow =
+                    false;
+
+                let editingProductRecord =
+                    null;
+
+                let editingProductRow =
+                    null;
+
                 const openAddProductModal =
                     document.getElementById(
                         'openAddProductModal'
@@ -8589,12 +12701,31 @@ document.addEventListener(
                 }
 
                 function syncVariableProductStock() {
-                    if (!createProductStock || pricingMode !== 'varies') {
+                    if (!createProductStock) {
                         return;
                     }
 
-                    const totalStock = ['variations', 'colors', 'sizes']
-                        .reduce(
+                    const matrixInput =
+                        document.getElementById('variantCombinationsInput');
+
+                    let matrixRows = [];
+
+                    try {
+                        matrixRows = JSON.parse(
+                            matrixInput?.value || '[]'
+                        );
+                    } catch (error) {
+                        matrixRows = [];
+                    }
+
+                    const totalStock = matrixRows.length
+                        ? matrixRows.reduce(
+                            function (total, row) {
+                                return total + (Number.parseInt(row.stock, 10) || 0);
+                            },
+                            0
+                        )
+                        : ['variations', 'colors', 'sizes'].reduce(
                             function (sum, group) {
                                 return sum + getPricingGroupItems(group).reduce(
                                     function (total, item) {
@@ -8607,11 +12738,8 @@ document.addEventListener(
                         );
 
                     createProductStock.value = String(totalStock);
-
-                    const stockDisplay = document.getElementById('categorySpec_stock_display');
-                    if (stockDisplay) {
-                        stockDisplay.value = String(totalStock);
-                    }
+                    createProductStock.readOnly = true;
+                    createProductStock.required = false;
                 }
 
                 function getPricingGroupLabel(group) {
@@ -8900,14 +13028,9 @@ document.addEventListener(
                     }
 
                     if (createProductStock) {
-                        createProductStock.readOnly =
-                            isVariable;
-
-                        createProductStock.disabled =
-                            false;
-
-                        createProductStock.required =
-                            !isVariable;
+                        createProductStock.readOnly = true;
+                        createProductStock.disabled = false;
+                        createProductStock.required = false;
                     }
 
                     if (isVariable) {
@@ -9620,6 +13743,75 @@ document.addEventListener(
                 }
 
 
+                function syncEditCategoryLocks(
+                    editing =
+                        isEditProductFlow
+                ) {
+
+                    categoryChoicePills.forEach(
+                        function (pill) {
+
+                            pill.disabled =
+                                Boolean(
+                                    editing
+                                );
+
+                            pill.classList.toggle(
+                                'is-edit-locked',
+                                Boolean(
+                                    editing
+                                )
+                            );
+
+                            pill.setAttribute(
+                                'aria-disabled',
+                                editing
+                                    ? 'true'
+                                    : 'false'
+                            );
+
+                        }
+                    );
+
+                    const subcategorySelect =
+                        categorySpecificationsFields
+                            ?.querySelector(
+                                '[name="category_specifications[subcategory]"]'
+                            );
+
+                    if (
+                        subcategorySelect
+                    ) {
+
+                        /*
+                         * Do NOT use disabled=true here.
+                         * Disabled form fields are excluded from FormData,
+                         * so the saved subcategory would disappear.
+                         */
+                        subcategorySelect.classList.toggle(
+                            'is-edit-locked',
+                            Boolean(
+                                editing
+                            )
+                        );
+
+                        subcategorySelect.setAttribute(
+                            'aria-disabled',
+                            editing
+                                ? 'true'
+                                : 'false'
+                        );
+
+                        subcategorySelect.tabIndex =
+                            editing
+                                ? -1
+                                : 0;
+
+                    }
+
+                }
+
+
                 function syncCreateCategoryPills() {
 
                     const selectedCategory =
@@ -9660,6 +13852,12 @@ document.addEventListener(
                         pill.addEventListener(
                             'click',
                             function () {
+
+                                if (
+                                    isEditProductFlow
+                                ) {
+                                    return;
+                                }
 
                                 if (!addProductCategory) {
                                     return;
@@ -10100,23 +14298,6 @@ document.addEventListener(
 
                     }
 
-                    categorySpecificationsFields.appendChild(
-                        buildReadonlySpecification(
-                            'Category',
-                            'selected_category',
-                            config.label
-                        )
-                    );
-
-                    categorySpecificationsFields.appendChild(
-                        buildReadonlySpecification(
-                            'Stock',
-                            'stock_display',
-                            createProductStock?.value ||
-                            ''
-                        )
-                    );
-
                     const subcategorySelectData =
                         buildSubcategorySelect(
                             config
@@ -10204,30 +14385,16 @@ document.addEventListener(
                         }
                     );
 
+                    syncEditCategoryLocks(
+                        isEditProductFlow
+                    );
+
                 }
 
 
                 addProductCategory?.addEventListener(
                     'change',
                     renderCategorySpecifications
-                );
-
-
-                createProductStock?.addEventListener(
-                    'input',
-                    function () {
-
-                        const stockDisplay =
-                            document.getElementById(
-                                'categorySpec_stock_display'
-                            );
-
-                        if (stockDisplay) {
-                            stockDisplay.value =
-                                createProductStock.value;
-                        }
-
-                    }
                 );
 
 
@@ -10353,6 +14520,819 @@ document.addEventListener(
                 }
 
 
+                async function createEditablePhotoFile(
+                    source,
+                    index = 0
+                ) {
+
+                    if (!source) {
+                        return null;
+                    }
+
+                    try {
+
+                        const response =
+                            await fetch(
+                                source
+                            );
+
+                        const blob =
+                            await response.blob();
+
+                        const extension =
+                            blob.type === 'image/png'
+                                ? 'png'
+                                : blob.type === 'image/webp'
+                                    ? 'webp'
+                                    : 'jpg';
+
+                        return new File(
+                            [
+                                blob
+                            ],
+                            `existing-product-photo-${index + 1}.${extension}`,
+                            {
+                                type:
+                                    blob.type ||
+                                    'image/jpeg'
+                            }
+                        );
+
+                    } catch (error) {
+
+                        return null;
+
+                    }
+
+                }
+
+
+                function restoreAddProductPanelHome() {
+
+                    if (
+                        addProductModal &&
+                        addProductModalPanel &&
+                        addProductModalPanel.parentElement !==
+                            addProductModal
+                    ) {
+
+                        addProductModal.appendChild(
+                            addProductModalPanel
+                        );
+
+                    }
+
+                }
+
+
+                function syncCreateModalCopy(
+                    editing = false
+                ) {
+
+                    const title =
+                        document.getElementById(
+                            'createProductModalTitle'
+                        );
+
+                    const subtitle =
+                        addProductModalPanel
+                            ?.querySelector(
+                                '.create-product-subtitle'
+                            );
+
+                    const submit =
+                        addProductForm
+                            ?.querySelector(
+                                'button[type="submit"]'
+                            );
+
+                    if (title) {
+                        title.textContent =
+                            editing
+                                ? 'Edit Product'
+                                : 'Create Product';
+                    }
+
+                    if (subtitle) {
+                        subtitle.textContent =
+                            editing
+                                ? 'Update product information, buyer options, pricing, grouped stock, and specifications.'
+                                : 'Add product information, options, and category-specific specifications.';
+                    }
+
+                    if (submit) {
+                        submit.textContent =
+                            editing
+                                ? 'Save Changes'
+                                : 'Add Product';
+                    }
+
+                }
+
+
+                async function populateAddProductForEdit(
+                    product
+                ) {
+
+                    if (!product) {
+                        return;
+                    }
+
+                    resetCreateProductModal();
+
+                    const titleInput =
+                        addProductForm?.elements?.[
+                            'title'
+                        ];
+
+                    const skuInput =
+                        addProductForm?.elements?.[
+                            'sku'
+                        ];
+
+                    if (titleInput) {
+                        titleInput.value =
+                            product.title ||
+                            product.listingSnapshot?.title ||
+                            '';
+                    }
+
+                    if (skuInput) {
+                        skuInput.value =
+                            product.sku ||
+                            product.listingSnapshot?.sku ||
+                            '';
+                    }
+
+                    if (createProductDescription) {
+                        createProductDescription.value =
+                            product.description ||
+                            product.listingSnapshot?.description ||
+                            '';
+                    }
+
+                    /*
+                     * Photos:
+                     * convert saved image sources back into File objects so
+                     * the exact Add Product photo editor can add/remove them.
+                     */
+                    const existingPhotos =
+                        (
+                            Array.isArray(
+                                product.photos
+                            ) &&
+                            product.photos.length
+                        )
+                            ? product.photos
+                            : (
+                                product.coverPhoto
+                                    ? [
+                                        product.coverPhoto
+                                    ]
+                                    : []
+                            );
+
+                    const existingFiles =
+                        (
+                            await Promise.all(
+                                existingPhotos.map(
+                                    function (
+                                        source,
+                                        index
+                                    ) {
+                                        return createEditablePhotoFile(
+                                            source,
+                                            index
+                                        );
+                                    }
+                                )
+                            )
+                        )
+                        .filter(
+                            Boolean
+                        );
+
+                    selectedProductPhotos =
+                        existingFiles.map(
+                            function (file) {
+                                return {
+                                    file,
+                                    url:
+                                        URL.createObjectURL(
+                                            file
+                                        )
+                                };
+                            }
+                        );
+
+                    syncProductPhotoInput();
+                    renderProductPhotos();
+
+                    /*
+                     * Buyer options.
+                     */
+                    productVariations =
+                        (
+                            Array.isArray(
+                                product.variations
+                            )
+                                ? product.variations
+                                : []
+                        )
+                        .map(
+                            function (item) {
+                                return {
+                                    name:
+                                        item?.name ||
+                                        '',
+                                    price:
+                                        item?.price ??
+                                        '',
+                                    stock:
+                                        item?.stock ??
+                                        '',
+                                    photo:
+                                        null,
+                                    photoUrl:
+                                        item?.photoData ??
+                                        item?.photoUrl ??
+                                        ''
+                                };
+                            }
+                        );
+
+                    productColors =
+                        (
+                            Array.isArray(
+                                product.colors
+                            )
+                                ? product.colors
+                                : []
+                        )
+                        .map(
+                            function (item) {
+                                return {
+                                    name:
+                                        item?.name ||
+                                        '',
+                                    price:
+                                        item?.price ??
+                                        '',
+                                    stock:
+                                        item?.stock ??
+                                        ''
+                                };
+                            }
+                        );
+
+                    productSizes =
+                        (
+                            Array.isArray(
+                                product.sizes
+                            )
+                                ? product.sizes
+                                : []
+                        )
+                        .map(
+                            function (item) {
+                                return {
+                                    name:
+                                        item?.name ||
+                                        '',
+                                    price:
+                                        item?.price ??
+                                        '',
+                                    stock:
+                                        item?.stock ??
+                                        ''
+                                };
+                            }
+                        );
+
+                    const savedMode =
+                        resolveProductPricingMode(
+                            product
+                        );
+
+                    const savedSource =
+                        resolveProductPricingSource(
+                            product
+                        );
+
+                    applyPricingMode(
+                        savedMode
+                    );
+
+                    if (
+                        savedMode ===
+                        'varies'
+                    ) {
+                        setPricingSource(
+                            savedSource,
+                            false
+                        );
+                    }
+
+                    if (
+                        savedMode ===
+                        'fixed' &&
+                        createProductPrice
+                    ) {
+
+                        createProductPrice.value =
+                            Number(
+                                product.basePrice ??
+                                product.base_price ??
+                                product.listingSnapshot?.basePrice ??
+                                product.price ??
+                                0
+                            ).toFixed(
+                                2
+                            );
+
+                    }
+
+                    renderAllBuyerOptions();
+
+                    window.__shopEaseRestoreGroupedPricingState?.(
+                        product,
+                        savedMode,
+                        savedSource
+                    );
+
+                    if (
+                        savedMode ===
+                        'varies' &&
+                        savedSource
+                    ) {
+
+                        const connectedVariants =
+                            Array.isArray(
+                                product.connectedVariants
+                            )
+                                ? product.connectedVariants
+                                : Array.isArray(
+                                    product.connected_variants
+                                )
+                                    ? product.connected_variants
+                                    : [];
+
+                        const sourcePriceMap =
+                            new Map();
+
+                        connectedVariants.forEach(
+                            function (variant) {
+
+                                const choiceName =
+                                    variant?.choices?.[
+                                        savedSource
+                                    ] ??
+                                    variant?.[
+                                        savedSource
+                                    ] ??
+                                    (
+                                        savedSource === 'variations'
+                                            ? variant?.variation
+                                            : savedSource === 'colors'
+                                                ? variant?.color
+                                                : variant?.size
+                                    ) ??
+                                    '';
+
+                                const basePrice =
+                                    Number(
+                                        variant?.base_price ??
+                                        variant?.basePrice
+                                    );
+
+                                if (
+                                    choiceName &&
+                                    Number.isFinite(
+                                        basePrice
+                                    ) &&
+                                    !sourcePriceMap.has(
+                                        String(
+                                            choiceName
+                                        )
+                                    )
+                                ) {
+                                    sourcePriceMap.set(
+                                        String(
+                                            choiceName
+                                        ),
+                                        basePrice
+                                    );
+                                }
+
+                            }
+                        );
+
+                        const sourceItems =
+                            savedSource === 'variations'
+                                ? productVariations
+                                : savedSource === 'colors'
+                                    ? productColors
+                                    : productSizes;
+
+                        sourceItems.forEach(
+                            function (item) {
+
+                                const restored =
+                                    sourcePriceMap.get(
+                                        String(
+                                            item?.name ||
+                                            ''
+                                        )
+                                    );
+
+                                if (
+                                    restored !==
+                                    undefined
+                                ) {
+                                    item.price =
+                                        restored;
+                                }
+
+                            }
+                        );
+
+                        renderAllBuyerOptions();
+
+                        window.__shopEaseRestoreGroupedPricingState?.(
+                            product,
+                            savedMode,
+                            savedSource
+                        );
+
+                    }
+
+                    /*
+                     * IMPORTANT FOR EDIT PRODUCT:
+                     * Re-apply the exact current pricing configuration after
+                     * all option controls have rendered. applyPricingMode()
+                     * itself re-renders the option UI, so this final pass
+                     * prevents Edit Product from falling back to Fixed Price
+                     * or another base-price source.
+                     */
+                    applyPricingMode(
+                        savedMode
+                    );
+
+                    if (
+                        savedMode ===
+                        'varies'
+                    ) {
+
+                        setPricingSource(
+                            savedSource,
+                            true
+                        );
+
+                    } else if (
+                        createProductPrice
+                    ) {
+
+                        createProductPrice.value =
+                            Number(
+                                product.basePrice ??
+                                product.base_price ??
+                                product.listingSnapshot?.basePrice ??
+                                product.listingSnapshot?.base_price ??
+                                product.price ??
+                                0
+                            ).toFixed(
+                                2
+                            );
+
+                    }
+
+                    /*
+                     * Category + specifications.
+                     */
+                    const category =
+                        product.category ||
+                        product.listingSnapshot?.category ||
+                        '';
+
+                    if (
+                        addProductCategory
+                    ) {
+
+                        addProductCategory.value =
+                            category;
+
+                        syncCreateCategoryPills();
+
+                        addProductCategory.dispatchEvent(
+                            new Event(
+                                'change',
+                                {
+                                    bubbles:
+                                        true
+                                }
+                            )
+                        );
+
+                    }
+
+                    const specificationDisplay =
+                        Array.isArray(
+                            product.specificationDisplay
+                        )
+                            ? product.specificationDisplay
+                            : Array.isArray(
+                                product.listingSnapshot
+                                    ?.specificationDisplay
+                            )
+                                ? product.listingSnapshot
+                                    .specificationDisplay
+                                : [];
+
+                    const specificationValues =
+                        {};
+
+                    specificationDisplay.forEach(
+                        function (item) {
+                            specificationValues[
+                                item.key
+                            ] =
+                                item.value;
+                        }
+                    );
+
+                    Object.entries(
+                        product.specifications ||
+                        product.listingSnapshot
+                            ?.specifications ||
+                        {}
+                    ).forEach(
+                        function ([
+                            rawKey,
+                            value
+                        ]) {
+
+                            const key =
+                                String(
+                                    rawKey
+                                )
+                                .replace(
+                                    /^category_specifications\[/,
+                                    ''
+                                )
+                                .replace(
+                                    /\]$/,
+                                    ''
+                                );
+
+                            if (
+                                specificationValues[
+                                    key
+                                ] ===
+                                undefined
+                            ) {
+                                specificationValues[
+                                    key
+                                ] =
+                                    value;
+                            }
+
+                        }
+                    );
+
+                    window.setTimeout(
+                        function () {
+
+                            Object.entries(
+                                specificationValues
+                            ).forEach(
+                                function ([
+                                    key,
+                                    value
+                                ]) {
+
+                                    const control =
+                                        categorySpecificationsFields
+                                            ?.querySelector(
+                                                `[name="category_specifications[${CSS.escape(
+                                                    key
+                                                )}]"]`
+                                            );
+
+                                    if (!control) {
+                                        return;
+                                    }
+
+                                    control.value =
+                                        value ??
+                                        '';
+
+                                    control.dispatchEvent(
+                                        new Event(
+                                            'change',
+                                            {
+                                                bubbles:
+                                                    true
+                                            }
+                                        )
+                                    );
+
+                                }
+                            );
+
+                            /*
+                             * Restore exact grouped choices after option lists
+                             * and specification UI are already present.
+                             */
+                            window.__shopEaseLoadConnectedVariantGroups?.(
+                                product.connectedVariants ||
+                                product.connected_variants ||
+                                product.listingSnapshot?.connectedVariants ||
+                                []
+                            );
+
+                            window.__shopEaseRestoreGroupedPricingState?.(
+                                product,
+                                savedMode,
+                                savedSource
+                            );
+
+                            /*
+                             * Group restoration can trigger another UI render.
+                             * Restore the saved pricing type/source one last time.
+                             */
+                            applyPricingMode(
+                                savedMode
+                            );
+
+                            if (
+                                savedMode ===
+                                'varies'
+                            ) {
+
+                                setPricingSource(
+                                    savedSource,
+                                    true
+                                );
+
+                            } else if (
+                                createProductPrice
+                            ) {
+
+                                createProductPrice.value =
+                                    Number(
+                                        product.basePrice ??
+                                        product.base_price ??
+                                        product.listingSnapshot?.basePrice ??
+                                        product.listingSnapshot?.base_price ??
+                                        product.price ??
+                                        0
+                                    ).toFixed(
+                                        2
+                                    );
+
+                            }
+
+                            window.__shopEaseRestoreGroupedPricingState?.(
+                                product,
+                                savedMode,
+                                savedSource
+                            );
+
+                            syncEditCategoryLocks(
+                                true
+                            );
+
+                            updateCreateDescriptionCount();
+
+                        },
+                        0
+                    );
+
+                }
+
+
+                async function openEditProductModal(
+                    product,
+                    row
+                ) {
+
+                    if (
+                        !editProductModal ||
+                        !addProductModalPanel ||
+                        !product
+                    ) {
+                        return;
+                    }
+
+                    isEditProductFlow =
+                        true;
+
+                    editingProductRecord =
+                        product;
+
+                    editingProductRow =
+                        row ||
+                        null;
+
+                    restoreAddProductPanelHome();
+
+                    editProductModal.appendChild(
+                        addProductModalPanel
+                    );
+
+                    syncCreateModalCopy(
+                        true
+                    );
+
+                    syncEditCategoryLocks(
+                        true
+                    );
+
+                    await populateAddProductForEdit(
+                        product
+                    );
+
+                    syncEditCategoryLocks(
+                        true
+                    );
+
+                    editProductModal.classList.remove(
+                        'hidden'
+                    );
+
+                    editProductModal.classList.add(
+                        'modal-open'
+                    );
+
+                    editProductModal.setAttribute(
+                        'aria-hidden',
+                        'false'
+                    );
+
+                    addProductModalPanel.style.opacity =
+                        '1';
+
+                    addProductModalPanel.style.transform =
+                        'none';
+
+                    document.body.classList.add(
+                        'overflow-hidden'
+                    );
+
+                }
+
+
+                function closeEditProductModal(
+                    reset = true
+                ) {
+
+                    if (!editProductModal) {
+                        return;
+                    }
+
+                    editProductModal.classList.remove(
+                        'modal-open'
+                    );
+
+                    editProductModal.classList.add(
+                        'hidden'
+                    );
+
+                    editProductModal.setAttribute(
+                        'aria-hidden',
+                        'true'
+                    );
+
+                    restoreAddProductPanelHome();
+
+                    isEditProductFlow =
+                        false;
+
+                    syncEditCategoryLocks(
+                        false
+                    );
+
+                    editingProductRecord =
+                        null;
+
+                    editingProductRow =
+                        null;
+
+                    syncCreateModalCopy(
+                        false
+                    );
+
+                    if (reset) {
+                        resetCreateProductModal();
+                    }
+
+                    document.body.classList.remove(
+                        'overflow-hidden'
+                    );
+
+                }
+
+
                 /* =================================================
                    OPEN / CLOSE CREATE PRODUCT
                 ================================================== */
@@ -10362,6 +15342,25 @@ document.addEventListener(
                     if (!addProductModal) {
                         return;
                     }
+
+                    restoreAddProductPanelHome();
+
+                    isEditProductFlow =
+                        false;
+
+                    editingProductRecord =
+                        null;
+
+                    editingProductRow =
+                        null;
+
+                    syncCreateModalCopy(
+                        false
+                    );
+
+                    syncEditCategoryLocks(
+                        false
+                    );
 
                     resetCreateProductModal();
 
@@ -10396,7 +15395,19 @@ document.addEventListener(
                 }
 
 
-                function closeAddModal() {
+                function closeAddModal(force = false) {
+
+                    if (
+                        isEditProductFlow
+                    ) {
+
+                        closeEditProductModal(
+                            true
+                        );
+
+                        return;
+
+                    }
 
                     if (
                         !addProductModal ||
@@ -10405,10 +15416,39 @@ document.addEventListener(
                         return;
                     }
 
+                    if (
+                        !force &&
+                        addProductModal.dataset.groupPhotoPickerOpen === 'true'
+                    ) {
+                        return;
+                    }
+
+                    /*
+                     * Release the grouped-photo picker state before closing.
+                     * The picker temporarily forces display:flex so it stays
+                     * visible while the native file dialog is open.
+                     */
+                    addProductModal.dataset.groupPhotoPickerOpen =
+                        'false';
+
                     fadeCloseModal(
                         addProductModal,
                         addProductModalPanel,
                         function () {
+
+                            /*
+                             * Remove inline styles left by the file picker.
+                             * Otherwise display:flex overrides the hidden class
+                             * and the modal looks like it never closed.
+                             */
+                            addProductModal.style.display =
+                                '';
+
+                            addProductModalPanel.style.opacity =
+                                '';
+
+                            addProductModalPanel.style.transform =
+                                '';
 
                             document.body.classList.remove(
                                 'overflow-hidden'
@@ -10430,48 +15470,96 @@ document.addEventListener(
 
                 closeAddProductModal?.addEventListener(
                     'click',
-                    closeAddModal
+                    function () {
+                        closeAddModal(true);
+                    }
                 );
 
 
                 cancelAddProduct?.addEventListener(
                     'click',
-                    closeAddModal
+                    function () {
+                        closeAddModal(true);
+                    }
                 );
 
 
+                /*
+                 * Close Add Product when clicking the dark backdrop.
+                 * Do not close while the native grouped-variant photo picker
+                 * is active, and never treat clicks inside the panel as outside.
+                 */
                 addProductModal?.addEventListener(
                     'click',
                     function (event) {
 
                         if (
-                            event.target ===
-                            addProductModal
+                            event.target !== addProductModal ||
+                            addProductModal.dataset.groupPhotoPickerOpen === 'true'
                         ) {
+                            return;
+                        }
 
-                            closeAddModal();
+                        closeAddModal(true);
 
+                    }
+                );
+
+
+                editProductModal?.addEventListener(
+                    'click',
+                    function (event) {
+
+                        if (
+                            event.target ===
+                            editProductModal
+                        ) {
+                            closeEditProductModal(
+                                true
+                            );
                         }
 
                     }
                 );
 
 
-                document.addEventListener(
-                    'keydown',
-                    function (event) {
-
+                /*
+                 * If the seller cancels the native grouped-photo dialog,
+                 * focus returns to the browser without a change event.
+                 * Clear only the picker guard; never close the modal.
+                 */
+                window.addEventListener(
+                    'focus',
+                    function () {
                         if (
-                            event.key === 'Escape' &&
-                            addProductModal?.classList.contains(
+                            addProductModal?.dataset.groupPhotoPickerOpen ===
+                                'true' &&
+                            addProductModal.classList.contains(
                                 'modal-open'
+                            ) &&
+                            !addProductModal.classList.contains(
+                                'modal-closing'
                             )
                         ) {
+                            window.setTimeout(
+                                function () {
+                                    addProductModal.dataset.groupPhotoPickerOpen =
+                                        'false';
 
-                            closeAddModal();
+                                    addProductModal.classList.remove('hidden');
+                                    addProductModal.classList.add('modal-open');
+                                    addProductModal.setAttribute(
+                                        'aria-hidden',
+                                        'false'
+                                    );
 
+                                    document.body.classList.add(
+                                        'overflow-hidden'
+                                    );
+                                },
+                                300
+                            );
                         }
-
                     }
                 );
 
@@ -10678,15 +15766,6 @@ document.addEventListener(
                                     variation.stock || '0'
                                 );
 
-                                if (variation.photo) {
-
-                                    formData.append(
-                                        `variation_items[${index}][photo]`,
-                                        variation.photo
-                                    );
-
-                                }
-
                             }
                         );
 
@@ -10718,13 +15797,6 @@ document.addEventListener(
                                     color.stock || '0'
                                 );
 
-                                if (color.photo) {
-                                    formData.append(
-                                        `color_items[${index}][photo]`,
-                                        color.photo
-                                    );
-                                }
-
                             }
                         );
 
@@ -10755,13 +15827,6 @@ document.addEventListener(
                                     `size_items[${index}][stock]`,
                                     size.stock || '0'
                                 );
-
-                                if (size.photo) {
-                                    formData.append(
-                                        `size_items[${index}][photo]`,
-                                        size.photo
-                                    );
-                                }
 
                             }
                         );
@@ -10801,11 +15866,6 @@ document.addEventListener(
                                         return {
                                             name:
                                                 variation.name,
-
-                                            hasPhoto:
-                                                Boolean(
-                                                    variation.photo
-                                                ),
 
                                             price:
                                                 Number(
@@ -10955,6 +16015,71 @@ document.addEventListener(
                             );
 
 
+                        const connectedGroupRuntime =
+                            Array.isArray(
+                                window.__shopEaseConnectedVariantGroups
+                            )
+                                ? window.__shopEaseConnectedVariantGroups
+                                : [];
+
+                        let serializedConnectedVariants =
+                            [];
+
+                        try {
+
+                            const rawConnected =
+                                formData.get(
+                                    'variant_combinations'
+                                );
+
+                            serializedConnectedVariants =
+                                rawConnected
+                                    ? JSON.parse(
+                                        rawConnected
+                                    )
+                                    : [];
+
+                        } catch (error) {
+
+                            serializedConnectedVariants =
+                                [];
+
+                        }
+
+                        const compactConnectedGroupPhotos =
+                            await Promise.all(
+                                connectedGroupRuntime.map(
+                                    function (group) {
+
+                                        return createCompactCoverDataUrl(
+                                            group?.photo
+                                        );
+
+                                    }
+                                )
+                            );
+
+                        const localConnectedVariants =
+                            serializedConnectedVariants.map(
+                                function (
+                                    variant,
+                                    index
+                                ) {
+
+                                    return {
+                                        ...variant,
+
+                                        photoData:
+                                            compactConnectedGroupPhotos[
+                                                index
+                                            ] ||
+                                            ''
+                                    };
+
+                                }
+                            );
+
+
                         const specificationDisplay =
                             Array.from(
                                 categorySpecificationsFields
@@ -11020,6 +16145,444 @@ document.addEventListener(
                                     );
                                 }
                             );
+
+
+                        if (
+                            isEditProductFlow &&
+                            editingProductRecord
+                        ) {
+
+                            const product =
+                                editingProductRecord;
+
+                            const row =
+                                editingProductRow;
+
+                            const csrfToken =
+                                document.querySelector(
+                                    'meta[name="csrf-token"]'
+                                )?.content ||
+                                '';
+
+                            /*
+                             * Laravel-compatible update:
+                             * multipart POST + _method=PUT.
+                             */
+                            formData.set(
+                                '_method',
+                                'PUT'
+                            );
+
+                            formData.set(
+                                'status',
+                                'pending'
+                            );
+
+                            try {
+
+                                const response =
+                                    await fetch(
+                                        `${inventoryConfig.inventoryProductsUrl}/${product.id}`,
+                                        {
+                                            method:
+                                                'POST',
+                                            credentials:
+                                                'same-origin',
+                                            headers: {
+                                                'X-CSRF-TOKEN':
+                                                    csrfToken,
+                                                'X-XSRF-TOKEN':
+                                                    csrfToken,
+                                                'Accept':
+                                                    'application/json'
+                                            },
+                                            body:
+                                                formData
+                                        }
+                                    );
+
+                                if (!response.ok) {
+
+                                    const payload =
+                                        await response.json()
+                                            .catch(
+                                                () => ({})
+                                            );
+
+                                    const firstError =
+                                        Object.values(
+                                            payload.errors ||
+                                            {}
+                                        )[0]?.[0];
+
+                                    throw new Error(
+                                        firstError ||
+                                        payload.message ||
+                                        'Product changes could not be saved.'
+                                    );
+
+                                }
+
+                                await response.json()
+                                    .catch(
+                                        () => ({})
+                                    );
+
+                            } catch (error) {
+
+                                if (submitButton) {
+                                    submitButton.disabled =
+                                        false;
+
+                                    submitButton.textContent =
+                                        'Save Changes';
+                                }
+
+                                window.alert(
+                                    error.message ||
+                                    'Product changes could not be saved.'
+                                );
+
+                                return;
+
+                            }
+
+                            const previousPrice =
+                                currentProductPriceNumber(
+                                    product
+                                );
+
+                            const previousPricingMode =
+                                resolveProductPricingMode(
+                                    product
+                                );
+
+                            const previousPricingSource =
+                                resolveProductPricingSource(
+                                    product
+                                );
+
+                            product.title =
+                                previewPayload.title ||
+                                product.title;
+
+                            product.category =
+                                previewPayload.category ||
+                                product.category;
+
+                            product.categoryLabel =
+                                productSpecificationLibrary[
+                                    product.category
+                                ]?.label ||
+                                product.categoryLabel ||
+                                product.category;
+
+                            product.pricingMode =
+                                previewPayload.pricingMode;
+
+                            product.pricing_mode =
+                                previewPayload.pricingMode;
+
+                            product.pricingSource =
+                                previewPayload.pricingSource;
+
+                            product.pricing_source =
+                                previewPayload.pricingSource;
+
+                            product.basePrice =
+                                previewPayload.pricingMode ===
+                                    'fixed'
+                                    ? Number(
+                                        previewPayload.basePrice ||
+                                        0
+                                    )
+                                    : productDetailsLowestBasePrice(
+                                        {
+                                            ...product,
+                                            variations:
+                                                previewPayload.variations,
+                                            colors:
+                                                previewPayload.colors,
+                                            sizes:
+                                                previewPayload.sizes,
+                                            connectedVariants:
+                                                localConnectedVariants,
+                                            pricingMode:
+                                                previewPayload.pricingMode,
+                                            pricingSource:
+                                                previewPayload.pricingSource
+                                        }
+                                    );
+
+                            product.stock =
+                                Number(
+                                    previewPayload.stock ||
+                                    0
+                                );
+
+                            product.variations =
+                                previewPayload.variations;
+
+                            product.colors =
+                                previewPayload.colors;
+
+                            product.sizes =
+                                previewPayload.sizes;
+
+                            product.connectedVariants =
+                                localConnectedVariants;
+
+                            product.specifications =
+                                previewPayload.specifications;
+
+                            product.specificationDisplay =
+                                specificationDisplay;
+
+                            product.description =
+                                formData.get(
+                                    'description'
+                                ) ||
+                                '';
+
+                            product.sku =
+                                formData.get(
+                                    'sku'
+                                ) ||
+                                '';
+
+                            product.photos =
+                                compactProductPhotos;
+
+                            product.coverPhoto =
+                                compactProductPhotos[
+                                    0
+                                ] ||
+                                '';
+
+                            product.approvalStatus =
+                                'pending';
+
+                            product.status =
+                                'pending';
+
+                            product.updatedAt =
+                                new Date().toISOString();
+
+                            product.listingSnapshot = {
+                                ...(product.listingSnapshot || {}),
+
+                                title:
+                                    product.title,
+
+                                category:
+                                    product.category,
+
+                                categoryLabel:
+                                    product.categoryLabel,
+
+                                pricingMode:
+                                    product.pricingMode,
+
+                                originalPricingMode:
+                                    product.pricingMode,
+
+                                pricingSource:
+                                    product.pricingSource,
+
+                                originalPricingSource:
+                                    product.pricingSource,
+
+                                basePrice:
+                                    product.basePrice,
+
+                                stock:
+                                    product.stock,
+
+                                sku:
+                                    product.sku,
+
+                                description:
+                                    product.description,
+
+                                variations:
+                                    product.variations,
+
+                                colors:
+                                    product.colors,
+
+                                sizes:
+                                    product.sizes,
+
+                                specifications:
+                                    product.specifications,
+
+                                specificationDisplay:
+                                    product.specificationDisplay,
+
+                                connectedVariants:
+                                    product.connectedVariants,
+
+                                approvalStatus:
+                                    'pending'
+                            };
+
+                            ensureProductHistoryArrays(
+                                product
+                            );
+
+                            const newPrice =
+                                currentProductPriceNumber(
+                                    product
+                                );
+
+                            const newPricingMode =
+                                resolveProductPricingMode(
+                                    product
+                                );
+
+                            const newPricingSource =
+                                resolveProductPricingSource(
+                                    product
+                                );
+
+                            if (
+                                Math.abs(
+                                    Number(
+                                        previousPrice ||
+                                        0
+                                    ) -
+                                    Number(
+                                        newPrice ||
+                                        0
+                                    )
+                                ) > 0.004 ||
+                                previousPricingMode !==
+                                    newPricingMode ||
+                                previousPricingSource !==
+                                    newPricingSource
+                            ) {
+
+                                const previousPricingLabel =
+                                    previousPricingMode ===
+                                        'varies'
+                                        ? `Price Varies${
+                                            previousPricingSource
+                                                ? ` · Base: ${productDetailsGroupLabel(
+                                                    previousPricingSource
+                                                )}`
+                                                : ''
+                                        }`
+                                        : 'Fixed Price';
+
+                                const newPricingLabel =
+                                    newPricingMode ===
+                                        'varies'
+                                        ? `Price Varies${
+                                            newPricingSource
+                                                ? ` · Base: ${productDetailsGroupLabel(
+                                                    newPricingSource
+                                                )}`
+                                                : ''
+                                        }`
+                                        : 'Fixed Price';
+
+                                product.priceHistory.push(
+                                    {
+                                        at:
+                                            new Date().toISOString(),
+                                        by:
+                                            'Seller',
+                                        label:
+                                            'Product price updated',
+                                        note:
+                                            `${previousPricingLabel} → ${newPricingLabel}`,
+                                        before:
+                                            Number(
+                                                previousPrice ||
+                                                0
+                                            ),
+                                        after:
+                                            Number(
+                                                newPrice ||
+                                                0
+                                            )
+                                    }
+                                );
+
+                            }
+
+                            const existingIndex =
+                                createdInventoryProducts.findIndex(
+                                    function (item) {
+                                        return (
+                                            String(
+                                                item.id
+                                            ) ===
+                                            String(
+                                                product.id
+                                            )
+                                        );
+                                    }
+                                );
+
+                            if (
+                                existingIndex >=
+                                0
+                            ) {
+
+                                createdInventoryProducts[
+                                    existingIndex
+                                ] =
+                                    product;
+
+                            }
+
+                            saveCreatedProducts();
+
+                            if (row) {
+
+                                const replacement =
+                                    buildCreatedProductRow(
+                                        product,
+                                        true
+                                    );
+
+                                if (replacement) {
+                                    row.replaceWith(
+                                        replacement
+                                    );
+                                }
+
+                            }
+
+                            updateInventoryTotalCount();
+
+                            if (submitButton) {
+                                submitButton.disabled =
+                                    false;
+
+                                submitButton.textContent =
+                                    'Save Changes';
+                            }
+
+                            closeEditProductModal(
+                                true
+                            );
+
+                            window.setTimeout(
+                                function () {
+
+                                    showInventoryFlash(
+                                        'Product changes saved and submitted for admin approval.'
+                                    );
+
+                                },
+                                180
+                            );
+
+                            return;
+
+                        }
 
 
                         let persistedProduct;
@@ -11116,11 +16679,58 @@ document.addEventListener(
                                 previewPayload.sizes,
 
                             connectedVariants:
-                                Array.isArray(persistedProduct.connected_variants)
-                                    ? persistedProduct.connected_variants
-                                    : Array.isArray(persistedProduct.connectedVariants)
-                                        ? persistedProduct.connectedVariants
-                                        : [],
+                                (
+                                    Array.isArray(
+                                        persistedProduct.connected_variants
+                                    ) &&
+                                    persistedProduct.connected_variants.length
+                                )
+                                    ? persistedProduct.connected_variants.map(
+                                        function (
+                                            variant,
+                                            index
+                                        ) {
+
+                                            return {
+                                                ...variant,
+
+                                                photoData:
+                                                    localConnectedVariants[
+                                                        index
+                                                    ]?.photoData ||
+                                                    variant.photoData ||
+                                                    variant.photo_data ||
+                                                    ''
+                                            };
+
+                                        }
+                                    )
+                                    : (
+                                        Array.isArray(
+                                            persistedProduct.connectedVariants
+                                        ) &&
+                                        persistedProduct.connectedVariants.length
+                                    )
+                                        ? persistedProduct.connectedVariants.map(
+                                            function (
+                                                variant,
+                                                index
+                                            ) {
+
+                                                return {
+                                                    ...variant,
+
+                                                    photoData:
+                                                        localConnectedVariants[
+                                                            index
+                                                        ]?.photoData ||
+                                                        variant.photoData ||
+                                                        ''
+                                                };
+
+                                            }
+                                        )
+                                        : localConnectedVariants,
 
                             specifications:
                                 previewPayload.specifications,
@@ -11150,7 +16760,144 @@ document.addEventListener(
                                 '',
 
                             createdAt:
-                                persistedProduct.created_at || new Date().toISOString()
+                                persistedProduct.created_at || new Date().toISOString(),
+
+                            stockHistory: [
+                                {
+                                    at:
+                                        persistedProduct.created_at ||
+                                        new Date().toISOString(),
+                                    by:
+                                        'Seller',
+                                    label:
+                                        'Initial stock',
+                                    variant:
+                                        'Opening grouped inventory',
+                                    before:
+                                        0,
+                                    after:
+                                        Number(
+                                            (persistedProduct.stock_quantity ??
+                                                previewPayload.stock) ||
+                                            0
+                                        )
+                                }
+                            ],
+
+                            priceHistory: [
+                                {
+                                    at:
+                                        persistedProduct.created_at ||
+                                        new Date().toISOString(),
+                                    by:
+                                        'Seller',
+                                    label:
+                                        'Initial price',
+                                    note:
+                                        previewPayload.pricingMode === 'varies'
+                                            ? 'Lowest base price'
+                                            : 'Fixed price',
+                                    before:
+                                        0,
+                                    after:
+                                        previewPayload.pricingMode === 'varies'
+                                            ? (
+                                                (
+                                                    previewPayload[
+                                                        previewPayload.pricingSource
+                                                    ] ||
+                                                    []
+                                                )
+                                                .map(
+                                                    function (item) {
+                                                        return Number(
+                                                            item?.price ||
+                                                            0
+                                                        );
+                                                    }
+                                                )
+                                                .filter(Number.isFinite)
+                                                .reduce(
+                                                    function (
+                                                        minimum,
+                                                        value
+                                                    ) {
+                                                        return minimum === null
+                                                            ? value
+                                                            : Math.min(
+                                                                minimum,
+                                                                value
+                                                            );
+                                                    },
+                                                    null
+                                                ) ??
+                                                0
+                                            )
+                                            : Number(
+                                                persistedProduct.price ??
+                                                previewPayload.basePrice ??
+                                                0
+                                            )
+                                }
+                            ],
+
+                            /*
+                             * Complete snapshot of Add Product data so Product
+                             * Details can always reproduce what the seller entered,
+                             * even when the backend response omits optional UI fields.
+                             */
+                            listingSnapshot: {
+                                title:
+                                    previewPayload.title || '',
+
+                                category:
+                                    previewPayload.category || '',
+
+                                pricingMode:
+                                    previewPayload.pricingMode || 'fixed',
+
+                                originalPricingMode:
+                                    previewPayload.pricingMode || 'fixed',
+
+                                pricingSource:
+                                    previewPayload.pricingSource || '',
+
+                                originalPricingSource:
+                                    previewPayload.pricingSource || '',
+
+                                basePrice:
+                                    previewPayload.basePrice,
+
+                                stock:
+                                    Number(
+                                        previewPayload.stock ||
+                                        0
+                                    ),
+
+                                sku:
+                                    formData.get('sku') || '',
+
+                                description:
+                                    formData.get('description') || '',
+
+                                variations:
+                                    previewPayload.variations,
+
+                                colors:
+                                    previewPayload.colors,
+
+                                sizes:
+                                    previewPayload.sizes,
+
+                                specifications:
+                                    previewPayload.specifications,
+
+                                specificationDisplay:
+                                    specificationDisplay,
+
+                                connectedVariants:
+                                    localConnectedVariants
+                            }
                         };
                         createdInventoryProducts.unshift(
                             createdProduct
@@ -11183,7 +16930,7 @@ document.addEventListener(
 
                                 }
 
-                                closeAddModal();
+                                closeAddModal(true);
 
                                 window.setTimeout(
                                     function () {
@@ -11539,6 +17286,424 @@ document.addEventListener(
              *   Variation 2 + Black => Black +₱60
              */
             let connectedGroups = [];
+
+            window.__shopEaseLoadConnectedVariantGroups =
+                function (savedGroups) {
+
+                    const incoming =
+                        Array.isArray(
+                            savedGroups
+                        )
+                            ? savedGroups
+                            : [];
+
+                    connectedGroups =
+                        incoming.map(
+                            function (variant) {
+
+                                const choices = {
+                                    variations:
+                                        variant?.choices?.variations ??
+                                        variant?.variations ??
+                                        variant?.variation ??
+                                        '',
+                                    colors:
+                                        variant?.choices?.colors ??
+                                        variant?.colors ??
+                                        variant?.color ??
+                                        '',
+                                    sizes:
+                                        variant?.choices?.sizes ??
+                                        variant?.sizes ??
+                                        variant?.size ??
+                                        ''
+                                };
+
+                                return {
+                                    choices,
+                                    pricingMode:
+                                        variant?.pricing_mode ??
+                                        variant?.pricingMode ??
+                                        '',
+                                    pricingSource:
+                                        variant?.pricing_source ??
+                                        variant?.pricingSource ??
+                                        '',
+                                    basePrice:
+                                        Number(
+                                            variant?.base_price ??
+                                            variant?.basePrice ??
+                                            0
+                                        ),
+                                    additions: {
+                                        ...(
+                                            variant?.additions ||
+                                            {}
+                                        )
+                                    },
+                                    stock:
+                                        Number(
+                                            variant?.stock ||
+                                            0
+                                        ),
+                                    photo:
+                                        null,
+                                    photoUrl:
+                                        variant?.photoData ??
+                                        variant?.photo_url ??
+                                        variant?.photoUrl ??
+                                        ''
+                                };
+
+                            }
+                        );
+
+                    renderConnectedTable(
+                        getActiveGroups()
+                    );
+
+                    syncPayload();
+
+                };
+
+
+            window.__shopEaseRestoreGroupedPricingState =
+                function (
+                    product,
+                    requestedMode = '',
+                    requestedSource = ''
+                ) {
+
+                    if (!product) {
+                        return;
+                    }
+
+                    const connectedVariants =
+                        Array.isArray(
+                            product.connectedVariants
+                        )
+                            ? product.connectedVariants
+                            : Array.isArray(
+                                product.connected_variants
+                            )
+                                ? product.connected_variants
+                                : [];
+
+                    const normalizeMode =
+                        function (value) {
+
+                            const normalized =
+                                String(
+                                    value ??
+                                    ''
+                                )
+                                .trim()
+                                .toLowerCase();
+
+                            return [
+                                'varies',
+                                'variable',
+                                'price varies',
+                                'price_varies',
+                                'variable_price'
+                            ].includes(
+                                normalized
+                            )
+                                ? 'varies'
+                                : 'fixed';
+
+                        };
+
+                    const sourceAliases = {
+                        variation:
+                            'variations',
+                        variations:
+                            'variations',
+                        color:
+                            'colors',
+                        colour:
+                            'colors',
+                        colours:
+                            'colors',
+                        colors:
+                            'colors',
+                        size:
+                            'sizes',
+                        sizes:
+                            'sizes'
+                    };
+
+                    const normalizeSource =
+                        function (value) {
+
+                            const normalized =
+                                String(
+                                    value ??
+                                    ''
+                                )
+                                .trim()
+                                .toLowerCase();
+
+                            return sourceAliases[
+                                normalized
+                            ] ||
+                            '';
+
+                        };
+
+                    const savedMode =
+                        normalizeMode(
+                            requestedMode ||
+                            connectedVariants[0]?.pricing_mode ||
+                            connectedVariants[0]?.pricingMode ||
+                            product.listingSnapshot?.originalPricingMode ||
+                            product.listingSnapshot?.pricingMode ||
+                            product.listingSnapshot?.pricing_mode ||
+                            product.pricingMode ||
+                            product.pricing_mode
+                        );
+
+                    const savedSource =
+                        savedMode === 'varies'
+                            ? normalizeSource(
+                                requestedSource ||
+                                connectedVariants[0]?.pricing_source ||
+                                connectedVariants[0]?.pricingSource ||
+                                product.listingSnapshot?.originalPricingSource ||
+                                product.listingSnapshot?.pricingSource ||
+                                product.listingSnapshot?.pricing_source ||
+                                product.pricingSource ||
+                                product.pricing_source
+                            )
+                            : '';
+
+                    pricingMode =
+                        savedMode;
+
+                    pricingSource =
+                        savedSource;
+
+                    /*
+                     * Rebuild exact base-price memory.
+                     * This is what the grouped pricing renderer uses when it
+                     * shows the Base Price fields after Edit Product opens.
+                     */
+                    basePriceState.clear();
+
+                    if (
+                        savedMode === 'varies' &&
+                        savedSource
+                    ) {
+
+                        connectedVariants.forEach(
+                            function (variant) {
+
+                                const choiceName =
+                                    variant?.choices?.[
+                                        savedSource
+                                    ] ??
+                                    variant?.[
+                                        savedSource
+                                    ] ??
+                                    (
+                                        savedSource === 'variations'
+                                            ? variant?.variation
+                                            : savedSource === 'colors'
+                                                ? variant?.color
+                                                : variant?.size
+                                    ) ??
+                                    '';
+
+                                if (!choiceName) {
+                                    return;
+                                }
+
+                                const basePrice =
+                                    Number(
+                                        variant?.base_price ??
+                                        variant?.basePrice
+                                    );
+
+                                if (
+                                    Number.isFinite(
+                                        basePrice
+                                    )
+                                ) {
+
+                                    basePriceState.set(
+                                        basePriceKey(
+                                            savedSource,
+                                            choiceName
+                                        ),
+                                        String(
+                                            basePrice
+                                        )
+                                    );
+
+                                    const sourceItems =
+                                        Array.isArray(
+                                            product?.[
+                                                savedSource
+                                            ]
+                                        )
+                                            ? product[
+                                                savedSource
+                                            ]
+                                            : [];
+
+                                    const sourceItem =
+                                        sourceItems.find(
+                                            function (item) {
+                                                return (
+                                                    String(
+                                                        item?.name ||
+                                                        ''
+                                                    ) ===
+                                                    String(
+                                                        choiceName
+                                                    )
+                                                );
+                                            }
+                                        );
+
+                                    if (sourceItem) {
+                                        sourceItem.price =
+                                            basePrice;
+
+                                        sourceItem.price_type =
+                                            'base';
+
+                                        sourceItem.priceType =
+                                            'base';
+                                    }
+
+                                }
+
+                            }
+                        );
+
+                        /*
+                         * Older/local products may keep base prices only on the
+                         * source option items. Fill any keys not found above.
+                         */
+                        const sourceItems =
+                            Array.isArray(
+                                product?.[
+                                    savedSource
+                                ]
+                            )
+                                ? product[
+                                    savedSource
+                                ]
+                                : [];
+
+                        sourceItems.forEach(
+                            function (item) {
+
+                                const choiceName =
+                                    item?.name ||
+                                    '';
+
+                                if (!choiceName) {
+                                    return;
+                                }
+
+                                const key =
+                                    basePriceKey(
+                                        savedSource,
+                                        choiceName
+                                    );
+
+                                if (
+                                    basePriceState.has(
+                                        key
+                                    )
+                                ) {
+                                    return;
+                                }
+
+                                const value =
+                                    Number(
+                                        item?.price ??
+                                        item?.base_price ??
+                                        item?.basePrice
+                                    );
+
+                                if (
+                                    Number.isFinite(
+                                        value
+                                    )
+                                ) {
+
+                                    basePriceState.set(
+                                        key,
+                                        String(
+                                            value
+                                        )
+                                    );
+
+                                }
+
+                            }
+                        );
+
+                    }
+
+                    /*
+                     * Fixed price is held separately by the grouped pricing
+                     * module, so restore it too.
+                     */
+                    if (
+                        savedMode === 'fixed' &&
+                        fixedPriceInput
+                    ) {
+
+                        fixedPriceInput.value =
+                            Number(
+                                product.basePrice ??
+                                product.base_price ??
+                                product.listingSnapshot?.basePrice ??
+                                product.listingSnapshot?.base_price ??
+                                product.price ??
+                                0
+                            ).toFixed(
+                                2
+                            );
+
+                    }
+
+                    /*
+                     * IMPORTANT:
+                     * Do NOT call applyRules() here.
+                     *
+                     * applyRules() begins with captureBasePrices(), and while
+                     * opening Edit Product the current DOM may still contain
+                     * blank/stale pricing inputs. That was overwriting the
+                     * restored basePriceState and turning the real base prices
+                     * into 0.00.
+                     *
+                     * Render directly from the saved state instead.
+                     */
+                    syncPricingUI();
+
+                    const activeGroups =
+                        getActiveGroups();
+
+                    configureChoiceRows(
+                        activeGroups
+                    );
+
+                    rebuildComposer(
+                        activeGroups
+                    );
+
+                    renderConnectedTable(
+                        activeGroups
+                    );
+
+                    syncPayload();
+
+                };
 
             let applyingRules = false;
 
@@ -12959,6 +19124,8 @@ document.addEventListener(
                         ...additions,
                     },
 
+                    photo: null,
+                    photoUrl: null,
                     stock: 0,
                 });
 
@@ -13312,6 +19479,14 @@ document.addEventListener(
                     JSON.stringify(
                         payload
                     );
+
+                /*
+                 * Expose the in-memory grouped choices to the Create Product
+                 * submit handler so Product Details can preserve the exact
+                 * grouped layout and its attached photos immediately.
+                 */
+                window.__shopEaseConnectedVariantGroups =
+                    connectedGroups;
             }
 
             function purgeInvalidGroups(
@@ -13377,17 +19552,33 @@ document.addEventListener(
                     );
 
                 if (productStockInput) {
-                    productStockInput.readOnly = groups.length > 0;
+                    productStockInput.readOnly = true;
+                    productStockInput.required = false;
 
-                    if (groups.length > 0) {
-                        productStockInput.value = String(
-                            groups.reduce(
-                                (total, group) =>
-                                    total + Math.max(0, Number(group.stock) || 0),
-                                0
-                            )
+                    const totalStock = groups.length > 0
+                        ? groups.reduce(
+                            (total, group) =>
+                                total + Math.max(0, Number(group.stock) || 0),
+                            0
+                        )
+                        : Object.values(containers).reduce(
+                            (total, container) => {
+                                if (!container) return total;
+
+                                return total + Array.from(
+                                    container.querySelectorAll(
+                                        '.buyer-option-stock-field input[type="number"]'
+                                    )
+                                ).reduce(
+                                    (subtotal, input) =>
+                                        subtotal + Math.max(0, Number(input.value) || 0),
+                                    0
+                                );
+                            },
+                            0
                         );
-                    }
+
+                    productStockInput.value = String(totalStock);
                 }
 
                 if (matrixCount) {
@@ -13442,6 +19633,18 @@ document.addEventListener(
                             th
                         );
                     }
+                );
+
+                const photoTh =
+                    document.createElement(
+                        'th'
+                    );
+
+                photoTh.textContent =
+                    'Photo';
+
+                matrixHeader.appendChild(
+                    photoTh
                 );
 
                 const priceTh =
@@ -13559,6 +19762,350 @@ document.addEventListener(
                             }
                         );
 
+                        const photoTd =
+                            document.createElement(
+                                'td'
+                            );
+
+                        photoTd.className =
+                            'variant-photo-cell';
+
+                        const photoButton =
+                            document.createElement(
+                                'button'
+                            );
+
+                        photoButton.type =
+                            'button';
+
+                        photoButton.className =
+                            'variant-group-photo-picker';
+
+                        photoButton.setAttribute(
+                            'aria-label',
+                            'Attach photo for this grouped choice'
+                        );
+
+                        const photoInput =
+                            document.createElement(
+                                'input'
+                            );
+
+                        photoInput.type =
+                            'file';
+
+                        photoInput.accept =
+                            'image/jpeg,image/png,image/webp';
+
+                        photoInput.name =
+                            `variant_group_photos[${rowIndex}]`;
+
+                        photoInput.className =
+                            'variant-group-photo-input';
+
+                        /*
+                         * Keep the native file input separate from the
+                         * clickable button. The button explicitly opens
+                         * the picker, so it can never submit the form or
+                         * behave like a label/backdrop click.
+                         */
+                        /*
+                         * Keep the file input available to the browser.
+                         * It is visually hidden with CSS instead of using
+                         * the HTML hidden attribute/display:none.
+                         */
+                        photoInput.tabIndex =
+                            -1;
+
+                        const photoKey =
+                            document.createElement('input');
+
+                        photoKey.type = 'hidden';
+
+                        photoKey.name =
+                            `variant_group_photo_keys[${rowIndex}]`;
+
+                        photoKey.value =
+                            group.key;
+
+                        const photoPreview =
+                            document.createElement('span');
+
+                        photoPreview.className =
+                            'variant-group-photo-preview';
+
+                        const photoText =
+                            document.createElement('span');
+
+                        photoText.className =
+                            'variant-group-photo-text';
+
+                        const syncPhotoPreview = () => {
+
+                            photoPreview.innerHTML =
+                                '';
+
+                            if (group.photoUrl) {
+
+                                const image =
+                                    document.createElement(
+                                        'img'
+                                    );
+
+                                image.src =
+                                    group.photoUrl;
+
+                                image.alt =
+                                    'Grouped choice photo';
+
+                                photoPreview.appendChild(
+                                    image
+                                );
+
+                                photoText.textContent =
+                                    'Change';
+
+                            } else {
+
+                                photoPreview.textContent =
+                                    '+';
+
+                                photoText.textContent =
+                                    'Attach';
+
+                            }
+
+                        };
+
+                        if (
+                            group.photo &&
+                            typeof DataTransfer !==
+                                'undefined'
+                        ) {
+
+                            const transfer =
+                                new DataTransfer();
+
+                            transfer.items.add(
+                                group.photo
+                            );
+
+                            photoInput.files =
+                                transfer.files;
+
+                        }
+
+                        syncPhotoPreview();
+
+                        /*
+                         * Open the native picker from a TYPE=BUTTON.
+                         * Capture + stopImmediatePropagation prevents
+                         * any modal/backdrop click handler from seeing
+                         * this interaction.
+                         */
+                        photoButton.addEventListener(
+                            'click',
+                            function (event) {
+
+                                event.preventDefault();
+                                event.stopPropagation();
+
+                                if (addProductModal) {
+
+                                    addProductModal.dataset.groupPhotoPickerOpen =
+                                        'true';
+
+                                    addProductModal.classList.remove(
+                                        'hidden',
+                                        'modal-closing'
+                                    );
+
+                                    addProductModal.classList.add(
+                                        'modal-open'
+                                    );
+
+                                    addProductModal.setAttribute(
+                                        'aria-hidden',
+                                        'false'
+                                    );
+
+                                    addProductModal.style.display =
+                                        'flex';
+
+                                }
+
+                                if (addProductModalPanel) {
+
+                                    addProductModalPanel.style.opacity =
+                                        '1';
+
+                                    addProductModalPanel.style.transform =
+                                        'none';
+
+                                }
+
+                                document.body.classList.add(
+                                    'overflow-hidden'
+                                );
+
+                                /*
+                                 * Open the native Windows/browser file picker
+                                 * directly from the user's click.
+                                 */
+                                try {
+
+                                    if (
+                                        typeof photoInput.showPicker ===
+                                        'function'
+                                    ) {
+
+                                        photoInput.showPicker();
+
+                                    } else {
+
+                                        photoInput.click();
+
+                                    }
+
+                                } catch (error) {
+
+                                    /*
+                                     * Fallback for browsers that expose
+                                     * showPicker() but reject it.
+                                     */
+                                    photoInput.click();
+
+                                }
+
+                            }
+                        );
+
+                        photoInput.addEventListener(
+                            'change',
+                            function (event) {
+
+                                event.stopPropagation();
+
+                                const file =
+                                    photoInput.files?.[0] ||
+                                    null;
+
+                                if (!file) {
+
+                                    if (addProductModal) {
+                                        addProductModal.dataset.groupPhotoPickerOpen =
+                                            'false';
+                                    }
+
+                                    return;
+
+                                }
+
+                                if (
+                                    ![
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp'
+                                    ].includes(
+                                        file.type
+                                    )
+                                ) {
+
+                                    photoInput.value =
+                                        '';
+
+                                    if (addProductModal) {
+                                        addProductModal.dataset.groupPhotoPickerOpen =
+                                            'false';
+                                    }
+
+                                    window.alert(
+                                        'Please choose a JPG, PNG, or WEBP image.'
+                                    );
+
+                                    return;
+
+                                }
+
+                                if (group.photoUrl) {
+
+                                    URL.revokeObjectURL(
+                                        group.photoUrl
+                                    );
+
+                                }
+
+                                group.photo =
+                                    file;
+
+                                group.photoUrl =
+                                    URL.createObjectURL(
+                                        file
+                                    );
+
+                                syncPhotoPreview();
+
+                                /*
+                                 * Explicitly restore the modal after the
+                                 * native picker returns. This also cancels
+                                 * any visual closing state.
+                                 */
+                                if (addProductModal) {
+
+                                    addProductModal.dataset.groupPhotoPickerOpen =
+                                        'false';
+
+                                    addProductModal.classList.remove(
+                                        'hidden',
+                                        'modal-closing'
+                                    );
+
+                                    addProductModal.classList.add(
+                                        'modal-open'
+                                    );
+
+                                    addProductModal.setAttribute(
+                                        'aria-hidden',
+                                        'false'
+                                    );
+
+                                    addProductModal.style.display =
+                                        'flex';
+
+                                }
+
+                                if (addProductModalPanel) {
+
+                                    addProductModalPanel.style.opacity =
+                                        '1';
+
+                                    addProductModalPanel.style.transform =
+                                        'none';
+
+                                }
+
+                                document.body.classList.add(
+                                    'overflow-hidden'
+                                );
+
+                            }
+                        );
+
+                        photoButton.append(
+                            photoPreview,
+                            photoText
+                        );
+
+                        photoTd.append(
+                            photoButton,
+                            photoInput,
+                            photoKey
+                        );
+
+                        tr.appendChild(
+                            photoTd
+                        );
+
                         tr.appendChild(
                             renderPriceCell(
                                 group
@@ -13600,6 +20147,16 @@ document.addEventListener(
                                             .value ||
                                         0
                                     );
+
+                                if (productStockInput) {
+                                    productStockInput.value = String(
+                                        connectedGroups.reduce(
+                                            (total, item) =>
+                                                total + Math.max(0, Number(item.stock) || 0),
+                                            0
+                                        )
+                                    );
+                                }
 
                                 syncPayload();
                             }
