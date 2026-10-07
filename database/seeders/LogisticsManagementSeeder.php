@@ -35,13 +35,53 @@ class LogisticsManagementSeeder extends Seeder
                 'contact_last' => 'Garcia',
                 'status' => 'rejected',
             ],
+            [
+                'email' => 'logistics.pending.north@shopease.test',
+                'company' => 'Northstar Delivery',
+                'contact_first' => 'Leah',
+                'contact_last' => 'Navarro',
+                'status' => 'pending',
+            ],
+            [
+                'email' => 'logistics.pending.south@shopease.test',
+                'company' => 'Southline Couriers',
+                'contact_first' => 'Ramon',
+                'contact_last' => 'Dizon',
+                'status' => 'pending',
+            ],
+            [
+                'email' => 'logistics.active.swiftgo@shopease.test',
+                'company' => 'SwiftGo Logistics',
+                'contact_first' => 'Angela',
+                'contact_last' => 'Mendoza',
+                'status' => 'approved',
+            ],
+            [
+                'email' => 'logistics.active.parcelpro@shopease.test',
+                'company' => 'ParcelPro Express',
+                'contact_first' => 'Miguel',
+                'contact_last' => 'Torres',
+                'status' => 'approved',
+            ],
+            [
+                'email' => 'logistics.rejected.quickship@shopease.test',
+                'company' => 'QuickShip Transport',
+                'contact_first' => 'Nina',
+                'contact_last' => 'Flores',
+                'status' => 'rejected',
+            ],
+            [
+                'email' => 'logistics.rejected.roadstar@shopease.test',
+                'company' => 'Roadstar Logistics',
+                'contact_first' => 'Carlo',
+                'contact_last' => 'Bautista',
+                'status' => 'rejected',
+            ],
         ] as $application) {
             $this->seedApplication($application);
         }
 
-        $company = Logistics::query()
-            ->where('business_name', 'Demo Logistics - Active')
-            ->firstOrFail();
+        $company = Logistics::query()->where('business_name', 'Demo Logistics - Active')->firstOrFail();
 
         $branch = LogisticsBranch::updateOrCreate(
             ['logistics_id' => $company->id, 'name' => 'Metro Manila Hub'],
@@ -60,6 +100,21 @@ class LogisticsManagementSeeder extends Seeder
                 'phone' => '09181234567',
             ]
         );
+
+        foreach ([
+            'SwiftGo Logistics' => ['name' => 'Makati Dispatch Hub', 'address' => '88 Sample Street, Makati, Metro Manila'],
+            'ParcelPro Express' => ['name' => 'Cebu Operations Hub', 'address' => '21 Demo Road, Cebu City, Cebu'],
+        ] as $companyName => $branchDetails) {
+            $activeCompany = Logistics::query()->where('business_name', $companyName)->firstOrFail();
+            LogisticsBranch::updateOrCreate(
+                ['logistics_id' => $activeCompany->id, 'name' => $branchDetails['name']],
+                [
+                    'address' => $branchDetails['address'],
+                    'contact_person' => $activeCompany->first_name.' '.$activeCompany->last_name,
+                    'phone' => $activeCompany->contact_no,
+                ]
+            );
+        }
 
         $riderUser = User::updateOrCreate(
             ['email' => 'rider.demo@shopease.test'],
