@@ -1878,14 +1878,11 @@ Route::get('/buyer/register/exit', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/seller/inventory',
-    [InventoryController::class, 'index']
-)
-    ->middleware('auth')
-    ->name('seller.inventory');
+Route::middleware(['auth', 'role:seller'])->group(function () {
 
-Route::middleware('auth')->group(function () {
+    Route::get('/seller/inventory', [InventoryController::class, 'index'])
+        ->name('seller.inventory');
+
     Route::post('/seller/inventory/products', [ApiSellerInventoryController::class, 'store'])
         ->name('seller.web.inventory.products.store');
 
@@ -1898,7 +1895,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/seller/inventory/products/{product}', [ApiSellerInventoryController::class, 'destroy'])
         ->name('seller.web.inventory.products.destroy');
 });
-
 /*
 |--------------------------------------------------------------------------
 | SELLER ORDER STATUS
