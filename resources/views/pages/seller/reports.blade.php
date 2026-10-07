@@ -215,6 +215,7 @@
 
             </div>
 
+            <p id="reportFeedback" class="text-sm text-red-700" role="status" aria-live="polite"></p>
 
             {{-- =================================================
                  STAT CARDS
@@ -240,8 +241,8 @@
 
                         <div class="report-stat-info">
 
-                            <span class="report-stat-value">
-                                ₱23,667.00
+                            <span class="report-stat-value" id="reportTotalSales">
+                                ₱{{ number_format($report['stats']['total_sales'], 2) }}
                             </span>
 
                             <span class="report-stat-label">
@@ -255,12 +256,12 @@
 
                     <div class="report-stat-bottom">
 
-                        <span class="report-stat-change">
-                            ↑12%
+                        <span class="report-stat-change" id="reportTotalSalesChange">
+                            —
                         </span>
 
-                        <span>
-                            from yesterday
+                        <span class="report-comparison-label">
+                            {{ $report['stats']['comparison_label'] }}
                         </span>
 
                     </div>
@@ -285,8 +286,8 @@
 
                         <div class="report-stat-info">
 
-                            <span class="report-stat-value">
-                                156
+                            <span class="report-stat-value" id="reportTotalOrders">
+                                {{ number_format($report['stats']['total_orders']) }}
                             </span>
 
                             <span class="report-stat-label">
@@ -300,12 +301,12 @@
 
                     <div class="report-stat-bottom">
 
-                        <span class="report-stat-change">
-                            ↑8%
+                        <span class="report-stat-change" id="reportTotalOrdersChange">
+                            —
                         </span>
 
-                        <span>
-                            from yesterday
+                        <span class="report-comparison-label">
+                            {{ $report['stats']['comparison_label'] }}
                         </span>
 
                     </div>
@@ -330,8 +331,8 @@
 
                         <div class="report-stat-info">
 
-                            <span class="report-stat-value">
-                                352
+                            <span class="report-stat-value" id="reportTotalProfit">
+                                ₱{{ number_format($report['stats']['total_profit'], 2) }}
                             </span>
 
                             <span class="report-stat-label">
@@ -345,12 +346,12 @@
 
                     <div class="report-stat-bottom">
 
-                        <span class="report-stat-change">
-                            ↑5%
+                        <span class="report-stat-change" id="reportTotalProfitChange">
+                            —
                         </span>
 
-                        <span>
-                            from yesterday
+                        <span class="report-comparison-label">
+                            {{ $report['stats']['comparison_label'] }}
                         </span>
 
                     </div>
@@ -375,8 +376,8 @@
 
                         <div class="report-stat-info">
 
-                            <span class="report-stat-value">
-                                46.0%
+                            <span class="report-stat-value" id="reportGrossProfitMargin">
+                                {{ number_format($report['stats']['gross_profit_margin'], 1) }}%
                             </span>
 
                             <span class="report-stat-label">
@@ -390,12 +391,12 @@
 
                     <div class="report-stat-bottom">
 
-                        <span class="report-stat-change">
-                            ↑5%
+                        <span class="report-stat-change" id="reportGrossProfitMarginChange">
+                            —
                         </span>
 
-                        <span>
-                            from yesterday
+                        <span class="report-comparison-label">
+                            {{ $report['stats']['comparison_label'] }}
                         </span>
 
                     </div>
@@ -526,8 +527,8 @@
                                     Total Orders
                                 </span>
 
-                                <strong>
-                                    156
+                                <strong id="reportPerformanceOrders">
+                                    {{ number_format($report['performance']['total_orders']) }}
                                 </strong>
 
                             </div>
@@ -539,8 +540,8 @@
                                     Gross Sales
                                 </span>
 
-                                <strong>
-                                    ₱145,567.00
+                                <strong id="reportPerformanceSales">
+                                    ₱{{ number_format($report['performance']['gross_sales'], 2) }}
                                 </strong>
 
                             </div>
@@ -549,11 +550,11 @@
                             <div class="performance-row">
 
                                 <span>
-                                    Admin Commission (10%)
+                                    Admin Commission
                                 </span>
 
-                                <strong>
-                                    -₱12,585.00
+                                <strong id="reportPerformanceCommission">
+                                    -₱{{ number_format($report['performance']['admin_commission'], 2) }}
                                 </strong>
 
                             </div>
@@ -570,8 +571,8 @@
                                     Profit
                                 </span>
 
-                                <strong>
-                                    ₱113,285.00
+                                <strong id="reportPerformanceProfit">
+                                    ₱{{ number_format($report['performance']['profit'], 2) }}
                                 </strong>
 
                             </div>
@@ -621,64 +622,8 @@
                             </div>
 
 
-                            @php
-
-                                $topProducts = [
-
-                                    [
-                                        'name' =>
-                                            'Wireless Headphones',
-
-                                        'quantity' =>
-                                            45,
-                                    ],
-
-                                    [
-                                        'name' =>
-                                            'Wireless Headphones',
-
-                                        'quantity' =>
-                                            38,
-                                    ],
-
-                                    [
-                                        'name' =>
-                                            'Wireless Headphones',
-
-                                        'quantity' =>
-                                            30,
-                                    ],
-
-                                    [
-                                        'name' =>
-                                            'Wireless Headphones',
-
-                                        'quantity' =>
-                                            30,
-                                    ],
-
-                                    [
-                                        'name' =>
-                                            'Wireless Headphones',
-
-                                        'quantity' =>
-                                            30,
-                                    ],
-
-                                    [
-                                        'name' =>
-                                            'Wireless Headphones',
-
-                                        'quantity' =>
-                                            30,
-                                    ],
-
-                                ];
-
-                            @endphp
-
-
-                            @foreach ($topProducts as $product)
+                            <div id="reportTopProducts">
+                            @forelse ($report['top_products'] as $product)
 
                                 <div class="top-product-row">
 
@@ -687,6 +632,9 @@
 
                                         <div class="top-product-image">
 
+                                            @if ($product['photo'])
+                                                <img src="{{ $product['photo'] }}" alt="">
+                                            @else
                                             <svg
                                                 viewBox="0 0 24 24"
                                                 fill="none"
@@ -734,17 +682,14 @@
                                                     "
                                                 />
                                             </svg>
+                                            @endif
 
                                         </div>
 
 
                                         <span class="top-product-name">
 
-                                            {{
-                                                $product[
-                                                    'name'
-                                                ]
-                                            }}
+                                            {{ $product['name'] }}
 
                                         </span>
 
@@ -753,17 +698,16 @@
 
                                     <div class="top-product-qty">
 
-                                        {{
-                                            $product[
-                                                'quantity'
-                                            ]
-                                        }}
+                                        {{ number_format($product['quantity']) }}
 
                                     </div>
 
                                 </div>
 
-                            @endforeach
+                            @empty
+                                <div class="top-product-row">No product sales found for this period.</div>
+                            @endforelse
+                            </div>
 
 
                         </div>
@@ -790,8 +734,8 @@
 
                     <div class="order-summary-title-wrap">
 
-                        <h2 class="reports-card-title">
-                            Order Summary (May 1, 2026 - May 31, 2026)
+                        <h2 class="reports-card-title" id="reportOrderSummaryTitle">
+                            Order Summary
                         </h2>
 
                         <span class="order-summary-sort">
@@ -840,190 +784,19 @@
                         </thead>
 
 
-                        <tbody>
-
-                            @php
-
-                                $orders = [
-
-                                    [
-                                        'id' =>
-                                            '#ORD-2026',
-
-                                        'date' =>
-                                            'May 31, 2026',
-
-                                        'payment' =>
-                                            'COD',
-
-                                        'sales' =>
-                                            '₱315.00',
-
-                                        'commission' =>
-                                            '₱31.5',
-
-                                        'profit' =>
-                                            '₱283.5',
-                                    ],
-
-                                    [
-                                        'id' =>
-                                            '#ORD-2026',
-
-                                        'date' =>
-                                            'May 31, 2026',
-
-                                        'payment' =>
-                                            'COD',
-
-                                        'sales' =>
-                                            '₱315.00',
-
-                                        'commission' =>
-                                            '₱31.5',
-
-                                        'profit' =>
-                                            '₱284.5',
-                                    ],
-
-                                    [
-                                        'id' =>
-                                            '#ORD-2026',
-
-                                        'date' =>
-                                            'May 31, 2026',
-
-                                        'payment' =>
-                                            'COD',
-
-                                        'sales' =>
-                                            '₱315.00',
-
-                                        'commission' =>
-                                            '₱31.5',
-
-                                        'profit' =>
-                                            '₱283.5',
-                                    ],
-
-                                    [
-                                        'id' =>
-                                            '#ORD-2026',
-
-                                        'date' =>
-                                            'May 31, 2026',
-
-                                        'payment' =>
-                                            'COD',
-
-                                        'sales' =>
-                                            '₱315.00',
-
-                                        'commission' =>
-                                            '₱31.5',
-
-                                        'profit' =>
-                                            '₱283.5',
-                                    ],
-
-                                    [
-                                        'id' =>
-                                            '#ORD-2026',
-
-                                        'date' =>
-                                            'May 31, 2026',
-
-                                        'payment' =>
-                                            'COD',
-
-                                        'sales' =>
-                                            '₱315.00',
-
-                                        'commission' =>
-                                            '₱31.5',
-
-                                        'profit' =>
-                                            '₱283.5',
-                                    ],
-
-                                ];
-
-                            @endphp
-
-
-                            @foreach ($orders as $order)
-
+                        <tbody id="reportOrderRows">
+                            @forelse ($report['orders']['data'] as $order)
                                 <tr>
-
-                                    <td class="order-id-cell">
-
-                                        {{
-                                            $order[
-                                                'id'
-                                            ]
-                                        }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{
-                                            $order[
-                                                'date'
-                                            ]
-                                        }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{
-                                            $order[
-                                                'payment'
-                                            ]
-                                        }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{
-                                            $order[
-                                                'sales'
-                                            ]
-                                        }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{
-                                            $order[
-                                                'commission'
-                                            ]
-                                        }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{
-                                            $order[
-                                                'profit'
-                                            ]
-                                        }}
-
-                                    </td>
-
+                                    <td class="order-id-cell">#{{ $order['id'] }}</td>
+                                    <td>{{ \Illuminate\Support\Carbon::parse($order['date'])->format('M d, Y') }}</td>
+                                    <td>{{ $order['payment_method'] }}</td>
+                                    <td>₱{{ number_format($order['sales'], 2) }}</td>
+                                    <td>₱{{ number_format($order['commission'], 2) }}</td>
+                                    <td>₱{{ number_format($order['profit'], 2) }}</td>
                                 </tr>
-
-                            @endforeach
-
+                            @empty
+                                <tr><td colspan="6">No completed orders found for this period.</td></tr>
+                            @endforelse
                         </tbody>
 
                     </table>
@@ -1033,10 +806,8 @@
 
                 <div class="order-summary-footer">
 
-                    <p class="order-summary-count">
-
-                        Showing 7 out of 379 entries
-
+                    <p class="order-summary-count" id="reportOrderCount">
+                        Showing {{ $report['orders']['from'] ?? 0 }} to {{ $report['orders']['to'] ?? 0 }} of {{ $report['orders']['total'] }} entries
                     </p>
 
 
@@ -1046,51 +817,38 @@
                             type="button"
                             class="report-page-button"
                             aria-label="Previous page"
+                            data-page-direction="previous"
                         >
                             ‹
                         </button>
 
 
+                        <div id="reportPaginationPages" class="flex items-center gap-1">
+                        @for ($page = 1; $page <= $report['orders']['last_page']; $page++)
                         <button
                             type="button"
                             class="
                                 report-page-button
-                                active
+                                {{ $page === $report['orders']['current_page'] ? 'active' : '' }}
                             "
-                            data-page="1"
+                            data-page="{{ $page }}"
                         >
-                            1
+                            {{ $page }}
                         </button>
-
-
-                        <button
-                            type="button"
-                            class="report-page-button"
-                            data-page="2"
-                        >
-                            2
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="report-page-button"
-                            data-page="3"
-                        >
-                            3
-                        </button>
-
+                        @endfor
+                        </div>
 
                         <button
                             type="button"
                             class="report-page-button"
                             aria-label="Next page"
+                            data-page-direction="next"
                         >
                             ›
                         </button>
 
 
-                        <select class="report-items-select">
+                        <select class="report-items-select" id="reportItemsPerPage">
 
                             <option value="7">
                                 Items per page: 7
@@ -1116,6 +874,8 @@
 
     </main>
 
+    <script id="sellerReportsData" type="application/json">@json($report)</script>
+    <script id="sellerReportsConfig" type="application/json">@json(['dataUrl' => $reportDataUrl])</script>
 
     
 

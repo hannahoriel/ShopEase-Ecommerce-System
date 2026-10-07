@@ -214,139 +214,23 @@ document.addEventListener(
            SALES DATA
         ================================================== */
 
-        const reportSalesData = {
+        const reportDataElement =
+            document.getElementById('sellerReportsData');
 
-            month: {
+        const reportConfigElement =
+            document.getElementById('sellerReportsConfig');
 
-                dates: [
-                    '2026-05-01',
-                    '2026-05-06',
-                    '2026-05-11',
-                    '2026-05-16',
-                    '2026-05-21',
-                    '2026-05-26',
-                    '2026-05-31'
-                ],
+        let reportData =
+            reportDataElement
+                ? JSON.parse(reportDataElement.textContent || '{}')
+                : {};
 
-                labels: [
-                    'May 1',
-                    'May 6',
-                    'May 11',
-                    'May 16',
-                    'May 21',
-                    'May 26',
-                    'May 31'
-                ],
+        const reportConfig =
+            reportConfigElement
+                ? JSON.parse(reportConfigElement.textContent || '{}')
+                : {};
 
-                previous: [
-                    2400,
-                    5600,
-                    2300,
-                    5500,
-                    4200,
-                    5800,
-                    14000
-                ],
-
-                current: [
-                    4700,
-                    8900,
-                    5100,
-                    13200,
-                    7900,
-                    11800,
-                    21600
-                ]
-
-            },
-
-
-            week: {
-
-                dates: [
-                    '2026-05-25',
-                    '2026-05-26',
-                    '2026-05-27',
-                    '2026-05-28',
-                    '2026-05-29',
-                    '2026-05-30',
-                    '2026-05-31'
-                ],
-
-                labels: [
-                    'Mon',
-                    'Tue',
-                    'Wed',
-                    'Thu',
-                    'Fri',
-                    'Sat',
-                    'Sun'
-                ],
-
-                previous: [
-                    1800,
-                    2500,
-                    2100,
-                    2900,
-                    3200,
-                    4100,
-                    3900
-                ],
-
-                current: [
-                    2600,
-                    3400,
-                    2950,
-                    4300,
-                    4700,
-                    5900,
-                    5200
-                ]
-
-            },
-
-
-            year: {
-
-                dates: [
-                    '2026-01-01',
-                    '2026-03-01',
-                    '2026-05-01',
-                    '2026-07-01',
-                    '2026-09-01',
-                    '2026-11-01'
-                ],
-
-                labels: [
-                    'Jan',
-                    'Mar',
-                    'May',
-                    'Jul',
-                    'Sep',
-                    'Nov'
-                ],
-
-                previous: [
-                    12000,
-                    15000,
-                    18000,
-                    21000,
-                    23000,
-                    27000
-                ],
-
-                current: [
-                    15000,
-                    19000,
-                    24000,
-                    26000,
-                    30000,
-                    35000
-                ]
-
-            }
-
-        };
+        let reportSalesData = {};
 
 
         /* =================================================
@@ -494,37 +378,218 @@ document.addEventListener(
 
             }
 
-
-            reportEndDate.setCustomValidity(
-                ''
-            );
-
+            reportEndDate.setCustomValidity('');
 
             if (
                 reportStartDate.value &&
                 reportEndDate.value &&
-                reportStartDate.value >
-                    reportEndDate.value
+                reportStartDate.value > reportEndDate.value
             ) {
-
                 reportEndDate.setCustomValidity(
                     'End date must be on or after the start date.'
                 );
-
-
                 reportEndDate.reportValidity();
 
-
                 return false;
-
             }
 
-
             return true;
-
         }
 
+            function formatReportCurrency(value) {
+                return '₱' + Number(value || 0).toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            }
 
+            function updateReportChange(elementId, change) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                const arrows = { up: '↑', down: '↓', flat: '→' };
+                element.textContent = (arrows[change?.direction] || '→') + (change?.value || '0%');
+                element.style.color = change?.direction === 'down'
+                    ? '#B42318'
+                    : change?.direction === 'up'
+                        ? '#11951B'
+                        : '#777777';
+            }
+
+            function renderReportData() {
+                const stats = reportData.stats || {};
+                const performance = reportData.performance || {};
+                const orders = reportData.orders || {};
+
+                document.getElementById('reportTotalSales').textContent =
+                    formatReportCurrency(stats.total_sales);
+                document.getElementById('reportTotalOrders').textContent =
+                    Number(stats.total_orders || 0).toLocaleString();
+                document.getElementById('reportTotalProfit').textContent =
+                    formatReportCurrency(stats.total_profit);
+                document.getElementById('reportGrossProfitMargin').textContent =
+                    Number(stats.gross_profit_margin || 0).toFixed(1) + '%';
+                updateReportChange('reportTotalSalesChange', stats.changes?.total_sales);
+                updateReportChange('reportTotalOrdersChange', stats.changes?.total_orders);
+                updateReportChange('reportTotalProfitChange', stats.changes?.total_profit);
+                updateReportChange('reportGrossProfitMarginChange', stats.changes?.gross_profit_margin);
+                document.querySelectorAll('.report-comparison-label').forEach((element) => {
+                    element.textContent = stats.comparison_label || 'from yesterday';
+                });
+
+                document.getElementById('reportPerformanceOrders').textContent =
+                    Number(performance.total_orders || 0).toLocaleString();
+                document.getElementById('reportPerformanceSales').textContent =
+                    formatReportCurrency(performance.gross_sales);
+                document.getElementById('reportPerformanceCommission').textContent =
+                    '-' + formatReportCurrency(performance.admin_commission);
+                document.getElementById('reportPerformanceProfit').textContent =
+                    formatReportCurrency(performance.profit);
+
+                const orderRows = document.getElementById('reportOrderRows');
+                orderRows.replaceChildren();
+                if (!orders.data?.length) {
+                    const row = document.createElement('tr');
+                    const empty = document.createElement('td');
+                    empty.colSpan = 6;
+                    empty.textContent = 'No completed orders found for this period.';
+                    row.append(empty);
+                    orderRows.append(row);
+                } else {
+                    orders.data.forEach((order) => {
+                        const row = document.createElement('tr');
+                        const date = order.date
+                            ? new Date(order.date + 'T00:00:00').toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: '2-digit',
+                                year: 'numeric',
+                            })
+                            : '—';
+
+                        [
+                            { value: '#' + order.id, className: 'order-id-cell' },
+                            { value: date },
+                            { value: order.payment_method || '—' },
+                            { value: formatReportCurrency(order.sales) },
+                            { value: formatReportCurrency(order.commission) },
+                            { value: formatReportCurrency(order.profit) },
+                        ].forEach((cell) => {
+                            const td = document.createElement('td');
+                            td.textContent = cell.value;
+                            if (cell.className) td.className = cell.className;
+                            row.append(td);
+                        });
+                        orderRows.append(row);
+                    });
+                }
+
+                const topProducts = document.getElementById('reportTopProducts');
+                topProducts.replaceChildren();
+                if (!reportData.top_products?.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'top-product-row';
+                    empty.textContent = 'No product sales found for this period.';
+                    topProducts.append(empty);
+                } else {
+                    reportData.top_products.forEach((product) => {
+                        const row = document.createElement('div');
+                        row.className = 'top-product-row';
+                        const info = document.createElement('div');
+                        info.className = 'top-product-info';
+                        const image = document.createElement('div');
+                        image.className = 'top-product-image';
+                        if (product.photo) {
+                            const img = document.createElement('img');
+                            img.src = product.photo;
+                            img.alt = '';
+                            image.append(img);
+                        } else {
+                            image.textContent = (product.name || '?').slice(0, 1).toUpperCase();
+                        }
+                        const name = document.createElement('span');
+                        name.className = 'top-product-name';
+                        name.textContent = product.name;
+                        info.append(image, name);
+                        const quantity = document.createElement('div');
+                        quantity.className = 'top-product-qty';
+                        quantity.textContent = Number(product.quantity || 0).toLocaleString();
+                        row.append(info, quantity);
+                        topProducts.append(row);
+                    });
+                }
+
+                const count = document.getElementById('reportOrderCount');
+                count.textContent = orders.total
+                    ? `Showing ${orders.from} to ${orders.to} of ${orders.total} entries`
+                    : 'Showing 0 entries';
+
+                const start = reportStartDate.value;
+                const end = reportEndDate.value;
+                const title = document.getElementById('reportOrderSummaryTitle');
+                title.textContent = start && end
+                    ? `Order Summary (${start} - ${end})`
+                    : start
+                        ? `Order Summary (From ${start})`
+                        : end
+                            ? `Order Summary (Through ${end})`
+                            : 'Order Summary (All dates)';
+
+                renderReportPagination(orders);
+                reportSalesData[reportData.filters?.period || 'month'] = reportData.sales_chart;
+                renderReportSalesChart(reportData.filters?.period || 'month');
+            }
+
+            function renderReportPagination(orders) {
+                const pages = document.getElementById('reportPaginationPages');
+                pages.replaceChildren();
+                const current = Number(orders.current_page || 1);
+                const last = Number(orders.last_page || 1);
+                const first = Math.max(1, current - 2);
+                const final = Math.min(last, current + 2);
+
+                for (let page = first; page <= final; page += 1) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'report-page-button' + (page === current ? ' active' : '');
+                    button.dataset.page = String(page);
+                    button.textContent = String(page);
+                    pages.append(button);
+                }
+
+                document.querySelector('[data-page-direction="previous"]').disabled = current <= 1;
+                document.querySelector('[data-page-direction="next"]').disabled = current >= last;
+                document.getElementById('reportItemsPerPage').value = String(orders.per_page || 7);
+            }
+
+            async function loadReportData(page = 1) {
+                if (!validateReportRange()) return;
+
+                const params = new URLSearchParams({
+                    period: document.getElementById('reportSalesPeriod').value,
+                    page: String(page),
+                    per_page: document.getElementById('reportItemsPerPage').value,
+                });
+                if (reportStartDate.value) params.set('start_date', reportStartDate.value);
+                if (reportEndDate.value) params.set('end_date', reportEndDate.value);
+
+                const feedback = document.getElementById('reportFeedback');
+                feedback.textContent = '';
+                try {
+                    const response = await fetch(`${reportConfig.dataUrl}?${params}`, {
+                        credentials: 'same-origin',
+                        headers: { Accept: 'application/json' },
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Unable to load report data.');
+                    }
+
+                    reportData = result;
+                    renderReportData();
+                } catch (error) {
+                    feedback.textContent = error.message || 'Unable to load report data.';
+                }
+            }
         function filterReportSeriesByDate(
             data
         ) {
@@ -710,25 +775,7 @@ document.addEventListener(
 
         function applyReportDateFilter() {
 
-            if (
-                !validateReportRange()
-            ) {
-
-                return;
-
-            }
-
-
-            filterOrderSummaryByDate();
-
-
-            renderReportSalesChart(
-                document.getElementById(
-                    'reportSalesPeriod'
-                )
-                    ?.value ||
-                'month'
-            );
+            loadReportData(1);
 
         }
 
@@ -743,9 +790,7 @@ document.addEventListener(
 
 
             const sourceData =
-                reportSalesData[
-                    period
-                ];
+                reportSalesData[period];
 
 
             if (!sourceData) {
@@ -851,6 +896,9 @@ document.addEventListener(
                                     fill:
                                         true,
 
+                                    spanGaps:
+                                        true,
+
                                     tension:
                                         0.4,
 
@@ -893,6 +941,9 @@ document.addEventListener(
                                         2,
 
                                     fill:
+                                        true,
+
+                                    spanGaps:
                                         true,
 
                                     tension:
@@ -1074,6 +1125,9 @@ document.addEventListener(
                                         color:
                                             '#777777',
 
+                                        maxTicksLimit:
+                                            6,
+
 
                                         font: {
 
@@ -1092,26 +1146,33 @@ document.addEventListener(
 
                                         callback:
                                             function (
-                                                value
+                                                value,
+                                                index,
+                                                ticks
                                             ) {
 
-                                                if (
-                                                    value === 0
-                                                ) {
+                                                const amount =
+                                                    Number(value);
 
-                                                    return '0';
+                                                if (!Number.isFinite(amount)) {
 
+                                                    return '';
                                                 }
 
+                                                const highestTick =
+                                                    Number(ticks[ticks.length - 1]?.value || 0);
 
-                                                return (
-                                                    '₱' +
-                                                    (
-                                                        value /
-                                                        1000
-                                                    ) +
-                                                    'k'
-                                                );
+                                                if (Math.abs(highestTick) >= 1000) {
+
+                                                    return '₱' + (amount / 1000).toLocaleString('en-PH', {
+                                                        minimumFractionDigits: 1,
+                                                        maximumFractionDigits: 1
+                                                    }) + 'k';
+                                                }
+
+                                                return '₱' + amount.toLocaleString('en-PH', {
+                                                    maximumFractionDigits: 2
+                                                });
 
                                             }
 
@@ -1173,7 +1234,7 @@ document.addEventListener(
 
 
         renderReportSalesChart(
-            'month'
+            reportData.filters?.period || 'month'
         );
 
 
@@ -1193,14 +1254,31 @@ document.addEventListener(
                 'change',
                 function () {
 
-                    renderReportSalesChart(
-                        this.value
-                    );
+                    loadReportData(1);
 
                 }
             );
 
         }
+
+        document.getElementById('reportItemsPerPage')
+            ?.addEventListener('change', function () {
+                loadReportData(1);
+            });
+
+        document.querySelector('.order-summary-pagination')
+            ?.addEventListener('click', function (event) {
+                const button = event.target.closest('.report-page-button');
+                if (!button || button.disabled) return;
+
+                const current = Number(reportData.orders?.current_page || 1);
+                const page = button.dataset.page
+                    ? Number(button.dataset.page)
+                    : button.dataset.pageDirection === 'previous'
+                        ? current - 1
+                        : current + 1;
+                loadReportData(page);
+            });
 
 
         /*
@@ -1221,11 +1299,10 @@ document.addEventListener(
             );
 
 
-        reportRefreshButton
-            ?.addEventListener(
-                'click',
-                applyReportDateFilter
-            );
+        reportRefreshButton?.addEventListener('click', applyReportDateFilter);
+
+        reportSalesData[reportData.filters?.period || 'month'] = reportData.sales_chart;
+        renderReportData();
 
 
         /* =================================================

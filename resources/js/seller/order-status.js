@@ -1,8 +1,13 @@
+import QRCode from 'qrcode';
+
 document.addEventListener('DOMContentLoaded', function () {
+    const configElement = document.getElementById('sellerOrderStatusConfig');
+    const config = configElement ? JSON.parse(configElement.textContent) : {};
     const sidebar = document.getElementById('sellerSidebar');
     const page = document.getElementById('order-status-page');
     const tabs = document.querySelectorAll('.order-status-tab');
-    const rows = Array.from(document.querySelectorAll('.order-row'));
+    const orderTable = document.getElementById('orderStatusTable');
+    let rows = [];
     const searchInput = document.getElementById('orderSearch');
     const noResults = document.getElementById('orderStatusNoResults');
     const showingCount = document.getElementById('showingCount');
@@ -12,6 +17,96 @@ document.addEventListener('DOMContentLoaded', function () {
     const pageButtons = document.querySelectorAll('.pagination-button[data-page]');
 
     let activeTab = 'all';
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[character]);
+    }
+
+    function productImageUrl(item) {
+        const photos = item.product?.photos;
+        const photo = Array.isArray(photos)
+            ? photos.find((value) => typeof value === 'string' && value.trim())
+            : null;
+        if (!photo) return null;
+        if (/^(data:|https?:\/\/)/i.test(photo)) return photo;
+
+        const path = photo.replace(/^\/+/, '').replace(/^storage\//, '');
+        return path ? `/storage/${path.split('/').map(encodeURIComponent).join('/')}` : null;
+    }
+
+    function renderOrderRows(orders) {
+        if (!orderTable) return;
+
+        const statusInfo = {
+            new: { label: 'New Order', style: 'new', icon: 'new-order.png' },
+            pending: { label: 'New Order', style: 'new', icon: 'new-order.png' },
+            preparing: { label: 'Preparing', style: 'preparing', icon: 'processing.png' },
+            to_ship: { label: 'Ready to Ship', style: 'ready', icon: 'ready-to-ship.png' },
+            'to-ship': { label: 'Ready to Ship', style: 'ready', icon: 'ready-to-ship.png' },
+        };
+        const money = (value) => `₱${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+
+        orderTable.innerHTML = orders.map((order) => {
+            const status = statusInfo[order.status] || {
+                label: String(order.status || 'unknown').replaceAll('_', ' '),
+                style: 'new',
+                icon: 'new-order.png',
+            };
+            const items = order.items || [];
+            const itemNames = items.map((item) => item.product_name);
+            const createdAt = order.created_at ? new Date(order.created_at) : null;
+            const pickupDate = order.pickup_date_display || '';
+            const pickupTime = order.pickup_time_display || '';
+            const orderNumber = order.order_number || `ORD-${order.id}`;
+            const customer = order.delivery_name || order.buyer?.name || 'Customer';
+            const phone = order.delivery_phone || order.buyer?.contact_no || '';
+            const date = pickupDate && ['to_ship', 'to-ship'].includes(order.status)
+                ? formatDateDisplay(pickupDate)
+                : (createdAt && !Number.isNaN(createdAt.getTime())
+                ? new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(createdAt)
+                : '');
+            const time = pickupTime && ['to_ship', 'to-ship'].includes(order.status)
+                ? formatTimeDisplay(pickupTime)
+                : (createdAt && !Number.isNaN(createdAt.getTime())
+                ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(createdAt)
+                : '');
+            const itemPreview = items.slice(0, 2).map((item) =>
+                `<div class="mini-product" title="${escapeHtml(item.product_name)}">${productImageUrl(item)
+                    ? `<img src="${escapeHtml(productImageUrl(item))}" alt="${escapeHtml(item.product_name)}">`
+                    : '<div class="product-bag"></div>'}</div>`
+            ).join('');
+            const moreItems = items.length > 2
+                ? `<span class="more-items">+${items.length - 2} more</span>`
+                : (items.length === 1 ? `<span class="text-[12px] text-[#625D5A] truncate">${escapeHtml(items[0].product_name)}</span>` : '');
+
+            return `
+                <article class="order-row grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[99px] px-[20px] border-b border-[#DDD9D7] transition-all duration-200 ease-out hover:bg-[#FFFBF9]"
+                    data-order-id="${Number(order.id)}"
+                    data-status="${escapeHtml(order.status === 'pending' ? 'new' : (order.status === 'to_ship' ? 'to-ship' : order.status))}"
+                    data-tab="${escapeHtml(order.status === 'pending' ? 'new' : (order.status === 'to_ship' ? 'to-ship' : order.status))}"
+                    data-pickup-date="${escapeHtml(pickupDate)}"
+                    data-pickup-time="${escapeHtml(pickupTime)}"
+                    data-search="${escapeHtml(`${orderNumber} ${customer} ${phone} ${itemNames.join(' ')}`)}">
+                    <div class="flex items-center gap-[22px] min-w-0">
+                        <div class="order-icon-box ${status.style}"><img src="/icons/seller/order-status/${status.icon}" alt="${escapeHtml(status.label)}"></div>
+                        <div class="min-w-0">
+                            <h3 class="order-id">#${escapeHtml(orderNumber)}</h3>
+                            <p class="order-status ${status.style}-text"><span class="status-dot ${status.style}-dot"></span>${escapeHtml(status.label)}</p>
+                        </div>
+                    </div>
+                    <div class="min-w-0"><p class="customer-name">${escapeHtml(customer)}</p><p class="customer-phone">${escapeHtml(phone)}</p></div>
+                    <div class="flex items-center gap-[10px] min-w-0">${itemPreview}${moreItems || (items.length === 0 ? '<span class="text-[12px] text-[#8A8582]">No item details</span>' : '')}</div>
+                    <div><p class="amount">${money(order.total)}</p><p class="payment">Payment: ${escapeHtml(order.payment_method || 'Cash on Delivery')}</p></div>
+                    <div><p class="ordered-date">${escapeHtml(date)}</p><p class="ordered-time">${escapeHtml(time)}</p></div>
+                </article>`;
+        }).join('');
+
+        rows = Array.from(orderTable.querySelectorAll('.order-row'));
+    }
+
+    renderOrderRows(config.orders || []);
 
     function syncPageOffset() {
         if (!page) return;
@@ -237,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(
             'orderModalActionLabel'
         );
+    const printWaybillButton = document.getElementById('printOrderWaybillButton');
 
     const orderModalIconBox =
         document.getElementById(
@@ -277,6 +373,280 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(
             'orderModalOrderedTime'
         );
+    function formatCurrency(value) {
+        return `₱${Number(value || 0).toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`;
+    }
+
+    function waybillDocument(order, shipment, scanUrl) {
+        const items = order.items || [];
+        const itemRows = items.map((item) => `
+            <tr>
+                <td>${escapeHtml(item.product_name || item.product?.name || 'Product')}${[item.variation, item.color, item.size].filter(Boolean).length
+                    ? `<small>${escapeHtml([item.variation, item.color, item.size].filter(Boolean).join(' · '))}</small>`
+                    : ''}</td>
+                <td class="qty">${Number(item.quantity || 0)}</td>
+            </tr>`).join('');
+        const customerName = order.delivery_name || order.buyer?.name || 'Customer';
+        const buyerContact = order.delivery_phone || order.buyer?.contact_no || 'Not provided';
+        const sellerName = order.seller?.store_name || 'ShopEase Seller';
+        const sellerAddress = [
+            order.seller?.house_number,
+            order.seller?.street,
+            order.seller?.barangay,
+            order.seller?.municipality,
+            order.seller?.province,
+        ].filter((part) => typeof part === 'string' && part.trim()).join(', ') || 'Seller address not provided';
+        const address = order.delivery_address || '—';
+        const trackingNumber = shipment.tracking_number || order.order_number || `ORD-${order.id}`;
+        const paymentMethod = order.payment_method || 'Cash on Delivery';
+        const isCod = /cash|cod/i.test(paymentMethod);
+        const amountLabel = isCod ? 'COLLECT' : 'ORDER TOTAL';
+        const routeHint = (order.delivery_address || '').split(',').slice(-2).join(',').trim() || 'PHILIPPINES';
+
+        return `<!DOCTYPE html>
+            <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Waybill ${escapeHtml(trackingNumber)}</title>
+            <style>
+                @page { size: 100mm 150mm; margin: 0; }
+                * { box-sizing: border-box; }
+                body { margin: 0; color: #111; background: #fff; font: 10px Arial, Helvetica, sans-serif; }
+                .label { width: 100mm; min-height: 150mm; margin: 0 auto; border: 1px solid #111; }
+                .topbar { display: flex; justify-content: space-between; align-items: center; padding: 3mm; border-bottom: 1px solid #111; }
+                .brand { font-size: 18px; font-weight: 900; letter-spacing: -.6px; }
+                .courier { text-align: right; font-size: 12px; font-weight: 800; }
+                .service { margin-top: 2px; font-size: 8px; font-weight: 700; letter-spacing: 1px; }
+                .route { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 2.5mm 3mm; border-bottom: 1px solid #111; background: #f1f1f1; }
+                .route-label { font-size: 8px; font-weight: 700; text-transform: uppercase; }
+                .route-code { font-size: 15px; font-weight: 900; text-transform: uppercase; }
+                .order-ref { font-size: 8px; font-weight: 700; text-align: right; }
+                section { padding: 2.5mm 3mm; border-bottom: 1px solid #111; }
+                .section-title { margin-bottom: 1.5mm; font-size: 8px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; }
+                .recipient-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; }
+                .recipient { font-size: 16px; font-weight: 900; }
+                .phone { white-space: nowrap; font-size: 12px; font-weight: 800; }
+                .buyer-contact { margin-top: 1mm; font-size: 9px; }
+                .buyer-contact strong { text-transform: uppercase; font-size: 8px; }
+                .address { margin-top: 1.5mm; line-height: 1.35; overflow-wrap: anywhere; }
+                .tracking-block { display: grid; grid-template-columns: 1fr 27mm; gap: 3mm; align-items: center; }
+                .tracking { margin: 1mm 0; font-size: 16px; font-weight: 900; letter-spacing: .4px; overflow-wrap: anywhere; }
+                .qr { width: 27mm; height: 27mm; padding: 1mm; border: 1px solid #111; }
+                .qr img { display: block; width: 100%; height: 100%; }
+                .scan-caption { margin-top: 1mm; font-size: 7px; font-weight: 700; text-align: center; }
+                .from { display: flex; justify-content: space-between; gap: 5px; }
+                .from-name { font-size: 11px; font-weight: 800; }
+                .payment { display: flex; justify-content: space-between; align-items: center; }
+                .payment-badge { padding: 1.5mm 2mm; border: 1px solid #111; font-size: 10px; font-weight: 900; }
+                .amount { font-size: 18px; font-weight: 900; text-align: right; white-space: nowrap; }
+                .amount-caption { font-size: 7px; font-weight: 800; text-align: right; }
+                table { width: 100%; border-collapse: collapse; }
+                td { padding: 1.2mm 0; border-top: 1px solid #bbb; vertical-align: top; }
+                td small { display: block; margin-top: 1px; color: #444; font-size: 8px; }
+                .qty { width: 12mm; text-align: right; font-weight: 800; }
+                .footer { padding: 2mm 3mm; font-size: 7px; text-align: center; }
+                @media screen { body { padding: 16px; background: #e8e8e8; } .label { box-shadow: 0 2px 12px #0002; } }
+                @media print { .label { break-inside: avoid; } }
+            </style></head><body>
+            <main class="label">
+                <div class="topbar"><div class="brand">ShopEase</div><div class="courier">${escapeHtml(shipment.courier || 'Ease Express')}<div class="service">STANDARD DELIVERY</div></div></div>
+                <div class="route"><div><div class="route-label">Destination</div><div class="route-code">${escapeHtml(routeHint)}</div></div><div class="order-ref">ORDER<br>${escapeHtml(order.order_number || `ORD-${order.id}`)}</div></div>
+                <section><div class="section-title">Buyer</div><div class="recipient">${escapeHtml(customerName)}</div><div class="buyer-contact"><strong>Contact number:</strong> ${escapeHtml(buyerContact)}</div><div class="address">${escapeHtml(address)}</div></section>
+                <section class="tracking-block"><div><div class="section-title">Tracking number</div><div class="tracking">${escapeHtml(trackingNumber)}</div><div class="section-title">Parcel tracking QR</div></div><div><div class="qr"><img src="${escapeHtml(scanUrl)}" alt="Scannable parcel tracking QR code"></div><div class="scan-caption">SCAN FOR PARCEL UPDATES</div></div></section>
+                <section class="from"><div><div class="section-title">Seller</div><div class="from-name">${escapeHtml(sellerName)}</div><div class="address">${escapeHtml(sellerAddress)}</div></div><div style="text-align:right"><div class="section-title">Payment</div><div class="payment-badge">${isCod ? 'COD' : 'PAID'}</div></div></section>
+                <section class="payment"><div><div class="section-title">Parcel contents</div><table><tbody>${itemRows || '<tr><td>Order parcel</td><td class="qty">1</td></tr>'}</tbody></table></div><div><div class="amount-caption">${amountLabel}</div><div class="amount">${formatCurrency(order.total)}</div></div></section>
+                <div class="footer">Handle with care · Keep this waybill attached to the parcel</div>
+            </main></body></html>`;
+    }
+
+    async function printWaybill() {
+        if (!selectedOrderRow || !printWaybillButton) return;
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Please allow pop-ups to print the waybill.');
+            return;
+        }
+
+        printWaybillButton.disabled = true;
+        printWaybillButton.textContent = 'Preparing Waybill…';
+        printWindow.document.write('<!doctype html><title>Preparing waybill</title><p style="font:16px Arial;padding:24px">Preparing your waybill…</p>');
+
+        try {
+            const response = await fetch(`${config.ordersUrl}/${selectedOrderRow.dataset.orderId}/waybill`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || `Unable to create waybill (${response.status}).`);
+
+            const qrImage = await QRCode.toDataURL(result.scan_url, {
+                errorCorrectionLevel: 'H',
+                margin: 2,
+                width: 320,
+            });
+            printWindow.document.open();
+            printWindow.document.write(waybillDocument(result.order, result.shipment, qrImage));
+            printWindow.document.close();
+            printWindow.addEventListener('load', () => {
+                printWindow.focus();
+                printWindow.print();
+            }, { once: true });
+        } catch (error) {
+            printWindow.close();
+            alert(error.message);
+        } finally {
+            printWaybillButton.disabled = false;
+            printWaybillButton.textContent = 'Print Waybill';
+        }
+    }
+
+    printWaybillButton?.addEventListener('click', printWaybill);
+
+    async function loadOrderDetails(row) {
+        const response = await fetch(`${config.ordersUrl}/${row.dataset.orderId}`, {
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${config.apiToken || ''}`,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+        if (!response.ok) throw new Error(`Unable to load order details (${response.status}).`);
+
+        const order = await response.json();
+        const buyer = order.buyer || {};
+        const items = order.items || [];
+        const subtotal = items.reduce((sum, item) =>
+            sum + (Number(item.unit_price) * Number(item.quantity)), 0
+        );
+        const setText = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value || '—';
+        };
+        const createdAt = order.created_at ? new Date(order.created_at) : null;
+
+        setText('orderModalCustomerName', order.delivery_name || buyer.name);
+        setText('orderModalCustomerEmail', buyer.email);
+        setText('orderModalCustomerPhone', order.delivery_phone || buyer.contact_no);
+        setText('orderModalCustomerAddress', order.delivery_address);
+        setText('orderModalPaymentMethod', order.payment_method || 'Cash on Delivery');
+        setText(
+            'orderModalPaymentDescription',
+            (order.payment_method || '').toLowerCase().includes('cash') ? 'Payment upon Delivery' : 'Payment details',
+        );
+        if (createdAt && !Number.isNaN(createdAt.getTime())) {
+            setText('orderModalOrderedDate', new Intl.DateTimeFormat('en-US', {
+                month: 'long', day: 'numeric', year: 'numeric',
+            }).format(createdAt));
+            setText('orderModalOrderedTime', new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric', minute: '2-digit',
+            }).format(createdAt));
+        }
+
+        const itemsSection = document.querySelector('.modal-items-section');
+        if (itemsSection) {
+            itemsSection.innerHTML = `
+                <h3 class="text-[15px] font-semibold text-[#17120F]">Items Ordered</h3>
+                <div class="mt-[5px] h-[42px] rounded-[11px] bg-[#FBEDED] grid grid-cols-[2.25fr_1fr_1fr_1fr] items-center px-[24px] text-[12px] font-medium text-[#60100F]">
+                    <div>Item</div><div>Price</div><div>Quantity</div><div>Subtotal</div>
+                </div>
+                ${items.length ? items.map((item) => {
+                    const itemSubtotal = Number(item.unit_price) * Number(item.quantity);
+                    const options = [item.variation, item.color, item.size].filter(Boolean).join(' · ');
+                    return `
+                        <div class="modal-item-row">
+                            <div class="flex items-center gap-[16px]">
+                                <div class="modal-product-image">${productImageUrl(item)
+                                    ? `<img src="${escapeHtml(productImageUrl(item))}" alt="${escapeHtml(item.product_name)}">`
+                                    : '<div class="modal-product-bag"></div>'}</div>
+                                <span class="text-[14px] font-semibold text-[#17120F]">
+                                    ${escapeHtml(item.product_name)}${options ? `<small class="block font-normal">${escapeHtml(options)}</small>` : ''}
+                                </span>
+                            </div>
+                            <div class="text-[13px] text-[#17120F]">${formatCurrency(item.unit_price)}</div>
+                            <div class="text-[13px] text-[#17120F] text-center">${Number(item.quantity)}</div>
+                            <div class="text-[13px] text-[#17120F]">${formatCurrency(itemSubtotal)}</div>
+                        </div>`;
+                }).join('') : '<p class="py-4 text-[13px] text-[#77716E]">No item details are saved for this order.</p>'}
+                <div class="flex justify-end pt-[10px]"><div class="w-[320px]">
+                    <div class="flex items-center justify-between"><span class="text-[13px] text-[#85807D]">Subtotal</span><span class="text-[13px] text-[#17120F]">${formatCurrency(subtotal)}</span></div>
+                    <div class="mt-[10px] flex items-center justify-between"><span class="text-[13px] text-[#85807D]">Shipping Fee</span><span class="text-[13px] text-[#17120F]">${formatCurrency(0)}</span></div>
+                    <div class="mt-[12px] flex items-center justify-between"><span class="text-[13px] font-medium text-[#17120F]">Total Amount</span><span class="text-[20px] font-bold text-[#721313]">${formatCurrency(order.total)}</span></div>
+                </div></div>`;
+        }
+
+        const notesSection = document.querySelector('.modal-notes-section');
+        if (notesSection) notesSection.hidden = true;
+
+        if (Array.isArray(order.status_history)) {
+            const statusHistoryOrder = {
+                new: [],
+                pending: [],
+                preparing: ['preparing'],
+                to_ship: ['preparing', 'to_ship'],
+                in_transit: ['preparing', 'to_ship'],
+                out_for_delivery: ['preparing', 'to_ship'],
+                delivered: ['preparing', 'to_ship'],
+            };
+            const eligibleStatuses = statusHistoryOrder[order.status] || [];
+            const history = [...order.status_history]
+                .filter((event) => eligibleStatuses.includes(event.to_status))
+                .reverse();
+            const events = history
+                .map((event) => {
+                    const eventDate = event.created_at ? new Date(event.created_at) : null;
+                    return {
+                        type: event.to_status === 'to_ship' ? 'ready' : 'prepared',
+                        date: eventDate && !Number.isNaN(eventDate.getTime())
+                            ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(eventDate)
+                            : '',
+                        time: eventDate && !Number.isNaN(eventDate.getTime())
+                            ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(eventDate)
+                            : '',
+                    };
+                });
+            setTrackingEvents(row, events);
+            renderTrackingHistory(row);
+        }
+    }
+
+    async function saveOrderStatus(orderId, payload, method = 'PATCH') {
+        const response = await fetch(
+            method === 'POST'
+                ? `${config.ordersUrl}/${orderId}/schedule`
+                : `${config.ordersUrl}/${orderId}/status`,
+            {
+                method,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+            },
+        );
+
+        let result = {};
+        try {
+            result = await response.json();
+        } catch {
+            // Surface the HTTP status if the API did not return JSON.
+        }
+
+        if (!response.ok) {
+            const validationMessage = Object.values(result.errors || {}).flat()[0];
+            throw new Error(validationMessage || result.message || `Could not save order changes (${response.status}).`);
+        }
+
+        return result;
+    }
 
     const trackingHistorySection =
         document.getElementById(
@@ -532,71 +902,6 @@ document.addEventListener('DOMContentLoaded', function () {
             );
     }
 
-    function ensureInitialTracking(
-        row
-    ) {
-        const status =
-            row.dataset.status;
-
-        if (
-            status ===
-                'preparing' &&
-            !getTrackingEvents(
-                row
-            ).length
-        ) {
-            setTrackingEvents(
-                row,
-                [
-                    makeTrackingEvent(
-                        'prepared',
-                        'May 22, 2026',
-                        '11:45 PM'
-                    )
-                ]
-            );
-        }
-
-        if (
-            status ===
-                'to-ship' &&
-            !getTrackingEvents(
-                row
-            ).length
-        ) {
-            setTrackingEvents(
-                row,
-                [
-                    makeTrackingEvent(
-                        'prepared',
-                        'May 22, 2026',
-                        '11:45 PM'
-                    ),
-
-                    makeTrackingEvent(
-                        'ready',
-
-                        row.querySelector(
-                            '.ordered-date'
-                        )?.textContent
-                            ?.trim() ||
-                            'May 22, 2026',
-
-                        row.querySelector(
-                            '.ordered-time'
-                        )?.textContent
-                            ?.trim() ||
-                            '11:45 PM'
-                    )
-                ]
-            );
-        }
-    }
-
-    rows.forEach(
-        ensureInitialTracking
-    );
-
     function trackingIcon(
         type,
         active
@@ -783,6 +1088,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const isReady =
             status ===
             'to-ship';
+
+        const isNewOrder =
+            status === 'new' || status === 'pending';
+        if (printWaybillButton) printWaybillButton.hidden = !isNewOrder;
 
         if (
             orderModalOrderId
@@ -995,6 +1304,22 @@ document.addEventListener('DOMContentLoaded', function () {
         lastFocusedElement =
             document.activeElement;
 
+        const itemsSection = document.querySelector('.modal-items-section');
+        if (itemsSection) {
+            itemsSection.innerHTML = '<p class="py-4 text-[13px] text-[#77716E]">Loading order items…</p>';
+        }
+        [
+            'orderModalCustomerName',
+            'orderModalCustomerEmail',
+            'orderModalCustomerPhone',
+            'orderModalCustomerAddress',
+            'orderModalPaymentMethod',
+            'orderModalPaymentDescription',
+        ].forEach((id) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = 'Loading…';
+        });
+
         syncOrderModalFromRow(
             row
         );
@@ -1012,6 +1337,10 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
         lockBody();
+        loadOrderDetails(row).catch((error) => {
+            const items = document.getElementById('orderModalItems');
+            if (items) items.innerHTML = `<p class="py-4 text-[13px] text-red-700">${escapeHtml(error.message)}</p>`;
+        });
     }
 
     function closeOrderDetailsModal(
@@ -1208,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     orderModalActionButton?.addEventListener(
         'click',
-        function () {
+        async function () {
             if (
                 !selectedOrderRow
             ) {
@@ -1230,8 +1559,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 orderModalActionLabel.textContent =
                     'Preparing...';
 
-                setTimeout(
-                    function () {
+                try {
+                    await saveOrderStatus(
+                        selectedOrderRow.dataset.orderId,
+                        { status: 'preparing', notes: 'Seller started preparing the order.' },
+                    );
+
                         const stamp =
                             nowTrackingStamp();
 
@@ -1313,9 +1646,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         syncOrderModalFromRow(
                             selectedOrderRow
                         );
-                    },
-                    400
-                );
+                } catch (error) {
+                    alert(error.message);
+                    orderModalActionButton.disabled = false;
+                    orderModalActionLabel.textContent = 'Prepare Order';
+                }
 
                 return;
             }
@@ -1366,7 +1701,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     confirmScheduleShipmentButton?.addEventListener(
         'click',
-        function () {
+        async function () {
             if (
                 !selectedOrderRow
             ) {
@@ -1392,17 +1727,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const scheduledStamp =
-                nowTrackingStamp();
-
             confirmScheduleShipmentButton.disabled =
                 true;
 
             confirmScheduleShipmentButton.textContent =
                 'Scheduling...';
 
-            setTimeout(
-                function () {
+            try {
+                    await saveOrderStatus(
+                        selectedOrderRow.dataset.orderId,
+                        {
+                            pickup_date: pickupDate,
+                            pickup_time: pickupTime,
+                            notes: 'Seller scheduled shipment pickup.',
+                        },
+                        'POST',
+                    );
+                    const scheduledStamp =
+                        nowTrackingStamp();
                     const row =
                         selectedOrderRow;
 
@@ -1548,9 +1890,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     confirmScheduleShipmentButton.textContent =
                         'Schedule Pickup';
-                },
-                400
-            );
+            } catch (error) {
+                alert(error.message);
+                confirmScheduleShipmentButton.disabled = false;
+                confirmScheduleShipmentButton.textContent = 'Schedule Pickup';
+            }
         }
     );
 

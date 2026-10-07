@@ -77,6 +77,13 @@
         'resources/js/seller/shipping-status.js'
     ])
 
+    <script id="sellerShippingStatusConfig" type="application/json">
+        {!! json_encode([
+            'apiUrl' => '/api/v1/seller/shipping-status',
+            'ordersUrl' => '/api/v1/seller/shipping',
+            'apiToken' => $apiToken ?? '',
+        ]) !!}
+    </script>
 
     
 
@@ -223,7 +230,6 @@
                             class="
                                 shipping-status-tab
                                 active
-
                                 relative
                                 h-full
 
@@ -238,20 +244,15 @@
                             All
                         </button>
 
-
                         <button
                             type="button"
                             data-tab="in-transit"
-
                             class="
                                 shipping-status-tab
-
                                 relative
                                 h-full
-
                                 px-[8px]
                                 mr-[48px]
-
                                 text-[14px]
                                 font-medium
                                 text-[#95908E]
@@ -260,19 +261,14 @@
                             In Transit
                         </button>
 
-
                         <button
                             type="button"
                             data-tab="delivered"
-
                             class="
                                 shipping-status-tab
-
                                 relative
                                 h-full
-
                                 px-[8px]
-
                                 text-[14px]
                                 font-medium
                                 text-[#95908E]
@@ -397,6 +393,133 @@
                         class="shipping-table"
                     >
 
+                        @forelse ($orders as $order)
+                            @php
+                                $shippingStatus = str_replace('_', '-', $order->status);
+                                $shippingLabel = match ($order->status) {
+                                    'to_ship' => 'Ready to Ship',
+                                    'in_transit' => 'In Transit',
+                                    'out_for_delivery' => 'Out for Delivery',
+                                    'delivered' => 'Delivered',
+                                    default => 'Shipping',
+                                };
+                                $shipment = $order->shipment;
+                                $trackingNumber = $shipment?->tracking_number ?? 'Pending';
+                                $createdAt = $order->created_at;
+                                $productPhoto = null;
+                                $productName = null;
+                                foreach ($order->items as $item) {
+                                    $photos = $item->product?->photos;
+                                    $productPhoto = is_array($photos)
+                                        ? collect($photos)->first(fn ($photo) => is_string($photo) && trim($photo) !== '')
+                                        : null;
+                                    if ($productPhoto) {
+                                        $productName = $item->product?->name ?: $item->product_name;
+                                        break;
+                                    }
+                                }
+                                $productPhotoUrl = $productPhoto && \Illuminate\Support\Str::startsWith($productPhoto, ['data:', 'http://', 'https://'])
+                                    ? $productPhoto
+                                    : ($productPhoto
+                                        ? url('/storage/' . implode('/', array_map('rawurlencode', explode('/', preg_replace('#^/?storage/#', '', ltrim($productPhoto, '/'))))))
+                                        : null);
+                            @endphp
+                            <article
+                                class="shipping-row"
+                                data-order-id="{{ $order->id }}"
+                                data-order-number="{{ $order->order_number ?: 'ORD-' . $order->id }}"
+                                data-status="{{ $shippingStatus }}"
+                                data-search="{{ strtolower(($order->order_number ?: 'ORD-' . $order->id) . ' ' . ($order->buyer?->name ?? '') . ' ' . ($order->buyer?->contact_no ?? '') . ' ' . $trackingNumber) }}"
+                                data-customer="{{ $order->delivery_name ?: ($order->buyer?->name ?? 'Customer') }}"
+                                data-phone="{{ $order->delivery_phone ?: ($order->buyer?->contact_no ?? '') }}"
+                                data-order-date="{{ $createdAt?->format('F j, Y') }}"
+                                data-order-time="{{ $createdAt?->format('g:i A') }}"
+                                data-estimated="{{ $shipment?->estimated_delivery?->format('F j, Y') ?? '' }}"
+                                data-tracking="{{ $trackingNumber }}"
+                                data-courier="{{ $shipment?->courier ?? 'Ease Express' }}"
+                            >
+                                <div class="order-info">
+                                    <div class="order-product-icon {{ $order->status === 'delivered' ? 'green-bg' : 'blue-bg' }}">
+                                        @if ($productPhotoUrl)
+                                            <img class="shipping-product-photo" src="{{ $productPhotoUrl }}" alt="{{ $productName }}">
+                                        @else
+                                            <img
+                                                src="{{ asset('icons/seller/shipping-status/' . ($order->status === 'delivered' ? 'delivered.png' : 'in-transit.png')) }}"
+                                                alt="{{ $shippingLabel }}"
+                                            >
+                                        @endif
+                                    </div>
+                                    <div class="order-details">
+                                        <h3>#{{ $order->order_number ?: 'ORD-' . $order->id }}</h3>
+                                        <p class="customer-name">{{ $order->delivery_name ?: ($order->buyer?->name ?? 'Customer') }}</p>
+                                        <p class="customer-phone">{{ $order->delivery_phone ?: ($order->buyer?->contact_no ?? '—') }}</p>
+                                        <div class="order-date-row">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="4" y="3" width="16" height="18" rx="2" />
+                                                <path d="M8 7h8M8 11h8" />
+                                            </svg>
+                                            <span>{{ $createdAt?->format('M d, Y') }}</span>
+                                        </div>
+                                        <div class="order-time-row">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="8" />
+                                                <path d="M12 7v5l3 2" />
+                                            </svg>
+                                            <span>{{ $createdAt?->format('g:i A') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="delivery-info">
+                                    <span class="status-pill {{ $order->status === 'delivered' ? 'delivered' : 'transit' }}">{{ $shippingLabel }}</span>
+                                    <span class="delivery-label">Estimated Delivery</span>
+                                    <strong class="delivery-date {{ $order->status === 'delivered' ? 'delivered' : '' }}">{{ $shipment?->estimated_delivery?->format('M d, Y') ?? 'Not scheduled' }}</strong>
+                                </div>
+                                <div class="tracking-and-courier">
+                                    <div class="tracking-block">
+                                        @php
+                                            $isOutForDelivery = $order->status === 'out_for_delivery';
+                                            $isDelivered = $order->status === 'delivered';
+                                            $transitIcon = $isDelivered || $isOutForDelivery
+                                                ? 'in-transit-check.png'
+                                                : 'in-transit-blue.png';
+                                            $outIcon = $isDelivered
+                                                ? 'delivered-check.png'
+                                                : ($isOutForDelivery ? 'out-for-delivery.png' : 'out-for-delivery-gray.png');
+                                            $deliveredIcon = $isDelivered
+                                                ? 'delivered-check.png'
+                                                : 'delivered-gray.png';
+                                        @endphp
+                                        <div class="tracker">
+                                            <div class="tracker-step">
+                                                <img src="{{ asset('icons/seller/shipping-status/' . $transitIcon) }}" alt="In Transit">
+                                                <span>In Transit</span>
+                                            </div>
+                                            <div class="tracker-line {{ $isOutForDelivery || $isDelivered ? 'completed' : '' }}"></div>
+                                            <div class="tracker-step">
+                                                <img src="{{ asset('icons/seller/shipping-status/' . $outIcon) }}" alt="Out for Delivery">
+                                                <span>Out for Delivery</span>
+                                            </div>
+                                            <div class="tracker-line {{ $isDelivered ? 'completed' : '' }}"></div>
+                                            <div class="tracker-step">
+                                                <img src="{{ asset('icons/seller/shipping-status/' . $deliveredIcon) }}" alt="Delivered">
+                                                <span>Delivered</span>
+                                            </div>
+                                        </div>
+                                        <p class="tracking-number">Tracking Number: <span>{{ $trackingNumber }}</span></p>
+                                    </div>
+                                    <div class="courier-info">
+                                        <h3 class="courier-name {{ $isDelivered ? 'green' : 'blue' }}">{{ $shipment?->courier ?? 'Ease Express' }}</h3>
+                                        <p class="shipping-price">₱{{ number_format((float) $order->total, 2) }}</p>
+                                        <p class="payment-line">Payment: <span>{{ in_array(strtolower((string) $order->payment_method), ['cod', 'cash on delivery'], true) ? 'COD' : ($order->payment_method ?? 'COD') }}</span></p>
+                                        <p class="payment-description">{{ in_array(strtolower((string) $order->payment_method), ['cod', 'cash on delivery'], true) ? 'Payment upon Delivery' : 'Payment details' }}</p>
+                                    </div>
+                                </div>
+                            </article>
+                        @empty
+                            <p class="feedback-empty">No orders are currently in the shipping flow.</p>
+                        @endforelse
+
+                        @if (false)
 
                         {{-- =================================================
                              ROW 1 — IN TRANSIT
@@ -1477,6 +1600,8 @@
 
                         </article>
 
+                        @endif
+
                     </div>
 
                 </div>
@@ -1931,6 +2056,8 @@
                     >
                         T23430583RHEFBW
                     </span>
+                    <p class="modal-tracking-label">Current Parcel Location</p>
+                    <span id="shippingModalCurrentLocation" class="modal-tracking-value">Not scanned yet</span>
 
                 </div>
 
@@ -2091,7 +2218,7 @@
 
 
                             <span>
-                                Calamba, Laguna
+                                <span id="shippingModalAddress">—</span>
                             </span>
 
                         </div>
@@ -2146,13 +2273,13 @@
                             <p>
                                 Payment:
                                 <span>
-                                    COD
+                                    <span id="shippingModalPaymentMethod">COD</span>
                                 </span>
                             </p>
 
 
                             <small>
-                                Payment upon Delivery
+                                <span id="shippingModalPaymentDescription">Payment upon Delivery</span>
                             </small>
 
                         </div>
@@ -2179,6 +2306,7 @@
                     Items Ordered
                 </h3>
 
+                <div id="shippingModalItemsList">
 
                 <div
                     class="
@@ -2352,6 +2480,8 @@
 
                     </div>
 
+                    </div>
+
                 </div>
 
             </div>
@@ -2374,7 +2504,7 @@
 
 
                 <div>
-                    Please Handle with care. Thank you!
+                    <span id="shippingModalNotes">No customer notes provided.</span>
                 </div>
 
             </div>
@@ -2512,6 +2642,14 @@
                     shipping-modal-footer
                 "
             >
+
+                <button
+                    type="button"
+                    id="shippingAdvanceButton"
+                    hidden
+                >
+                    Mark In Transit
+                </button>
 
                 <button
                     type="button"

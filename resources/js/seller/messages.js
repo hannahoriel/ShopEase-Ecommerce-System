@@ -1,254 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const tabs =
-        Array.from(
-            document.querySelectorAll('[data-message-tab]')
-        );
+    const config = window.sellerMessagesConfig || {};
+    const tabs = Array.from(document.querySelectorAll('[data-message-tab]'));
+    const threadList = document.getElementById('messagesThreadList');
+    const emptyThreads = document.getElementById('messagesEmptyThreads');
+    const searchInput = document.getElementById('messagesSearch');
+    const chatPanel = document.querySelector('.messages-chat-panel');
+    const chatBody = document.getElementById('messagesChatBody');
+    const activeAvatar = document.getElementById('activeConversationAvatar');
+    const activeTitle = document.getElementById('activeConversationTitle');
+    const activeBadge = document.getElementById('activeConversationBadge');
+    const activeSubtitle = document.getElementById('activeConversationSubtitle');
+    const activeContextLabel = document.getElementById('activeContextLabel');
+    const activeContextValue = document.getElementById('activeContextValue');
+    const viewContextButton = document.getElementById('viewContextButton');
+    const composerInput = document.getElementById('messageComposerInput');
+    const sendButton = document.getElementById('sendMessageButton');
+    const fileInput = document.getElementById('messageFileInput');
+    const mediaInput = document.getElementById('messageMediaInput');
+    const status = document.getElementById('messagesStatus');
+    const buyerTabCount = document.getElementById('buyerTabCount');
+    const complaintTabCount = document.getElementById('complaintTabCount');
+    const newConversationDialog = document.getElementById('newBuyerConversationDialog');
+    const newConversationOrder = document.getElementById('newConversationOrder');
+    const newConversationStatus = document.getElementById('newConversationStatus');
+    const startConversationButton = document.getElementById('startNewConversationButton');
 
-    const threadList =
-        document.getElementById('messagesThreadList');
-
-    const emptyThreads =
-        document.getElementById('messagesEmptyThreads');
-
-    const searchInput =
-        document.getElementById('messagesSearch');
-
-    const chatPanel =
-        document.querySelector('.messages-chat-panel');
-
-    const chatBody =
-        document.getElementById('messagesChatBody');
-
-    const activeAvatar =
-        document.getElementById('activeConversationAvatar');
-
-    const activeTitle =
-        document.getElementById('activeConversationTitle');
-
-    const activeBadge =
-        document.getElementById('activeConversationBadge');
-
-    const activeSubtitle =
-        document.getElementById('activeConversationSubtitle');
-
-    const activeContextLabel =
-        document.getElementById('activeContextLabel');
-
-    const activeContextValue =
-        document.getElementById('activeContextValue');
-
-    const viewContextButton =
-        document.getElementById('viewContextButton');
-
-    const composerInput =
-        document.getElementById('messageComposerInput');
-
-    const sendButton =
-        document.getElementById('sendMessageButton');
-
-    const buyerTabCount =
-        document.getElementById('buyerTabCount');
-
-    const complaintTabCount =
-        document.getElementById('complaintTabCount');
-
-
-    const conversations = {
-        buyers: [
-            {
-                id: 'buyer-1',
-                type: 'buyers',
-                title: 'Juan Dela Cruz',
-                initials: 'JD',
-                badge: 'Buyer',
-                subtitle: 'Order #ORD-2028 · Online',
-                contextLabel: 'Related Order',
-                contextValue: '#ORD-2028 · Wireless Headphones',
-                contextButton: 'View Order',
-                preview: 'Is this still available in black?',
-                time: '2m',
-                unread: 2,
-                messages: [
-                    {
-                        type: 'divider',
-                        label: 'Today'
-                    },
-                    {
-                        sender: 'buyer',
-                        text: 'Hi! Is this still available in black?',
-                        time: '10:22 AM'
-                    },
-                    {
-                        sender: 'seller',
-                        text: 'Hi Juan! Yes, the black variant is still available.',
-                        time: '10:24 AM',
-                        seen: true
-                    },
-                    {
-                        sender: 'buyer',
-                        text: 'Great. If I order today, when can you ship it?',
-                        time: '10:25 AM'
-                    },
-                    {
-                        sender: 'seller',
-                        text: 'We can prepare it today and hand it over to the courier within 24 hours.',
-                        time: '10:27 AM',
-                        seen: true
-                    },
-                    {
-                        sender: 'buyer',
-                        text: 'Perfect, thank you!',
-                        time: '10:29 AM'
-                    }
-                ]
-            },
-            {
-                id: 'buyer-2',
-                type: 'buyers',
-                title: 'Maria Santos',
-                initials: 'MS',
-                badge: 'Buyer',
-                subtitle: 'Order #ORD-2026 · Active 8m ago',
-                contextLabel: 'Related Order',
-                contextValue: '#ORD-2026 · Smart Watch Series 8',
-                contextButton: 'View Order',
-                preview: 'Thank you for the update!',
-                time: '18m',
-                unread: 0,
-                messages: [
-                    {
-                        type: 'divider',
-                        label: 'Today'
-                    },
-                    {
-                        sender: 'seller',
-                        text: 'Hi Maria, your order has already been packed and is ready for pickup.',
-                        time: '9:41 AM',
-                        seen: true
-                    },
-                    {
-                        sender: 'buyer',
-                        text: 'Thank you for the update!',
-                        time: '9:45 AM'
-                    }
-                ]
-            },
-            {
-                id: 'buyer-3',
-                type: 'buyers',
-                title: 'Carlo Reyes',
-                initials: 'CR',
-                badge: 'Buyer',
-                subtitle: 'Order #ORD-2027 · Active 1h ago',
-                contextLabel: 'Related Order',
-                contextValue: '#ORD-2027 · Canvas Shoulder Bag',
-                contextButton: 'View Order',
-                preview: 'Can I change the delivery address?',
-                time: '1h',
-                unread: 1,
-                messages: [
-                    {
-                        type: 'divider',
-                        label: 'Today'
-                    },
-                    {
-                        sender: 'buyer',
-                        text: 'Hello, can I still change the delivery address for my order?',
-                        time: '8:13 AM'
-                    },
-                    {
-                        sender: 'seller',
-                        text: 'Hi Carlo. If the parcel has not been handed to the courier yet, we can check what options are available.',
-                        time: '8:17 AM',
-                        seen: true
-                    }
-                ]
-            }
-        ],
-
-        complaints: [
-            {
-                id: 'complaint-1',
-                type: 'complaints',
-                title: 'Complaint #CMP-2026-0148',
-                initials: 'AD',
-                badge: 'Admin',
-                subtitle: 'Admin Support · Case in review',
-                contextLabel: 'Complaint Reference',
-                contextValue: '#CMP-2026-0148 · Order #ORD-2025',
-                contextButton: 'View Complaint',
-                preview: 'Admin requested additional proof.',
-                time: '12m',
-                unread: 1,
-                messages: [
-                    {
-                        type: 'divider',
-                        label: 'Today'
-                    },
-                    {
-                        type: 'system',
-                        text: 'This complaint conversation is between your seller account and ShopEase Admin only.'
-                    },
-                    {
-                        sender: 'admin',
-                        text: 'Hello Seller. We are reviewing Complaint #CMP-2026-0148 regarding Order #ORD-2025.',
-                        time: '10:02 AM'
-                    },
-                    {
-                        sender: 'admin',
-                        text: 'Please provide a clear photo of the package before shipment and any courier handover proof available.',
-                        time: '10:04 AM'
-                    },
-                    {
-                        sender: 'seller',
-                        text: 'Understood. I will send the requested proof here shortly.',
-                        time: '10:08 AM',
-                        seen: true
-                    }
-                ]
-            },
-            {
-                id: 'complaint-2',
-                type: 'complaints',
-                title: 'Complaint #CMP-2026-0139',
-                initials: 'AD',
-                badge: 'Admin',
-                subtitle: 'Admin Support · Waiting for seller response',
-                contextLabel: 'Complaint Reference',
-                contextValue: '#CMP-2026-0139 · Order #ORD-2018',
-                contextButton: 'View Complaint',
-                preview: 'Please confirm the item condition.',
-                time: '2h',
-                unread: 0,
-                messages: [
-                    {
-                        type: 'divider',
-                        label: 'Yesterday'
-                    },
-                    {
-                        type: 'system',
-                        text: 'Only ShopEase Admin can contact you inside complaint threads.'
-                    },
-                    {
-                        sender: 'admin',
-                        text: 'Please confirm whether the item was sealed and complete before courier pickup.',
-                        time: '4:26 PM'
-                    },
-                    {
-                        sender: 'seller',
-                        text: 'Yes. The item was sealed, complete, and documented before pickup.',
-                        time: '4:39 PM',
-                        seen: true
-                    }
-                ]
-            }
-        ]
-    };
-
-
+    const conversations = { buyers: [], complaints: [] };
+    const counts = { buyers: 0, complaints: 0 };
+    const unreadCounts = { buyers: 0, complaints: 0 };
     let activeTab = 'buyers';
-    let activeConversationId = 'buyer-1';
-
+    let activeConversationId = null;
+    let searchTimer = null;
+    let listRequestId = 0;
+    let selectedAttachment = null;
+    let statusTimer = null;
+    const attachmentUrls = new Map();
+    const maxAttachmentBytes = 15 * 1024 * 1024;
+    const maxAttachmentMessage = 'You can only attach files up to 15 MB.';
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -259,486 +47,469 @@ document.addEventListener('DOMContentLoaded', () => {
             .replaceAll("'", '&#039;');
     }
 
-
-    function getActiveConversations() {
-        return conversations[activeTab] || [];
+    function showStatus(element, message = '') {
+        if (!element) return;
+        element.textContent = message;
+        element.hidden = !message;
     }
 
-
-    function getConversationById(id) {
-        return [
-            ...conversations.buyers,
-            ...conversations.complaints
-        ].find(conversation => conversation.id === id);
+    function flashStatus(message) {
+        showStatus(status, message);
+        clearTimeout(statusTimer);
+        statusTimer = window.setTimeout(() => showStatus(status), 6000);
     }
 
+    function clearSelectedAttachment() {
+        selectedAttachment = null;
+        if (fileInput) fileInput.value = '';
+        if (mediaInput) mediaInput.value = '';
+    }
+
+    async function apiFetch(path, options = {}) {
+        const response = await fetch(`${config.apiUrl}${path}`, {
+            credentials: 'same-origin',
+            ...options,
+            headers: {
+                Accept: 'application/json',
+                ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+                Authorization: `Bearer ${config.apiToken || ''}`,
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(options.headers || {}),
+            },
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const validationMessage = Object.values(payload.errors || {}).flat()[0];
+            throw new Error(validationMessage || payload.message || 'Unable to complete the messaging request.');
+        }
+
+        return payload;
+    }
+
+    function setCounts(payload) {
+        Object.assign(counts, payload.counts || {});
+        Object.assign(unreadCounts, payload.unread || {});
+        buyerTabCount.textContent = unreadCounts.buyers || counts.buyers;
+        complaintTabCount.textContent = unreadCounts.complaints || counts.complaints;
+    }
 
     function renderThreads() {
-        if (!threadList) {
-            return;
-        }
+        if (!threadList) return;
 
-        const query =
-            (searchInput?.value || '')
-                .trim()
-                .toLowerCase();
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        const filtered = conversations[activeTab].filter(conversation => {
+            const haystack = [
+                conversation.title,
+                conversation.preview,
+                conversation.subtitle,
+                conversation.context_value,
+            ].join(' ').toLowerCase();
+            return !query || haystack.includes(query);
+        });
 
-        const filtered =
-            getActiveConversations().filter(conversation => {
-                const haystack =
-                    [
-                        conversation.title,
-                        conversation.preview,
-                        conversation.subtitle,
-                        conversation.contextValue
-                    ]
-                        .join(' ')
-                        .toLowerCase();
-
-                return !query || haystack.includes(query);
-            });
-
-        threadList.innerHTML =
-            filtered.map(conversation => `
-                <button
-                    type="button"
-                    class="
-                        messages-thread
-                        ${conversation.id === activeConversationId ? 'is-active' : ''}
-                        ${conversation.unread ? 'is-unread' : ''}
-                    "
-                    data-conversation-id="${escapeHtml(conversation.id)}"
-                    data-type="${escapeHtml(conversation.type)}"
-                >
-                    <span class="messages-thread-avatar">
-                        ${escapeHtml(conversation.initials)}
+        threadList.innerHTML = filtered.map(conversation => `
+            <button
+                type="button"
+                class="messages-thread ${String(conversation.id) === String(activeConversationId) ? 'is-active' : ''} ${conversation.unread ? 'is-unread' : ''}"
+                data-conversation-id="${escapeHtml(conversation.id)}"
+                data-type="${escapeHtml(conversation.type)}"
+            >
+                <span class="messages-thread-avatar">${escapeHtml(conversation.initials)}</span>
+                <span class="messages-thread-copy">
+                    <span class="messages-thread-topline">
+                        <strong class="messages-thread-title">${escapeHtml(conversation.title)}</strong>
+                        <span class="messages-thread-type">${escapeHtml(conversation.badge)}</span>
                     </span>
+                    <span class="messages-thread-preview">${escapeHtml(conversation.preview)}</span>
+                </span>
+                <span class="messages-thread-meta">
+                    <time class="messages-thread-time">${escapeHtml(conversation.time || '')}</time>
+                    ${conversation.unread ? `<span class="messages-thread-unread">${escapeHtml(conversation.unread)}</span>` : ''}
+                </span>
+            </button>
+        `).join('');
 
-                    <span class="messages-thread-copy">
-                        <span class="messages-thread-topline">
-                            <strong class="messages-thread-title">
-                                ${escapeHtml(conversation.title)}
-                            </strong>
-
-                            <span class="messages-thread-type">
-                                ${conversation.type === 'complaints' ? 'Admin' : 'Buyer'}
-                            </span>
-                        </span>
-
-                        <span class="messages-thread-preview">
-                            ${escapeHtml(conversation.preview)}
-                        </span>
-                    </span>
-
-                    <span class="messages-thread-meta">
-                        <time class="messages-thread-time">
-                            ${escapeHtml(conversation.time)}
-                        </time>
-
-                        ${
-                            conversation.unread
-                                ? `<span class="messages-thread-unread">${conversation.unread}</span>`
-                                : ''
-                        }
-                    </span>
-                </button>
-            `).join('');
-
-        const hasResults = filtered.length > 0;
-
-        threadList.hidden = !hasResults;
-
-        if (emptyThreads) {
-            emptyThreads.hidden = hasResults;
-        }
+        threadList.hidden = filtered.length === 0;
+        if (emptyThreads) emptyThreads.hidden = filtered.length > 0;
     }
 
+    function formatDateLabel(dateValue) {
+        const date = new Date(`${dateValue}T00:00:00`);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+        const asDay = value => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+
+        if (asDay(date) === asDay(today)) return 'Today';
+        if (asDay(date) === asDay(yesterday)) return 'Yesterday';
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
 
     function renderConversation(conversation) {
-        if (!conversation || !chatBody) {
-            return;
-        }
+        if (!conversation || !chatBody) return;
+        activeConversationId = conversation.id;
+        chatPanel?.classList.toggle('is-complaint', conversation.type === 'complaints');
+        activeAvatar.innerHTML = `<span>${escapeHtml(conversation.initials)}</span>`;
+        activeTitle.textContent = conversation.title;
+        activeBadge.textContent = conversation.badge;
+        activeSubtitle.textContent = conversation.subtitle;
+        activeContextLabel.textContent = conversation.context_label;
+        activeContextValue.textContent = conversation.context_value;
+        viewContextButton.textContent = conversation.context_button;
+        composerInput.placeholder = conversation.type === 'complaints'
+            ? 'Reply to ShopEase Admin...'
+            : 'Type a message...';
+        composerInput.disabled = false;
+        sendButton.disabled = false;
 
-        activeConversationId =
-            conversation.id;
-
-        conversation.unread = 0;
-
-        chatPanel?.classList.toggle(
-            'is-complaint',
-            conversation.type === 'complaints'
-        );
-
-        if (activeAvatar) {
-            activeAvatar.innerHTML =
-                `<span>${escapeHtml(conversation.initials)}</span>`;
-        }
-
-        if (activeTitle) {
-            activeTitle.textContent =
-                conversation.title;
-        }
-
-        if (activeBadge) {
-            activeBadge.textContent =
-                conversation.badge;
-        }
-
-        if (activeSubtitle) {
-            activeSubtitle.textContent =
-                conversation.subtitle;
-        }
-
-        if (activeContextLabel) {
-            activeContextLabel.textContent =
-                conversation.contextLabel;
-        }
-
-        if (activeContextValue) {
-            activeContextValue.textContent =
-                conversation.contextValue;
-        }
-
-        if (viewContextButton) {
-            viewContextButton.textContent =
-                conversation.contextButton;
-        }
-
-        if (composerInput) {
-            composerInput.placeholder =
-                conversation.type === 'complaints'
-                    ? 'Reply to ShopEase Admin...'
-                    : 'Type a message...';
-        }
-
-        chatBody.innerHTML =
-            conversation.messages.map(message => {
-                if (message.type === 'divider') {
-                    return `
-                        <div class="messages-date-divider">
-                            <span>${escapeHtml(message.label)}</span>
-                        </div>
-                    `;
+        let previousDate = null;
+        const messageMarkup = (conversation.messages || []).map(message => {
+            const date = message.date || '';
+            const divider = date && date !== previousDate
+                ? `<div class="messages-date-divider"><span>${escapeHtml(formatDateLabel(date))}</span></div>`
+                : '';
+            previousDate = date || previousDate;
+            const isSeller = message.sender === 'seller';
+            const attachment = message.attachment;
+            let attachmentMarkup = '';
+            if (attachment) {
+                const attachmentUrl = escapeHtml(attachment.url);
+                const attachmentName = escapeHtml(attachment.name);
+                if (attachment.mime_type?.startsWith('image/')) {
+                    attachmentMarkup = `<img class="message-attachment-image" data-attachment-url="${attachmentUrl}" alt="${attachmentName}" loading="lazy">`;
+                } else if (attachment.mime_type?.startsWith('video/')) {
+                    attachmentMarkup = `<video class="message-attachment-video" data-attachment-url="${attachmentUrl}" controls preload="metadata" aria-label="${attachmentName}"></video>`;
+                } else {
+                    attachmentMarkup = `<span class="message-attachment-file">${attachmentName}</span>`;
                 }
+                attachmentMarkup += `<button type="button" class="message-attachment-download" data-download-url="${attachmentUrl}" data-download-name="${attachmentName}">Download</button>`;
+            }
 
-                if (message.type === 'system') {
-                    return `
-                        <div class="message-system-note">
-                            ${escapeHtml(message.text)}
-                        </div>
-                    `;
-                }
-
-                const seller =
-                    message.sender === 'seller';
-
-                return `
-                    <div class="message-row ${seller ? 'is-seller' : ''}">
-                        <div class="message-bubble-wrap">
-                            <div class="message-bubble">
-                                ${escapeHtml(message.text)}
-                            </div>
-
-                            <div class="message-meta">
-                                ${escapeHtml(message.time)}
-                                ${
-                                    seller && message.seen
-                                        ? ' · Seen'
-                                        : ''
-                                }
-                            </div>
+            return `${divider}
+                <div class="message-row ${isSeller ? 'is-seller' : ''}">
+                    <div class="message-bubble-wrap">
+                        ${message.text ? `<div class="message-bubble">${escapeHtml(message.text)}</div>` : ''}
+                        ${attachmentMarkup}
+                        <div class="message-meta">
+                            ${escapeHtml(message.time || '')}
+                            ${isSeller && message.seen ? ' · Seen' : ''}
                         </div>
                     </div>
-                `;
-            }).join('');
+                </div>`;
+        }).join('');
 
-        chatBody.scrollTop =
-            chatBody.scrollHeight;
+        const systemNote = conversation.type === 'complaints'
+            ? '<div class="message-system-note">This complaint conversation is between your seller account and ShopEase Admin only.</div>'
+            : '';
+        chatBody.innerHTML = `${systemNote}${messageMarkup}`;
+        if (!messageMarkup && !systemNote) {
+            chatBody.innerHTML = '<div class="messages-system-empty">Send a message to start this conversation.</div>';
+        }
 
+        chatBody.scrollTop = chatBody.scrollHeight;
+        hydrateAttachmentPreviews();
         renderThreads();
-        updateTabCounts();
     }
 
-
-    function switchTab(tabName) {
-        if (!conversations[tabName]) {
-            return;
-        }
-
-        activeTab = tabName;
-
-        tabs.forEach(tab => {
-            const active =
-                tab.dataset.messageTab === activeTab;
-
-            tab.classList.toggle('is-active', active);
-            tab.setAttribute(
-                'aria-selected',
-                active ? 'true' : 'false'
-            );
+    async function attachmentObjectUrl(url) {
+        if (attachmentUrls.has(url)) return attachmentUrls.get(url);
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+                Authorization: `Bearer ${config.apiToken || ''}`,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
         });
+        if (!response.ok) throw new Error('Unable to load this attachment.');
+        const objectUrl = URL.createObjectURL(await response.blob());
+        attachmentUrls.set(url, objectUrl);
+        return objectUrl;
+    }
 
-        const firstConversation =
-            conversations[activeTab][0];
+    function hydrateAttachmentPreviews() {
+        chatBody?.querySelectorAll('[data-attachment-url]').forEach(element => {
+            attachmentObjectUrl(element.dataset.attachmentUrl)
+                .then(objectUrl => {
+                    element.src = objectUrl;
+                })
+                .catch(error => flashStatus(error.message));
+        });
+    }
 
-        if (firstConversation) {
-            activeConversationId =
-                firstConversation.id;
+    async function downloadAttachment(button) {
+        try {
+            const url = `${button.dataset.downloadUrl}?download=1`;
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            if (!response.ok) throw new Error('Unable to download this attachment.');
+            const objectUrl = URL.createObjectURL(await response.blob());
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = button.dataset.downloadName || 'attachment';
+            link.click();
+            URL.revokeObjectURL(objectUrl);
+        } catch (error) {
+            flashStatus(error.message);
+        }
+    }
 
-            renderConversation(
-                firstConversation
-            );
-        } else {
+    function clearConversation() {
+        activeConversationId = null;
+        activeTitle.textContent = 'Select a conversation';
+        activeBadge.textContent = 'Messages';
+        activeSubtitle.textContent = '';
+        activeAvatar.innerHTML = '<span></span>';
+        activeContextLabel.textContent = 'Conversation';
+        activeContextValue.textContent = 'Select a thread to view its details.';
+        viewContextButton.textContent = 'View Order';
+        chatBody.innerHTML = '<div class="messages-system-empty">Choose a conversation to view its messages.</div>';
+        composerInput.disabled = true;
+        sendButton.disabled = true;
+        chatPanel?.classList.remove('is-complaint');
+        renderThreads();
+    }
+
+    async function loadThreads({ selectFirst = true } = {}) {
+        const requestId = ++listRequestId;
+        showStatus(status);
+        const search = searchInput?.value.trim() || '';
+        const query = new URLSearchParams({ type: activeTab });
+        if (search) query.set('search', search);
+
+        try {
+            const payload = await apiFetch(`?${query.toString()}`);
+            if (requestId !== listRequestId) return;
+            conversations[activeTab] = payload.data || [];
+            setCounts(payload);
             renderThreads();
+
+            const current = conversations[activeTab].find(item => String(item.id) === String(activeConversationId));
+            if (current) {
+                await openConversation(current.id);
+            } else if (selectFirst && conversations[activeTab].length) {
+                await openConversation(conversations[activeTab][0].id);
+            } else if (!conversations[activeTab].length) {
+                clearConversation();
+            }
+        } catch (error) {
+            showStatus(status, error.message);
         }
     }
 
-
-    function updateTabCounts() {
-        const buyerUnread =
-            conversations.buyers.reduce(
-                (sum, item) =>
-                    sum + Number(item.unread || 0),
-                0
-            );
-
-        const complaintUnread =
-            conversations.complaints.reduce(
-                (sum, item) =>
-                    sum + Number(item.unread || 0),
-                0
-            );
-
-        if (buyerTabCount) {
-            buyerTabCount.textContent =
-                buyerUnread || conversations.buyers.length;
-        }
-
-        if (complaintTabCount) {
-            complaintTabCount.textContent =
-                complaintUnread || conversations.complaints.length;
+    async function openConversation(id) {
+        showStatus(status);
+        try {
+            const payload = await apiFetch(`/conversations/${encodeURIComponent(id)}`);
+            const conversation = payload.data;
+            if (String(activeConversationId) !== String(conversation.id)) {
+                clearSelectedAttachment();
+            }
+            const existingIndex = conversations[conversation.type].findIndex(item => String(item.id) === String(conversation.id));
+            if (existingIndex === -1) {
+                conversations[conversation.type].unshift(conversation);
+            } else {
+                conversations[conversation.type][existingIndex] = conversation;
+            }
+            activeTab = conversation.type;
+            renderConversation(conversation);
+            await refreshUnreadCounts();
+        } catch (error) {
+            showStatus(status, error.message);
         }
     }
 
-
-    function sendCurrentMessage() {
-        const value =
-            (composerInput?.value || '')
-                .trim();
-
-        if (!value) {
-            composerInput?.focus();
-            return;
-        }
-
-        const conversation =
-            getConversationById(
-                activeConversationId
-            );
-
-        if (!conversation) {
-            return;
-        }
-
-        const now =
-            new Intl.DateTimeFormat(
-                'en-US',
-                {
-                    hour: 'numeric',
-                    minute: '2-digit'
+    async function refreshUnreadCounts() {
+        try {
+            const query = new URLSearchParams({ type: activeTab });
+            const payload = await apiFetch(`?${query.toString()}`);
+            setCounts(payload);
+            const items = payload.data || [];
+            conversations[activeTab] = items.map(item => {
+                if (String(item.id) === String(activeConversationId)) {
+                    const active = conversations[activeTab].find(existing => String(existing.id) === String(item.id));
+                    return active ? { ...item, messages: active.messages } : item;
                 }
-            ).format(new Date());
+                return item;
+            });
+            renderThreads();
+        } catch (error) {
+            showStatus(status, error.message);
+        }
+    }
 
-        conversation.messages.push({
-            sender: 'seller',
-            text: value,
-            time: now,
-            seen: false
-        });
+    async function sendCurrentMessage() {
+        const body = composerInput.value.trim();
+        if (!body && !selectedAttachment) {
+            composerInput.focus();
+            return;
+        }
+        if (!activeConversationId) return;
 
-        conversation.preview = value;
-        conversation.time = 'Now';
-
-        if (composerInput) {
+        sendButton.disabled = true;
+        showStatus(status);
+        try {
+            const formData = new FormData();
+            if (body) formData.append('body', body);
+            if (selectedAttachment) formData.append('attachment', selectedAttachment);
+            await apiFetch(`/conversations/${encodeURIComponent(activeConversationId)}/messages`, {
+                method: 'POST',
+                body: formData,
+            });
             composerInput.value = '';
             composerInput.style.height = 'auto';
+            selectedAttachment = null;
+            if (fileInput) fileInput.value = '';
+            if (mediaInput) mediaInput.value = '';
+            await openConversation(activeConversationId);
+            await loadThreads({ selectFirst: false });
+        } catch (error) {
+            flashStatus(error.message.includes('15 MB') ? maxAttachmentMessage : error.message);
+        } finally {
+            sendButton.disabled = false;
         }
-
-        renderConversation(
-            conversation
-        );
     }
 
+    async function openNewConversationDialog() {
+        if (activeTab === 'complaints') {
+            window.alert('Complaint conversations are created from ShopEase complaint cases.');
+            return;
+        }
+
+        showStatus(newConversationStatus);
+        newConversationOrder.innerHTML = '<option value="">Loading buyer orders...</option>';
+        newConversationDialog.showModal();
+        try {
+            const payload = await apiFetch('/contacts');
+            const contacts = payload.data || [];
+            newConversationOrder.innerHTML = contacts.length
+                ? `<option value="">Choose a buyer order</option>${contacts.map(contact => `
+                    <option value="${escapeHtml(contact.order_id)}">
+                        ${escapeHtml(contact.buyer_name)} · #${escapeHtml(contact.order_number)}${contact.products ? ` · ${escapeHtml(contact.products)}` : ''}
+                    </option>
+                `).join('')}`
+                : '<option value="">No buyer orders are available</option>';
+            startConversationButton.disabled = contacts.length === 0;
+            if (!contacts.length) showStatus(newConversationStatus, 'Buyer conversations can only be started from an existing buyer order.');
+        } catch (error) {
+            showStatus(newConversationStatus, error.message);
+        }
+    }
+
+    async function createConversation() {
+        const orderId = newConversationOrder.value;
+        if (!orderId) {
+            showStatus(newConversationStatus, 'Choose a buyer order first.');
+            return;
+        }
+        startConversationButton.disabled = true;
+        showStatus(newConversationStatus);
+        try {
+            const payload = await apiFetch('/conversations', {
+                method: 'POST',
+                body: JSON.stringify({ order_id: Number(orderId) }),
+            });
+            newConversationDialog.close();
+            activeTab = 'buyers';
+            tabs.forEach(tab => {
+                const selected = tab.dataset.messageTab === activeTab;
+                tab.classList.toggle('is-active', selected);
+                tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+            });
+            await loadThreads({ selectFirst: false });
+            await openConversation(payload.data.id);
+        } catch (error) {
+            showStatus(newConversationStatus, error.message);
+        } finally {
+            startConversationButton.disabled = false;
+        }
+    }
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            switchTab(
-                tab.dataset.messageTab
-            );
+            activeTab = tab.dataset.messageTab;
+            activeConversationId = null;
+            clearSelectedAttachment();
+            tabs.forEach(item => {
+                const selected = item === tab;
+                item.classList.toggle('is-active', selected);
+                item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            });
+            loadThreads();
         });
     });
 
+    threadList?.addEventListener('click', event => {
+        const thread = event.target.closest('[data-conversation-id]');
+        if (thread) openConversation(thread.dataset.conversationId);
+    });
 
-    threadList?.addEventListener(
-        'click',
-        event => {
-            const thread =
-                event.target.closest(
-                    '[data-conversation-id]'
-                );
+    searchInput?.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadThreads({ selectFirst: false }), 250);
+    });
 
-            if (!thread) {
-                return;
-            }
-
-            const conversation =
-                getConversationById(
-                    thread.dataset.conversationId
-                );
-
-            renderConversation(
-                conversation
-            );
+    sendButton?.addEventListener('click', sendCurrentMessage);
+    composerInput?.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendCurrentMessage();
         }
-    );
+    });
+    composerInput?.addEventListener('input', () => {
+        composerInput.style.height = 'auto';
+        composerInput.style.height = `${Math.min(composerInput.scrollHeight, 90)}px`;
+    });
 
+    document.getElementById('emojiButton')?.addEventListener('click', () => {
+        if (!composerInput) return;
+        const start = composerInput.selectionStart ?? composerInput.value.length;
+        const end = composerInput.selectionEnd ?? composerInput.value.length;
+        composerInput.value = `${composerInput.value.slice(0, start)} 🙂 ${composerInput.value.slice(end)}`;
+        composerInput.focus();
+    });
 
-    searchInput?.addEventListener(
-        'input',
-        renderThreads
-    );
-
-
-    sendButton?.addEventListener(
-        'click',
-        sendCurrentMessage
-    );
-
-
-    composerInput?.addEventListener(
-        'keydown',
-        event => {
-            if (
-                event.key === 'Enter'
-                &&
-                !event.shiftKey
-            ) {
-                event.preventDefault();
-                sendCurrentMessage();
-            }
+    document.getElementById('attachFileButton')?.addEventListener('click', () => fileInput?.click());
+    document.getElementById('sendPhotoButton')?.addEventListener('click', () => mediaInput?.click());
+    [fileInput, mediaInput].forEach(input => input?.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        if (file.size > maxAttachmentBytes) {
+            selectedAttachment = null;
+            input.value = '';
+            flashStatus(maxAttachmentMessage);
+            return;
         }
-    );
+        selectedAttachment = file;
+        showStatus(status, `${file.name} is ready to attach. Maximum size: 15 MB.`);
+    }));
+    chatBody?.addEventListener('click', event => {
+        const button = event.target.closest('[data-download-url]');
+        if (button) downloadAttachment(button);
+    });
+    document.getElementById('newMessageButton')?.addEventListener('click', openNewConversationDialog);
+    document.getElementById('chatSearchButton')?.addEventListener('click', () => searchInput?.focus());
+    document.getElementById('closeNewConversationButton')?.addEventListener('click', () => newConversationDialog.close());
+    document.getElementById('cancelNewConversationButton')?.addEventListener('click', () => newConversationDialog.close());
+    startConversationButton?.addEventListener('click', createConversation);
 
+    viewContextButton?.addEventListener('click', () => {
+        const conversation = conversations[activeTab].find(item => String(item.id) === String(activeConversationId));
+        if (conversation) window.alert(conversation.context_value);
+    });
 
-    composerInput?.addEventListener(
-        'input',
-        () => {
-            composerInput.style.height = 'auto';
-            composerInput.style.height =
-                `${Math.min(composerInput.scrollHeight, 90)}px`;
-        }
-    );
-
-
-    document
-        .getElementById('emojiButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                if (!composerInput) {
-                    return;
-                }
-
-                const start =
-                    composerInput.selectionStart ?? composerInput.value.length;
-
-                const end =
-                    composerInput.selectionEnd ?? composerInput.value.length;
-
-                composerInput.value =
-                    composerInput.value.slice(0, start)
-                    + ' 🙂 '
-                    + composerInput.value.slice(end);
-
-                composerInput.focus();
-            }
-        );
-
-
-    document
-        .getElementById('attachFileButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                alert('File attachment UI is ready for backend/file-upload integration.');
-            }
-        );
-
-
-    document
-        .getElementById('sendPhotoButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                alert('Photo attachment UI is ready for backend/file-upload integration.');
-            }
-        );
-
-
-    document
-        .getElementById('newMessageButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                alert(
-                    activeTab === 'complaints'
-                        ? 'Complaint threads are created through the complaint process and are handled with ShopEase Admin.'
-                        : 'New buyer chats can be connected to your buyer messaging backend here.'
-                );
-            }
-        );
-
-
-    document
-        .getElementById('chatSearchButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                searchInput?.focus();
-            }
-        );
-
-
-    viewContextButton?.addEventListener(
-        'click',
-        () => {
-            const conversation =
-                getConversationById(
-                    activeConversationId
-                );
-
-            if (!conversation) {
-                return;
-            }
-
-            alert(
-                conversation.type === 'complaints'
-                    ? `Open ${conversation.contextValue}`
-                    : `Open ${conversation.contextValue}`
-            );
-        }
-    );
-
-
-    updateTabCounts();
-
-    const initialConversation =
-        getConversationById(
-            activeConversationId
-        );
-
-    renderThreads();
-    renderConversation(
-        initialConversation
-    );
+    loadThreads();
+    window.setInterval(() => {
+        if (activeConversationId) openConversation(activeConversationId);
+        else loadThreads({ selectFirst: false });
+    }, 15000);
+    window.addEventListener('beforeunload', () => {
+        attachmentUrls.forEach(url => URL.revokeObjectURL(url));
+        attachmentUrls.clear();
+    });
 });

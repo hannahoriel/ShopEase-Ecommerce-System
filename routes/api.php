@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
 use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
 use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
@@ -13,11 +14,16 @@ use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
+use App\Http\Controllers\Api\Buyer\ProductReviewController;
+use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
+use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
 
 Route::prefix('v1')->group(function () {
 
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::get('/orders/verify/{orderNumber}', [BuyerOrderController::class, 'verify'])->name('buyer.api.orders.verify');
 
     Route::prefix('locations')->group(function () {
         Route::get('/provinces', [LocationController::class, 'provinces']);
@@ -56,8 +62,12 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
+            Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
+            Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
+            Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
 
             // Cart
             Route::get('/cart', [BuyerCartController::class, 'index'])->name('buyer.api.cart.index');
@@ -69,10 +79,20 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
+            Route::get('/messages', [SellerMessagesController::class, 'index'])->name('seller.api.messages.index');
+            Route::get('/messages/contacts', [SellerMessagesController::class, 'contacts'])->name('seller.api.messages.contacts');
+            Route::post('/messages/conversations', [SellerMessagesController::class, 'storeConversation'])->name('seller.api.messages.conversations.store');
+            Route::get('/messages/conversations/{conversation}', [SellerMessagesController::class, 'show'])->name('seller.api.messages.conversations.show');
+            Route::post('/messages/conversations/{conversation}/messages', [SellerMessagesController::class, 'send'])->name('seller.api.messages.send');
+            Route::get('/messages/conversations/{conversation}/messages/{message}/attachment', [SellerMessagesController::class, 'attachment'])->name('seller.api.messages.attachment');
+            Route::get('/reports', [SellerReportsController::class, 'data'])->name('seller.api.reports');
+            Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
+            Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
             Route::get('/order-status', [OrderStatusController::class, 'index']);
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
             Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
+            Route::post('/orders/{order}/waybill', [OrderStatusController::class, 'waybill']);
             Route::get('/shipping-status', [ShippingStatusController::class, 'index']);
             Route::get('/shipping/{order}', [ShippingStatusController::class, 'show']);
             Route::patch('/shipping/{order}/status', [ShippingStatusController::class, 'update']);

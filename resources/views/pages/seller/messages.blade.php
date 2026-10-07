@@ -8,6 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>ShopEase - Seller Messages</title>
 
@@ -54,7 +55,7 @@
                             aria-selected="true"
                         >
                             Buyers
-                            <span class="messages-tab-count" id="buyerTabCount">3</span>
+                            <span class="messages-tab-count" id="buyerTabCount">0</span>
                         </button>
 
                         <button
@@ -65,7 +66,7 @@
                             aria-selected="false"
                         >
                             Complaints
-                            <span class="messages-tab-count" id="complaintTabCount">2</span>
+                            <span class="messages-tab-count" id="complaintTabCount">0</span>
                         </button>
                     </div>
 
@@ -139,22 +140,21 @@
                                 id="activeConversationAvatar"
                                 aria-hidden="true"
                             >
-                                <span>JM</span>
+                                <span></span>
                             </div>
 
                             <div class="messages-chat-heading-copy">
                                 <div class="messages-chat-title-row">
-                                    <h2 id="activeConversationTitle">Juan Dela Cruz</h2>
+                                    <h2 id="activeConversationTitle">Select a conversation</h2>
                                     <span
                                         class="messages-conversation-badge"
                                         id="activeConversationBadge"
                                     >
-                                        Buyer
+                                        Messages
                                     </span>
                                 </div>
 
                                 <p id="activeConversationSubtitle">
-                                    Order #ORD-2028 · Online
                                 </p>
                             </div>
                         </div>
@@ -222,8 +222,8 @@
                         </div>
 
                         <div class="messages-chat-context-copy">
-                            <span id="activeContextLabel">Related Order</span>
-                            <strong id="activeContextValue">#ORD-2028 · Wireless Headphones</strong>
+                            <span id="activeContextLabel">Conversation</span>
+                            <strong id="activeContextValue">Select a thread to view its details.</strong>
                         </div>
 
                         <button
@@ -240,6 +240,8 @@
                         id="messagesChatBody"
                         aria-live="polite"
                     ></div>
+
+                    <p id="messagesStatus" class="messages-status" role="status" aria-live="polite" hidden></p>
 
                     <div
                         class="messages-typing"
@@ -271,6 +273,20 @@
                                     />
                                 </svg>
                             </button>
+
+                            <input
+                                type="file"
+                                id="messageFileInput"
+                                class="messages-hidden-file-input"
+                                aria-label="Choose a file attachment"
+                            >
+                            <input
+                                type="file"
+                                id="messageMediaInput"
+                                class="messages-hidden-file-input"
+                                accept="image/*,video/*"
+                                aria-label="Choose a photo or video attachment"
+                            >
 
                             <button
                                 type="button"
@@ -368,8 +384,37 @@
 
                 </section>
             </section>
+
+            <dialog class="messages-new-dialog" id="newBuyerConversationDialog">
+                <form method="dialog" class="messages-new-dialog-form" id="newBuyerConversationForm">
+                    <div class="messages-new-dialog-heading">
+                        <div>
+                            <h2>Start a buyer conversation</h2>
+                            <p>Choose one of your buyer's orders to provide context.</p>
+                        </div>
+                        <button type="button" class="messages-icon-button" id="closeNewConversationButton" aria-label="Close dialog">×</button>
+                    </div>
+
+                    <label for="newConversationOrder">Buyer order</label>
+                    <select id="newConversationOrder" required>
+                        <option value="">Loading buyer orders...</option>
+                    </select>
+                    <p id="newConversationStatus" class="messages-status" role="status" aria-live="polite" hidden></p>
+
+                    <div class="messages-new-dialog-actions">
+                        <button type="button" class="messages-dialog-cancel" id="cancelNewConversationButton">Cancel</button>
+                        <button type="button" class="messages-dialog-submit" id="startNewConversationButton">Open conversation</button>
+                    </div>
+                </form>
+            </dialog>
         </div>
     </main>
 
+    <script>
+        window.sellerMessagesConfig = {!! json_encode([
+            'apiUrl' => '/api/v1/seller/messages',
+            'apiToken' => $apiToken,
+        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!};
+    </script>
 </body>
 </html>

@@ -5,8 +5,10 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
+use App\Http\Controllers\ParcelScanController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Api\Seller\InventoryController as ApiSellerInventoryController;
 use App\Models\User;
@@ -31,6 +33,13 @@ Route::get('/', function () {
     return view('pages.landing-page');
 
 })->name('landing.page');
+
+Route::get('/parcel/scan/{token}', [ParcelScanController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->name('parcel.scan.show');
+Route::post('/parcel/scan/{token}', [ParcelScanController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('parcel.scan.store');
 
 
 Route::get('/auth/login', function () {
@@ -2113,17 +2122,13 @@ Route::get('/seller/shipping-status', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/seller/reports', function () {
-
-    abort_unless(
-        Auth::user()->role === User::ROLE_SELLER,
-        403
-    );
-
-    return view('pages.seller.reports');
-
-})->middleware('auth')
+Route::get('/seller/reports', [SellerReportsController::class, 'page'])
+  ->middleware('auth', 'role:seller')
   ->name('seller.reports');
+
+Route::get('/seller/reports/data', [SellerReportsController::class, 'data'])
+  ->middleware('auth', 'role:seller')
+  ->name('seller.reports.data');
 
 /*
 |--------------------------------------------------------------------------
@@ -2138,7 +2143,9 @@ Route::get('/seller/customer-feedback', function () {
         403
     );
 
-    return view('pages.seller.customer-feedback');
+    $apiToken = Auth::user()->createToken('seller-feedback')->plainTextToken;
+
+    return view('pages.seller.customer-feedback', ['apiToken' => $apiToken]);
 
 })->middleware('auth')
   ->name('seller.feedback.index');
@@ -2196,21 +2203,31 @@ Route::get('/buyer/cart', function () {
 })->middleware('auth')->name('buyer.cart');
 
 Route::get('/buyer/product', function () {
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
     $apiToken = Auth::check() ? Auth::user()->createToken('buyer-product')->plainTextToken : '';
     return view('pages.buyer.product', ['apiToken' => $apiToken]);
 })->middleware('auth')->name('buyer.product');
 
 Route::get('/buyer/my-purchases', function () {
-    return view('pages.buyer.my-purchases');
-})->name('buyer.my-purchases');
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $apiToken = Auth::user()->createToken('buyer-purchases')->plainTextToken;
+    return view('pages.buyer.my-purchases', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.my-purchases');
 
 Route::get('/buyer/checkout', function () {
-    return view('pages.buyer.checkout');
-})->name('buyer.checkout');
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $apiToken = Auth::user()->createToken('buyer-checkout')->plainTextToken;
+    return view('pages.buyer.checkout', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.checkout');
 
 Route::get('/seller/messages', function () {
-    return view('pages.seller.messages');
-})->name('seller.messages');
+    abort_unless(Auth::user()->role === User::ROLE_SELLER, 403);
+
+    return view('pages.seller.messages', [
+        'apiToken' => Auth::user()->createToken('seller-messages')->plainTextToken,
+    ]);
+})->middleware('auth')
+  ->name('seller.messages');
 
 Route::get('/admin/messages', function () {
     return view('pages.admin.messages');

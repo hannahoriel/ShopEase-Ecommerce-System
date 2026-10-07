@@ -26,13 +26,8 @@ class ShippingStatusController extends Controller
     public function index(Request $request): JsonResponse
     {
         $seller = $this->sellerFor($request->user());
-        $query = $this->shippingQuery($seller->id);
-
-        if ($request->filled('status')) {
-            $query->whereIn('status', (array) $request->input('status'));
-        } else {
-            $query->whereIn('status', array_keys(self::TRANSITIONS));
-        }
+        $query = $this->shippingQuery($seller->id)
+            ->whereIn('status', array_keys(self::TRANSITIONS));
 
         if ($request->filled('search')) {
             $search = trim((string) $request->input('search'));
@@ -51,7 +46,12 @@ class ShippingStatusController extends Controller
         $order = $this->ownedOrder($request->user(), $order);
         abort_unless(array_key_exists($order->status, self::TRANSITIONS), 404);
 
-        return response()->json($order->load(['buyer:id,name,email,contact_no', 'shipment', 'statusHistory.changedBy:id,name']));
+        return response()->json($order->load([
+            'buyer:id,name,email,contact_no',
+            'items.product:id,name,photos',
+            'shipment.scans',
+            'statusHistory.changedBy:id,name',
+        ]));
     }
 
     public function update(Request $request, Order $order): JsonResponse
@@ -113,7 +113,12 @@ class ShippingStatusController extends Controller
     {
         return Order::query()
             ->where('seller_id', $sellerId)
-            ->with(['buyer:id,name,email,contact_no', 'shipment', 'statusHistory']);
+            ->with([
+                'buyer:id,name,email,contact_no',
+                'items.product:id,name,photos',
+                'shipment',
+                'statusHistory',
+            ]);
     }
 
     protected function sellerFor(User $user): Seller

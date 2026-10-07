@@ -16,6 +16,7 @@
         {!! json_encode([
             'cartUrl'    => '/api/v1/buyer/cart',
             'productUrl' => '/api/v1/buyer/products',
+            'reviewsUrl' => '/api/v1/buyer/products',
             'productId'  => request()->integer('id') ?: null,
             'apiToken'   => $apiToken ?? '',
         ]) !!}
@@ -167,8 +168,9 @@
                 <div class="product-section-heading"><h2>Product Ratings</h2></div>
                 <div class="ratings-summary">
                     <div class="rating-score-box">
-                        <strong>4.5 <small>out of 5</small></strong>
-                        <span>★★★★☆</span>
+                        <strong id="productRatingAverage">0.0 <small>out of 5</small></strong>
+                        <span id="productRatingStars">☆☆☆☆☆</span>
+                        <small id="productReviewCount">0 reviews</small>
                     </div>
                     <div class="rating-filter-list">
                         <button type="button" class="rating-filter active" data-rating-filter="all">All</button>
@@ -179,8 +181,27 @@
                         <button type="button" class="rating-filter" data-rating-filter="1">1 Star</button>
                     </div>
                 </div>
+                <form id="productReviewForm" class="product-review-form">
+                    <h3>Share your feedback</h3>
+                    <label for="reviewRating">Your rating</label>
+                    <select id="reviewRating" name="rating" required>
+                        <option value="">Choose a rating</option>
+                        <option value="5">5 stars - Excellent</option>
+                        <option value="4">4 stars - Good</option>
+                        <option value="3">3 stars - Average</option>
+                        <option value="2">2 stars - Poor</option>
+                        <option value="1">1 star - Very poor</option>
+                    </select>
+                    <label for="reviewTitle">Title (optional)</label>
+                    <input id="reviewTitle" name="title" type="text" maxlength="120" placeholder="Summarize your experience">
+                    <label for="reviewBody">Your review</label>
+                    <textarea id="reviewBody" name="body" rows="3" maxlength="2000" minlength="2" required placeholder="What did you think of this product?"></textarea>
+                    <button type="submit" id="submitProductReview">Submit review</button>
+                    <p id="productReviewMessage" role="status" aria-live="polite"></p>
+                </form>
                 <div class="review-list">
-                    <div id="ratingsFilterEmpty" class="ratings-filter-empty">No reviews yet.</div>
+                    <div id="ratingsReviewList"></div>
+                    <div id="ratingsFilterEmpty" class="ratings-filter-empty">Loading reviews…</div>
                 </div>
             </section>
 

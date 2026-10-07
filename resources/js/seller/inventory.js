@@ -4557,6 +4557,48 @@ document.addEventListener(
                     productDetailsBuyerOptions.innerHTML =
                         '';
 
+                    const connectedVariants =
+                        Array.isArray(product.connectedVariants)
+                            ? product.connectedVariants
+                            : Array.isArray(product.connected_variants)
+                                ? product.connected_variants
+                                : [];
+
+                    if (connectedVariants.length) {
+                        const groupLabels = {
+                            variations: 'Variation',
+                            colors: 'Color',
+                            sizes: 'Size'
+                        };
+                        const rows = connectedVariants.map(
+                            function (variant) {
+                                const choices = Object.entries(groupLabels)
+                                    .filter(([key]) => variant[key])
+                                    .map(([key, label]) => `${label}: ${variant[key]}`)
+                                    .join(' · ');
+                                const availability = variant.available === false
+                                    ? ' — Unavailable'
+                                    : '';
+
+                                return `${choices} — ${formatMoney(variant.final_price)} — Stock: ${Number(variant.stock || 0)}${availability}`;
+                            }
+                        );
+
+                        productDetailsBuyerOptions.appendChild(
+                            makeCreatedDetailItem(
+                                'Connected Variants',
+                                rows,
+                                true
+                            )
+                        );
+
+                        productDetailsBuyerOptionsSection.classList.remove(
+                            'hidden'
+                        );
+
+                        return;
+                    }
+
                     const groups = [
                         {
                             label:
@@ -7079,6 +7121,11 @@ document.addEventListener(
                         variations: Array.isArray(product.variations) ? product.variations : [],
                         colors: Array.isArray(product.colors) ? product.colors : [],
                         sizes: Array.isArray(product.sizes) ? product.sizes : [],
+                        connectedVariants: Array.isArray(product.connected_variants)
+                            ? product.connected_variants
+                            : Array.isArray(product.connectedVariants)
+                                ? product.connectedVariants
+                                : [],
                         specifications: specifications,
                         specificationDisplay: specificationDisplay,
                         description: product.description || '',
@@ -7224,6 +7271,27 @@ document.addEventListener(
                 function calculateCreatedProductPrice(
                     product
                 ) {
+
+                    const connectedVariants =
+                        Array.isArray(product.connectedVariants)
+                            ? product.connectedVariants
+                            : [];
+
+                    if (connectedVariants.length) {
+                        const prices = connectedVariants
+                            .filter((variant) => variant.available !== false)
+                            .map((variant) => Number(variant.final_price))
+                            .filter(Number.isFinite);
+
+                        if (prices.length) {
+                            const minimum = Math.min(...prices);
+                            const maximum = Math.max(...prices);
+
+                            return Math.abs(maximum - minimum) < 0.005
+                                ? formatMoney(minimum)
+                                : `${formatMoney(minimum)} – ${formatMoney(maximum)}`;
+                        }
+                    }
 
                     if (
                         product.pricingMode !==
@@ -11016,11 +11084,13 @@ document.addEventListener(
                                 previewPayload.pricingSource,
 
                             basePrice:
+                                persistedProduct.price ??
                                 previewPayload.basePrice,
 
                             stock:
                                 Number(
-                                    previewPayload.stock ||
+                                    (persistedProduct.stock_quantity ??
+                                        previewPayload.stock) ||
                                     0
                                 ),
 
@@ -11044,6 +11114,13 @@ document.addEventListener(
 
                             sizes:
                                 previewPayload.sizes,
+
+                            connectedVariants:
+                                Array.isArray(persistedProduct.connected_variants)
+                                    ? persistedProduct.connected_variants
+                                    : Array.isArray(persistedProduct.connectedVariants)
+                                        ? persistedProduct.connectedVariants
+                                        : [],
 
                             specifications:
                                 previewPayload.specifications,
@@ -11292,6 +11369,9 @@ document.addEventListener(
 
             const fixedPriceInput =
                 document.getElementById('createProductPrice');
+
+            const productStockInput =
+                document.getElementById('createProductStock');
 
             const fixedPanel =
                 document.getElementById('fixedPricePanel');
@@ -13295,6 +13375,20 @@ document.addEventListener(
                         connectedGroups,
                         activeGroups
                     );
+
+                if (productStockInput) {
+                    productStockInput.readOnly = groups.length > 0;
+
+                    if (groups.length > 0) {
+                        productStockInput.value = String(
+                            groups.reduce(
+                                (total, group) =>
+                                    total + Math.max(0, Number(group.stock) || 0),
+                                0
+                            )
+                        );
+                    }
+                }
 
                 if (matrixCount) {
                     matrixCount.textContent =

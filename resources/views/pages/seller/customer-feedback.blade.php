@@ -54,7 +54,12 @@
         'resources/js/seller/customer-feedback.js',
     ])
 
-
+    <script id="sellerFeedbackConfig" type="application/json">
+        {!! json_encode([
+            'url' => '/api/v1/seller/feedback',
+            'apiToken' => $apiToken ?? '',
+        ]) !!}
+    </script>
     
 
 </head>
@@ -158,7 +163,7 @@
                             <input
                                 type="text"
                                 id="feedbackSearch"
-                                placeholder="Search order ID or customer name"
+                                placeholder="Search product or customer name"
                             >
 
                             <svg
@@ -258,7 +263,7 @@
                     <div class="feedback-table-head">
 
                         <div>
-                            Order ID
+                            Product
                         </div>
 
                         <div>
@@ -454,7 +459,7 @@
                         class="feedback-list"
                     >
 
-                        @foreach ($feedbackRows as $feedback)
+                        @foreach ([] as $feedback)
 
                             <div
                                 class="feedback-row"
@@ -662,7 +667,7 @@
                         class="product-grid"
                     >
 
-                        @foreach ($products as $index => $product)
+                        @foreach ([] as $index => $product)
 
                             <article
                                 class="product-card"
@@ -776,62 +781,23 @@
                         id="feedbackCount"
                         class="feedback-count"
                     >
-                        Showing 7 out of 378 entries
+                        Loading customer feedback…
                     </p>
 
 
                     <div class="feedback-pagination">
 
-                        <button
-                            type="button"
-                            class="page-button"
-                        >
-                            ‹
-                        </button>
+                        <select class="per-page" id="feedbackPerPage">
 
-                        <button
-                            type="button"
-                            class="
-                                page-button
-                                active
-                            "
-                        >
-                            1
-                        </button>
-
-                        <button
-                            type="button"
-                            class="page-button"
-                        >
-                            2
-                        </button>
-
-                        <button
-                            type="button"
-                            class="page-button"
-                        >
-                            3
-                        </button>
-
-                        <button
-                            type="button"
-                            class="page-button"
-                        >
-                            ›
-                        </button>
-
-
-                        <select class="per-page">
-
-                            <option>
+                            <option value="7">
                                 Items per page: 7
                             </option>
 
-                            <option>
+                            <option value="10">
                                 Items per page: 10
                             </option>
 
-                            <option>
+                            <option value="20">
                                 Items per page: 20
                             </option>
 
@@ -920,11 +886,11 @@
                         id="modalProductName"
                         class="modal-product-name"
                     >
-                        Men’s Graphic T-shirt
+                        <span id="modalProductName">Product reviews</span>
                     </h2>
 
                     <div class="modal-product-price">
-                        ₱59
+                        <span id="modalProductPrice">Customer feedback</span>
                     </div>
 
                     <div class="modal-category-row">
@@ -934,7 +900,7 @@
                         </span>
 
                         <span class="category-pill">
-                            Women’s Apparel
+                            <span id="modalProductCategory">Uncategorized</span>
                         </span>
 
                     </div>
@@ -945,12 +911,12 @@
                             ★
                         </span>
 
-                        <span class="modal-rating-score">
-                            4.3 out of 5
+                        <span class="modal-rating-score" id="modalRatingScore">
+                            0.0 out of 5
                         </span>
 
-                        <span class="modal-review-count">
-                            (24 reviews)
+                        <span class="modal-review-count" id="modalReviewCount">
+                            (0 reviews)
                         </span>
 
                     </div>
@@ -958,7 +924,7 @@
                 </div>
 
 
-                <div class="rating-breakdown">
+                <div class="rating-breakdown" id="modalRatingBreakdown">
 
                     @php
 
@@ -999,7 +965,7 @@
                     @endphp
 
 
-                    @foreach ($breakdown as $item)
+                    @foreach ([] as $item)
 
                         <div class="rating-breakdown-row">
 
@@ -1039,8 +1005,8 @@
             {{-- REVIEWS --}}
             <div class="modal-reviews-section">
 
-                <h3 class="modal-reviews-title">
-                    Customer Review (24)
+                <h3 class="modal-reviews-title" id="modalReviewsTitle">
+                    Customer Reviews (0)
                 </h3>
 
 
@@ -1103,8 +1069,9 @@
 
                 @endphp
 
+                <div id="modalReviewsList"></div>
 
-                @foreach ($reviews as $review)
+                @foreach ([] as $review)
 
                     <article class="review-card">
 

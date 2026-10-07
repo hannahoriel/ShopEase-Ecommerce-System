@@ -17,11 +17,16 @@ class Order extends Model
     protected $fillable = [
         'buyer_id',
         'seller_id',
+        'order_number',
         'total',
         'commission_amount',
         'status',
         'pickup_date',
         'pickup_time',
+        'delivery_name',
+        'delivery_phone',
+        'delivery_address',
+        'payment_method',
     ];
 
     protected $casts = [
@@ -30,6 +35,21 @@ class Order extends Model
         'pickup_date' => 'date',
         'pickup_time' => 'datetime:H:i',
     ];
+
+    protected $appends = [
+        'pickup_date_display',
+        'pickup_time_display',
+    ];
+
+    public function getPickupDateDisplayAttribute(): ?string
+    {
+        return $this->pickup_date?->format('Y-m-d');
+    }
+
+    public function getPickupTimeDisplayAttribute(): ?string
+    {
+        return $this->pickup_time?->format('H:i');
+    }
 
     public function buyer(): BelongsTo
     {
@@ -44,6 +64,11 @@ class Order extends Model
     public function statusHistory(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->latest();
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
     public function shipment(): HasOne

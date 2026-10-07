@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Admin\Shipment;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class OrderStatusController extends Controller
 {
@@ -31,7 +34,7 @@ class OrderStatusController extends Controller
         $seller = $this->sellerFor($request->user());
         $query = Order::query()
             ->where('seller_id', $seller->id)
-            ->with('buyer:id,name,email,contact_no');
+            ->with(['buyer:id,name,email,contact_no', 'items.product:id,name,photos']);
 
         if ($request->filled('status')) {
             $query->whereIn('status', (array) $request->input('status'));
@@ -55,7 +58,11 @@ class OrderStatusController extends Controller
 
     public function show(Request $request, Order $order): JsonResponse
     {
-        $this->ownedOrder($request->user(), $order)->load(['buyer:id,name,email,contact_no', 'statusHistory.changedBy:id,name']);
+        $this->ownedOrder($request->user(), $order)->load([
+            'buyer:id,name,email,contact_no',
+            'items.product:id,name,photos',
+            'statusHistory.changedBy:id,name',
+        ]);
 
         return response()->json($order);
     }
@@ -82,17 +89,55 @@ class OrderStatusController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if (! in_array($order->status, ['preparing', 'pending', 'new'], true)) {
-            abort(422, 'Only preparing or new orders can be scheduled for pickup.');
+        if ($order->status !== 'preparing') {
+            abort(422, 'Prepare the order before scheduling pickup.');
         }
 
-        $order->update([
-            'pickup_date' => $validated['pickup_date'],
-            'pickup_time' => $validated['pickup_time'],
-        ]);
-        $this->changeStatus($order, 'to_ship', $request->user(), $validated['notes'] ?? null);
+        DB::transaction(function () use ($order, $validated, $request): void {
+            $order->update([
+                'pickup_date' => $validated['pickup_date'],
+                'pickup_time' => $validated['pickup_time'],
+            ]);
+            $this->changeStatus($order, 'to_ship', $request->user(), $validated['notes'] ?? null);
+        });
 
         return response()->json($order->fresh(['statusHistory']));
+    }
+
+    public function waybill(Request $request, Order $order): JsonResponse
+    {
+        $order = $this->ownedOrder($request->user(), $order);
+        abort_unless(
+            in_array($order->status, ['new', 'pending'], true),
+            422,
+            'A waybill can only be printed while the order is new.'
+        );
+
+        $shipment = Shipment::firstOrCreate(
+            ['order_id' => $order->id],
+            [
+                'tracking_number' => 'SE-' . Str::upper(Str::random(10)),
+                'scan_token' => Str::random(64),
+                'courier' => 'Ease Express',
+                'estimated_delivery' => $order->pickup_date?->copy()->addDays(3) ?? now()->addDays(3)->toDateString(),
+            ]
+        );
+
+        if (! $shipment->scan_token) {
+            $shipment->update(['scan_token' => Str::random(64)]);
+        }
+
+        $order->load([
+            'buyer:id,name,email,contact_no',
+            'seller:id,store_name,province,municipality,barangay,street,house_number',
+            'items.product:id,name,photos',
+        ]);
+
+        return response()->json([
+            'scan_url' => route('parcel.scan.show', ['token' => $shipment->scan_token]),
+            'order' => $order,
+            'shipment' => $shipment->fresh(),
+        ]);
     }
 
     protected function sellerFor(User $user): Seller

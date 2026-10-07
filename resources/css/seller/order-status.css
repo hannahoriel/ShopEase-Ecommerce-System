@@ -403,8 +403,25 @@
 .modal-footer-section {
     padding: 4px 35px 18px;
     display: flex;
+    align-items: center;
+    gap: 12px;
     justify-content: flex-end;
 }
+
+.print-waybill-button {
+    height: 45px;
+    padding: 0 22px;
+    border: 1px solid #9E241F;
+    border-radius: 9px;
+    color: #9E241F;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.print-waybill-button:hover { background: #fff6f4; }
+.print-waybill-button:disabled { opacity: .6; cursor: wait; }
 
 .order-modal-action-button {
     height: 45px;
@@ -729,6 +746,11 @@
     font-weight: 500 !important;
 }
 
+#order-status-page .order-table-header,
+#orderStatusTable .order-row {
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1.35fr) minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+}
+
 #order-status-page .order-table-header > div {
     font-size: 12px !important;
     font-weight: 500 !important;
@@ -755,6 +777,7 @@
 
 #orderStatusTable .order-row > div:first-child {
     gap: 12px !important;
+    min-width: 0 !important;
 }
 
 #orderStatusTable .order-icon-box,
@@ -793,6 +816,10 @@
     line-height: 1.2 !important;
     font-weight: 600 !important;
     color: #1F2937 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }
 
 #orderStatusTable .order-status {
@@ -814,6 +841,9 @@
     line-height: 1.2 !important;
     font-weight: 500 !important;
     color: #1F2937 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }
 
 #orderStatusTable .customer-phone {
@@ -829,6 +859,20 @@
     height: 30px !important;
     min-width: 30px !important;
     border-radius: 7px !important;
+}
+
+#orderStatusTable .mini-product img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.modal-product-image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
 }
 
 #orderStatusTable .more-items {
