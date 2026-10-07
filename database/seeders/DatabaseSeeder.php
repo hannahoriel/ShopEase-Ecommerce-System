@@ -80,5 +80,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ProductReviewSeeder::class);
         $this->call(SellerOrderStatusSeeder::class);
         $this->call(SellerShippingStatusSeeder::class);
+        $this->call(SellerReportsSeeder::class);
+        $this->call(SellerMessagesSeeder::class);
     }
 }

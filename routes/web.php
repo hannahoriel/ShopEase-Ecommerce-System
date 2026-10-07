@@ -2221,8 +2221,13 @@ Route::get('/buyer/checkout', function () {
 })->middleware('auth')->name('buyer.checkout');
 
 Route::get('/seller/messages', function () {
-    return view('pages.seller.messages');
-})->name('seller.messages');
+    abort_unless(Auth::user()->role === User::ROLE_SELLER, 403);
+
+    return view('pages.seller.messages', [
+        'apiToken' => Auth::user()->createToken('seller-messages')->plainTextToken,
+    ]);
+})->middleware('auth')
+  ->name('seller.messages');
 
 Route::get('/admin/messages', function () {
     return view('pages.admin.messages');

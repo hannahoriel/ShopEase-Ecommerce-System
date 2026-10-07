@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
+use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
 
 Route::prefix('v1')->group(function () {
 
@@ -78,6 +79,12 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
+            Route::get('/messages', [SellerMessagesController::class, 'index'])->name('seller.api.messages.index');
+            Route::get('/messages/contacts', [SellerMessagesController::class, 'contacts'])->name('seller.api.messages.contacts');
+            Route::post('/messages/conversations', [SellerMessagesController::class, 'storeConversation'])->name('seller.api.messages.conversations.store');
+            Route::get('/messages/conversations/{conversation}', [SellerMessagesController::class, 'show'])->name('seller.api.messages.conversations.show');
+            Route::post('/messages/conversations/{conversation}/messages', [SellerMessagesController::class, 'send'])->name('seller.api.messages.send');
+            Route::get('/messages/conversations/{conversation}/messages/{message}/attachment', [SellerMessagesController::class, 'attachment'])->name('seller.api.messages.attachment');
             Route::get('/reports', [SellerReportsController::class, 'data'])->name('seller.api.reports');
             Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
             Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
