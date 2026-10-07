@@ -145,7 +145,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = document.getElementById('feedbackCount');
         const first = feedback.total ? ((feedback.current_page - 1) * feedback.per_page) + 1 : 0;
         const last = Math.min(feedback.current_page * feedback.per_page, feedback.total);
-        if (count) count.textContent = `Showing ${first}–${last} out of ${feedback.total} entries`;
+        if (count) {
+            count.textContent =
+                feedback.total
+                    ? `Showing ${first}–${last} out of ${feedback.total} entries`
+                    : 'Showing 0 out of 0 entries';
+        }
         totalPages = feedback.last_page;
 
         const buttons = [];
@@ -169,7 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderProducts(products) {
         if (!productGrid) return;
         if (!products.length) {
-            productGrid.innerHTML = '<p class="feedback-empty">No product reviews yet.</p>';
+            productGrid.innerHTML = `
+                <div class="feedback-empty-state product-rating-empty-state" role="status">
+                    <strong>No product ratings found.</strong>
+                    <span>Ratings will appear here once customers review your products.</span>
+                </div>
+            `;
             return;
         }
 
@@ -190,7 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadFeedback() {
         if (!feedbackList) return;
-        feedbackList.innerHTML = '<p class="feedback-empty">Loading customer feedback…</p>';
+        document.querySelector('.feedback-card')
+            ?.classList.remove('is-feedback-empty');
+
+        feedbackList.innerHTML =
+            '<p class="feedback-empty feedback-loading">Loading customer feedback…</p>';
         const url = new URL(config.url, window.location.origin);
         url.searchParams.set('page', currentPage);
         url.searchParams.set('per_page', perPageSelect?.value || '7');
@@ -202,12 +216,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const feedback = payload.feedback;
             feedbackList.innerHTML = feedback.data.length
                 ? feedback.data.map(renderFeedbackRow).join('')
-                : '<p class="feedback-empty">No feedback matches your search.</p>';
+                : `
+                    <div class="feedback-empty-state" role="status">
+                        <strong>No customer feedback found.</strong>
+                        <span>Try another search or rating filter.</span>
+                    </div>
+                `;
+
+            document.querySelector('.feedback-card')
+                ?.classList.toggle(
+                    'is-feedback-empty',
+                    feedback.data.length === 0
+                );
+
             renderPagination(feedback);
             renderProducts(payload.products || []);
             applyProductSearch();
         } catch (error) {
-            feedbackList.innerHTML = `<p class="feedback-empty">${escapeHtml(error.message)} Please refresh and try again.</p>`;
+            document.querySelector('.feedback-card')
+                ?.classList.remove('is-feedback-empty');
+
+            feedbackList.innerHTML =
+                `<p class="feedback-empty">${escapeHtml(error.message)} Please refresh and try again.</p>`;
+
             const count = document.getElementById('feedbackCount');
             if (count) count.textContent = 'Feedback could not be loaded.';
         }

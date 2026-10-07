@@ -97,7 +97,35 @@
                     </div>
 
                     {{-- SHOP GROUPS — populated by cart.js via API --}}
-                    <div id="cartGroups" class="cart-groups"></div>
+                    <div id="cartGroups" class="cart-groups" aria-live="polite"></div>
+
+                    {{-- EMPTY CART INDICATION --}}
+                    <div
+                        id="cartEmptyState"
+                        class="cart-empty-state"
+                        role="status"
+                        aria-live="polite"
+                        hidden
+                    >
+                        <div class="cart-empty-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20.2 8H6.1"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <circle cx="10" cy="20" r="1.3" fill="currentColor"/>
+                                <circle cx="17" cy="20" r="1.3" fill="currentColor"/>
+                            </svg>
+                        </div>
+
+                        <strong>No products added to cart</strong>
+                        <span>
+                            Products you add to your cart will appear here.
+                        </span>
+                    </div>
                 </div>
 
                 {{-- RIGHT: ORDER SUMMARY --}}
@@ -151,7 +179,47 @@
 
             </section>
 
+            {{-- RECOMMENDED PRODUCTS --}}
+            <section class="also-like-section" aria-labelledby="recommendedProductsTitle">
+                <h2 id="recommendedProductsTitle">
+                    You May Also Like
+                </h2>
 
+                <div
+                    id="recommendedProductsGrid"
+                    class="also-like-grid"
+                    aria-live="polite"
+                ></div>
+
+                <div
+                    id="recommendedProductsEmpty"
+                    class="recommended-products-empty"
+                    role="status"
+                    hidden
+                >
+                    <div class="recommended-empty-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M4 6h16v13H4V6Z"
+                                stroke="currentColor"
+                                stroke-width="1.7"
+                                stroke-linejoin="round"
+                            />
+                            <path
+                                d="M8 10h8M8 14h5"
+                                stroke="currentColor"
+                                stroke-width="1.7"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </div>
+
+                    <strong>No recommended products available</strong>
+                    <span>
+                        Recommended products will appear here when available.
+                    </span>
+                </div>
+            </section>
 
         </div>
     </main>

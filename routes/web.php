@@ -2232,3 +2232,6 @@ Route::get('/seller/messages', function () {
 Route::get('/admin/messages', function () {
     return view('pages.admin.messages');
 })->name('admin.messages');
+
+Route::put('/seller/inventory/products/{product}', [ApiSellerInventoryController::class, 'update'])
+    ->name('seller.web.inventory.products.update');

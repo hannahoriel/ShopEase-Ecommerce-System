@@ -1587,7 +1587,7 @@
 
                             <div class="create-field">
                                 <label for="createProductStock">
-                                    Stock <span class="required-mark">*</span>
+                                    Stock
                                 </label>
 
                                 <input
@@ -1596,8 +1596,54 @@
                                     type="number"
                                     min="0"
                                     step="1"
+                                    value="0"
+                                    readonly
+                                    aria-readonly="true"
                                     placeholder="0"
                                 >
+
+                                <small class="create-stock-auto-help">
+                                    Automatically calculated from the stock of your grouped choices.
+                                </small>
+                            </div>
+
+                            <div class="create-field col-span-2 create-basic-category-field">
+                                <label>
+                                    Product Category <span class="required-mark">*</span>
+                                </label>
+
+                                <div class="create-product-category-picker">
+                                    <input
+                                        type="hidden"
+                                        id="addProductCategory"
+                                        name="category"
+                                        value=""
+                                    >
+
+                                    <div
+                                        id="createProductCategoryPills"
+                                        class="create-product-category-pills"
+                                    >
+                                        @forelse ($sellerInventoryCategories as $category)
+                                            <button
+                                                type="button"
+                                                class="create-category-pill"
+                                                data-category-slug="{{ $category['slug'] }}"
+                                                data-category-label="{{ $category['label'] }}"
+                                            >
+                                                {{ $category['label'] }}
+                                            </button>
+                                        @empty
+                                            <div class="create-category-empty">
+                                                No registered categories available
+                                            </div>
+                                        @endforelse
+                                    </div>
+
+                                    <small class="create-category-help">
+                                        Select one category. Subcategory and product specifications will appear below.
+                                    </small>
+                                </div>
                             </div>
 
                             <div class="create-field">
@@ -1691,7 +1737,7 @@
                                     <div>
                                         <strong>Variations</strong>
                                         <span>
-                                            Optional. Each variation can have its own photo and price when Price Varies is selected.
+                                            Optional buyer variation choices and price adjustments.
                                         </span>
                                     </div>
                                 </div>
@@ -1703,24 +1749,6 @@
                                         type="text"
                                         placeholder="e.g. Classic"
                                     >
-
-                                    <label
-                                        for="productVariationPhotoInput"
-                                        id="variationPhotoPickerLabel"
-                                        class="create-variation-photo-picker"
-                                        title="Add optional variation photo"
-                                    >
-                                        <input
-                                            id="productVariationPhotoInput"
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp"
-                                            class="hidden"
-                                        >
-
-                                        <span id="variationPhotoPickerText">
-                                            Photo
-                                        </span>
-                                    </label>
 
                                     <button
                                         type="button"
@@ -1756,20 +1784,6 @@
                                         placeholder="e.g. Black"
                                     >
 
-                                    <label
-                                        for="productColorPhotoInput"
-                                        class="create-variation-photo-picker"
-                                        title="Add optional color photo"
-                                    >
-                                        <input
-                                            id="productColorPhotoInput"
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp"
-                                            class="hidden"
-                                        >
-                                        <span id="colorPhotoPickerText">Photo</span>
-                                    </label>
-
                                     <button
                                         type="button"
                                         id="addProductColorButton"
@@ -1802,20 +1816,6 @@
                                         type="text"
                                         placeholder="e.g. Medium"
                                     >
-
-                                    <label
-                                        for="productSizePhotoInput"
-                                        class="create-variation-photo-picker"
-                                        title="Add optional size photo"
-                                    >
-                                        <input
-                                            id="productSizePhotoInput"
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp"
-                                            class="hidden"
-                                        >
-                                        <span id="sizePhotoPickerText">Photo</span>
-                                    </label>
 
                                     <button
                                         type="button"
@@ -1883,7 +1883,7 @@
                                 <div>
                                     <strong>Connected Variant Stock</strong>
                                     <span>
-                                        Each row is one exact sellable combination. Same Variation and Color values are grouped instead of repeated.
+                                        Each row is one exact sellable combination. Add the photo and stock for that exact grouped choice. Total stock is calculated automatically above.
                                     </span>
                                 </div>
 
@@ -1926,63 +1926,6 @@
                                 Final Price = Base Price from the selected pricing-source choice + the Additional amounts entered for this exact connected group.
                             </p>
                         </div>
-                    </section>
-
-
-                    {{-- =====================================================
-                         PRODUCT CATEGORY
-                         Only categories selected during seller registration
-                    ====================================================== --}}
-                    <section class="create-product-section">
-
-                        <div class="create-product-section-heading">
-                            <div>
-                                <h4>
-                                    Product Category
-                                    <span class="required-mark">*</span>
-                                </h4>
-
-                                <p>
-                                    Choose where this product belongs. Only your registered seller categories are available.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="create-product-category-picker">
-
-                            <input
-                                type="hidden"
-                                id="addProductCategory"
-                                name="category"
-                                value=""
-                            >
-
-                            <div
-                                id="createProductCategoryPills"
-                                class="create-product-category-pills"
-                            >
-                                @forelse ($sellerInventoryCategories as $category)
-                                    <button
-                                        type="button"
-                                        class="create-category-pill"
-                                        data-category-slug="{{ $category['slug'] }}"
-                                        data-category-label="{{ $category['label'] }}"
-                                    >
-                                        {{ $category['label'] }}
-                                    </button>
-                                @empty
-                                    <div class="create-category-empty">
-                                        No registered categories available
-                                    </div>
-                                @endforelse
-                            </div>
-
-                            <small class="create-category-help">
-                                Select one category. Product specifications will appear after selection.
-                            </small>
-
-                        </div>
-
                     </section>
 
 
@@ -2080,1306 +2023,407 @@
 
 
     {{-- =========================================================
+         EDIT PRODUCT MODAL
+         Reuses the exact Add Product panel/layout while editing.
+    ========================================================== --}}
+    <div
+        id="editProductModal"
+        class="
+            fixed inset-0 z-[120] hidden items-center justify-center
+            bg-black/30 backdrop-blur-[2px] p-[18px]
+        "
+        aria-hidden="true"
+    ></div>
+
+
+    {{-- =========================================================
          PRODUCT DETAILS MODAL
-         FIGMA MATCHED
+         Reference-inspired layout aligned to ShopEase seller UI
     ========================================================== --}}
 
     <div
         id="productDetailsModal"
-
         class="
-            fixed
-            inset-0
-
-            z-[110]
-
-            hidden
-
-            items-center
-            justify-center
-
-            bg-black/20
-
-            backdrop-blur-[3px]
-
-            opacity-0
-
-            transition-opacity
-            duration-200
-            ease-out
-
-            p-0
-            sm:p-[8px]
+            fixed inset-0 z-[110] hidden items-center justify-center
+            bg-black/25 backdrop-blur-[3px] opacity-0
+            transition-opacity duration-200 ease-out p-[10px]
         "
+        aria-hidden="true"
     >
-
-
-        {{-- =====================================================
-             MODAL PANEL
-        ====================================================== --}}
-
         <div
             id="productDetailsModalPanel"
-
-            class="
-                product-details-panel
-
-                relative
-
-                w-full
-
-                max-w-[916px]
-
-                h-[calc(100vh-16px)]
-
-                max-h-[calc(100vh-16px)]
-
-                overflow-y-auto
-
-                overflow-x-hidden
-
-                rounded-[28px]
-
-                bg-white
-
-                shadow-[0_12px_40px_rgba(0,0,0,0.10)]
-
-                opacity-0
-
-                transition-opacity
-                duration-200
-                ease-out
-            "
+            class="product-details-panel product-details-inspo-panel product-details-view-mode"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="productDetailsModalTitle"
         >
+            <header class="product-details-inspo-header">
+                <h2 id="productDetailsModalTitle">Product Details</h2>
 
-
-            {{-- =================================================
-                 MODAL TITLE
-            ================================================== --}}
-
-            <div
-                class="
-                    shrink-0
-
-                    px-[35px]
-                    pt-[20px]
-                    pb-[4px]
-                "
-            >
-
-                <h2
-                    class="
-                        text-[20px]
-                        font-semibold
-                        leading-tight
-                        text-[#17120F]
-                    "
+                <button
+                    type="button"
+                    id="closeProductDetailsModal"
+                    class="product-details-inspo-close"
+                    aria-label="Close product details"
                 >
-                    Product Details
-                </h2>
-
-            </div>
-
-
-            {{-- =================================================
-                 PRODUCT SUMMARY
-            ================================================== --}}
-
-            <div
-                class="
-                    px-[35px]
-                    pt-[12px]
-                    pb-[20px]
-                "
-            >
-
-                <div
-                    class="
-                        border
-                        border-[#D8D8D8]
-
-                        rounded-[19px]
-
-                        px-[42px]
-                        pt-[17px]
-                        pb-[15px]
-
-                        min-h-[286px]
-                    "
-                >
-
-                    <div
-                        class="
-                            grid
-
-                            grid-cols-[225px_1fr]
-
-                            gap-[18px]
-                        "
-                    >
-
-
-                        {{-- =================================
-                             IMAGE SIDE
-                        ================================== --}}
-
-                        <div>
-
-                            <div
-                                class="
-                                    w-[188px]
-                                    h-[188px]
-
-                                    rounded-[9px]
-
-                                    border
-                                    border-[#BBBBBB]
-
-                                    bg-white
-
-                                    flex
-                                    items-center
-                                    justify-center
-
-                                    overflow-hidden
-
-                                    mx-auto
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        product-real-image-wrap
-
-                                        relative
-
-                                        w-full
-                                        h-full
-                                    "
-                                >
-
-                                    <img
-                                        id="productDetailsMainImage"
-                                        src=""
-
-                                        alt="Product image"
-
-                                        class="
-                                            product-real-image
-
-                                            absolute
-                                            inset-0
-
-                                            w-full
-                                            h-full
-
-                                            object-contain
-
-                                            bg-white
-                                        "
-
-                                        onerror="
-                                            this.style.display='none';
-                                            this.nextElementSibling.style.display='flex';
-                                        "
-                                    >
-
-
-                                    <div
-                                        id="productDetailsImageFallback"
-                                        class="
-                                            product-shirt-fallback
-
-                                            absolute
-                                            inset-0
-
-                                            items-center
-                                            justify-center
-
-                                            bg-white
-                                        "
-                                        style="display:none;"
-                                    >
-
-                                        <svg
-                                            width="150"
-                                            height="170"
-                                            viewBox="0 0 150 170"
-                                            fill="none"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-
-                                            <path
-                                                d="M49 21
-                                                   C55 14 62 10 75 10
-                                                   C88 10 95 14 101 21
-                                                   L137 38
-                                                   L120 69
-                                                   L108 62
-                                                   L108 158
-                                                   L42 158
-                                                   L42 62
-                                                   L30 69
-                                                   L13 38
-                                                   L49 21Z"
-                                                fill="#111111"
-                                            />
-
-                                            <path
-                                                d="M57 16
-                                                   C60 24 66 28 75 28
-                                                   C84 28 90 24 93 16"
-                                                stroke="#2B2B2B"
-                                                stroke-width="4"
-                                                stroke-linecap="round"
-                                            />
-
-                                            <path
-                                                d="M42 57L42 157"
-                                                stroke="#232323"
-                                                stroke-width="3"
-                                            />
-
-                                            <path
-                                                d="M108 57L108 157"
-                                                stroke="#232323"
-                                                stroke-width="3"
-                                            />
-
-                                        </svg>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-
-                            {{-- THUMBNAILS --}}
-
-                            <div
-                                id="productDetailsThumbnails"
-                                class="
-                                    mt-[9px]
-
-                                    flex
-                                    items-center
-                                    justify-center
-
-                                    gap-[7px]
-                                "
-                            >
-
-                                <div class="product-thumbnail">
-                                    <div class="mini-shirt"></div>
-                                </div>
-
-                                <div class="product-thumbnail">
-                                    <div class="mini-shirt"></div>
-                                </div>
-
-                                <div class="product-thumbnail">
-                                    <div class="mini-shirt"></div>
-                                </div>
-
-                                <div class="product-thumbnail">
-                                    <div class="mini-shirt"></div>
-                                </div>
-
-                                <div class="product-thumbnail">
-                                    <div class="mini-shirt"></div>
-                                </div>
-
-                                <span
-                                    class="
-                                        text-[31px]
-
-                                        leading-none
-
-                                        text-[#17120F]
-
-                                        ml-[2px]
-                                    "
-                                >
-                                    ›
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- =================================
-                             PRODUCT INFO
-                        ================================== --}}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M6 6l12 12"/>
+                        <path d="M18 6L6 18"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="product-details-inspo-body">
+                <aside class="product-details-inspo-gallery">
+                    <div class="product-details-inspo-main-photo">
+                        <img
+                            id="productDetailsMainImage"
+                            src=""
+                            alt="Product image"
+                            class="product-real-image"
+                            onerror="
+                                this.style.display='none';
+                                this.nextElementSibling.style.display='flex';
+                            "
+                        >
 
                         <div
-                            class="
-                                pt-[23px]
-                            "
-                        >
-
-                            <div
-                                class="
-                                    grid
-                                    grid-cols-[1fr_110px]
-                                    items-start
-
-                                    gap-4
-                                "
-                            >
-
-                                <div>
-
-                                    <h2
-                                        id="productDetailsName"
-                                        class="
-                                            text-[23px]
-
-                                            font-semibold
-
-                                            leading-tight
-
-                                            text-[#080808]
-                                        "
-                                    >
-                                        Men’s Graphic T-shirt
-                                    </h2>
-
-
-                                    <p
-                                        id="productDetailsPrice"
-                                        class="
-                                            mt-[8px]
-
-                                            text-[21px]
-
-                                            leading-none
-
-                                            font-semibold
-
-                                            text-[#6D1010]
-                                        "
-                                    >
-                                        ₱59
-                                    </p>
-
-                                </div>
-
-
-                                <div
-                                    id="productDetailsSold"
-                                    class="
-                                        pt-[42px]
-
-                                        text-[11px]
-
-                                        text-[#3D3937]
-                                    "
-                                >
-                                    0 sold
-                                </div>
-
-                            </div>
-
-
-
-                            {{-- CATEGORY --}}
-
-                            <div
-                                class="
-                                    mt-[24px]
-                                "
-                            >
-
-                                <p
-                                    class="
-                                        text-[14px]
-
-                                        text-[#8F8B89]
-                                    "
-                                >
-                                    Category
-                                </p>
-
-
-                                <span
-                                    id="productDetailsCategory"
-                                    class="
-                                        inline-flex
-                                        items-center
-
-                                        mt-[7px]
-
-                                        rounded-full
-
-                                        px-[13px]
-                                        py-[4px]
-
-                                        text-[11px]
-
-                                        font-medium
-
-                                        category-badge
-                                        category-womens-apparel
-                                    "
-                                >
-                                    Women’s Apparel
-                                </span>
-
-                            </div>
-
-
-
-                            {{-- STOCK --}}
-
-                            <div
-                                class="
-                                    mt-[20px]
-                                "
-                            >
-
-                                <p
-                                    class="
-                                        text-[14px]
-
-                                        text-[#8F8B89]
-                                    "
-                                >
-                                    Stock
-                                </p>
-
-
-                                <p
-                                    id="productDetailsStock"
-                                    class="
-                                        mt-[4px]
-
-                                        text-[15px]
-
-                                        font-medium
-
-                                        text-[#161414]
-                                    "
-                                >
-                                    154 pieces
-                                </p>
-
-                            </div>
-
-
-                            {{-- STATUS --}}
-                            <div class="mt-[16px]">
-
-                                <p class="text-[14px] text-[#8F8B89]">
-                                    Status
-                                </p>
-
-                                <span
-                                    id="productDetailsStatus"
-                                    class="
-                                        status-badge
-                                        status-pending
-                                        mt-[6px]
-                                    "
-                                >
-                                    Pending
-                                </span>
-
-                            </div>
-
-                        </div>
-
+                            id="productDetailsImageFallback"
+                            class="product-details-image-fallback"
+                            style="display:none;"
+                            aria-hidden="true"
+                        ></div>
                     </div>
 
-
-
-                    {{-- UPLOADED DATE --}}
-
                     <div
-                        class="
-                            flex
-                            justify-end
+                        id="productDetailsThumbnails"
+                        class="product-details-thumbnail-list"
+                    ></div>
 
-                            mt-[2px]
-                        "
-                    >
+                    <div class="product-details-photo-editor product-details-edit-control">
+                        <input
+                            id="productDetailsPhotoInput"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            multiple
+                            hidden
+                        >
+                        <button
+                            type="button"
+                            id="productDetailsAddPhoto"
+                            class="product-details-add-photo-button"
+                        >
+                            + Add photo
+                        </button>
+                        <small>JPG, PNG, or WEBP</small>
+                    </div>
+                </aside>
 
-                        <p
-                            class="
-                                text-[12px]
-
-                                text-[#8E8885]
-                            "
+                <section class="product-details-inspo-content">
+                    <div class="product-details-inspo-summary">
+                        <label class="product-details-edit-label" for="productDetailsName">Product Title</label>
+                        <h3 id="productDetailsNameDisplay" class="product-details-view-value product-details-title-display">Product</h3>
+                        <input
+                            type="text"
+                            id="productDetailsName"
+                            class="product-details-edit-control"
+                            maxlength="120"
+                            placeholder="Product title"
                         >
 
-                            Uploaded:
+                        <div class="product-details-inspo-sku">
+                            <span>SKU:</span>
+                            <strong id="productDetailsSkuDisplay" class="product-details-view-value">—</strong>
+                            <input
+                                id="productDetailsSku"
+                                class="product-details-edit-control"
+                                type="text"
+                                maxlength="80"
+                                placeholder="—"
+                            >
+                        </div>
+
+                        <div class="product-details-inspo-badges">
+                            <div class="product-details-inspo-category">
+                                <label class="product-details-edit-label" for="productDetailsCategory">Category</label>
+                                <span id="productDetailsCategoryDisplay" class="product-details-view-value product-details-category-display">—</span>
+                                <select id="productDetailsCategory" class="product-details-edit-control">
+                                    @forelse ($sellerInventoryCategories as $category)
+                                        <option value="{{ $category['slug'] }}">
+                                            {{ $category['label'] }}
+                                        </option>
+                                    @empty
+                                        <option value="">No category</option>
+                                    @endforelse
+                                </select>
+                            </div>
 
                             <span
-                                id="productDetailsUploaded"
-                                class="
-                                    text-[#17120F]
-
-                                    font-medium
-                                "
+                                id="productDetailsSubcategoryBadge"
+                                class="product-details-soft-badge"
                             >
                                 —
                             </span>
 
-                        </p>
+                            <span
+                                id="productDetailsStatus"
+                                class="status-badge status-pending"
+                            >
+                                Pending
+                            </span>
+                        </div>
 
+                        <div class="product-details-inspo-price">
+                            <strong id="productDetailsPriceDisplay" class="product-details-view-value">₱0.00</strong>
+                            <div class="product-details-edit-price product-details-edit-control">
+                                <span>₱</span>
+                                <input
+                                    id="productDetailsPrice"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="product-details-inspo-pricing-meta">
+                            <div>
+                                <span>Pricing Type</span>
+                                <strong id="productDetailsPricingTypeView" class="product-details-view-value">—</strong>
+                                <select id="productDetailsPricingMode" class="product-details-edit-control">
+                                    <option value="fixed">Fixed Price</option>
+                                    <option value="varies">Price Varies</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <span>Base Price Source</span>
+                                <strong id="productDetailsPricingSourceView" class="product-details-view-value">—</strong>
+                                <select id="productDetailsPricingSource" class="product-details-edit-control">
+                                    <option value="">Not applicable</option>
+                                    <option value="variations">Variations</option>
+                                    <option value="colors">Colors</option>
+                                    <option value="sizes">Sizes</option>
+                                </select>
+                            </div>
+
+                            <span id="productDetailsPriceLabel" hidden>Price</span>
+                            <span id="productDetailsPriceHelp" hidden></span>
+                            <input id="productDetailsStock" type="hidden" value="0">
+                        </div>
                     </div>
 
-                </div>
-
-            </div>
-
-
-
-            {{-- =================================================
-                 POLICY WARNING
-            ================================================== --}}
-
-            <div
-                id="productPolicyWarning"
-                class="
-                    hidden
-                    mx-[35px]
-                    mb-[20px]
-                    rounded-[18px]
-                    bg-[#FFE9BE]
-                    px-[23px]
-                    py-[17px]
-                "
-            >
-
-                <div
-                    class="
-                        flex
-                        items-start
-                        gap-[15px]
-                    "
-                >
-
-                    <div
-                        class="
-                            flex
-                            items-center
-                            justify-center
-                            shrink-0
-                            w-[42px]
-                            h-[42px]
-                        "
-                    >
-                        <svg
-                            class="w-[40px] h-[40px]"
-                            viewBox="0 0 48 48"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden="true"
+                    <nav class="product-details-inspo-tabs" role="tablist">
+                        <button
+                            type="button"
+                            class="product-details-tab is-active"
+                            data-product-details-tab="details"
+                            role="tab"
+                            aria-selected="true"
                         >
-                            <path
-                                d="M24 4L45 41H3L24 4Z"
-                                fill="#E9A33C"
-                            />
-                            <path
-                                d="M24 15V29"
-                                stroke="white"
-                                stroke-width="4"
-                                stroke-linecap="round"
-                            />
-                            <circle
-                                cx="24"
-                                cy="35"
-                                r="2.2"
-                                fill="white"
-                            />
-                        </svg>
+                            Details
+                        </button>
+
+                        <button
+                            type="button"
+                            class="product-details-tab"
+                            data-product-details-tab="variations"
+                            role="tab"
+                            aria-selected="false"
+                        >
+                            Variations
+                            <span id="productDetailsVariationCount" class="product-details-tab-count">0</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="product-details-tab"
+                            data-product-details-tab="stock-history"
+                            role="tab"
+                            aria-selected="false"
+                        >
+                            Stock history
+                        </button>
+
+                        <button
+                            type="button"
+                            class="product-details-tab"
+                            data-product-details-tab="price-history"
+                            role="tab"
+                            aria-selected="false"
+                        >
+                            Price history
+                        </button>
+                    </nav>
+
+                    <div class="product-details-inspo-tab-scroll">
+                        {{-- DETAILS --}}
+                        <div
+                            id="productDetailsInfoPanel"
+                            class="product-details-tab-panel"
+                            data-product-details-panel="details"
+                        >
+                            <div class="product-details-inspo-basic-grid">
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Total stock (all variations)</span>
+                                    <strong id="productDetailsStockDisplay">0 units</strong>
+                                </div>
+
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Date added</span>
+                                    <strong id="productDetailsUploaded">—</strong>
+                                </div>
+
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Pricing type</span>
+                                    <strong id="productDetailsPricingModeDisplay">—</strong>
+                                </div>
+
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Base price source</span>
+                                    <strong id="productDetailsPricingSourceDisplay">—</strong>
+                                </div>
+
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Variation</span>
+                                    <strong id="productDetailsVariationsDisplay">—</strong>
+                                </div>
+
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Color</span>
+                                    <strong id="productDetailsColorsDisplay">—</strong>
+                                </div>
+
+                                <div class="product-details-inspo-detail-item">
+                                    <span>Size</span>
+                                    <strong id="productDetailsSizesDisplay">—</strong>
+                                </div>
+                            </div>
+
+                            <section
+                                id="productDetailsSpecificationsSection"
+                                class="product-details-inspo-specs hidden"
+                            >
+                                <div
+                                    id="productDetailsSpecifications"
+                                    class="product-created-details-grid product-details-inspo-spec-grid"
+                                ></div>
+                            </section>
+
+                            <section
+                                id="productPolicyWarning"
+                                class="product-details-policy-warning hidden"
+                            >
+                                <div class="product-details-policy-icon" aria-hidden="true">!</div>
+                                <div>
+                                    <strong id="productPolicyIssueTitle"></strong>
+                                    <span id="productPolicyIssueDate"></span>
+                                    <p id="productPolicyIssueReason"></p>
+                                </div>
+                            </section>
+
+                            <div class="product-details-inspo-description">
+                                <label class="product-details-edit-label" for="productDescription">Product Description</label>
+                                <textarea
+                                    id="productDescription"
+                                    maxlength="2000"
+                                    rows="7"
+                                    placeholder="No product description."
+                                ></textarea>
+                                <span id="descriptionCount" class="product-details-character-count">0/2000</span>
+                            </div>
+
+                            {{-- Compatibility IDs for existing code --}}
+                            <div hidden aria-hidden="true">
+                                <input type="text" id="productDetailBrand">
+                                <input type="text" id="productDetailMaterial">
+                                <input type="text" id="productDetailSizes">
+                                <input type="text" id="productDetailColors">
+                                <input type="text" id="productDetailQuantity">
+                                <input type="text" id="productDetailCountry">
+                                <div id="productDetailsCompleteInfo"></div>
+                                <div id="productDetailsStocksPanel"></div>
+                                <div id="productDetailsStockRows"></div>
+                                <div id="productDetailsStockEmpty"></div>
+                                <div id="productDetailsStockTotal"></div>
+                                <div id="productDetailsStockMessage"></div>
+                                <button type="button" id="saveProductStockChanges"></button>
+                            </div>
+                        </div>
+
+                        {{-- VARIATIONS --}}
+                        <div
+                            id="productDetailsVariationsPanel"
+                            class="product-details-tab-panel hidden"
+                            data-product-details-panel="variations"
+                        >
+                            <section
+                                id="productDetailsBuyerOptionsSection"
+                                class="product-details-inspo-variations hidden"
+                            >
+                                <div
+                                    id="productDetailsBuyerOptions"
+                                    class="product-details-buyer-options-layout"
+                                ></div>
+                            </section>
+                        </div>
+
+                        {{-- STOCK HISTORY --}}
+                        <div
+                            id="productDetailsStockHistoryPanel"
+                            class="product-details-tab-panel hidden"
+                            data-product-details-panel="stock-history"
+                        >
+                            <div
+                                id="productDetailsStockHistory"
+                                class="product-details-history-table"
+                            ></div>
+                        </div>
+
+                        {{-- PRICE HISTORY --}}
+                        <div
+                            id="productDetailsPriceHistoryPanel"
+                            class="product-details-tab-panel hidden"
+                            data-product-details-panel="price-history"
+                        >
+                            <div
+                                id="productDetailsPriceHistory"
+                                class="product-details-history-table"
+                            ></div>
+                        </div>
                     </div>
-
-                    <div class="min-w-0 pt-[1px]">
-                        <p
-                            id="productPolicyIssueTitle"
-                            class="
-                                text-[18px]
-                                font-semibold
-                                leading-tight
-                                text-[#17120F]
-                            "
-                        >
-
-                        </p>
-
-                        <p
-                            id="productPolicyIssueDate"
-                            class="
-                                mt-[5px]
-                                text-[11px]
-                                text-[#A78E6D]
-                            "
-                        >
-
-                        </p>
-
-                        <p
-                            id="productPolicyIssueReason"
-                            class="
-                                mt-[8px]
-                                text-[13px]
-                                leading-[1.5]
-                                text-[#5F534C]
-                            "
-                        >
-
-                        </p>
-                    </div>
-
-                </div>
-
+                </section>
             </div>
 
-            {{-- =================================================
-                 DESCRIPTION
-            ================================================== --}}
-
-            <div
-                class="
-                    px-[39px]
-                "
-            >
-
-                <label
-                    class="
-                        block
-
-                        mb-[9px]
-
-                        text-[17px]
-
-                        font-semibold
-
-                        text-[#121212]
-                    "
-                >
-                    Product Description
-                </label>
-
-
-                <textarea
-                    id="productDescription"
-
-                    maxlength="300"
-
-                    class="
-                        w-full
-
-                        h-[78px]
-
-                        resize-none
-
-                        rounded-[15px]
-
-                        border
-                        border-[#D8D8D8]
-
-                        bg-white
-
-                        px-[22px]
-                        py-[11px]
-
-                        text-[16px]
-
-                        leading-[1.5]
-
-                        text-[#252220]
-
-                        outline-none
-
-                        transition-all
-                        duration-200
-
-                        focus:border-[#B8B0AC]
-
-                        focus:ring-[3px]
-
-                        focus:ring-[#B8B0AC]/10
-                    "
-                >High-quality cotton graphic T-shirt for everyday wear. Comfortable, breathable, and perfect for casual outfits. Available in multiple sizes.</textarea>
-
-
-                <div
-                    class="
-                        flex
-                        justify-end
-
-                        mt-[-20px]
-
-                        pr-[18px]
-
-                        pointer-events-none
-                    "
-                >
-
-                    <span
-                        id="descriptionCount"
-
-                        class="
-                            text-[10px]
-
-                            text-[#77716E]
-                        "
-                    >
-                        105/300
-                    </span>
-
-                </div>
-
-            </div>
-
-
-
-            {{-- =================================================
-                 PRODUCT DETAILS
-            ================================================== --}}
-
-            <div
-                class="
-                    px-[62px]
-
-                    pt-[16px]
-                "
-            >
-
-                <h3
-                    class="
-                        text-[17px]
-
-                        font-semibold
-
-                        text-[#17120F]
-
-                        mb-[12px]
-                    "
-                >
-                    Product Details
-                </h3>
-
-
-
-                <div
-                    class="
-                        grid
-
-                        grid-cols-[190px_1fr]
-
-                        items-center
-
-                        gap-y-[12px]
-                    "
-                >
-
-
-                    {{-- BRAND --}}
-
-                    <label
-                        class="
-                            text-[16px]
-
-                            text-[#8D8987]
-                        "
-                    >
-                        Brand
-                    </label>
-
-
-                    <input
-                        type="text"
-
-                        id="productDetailBrand"
-
-                        value="HangLoose"
-
-                        class="
-                            w-[215px]
-
-                            h-[38px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D6D2D0]
-
-                            px-[11px]
-
-                            text-[16px]
-
-                            text-[#282422]
-
-                            outline-none
-
-                            transition-all
-                            duration-200
-
-                            focus:border-[#B8B0AC]
-                            focus:ring-[3px]
-                            focus:ring-[#B8B0AC]/10
-                        "
-                    >
-
-
-
-                    {{-- MATERIAL --}}
-
-                    <label
-                        class="
-                            text-[16px]
-
-                            text-[#8D8987]
-                        "
-                    >
-                        Material
-                    </label>
-
-
-                    <input
-                        type="text"
-
-                        id="productDetailMaterial"
-
-                        value="100% Cotton"
-
-                        class="
-                            w-[215px]
-
-                            h-[38px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D6D2D0]
-
-                            px-[11px]
-
-                            text-[16px]
-
-                            text-[#282422]
-
-                            outline-none
-
-                            transition-all
-                            duration-200
-
-                            focus:border-[#B8B0AC]
-                            focus:ring-[3px]
-                            focus:ring-[#B8B0AC]/10
-                        "
-                    >
-
-
-
-                    {{-- SIZES --}}
-
-                    <label
-                        class="
-                            text-[16px]
-
-                            text-[#8D8987]
-                        "
-                    >
-                        Sizes
-                    </label>
-
-
-                    <input
-                        type="text"
-
-                        id="productDetailSizes"
-
-                        value="S, M, L, XL, XXL"
-
-                        class="
-                            w-[215px]
-
-                            h-[38px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D6D2D0]
-
-                            px-[11px]
-
-                            text-[16px]
-
-                            text-[#282422]
-
-                            outline-none
-
-                            transition-all
-                            duration-200
-
-                            focus:border-[#B8B0AC]
-                            focus:ring-[3px]
-                            focus:ring-[#B8B0AC]/10
-                        "
-                    >
-
-
-
-                    {{-- COLORS --}}
-
-                    <label
-                        class="
-                            text-[16px]
-
-                            text-[#8D8987]
-                        "
-                    >
-                        Colors
-                    </label>
-
-
-                    <input
-                        type="text"
-
-                        id="productDetailColors"
-
-                        value="Black, White, Gray"
-
-                        class="
-                            w-[215px]
-
-                            h-[38px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D6D2D0]
-
-                            px-[11px]
-
-                            text-[16px]
-
-                            text-[#282422]
-
-                            outline-none
-
-                            transition-all
-                            duration-200
-
-                            focus:border-[#B8B0AC]
-                            focus:ring-[3px]
-                            focus:ring-[#B8B0AC]/10
-                        "
-                    >
-
-
-
-                    {{-- WEIGHT --}}
-
-                    <label
-                        class="
-                            text-[16px]
-
-                            text-[#8D8987]
-                        "
-                    >
-                        Quantity per Pack
-                    </label>
-
-
-                    <input
-                        type="text"
-
-                        id="productDetailQuantity"
-
-                        value="150g"
-
-                        class="
-                            w-[215px]
-
-                            h-[38px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D6D2D0]
-
-                            px-[11px]
-
-                            text-[16px]
-
-                            text-[#282422]
-
-                            outline-none
-
-                            transition-all
-                            duration-200
-
-                            focus:border-[#B8B0AC]
-                            focus:ring-[3px]
-                            focus:ring-[#B8B0AC]/10
-                        "
-                    >
-
-
-
-                    {{-- COUNTRY --}}
-
-                    <label
-                        class="
-                            text-[16px]
-
-                            text-[#8D8987]
-                        "
-                    >
-                        Country of Origin
-                    </label>
-
-
-                    <input
-                        type="text"
-
-                        id="productDetailCountry"
-
-                        value="Philippines"
-
-                        class="
-                            w-[215px]
-
-                            h-[38px]
-
-                            rounded-[9px]
-
-                            border
-                            border-[#D6D2D0]
-
-                            px-[11px]
-
-                            text-[16px]
-
-                            text-[#282422]
-
-                            outline-none
-
-                            transition-all
-                            duration-200
-
-                            focus:border-[#B8B0AC]
-                            focus:ring-[3px]
-                            focus:ring-[#B8B0AC]/10
-                        "
-                    >
-
-                </div>
-
-            </div>
-
-
-
-
-            {{-- =================================================
-                 CREATED PRODUCT BUYER OPTIONS
-            ================================================== --}}
-
-            <div
-                id="productDetailsBuyerOptionsSection"
-                class="
-                    hidden
-                    px-[62px]
-                    pt-[16px]
-                "
-            >
-
-                <h3
-                    class="
-                        text-[17px]
-                        font-semibold
-                        text-[#17120F]
-                        mb-[10px]
-                    "
-                >
-                    Buyer Options
-                </h3>
-
-                <div
-                    id="productDetailsBuyerOptions"
-                    class="product-created-details-grid"
-                ></div>
-
-            </div>
-
-
-            {{-- =================================================
-                 CREATED PRODUCT SPECIFICATIONS
-            ================================================== --}}
-
-            <div
-                id="productDetailsSpecificationsSection"
-                class="
-                    hidden
-                    px-[62px]
-                    pt-[18px]
-                "
-            >
-
-                <h3
-                    class="
-                        text-[17px]
-                        font-semibold
-                        text-[#17120F]
-                        mb-[10px]
-                    "
-                >
-                    Product Specifications
-                </h3>
-
-                <div
-                    id="productDetailsSpecifications"
-                    class="product-created-details-grid"
-                ></div>
-
-            </div>
-
-
-            {{-- =================================================
-                 MODAL ACTIONS
-            ================================================== --}}
-
-            <div
-                class="
-                    flex
-                    justify-end
-                    items-center
-
-                    gap-[16px]
-
-                    px-[38px]
-
-                    pb-[24px]
-
-                    pt-[24px]
-                "
-            >
-
-                {{-- REMOVE --}}
-
+            <footer class="product-details-inspo-footer">
                 <button
                     type="button"
-
                     id="removeProductButton"
-
-                    class="
-                        h-[48px]
-
-                        min-w-[120px]
-
-                        px-[22px]
-
-                        rounded-[8px]
-
-                        border
-                        border-[#F0A276]
-
-                        bg-[#FFF0E8]
-
-                        text-[16px]
-
-                        font-semibold
-
-                        text-[#C85D00]
-
-                        transition-all
-                        duration-200
-
-                        hover:bg-[#FFE4D8]
-                        hover:-translate-y-[1px]
-
-                        active:scale-[0.98]
-                    "
+                    class="product-details-remove-button"
                 >
                     Remove
                 </button>
 
+                <div>
+                    <button
+                        type="button"
+                        id="saveProductChanges"
+                        class="product-details-edit-button"
+                    >
+                        Edit product
+                    </button>
 
-
-                {{-- SAVE --}}
-
-                <button
-                    type="button"
-
-                    id="saveProductChanges"
-
-                    class="
-                        h-[48px]
-
-                        min-w-[165px]
-
-                        px-[24px]
-
-                        rounded-[8px]
-
-                        bg-[#9E241F]
-
-                        text-[16px]
-
-                        font-semibold
-
-                        text-white
-
-                        transition-all
-                        duration-200
-
-                        hover:bg-[#861D19]
-                        hover:-translate-y-[1px]
-
-                        active:scale-[0.98]
-                    "
-                >
-                    Save Changes
-                </button>
-
-
-
-                {{-- CANCEL --}}
-
-                <button
-                    type="button"
-
-                    id="cancelProductDetails"
-
-                    class="
-                        h-[48px]
-
-                        min-w-[145px]
-
-                        px-[24px]
-
-                        rounded-[8px]
-
-                        border
-                        border-[#242424]
-
-                        bg-white
-
-                        text-[16px]
-
-                        font-semibold
-
-                        text-[#17120F]
-
-                        hover:bg-[#FAF7F5]
-                    "
-                >
-                    Cancel
-                </button>
-
-            </div>
-
+                    <button
+                        type="button"
+                        id="cancelProductDetails"
+                        class="product-details-close-button"
+                    >
+                        Close
+                    </button>
+                </div>
+            </footer>
         </div>
-
     </div>
 
 
