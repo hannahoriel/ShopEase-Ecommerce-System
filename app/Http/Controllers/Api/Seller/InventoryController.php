@@ -8,11 +8,11 @@ use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Http\UploadedFile;
 use Throwable;
 
 class InventoryController extends Controller
@@ -208,7 +208,6 @@ class InventoryController extends Controller
             $product = DB::transaction(function () use (
                 $seller,
                 $validated,
-                $request,
                 $optionGroups,
                 $pricingMode,
                 $pricingSource,
@@ -307,7 +306,7 @@ class InventoryController extends Controller
 
         $activeGroups = [];
         foreach ($optionGroups as $source => $group) {
-            if (!empty($validated[$group['input']])) {
+            if (! empty($validated[$group['input']])) {
                 $activeGroups[$source] = $validated[$group['input']];
             }
         }
@@ -328,7 +327,7 @@ class InventoryController extends Controller
                     fn (array $option) => trim($option['name']) === $choice
                 );
 
-                if ($choice === '' || !$matchesOption) {
+                if ($choice === '' || ! $matchesOption) {
                     throw ValidationException::withMessages([
                         "variant_combinations.{$index}.{$source}" => "Choose a valid {$source} option for this connected variant.",
                     ]);
@@ -338,7 +337,7 @@ class InventoryController extends Controller
             }
 
             foreach (array_keys($combination) as $key) {
-                if (!in_array($key, $allowedKeys, true)) {
+                if (! in_array($key, $allowedKeys, true)) {
                     throw ValidationException::withMessages([
                         "variant_combinations.{$index}.{$key}" => 'This choice is not an available product option.',
                     ]);
@@ -355,7 +354,7 @@ class InventoryController extends Controller
 
             $basePrice = (float) ($combination['base_price'] ?? $validated['price'] ?? 0);
             if ($pricingMode === 'varies') {
-                if (!isset($activeGroups[$pricingSource])) {
+                if (! isset($activeGroups[$pricingSource])) {
                     throw ValidationException::withMessages([
                         "variant_combinations.{$index}.{$pricingSource}" => 'The pricing-source choice is not available.',
                     ]);
@@ -406,7 +405,7 @@ class InventoryController extends Controller
     {
         $path = $photo->store($directory, 'public');
 
-        if (!is_string($path) || $path === '') {
+        if (! is_string($path) || $path === '') {
             throw new \RuntimeException('Unable to store an uploaded product photo.');
         }
 
@@ -421,6 +420,12 @@ class InventoryController extends Controller
 
         abort_unless($product->seller_id === $seller->id, 404);
 
+        $optionGroups = [
+            'variations' => ['input' => 'variation_items', 'type' => 'variation'],
+            'colors' => ['input' => 'color_items', 'type' => 'color'],
+            'sizes' => ['input' => 'size_items', 'type' => 'size'],
+        ];
+
         if ($request->has('title') || $request->has('name')) {
             $request->merge([
                 'name' => $request->input('name', $request->input('title')),
@@ -433,32 +438,282 @@ class InventoryController extends Controller
             ]);
         }
 
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
+        $rawCombinations = $request->input('variant_combinations', []);
+        if (is_string($rawCombinations)) {
+            $decodedCombinations = json_decode($rawCombinations, true);
+            $request->merge([
+                'variant_combinations' => json_last_error() === JSON_ERROR_NONE
+                    ? $decodedCombinations
+                    : $rawCombinations,
+            ]);
+        }
+
+        $pricingModeInput = $request->input('pricing_mode', $product->pricing_mode ?: 'fixed');
+        $pricingMode = is_string($pricingModeInput) ? $pricingModeInput : ($product->pricing_mode ?: 'fixed');
+        $pricingSourceInput = $request->input('pricing_source', $product->pricing_source);
+        $pricingSource = is_string($pricingSourceInput) ? $pricingSourceInput : null;
+
+        if ($pricingMode === 'varies' && isset($optionGroups[$pricingSource])) {
+            $sourceOptions = $request->input($optionGroups[$pricingSource]['input']);
+            if (is_array($sourceOptions)) {
+                $baseOption = collect($sourceOptions)->first(
+                    fn ($option) => is_array($option)
+                        && isset($option['price'])
+                        && is_numeric($option['price'])
+                );
+
+                if ($baseOption !== null && ! $request->has('price')) {
+                    $request->merge(['price' => $baseOption['price']]);
+                }
+
+                if (! $request->has('stock_quantity')) {
+                    $request->merge([
+                        'stock_quantity' => collect($sourceOptions)->sum(
+                            fn ($option) => is_array($option) && is_numeric($option['stock'] ?? null)
+                                ? (int) $option['stock']
+                                : 0
+                        ),
+                    ]);
+                }
+            }
+        }
+
+        $submittedCombinations = $request->input('variant_combinations', []);
+        if (is_array($submittedCombinations) && $submittedCombinations !== []) {
+            $request->merge([
+                'stock_quantity' => collect($submittedCombinations)->sum(
+                    fn ($combination) => is_array($combination) && is_numeric($combination['stock'] ?? null)
+                        ? (int) $combination['stock']
+                        : 0
+                ),
+            ]);
+        }
+
+        $rules = [
+            'name' => ['sometimes', 'string', 'max:120'],
             'sku' => [
                 'sometimes',
                 'nullable',
                 'string',
-                'max:255',
+                'max:80',
                 Rule::unique('products', 'sku')->where(fn ($query) => $query->where('seller_id', $seller->id))->ignore($product->id),
             ],
-            'description' => ['sometimes', 'nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'stock_quantity' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', 'string', 'max:50'],
-            'category' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'photos' => ['sometimes', 'array'],
-            'photos.*' => ['nullable', 'string'],
-            'is_archived' => ['sometimes', 'boolean'],
-        ]);
+            'category' => ['sometimes', 'string', 'max:255'],
+            'pricing_mode' => ['sometimes', Rule::in(['fixed', 'varies'])],
+            'pricing_source' => ['sometimes', 'nullable', Rule::in(['variations', 'colors', 'sizes'])],
+            'photos' => ['sometimes', 'array', 'min:1', 'max:8'],
+            'photos.*' => ['required', 'string'],
+            'product_photos' => ['sometimes', 'array', 'min:1', 'max:8'],
+            'product_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'category_specifications' => ['sometimes', 'array'],
+            'category_specifications.*' => ['nullable', 'string', 'max:2000'],
+            'variant_combinations' => ['sometimes', 'array', 'max:300'],
+            'variant_combinations.*' => ['array'],
+            'variant_combinations.*.pricing_mode' => ['required', Rule::in(['fixed', 'varies'])],
+            'variant_combinations.*.pricing_source' => ['nullable', Rule::in(['variations', 'colors', 'sizes'])],
+            'variant_combinations.*.base_price' => ['required', 'numeric', 'min:0'],
+            'variant_combinations.*.additions' => ['sometimes', 'array'],
+            'variant_combinations.*.additions.*' => ['numeric', 'min:0'],
+            'variant_combinations.*.additional_price' => ['required', 'numeric', 'min:0'],
+            'variant_combinations.*.final_price' => ['required', 'numeric', 'min:0'],
+            'variant_combinations.*.stock' => ['required', 'integer', 'min:0'],
+            'variant_combinations.*.available' => ['sometimes', 'boolean'],
+        ];
 
-        if (array_key_exists('photos', $validated)) {
-            $validated['photos'] = $this->normalizePhotos($validated['photos']);
+        foreach ($optionGroups as $source => $group) {
+            $rules["variant_combinations.*.{$source}"] = ['sometimes', 'string', 'max:120'];
+            $rules[$group['input']] = ['sometimes', 'array'];
+            $rules[$group['input'].'.*.name'] = ['required', 'string', 'max:120', 'distinct'];
+            $rules[$group['input'].'.*.price'] = ['required', 'numeric', 'min:0'];
+            $rules[$group['input'].'.*.stock'] = ['required', 'integer', 'min:0'];
+            $rules[$group['input'].'.*.price_type'] = ['nullable', Rule::in(['base', 'addon'])];
+            $rules[$group['input'].'.*.photo'] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'];
         }
 
-        $product->fill($validated);
+        $validated = $request->validate($rules);
+        $connectedVariants = [];
+        if (array_key_exists('variant_combinations', $validated)) {
+            $connectedVariants = $this->buildConnectedVariants(
+                $validated['variant_combinations'],
+                $validated,
+                $optionGroups,
+                $pricingMode,
+                $pricingSource
+            );
+        }
 
-        $product->save();
+        if ($pricingMode === 'varies') {
+            $pricingGroup = $optionGroups[$pricingSource] ?? null;
+            $hasSourceOptions = $pricingGroup
+                && (
+                    ! empty($validated[$pricingGroup['input']])
+                    || $product->options()->where('type', $pricingGroup['type'])->exists()
+                );
+
+            if (! $hasSourceOptions) {
+                throw ValidationException::withMessages([
+                    'pricing_source' => 'Add at least one option in the selected base-price group.',
+                ]);
+            }
+        }
+
+        if ($connectedVariants !== []) {
+            if ($pricingMode === 'varies' && isset($optionGroups[$pricingSource])) {
+                $sourceInput = $optionGroups[$pricingSource]['input'];
+                if (isset($validated[$sourceInput])) {
+                    foreach ($connectedVariants as $variant) {
+                        $sourceChoice = $variant['choices'][$pricingSource];
+
+                        foreach ($validated[$sourceInput] as &$sourceOption) {
+                            if ($sourceOption['name'] === $sourceChoice) {
+                                $sourceOption['price'] = $variant['base_price'];
+                                break;
+                            }
+                        }
+                        unset($sourceOption);
+                    }
+                }
+            }
+
+            $validated['price'] = min(array_column($connectedVariants, 'final_price'));
+            $validated['stock_quantity'] = array_sum(array_column($connectedVariants, 'stock'));
+        } elseif ($pricingMode === 'varies' && isset($optionGroups[$pricingSource])) {
+            $sourceInput = $optionGroups[$pricingSource]['input'];
+            if (isset($validated[$sourceInput])) {
+                $basePrices = array_column($validated[$sourceInput], 'price');
+                if ($basePrices !== []) {
+                    $validated['price'] = min($basePrices);
+                }
+                $validated['stock_quantity'] = array_sum(array_column($validated[$sourceInput], 'stock'));
+            }
+        }
+
+        $storedFiles = [];
+
+        try {
+            DB::transaction(function () use (
+                $product,
+                $validated,
+                $optionGroups,
+                $pricingMode,
+                $pricingSource,
+                $connectedVariants,
+                &$storedFiles
+            ): void {
+                $attributes = array_intersect_key($validated, array_flip([
+                    'name',
+                    'sku',
+                    'description',
+                    'price',
+                    'stock_quantity',
+                    'status',
+                    'category',
+                    'pricing_mode',
+                    'pricing_source',
+                ]));
+
+                $attributes['pricing_mode'] = $pricingMode;
+                $attributes['pricing_source'] = $pricingMode === 'varies' ? $pricingSource : null;
+
+                if (array_key_exists('photos', $validated)) {
+                    $attributes['photos'] = $this->normalizePhotos($validated['photos']);
+                } elseif (isset($validated['product_photos'])) {
+                    $attributes['photos'] = array_map(
+                        fn (UploadedFile $photo) => $this->storeUploadedPhoto($photo, 'products', $storedFiles),
+                        $validated['product_photos']
+                    );
+                }
+
+                $product->fill($attributes)->save();
+
+                if (array_key_exists('category_specifications', $validated)) {
+                    $product->productSpecifications()->delete();
+
+                    $specificationOrder = 0;
+                    foreach ($validated['category_specifications'] as $key => $value) {
+                        $value = is_string($value) ? trim($value) : '';
+                        if ($value === '') {
+                            continue;
+                        }
+
+                        $product->productSpecifications()->create([
+                            'key' => (string) $key,
+                            'value' => $value,
+                            'sort_order' => $specificationOrder++,
+                        ]);
+                    }
+                }
+
+                foreach ($optionGroups as $source => $group) {
+                    if (! array_key_exists($group['input'], $validated)) {
+                        continue;
+                    }
+
+                    $existingPhotos = $product->options()
+                        ->where('type', $group['type'])
+                        ->pluck('photo', 'name');
+
+                    $product->options()->where('type', $group['type'])->delete();
+
+                    foreach ($validated[$group['input']] as $index => $option) {
+                        $photo = $option['photo'] ?? null;
+                        if ($photo instanceof UploadedFile) {
+                            $photo = $this->storeUploadedPhoto($photo, 'product-options', $storedFiles);
+                        } elseif (! is_string($photo) || $photo === '') {
+                            $photo = $existingPhotos->get($option['name']);
+                        }
+
+                        $product->options()->create([
+                            'type' => $group['type'],
+                            'name' => $option['name'],
+                            'price' => $pricingMode === 'fixed'
+                                ? ($validated['price'] ?? $product->price)
+                                : $option['price'],
+                            'stock' => $option['stock'],
+                            'price_type' => $pricingMode === 'varies' && $pricingSource === $source
+                                ? 'base'
+                                : 'addon',
+                            'photo' => is_string($photo) ? $photo : null,
+                            'sort_order' => $index,
+                        ]);
+                    }
+                }
+
+                if ($pricingMode === 'fixed' && array_key_exists('price', $validated)) {
+                    $product->options()->update([
+                        'price' => $validated['price'],
+                        'price_type' => 'addon',
+                    ]);
+
+                    if (! array_key_exists('variant_combinations', $validated)) {
+                        $product->connectedVariants()->update([
+                            'base_price' => $validated['price'],
+                            'additional_price' => 0,
+                            'final_price' => $validated['price'],
+                            'additions' => json_encode([]),
+                        ]);
+                    }
+                }
+
+                if (array_key_exists('variant_combinations', $validated)) {
+                    $product->connectedVariants()->delete();
+
+                    foreach ($connectedVariants as $index => $variant) {
+                        $product->connectedVariants()->create([
+                            ...$variant,
+                            'sort_order' => $index,
+                        ]);
+                    }
+                }
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($storedFiles);
+            throw $exception;
+        }
 
         return response()->json($this->serializeProduct($product->fresh()));
     }
@@ -532,7 +787,7 @@ class InventoryController extends Controller
             $data['photos'] = $this->normalizePhotos($data['photos']);
         }
 
-        if (!empty($data['photos'])) {
+        if (! empty($data['photos'])) {
             $data['image_url'] = $data['photos'][0];
         }
 
@@ -546,12 +801,12 @@ class InventoryController extends Controller
             $photos = is_array($decoded) ? $decoded : [$photos];
         }
 
-        if (!is_array($photos)) {
+        if (! is_array($photos)) {
             return [];
         }
 
         return array_values(array_filter(array_map(function ($photo): ?string {
-            if (!is_string($photo)) {
+            if (! is_string($photo)) {
                 return null;
             }
 

@@ -1889,6 +1889,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/seller/inventory/products', [ApiSellerInventoryController::class, 'store'])
         ->name('seller.web.inventory.products.store');
 
+    Route::patch('/seller/inventory/products/{product}', [ApiSellerInventoryController::class, 'update'])
+        ->name('seller.web.inventory.products.update');
+
     Route::patch('/seller/inventory/products/{product}/archive', [ApiSellerInventoryController::class, 'archive'])
         ->name('seller.web.inventory.products.archive');
 
