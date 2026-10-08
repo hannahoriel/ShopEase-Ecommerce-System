@@ -278,24 +278,156 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            const notificationItems =
-                Array.from(document.querySelectorAll('.buyer-notification-item'));
+            const notificationsList = document.getElementById('buyerNotificationsList');
+            const notificationsError = document.getElementById('buyerNotificationsError');
+            const markAllReadButton = document.getElementById('buyerMarkAllRead');
+            const notificationBadge = document.getElementById('buyerNotificationBadge');
+            const notificationsUrl = purchasesConfig.notificationsUrl || '/api/v1/buyer/notifications';
+            let notifications = [];
+            let unreadNotificationCount = 0;
+            if (notificationsList) {
+                notificationsList.innerHTML = '<p class="buyer-notifications-empty">Loading notifications…</p>';
+            }
 
-            notificationItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    item.classList.remove('is-unread');
-                    item.querySelector('.buyer-notification-unread-dot')?.remove();
-                });
+            const notificationHeaders = () => ({
+                Accept: 'application/json',
+                Authorization: `Bearer ${purchasesConfig.apiToken || ''}`,
+                ...(document.querySelector('meta[name="csrf-token"]')?.content
+                    ? { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                    : {}),
             });
 
-            document
-                .getElementById('buyerMarkAllRead')
-                ?.addEventListener('click', () => {
-                    notificationItems.forEach(item => {
-                        item.classList.remove('is-unread');
-                        item.querySelector('.buyer-notification-unread-dot')?.remove();
+            const escapeNotificationText = value => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const updateNotificationBadge = count => {
+                unreadNotificationCount = count;
+                if (!notificationBadge) return;
+                notificationBadge.textContent = count > 99 ? '99+' : String(count);
+                notificationBadge.style.display = count > 0 ? '' : 'none';
+            };
+
+            const relativeNotificationTime = value => {
+                if (!value) return '';
+                const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
+                const units = [
+                    ['year', 31536000],
+                    ['month', 2592000],
+                    ['week', 604800],
+                    ['day', 86400],
+                    ['hour', 3600],
+                    ['minute', 60],
+                ];
+                const [unit, size] = units.find(([, unitSize]) => Math.abs(seconds) >= unitSize) || ['second', 1];
+                return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(Math.round(seconds / size), unit);
+            };
+
+            const notificationIcon = type => {
+                if (type === 'shipping') return 'buyer-notification-icon--shipping';
+                if (type === 'delivered' || type === 'completed') return 'buyer-notification-icon--delivered';
+                if (type === 'promotion') return 'buyer-notification-icon--promo';
+                return 'buyer-notification-icon--order';
+            };
+
+            const renderNotifications = () => {
+                if (!notificationsList) return;
+                if (!notifications.length) {
+                    notificationsList.innerHTML = '<p class="buyer-notifications-empty">You have no notifications yet.</p>';
+                    return;
+                }
+
+                notificationsList.innerHTML = notifications.map(notification => `
+                    <button type="button"
+                        class="buyer-notification-item ${notification.read_at ? '' : 'is-unread'}"
+                        data-buyer-notification="${escapeNotificationText(notification.id)}">
+                        <span class="buyer-notification-icon ${notificationIcon(notification.type)}" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M5.5 8.5h13l-1 10h-11l-1-10Z" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round"/>
+                                <path d="M9 9V7a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span class="buyer-notification-copy">
+                            <strong>${escapeNotificationText(notification.title)}</strong>
+                            <span>${escapeNotificationText(notification.message)}</span>
+                        </span>
+                        <span class="buyer-notification-meta">
+                            <time datetime="${escapeNotificationText(notification.created_at)}">${escapeNotificationText(relativeNotificationTime(notification.created_at))}</time>
+                            ${notification.read_at ? '' : '<span class="buyer-notification-unread-dot" aria-label="Unread"></span>'}
+                        </span>
+                    </button>`).join('');
+            };
+
+            const loadNotifications = async () => {
+                if (!notificationsList || !purchasesConfig.apiToken) return;
+                notificationsError.hidden = true;
+                try {
+                    const response = await fetch(notificationsUrl, {
+                        headers: notificationHeaders(),
+                        credentials: 'same-origin',
                     });
-                });
+                    if (!response.ok) throw new Error(`Notifications could not be loaded (${response.status}).`);
+                    const payload = await response.json();
+                    notifications = payload.data || [];
+                    updateNotificationBadge(Number(payload.unread_count || 0));
+                    renderNotifications();
+                } catch (error) {
+                    notificationsError.textContent = error.message;
+                    notificationsError.hidden = false;
+                }
+            };
+
+            notificationsList?.addEventListener('click', async event => {
+                const notificationItem = event.target.closest('[data-buyer-notification]');
+                if (!notificationItem || !notificationItem.classList.contains('is-unread')) return;
+                const notificationId = notificationItem.dataset.buyerNotification;
+                try {
+                    const response = await fetch(`${notificationsUrl}/${encodeURIComponent(notificationId)}/read`, {
+                        method: 'PATCH',
+                        headers: notificationHeaders(),
+                        credentials: 'same-origin',
+                    });
+                    if (!response.ok) throw new Error(`Notification could not be marked as read (${response.status}).`);
+                    const notification = notifications.find(item => String(item.id) === notificationId);
+                    if (notification) {
+                        notification.read_at = new Date().toISOString();
+                        updateNotificationBadge(Math.max(0, unreadNotificationCount - 1));
+                    }
+                    renderNotifications();
+                } catch (error) {
+                    notificationsError.textContent = error.message;
+                    notificationsError.hidden = false;
+                }
+            });
+
+            markAllReadButton?.addEventListener('click', async () => {
+                markAllReadButton.disabled = true;
+                notificationsError.hidden = true;
+                try {
+                    const response = await fetch(`${notificationsUrl}/read-all`, {
+                        method: 'POST',
+                        headers: notificationHeaders(),
+                        credentials: 'same-origin',
+                    });
+                    if (!response.ok) throw new Error(`Notifications could not be marked as read (${response.status}).`);
+                    const readAt = new Date().toISOString();
+                    notifications.forEach(notification => {
+                        notification.read_at = notification.read_at || readAt;
+                    });
+                    updateNotificationBadge(0);
+                    renderNotifications();
+                } catch (error) {
+                    notificationsError.textContent = error.message;
+                    notificationsError.hidden = false;
+                } finally {
+                    markAllReadButton.disabled = false;
+                }
+            });
+
+            loadNotifications();
 
             const tabs =
                 Array.from(

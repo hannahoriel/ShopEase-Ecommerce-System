@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
+use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
@@ -90,6 +91,9 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/notifications', [BuyerNotificationController::class, 'index'])->name('buyer.api.notifications.index');
+            Route::patch('/notifications/{notification}/read', [BuyerNotificationController::class, 'markRead'])->name('buyer.api.notifications.read');
+            Route::post('/notifications/read-all', [BuyerNotificationController::class, 'markAllRead'])->name('buyer.api.notifications.read-all');
             Route::get('/dashboard/announcements', [BuyerDashboardController::class, 'announcements'])->name('buyer.api.dashboard.announcements');
             Route::get('/messages', [BuyerMessagesController::class, 'index'])->name('buyer.api.messages.index');
             Route::post('/messages/conversations', [BuyerMessagesController::class, 'storeConversation'])->name('buyer.api.messages.conversations.store');

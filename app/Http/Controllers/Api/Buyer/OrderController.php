@@ -9,6 +9,7 @@ use App\Models\Admin\ComplaintUpdate;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderCancellationRequest;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Services\OrderInventoryService;
@@ -189,6 +190,13 @@ class OrderController extends Controller
                         'delivery_address' => $validated['delivery_address'],
                         'payment_method' => $validated['payment_method'],
                     ]);
+                    BuyerNotification::createForOrder(
+                        $order,
+                        'order',
+                        'Order placed successfully',
+                        'Your order '.$order->order_number.' has been placed.',
+                        ['status' => $order->status]
+                    );
 
                     foreach ($sellerItems as $item) {
                         $orderItem = $order->items()->create([

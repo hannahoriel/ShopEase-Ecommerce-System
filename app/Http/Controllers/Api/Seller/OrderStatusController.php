@@ -7,6 +7,7 @@ use App\Models\Admin\Order;
 use App\Models\Admin\OrderCancellationRequest;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\OrderInventoryService;
@@ -153,6 +154,7 @@ class OrderStatusController extends Controller
                 'changed_by' => $request->user()->id,
                 'notes' => 'Scheduled shipment cancelled by seller. Reason: '.$reason,
             ]);
+            BuyerNotification::createForOrderStatus($lockedOrder, 'cancelled');
         });
 
         return response()->json($order->fresh(['statusHistory']));
@@ -190,6 +192,7 @@ class OrderStatusController extends Controller
                 'changed_by' => $request->user()->id,
                 'notes' => 'Buyer cancellation request approved by seller.',
             ]);
+            BuyerNotification::createForOrderStatus($lockedOrder, 'cancelled');
         });
 
         return response()->json($order->fresh(['latestCancellationRequest', 'statusHistory']));
@@ -225,6 +228,21 @@ class OrderStatusController extends Controller
                     : null,
                 'decided_at' => now(),
             ]);
+
+            $reason = $validated['reason'] === 'other'
+                ? trim($validated['other_reason'])
+                : str_replace('_', ' ', $validated['reason']);
+            BuyerNotification::createForOrder(
+                $lockedOrder,
+                'cancellation_rejected',
+                'Cancellation request declined',
+                'The seller declined your cancellation request. Reason: '.$reason,
+                [
+                    'cancellation_request_id' => $lockedRequest->id,
+                    'seller_reason' => $validated['reason'],
+                    'seller_other_reason' => $validated['reason'] === 'other' ? trim($validated['other_reason']) : null,
+                ]
+            );
 
             return $lockedRequest->fresh();
         });
@@ -308,5 +326,7 @@ class OrderStatusController extends Controller
             'changed_by' => $user->id,
             'notes' => $notes,
         ]);
+
+        BuyerNotification::createForOrderStatus($order, $newStatus);
     }
 }

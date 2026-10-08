@@ -33,6 +33,7 @@
         {!! json_encode([
             'ordersUrl' => '/api/v1/buyer/orders',
             'complaintsUrl' => '/api/v1/buyer/orders',
+            'notificationsUrl' => '/api/v1/buyer/notifications',
             'apiToken' => $apiToken ?? '',
         ]) !!}
     </script>
@@ -408,7 +409,8 @@
                                 </button>
                             </div>
 
-                            <div class="buyer-notifications-list">
+                            <p id="buyerNotificationsError" role="alert" hidden></p>
+                            <div class="buyer-notifications-list" id="buyerNotificationsList" aria-live="polite">
 
                                 <button type="button" class="buyer-notification-item is-unread">
                                     <span class="buyer-notification-icon buyer-notification-icon--order" aria-hidden="true">

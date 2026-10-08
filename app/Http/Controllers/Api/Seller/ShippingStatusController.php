@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -113,6 +114,7 @@ class ShippingStatusController extends Controller
                 'changed_by' => $request->user()->id,
                 'notes' => $validated['notes'] ?? null,
             ]);
+            BuyerNotification::createForOrderStatus($lockedOrder, $newStatus);
 
             return $shipment;
         });

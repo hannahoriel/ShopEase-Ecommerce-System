@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
        HEADER BUTTONS
     ================================================== */
     notificationButton?.addEventListener('click', function () {
-        console.log('Buyer notifications opened.');
+        window.location.href = '/buyer/my-purchases?section=notifications';
     });
 
     accountButton?.addEventListener('click', function (event) {

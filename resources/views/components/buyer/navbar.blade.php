@@ -200,7 +200,7 @@
                         "
                     >
 
-                    <span class="buyer-icon-badge">4</span>
+                    <span class="buyer-icon-badge" id="buyerNotificationBadge" style="display: none"></span>
                 </button>
 
                 {{-- CART --}}

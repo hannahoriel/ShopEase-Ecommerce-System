@@ -820,6 +820,12 @@
             flex-direction: column;
         }
 
+        .buyer-notifications-empty {
+            padding: 24px 16px;
+            color: #766A67;
+            text-align: center;
+        }
+
         .buyer-notification-item {
             width: 100%;
             min-height: 76px;

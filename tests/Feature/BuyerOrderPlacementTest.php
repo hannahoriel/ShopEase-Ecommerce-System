@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin\Order;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductOption;
@@ -69,6 +70,7 @@ class BuyerOrderPlacementTest extends TestCase
             ->assertJsonPath('order_number', $orderNumbers->first())
             ->assertJsonMissingPath('buyer_id');
         $this->assertDatabaseCount('orders', 2);
+        $this->assertDatabaseCount('buyer_notifications', 2);
         $this->assertDatabaseHas('orders', [
             'buyer_id' => $buyer->id,
             'seller_id' => $firstSeller->id,
@@ -294,6 +296,20 @@ class BuyerOrderPlacementTest extends TestCase
             ->assertJsonPath('data.status', 'rejected')
             ->assertJsonPath('data.seller_other_reason', 'The order is already being packed.');
 
+        $this->assertDatabaseHas('buyer_notifications', [
+            'buyer_id' => $buyer->id,
+            'order_id' => $order->id,
+            'type' => 'cancellation_rejected',
+            'title' => 'Cancellation request declined',
+        ]);
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonPath('data.0.data.order_number', 'SE-TEST-LATE-CANCEL')
+            ->assertJsonPath('data.0.data.seller_other_reason', 'The order is already being packed.')
+            ->assertJsonPath('data.0.message', 'The seller declined your cancellation request. Reason: The order is already being packed.');
+
         $this->actingAs($buyer)
             ->getJson('/api/v1/buyer/orders')
             ->assertOk()
@@ -304,6 +320,55 @@ class BuyerOrderPlacementTest extends TestCase
         $this->assertSame('preparing', $order->fresh()->status);
 
         Carbon::setTestNow();
+    }
+
+    public function test_buyer_notifications_are_private_and_can_be_marked_read(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $otherBuyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-NOTIFICATION-API',
+            'total' => 1200,
+            'status' => 'pending',
+            'delivery_name' => 'Buyer Example',
+            'delivery_phone' => '09171234567',
+            'delivery_address' => '1 Main Street, Manila',
+            'payment_method' => 'Cash on Delivery',
+        ]);
+        $firstNotification = BuyerNotification::createForOrder($order, 'order', 'Order received', 'Your order was received.');
+        BuyerNotification::createForOrder($order, 'shipping', 'On the way', 'Your package is on the way.');
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 2)
+            ->assertJsonCount(2, 'data');
+
+        $this->actingAs($otherBuyer)
+            ->getJson('/api/v1/buyer/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 0)
+            ->assertJsonCount(0, 'data');
+        $this->actingAs($otherBuyer)
+            ->patchJson("/api/v1/buyer/notifications/{$firstNotification->id}/read")
+            ->assertNotFound();
+
+        $this->actingAs($buyer)
+            ->patchJson("/api/v1/buyer/notifications/{$firstNotification->id}/read")
+            ->assertOk()
+            ->assertJsonPath('data.id', $firstNotification->id);
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/notifications/read-all')
+            ->assertOk()
+            ->assertJsonPath('updated_count', 1);
+        $this->assertDatabaseCount('buyer_notifications', 2);
+        $this->assertDatabaseMissing('buyer_notifications', [
+            'id' => $firstNotification->id,
+            'read_at' => null,
+        ]);
     }
 
     public function test_buyer_cancellation_at_five_hour_boundary_is_automatically_approved(): void
