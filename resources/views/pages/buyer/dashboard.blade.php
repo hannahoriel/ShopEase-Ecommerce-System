@@ -31,6 +31,8 @@
         {!! json_encode([
             'productsUrl'    => '/api/v1/buyer/dashboard/products',
             'announcementsUrl' => '/api/v1/buyer/dashboard/announcements',
+            'ordersUrl' => '/api/v1/buyer/orders',
+            'notificationsUrl' => '/api/v1/buyer/notifications',
             'productBaseUrl' => '/buyer/product',
             'cartUrl'        => '/api/v1/buyer/cart',
             'apiToken'       => $apiToken ?? '',
@@ -220,7 +222,7 @@
                             <span class="purchase-icon">
                                 <img src="{{ asset('icons/buyer/processing.png') }}" alt="" data-clean-bg="true">
                             </span>
-                            <strong>2</strong>
+                            <strong data-purchase-count="processing">0</strong>
                             <span>Processing</span>
                         </button>
 
@@ -232,7 +234,7 @@
                             <span class="purchase-icon">
                                 <img src="{{ asset('icons/buyer/to-ship.png') }}" alt="" data-clean-bg="true">
                             </span>
-                            <strong>2</strong>
+                            <strong data-purchase-count="to-ship">0</strong>
                             <span>To Ship</span>
                         </button>
 
@@ -244,7 +246,7 @@
                             <span class="purchase-icon">
                                 <img src="{{ asset('icons/buyer/in-transit.png') }}" alt="" data-clean-bg="true">
                             </span>
-                            <strong>2</strong>
+                            <strong data-purchase-count="in-transit">0</strong>
                             <span>In Transit</span>
                         </button>
 
@@ -256,7 +258,7 @@
                             <span class="purchase-icon">
                                 <img src="{{ asset('icons/buyer/out-for-delivery.png') }}" alt="" data-clean-bg="true">
                             </span>
-                            <strong>2</strong>
+                            <strong data-purchase-count="out-for-delivery">0</strong>
                             <span class="purchase-label-nowrap">Out for Delivery</span>
                         </button>
 
@@ -268,7 +270,7 @@
                             <span class="purchase-icon">
                                 <img src="{{ asset('icons/buyer/delivered.png') }}" alt="" data-clean-bg="true">
                             </span>
-                            <strong>2</strong>
+                            <strong data-purchase-count="delivered">0</strong>
                             <span>Delivered</span>
                         </button>
                     </div>
@@ -336,87 +338,10 @@
                         </a>
                     </div>
 
-                    <div class="notifications-list">
-
-                        <button type="button" class="notification-row is-unread">
-                            <span class="notification-icon notification-icon-order" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path
-                                        d="M4 7h16l-1 12H5L4 7Z"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                        stroke-linejoin="round"
-                                    />
-                                    <path
-                                        d="M8 9V6a4 4 0 0 1 8 0v3"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                        stroke-linecap="round"
-                                    />
-                                </svg>
-                            </span>
-
-                            <span class="notification-copy">
-                                <strong>Order is ready to ship</strong>
-                                <span>Your order from The Shop PH has been packed and is ready for pickup.</span>
-                            </span>
-
-                            <span class="notification-meta">
-                                <time>5m ago</time>
-                                <span class="notification-dot" aria-label="Unread"></span>
-                            </span>
-                        </button>
-
-                        <button type="button" class="notification-row is-unread">
-                            <span class="notification-icon notification-icon-delivery" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path
-                                        d="M3 6h11v10H3V6Zm11 3h4l3 3v4h-7V9Z"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                        stroke-linejoin="round"
-                                    />
-                                    <circle cx="7" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/>
-                                    <circle cx="18" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/>
-                                </svg>
-                            </span>
-
-                            <span class="notification-copy">
-                                <strong>Package is in transit</strong>
-                                <span>Your parcel is on the way and will be delivered soon.</span>
-                            </span>
-
-                            <span class="notification-meta">
-                                <time>32m ago</time>
-                                <span class="notification-dot" aria-label="Unread"></span>
-                            </span>
-                        </button>
-
-                        <button type="button" class="notification-row">
-                            <span class="notification-icon notification-icon-promo" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path
-                                        d="M4 12V5h7l9 9-7 7-9-9Z"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                        stroke-linejoin="round"
-                                    />
-                                    <circle cx="8" cy="9" r="1.3" fill="currentColor"/>
-                                </svg>
-                            </span>
-
-                            <span class="notification-copy">
-                                <strong>New voucher available</strong>
-                                <span>You received a new ShopEase voucher for your next purchase.</span>
-                            </span>
-
-                            <span class="notification-meta">
-                                <time>2h ago</time>
-                            </span>
-                        </button>
-
-
+                    <div class="notifications-list" id="buyerDashboardNotifications" aria-live="polite">
+                        <p class="buyer-dashboard-notifications-state">Loading notifications…</p>
                     </div>
+                    <p id="buyerDashboardNotificationsError" role="alert" hidden></p>
                 </section>
             </section>
 

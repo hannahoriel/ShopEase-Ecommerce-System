@@ -16,7 +16,6 @@ use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -33,6 +32,11 @@ class OrderController extends Controller
             ->with(['seller:id,store_name', 'items', 'complaints', 'latestCancellationRequest'])
             ->latest()
             ->paginate(50);
+        $statusCounts = Order::query()
+            ->where('buyer_id', $request->user()->id)
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
 
         return response()->json([
             'data' => $orders->getCollection()->map(fn (Order $order): array => [
@@ -61,6 +65,7 @@ class OrderController extends Controller
                 ])->all(),
             ])->values(),
             'total' => $orders->total(),
+            'status_counts' => $statusCounts,
         ]);
     }
 
@@ -181,7 +186,7 @@ class OrderController extends Controller
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
-                        'order_number' => $this->newOrderNumber(),
+                        'order_number' => null,
                         'total' => $total,
                         'commission_amount' => round($total * (CommissionTransaction::DEFAULT_RATE / 100), 2),
                         'status' => 'pending',
@@ -190,6 +195,9 @@ class OrderController extends Controller
                         'delivery_address' => $validated['delivery_address'],
                         'payment_method' => $validated['payment_method'],
                     ]);
+                    $order->forceFill([
+                        'order_number' => $this->orderNumberFor($order),
+                    ])->saveQuietly();
                     BuyerNotification::createForOrder(
                         $order,
                         'order',
@@ -352,12 +360,8 @@ class OrderController extends Controller
         ]);
     }
 
-    private function newOrderNumber(): string
+    private function orderNumberFor(Order $order): string
     {
-        do {
-            $number = 'SE-'.now()->format('Ymd').'-'.Str::upper(Str::random(8));
-        } while (Order::where('order_number', $number)->exists());
-
-        return $number;
+        return 'SE-'.now()->format('Ymd').'-'.str_pad((string) $order->id, 8, '0', STR_PAD_LEFT);
     }
 }

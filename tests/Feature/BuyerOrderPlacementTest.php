@@ -36,6 +36,21 @@ class BuyerOrderPlacementTest extends TestCase
             ->assertDontSee('class="buyer-icon-badge">2</span>', false);
     }
 
+    public function test_buyer_dashboard_uses_api_data_for_purchase_counts_and_notifications(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+
+        $this->actingAs($buyer)
+            ->get('/buyer/dashboard')
+            ->assertOk()
+            ->assertSee('"ordersUrl":"\/api\/v1\/buyer\/orders"', false)
+            ->assertSee('"notificationsUrl":"\/api\/v1\/buyer\/notifications"', false)
+            ->assertSee('data-purchase-count="processing"', false)
+            ->assertSee('id="buyerDashboardNotifications"', false)
+            ->assertDontSee('Order is ready to ship')
+            ->assertDontSee('New voucher available');
+    }
+
     public function test_buyer_places_real_orders_and_receives_unique_order_numbers_for_qr_codes(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
@@ -78,15 +93,24 @@ class BuyerOrderPlacementTest extends TestCase
 
         $orderNumbers = collect($response->json('orders'))->pluck('order_number');
         $this->assertCount(2, $orderNumbers->unique());
-        $this->assertStringContainsString(
-            '/api/v1/orders/verify/'.$orderNumbers->first(),
+        $qrPayloads = collect($response->json('orders'))->pluck('qr_payload');
+        $this->assertCount(2, $qrPayloads->unique());
+        $this->assertSame(
+            url('/api/v1/orders/verify/'.rawurlencode($orderNumbers->first())),
             $response->json('orders.0.qr_payload')
+        );
+        $this->assertSame(
+            url('/api/v1/orders/verify/'.rawurlencode($orderNumbers->last())),
+            $response->json('orders.1.qr_payload')
         );
         $verified = $this->getJson('/api/v1/orders/verify/'.$orderNumbers->first());
         $verified->assertOk()
             ->assertJsonPath('valid', true)
             ->assertJsonPath('order_number', $orderNumbers->first())
             ->assertJsonMissingPath('buyer_id');
+        $this->getJson('/api/v1/orders/verify/'.$orderNumbers->last())
+            ->assertOk()
+            ->assertJsonPath('order_number', $orderNumbers->last());
         $this->assertDatabaseCount('orders', 2);
         $this->assertDatabaseCount('buyer_notifications', 2);
         $this->assertDatabaseHas('orders', [
@@ -121,6 +145,7 @@ class BuyerOrderPlacementTest extends TestCase
             ->getJson('/api/v1/buyer/orders')
             ->assertOk()
             ->assertJsonCount(2, 'data')
+            ->assertJsonPath('status_counts.pending', 2)
             ->assertJsonFragment(['order_number' => $orderNumbers->first()])
             ->assertJsonFragment(['product_name' => 'Wireless Earbuds']);
 
