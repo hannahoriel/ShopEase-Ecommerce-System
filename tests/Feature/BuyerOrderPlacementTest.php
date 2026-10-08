@@ -9,6 +9,7 @@ use App\Models\Seller\ProductOption;
 use App\Models\Seller\ProductVariantCombination;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -156,7 +157,7 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_buyer_cancellation_restores_reserved_stock_only_once(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
         CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $product->id,
@@ -174,20 +175,222 @@ class BuyerOrderPlacementTest extends TestCase
             ->json('orders.0.id');
 
         $this->assertSame(7, $product->fresh()->stock_quantity);
+        $this->actingAs(User::findOrFail($seller->user_id))
+            ->getJson('/api/v1/seller/inventory')
+            ->assertOk()
+            ->assertJsonPath('data.0.stock_quantity', 7);
 
-        $this->postJson("/api/v1/buyer/orders/{$orderId}/cancel")
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$orderId}/cancel")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reason');
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$orderId}/cancel", [
+                'reason' => 'other',
+                'other_reason' => 'I placed the wrong order.',
+            ])
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled')
-            ->assertJsonPath('data.can_cancel', false);
+            ->assertJsonPath('data.can_cancel', false)
+            ->assertJsonPath('data.auto_cancelled', true)
+            ->assertJsonPath('data.cancellation_request.buyer_other_reason', 'I placed the wrong order.');
 
         $this->assertSame(10, $product->fresh()->stock_quantity);
-
-        $this->postJson("/api/v1/buyer/orders/{$orderId}/cancel")
+        $this->actingAs(User::findOrFail($seller->user_id))
+            ->getJson('/api/v1/seller/inventory')
             ->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.0.stock_quantity', 10);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$orderId}/cancel", [
+                'reason' => 'changed_mind',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('message', 'This order has already been cancelled.');
 
         $this->assertSame(10, $product->fresh()->stock_quantity);
         $this->assertDatabaseCount('order_status_histories', 1);
+    }
+
+    public function test_buyer_cancellation_after_five_hours_waits_for_seller_review(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-08 18:00:00'));
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-LATE-CANCEL',
+            'total' => 1200,
+            'status' => 'preparing',
+            'delivery_name' => 'Buyer Example',
+            'delivery_phone' => '09171234567',
+            'delivery_address' => '1 Main Street, Manila',
+            'payment_method' => 'Cash on Delivery',
+        ]);
+        $order->created_at = now()->subHours(5)->subSecond();
+        $order->save();
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 2,
+            'unit_price' => $product->price,
+        ]);
+        $product->update(['stock_quantity' => 8]);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", [
+                'reason' => 'ordered_by_mistake',
+            ])
+            ->assertStatus(202)
+            ->assertJsonPath('data.status', 'preparing')
+            ->assertJsonPath('data.auto_cancelled', false)
+            ->assertJsonPath('data.cancellation_request.status', 'pending');
+
+        $requestId = $order->latestCancellationRequest()->value('id');
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", [
+                'reason' => 'changed_mind',
+            ])
+            ->assertStatus(202)
+            ->assertJsonPath('data.cancellation_request.id', $requestId);
+        $this->assertDatabaseCount('order_cancellation_requests', 1);
+
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+        $this->assertSame('preparing', $order->fresh()->status);
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/orders')
+            ->assertOk()
+            ->assertJsonPath('data.0.can_cancel', false)
+            ->assertJsonPath('data.0.cancellation_request.buyer_reason', 'ordered_by_mistake');
+
+        $sellerUser = User::findOrFail($seller->user_id);
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/order-status')
+            ->assertOk()
+            ->assertJsonPath('data.0.latest_cancellation_request.status', 'pending')
+            ->assertJsonPath('data.0.latest_cancellation_request.buyer_reason', 'ordered_by_mistake');
+
+        $this->actingAs($sellerUser)
+            ->patchJson("/api/v1/seller/orders/{$order->id}/status", ['status' => 'to_ship'])
+            ->assertUnprocessable();
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$order->id}/cancellation-requests/{$order->latestCancellationRequest->id}/reject", [
+                'reason' => 'other',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('other_reason');
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$order->id}/cancellation-requests/{$order->latestCancellationRequest->id}/reject", [
+                'reason' => 'other',
+                'other_reason' => 'The order is already being packed.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.seller_other_reason', 'The order is already being packed.');
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/orders')
+            ->assertOk()
+            ->assertJsonPath('data.0.cancellation_request.status', 'rejected')
+            ->assertJsonPath('data.0.cancellation_request.seller_other_reason', 'The order is already being packed.');
+
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+        $this->assertSame('preparing', $order->fresh()->status);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_buyer_cancellation_at_five_hour_boundary_is_automatically_approved(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-08 18:00:00'));
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-EXACT-FIVE-HOURS',
+            'total' => 1200,
+            'status' => 'pending',
+            'delivery_name' => 'Buyer Example',
+            'delivery_phone' => '09171234567',
+            'delivery_address' => '1 Main Street, Manila',
+            'payment_method' => 'Cash on Delivery',
+        ]);
+        $order->created_at = now()->subHours(5);
+        $order->save();
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => $product->price,
+        ]);
+        $product->update(['stock_quantity' => 9]);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", [
+                'reason' => 'changed_mind',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.auto_cancelled', true)
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+        Carbon::setTestNow();
+    }
+
+    public function test_seller_can_approve_late_buyer_cancellation_and_restore_stock(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-08 18:00:00'));
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-APPROVE-CANCEL',
+            'total' => 1200,
+            'status' => 'to_ship',
+            'delivery_name' => 'Buyer Example',
+            'delivery_phone' => '09171234567',
+            'delivery_address' => '1 Main Street, Manila',
+            'payment_method' => 'Cash on Delivery',
+        ]);
+        $order->created_at = now()->subHours(6);
+        $order->save();
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 2,
+            'unit_price' => $product->price,
+        ]);
+        $product->update(['stock_quantity' => 8]);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", [
+                'reason' => 'changed_mind',
+            ])
+            ->assertStatus(202);
+
+        $requestId = $order->latestCancellationRequest()->value('id');
+        $this->actingAs(User::findOrFail($seller->user_id))
+            ->postJson("/api/v1/seller/orders/{$order->id}/cancellation-requests/{$requestId}/approve")
+            ->assertOk()
+            ->assertJsonPath('status', 'cancelled')
+            ->assertJsonPath('latest_cancellation_request.status', 'approved');
+
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'to_status' => 'cancelled',
+            'notes' => 'Buyer cancellation request approved by seller.',
+        ]);
+
+        Carbon::setTestNow();
     }
 
     public function test_order_reserves_the_exact_connected_variant_stock(): void
@@ -229,6 +432,41 @@ class BuyerOrderPlacementTest extends TestCase
         $this->assertSame(1, $combination->fresh()->stock);
     }
 
+    public function test_buyer_product_details_include_grouped_variant_combinations(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        ProductOption::create([
+            'product_id' => $product->id,
+            'type' => 'variation',
+            'name' => 'Pack of 2',
+            'stock' => 4,
+        ]);
+        ProductOption::create([
+            'product_id' => $product->id,
+            'type' => 'color',
+            'name' => 'Black',
+            'stock' => 4,
+        ]);
+        ProductVariantCombination::create([
+            'product_id' => $product->id,
+            'choices' => ['variations' => 'Pack of 2', 'colors' => 'Black'],
+            'pricing_mode' => 'fixed',
+            'additions' => [],
+            'stock' => 4,
+            'available' => true,
+        ]);
+
+        $this->actingAs($buyer)
+            ->getJson("/api/v1/buyer/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('pricing_mode', 'fixed')
+            ->assertJsonPath('connected_variants.0.variations', 'Pack of 2')
+            ->assertJsonPath('connected_variants.0.colors', 'Black')
+            ->assertJsonPath('connected_variants.0.stock', 4)
+            ->assertJsonPath('variations.0.name', 'Pack of 2');
+    }
+
     public function test_seller_cancellation_also_restores_reserved_stock(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
@@ -249,16 +487,81 @@ class BuyerOrderPlacementTest extends TestCase
             ->assertCreated()
             ->json('orders.0.id');
 
-        $this->actingAs(User::findOrFail($seller->user_id))
-            ->patchJson("/api/v1/seller/orders/{$orderId}/status", ['status' => 'cancelled'])
+        $sellerUser = User::findOrFail($seller->user_id);
+        $this->actingAs($sellerUser)
+            ->patchJson("/api/v1/seller/orders/{$orderId}/status", ['status' => 'preparing'])
+            ->assertOk()
+            ->assertJsonPath('status', 'preparing');
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$orderId}/schedule", [
+                'pickup_date' => now()->addDay()->toDateString(),
+                'pickup_time' => '14:30',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'to_ship');
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$orderId}/cancel-shipment", [
+                'reason' => 'Other',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('other_reason');
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$orderId}/cancel-shipment", [
+                'reason' => 'Other',
+                'other_reason' => 'Courier pickup is unavailable.',
+            ])
             ->assertOk()
             ->assertJsonPath('status', 'cancelled');
 
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $orderId,
+            'from_status' => 'to_ship',
+            'to_status' => 'cancelled',
+            'notes' => 'Scheduled shipment cancelled by seller. Reason: Other: Courier pickup is unavailable.',
+        ]);
         $this->assertSame(10, $product->fresh()->stock_quantity);
-        $this->actingAs(User::findOrFail($seller->user_id))
-            ->patchJson("/api/v1/seller/orders/{$orderId}/status", ['status' => 'cancelled'])
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$orderId}/cancel-shipment", [
+                'reason' => 'Item is out of stock',
+            ])
             ->assertUnprocessable();
         $this->assertSame(10, $product->fresh()->stock_quantity);
+    }
+
+    public function test_buyer_can_cancel_until_shipment_is_in_transit(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-PRETRANSIT',
+            'total' => 1200,
+            'status' => 'to_ship',
+            'delivery_name' => 'Buyer Example',
+            'delivery_phone' => '09171234567',
+            'delivery_address' => '1 Main Street, Manila',
+            'payment_method' => 'Cash on Delivery',
+        ]);
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/orders')
+            ->assertOk()
+            ->assertJsonPath('data.0.can_cancel', true);
+
+        $order->update(['status' => 'in_transit']);
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/orders')
+            ->assertOk()
+            ->assertJsonPath('data.0.can_cancel', false);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", ['reason' => 'changed_mind'])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'This order can no longer be cancelled.');
     }
 
     public function test_buyer_cannot_cancel_another_buyers_order(): void

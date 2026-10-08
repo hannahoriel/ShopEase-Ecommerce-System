@@ -340,6 +340,7 @@
             'inventoryProducts' => $inventoryProducts ?? [],
             'archivedProducts' => $archivedProducts ?? [],
             'inventoryProductsUrl' => url('/seller/inventory/products'),
+            'inventoryApiUrl' => url('/api/v1/seller/inventory'),
             'storageUrl' => asset('storage'),
             'storeProductUrl' => url('/seller/inventory/products'),
         ];

@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Array.from(
                     document.querySelectorAll('[data-purchase-row]')
                 );
+            let ordersRefreshBound = false;
 
             const search =
                 document.getElementById('purchaseSearch');
@@ -411,6 +412,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     loadOrders();
+                    if (!ordersRefreshBound) {
+                        window.addEventListener('focus', loadOrders);
+                        window.setInterval(() => {
+                            if (!document.hidden) loadOrders();
+                        }, 30000);
+                        ordersRefreshBound = true;
+                    }
                 });
             });
 

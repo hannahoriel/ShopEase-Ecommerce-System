@@ -66,13 +66,24 @@ class ShippingStatusController extends Controller
         ]);
 
         $newStatus = $validated['status'];
-        abort_unless(in_array($newStatus, self::TRANSITIONS[$order->status] ?? [], true), 422, "Order cannot move from {$order->status} to {$newStatus}.");
 
         $shipment = DB::transaction(function () use ($order, $newStatus, $validated, $request): Shipment {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            abort_unless(
+                in_array($newStatus, self::TRANSITIONS[$lockedOrder->status] ?? [], true),
+                422,
+                "Order cannot move from {$lockedOrder->status} to {$newStatus}."
+            );
+            abort_unless(
+                ! $lockedOrder->latestCancellationRequest()->where('status', 'pending')->exists(),
+                422,
+                'Review the pending buyer cancellation request before shipping this order.'
+            );
+
             $shipment = Shipment::firstOrCreate(
-                ['order_id' => $order->id],
+                ['order_id' => $lockedOrder->id],
                 [
-                    'tracking_number' => 'SE-' . Str::upper(Str::random(10)),
+                    'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
                     'courier' => $validated['courier'] ?? 'Ease Express',
                     'estimated_delivery' => $validated['estimated_delivery'] ?? now()->addDays(3)->toDateString(),
                     'shipping_fee' => $validated['shipping_fee'] ?? 0,
@@ -93,10 +104,10 @@ class ShippingStatusController extends Controller
             }
             $shipment->save();
 
-            $fromStatus = $order->status;
-            $order->update(['status' => $newStatus]);
+            $fromStatus = $lockedOrder->status;
+            $lockedOrder->update(['status' => $newStatus]);
             OrderStatusHistory::create([
-                'order_id' => $order->id,
+                'order_id' => $lockedOrder->id,
                 'from_status' => $fromStatus,
                 'to_status' => $newStatus,
                 'changed_by' => $request->user()->id,
@@ -118,6 +129,7 @@ class ShippingStatusController extends Controller
                 'items.product:id,name,photos',
                 'shipment',
                 'statusHistory',
+                'latestCancellationRequest',
             ]);
     }
 

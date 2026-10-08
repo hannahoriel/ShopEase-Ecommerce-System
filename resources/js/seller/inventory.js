@@ -11327,6 +11327,14 @@ document.addEventListener(
                                 ...serverProduct,
                                 ...localProduct,
 
+                                // Orders update stock in the database; localStorage
+                                // must not replace the latest inventory values.
+                                stock: serverProduct.stock,
+                                variations: serverProduct.variations,
+                                colors: serverProduct.colors,
+                                sizes: serverProduct.sizes,
+                                connectedVariants: serverProduct.connectedVariants,
+
                                 approvalStatus:
                                     serverProduct.approvalStatus,
 
@@ -12177,6 +12185,73 @@ document.addEventListener(
                 restoreCreatedProductRows();
                 renderWarningPolicyRows();
                 restoreArchivedProductRows();
+
+                async function syncInventoryStock() {
+                    try {
+                        const response = await fetch(
+                            inventoryConfig.inventoryApiUrl || '/api/v1/seller/inventory',
+                            {
+                                headers: { Accept: 'application/json' },
+                                credentials: 'same-origin'
+                            }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(`Inventory refresh failed (${response.status}).`);
+                        }
+
+                        const payload = await response.json();
+                        const serverProducts = (payload.data || []).map(normalizePersistedProduct);
+                        let changed = false;
+
+                        serverProducts.forEach(serverProduct => {
+                            const product = createdInventoryProducts.find(
+                                item => String(item.id) === String(serverProduct.id)
+                            );
+                            if (!product) return;
+
+                            const stockChanged =
+                                Number(product.stock) !== Number(serverProduct.stock);
+                            product.stock = serverProduct.stock;
+                            product.variations = serverProduct.variations;
+                            product.colors = serverProduct.colors;
+                            product.sizes = serverProduct.sizes;
+                            product.connectedVariants = serverProduct.connectedVariants;
+
+                            if (!stockChanged) return;
+                            changed = true;
+
+                            allTable?.querySelectorAll('[data-created-product-id]').forEach(row => {
+                                if (String(row.dataset.createdProductId) !== String(product.id)) return;
+
+                                const stockCell = row.querySelectorAll('.product-number')[1];
+                                if (stockCell) stockCell.textContent = String(product.stock ?? 0);
+
+                                const status = getCreatedProductStatus(product.stock, product.approvalStatus);
+                                row.dataset.status = status.slug;
+                                const statusBadge = row.querySelector('.status-badge');
+                                if (statusBadge) {
+                                    statusBadge.className = `status-badge ${status.className}`;
+                                    statusBadge.textContent = status.label;
+                                }
+                            });
+                        });
+
+                        if (changed) {
+                            saveCreatedProducts();
+                            filterProducts();
+                        }
+                    } catch (error) {
+                        console.error('[Seller inventory] Unable to refresh stock from the server:', error);
+                    }
+                }
+
+                window.addEventListener('focus', syncInventoryStock);
+                window.setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        syncInventoryStock();
+                    }
+                }, 15000);
 
                 async function permanentlyDeleteCurrentProduct() {
                     const product = getCreatedProductFromRow(currentProductRow);

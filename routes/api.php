@@ -127,6 +127,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
             Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
+            Route::post('/orders/{order}/cancel-shipment', [OrderStatusController::class, 'cancelScheduledShipment']);
+            Route::post('/orders/{order}/cancellation-requests/{cancellationRequest}/approve', [OrderStatusController::class, 'approveCancellationRequest']);
+            Route::post('/orders/{order}/cancellation-requests/{cancellationRequest}/reject', [OrderStatusController::class, 'rejectCancellationRequest']);
             Route::post('/orders/{order}/waybill', [OrderStatusController::class, 'waybill']);
             Route::get('/shipping-status', [ShippingStatusController::class, 'index']);
             Route::get('/shipping/{order}', [ShippingStatusController::class, 'show']);

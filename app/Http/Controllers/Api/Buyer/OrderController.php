@@ -7,6 +7,7 @@ use App\Models\Admin\CommissionTransaction;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\ComplaintUpdate;
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderCancellationRequest;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
@@ -28,7 +29,7 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('buyer_id', $request->user()->id)
-            ->with(['seller:id,store_name', 'items', 'complaints'])
+            ->with(['seller:id,store_name', 'items', 'complaints', 'latestCancellationRequest'])
             ->latest()
             ->paginate(50);
 
@@ -40,7 +41,9 @@ class OrderController extends Controller
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
                 'status' => $order->status,
-                'can_cancel' => in_array($order->status, ['pending', 'new'], true),
+                'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
+                    && $order->latestCancellationRequest?->status !== 'pending',
+                'cancellation_request' => $order->latestCancellationRequest,
                 'created_at' => $order->created_at?->toISOString(),
                 'complaint' => $order->complaints->first() ? [
                     'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
@@ -231,7 +234,14 @@ class OrderController extends Controller
 
     public function cancel(Request $request, Order $order): JsonResponse
     {
-        $cancelledOrder = DB::transaction(function () use ($request, $order): Order {
+        abort_unless($order->buyer_id === $request->user()->id, 404);
+
+        $validated = $request->validate([
+            'reason' => ['required', Rule::in(OrderCancellationRequest::BUYER_REASONS)],
+            'other_reason' => ['required_if:reason,other', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $result = DB::transaction(function () use ($request, $order, $validated): array {
             $lockedOrder = Order::query()
                 ->lockForUpdate()
                 ->findOrFail($order->id);
@@ -239,39 +249,98 @@ class OrderController extends Controller
             abort_unless($lockedOrder->buyer_id === $request->user()->id, 404);
 
             if ($lockedOrder->status === 'cancelled') {
-                return $lockedOrder->load(['seller:id,store_name', 'items']);
+                return [
+                    'order' => $lockedOrder,
+                    'request' => $lockedOrder->latestCancellationRequest,
+                    'auto_cancelled' => false,
+                    'already_cancelled' => true,
+                ];
             }
 
             abort_unless(
-                in_array($lockedOrder->status, ['pending', 'new'], true),
+                in_array($lockedOrder->status, ['pending', 'new', 'preparing', 'to_ship'], true),
                 422,
                 'This order can no longer be cancelled.'
             );
 
-            $this->inventory->restoreOrder($lockedOrder);
+            $pendingRequest = $lockedOrder->cancellationRequests()
+                ->where('status', 'pending')
+                ->latest('id')
+                ->first();
 
-            $previousStatus = $lockedOrder->status;
-            $lockedOrder->update(['status' => 'cancelled']);
+            if ($pendingRequest) {
+                return [
+                    'order' => $lockedOrder,
+                    'request' => $pendingRequest,
+                    'auto_cancelled' => false,
+                    'already_cancelled' => false,
+                ];
+            }
 
-            OrderStatusHistory::create([
+            $autoCancelled = $lockedOrder->created_at !== null
+                && now()->lessThanOrEqualTo($lockedOrder->created_at->copy()->addHours(5));
+            $cancellationRequest = OrderCancellationRequest::create([
                 'order_id' => $lockedOrder->id,
-                'from_status' => $previousStatus,
-                'to_status' => 'cancelled',
-                'changed_by' => $request->user()->id,
-                'notes' => 'Cancelled by buyer; reserved stock was restored.',
+                'buyer_id' => $lockedOrder->buyer_id,
+                'status' => $autoCancelled ? 'approved' : 'pending',
+                'buyer_reason' => $validated['reason'],
+                'buyer_other_reason' => $validated['reason'] === 'other'
+                    ? trim($validated['other_reason'])
+                    : null,
+                'auto_approved' => $autoCancelled,
+                'requested_at' => now(),
+                'decided_at' => $autoCancelled ? now() : null,
             ]);
 
-            return $lockedOrder->load(['seller:id,store_name', 'items']);
+            if ($autoCancelled) {
+                $this->finalizeBuyerCancellation($lockedOrder, $cancellationRequest);
+            }
+
+            return [
+                'order' => $lockedOrder,
+                'request' => $cancellationRequest,
+                'auto_cancelled' => $autoCancelled,
+                'already_cancelled' => false,
+            ];
         });
 
+        $cancelled = $result['auto_cancelled'];
+        $alreadyCancelled = $result['already_cancelled'];
+
         return response()->json([
-            'message' => 'Order cancelled and stock restored.',
+            'message' => $alreadyCancelled
+                ? 'This order has already been cancelled.'
+                : ($cancelled
+                        ? 'Order cancelled and stock restored.'
+                        : 'Cancellation request sent to seller.'),
             'data' => [
-                'id' => $cancelledOrder->id,
-                'order_number' => $cancelledOrder->order_number,
-                'status' => $cancelledOrder->status,
+                'id' => $result['order']->id,
+                'order_number' => $result['order']->order_number,
+                'status' => $result['order']->status,
                 'can_cancel' => false,
+                'auto_cancelled' => $cancelled,
+                'cancellation_request' => $result['request'],
             ],
+        ], $cancelled || $alreadyCancelled ? 200 : 202);
+    }
+
+    private function finalizeBuyerCancellation(Order $order, OrderCancellationRequest $cancellationRequest): void
+    {
+        $this->inventory->restoreOrder($order);
+
+        $previousStatus = $order->status;
+        $order->update(['status' => 'cancelled']);
+
+        $reason = $cancellationRequest->buyer_reason === 'other'
+            ? 'Other: '.$cancellationRequest->buyer_other_reason
+            : $cancellationRequest->buyer_reason;
+
+        OrderStatusHistory::create([
+            'order_id' => $order->id,
+            'from_status' => $previousStatus,
+            'to_status' => 'cancelled',
+            'changed_by' => $cancellationRequest->buyer_id,
+            'notes' => 'Cancelled by buyer within five hours of placement. Reason: '.$reason,
         ]);
     }
 

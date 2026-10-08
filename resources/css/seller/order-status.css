@@ -423,6 +423,19 @@
 .print-waybill-button:hover { background: #fff6f4; }
 .print-waybill-button:disabled { opacity: .6; cursor: wait; }
 
+.cancel-shipment-button {
+    height: 45px;
+    padding: 0 18px;
+    border: 1px solid #9E241F;
+    border-radius: 9px;
+    color: #9E241F;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cancel-shipment-button:hover { background: #fff6f4; }
+
 .order-modal-action-button {
     height: 45px;
     padding: 0 28px;

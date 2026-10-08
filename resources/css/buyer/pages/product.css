@@ -440,6 +440,20 @@
             gap: 8px;
         }
 
+        #variationsWrap {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .buyer-variation-group-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #625A57;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
         .variation-button {
             min-height: 32px;
             padding: 6px 12px;
@@ -460,6 +474,19 @@
             border-color: #E63E48;
             background: #FFF7F5;
             color: #BE2632;
+        }
+
+        .variation-button:disabled {
+            border-color: #E8E3E1;
+            background: #F7F5F4;
+            color: #B8B1AE;
+            cursor: not-allowed;
+        }
+
+        .variation-button:disabled:hover {
+            border-color: #E8E3E1;
+            background: #F7F5F4;
+            color: #B8B1AE;
         }
 
         .quantity-wrap {

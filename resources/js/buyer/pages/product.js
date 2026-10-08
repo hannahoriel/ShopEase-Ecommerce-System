@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ── Gallery state ──────────────────────────────────────── */
     let galleryPhotos = [];
     let activeGalleryIndex = 0;
+    let currentProduct = null;
+    let selectedProductOptions = {};
+    let connectedProductVariants = [];
 
     function renderGallery(photos) {
         galleryPhotos = photos.length ? photos : [];
@@ -83,6 +86,101 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ── Render product data into DOM ───────────────────────── */
     function renderProduct(p) {
+        currentProduct = p;
+        const variantGroups = [
+            { key: 'variations', field: 'variation', label: 'Variations', options: p.variations || [] },
+            { key: 'colors', field: 'color', label: 'Colors', options: p.colors || [] },
+            { key: 'sizes', field: 'size', label: 'Sizes', options: p.sizes || [] },
+        ];
+        connectedProductVariants = Array.isArray(p.connected_variants)
+            ? p.connected_variants
+            : [];
+        const activeConnectedVariants = connectedProductVariants
+            .map(variant => ({
+                ...variant,
+                choices: variant.choices || {
+                    variations: variant.variations ?? variant.variation,
+                    colors: variant.colors ?? variant.color,
+                    sizes: variant.sizes ?? variant.size,
+                },
+            }));
+
+        if (activeConnectedVariants.length) {
+            const groupKeys = ['variations', 'colors', 'sizes']
+                .filter(key => activeConnectedVariants.some(variant => variant.choices[key] != null));
+            variantGroups.splice(0, variantGroups.length, ...groupKeys.map(key => {
+                const values = [...new Set(activeConnectedVariants
+                    .map(variant => variant.choices[key])
+                    .filter(value => value != null && value !== '')
+                    .map(String))];
+                return {
+                    key,
+                    field: key === 'variations' ? 'variation' : key.slice(0, -1),
+                    label: key[0].toUpperCase() + key.slice(1),
+                    options: values.map(name => ({ name })),
+                };
+            }));
+            const firstAvailable = activeConnectedVariants.find(variant => variant.available && Number(variant.stock) > 0)
+                || activeConnectedVariants[0];
+            selectedProductOptions = Object.fromEntries(variantGroups.map(group => [
+                group.field,
+                firstAvailable.choices[group.key] == null ? '' : String(firstAvailable.choices[group.key]),
+            ]));
+        } else {
+            selectedProductOptions = Object.fromEntries(variantGroups
+                .filter(group => group.options.length)
+                .map(group => [group.field, String(group.options[0].name)]));
+        }
+
+        const updateSelectedVariant = () => {
+            const matchingVariants = activeConnectedVariants.filter(variant =>
+                variantGroups.every(group => {
+                    const selected = selectedProductOptions[group.field];
+                    return !selected || String(variant.choices[group.key] ?? '') === selected;
+                })
+            );
+            const selectedVariant = matchingVariants.find(variant =>
+                variant.available && Number(variant.stock) > 0
+            ) || null;
+            const priceEl = document.getElementById('pricePanel');
+            const stockLabel = document.getElementById('stockLabel');
+            const qtyInput = document.getElementById('productQuantity');
+            const addToCart = document.getElementById('addToCartButton');
+            const buyNow = document.getElementById('buyNowButton');
+
+            if (activeConnectedVariants.length) {
+                if (priceEl) {
+                    priceEl.innerHTML = `<strong>${escapeHtml(money(selectedVariant?.final_price ?? p.price))}</strong>`;
+                }
+                const stock = Number(selectedVariant?.stock || 0);
+                if (stockLabel) stockLabel.textContent = `${stock} In Stock`;
+                if (qtyInput) {
+                    qtyInput.max = String(Math.max(1, stock));
+                    qtyInput.value = String(Math.min(Number(qtyInput.value || 1), Math.max(1, stock)));
+                }
+                if (addToCart) addToCart.disabled = !selectedVariant;
+                if (buyNow) buyNow.disabled = !selectedVariant;
+            }
+
+            const wrap = document.getElementById('variationsWrap');
+            if (!wrap) return;
+            wrap.querySelectorAll('.variation-button').forEach(button => {
+                const field = button.dataset.optionType;
+                const value = button.dataset.optionValue;
+                const choices = { ...selectedProductOptions, [field]: value };
+                const hasAvailableVariant = !activeConnectedVariants.length || activeConnectedVariants.some(variant =>
+                    variant.available &&
+                    Number(variant.stock) > 0 &&
+                    variantGroups.every(group => {
+                        const selected = choices[group.field];
+                        return !selected || String(variant.choices[group.key] ?? '') === selected;
+                    })
+                );
+                button.disabled = !hasAvailableVariant;
+                button.classList.toggle('selected', selectedProductOptions[field] === value);
+            });
+        };
+
         // Breadcrumb
         const bc = document.getElementById('breadcrumbProduct');
         if (bc) bc.textContent = p.name.length > 58 ? p.name.slice(0, 58) + '…' : p.name;
@@ -120,39 +218,59 @@ document.addEventListener('DOMContentLoaded', function () {
         const variationsRow  = document.getElementById('variationsRow');
         const variationsWrap = document.getElementById('variationsWrap');
         const variationsLabel = document.getElementById('variationsLabel');
-        const allOptions = [];
-
-        if (p.variations?.length) {
-            p.variations.forEach(v => allOptions.push({ label: v.name, type: 'variation' }));
-            if (variationsLabel) variationsLabel.textContent = 'Variations';
-        }
-        if (p.colors?.length) {
-            p.colors.forEach(c => allOptions.push({ label: c.name, type: 'color' }));
-            if (variationsLabel && !p.variations?.length) variationsLabel.textContent = 'Colors';
-        }
-        if (p.sizes?.length) {
-            p.sizes.forEach(s => allOptions.push({ label: s.name, type: 'size' }));
-            if (variationsLabel && !p.variations?.length && !p.colors?.length) variationsLabel.textContent = 'Sizes';
-        }
-
-        if (allOptions.length && variationsRow && variationsWrap) {
+        const visibleGroups = variantGroups.filter(group => group.options.length);
+        if (visibleGroups.length && variationsRow && variationsWrap) {
             variationsRow.style.display = '';
-            variationsWrap.innerHTML = allOptions.map((opt, i) =>
-                `<button type="button" class="variation-button ${i === 0 ? 'selected' : ''}" data-option-type="${escapeHtml(opt.type)}">${escapeHtml(opt.label)}</button>`
-            ).join('');
+            if (variationsLabel) variationsLabel.textContent = activeConnectedVariants.length ? 'Choose options' : visibleGroups.length === 1 ? visibleGroups[0].label : 'Options';
+            variationsWrap.innerHTML = visibleGroups.map(group => `
+                <div class="buyer-variation-group">
+                    ${visibleGroups.length > 1 ? `<strong class="buyer-variation-group-label">${escapeHtml(group.label)}</strong>` : ''}
+                    <div class="variations-wrap">
+                        ${group.options.map(option => `
+                            <button type="button"
+                                class="variation-button ${selectedProductOptions[group.field] === String(option.name) ? 'selected' : ''}"
+                                data-option-type="${escapeHtml(group.field)}"
+                                data-option-value="${escapeHtml(String(option.name))}">
+                                ${escapeHtml(option.name)}
+                            </button>`).join('')}
+                    </div>
+                </div>`).join('');
             variationsWrap.querySelectorAll('.variation-button').forEach((btn) => {
                 btn.addEventListener('click', function () {
-                    variationsWrap.querySelectorAll('.variation-button').forEach(b => b.classList.remove('selected'));
-                    this.classList.add('selected');
+                    selectedProductOptions[this.dataset.optionType] = this.dataset.optionValue;
+                    const selectedGroup = variantGroups.find(group => group.field === this.dataset.optionType);
+                    const compatibleVariants = activeConnectedVariants.filter(variant =>
+                        variant.available &&
+                        Number(variant.stock) > 0 &&
+                        String(variant.choices[selectedGroup?.key] ?? '') === this.dataset.optionValue
+                    );
+                    if (compatibleVariants.length && !compatibleVariants.some(variant =>
+                        variantGroups.every(group =>
+                            !selectedProductOptions[group.field] ||
+                            String(variant.choices[group.key] ?? '') === selectedProductOptions[group.field]
+                        )
+                    )) {
+                        const nextVariant = compatibleVariants[0];
+                        variantGroups.forEach(group => {
+                            selectedProductOptions[group.field] = String(nextVariant.choices[group.key] ?? '');
+                        });
+                    }
+                    updateSelectedVariant();
                 });
             });
+            updateSelectedVariant();
+        } else if (variationsRow && variationsWrap) {
+            variationsRow.style.display = 'none';
+            variationsWrap.replaceChildren();
         }
 
         // Stock
         const stockLabel = document.getElementById('stockLabel');
         const qtyInput   = document.getElementById('productQuantity');
-        if (stockLabel) stockLabel.textContent = `${p.stock ?? 0} In Stock`;
-        if (qtyInput)   qtyInput.max = String(p.stock ?? 99);
+        if (!activeConnectedVariants.length) {
+            if (stockLabel) stockLabel.textContent = `${p.stock ?? 0} In Stock`;
+            if (qtyInput) qtyInput.max = String(p.stock ?? 99);
+        }
 
         // Add to Cart button product id
         const atcBtn = document.getElementById('addToCartButton');
@@ -373,9 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!pid || !apiToken) return;
 
         const qty       = Number(quantityInput?.value || 1);
-        const variation = document.querySelector('.variation-button.selected[data-option-type="variation"]')?.textContent.trim() || null;
-        const color     = document.querySelector('.variation-button.selected[data-option-type="color"]')?.textContent.trim() || null;
-        const size      = document.querySelector('.variation-button.selected[data-option-type="size"]')?.textContent.trim() || null;
+        const { variation = null, color = null, size = null } = selectedProductOptions;
 
         this.disabled = true;
 
@@ -393,9 +509,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!pid || !apiToken) return;
 
         const qty       = Number(quantityInput?.value || 1);
-        const variation = document.querySelector('.variation-button.selected[data-option-type="variation"]')?.textContent.trim() || null;
-        const color     = document.querySelector('.variation-button.selected[data-option-type="color"]')?.textContent.trim() || null;
-        const size      = document.querySelector('.variation-button.selected[data-option-type="size"]')?.textContent.trim() || null;
+        const { variation = null, color = null, size = null } = selectedProductOptions;
 
         this.disabled = true;
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderCancellationRequest;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Seller\Seller;
@@ -39,7 +40,12 @@ class OrderStatusController extends Controller
         $seller = $this->sellerFor($request->user());
         $query = Order::query()
             ->where('seller_id', $seller->id)
-            ->with(['buyer:id,name,email,contact_no', 'items.product:id,name,photos']);
+            ->with([
+                'buyer:id,name,email,contact_no',
+                'items.product:id,name,photos',
+                'latestCancellationRequest.buyer:id,name',
+                'latestCancellationRequest.decidedBy:id,name',
+            ]);
 
         if ($request->filled('status')) {
             $query->whereIn('status', (array) $request->input('status'));
@@ -67,6 +73,8 @@ class OrderStatusController extends Controller
             'buyer:id,name,email,contact_no',
             'items.product:id,name,photos',
             'statusHistory.changedBy:id,name',
+            'latestCancellationRequest.buyer:id,name',
+            'latestCancellationRequest.decidedBy:id,name',
         ]);
 
         return response()->json($order);
@@ -97,19 +105,134 @@ class OrderStatusController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if ($order->status !== 'preparing') {
-            abort(422, 'Prepare the order before scheduling pickup.');
-        }
-
         DB::transaction(function () use ($order, $validated, $request): void {
-            $order->update([
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            abort_unless($lockedOrder->seller_id === $this->sellerFor($request->user())->id, 404);
+            abort_unless($lockedOrder->status === 'preparing', 422, 'Prepare the order before scheduling pickup.');
+
+            $lockedOrder->update([
                 'pickup_date' => $validated['pickup_date'],
                 'pickup_time' => $validated['pickup_time'],
             ]);
-            $this->changeStatus($order, 'to_ship', $request->user(), $validated['notes'] ?? null);
+            $this->changeStatus($lockedOrder, 'to_ship', $request->user(), $validated['notes'] ?? null);
         });
 
         return response()->json($order->fresh(['statusHistory']));
+    }
+
+    public function cancelScheduledShipment(Request $request, Order $order): JsonResponse
+    {
+        $order = $this->ownedOrder($request->user(), $order);
+        $validated = $request->validate([
+            'reason' => ['required', Rule::in([
+                'Buyer requested cancellation',
+                'Item is out of stock',
+                'Unable to fulfill the order',
+                'Pickup schedule unavailable',
+                'Other',
+            ])],
+            'other_reason' => ['required_if:reason,Other', 'nullable', 'string', 'max:500'],
+        ]);
+
+        DB::transaction(function () use ($order, $validated, $request): void {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            abort_unless($lockedOrder->seller_id === $this->sellerFor($request->user())->id, 404);
+            abort_unless($lockedOrder->status === 'to_ship', 422, 'Only a scheduled shipment can be cancelled here.');
+
+            $reason = $validated['reason'] === 'Other'
+                ? 'Other: '.trim($validated['other_reason'])
+                : $validated['reason'];
+
+            $this->inventory->restoreOrder($lockedOrder);
+
+            $lockedOrder->update(['status' => 'cancelled']);
+            OrderStatusHistory::create([
+                'order_id' => $lockedOrder->id,
+                'from_status' => 'to_ship',
+                'to_status' => 'cancelled',
+                'changed_by' => $request->user()->id,
+                'notes' => 'Scheduled shipment cancelled by seller. Reason: '.$reason,
+            ]);
+        });
+
+        return response()->json($order->fresh(['statusHistory']));
+    }
+
+    public function approveCancellationRequest(Request $request, Order $order, OrderCancellationRequest $cancellationRequest): JsonResponse
+    {
+        $order = $this->ownedOrder($request->user(), $order);
+        abort_unless($cancellationRequest->order_id === $order->id, 404);
+
+        DB::transaction(function () use ($order, $cancellationRequest, $request): void {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $lockedRequest = OrderCancellationRequest::query()->lockForUpdate()->findOrFail($cancellationRequest->id);
+            abort_unless($lockedRequest->order_id === $lockedOrder->id, 404);
+            abort_unless($lockedRequest->status === 'pending', 422, 'This cancellation request has already been reviewed.');
+            abort_unless(
+                in_array($lockedOrder->status, ['pending', 'new', 'preparing', 'to_ship'], true),
+                422,
+                'This order can no longer be cancelled.'
+            );
+
+            $this->inventory->restoreOrder($lockedOrder);
+            $previousStatus = $lockedOrder->status;
+            $lockedOrder->update(['status' => 'cancelled']);
+            $lockedRequest->update([
+                'status' => 'approved',
+                'decided_by' => $request->user()->id,
+                'decided_at' => now(),
+            ]);
+
+            OrderStatusHistory::create([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $previousStatus,
+                'to_status' => 'cancelled',
+                'changed_by' => $request->user()->id,
+                'notes' => 'Buyer cancellation request approved by seller.',
+            ]);
+        });
+
+        return response()->json($order->fresh(['latestCancellationRequest', 'statusHistory']));
+    }
+
+    public function rejectCancellationRequest(Request $request, Order $order, OrderCancellationRequest $cancellationRequest): JsonResponse
+    {
+        $order = $this->ownedOrder($request->user(), $order);
+        abort_unless($cancellationRequest->order_id === $order->id, 404);
+
+        $validated = $request->validate([
+            'reason' => ['required', Rule::in(OrderCancellationRequest::SELLER_REJECTION_REASONS)],
+            'other_reason' => ['required_if:reason,other', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $reviewedRequest = DB::transaction(function () use ($order, $cancellationRequest, $request, $validated): OrderCancellationRequest {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $lockedRequest = OrderCancellationRequest::query()->lockForUpdate()->findOrFail($cancellationRequest->id);
+            abort_unless($lockedRequest->order_id === $lockedOrder->id, 404);
+            abort_unless($lockedRequest->status === 'pending', 422, 'This cancellation request has already been reviewed.');
+            abort_unless(
+                in_array($lockedOrder->status, ['pending', 'new', 'preparing', 'to_ship'], true),
+                422,
+                'This cancellation request can no longer be reviewed.'
+            );
+
+            $lockedRequest->update([
+                'status' => 'rejected',
+                'decided_by' => $request->user()->id,
+                'seller_reason' => $validated['reason'],
+                'seller_other_reason' => $validated['reason'] === 'other'
+                    ? trim($validated['other_reason'])
+                    : null,
+                'decided_at' => now(),
+            ]);
+
+            return $lockedRequest->fresh();
+        });
+
+        return response()->json([
+            'message' => 'Cancellation request rejected.',
+            'data' => $reviewedRequest,
+        ]);
     }
 
     public function waybill(Request $request, Order $order): JsonResponse
@@ -162,6 +285,12 @@ class OrderStatusController extends Controller
 
     private function changeStatus(Order $order, string $newStatus, User $user, ?string $notes): void
     {
+        abort_if(
+            $order->latestCancellationRequest()->where('status', 'pending')->exists(),
+            422,
+            'Review the pending buyer cancellation request before changing this order.'
+        );
+
         $allowedStatuses = self::TRANSITIONS[$order->status] ?? [];
         abort_unless(in_array($newStatus, $allowedStatuses, true), 422, "Order cannot move from {$order->status} to {$newStatus}.");
 
