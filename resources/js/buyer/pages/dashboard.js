@@ -342,10 +342,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             function buildProductCard(product) {
                 const productUrl = productBaseUrl + '?id=' + encodeURIComponent(product.id);
-                const hasImage   = product.image_url && !product.image_url.startsWith('data:');
+                const imageUrl = product.image_url || product.photos?.[0] || '';
+                const hasImage = typeof imageUrl === 'string' && imageUrl.trim() !== '';
 
                 const imageHtml = hasImage
-                    ? `<img src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
+                    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
                     : `<div class="product-art-placeholder" aria-hidden="true"></div>`;
 
                 return `
@@ -385,6 +386,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             function attachProductCardListeners() {
+                recommendedProducts?.querySelectorAll('.product-photo').forEach((image) => {
+                    image.addEventListener('error', () => {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'product-art-placeholder';
+                        placeholder.setAttribute('aria-hidden', 'true');
+                        image.replaceWith(placeholder);
+                    }, { once: true });
+                });
+
                 recommendedProducts?.querySelectorAll('.favorite-button').forEach((button) => {
                     button.addEventListener('click', (event) => {
                         event.preventDefault();
