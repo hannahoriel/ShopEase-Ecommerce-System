@@ -371,7 +371,40 @@
             {{-- ACTION --}}
             <div class="modal-section modal-footer-section">
                 <button type="button" id="printOrderWaybillButton" class="print-waybill-button" hidden>Print Waybill</button>
+                <button type="button" id="cancelScheduledShipmentButton" class="cancel-shipment-button" hidden>Cancel Scheduled Shipment</button>
                 <button type="button" id="orderModalActionButton" class="order-modal-action-button new-action"><span id="orderModalActionLabel">Prepare Order</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cancelScheduledShipmentModal" class="ui-modal" aria-hidden="true">
+        <div class="schedule-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cancelScheduledShipmentTitle">
+            <div class="flex items-center justify-between px-[28px] py-[20px] border-b border-[#D9D5D3]">
+                <div>
+                    <h2 id="cancelScheduledShipmentTitle" class="text-[19px] font-semibold text-[#17120F]">Cancel Scheduled Shipment</h2>
+                    <p class="mt-[4px] text-[12px] text-[#8A8582]">Select a reason. Cancelling will restore the reserved product stock.</p>
+                </div>
+                <button type="button" id="closeCancelScheduledShipment" class="w-[34px] h-[34px] rounded-full text-[#77716E] hover:bg-[#FFF2EE]" aria-label="Close cancellation form">×</button>
+            </div>
+            <div class="px-[28px] py-[24px]">
+                <label for="shipmentCancellationReason" class="block mb-[7px] text-[13px] font-semibold text-[#2F2926]">Cancellation reason</label>
+                <select id="shipmentCancellationReason" class="schedule-input" required>
+                    <option value="">Choose a reason</option>
+                    <option value="Buyer requested cancellation">Buyer requested cancellation</option>
+                    <option value="Item is out of stock">Item is out of stock</option>
+                    <option value="Unable to fulfill the order">Unable to fulfill the order</option>
+                    <option value="Pickup schedule unavailable">Pickup schedule unavailable</option>
+                    <option value="Other">Other</option>
+                </select>
+                <div id="shipmentCancellationOtherWrap" class="mt-[16px]" hidden>
+                    <label for="shipmentCancellationOtherReason" class="block mb-[7px] text-[13px] font-semibold text-[#2F2926]">Please specify</label>
+                    <textarea id="shipmentCancellationOtherReason" class="schedule-input" rows="3" maxlength="500" placeholder="Enter the cancellation reason"></textarea>
+                </div>
+                <p id="shipmentCancellationError" class="mt-[12px] text-[12px] text-red-700" role="alert" hidden></p>
+            </div>
+            <div class="flex justify-end items-center gap-[10px] px-[28px] py-[18px] border-t border-[#ECE7E5]">
+                <button type="button" id="cancelShipmentCancellation" class="h-[42px] px-[18px] rounded-[9px] border border-[#D9D3D0] bg-white text-[13px] font-medium text-[#625D5A]">Keep Shipment</button>
+                <button type="button" id="confirmShipmentCancellation" class="h-[42px] px-[20px] rounded-[9px] bg-[#9E241F] text-[13px] font-semibold text-white">Cancel Shipment</button>
             </div>
         </div>
     </div>

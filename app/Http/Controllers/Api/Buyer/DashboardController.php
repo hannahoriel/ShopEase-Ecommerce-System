@@ -75,7 +75,7 @@ class DashboardController extends Controller
             404
         );
 
-        $product->load(['seller', 'options', 'productSpecifications']);
+        $product->load(['seller', 'options', 'productSpecifications', 'connectedVariants']);
 
         return response()->json($this->serializeProduct($product, true));
     }
@@ -120,6 +120,7 @@ class DashboardController extends Controller
             $data['variations'] = $product->variations;
             $data['colors'] = $product->colors;
             $data['sizes'] = $product->sizes;
+            $data['connected_variants'] = $product->connected_variants;
             $data['specifications'] = $product->specifications;
         }
 

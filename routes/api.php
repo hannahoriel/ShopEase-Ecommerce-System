@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
+use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
@@ -90,12 +91,16 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/notifications', [BuyerNotificationController::class, 'index'])->name('buyer.api.notifications.index');
+            Route::patch('/notifications/{notification}/read', [BuyerNotificationController::class, 'markRead'])->name('buyer.api.notifications.read');
+            Route::post('/notifications/read-all', [BuyerNotificationController::class, 'markAllRead'])->name('buyer.api.notifications.read-all');
             Route::get('/dashboard/announcements', [BuyerDashboardController::class, 'announcements'])->name('buyer.api.dashboard.announcements');
             Route::get('/messages', [BuyerMessagesController::class, 'index'])->name('buyer.api.messages.index');
             Route::post('/messages/conversations', [BuyerMessagesController::class, 'storeConversation'])->name('buyer.api.messages.conversations.store');
             Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
             Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
+            Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
             Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
@@ -126,6 +131,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
             Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
+            Route::post('/orders/{order}/cancel-shipment', [OrderStatusController::class, 'cancelScheduledShipment']);
+            Route::post('/orders/{order}/cancellation-requests/{cancellationRequest}/approve', [OrderStatusController::class, 'approveCancellationRequest']);
+            Route::post('/orders/{order}/cancellation-requests/{cancellationRequest}/reject', [OrderStatusController::class, 'rejectCancellationRequest']);
             Route::post('/orders/{order}/waybill', [OrderStatusController::class, 'waybill']);
             Route::get('/shipping-status', [ShippingStatusController::class, 'index']);
             Route::get('/shipping/{order}', [ShippingStatusController::class, 'show']);

@@ -333,6 +333,13 @@ document.addEventListener('DOMContentLoaded', function () {
             'orderModalActionLabel'
         );
     const printWaybillButton = document.getElementById('printOrderWaybillButton');
+    const cancelScheduledShipmentButton = document.getElementById('cancelScheduledShipmentButton');
+    const cancelScheduledShipmentModal = document.getElementById('cancelScheduledShipmentModal');
+    const shipmentCancellationReason = document.getElementById('shipmentCancellationReason');
+    const shipmentCancellationOtherWrap = document.getElementById('shipmentCancellationOtherWrap');
+    const shipmentCancellationOtherReason = document.getElementById('shipmentCancellationOtherReason');
+    const shipmentCancellationError = document.getElementById('shipmentCancellationError');
+    const confirmShipmentCancellation = document.getElementById('confirmShipmentCancellation');
 
     const orderModalIconBox =
         document.getElementById(
@@ -1092,6 +1099,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const isNewOrder =
             status === 'new' || status === 'pending';
         if (printWaybillButton) printWaybillButton.hidden = !isNewOrder;
+        if (cancelScheduledShipmentButton) cancelScheduledShipmentButton.hidden = !isReady;
 
         if (
             orderModalOrderId
@@ -1385,6 +1393,95 @@ document.addEventListener('DOMContentLoaded', function () {
             210
         );
     }
+
+    function closeShipmentCancellationModal() {
+        cancelScheduledShipmentModal?.classList.remove('modal-open');
+        cancelScheduledShipmentModal?.setAttribute('aria-hidden', 'true');
+        unlockBody();
+    }
+
+    cancelScheduledShipmentButton?.addEventListener('click', () => {
+        if (!selectedOrderRow) return;
+
+        closeOrderDetailsModal(true);
+        shipmentCancellationReason.value = '';
+        shipmentCancellationOtherReason.value = '';
+        shipmentCancellationOtherWrap.hidden = true;
+        shipmentCancellationError.hidden = true;
+        cancelScheduledShipmentModal.classList.add('modal-open');
+        cancelScheduledShipmentModal.setAttribute('aria-hidden', 'false');
+        shipmentCancellationReason.focus();
+    });
+
+    shipmentCancellationReason?.addEventListener('change', () => {
+        const isOther = shipmentCancellationReason.value === 'Other';
+        shipmentCancellationOtherWrap.hidden = !isOther;
+        if (!isOther) shipmentCancellationOtherReason.value = '';
+    });
+
+    document.getElementById('closeCancelScheduledShipment')?.addEventListener('click', closeShipmentCancellationModal);
+    document.getElementById('cancelShipmentCancellation')?.addEventListener('click', closeShipmentCancellationModal);
+    cancelScheduledShipmentModal?.addEventListener('click', (event) => {
+        if (event.target === cancelScheduledShipmentModal) closeShipmentCancellationModal();
+    });
+
+    confirmShipmentCancellation?.addEventListener('click', async () => {
+        if (!selectedOrderRow) return;
+
+        const reason = shipmentCancellationReason.value;
+        const otherReason = shipmentCancellationOtherReason.value.trim();
+        if (!reason || (reason === 'Other' && !otherReason)) {
+            shipmentCancellationError.textContent = reason === 'Other'
+                ? 'Please enter the reason.'
+                : 'Please select a cancellation reason.';
+            shipmentCancellationError.hidden = false;
+            return;
+        }
+
+        confirmShipmentCancellation.disabled = true;
+        confirmShipmentCancellation.textContent = 'Cancelling…';
+        shipmentCancellationError.hidden = true;
+
+        try {
+            const response = await fetch(`${config.ordersUrl}/${selectedOrderRow.dataset.orderId}/cancel-shipment`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    reason,
+                    ...(reason === 'Other' ? { other_reason: otherReason } : {}),
+                }),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const validationMessage = Object.values(result.errors || {}).flat()[0];
+                throw new Error(validationMessage || result.message || `Could not cancel shipment (${response.status}).`);
+            }
+
+            selectedOrderRow.dataset.status = 'cancelled';
+            selectedOrderRow.dataset.tab = 'cancelled';
+            const rowStatus = selectedOrderRow.querySelector('.order-status');
+            if (rowStatus) {
+                rowStatus.className = 'order-status';
+                rowStatus.textContent = 'Cancelled';
+            }
+
+            closeShipmentCancellationModal();
+            filterOrders();
+            window.alert('Scheduled shipment cancelled and reserved stock restored.');
+        } catch (error) {
+            shipmentCancellationError.textContent = error.message;
+            shipmentCancellationError.hidden = false;
+        } finally {
+            confirmShipmentCancellation.disabled = false;
+            confirmShipmentCancellation.textContent = 'Cancel Shipment';
+        }
+    });
 
     function openScheduleShipmentModal() {
         if (
@@ -1907,6 +2004,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 event.key !==
                 'Escape'
             ) {
+                return;
+            }
+
+            if (cancelScheduledShipmentModal?.classList.contains('modal-open')) {
+                closeShipmentCancellationModal();
                 return;
             }
 

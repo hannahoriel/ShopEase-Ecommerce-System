@@ -108,6 +108,126 @@ class SellerInventoryTest extends TestCase
         ]);
     }
 
+    public function test_seller_edit_form_persists_product_options_variants_specifications_and_photos(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('inventory-edit@example.com');
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Before edit',
+            'sku' => 'EDIT-1',
+            'description' => 'Original description',
+            'price' => 10,
+            'stock_quantity' => 2,
+            'category' => 'electronics',
+            'photos' => ['https://example.test/old.jpg'],
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($sellerUser)->post("/seller/inventory/products/{$product->id}", [
+            '_method' => 'PATCH',
+            'title' => 'After edit',
+            'sku' => 'EDIT-1',
+            'description' => 'Updated description',
+            'status' => 'pending',
+            'pricing_mode' => 'varies',
+            'pricing_source' => 'variations',
+            'category' => 'electronics-and-gadgets',
+            'photos' => ['data:image/jpeg;base64,ZmFrZQ=='],
+            'variation_items' => [
+                ['name' => 'Large', 'price' => '25.00', 'price_type' => 'base', 'stock' => '4'],
+            ],
+            'color_items' => [
+                ['name' => 'Blue', 'price' => '0', 'price_type' => 'addon', 'stock' => '4'],
+            ],
+            'category_specifications' => [
+                'brand' => 'ShopEase',
+            ],
+            'variant_combinations' => json_encode([[
+                'variations' => 'Large',
+                'colors' => 'Blue',
+                'pricing_mode' => 'varies',
+                'pricing_source' => 'variations',
+                'base_price' => 25,
+                'additions' => ['colors' => 2],
+                'additional_price' => 2,
+                'final_price' => 27,
+                'stock' => 4,
+                'available' => true,
+            ]]),
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('name', 'After edit')
+            ->assertJsonPath('description', 'Updated description')
+            ->assertJsonPath('price', '27.00')
+            ->assertJsonPath('stock_quantity', 4)
+            ->assertJsonPath('status', 'pending')
+            ->assertJsonPath('photos.0', 'data:image/jpeg;base64,ZmFrZQ==')
+            ->assertJsonPath('variations.0.name', 'Large')
+            ->assertJsonPath('colors.0.name', 'Blue')
+            ->assertJsonPath('specifications.brand', 'ShopEase')
+            ->assertJsonPath('connected_variants.0.final_price', 27);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'name' => 'After edit',
+            'status' => 'pending',
+            'stock_quantity' => 4,
+        ]);
+        $this->assertDatabaseHas('product_options', [
+            'product_id' => $product->id,
+            'type' => 'variation',
+            'name' => 'Large',
+            'price' => 25,
+            'stock' => 4,
+            'price_type' => 'base',
+        ]);
+        $this->assertDatabaseHas('product_variant_combinations', [
+            'product_id' => $product->id,
+            'final_price' => 27,
+            'stock' => 4,
+        ]);
+
+        $this->actingAs($sellerUser)
+            ->patchJson("/seller/inventory/products/{$product->id}", [
+                'name' => 'Details editor update',
+                'sku' => 'EDIT-1',
+                'description' => 'Saved from Product Details.',
+                'price' => 30,
+                'stock_quantity' => 5,
+                'category' => 'electronics-and-gadgets',
+                'pricing_mode' => 'varies',
+                'pricing_source' => 'variations',
+                'status' => 'pending',
+                'photos' => ['data:image/jpeg;base64,bmV3'],
+                'category_specifications' => ['brand' => 'ShopEase Updated'],
+                'variation_items' => [
+                    ['name' => 'Large', 'price' => 30, 'price_type' => 'base', 'stock' => 5],
+                ],
+                'color_items' => [
+                    ['name' => 'Blue', 'price' => 0, 'price_type' => 'addon', 'stock' => 5],
+                ],
+                'variant_combinations' => [[
+                    'variations' => 'Large',
+                    'colors' => 'Blue',
+                    'pricing_mode' => 'varies',
+                    'pricing_source' => 'variations',
+                    'base_price' => 30,
+                    'additions' => ['colors' => 3],
+                    'additional_price' => 3,
+                    'final_price' => 33,
+                    'stock' => 5,
+                    'available' => true,
+                ]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('name', 'Details editor update')
+            ->assertJsonPath('price', '33.00')
+            ->assertJsonPath('stock_quantity', 5)
+            ->assertJsonPath('specifications.brand', 'ShopEase Updated')
+            ->assertJsonPath('connected_variants.0.final_price', 33);
+    }
+
     public function test_variable_price_product_uses_and_persists_buyer_option_price_and_stock(): void
     {
         [$sellerUser, $seller] = $this->createSeller('variable-price@example.com');

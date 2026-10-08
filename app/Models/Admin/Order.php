@@ -78,6 +78,16 @@ class Order extends Model
         return $this->hasMany(OrderStatusHistory::class)->latest();
     }
 
+    public function cancellationRequests(): HasMany
+    {
+        return $this->hasMany(OrderCancellationRequest::class);
+    }
+
+    public function latestCancellationRequest(): HasOne
+    {
+        return $this->hasOne(OrderCancellationRequest::class)->latestOfMany();
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);

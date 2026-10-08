@@ -10005,9 +10005,117 @@ document.addEventListener(
                     updateTabView();
                 }
 
+                function buildInventoryUpdatePayload(product) {
+                    const groups = ['variations', 'colors', 'sizes'];
+                    const optionPayload = Object.fromEntries(
+                        groups.map(function (group) {
+                            return [
+                                group,
+                                (Array.isArray(product[group]) ? product[group] : []).map(function (option) {
+                                    return {
+                                        name: option.name,
+                                        price: Number(option.price || 0),
+                                        stock: Number(option.stock || 0),
+                                        price_type: option.price_type || option.priceType || 'addon'
+                                    };
+                                })
+                            ];
+                        })
+                    );
+                    const specifications = {};
+
+                    Object.entries(product.specifications || {}).forEach(function ([key, value]) {
+                        const cleanKey = String(key)
+                            .replace(/^category_specifications\[/, '')
+                            .replace(/\]$/, '');
+                        specifications[cleanKey] = String(value ?? '');
+                    });
+
+                    const connectedVariants = (
+                        Array.isArray(product.connectedVariants)
+                            ? product.connectedVariants
+                            : []
+                    ).map(function (variant) {
+                        const choices = variant.choices || {};
+                        const normalizedChoices = {};
+
+                        groups.forEach(function (group) {
+                            const singular = group === 'variations' ? 'variation' : group.slice(0, -1);
+                            const choice = choices[group] ?? variant[group] ?? variant[singular];
+                            if (choice !== undefined && choice !== null && choice !== '') {
+                                normalizedChoices[group] = String(choice);
+                            }
+                        });
+
+                        const pricingMode =
+                            product.pricingMode || 'fixed';
+                        const pricingSource =
+                            product.pricingSource || null;
+                        const sourceOption = pricingSource
+                            ? (Array.isArray(product[pricingSource]) ? product[pricingSource] : []).find(
+                                function (option) {
+                                    return String(option.name || '') ===
+                                        String(normalizedChoices[pricingSource] || '');
+                                }
+                            )
+                            : null;
+                        const basePrice = Number(
+                            pricingMode === 'fixed'
+                                ? product.basePrice ?? product.base_price ?? 0
+                                : sourceOption?.price ?? variant.base_price ?? variant.basePrice ?? product.basePrice ?? 0
+                        );
+                        const additionalPrice = pricingMode === 'varies'
+                            ? Number(
+                                variant.additional_price ?? variant.additionalPrice ?? 0
+                            )
+                            : 0;
+                        const additions = {};
+
+                        if (pricingMode === 'varies' && additionalPrice > 0) {
+                            const additionalGroup = groups.find(function (group) {
+                                return group !== pricingSource && normalizedChoices[group];
+                            });
+
+                            if (additionalGroup) {
+                                additions[additionalGroup] = additionalPrice;
+                            }
+                        }
+
+                        return {
+                            ...normalizedChoices,
+                            pricing_mode: pricingMode,
+                            pricing_source: pricingSource,
+                            base_price: basePrice,
+                            additions: additions,
+                            additional_price: additionalPrice,
+                            final_price: basePrice + additionalPrice,
+                            stock: Number(variant.stock || 0),
+                            available: variant.available !== false
+                        };
+                    });
+
+                    return {
+                        name: product.title || product.name || 'Product',
+                        sku: product.sku || null,
+                        description: product.description || '',
+                        price: Number(currentProductPriceNumber(product) || 0),
+                        stock_quantity: Number(product.stock || 0),
+                        category: product.category || '',
+                        pricing_mode: product.pricingMode || 'fixed',
+                        pricing_source: product.pricingSource || null,
+                        status: 'pending',
+                        photos: Array.isArray(product.photos) ? product.photos : [],
+                        category_specifications: specifications,
+                        variation_items: optionPayload.variations,
+                        color_items: optionPayload.colors,
+                        size_items: optionPayload.sizes,
+                        variant_combinations: connectedVariants
+                    };
+                }
+
                 saveProductChanges?.addEventListener(
                     'click',
-                    function () {
+                    async function () {
 
                         const createdProduct =
                             getCreatedProductFromRow(
@@ -10082,11 +10190,13 @@ document.addEventListener(
 
                         /*
                          * Created products are truly editable in the current
-                         * Inventory UI. Save the Product Specifications,
-                         * Product Description, Colors, Sizes, and common
-                         * Product Details back to local persistence.
+                         * Inventory UI. Persist the Product Specifications,
+                         * Product Description, buyer options, and common
+                         * Product Details through the inventory endpoint.
                          */
                         if (createdProduct) {
+                            const originalProductState =
+                                JSON.parse(JSON.stringify(createdProduct));
 
                             if (
                                 Array.isArray(
@@ -10320,79 +10430,89 @@ document.addEventListener(
                                     'No product description.';
                             }
 
-                            const rowName =
-                                currentProductRow?.querySelector(
-                                    '.product-name'
+                            try {
+                                const csrfToken =
+                                    document.querySelector('meta[name="csrf-token"]')?.content || '';
+                                const response = await fetch(
+                                    `${inventoryConfig.inventoryProductsUrl}/${createdProduct.id}`,
+                                    {
+                                        method: 'PATCH',
+                                        credentials: 'same-origin',
+                                        headers: {
+                                            'X-CSRF-TOKEN': csrfToken,
+                                            'X-XSRF-TOKEN': csrfToken,
+                                            'Accept': 'application/json',
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify(
+                                            buildInventoryUpdatePayload(createdProduct)
+                                        )
+                                    }
                                 );
 
+                                if (!response.ok) {
+                                    const payload = await response.json().catch(() => ({}));
+                                    const firstError = Object.values(payload.errors || {})[0]?.[0];
+                                    throw new Error(
+                                        firstError ||
+                                        payload.message ||
+                                        'Product changes could not be saved.'
+                                    );
+                                }
+
+                                const persistedProduct = normalizePersistedProduct(
+                                    await response.json()
+                                );
+                                Object.assign(createdProduct, persistedProduct);
+                            } catch (error) {
+                                Object.assign(createdProduct, originalProductState);
+                                saveCreatedProducts();
+                                saveProductChanges.disabled = false;
+                                saveProductChanges.textContent = originalText;
+                                window.alert(
+                                    error.message ||
+                                    'Product changes could not be saved.'
+                                );
+                                return;
+                            }
+
+                            createdProduct.status = 'pending';
+                            createdProduct.approvalStatus = 'pending';
+
+                            if (createdProduct.listingSnapshot) {
+                                createdProduct.listingSnapshot.approvalStatus = 'pending';
+                            }
+
+                            const rowName =
+                                currentProductRow?.querySelector('.product-name');
                             if (rowName) {
-                                rowName.textContent =
-                                    createdProduct.title ||
-                                    'Product';
+                                rowName.textContent = createdProduct.title || 'Product';
                             }
 
                             const rowNumbers =
-                                currentProductRow?.querySelectorAll(
-                                    '.product-number'
-                                );
-
+                                currentProductRow?.querySelectorAll('.product-number');
                             if (rowNumbers?.[0]) {
                                 rowNumbers[0].textContent =
-                                    calculateCreatedProductPrice(
-                                        createdProduct
-                                    );
+                                    calculateCreatedProductPrice(createdProduct);
                             }
 
-                            currentProductRow.dataset.name =
-                                createdProduct.title || '';
-
-                            currentProductRow.dataset.category =
-                                createdProduct.category || '';
-
-                            /*
-                             * Seller edits require admin approval again.
-                             */
-                            createdProduct.approvalStatus =
-                                'pending';
-
-                            createdProduct.status =
-                                'pending';
-
-                            createdProduct.updatedAt =
-                                new Date().toISOString();
-
-                            if (
-                                createdProduct.listingSnapshot
-                            ) {
-                                createdProduct.listingSnapshot.approvalStatus =
-                                    'pending';
-                            }
-
-                            saveCreatedProducts();
-
-                            currentProductRow.dataset.status =
-                                'pending';
+                            currentProductRow.dataset.name = createdProduct.title || '';
+                            currentProductRow.dataset.category = createdProduct.category || '';
+                            currentProductRow.dataset.status = 'pending';
 
                             const rowStatusBadge =
-                                currentProductRow.querySelector(
-                                    '.status-badge'
-                                );
-
+                                currentProductRow.querySelector('.status-badge');
                             if (rowStatusBadge) {
-                                rowStatusBadge.textContent =
-                                    'Pending Approval';
-
-                                rowStatusBadge.className =
-                                    'status-badge status-pending';
+                                rowStatusBadge.textContent = 'Pending Approval';
+                                rowStatusBadge.className = 'status-badge status-pending';
                             }
 
                             if (productDetailsStatus) {
-                                productDetailsStatus.textContent =
-                                    'Pending Approval';
-
-                                productDetailsStatus.className =
-                                    'status-badge status-pending';
+                                productDetailsStatus.textContent = 'Pending Approval';
+                                productDetailsStatus.className = 'status-badge status-pending';
                             }
+
+                            saveCreatedProducts();
 
                             /*
                              * Re-render the dynamic Product Specifications
@@ -11206,6 +11326,14 @@ document.addEventListener(
                             return {
                                 ...serverProduct,
                                 ...localProduct,
+
+                                // Orders update stock in the database; localStorage
+                                // must not replace the latest inventory values.
+                                stock: serverProduct.stock,
+                                variations: serverProduct.variations,
+                                colors: serverProduct.colors,
+                                sizes: serverProduct.sizes,
+                                connectedVariants: serverProduct.connectedVariants,
 
                                 approvalStatus:
                                     serverProduct.approvalStatus,
@@ -12057,6 +12185,73 @@ document.addEventListener(
                 restoreCreatedProductRows();
                 renderWarningPolicyRows();
                 restoreArchivedProductRows();
+
+                async function syncInventoryStock() {
+                    try {
+                        const response = await fetch(
+                            inventoryConfig.inventoryApiUrl || '/api/v1/seller/inventory',
+                            {
+                                headers: { Accept: 'application/json' },
+                                credentials: 'same-origin'
+                            }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(`Inventory refresh failed (${response.status}).`);
+                        }
+
+                        const payload = await response.json();
+                        const serverProducts = (payload.data || []).map(normalizePersistedProduct);
+                        let changed = false;
+
+                        serverProducts.forEach(serverProduct => {
+                            const product = createdInventoryProducts.find(
+                                item => String(item.id) === String(serverProduct.id)
+                            );
+                            if (!product) return;
+
+                            const stockChanged =
+                                Number(product.stock) !== Number(serverProduct.stock);
+                            product.stock = serverProduct.stock;
+                            product.variations = serverProduct.variations;
+                            product.colors = serverProduct.colors;
+                            product.sizes = serverProduct.sizes;
+                            product.connectedVariants = serverProduct.connectedVariants;
+
+                            if (!stockChanged) return;
+                            changed = true;
+
+                            allTable?.querySelectorAll('[data-created-product-id]').forEach(row => {
+                                if (String(row.dataset.createdProductId) !== String(product.id)) return;
+
+                                const stockCell = row.querySelectorAll('.product-number')[1];
+                                if (stockCell) stockCell.textContent = String(product.stock ?? 0);
+
+                                const status = getCreatedProductStatus(product.stock, product.approvalStatus);
+                                row.dataset.status = status.slug;
+                                const statusBadge = row.querySelector('.status-badge');
+                                if (statusBadge) {
+                                    statusBadge.className = `status-badge ${status.className}`;
+                                    statusBadge.textContent = status.label;
+                                }
+                            });
+                        });
+
+                        if (changed) {
+                            saveCreatedProducts();
+                            filterProducts();
+                        }
+                    } catch (error) {
+                        console.error('[Seller inventory] Unable to refresh stock from the server:', error);
+                    }
+                }
+
+                window.addEventListener('focus', syncInventoryStock);
+                window.setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        syncInventoryStock();
+                    }
+                }, 15000);
 
                 async function permanentlyDeleteCurrentProduct() {
                     const product = getCreatedProductFromRow(currentProductRow);
@@ -16166,11 +16361,11 @@ document.addEventListener(
 
                             /*
                              * Laravel-compatible update:
-                             * multipart POST + _method=PUT.
+                             * multipart POST + _method=PATCH.
                              */
                             formData.set(
                                 '_method',
-                                'PUT'
+                                'PATCH'
                             );
 
                             formData.set(

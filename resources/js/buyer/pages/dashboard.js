@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const config = configEl ? JSON.parse(configEl.textContent) : {};
             const productsUrl    = config.productsUrl   || '';
             const announcementsUrl = config.announcementsUrl || '';
+            const ordersUrl = config.ordersUrl || '';
+            const notificationsUrl = config.notificationsUrl || '';
             const productBaseUrl = config.productBaseUrl || '/buyer/product';
             const cartUrl        = config.cartUrl        || '/api/v1/buyer/cart';
             const apiToken       = config.apiToken       || '';
@@ -77,6 +79,157 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             );
+
+            /* ─── Real purchase counts and notifications ────────── */
+            const notificationList = document.getElementById('buyerDashboardNotifications');
+            const notificationError = document.getElementById('buyerDashboardNotificationsError');
+            let dashboardNotifications = [];
+
+            const setDashboardError = (message) => {
+                if (!notificationError) return;
+                notificationError.textContent = message;
+                notificationError.hidden = !message;
+            };
+
+            const loadPurchaseCounts = async () => {
+                if (!ordersUrl || !apiToken) return;
+                const response = await apiFetch(ordersUrl);
+                if (!response.ok) throw new Error(`Purchase counts could not be loaded (${response.status}).`);
+                const payload = await response.json();
+                const counts = {
+                    processing: 0,
+                    'to-ship': 0,
+                    'in-transit': 0,
+                    'out-for-delivery': 0,
+                    delivered: 0,
+                };
+                const statusGroups = {
+                    pending: 'processing',
+                    new: 'processing',
+                    preparing: 'processing',
+                    to_ship: 'to-ship',
+                    in_transit: 'in-transit',
+                    out_for_delivery: 'out-for-delivery',
+                    delivered: 'delivered',
+                    completed: 'delivered',
+                };
+
+                const statusCounts = payload.status_counts || (payload.data || []).reduce((totals, order) => {
+                    const status = String(order.status || '').toLowerCase();
+                    totals[status] = (totals[status] || 0) + 1;
+                    return totals;
+                }, {});
+                Object.entries(statusCounts).forEach(([status, total]) => {
+                    const group = statusGroups[status.toLowerCase()];
+                    if (group) counts[group] += Number(total);
+                });
+
+                Object.entries(counts).forEach(([group, count]) => {
+                    const countElement = document.querySelector(`[data-purchase-count="${group}"]`);
+                    if (countElement) countElement.textContent = String(count);
+                });
+            };
+
+            const relativeNotificationTime = (value) => {
+                if (!value) return '';
+                const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
+                const units = [
+                    ['year', 31536000], ['month', 2592000], ['week', 604800],
+                    ['day', 86400], ['hour', 3600], ['minute', 60],
+                ];
+                const [unit, size] = units.find(([, unitSize]) => Math.abs(seconds) >= unitSize) || ['second', 1];
+                return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(Math.round(seconds / size), unit);
+            };
+
+            const notificationVisual = (type) => {
+                if (type === 'shipping' || type === 'delivered' || type === 'completed') {
+                    return {
+                        className: 'notification-icon-delivery',
+                        svg: '<path d="M3 6h11v10H3V6Zm11 3h4l3 3v4h-7V9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="18" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/>',
+                    };
+                }
+                if (type === 'promotion') {
+                    return {
+                        className: 'notification-icon-promo',
+                        svg: '<path d="M4 12V5h7l9 9-7 7-9-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="8" cy="9" r="1.3" fill="currentColor"/>',
+                    };
+                }
+                return {
+                    className: 'notification-icon-order',
+                    svg: '<path d="M4 7h16l-1 12H5L4 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 9V6a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+                };
+            };
+
+            const renderDashboardNotifications = () => {
+                if (!notificationList) return;
+                if (!dashboardNotifications.length) {
+                    notificationList.innerHTML = '<p class="buyer-dashboard-notifications-state">You have no notifications yet.</p>';
+                    return;
+                }
+
+                notificationList.innerHTML = dashboardNotifications.slice(0, 3).map((notification) => {
+                    const visual = notificationVisual(notification.type);
+                    const unread = !notification.read_at;
+                    return `<button type="button" class="notification-row ${unread ? 'is-unread' : ''}" data-dashboard-notification="${escapeHtml(notification.id)}">
+                        <span class="notification-icon ${visual.className}" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">${visual.svg}</svg>
+                        </span>
+                        <span class="notification-copy">
+                            <strong>${escapeHtml(notification.title)}</strong>
+                            <span>${escapeHtml(notification.message)}</span>
+                        </span>
+                        <span class="notification-meta">
+                            <time datetime="${escapeHtml(notification.created_at)}">${escapeHtml(relativeNotificationTime(notification.created_at))}</time>
+                            ${unread ? '<span class="notification-dot" aria-label="Unread"></span>' : ''}
+                        </span>
+                    </button>`;
+                }).join('');
+            };
+
+            const loadDashboardNotifications = async () => {
+                if (!notificationsUrl || !apiToken || !notificationList) return;
+                const response = await apiFetch(notificationsUrl);
+                if (!response.ok) throw new Error(`Notifications could not be loaded (${response.status}).`);
+                const payload = await response.json();
+                dashboardNotifications = payload.data || [];
+                renderDashboardNotifications();
+            };
+
+            const loadDashboardData = async () => {
+                const results = await Promise.allSettled([
+                    loadPurchaseCounts(),
+                    loadDashboardNotifications(),
+                ]);
+                const failures = results.filter((result) => result.status === 'rejected');
+                if (failures.length) {
+                    setDashboardError(failures.map((result) => result.reason.message).join(' '));
+                    if (notificationList && failures.some((result) => result.reason.message.startsWith('Notifications'))) {
+                        notificationList.innerHTML = '<p class="buyer-dashboard-notifications-state">Notifications could not be loaded. Please refresh to try again.</p>';
+                    }
+                }
+            };
+
+            notificationList?.addEventListener('click', async (event) => {
+                const row = event.target.closest('[data-dashboard-notification]');
+                if (!row || !row.classList.contains('is-unread')) return;
+                const notificationId = row.dataset.dashboardNotification;
+                const notification = dashboardNotifications.find((item) => String(item.id) === notificationId);
+                if (!notification) return;
+
+                try {
+                    const response = await apiFetch(`${notificationsUrl}/${encodeURIComponent(notificationId)}/read`, {
+                        method: 'PATCH',
+                    });
+                    if (!response.ok) throw new Error(`Notification could not be marked as read (${response.status}).`);
+                    notification.read_at = new Date().toISOString();
+                    setDashboardError('');
+                    renderDashboardNotifications();
+                } catch (error) {
+                    setDashboardError(error.message);
+                }
+            });
+
+            loadDashboardData();
 
             const recommendedProducts = document.getElementById('recommendedProducts');
 
@@ -298,18 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            /* ─── Latest notifications ───────────────────────────── */
-            document.querySelectorAll('.notification-row').forEach((notification) => {
-                notification.addEventListener('click', () => {
-                    notification.classList.remove('is-unread');
-
-                    const unreadDot =
-                        notification.querySelector('.notification-dot');
-
-                    unreadDot?.remove();
-                });
-            });
-
             /* ─── Purchase status navigation ─────────────────────── */
             document.querySelectorAll('.purchase-card').forEach((card) => {
                 card.addEventListener('click', (event) => {
@@ -342,10 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             function buildProductCard(product) {
                 const productUrl = productBaseUrl + '?id=' + encodeURIComponent(product.id);
-                const hasImage   = product.image_url && !product.image_url.startsWith('data:');
+                const imageUrl = product.image_url || product.photos?.[0] || '';
+                const hasImage = typeof imageUrl === 'string' && imageUrl.trim() !== '';
 
                 const imageHtml = hasImage
-                    ? `<img src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
+                    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
                     : `<div class="product-art-placeholder" aria-hidden="true"></div>`;
 
                 return `
@@ -385,6 +527,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             function attachProductCardListeners() {
+                recommendedProducts?.querySelectorAll('.product-photo').forEach((image) => {
+                    image.addEventListener('error', () => {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'product-art-placeholder';
+                        placeholder.setAttribute('aria-hidden', 'true');
+                        image.replaceWith(placeholder);
+                    }, { once: true });
+                });
+
                 recommendedProducts?.querySelectorAll('.favorite-button').forEach((button) => {
                     button.addEventListener('click', (event) => {
                         event.preventDefault();

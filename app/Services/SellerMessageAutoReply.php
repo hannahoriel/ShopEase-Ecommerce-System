@@ -9,26 +9,72 @@ use Illuminate\Support\Str;
 
 class SellerMessageAutoReply
 {
-    private const FALLBACK = "Can't answer the question because it isn't related to the product or your order. Please ask about this product or your order.";
-
     public function reply(string $question, SellerConversation $conversation): string
+    {
+        return $this->respond($question, $conversation)['text'];
+    }
+
+    /**
+     * @return array{text: string, needs_seller_follow_up: bool}
+     */
+    public function respond(string $question, SellerConversation $conversation): array
     {
         $question = Str::lower(trim($question));
         $order = $conversation->order;
         $product = $conversation->product
             ?? $order?->items()->with('product')->get()->pluck('product')->filter()->first();
 
+        if ($this->isGreeting($question)) {
+            $sellerName = $conversation->seller?->store_name ?: 'our store';
+
+            return $this->result("Hi! Thanks for messaging {$sellerName}. What can I help you with? You can ask about the product's price, availability, or options"
+                .($order ? ', or your order status and delivery.' : '.')
+                .' If you need help beyond these details, the seller will get back to you here.', true);
+        }
+
+        if ($this->isThanks($question)) {
+            return $this->result('You’re welcome! Feel free to ask if you need anything else. If I can’t confirm the details, the seller will follow up with you here.');
+        }
+
         if ($this->isOrderQuestion($question)) {
-            return $order
+            return $this->result($order
                 ? $this->orderReply($order)
-                : 'Shipment timing and tracking become available in your order details after you place an order.';
+                : 'I can help with delivery and tracking questions once you have placed an order. You can ask about this product’s price, availability, or options in the meantime.');
         }
 
         if (! $product || ! $this->isProductQuestion($question)) {
-            return self::FALLBACK;
+            return $this->result(
+                'Thanks for your message! I’ve shared it with the seller, and they’ll contact you here as soon as they can. While you wait, you can ask about the product’s price, availability, or options'
+                    .($order ? ', or your order status and delivery.' : '.'),
+                true,
+            );
         }
 
-        return $this->productReply($question, $product);
+        return $this->result($this->productReply($question, $product));
+    }
+
+    private function result(string $text, bool $needsSellerFollowUp = false): array
+    {
+        return [
+            'text' => $text,
+            'needs_seller_follow_up' => $needsSellerFollowUp,
+        ];
+    }
+
+    private function isGreeting(string $question): bool
+    {
+        return (bool) preg_match(
+            '/^(?:hi|hello|hey|hiya|howdy|good morning|good afternoon|good evening|kamusta|kumusta|musta)(?:[!.?,\s].*)?$/u',
+            $question,
+        );
+    }
+
+    private function isThanks(string $question): bool
+    {
+        return (bool) preg_match(
+            '/^(?:thanks|thank you|thank you so much|salamat|maraming salamat)(?:[!.?,\s].*)?$/u',
+            $question,
+        );
     }
 
     private function isOrderQuestion(string $question): bool

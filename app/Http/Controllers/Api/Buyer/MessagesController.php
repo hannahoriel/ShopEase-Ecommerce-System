@@ -118,15 +118,18 @@ class MessagesController extends Controller
             ->firstOrFail();
 
         [$buyerMessage, $sellerMessage] = DB::transaction(function () use ($conversation, $request, $validated, $autoReply, $sellerUser): array {
+            $response = $autoReply->respond(
+                $validated['body'],
+                $conversation->loadMissing(['seller', 'order.shipment', 'order.items.product', 'product']),
+            );
             $buyerMessage = $conversation->messages()->create([
                 'sender_id' => $request->user()->id,
                 'body' => trim($validated['body']),
-                'read_at' => now(),
+                'read_at' => $response['needs_seller_follow_up'] ? null : now(),
             ]);
-            $reply = $autoReply->reply($validated['body'], $conversation->loadMissing(['order.shipment', 'order.items.product', 'product']));
             $sellerMessage = $conversation->messages()->create([
                 'sender_id' => $sellerUser->id,
-                'body' => $reply,
+                'body' => $response['text'],
             ]);
             $conversation->touch();
 
