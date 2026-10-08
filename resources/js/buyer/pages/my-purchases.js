@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const complaintSubmit = document.getElementById('buyerComplaintSubmit');
             const complaintOrderId = document.getElementById('buyerComplaintOrderId');
             const complaintOrderLabel = document.getElementById('buyerComplaintOrderLabel');
+            const orderCancellationModal = document.getElementById('buyerOrderCancellationModal');
+            const orderCancellationLabel = document.getElementById('buyerOrderCancellationLabel');
+            const orderCancellationReason = document.getElementById('buyerOrderCancellationReason');
+            const orderCancellationOtherWrap = document.getElementById('buyerOrderCancellationOtherWrap');
+            const orderCancellationOther = document.getElementById('buyerOrderCancellationOther');
+            const orderCancellationError = document.getElementById('buyerOrderCancellationError');
+            const orderCancellationSubmit = document.getElementById('buyerOrderCancellationSubmit');
+            let selectedCancellationButton = null;
 
             const closeComplaintModal = () => {
                 complaintModal?.classList.add('hidden');
@@ -40,6 +48,18 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('click', async event => {
                 const cancelButton = event.target.closest('[data-buyer-cancel-order]');
                 if (!cancelButton) return;
+
+                selectedCancellationButton = cancelButton;
+                orderCancellationLabel.textContent = `Order ${cancelButton.dataset.orderNumber || ''}`;
+                orderCancellationReason.value = '';
+                orderCancellationOther.value = '';
+                orderCancellationOtherWrap.hidden = true;
+                orderCancellationError.hidden = true;
+                orderCancellationModal.classList.remove('hidden');
+                orderCancellationModal.classList.add('flex');
+                orderCancellationModal.setAttribute('aria-hidden', 'false');
+                orderCancellationReason.focus();
+                return;
 
                 cancelButton.disabled = true;
                 cancelButton.textContent = 'Cancelling…';
@@ -79,6 +99,101 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.alert(error.message);
                     cancelButton.disabled = false;
                     cancelButton.textContent = 'Cancel order';
+                }
+            });
+
+            orderCancellationReason?.addEventListener('change', () => {
+                const isOther = orderCancellationReason.value === 'other';
+                orderCancellationOtherWrap.hidden = !isOther;
+                if (!isOther) orderCancellationOther.value = '';
+            });
+
+            document.addEventListener('click', event => {
+                if (event.target.closest('#buyerOrderCancellationClose, #buyerOrderCancellationKeep') ||
+                    event.target === orderCancellationModal) {
+                    orderCancellationModal.classList.add('hidden');
+                    orderCancellationModal.classList.remove('flex');
+                    orderCancellationModal.setAttribute('aria-hidden', 'true');
+                    selectedCancellationButton = null;
+                }
+            });
+
+            orderCancellationSubmit?.addEventListener('click', async () => {
+                if (!selectedCancellationButton) return;
+
+                const reason = orderCancellationReason.value;
+                const otherReason = orderCancellationOther.value.trim();
+                if (!reason || (reason === 'other' && !otherReason)) {
+                    orderCancellationError.textContent = reason === 'other'
+                        ? 'Please enter your cancellation reason.'
+                        : 'Please select a cancellation reason.';
+                    orderCancellationError.hidden = false;
+                    return;
+                }
+
+                orderCancellationSubmit.disabled = true;
+                orderCancellationSubmit.textContent = 'Submitting…';
+                orderCancellationError.hidden = true;
+
+                try {
+                    const response = await fetch(
+                        `${purchasesConfig.ordersUrl || '/api/v1/buyer/orders'}/${encodeURIComponent(selectedCancellationButton.dataset.buyerCancelOrder)}/cancel`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${purchasesConfig.apiToken || ''}`,
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                reason,
+                                ...(reason === 'other' ? { other_reason: otherReason } : {}),
+                            }),
+                        }
+                    );
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        const validationMessage = Object.values(payload.errors || {}).flat()[0];
+                        throw new Error(validationMessage || payload.message || 'This order could not be cancelled.');
+                    }
+
+                    const orderCard = selectedCancellationButton.closest('[data-purchase-row]');
+                    if (orderCard && payload.data.status === 'cancelled') {
+                        const statusClass = 'cancelled';
+                        const statusLabel = 'Cancelled';
+                        const status = orderCard.querySelector('.purchase-status');
+                        orderCard.dataset.status = statusClass;
+                        if (status) {
+                            status.className = `purchase-status purchase-status--${statusClass}`;
+                            status.textContent = statusLabel;
+                        }
+                        selectedCancellationButton.remove();
+                        window.alert(payload.message || 'Order cancelled and stock restored.');
+                    } else if (orderCard) {
+                        selectedCancellationButton.remove();
+                        let requestNote = orderCard.querySelector('[data-cancellation-request-note]');
+                        if (!requestNote) {
+                            requestNote = document.createElement('span');
+                            requestNote.dataset.cancellationRequestNote = '';
+                            requestNote.className = 'purchase-complaint-submitted';
+                            orderCard.querySelector('.purchase-shop-order-meta')?.append(requestNote);
+                        }
+                        requestNote.textContent = 'Cancellation request pending seller review';
+                        window.alert(payload.message || 'Cancellation request sent to seller.');
+                    }
+
+                    orderCancellationModal.classList.add('hidden');
+                    orderCancellationModal.classList.remove('flex');
+                    orderCancellationModal.setAttribute('aria-hidden', 'true');
+                    selectedCancellationButton = null;
+                    applyPurchaseFilters();
+                } catch (error) {
+                    orderCancellationError.textContent = error.message;
+                    orderCancellationError.hidden = false;
+                } finally {
+                    orderCancellationSubmit.disabled = false;
+                    orderCancellationSubmit.textContent = 'Submit cancellation';
                 }
             });
 
@@ -334,7 +449,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <span class="purchase-shop-placed-at">Placed ${escapeHtml(placedAt)}</span>
                                             <button type="button" class="purchase-message-seller" data-buyer-chat-order="${escapeHtml(order.id)}">Message seller</button>
                                             ${order.can_cancel
-                                                ? `<button type="button" class="purchase-message-seller" data-buyer-cancel-order="${escapeHtml(order.id)}">Cancel order</button>`
+                                                ? `<button type="button" class="purchase-message-seller" data-buyer-cancel-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Cancel order</button>`
+                                                : ''}
+                                            ${order.cancellation_request?.status === 'pending'
+                                                ? '<span class="purchase-complaint-submitted" data-cancellation-request-note>Cancellation request pending seller review</span>'
+                                                : ''}
+                                            ${order.cancellation_request?.status === 'rejected'
+                                                ? `<span class="purchase-complaint-submitted" data-cancellation-request-note>Seller declined cancellation: ${escapeHtml(order.cancellation_request.seller_other_reason || order.cancellation_request.seller_reason || 'Please contact the seller.')}</span>`
                                                 : ''}
                                             ${order.complaint
                                                 ? `<span class="purchase-complaint-submitted">Complaint ${escapeHtml(order.complaint.reference)} · ${escapeHtml(order.complaint.status.replace('-', ' '))}</span>`

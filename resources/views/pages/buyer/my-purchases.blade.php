@@ -574,6 +574,41 @@
         </section>
     </div>
 
+    <div id="buyerOrderCancellationModal" class="fixed inset-0 z-[220] hidden items-center justify-center bg-black/40 px-4 py-6" aria-hidden="true">
+        <section class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="buyerOrderCancellationTitle">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 id="buyerOrderCancellationTitle" class="text-xl font-bold text-gray-900">Cancel order</h2>
+                    <p id="buyerOrderCancellationLabel" class="mt-1 text-sm text-gray-500"></p>
+                </div>
+                <button type="button" id="buyerOrderCancellationClose" class="rounded-full p-2 text-gray-500 hover:bg-gray-100" aria-label="Close cancellation form">×</button>
+            </div>
+            <div class="mt-5 space-y-4">
+                <label class="block text-sm font-medium text-gray-700" for="buyerOrderCancellationReason">
+                    Why are you cancelling?
+                    <select id="buyerOrderCancellationReason" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2">
+                        <option value="">Select a reason</option>
+                        <option value="changed_mind">I changed my mind</option>
+                        <option value="ordered_by_mistake">I ordered by mistake</option>
+                        <option value="wrong_address">The delivery address is incorrect</option>
+                        <option value="delivery_too_slow">Delivery is taking too long</option>
+                        <option value="payment_issue">I have a payment issue</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+                <label id="buyerOrderCancellationOtherWrap" class="block text-sm font-medium text-gray-700" for="buyerOrderCancellationOther" hidden>
+                    Please specify
+                    <textarea id="buyerOrderCancellationOther" rows="3" maxlength="500" class="mt-1 block w-full resize-y rounded-lg border border-gray-300 px-3 py-2" placeholder="Enter your reason"></textarea>
+                </label>
+                <p id="buyerOrderCancellationError" class="text-sm text-red-600" role="alert" hidden></p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="buyerOrderCancellationKeep" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Keep order</button>
+                    <button type="button" id="buyerOrderCancellationSubmit" class="rounded-lg bg-[#7B1B1B] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Submit cancellation</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
     {{-- Shared Buyer Footer --}}
     @include('components.buyer.footer')
 
