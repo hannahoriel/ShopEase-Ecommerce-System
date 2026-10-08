@@ -37,6 +37,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            document.addEventListener('click', async event => {
+                const cancelButton = event.target.closest('[data-buyer-cancel-order]');
+                if (!cancelButton) return;
+
+                cancelButton.disabled = true;
+                cancelButton.textContent = 'Cancelling…';
+
+                try {
+                    const response = await fetch(
+                        `${purchasesConfig.ordersUrl || '/api/v1/buyer/orders'}/${encodeURIComponent(cancelButton.dataset.buyerCancelOrder)}/cancel`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                Authorization: `Bearer ${purchasesConfig.apiToken || ''}`,
+                            },
+                            credentials: 'same-origin',
+                        }
+                    );
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'This order could not be cancelled.');
+                    }
+
+                    const orderCard = cancelButton.closest('[data-purchase-row]');
+                    const [statusClass, statusLabel] = statusData('cancelled');
+                    const status = orderCard?.querySelector('.purchase-status');
+
+                    if (orderCard && status) {
+                        orderCard.dataset.status = statusClass;
+                        status.className = `purchase-status purchase-status--${statusClass}`;
+                        status.textContent = statusLabel;
+                    }
+
+                    cancelButton.remove();
+                    applyPurchaseFilters();
+                    window.alert(payload.message || 'Order cancelled and stock restored.');
+                } catch (error) {
+                    window.alert(error.message);
+                    cancelButton.disabled = false;
+                    cancelButton.textContent = 'Cancel order';
+                }
+            });
+
             complaintForm?.addEventListener('submit', async event => {
                 event.preventDefault();
                 complaintError.hidden = true;
@@ -287,6 +332,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <strong class="purchase-shop-order-id">Order No: ${escapeHtml(order.order_number)}</strong>
                                             <span class="purchase-shop-placed-at">Placed ${escapeHtml(placedAt)}</span>
                                             <button type="button" class="purchase-message-seller" data-buyer-chat-order="${escapeHtml(order.id)}">Message seller</button>
+                                            ${order.can_cancel
+                                                ? `<button type="button" class="purchase-message-seller" data-buyer-cancel-order="${escapeHtml(order.id)}">Cancel order</button>`
+                                                : ''}
                                             ${order.complaint
                                                 ? `<span class="purchase-complaint-submitted">Complaint ${escapeHtml(order.complaint.reference)} · ${escapeHtml(order.complaint.status.replace('-', ' '))}</span>`
                                                 : `<button type="button" class="purchase-message-seller" data-buyer-complaint-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Report a problem</button>`}

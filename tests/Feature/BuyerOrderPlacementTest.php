@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Admin\Order;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
+use App\Models\Seller\ProductOption;
+use App\Models\Seller\ProductVariantCombination;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +21,12 @@ class BuyerOrderPlacementTest extends TestCase
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         [$firstSeller, $firstProduct] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
         [, $secondProduct] = $this->sellerWithProduct('Second Store', 'Watch', 2400);
+        ProductOption::create([
+            'product_id' => $firstProduct->id,
+            'type' => 'color',
+            'name' => 'Black',
+            'stock' => 10,
+        ]);
         $this->actingAs($buyer)
             ->get('/buyer/checkout')
             ->assertOk()
@@ -84,6 +92,9 @@ class BuyerOrderPlacementTest extends TestCase
             'unit_price' => 1200,
         ]);
         $this->assertDatabaseCount('cart_items', 0);
+        $this->assertSame(8, $firstProduct->fresh()->stock_quantity);
+        $this->assertSame(8, ProductOption::where('product_id', $firstProduct->id)->value('stock'));
+        $this->assertSame(9, $secondProduct->fresh()->stock_quantity);
 
         $this->actingAs($buyer)
             ->getJson('/api/v1/buyer/orders')
@@ -113,6 +124,172 @@ class BuyerOrderPlacementTest extends TestCase
             ->assertJsonValidationErrors('cart');
 
         $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_insufficient_stock_prevents_order_and_preserves_the_cart(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $product] = $this->sellerWithProduct('First Store', 'Limited Item', 100);
+        $product->update(['stock_quantity' => 1]);
+        CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/orders', [
+                'delivery_name' => 'Buyer Example',
+                'delivery_phone' => '09171234567',
+                'delivery_address' => '1 Main Street, Manila',
+                'payment_method' => 'Cash on Delivery',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('cart');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('order_items', 0);
+        $this->assertDatabaseCount('cart_items', 1);
+        $this->assertSame(1, $product->fresh()->stock_quantity);
+    }
+
+    public function test_buyer_cancellation_restores_reserved_stock_only_once(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+        ]);
+
+        $orderId = $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/orders', [
+                'delivery_name' => 'Buyer Example',
+                'delivery_phone' => '09171234567',
+                'delivery_address' => '1 Main Street, Manila',
+                'payment_method' => 'Cash on Delivery',
+            ])
+            ->assertCreated()
+            ->json('orders.0.id');
+
+        $this->assertSame(7, $product->fresh()->stock_quantity);
+
+        $this->postJson("/api/v1/buyer/orders/{$orderId}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.can_cancel', false);
+
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+
+        $this->postJson("/api/v1/buyer/orders/{$orderId}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+        $this->assertDatabaseCount('order_status_histories', 1);
+    }
+
+    public function test_order_reserves_the_exact_connected_variant_stock(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        ProductOption::create([
+            'product_id' => $product->id,
+            'type' => 'color',
+            'name' => 'Black',
+            'stock' => 0,
+        ]);
+        $combination = ProductVariantCombination::create([
+            'product_id' => $product->id,
+            'choices' => ['colors' => 'Black'],
+            'pricing_mode' => 'base',
+            'additions' => [],
+            'stock' => 3,
+            'available' => true,
+        ]);
+        CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'color' => 'Black',
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/orders', [
+                'delivery_name' => 'Buyer Example',
+                'delivery_phone' => '09171234567',
+                'delivery_address' => '1 Main Street, Manila',
+                'payment_method' => 'Cash on Delivery',
+            ])
+            ->assertCreated();
+
+        $this->assertSame(1, $product->fresh()->stock_quantity);
+        $this->assertSame(1, ProductOption::where('product_id', $product->id)->value('stock'));
+        $this->assertSame(1, $combination->fresh()->stock);
+    }
+
+    public function test_seller_cancellation_also_restores_reserved_stock(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+        ]);
+
+        $orderId = $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/orders', [
+                'delivery_name' => 'Buyer Example',
+                'delivery_phone' => '09171234567',
+                'delivery_address' => '1 Main Street, Manila',
+                'payment_method' => 'Cash on Delivery',
+            ])
+            ->assertCreated()
+            ->json('orders.0.id');
+
+        $this->actingAs(User::findOrFail($seller->user_id))
+            ->patchJson("/api/v1/seller/orders/{$orderId}/status", ['status' => 'cancelled'])
+            ->assertOk()
+            ->assertJsonPath('status', 'cancelled');
+
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+        $this->actingAs(User::findOrFail($seller->user_id))
+            ->patchJson("/api/v1/seller/orders/{$orderId}/status", ['status' => 'cancelled'])
+            ->assertUnprocessable();
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+    }
+
+    public function test_buyer_cannot_cancel_another_buyers_order(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $anotherBuyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $order = Order::create([
+            'buyer_id' => $anotherBuyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-TEST-ORDER',
+            'total' => 1200,
+            'status' => 'pending',
+            'delivery_name' => 'Buyer Example',
+            'delivery_phone' => '09171234567',
+            'delivery_address' => '1 Main Street, Manila',
+            'payment_method' => 'Cash on Delivery',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => $product->price,
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel")
+            ->assertNotFound();
+
+        $this->assertSame(10, $product->fresh()->stock_quantity);
+        $this->assertSame('pending', $order->fresh()->status);
     }
 
     private function sellerWithProduct(string $storeName, string $productName, float $price): array

@@ -8,6 +8,7 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,10 @@ use Illuminate\Validation\Rule;
 
 class OrderStatusController extends Controller
 {
+    public function __construct(
+        private readonly OrderInventoryService $inventory
+    ) {}
+
     private const TRANSITIONS = [
         'pending' => ['preparing', 'cancelled'],
         'new' => ['preparing', 'cancelled'],
@@ -75,7 +80,10 @@ class OrderStatusController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $this->changeStatus($order, $validated['status'], $request->user(), $validated['notes'] ?? null);
+        DB::transaction(function () use ($order, $validated, $request): void {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $this->changeStatus($lockedOrder, $validated['status'], $request->user(), $validated['notes'] ?? null);
+        });
 
         return response()->json($order->fresh(['statusHistory']));
     }
@@ -156,6 +164,10 @@ class OrderStatusController extends Controller
     {
         $allowedStatuses = self::TRANSITIONS[$order->status] ?? [];
         abort_unless(in_array($newStatus, $allowedStatuses, true), 422, "Order cannot move from {$order->status} to {$newStatus}.");
+
+        if ($newStatus === 'cancelled') {
+            $this->inventory->restoreOrder($order);
+        }
 
         $fromStatus = $order->status;
         $order->update(['status' => $newStatus]);

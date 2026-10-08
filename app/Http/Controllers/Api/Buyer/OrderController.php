@@ -7,7 +7,10 @@ use App\Models\Admin\CommissionTransaction;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\ComplaintUpdate;
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\CartItem;
+use App\Models\Seller\Product;
+use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +20,10 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private readonly OrderInventoryService $inventory
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $orders = Order::query()
@@ -33,6 +40,7 @@ class OrderController extends Controller
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
                 'status' => $order->status,
+                'can_cancel' => in_array($order->status, ['pending', 'new'], true),
                 'created_at' => $order->created_at?->toISOString(),
                 'complaint' => $order->complaints->first() ? [
                     'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
@@ -130,6 +138,8 @@ class OrderController extends Controller
             $items = CartItem::query()
                 ->where('user_id', $request->user()->id)
                 ->with(['product.seller'])
+                ->orderBy('product_id')
+                ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
 
@@ -140,7 +150,12 @@ class OrderController extends Controller
             }
 
             foreach ($items as $item) {
-                $product = $item->product;
+                $product = Product::query()
+                    ->with('seller')
+                    ->lockForUpdate()
+                    ->find($item->product_id);
+                $item->setRelation('product', $product);
+
                 if (
                     ! $product ||
                     $product->status !== 'active' ||
@@ -154,7 +169,7 @@ class OrderController extends Controller
                 }
             }
 
-            return $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
+            $orders = $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
                 ->map(function ($sellerItems) use ($validated, $request): Order {
                     $seller = $sellerItems->first()->product->seller;
                     $total = $sellerItems->sum(fn (CartItem $item) => (float) $item->product->price * $item->quantity);
@@ -173,7 +188,7 @@ class OrderController extends Controller
                     ]);
 
                     foreach ($sellerItems as $item) {
-                        $order->items()->create([
+                        $orderItem = $order->items()->create([
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->name,
                             'variation' => $item->variation,
@@ -182,14 +197,18 @@ class OrderController extends Controller
                             'quantity' => $item->quantity,
                             'unit_price' => $item->product->price,
                         ]);
+
+                        $this->inventory->reserve($orderItem);
                     }
 
                     return $order->load(['seller:id,store_name', 'items']);
                 })
                 ->values();
-        });
 
-        CartItem::where('user_id', $request->user()->id)->delete();
+            CartItem::where('user_id', $request->user()->id)->delete();
+
+            return $orders;
+        });
 
         return response()->json([
             'message' => 'Order placed successfully.',
@@ -208,6 +227,52 @@ class OrderController extends Controller
                 ])->all(),
             ])->all(),
         ], 201);
+    }
+
+    public function cancel(Request $request, Order $order): JsonResponse
+    {
+        $cancelledOrder = DB::transaction(function () use ($request, $order): Order {
+            $lockedOrder = Order::query()
+                ->lockForUpdate()
+                ->findOrFail($order->id);
+
+            abort_unless($lockedOrder->buyer_id === $request->user()->id, 404);
+
+            if ($lockedOrder->status === 'cancelled') {
+                return $lockedOrder->load(['seller:id,store_name', 'items']);
+            }
+
+            abort_unless(
+                in_array($lockedOrder->status, ['pending', 'new'], true),
+                422,
+                'This order can no longer be cancelled.'
+            );
+
+            $this->inventory->restoreOrder($lockedOrder);
+
+            $previousStatus = $lockedOrder->status;
+            $lockedOrder->update(['status' => 'cancelled']);
+
+            OrderStatusHistory::create([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $previousStatus,
+                'to_status' => 'cancelled',
+                'changed_by' => $request->user()->id,
+                'notes' => 'Cancelled by buyer; reserved stock was restored.',
+            ]);
+
+            return $lockedOrder->load(['seller:id,store_name', 'items']);
+        });
+
+        return response()->json([
+            'message' => 'Order cancelled and stock restored.',
+            'data' => [
+                'id' => $cancelledOrder->id,
+                'order_number' => $cancelledOrder->order_number,
+                'status' => $cancelledOrder->status,
+                'can_cancel' => false,
+            ],
+        ]);
     }
 
     private function newOrderNumber(): string
