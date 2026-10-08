@@ -200,9 +200,59 @@ class SellerMessagesTest extends TestCase
             'body' => 'Can you help me reset my email password?',
         ])
             ->assertCreated()
-            ->assertJsonPath('data.messages.1.text', "Can't answer the question because it isn't related to the product or your order. Please ask about this product or your order.");
+            ->assertJsonPath(
+                'data.messages.1.text',
+                'Thanks for your message! I’ve shared it with the seller, and they’ll contact you here as soon as they can. While you wait, you can ask about the product’s price, availability, or options.',
+            );
 
         $this->assertDatabaseCount('seller_messages', 6);
+        $this->assertDatabaseHas('seller_messages', [
+            'conversation_id' => $conversation->id,
+            'sender_id' => $buyer->id,
+            'body' => 'Can you help me reset my email password?',
+            'read_at' => null,
+        ]);
+    }
+
+    public function test_buyer_greeting_gets_a_conversational_reply_with_question_suggestions_and_seller_follow_up(): void
+    {
+        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Friendly Store',
+            'registration_status' => 'active',
+        ]);
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Canvas Tote',
+            'price' => 850,
+            'stock_quantity' => 6,
+            'status' => 'active',
+            'is_archived' => false,
+        ]);
+
+        $conversationId = $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/messages/conversations', ['product_id' => $product->id])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->postJson("/api/v1/buyer/messages/conversations/{$conversationId}/messages", [
+            'body' => 'Hi!',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.messages.0.text', 'Hi!')
+            ->assertJsonPath('data.messages.1.sender', 'seller')
+            ->assertJsonPath(
+                'data.messages.1.text',
+                'Hi! Thanks for messaging Friendly Store. What can I help you with? You can ask about the product\'s price, availability, or options. If you need help beyond these details, the seller will get back to you here.',
+            );
+
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/messages?type=buyers')
+            ->assertOk()
+            ->assertJsonPath('data.0.preview', 'Hi! Thanks for messaging Friendly Store. What can I help you with? You can ask about the product\'s price, availability, or options. If you need help beyond these details, the seller will get back to you here.')
+            ->assertJsonPath('data.0.unread', 1);
     }
 
     public function test_buyer_order_questions_get_current_shipment_details(): void
