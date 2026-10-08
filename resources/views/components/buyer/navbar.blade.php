@@ -18,6 +18,12 @@
     'resources/js/buyer/components/navbar.js',
 ])
 
+@php
+    $buyerCartCount = auth()->check() && auth()->user()->role === \App\Models\User::ROLE_BUYER
+        ? \App\Models\Buyer\CartItem::where('user_id', auth()->id())->sum('quantity')
+        : 0;
+@endphp
+
 <header
     id="buyer-navbar"
     class="
@@ -229,7 +235,11 @@
                         "
                     >
 
-                    <span class="buyer-icon-badge">2</span>
+                    <span
+                        class="buyer-icon-badge"
+                        id="buyerCartBadge"
+                        style="{{ $buyerCartCount > 0 ? '' : 'display: none' }}"
+                    >{{ $buyerCartCount > 99 ? '99+' : $buyerCartCount }}</span>
                 </a>
 
                 {{-- BUYER ACCOUNT --}}

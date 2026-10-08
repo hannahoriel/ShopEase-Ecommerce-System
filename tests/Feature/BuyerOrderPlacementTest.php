@@ -18,6 +18,24 @@ class BuyerOrderPlacementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_buyer_cart_badge_displays_the_total_cart_quantity(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+        ]);
+
+        $this->actingAs($buyer)
+            ->get('/buyer/cart')
+            ->assertOk()
+            ->assertSee('id="buyerCartBadge"', false)
+            ->assertSee('>3</span>', false)
+            ->assertDontSee('class="buyer-icon-badge">2</span>', false);
+    }
+
     public function test_buyer_places_real_orders_and_receives_unique_order_numbers_for_qr_codes(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);

@@ -27,6 +27,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const notificationButton =
         document.getElementById('buyerNotificationButton');
 
+    const cartBadge =
+        document.getElementById('buyerCartBadge');
+
+    function updateCartBadge(count) {
+        if (!cartBadge) return;
+
+        const quantity = Math.max(0, Number(count) || 0);
+        cartBadge.textContent = quantity > 99 ? '99+' : String(quantity);
+        cartBadge.style.display = quantity > 0 ? '' : 'none';
+    }
+
+    window.addEventListener('buyer:cart-updated', function (event) {
+        updateCartBadge(event.detail?.count);
+    });
+
     /* =================================================
        CATEGORY DROPDOWN
     ================================================== */

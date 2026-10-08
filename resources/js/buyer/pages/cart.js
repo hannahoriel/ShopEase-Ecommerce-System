@@ -71,6 +71,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     hasProducts;
             }
 
+            function updateCartBadgeFromRows() {
+                const count = Array.from(document.querySelectorAll('[data-cart-item]'))
+                    .reduce((total, row) => total + Number(row.querySelector('.quantity-input')?.value || 0), 0);
+                window.dispatchEvent(new CustomEvent('buyer:cart-updated', {
+                    detail: { count },
+                }));
+            }
+
             function syncRecommendedProductsEmptyState() {
                 if (
                     !recommendedProductsGrid ||
@@ -93,6 +101,9 @@ document.addEventListener('DOMContentLoaded', function () {
             function renderCartFromApi(items) {
                 const cartGroupsEl = document.getElementById('cartGroups');
                 if (!cartGroupsEl) return;
+                window.dispatchEvent(new CustomEvent('buyer:cart-updated', {
+                    detail: { count: items.reduce((total, item) => total + Number(item.quantity || 0), 0) },
+                }));
 
                 if (!items.length) {
                     cartGroupsEl.innerHTML = '';
@@ -846,6 +857,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         input.value =
                             quantity;
 
+                        updateCartBadgeFromRows();
                         updateTotals();
 
                         const apiItemId = row?.dataset.apiItemId;
@@ -862,6 +874,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (apiItemId) apiRemoveItem(apiItemId);
 
                         removeCartRow(row);
+                        updateCartBadgeFromRows();
                     }
                 }
             );
