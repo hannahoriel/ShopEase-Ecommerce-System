@@ -436,7 +436,7 @@
 
             {{-- NOTIFICATIONS --}}
             <a
-                href="{{ \Illuminate\Support\Facades\Route::has('seller.notifications') ? route('seller.notifications') : url('/seller/notifications') }}"
+                href="{{ route('seller.notifications.index') }}"
                 title="Notifications"
                 class="sidebar-link sidebar-menu-item seller-menu-delay-5 flex items-center gap-2.5 px-3 py-2.5 rounded-full transition-all duration-300 w-full {{ request()->routeIs('seller.notifications*') || request()->is('seller/notifications*') ? 'bg-maroon-700/60' : 'hover:bg-maroon-800/50 hover:translate-x-1' }}"
             >
