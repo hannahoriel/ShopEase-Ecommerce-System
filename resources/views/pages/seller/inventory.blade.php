@@ -2215,6 +2215,40 @@
                         </div>
                     </div>
 
+                    {{-- Read-only archive metadata (visible only for Archived Items) --}}
+                    <section
+                        id="productDetailsArchiveNotice"
+                        class="product-details-archive-notice hidden"
+                        aria-label="Archived product information"
+                    >
+                        <div class="product-details-archive-notice-header">
+                            <span class="product-details-archive-indicator" aria-hidden="true"></span>
+                            <div>
+                                <h3>Archived Product</h3>
+                                <p>This listing is archived and can only be viewed.</p>
+                            </div>
+                        </div>
+                        <div class="product-details-archive-meta">
+                            <div class="product-details-archive-field">
+                                <span>Archived by</span>
+                                <strong id="productDetailsArchivedBy">Not recorded</strong>
+                            </div>
+                            <div class="product-details-archive-field">
+                                <span>Date archived</span>
+                                <strong id="productDetailsArchivedAt">Not recorded</strong>
+                            </div>
+                            <div class="product-details-archive-field product-details-archive-reason">
+                                <span>Reason for archiving</span>
+                                <strong id="productDetailsArchiveReason">Not recorded</strong>
+                            </div>
+                            <div id="productDetailsArchiveDetailsWrap"
+                                 class="product-details-archive-field product-details-archive-details hidden">
+                                <span>Additional details</span>
+                                <p id="productDetailsArchiveDetails"></p>
+                            </div>
+                        </div>
+                    </section>
+
                     <nav class="product-details-inspo-tabs" role="tablist">
                         <button
                             type="button"

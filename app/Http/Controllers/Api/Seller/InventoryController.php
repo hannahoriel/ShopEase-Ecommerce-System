@@ -420,6 +420,9 @@ class InventoryController extends Controller
 
         abort_unless($product->seller_id === $seller->id, 404);
 
+        // Archived products are permanently read-only for seller inventory edits.
+        abort_if((bool) $product->is_archived, 403, 'Archived products cannot be edited.');
+
         $optionGroups = [
             'variations' => ['input' => 'variation_items', 'type' => 'variation'],
             'colors' => ['input' => 'color_items', 'type' => 'color'],
@@ -718,33 +721,44 @@ class InventoryController extends Controller
         return response()->json($this->serializeProduct($product->fresh()));
     }
 
-    public function archive(Product $product): JsonResponse
+    public function archive(Request $request, Product $product): JsonResponse
     {
-        $seller = $this->sellerForAuthUser(request()->user());
-
-        abort_unless($product->seller_id === $seller->id, 404);
+        $seller = $this->sellerForAuthUser($request->user());
+        abort_unless((int) $product->seller_id === (int) $seller->id, 404);
 
         if ($product->archived_by_admin) {
             return response()->json([
-                'message' => 'This product was removed by an administrator and cannot be restored by the seller.',
+                'message' => 'This product was removed by an administrator and cannot be archived or restored by the seller.',
             ], 403);
         }
 
-        $product->update([
+        // Never overwrite an existing archive event or its original attribution.
+        if ($product->is_archived) {
+            return response()->json($this->serializeProduct($product));
+        }
+
+        $validated = $request->validate([
+            'archive_reason' => ['required', 'string', 'max:255'],
+            'archive_details' => ['nullable', 'string', 'max:300'],
+        ]);
+
+        $product->forceFill([
             'is_archived' => true,
             'status' => 'archived',
             'archived_by_admin' => false,
-            'archive_reason' => null,
-        ]);
+            'archive_reason' => trim($validated['archive_reason']),
+            'archive_details' => trim($validated['archive_details'] ?? ''),
+            'archive_actor' => 'seller',
+            'archived_at' => now(),
+        ])->save();
 
         return response()->json($this->serializeProduct($product->fresh()));
     }
 
-    public function unarchive(Product $product): JsonResponse
+    public function unarchive(Request $request, Product $product): JsonResponse
     {
-        $seller = $this->sellerForAuthUser(request()->user());
-
-        abort_unless($product->seller_id === $seller->id, 404);
+        $seller = $this->sellerForAuthUser($request->user());
+        abort_unless((int) $product->seller_id === (int) $seller->id, 404);
 
         if ($product->archived_by_admin) {
             return response()->json([
@@ -752,11 +766,16 @@ class InventoryController extends Controller
             ], 403);
         }
 
-        $product->update([
+        // Preserve the historical metadata until an explicit unarchive is actually allowed.
+        $product->forceFill([
             'is_archived' => false,
             'status' => 'active',
+            'archived_by_admin' => false,
             'archive_reason' => null,
-        ]);
+            'archive_details' => null,
+            'archive_actor' => null,
+            'archived_at' => null,
+        ])->save();
 
         return response()->json($this->serializeProduct($product->fresh()));
     }
@@ -782,6 +801,23 @@ class InventoryController extends Controller
     protected function serializeProduct(Product $product): array
     {
         $data = $product->toArray();
+
+        // Include both database field names and the camelCase keys read by Inventory JS.
+        $actor = (bool) $product->archived_by_admin
+            ? 'admin'
+            : ($product->archive_actor ?: null);
+        $archivedAt = $product->archived_at;
+        $archivedAt = $archivedAt instanceof \DateTimeInterface
+            ? $archivedAt->format(DATE_ATOM)
+            : ($archivedAt ? (string) $archivedAt : null);
+
+        $data['archive_actor'] = $actor;
+        $data['archiveActor'] = $actor;
+        $data['archiveReason'] = $product->archive_reason;
+        $data['archiveDetails'] = $product->archive_details;
+        $data['archivedAt'] = $archivedAt;
+        $data['archived_by_admin'] = (bool) $product->archived_by_admin;
+
 
         if (isset($data['photos'])) {
             $data['photos'] = $this->normalizePhotos($data['photos']);

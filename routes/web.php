@@ -2088,3 +2088,23 @@ Route::get('/admin/messages', function () {
 
     return view('pages.admin.messages');
 })->middleware('auth')->name('admin.messages');
+
+
+use App\Http\Controllers\Seller\SellerPerformanceController;
+
+Route::middleware(['auth'])
+    ->prefix('seller')
+    ->name('seller.')
+    ->group(function () {
+
+        Route::get(
+            '/performance',
+            [SellerPerformanceController::class, 'index']
+        )->name('performance');
+
+        Route::get(
+            '/performance/data',
+            [SellerPerformanceController::class, 'data']
+        )->name('performance.data');
+
+    });

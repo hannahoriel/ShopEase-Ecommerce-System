@@ -1,0 +1,1922 @@
+
+/* ================================================
+   SHOPEASE | SELLER PERFORMANCE
+   Complete CSS - Updated Close Button & PNG Icons
+================================================ */
+
+.seller-performance-page {
+    background: #FBF8F6;
+    min-height: 100vh;
+    color: #17120F;
+}
+
+.seller-performance-content {
+    padding: 34px 38px 46px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.seller-performance-page button,
+.seller-performance-page input,
+.seller-performance-page select,
+.seller-performance-page textarea,
+.sp-admin-modal-overlay,
+.sp-contact-overlay,
+.sp-evidence-viewer {
+    font-family: 'Poppins', sans-serif;
+}
+
+.seller-performance-page *,
+.sp-admin-modal-overlay *,
+.sp-contact-overlay *,
+.sp-evidence-viewer * {
+    box-sizing: border-box;
+}
+
+.seller-performance-page [hidden],
+.sp-admin-modal-overlay[hidden],
+.sp-contact-overlay[hidden],
+.sp-evidence-viewer[hidden] {
+    display: none !important;
+}
+
+/* ================================================
+   PERFORMANCE OVERVIEW
+================================================ */
+
+.sp-top-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(330px, 1fr);
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.sp-score-card,
+.sp-panel,
+.sp-metric {
+    background: #FFFFFF;
+    border: 1px solid rgba(82, 7, 11, .04);
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(74, 10, 10, .04);
+}
+
+.sp-score-card {
+    padding: 23px 25px;
+    min-height: 274px;
+}
+
+.sp-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.sp-section-heading h2 {
+    margin: 0 0 5px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.sp-section-heading p {
+    margin: 0;
+    color: #929292;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.sp-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 21px;
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.sp-pill-neutral {
+    background: #F1EFEE;
+    color: #8C8784;
+}
+
+.sp-pill-compliant {
+    background: #D8ECD2;
+    color: #37802E;
+}
+
+.sp-pill-warning {
+    background: #FFE4D3;
+    color: #C56A19;
+}
+
+.sp-pill-under-review {
+    background: #FFF2C9;
+    color: #9A7100;
+}
+
+.sp-pill-suspended {
+    background: #FFD8DB;
+    color: #C3313C;
+}
+
+/* Compliance Score */
+
+.sp-score-inner {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.sp-gauge {
+    height: 174px;
+    width: 174px;
+    flex: 0 0 174px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--gauge-color, #FF9D22) calc(var(--score, 0) * 1%),
+        #DADADA 0
+    );
+    display: grid;
+    place-items: center;
+    transition: background .3s;
+}
+
+.sp-gauge-center {
+    height: 137px;
+    width: 137px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.sp-gauge-center strong {
+    font-size: 37px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--gauge-color, #FF9D22);
+}
+
+.sp-gauge-center span {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #929292;
+}
+
+.sp-score-copy {
+    min-width: 0;
+}
+
+.sp-score-copy strong {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.sp-score-copy p {
+    margin: 8px 0 13px;
+    color: #827B78;
+    font-size: 12px;
+    line-height: 1.9;
+}
+
+.sp-meta {
+    font-size: 10px;
+    color: #A6A1A0;
+}
+
+/* ================================================
+   PERFORMANCE CARDS - SMALLER PNG ICONS
+================================================ */
+
+.sp-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.sp-metric {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 125px;
+    padding: 18px;
+    transition: transform .18s, box-shadow .18s;
+}
+
+.sp-metric:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(74, 10, 10, .07);
+}
+
+.seller-performance-page .sp-metric-icon {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* All four PNG icons: 38px */
+
+.seller-performance-page .sp-metric-icon .sp-metric-png {
+    display: block;
+    width: 38px !important;
+    height: 38px !important;
+    object-fit: contain;
+    background: transparent !important;
+}
+
+.sp-metric strong {
+    display: block;
+    font-size: 25px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.sp-metric span {
+    display: block;
+    margin-top: 6px;
+    color: #929292;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* ================================================
+   COMPLIANCE NOTICES
+================================================ */
+
+.sp-panel {
+    padding: 23px 24px;
+    margin-bottom: 22px;
+}
+
+.sp-count {
+    padding: 6px 12px;
+    background: #FFF3F0;
+    color: #77262A;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sp-notice-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.sp-notice {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 17px;
+    background: #FFFCFB;
+    border: 1px solid #F2EBE8;
+    border-radius: 10px;
+    transition: background .18s, transform .18s;
+}
+
+.sp-notice:hover {
+    background: #FFF5F2;
+    transform: translateX(2px);
+}
+
+.sp-notice-icon {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.sp-notice-icon.warning {
+    background: #FFE4D2;
+    color: #C56A19;
+}
+
+.sp-notice-icon.removed {
+    background: #FFD8DC;
+    color: #C3313C;
+}
+
+.sp-notice-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sp-notice-content strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sp-notice-content p {
+    margin: 4px 0;
+    color: #7E7774;
+    font-size: 11px;
+    line-height: 1.65;
+}
+
+.sp-notice-date {
+    font-size: 10px;
+    color: #A7A1A0;
+    white-space: nowrap;
+}
+
+.sp-empty {
+    padding: 28px 14px;
+    text-align: center;
+    color: #929292;
+    font-size: 12px;
+}
+
+/* ================================================
+   COMPLAINTS AND DISPUTES - FILTERS
+================================================ */
+
+.sp-complaints {
+    margin-bottom: 26px;
+}
+
+.sp-complaint-heading {
+    margin: 0 0 14px;
+}
+
+.sp-complaints .complaints-filter-card {
+    padding: 16px;
+    margin-bottom: 20px;
+    background: #FFFFFF;
+    border: 1px solid #F0E9E6;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+}
+
+.sp-complaints .complaints-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sp-complaints .complaints-search-wrap {
+    position: relative;
+    width: 330px;
+    max-width: 100%;
+    flex: 0 1 330px;
+}
+
+.sp-complaints .complaints-search,
+.sp-complaints .complaints-date-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #D9D6D4;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #76716E;
+    font-size: 13px;
+    font-weight: 400;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.sp-complaints .complaints-search {
+    padding-left: 16px;
+    padding-right: 42px;
+}
+
+.sp-complaints .complaints-search::placeholder {
+    color: #76716E;
+    opacity: 1;
+}
+
+.sp-complaints .complaints-search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    color: #76716E;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.sp-complaints .complaints-date-wrap {
+    position: relative;
+    width: 195px;
+    flex: 0 0 195px;
+    height: 36px;
+}
+
+.sp-complaints .complaints-date-input {
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.sp-complaints .complaints-date-button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    border-radius: 0 8px 8px 0;
+    color: #76716E;
+    cursor: pointer;
+}
+
+.sp-complaints .complaints-date-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.sp-complaints .complaints-date-button:hover {
+    background: #F5F5F5;
+    color: #555555;
+}
+
+.sp-complaints .complaints-reload {
+    width: 40px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #17120F;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+}
+
+.sp-complaints .complaints-reload:hover {
+    background: #F2F2F2;
+}
+
+.sp-complaints .complaints-reload:active {
+    transform: scale(.95);
+}
+
+.sp-complaints .complaints-reload svg {
+    width: 20px;
+    height: 20px;
+}
+
+.sp-complaints .complaints-reload.is-spinning svg {
+    animation: spRotate .5s linear;
+}
+
+@keyframes spRotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Gray focus indicators */
+
+.seller-performance-page .sp-complaints
+.complaints-search:focus,
+
+.seller-performance-page .sp-complaints
+.complaints-date-input:focus,
+
+.seller-performance-page .sp-complaints
+.complaints-items:focus {
+    border-color: #AAA7A5 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(130, 130, 130, .16) !important;
+}
+
+.seller-performance-page .sp-complaints button:focus-visible,
+.seller-performance-page .sp-complaints select:focus-visible {
+    outline: 2px solid #AAA7A5;
+    outline-offset: 2px;
+}
+
+/* ================================================
+   COMPLAINTS TABLE AND RIGHT-SIDE PREVIEW
+================================================ */
+
+.sp-complaints .complaints-workspace {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: 0;
+}
+
+.sp-complaints .complaints-table-card,
+.sp-complaints .complaints-detail-card {
+    min-width: 0;
+    overflow: hidden;
+    background: #FFFFFF;
+    border: 1px solid #F0E9E6;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+}
+
+.sp-complaints .complaints-table-card {
+    width: 100%;
+    flex: 1 1 100%;
+    transition: width .3s ease, flex-basis .3s ease;
+}
+
+.sp-complaints .complaints-detail-card {
+    width: 0;
+    flex: 0 0 0;
+    height: 0;
+    margin-left: 0;
+    border-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(18px);
+
+    transition:
+        width .3s,
+        flex-basis .3s,
+        margin-left .3s,
+        opacity .18s,
+        transform .3s,
+        visibility .18s;
+}
+
+.sp-complaints .complaints-workspace.has-selection
+.complaints-table-card {
+    width: calc(66% - 6px);
+    flex: 0 1 calc(66% - 6px);
+}
+
+.sp-complaints .complaints-workspace.has-selection
+.complaints-detail-card {
+    width: calc(34% - 6px);
+    flex: 0 0 calc(34% - 6px);
+    height: auto;
+    min-height: 594px;
+    margin-left: 12px;
+    border-width: 1px;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+/* Status Tabs */
+
+.sp-complaints .complaints-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 26px;
+    min-height: 50px;
+    padding: 0 16px;
+    border-bottom: 1px solid #E5E7EB;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.sp-complaints .complaints-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.sp-complaints .complaints-tab {
+    height: 50px;
+    position: relative;
+    padding: 0 1px;
+    border: 0;
+    background: transparent;
+    color: #8C8784;
+    font-size: 12px;
+    font-weight: 400;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.sp-complaints .complaints-tab.active {
+    color: #17120F;
+    font-weight: 500;
+}
+
+.sp-complaints .complaints-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: #A52A2A;
+}
+
+/* Table */
+
+.sp-complaints .complaints-table-scroll {
+    overflow-x: auto;
+}
+
+.sp-complaints .complaints-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.sp-complaints .complaints-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 500;
+    color: #8C8784;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.sp-complaints .complaints-table th:nth-child(1) {
+    width: 22%;
+}
+
+.sp-complaints .complaints-table th:nth-child(2) {
+    width: 27%;
+}
+
+.sp-complaints .complaints-table th:nth-child(3) {
+    width: 18%;
+}
+
+.sp-complaints .complaints-table th:nth-child(4) {
+    width: 15%;
+}
+
+.sp-complaints .complaints-table th:nth-child(5) {
+    width: 18%;
+}
+
+.sp-complaints .complaint-row {
+    border-bottom: 1px solid #E5E7EB;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.sp-complaints .complaint-row:hover {
+    background: #FFF9F7;
+}
+
+.sp-complaints .complaint-row.active {
+    background: #FFF0EE;
+}
+
+.sp-complaints .complaint-row:focus-visible {
+    outline: 2px solid #AAA7A5;
+    outline-offset: -2px;
+}
+
+.sp-complaints .complaint-row td {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.25;
+    color: #17120F;
+    vertical-align: middle;
+}
+
+.sp-complaints .complaint-id {
+    color: #A52A2A;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Parties inside table */
+
+.sp-complaints .complaint-parties {
+    display: grid;
+    gap: 4px;
+}
+
+.sp-complaints .complaint-party {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.sp-complaints .complaint-avatar,
+.sp-admin-modal-overlay .complaint-avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 50%;
+    background: #D9D9D9;
+    color: #555555;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+}
+
+.sp-complaints .complaint-avatar svg {
+    width: 17px;
+    height: 17px;
+}
+
+.sp-complaints .complaint-party-copy {
+    min-width: 0;
+    line-height: 1.05;
+    display: grid;
+}
+
+.sp-complaints .complaint-party-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.sp-complaints .complaint-party-role {
+    display: block;
+    margin-top: 2px;
+    color: #8C8784;
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.sp-complaints .complaint-type {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* Complaint Status Colors */
+
+.sp-complaints .complaint-status,
+.sp-admin-modal-overlay .complaint-status,
+.sp-admin-modal-overlay .complaints-modal-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 62px;
+    min-height: 24px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.sp-complaints .complaint-status.open,
+.sp-admin-modal-overlay .complaint-status.open,
+.sp-admin-modal-overlay .complaints-modal-status.open {
+    background: #FFD7D9;
+    color: #B3262E;
+}
+
+.sp-complaints .complaint-status.in-progress,
+.sp-admin-modal-overlay .complaint-status.in-progress,
+.sp-admin-modal-overlay .complaints-modal-status.in-progress {
+    background: #FFE8D5;
+    color: #C96A00;
+}
+
+.sp-complaints .complaint-status.resolved,
+.sp-admin-modal-overlay .complaint-status.resolved,
+.sp-admin-modal-overlay .complaints-modal-status.resolved {
+    background: #DDF0D6;
+    color: #28721B;
+}
+
+.sp-complaints .complaint-date-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    white-space: nowrap;
+    color: #17120F;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.sp-complaints .complaint-date-cell svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+}
+
+.sp-complaints .complaints-empty {
+    display: none;
+    padding: 40px 16px;
+    text-align: center;
+    font-size: 12px;
+    color: #8C8784;
+}
+
+/* ================================================
+   TABLE PAGINATION
+================================================ */
+
+.sp-complaints .complaints-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 50px;
+    padding: 10px 16px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.sp-complaints .complaints-count {
+    margin: 0;
+    color: #8C8784;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.sp-complaints .complaints-pagination,
+.sp-complaints .complaints-page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sp-complaints .complaints-page-button {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #374151;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.sp-complaints .complaints-page-button:hover:not(:disabled) {
+    background: #F3F4F6;
+}
+
+.sp-complaints .complaints-page-button.active {
+    background: #FFD1C2;
+    color: #7B1B1B;
+    font-weight: 600;
+}
+
+.sp-complaints .complaints-page-button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.sp-complaints .complaints-items {
+    height: 28px;
+    margin-left: 4px;
+    padding: 0 8px;
+    border: 1px solid #F0B9AC;
+    border-radius: 6px;
+    background: #FFF5F1;
+    color: #374151;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ================================================
+   RIGHT-SIDE COMPLAINT PREVIEW
+================================================ */
+
+.sp-complaints .complaints-detail-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.sp-complaints .complaints-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.sp-complaints .complaints-detail-eyebrow {
+    color: #8C8784;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.sp-complaints .complaints-detail-id {
+    margin-top: 6px;
+    color: #A52A2A;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sp-complaints .complaints-detail-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sp-complaints .complaints-detail-close {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #8C8784;
+    display: grid;
+    place-items: center;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.sp-complaints .complaints-detail-close:hover {
+    background: #F6F2F0;
+    color: #17120F;
+}
+
+.sp-complaints .complaints-detail-body {
+    flex: 1;
+    padding: 13px 14px 8px;
+}
+
+.sp-complaints .complaints-detail-section {
+    margin-bottom: 17px;
+}
+
+.sp-complaints .complaints-detail-label {
+    margin: 0 0 6px;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sp-complaints .complaints-detail-text {
+    margin: 0;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.sp-complaints .complaints-parties-list {
+    display: grid;
+    gap: 10px;
+}
+
+.sp-complaints .complaints-evidence,
+.sp-admin-modal-overlay .complaints-modal-evidence-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: #8C8784;
+    font-size: 11px;
+}
+
+.sp-complaints .complaints-detail-actions {
+    padding: 12px 14px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sp-complaints .complaints-view-details {
+    height: 34px;
+    padding: 0 13px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.sp-complaints .complaints-view-details:hover {
+    background: #F9FAFB;
+}
+
+/* Evidence Thumbnails */
+
+.sp-complaints .sp-evidence-thumb,
+.sp-admin-modal-overlay .sp-evidence-thumb {
+    padding: 0;
+    border: 1px solid #E8DBD5;
+    border-radius: 6px;
+    background: #D9D9D9;
+    overflow: hidden;
+    cursor: zoom-in;
+    transition: transform .18s, box-shadow .18s;
+}
+
+.sp-complaints .sp-evidence-thumb:hover,
+.sp-admin-modal-overlay .sp-evidence-thumb:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(82, 7, 11, .14);
+}
+
+.sp-complaints .sp-evidence-thumb img {
+    display: block;
+    width: 43px;
+    height: 43px;
+    object-fit: cover;
+}
+
+.sp-admin-modal-overlay .sp-evidence-thumb img {
+    display: block;
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+}
+
+/* ================================================
+   FULL COMPLAINT DETAILS MODAL
+================================================ */
+
+.sp-admin-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(23, 18, 15, .40);
+    backdrop-filter: blur(2px);
+}
+
+.sp-admin-modal-overlay .complaints-modal-dialog {
+    width: min(900px, calc(100vw - 36px));
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding: 24px 24px 22px;
+    border-radius: 24px;
+    background: #FFFFFF;
+    box-shadow: 0 24px 70px rgba(42, 20, 15, .2);
+    scrollbar-width: none;
+    animation: spPop .23s ease;
+}
+
+.sp-admin-modal-overlay .complaints-modal-dialog::-webkit-scrollbar {
+    display: none;
+}
+
+@keyframes spPop {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.sp-modal-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-title {
+    margin: 0 0 0 10px;
+    color: #17120F;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.sp-admin-modal-overlay .sp-modal-x {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #8C8784;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.sp-admin-modal-overlay .sp-modal-x:hover {
+    background: #F6F2F0;
+    color: #17120F;
+}
+
+/* Modal Grid */
+
+.sp-admin-modal-overlay .complaints-modal-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-card {
+    min-width: 0;
+    padding: 13px 14px;
+    border: 1px solid #D9D6D4;
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+.sp-admin-modal-overlay .complaints-modal-card-title {
+    margin: 0 0 9px;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.sp-admin-modal-overlay .complaints-modal-label {
+    display: block;
+    margin-bottom: 4px;
+    color: #8C8784;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.15;
+}
+
+/* Complaint Summary */
+
+.sp-admin-modal-overlay .complaints-modal-summary {
+    min-height: 84px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sp-admin-modal-overlay .complaints-modal-summary-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-id {
+    display: block;
+    color: #9E231F;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: .01em;
+}
+
+.sp-admin-modal-overlay .complaints-modal-meta {
+    display: flex;
+    gap: 25px;
+    margin-top: 14px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-meta-item span {
+    display: block;
+    color: #8C8784;
+    font-size: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-meta-item strong {
+    font-size: 11px;
+    font-weight: 500;
+    color: #17120F;
+}
+
+.sp-admin-modal-overlay .complaints-modal-type-order {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-type-value,
+.sp-admin-modal-overlay .complaints-modal-order-id {
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.sp-admin-modal-overlay .complaints-modal-description {
+    margin: 0;
+    color: #17120F;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* ================================================
+   MODAL - PARTIES INVOLVED
+================================================ */
+
+.sp-admin-modal-overlay .complaints-modal-party-list {
+    display: grid;
+    gap: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #D9D9D9;
+    color: #555555;
+    display: grid;
+    place-items: center;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-avatar svg {
+    width: 21px;
+    height: 21px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.05;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-copy strong {
+    font-size: 10px;
+    font-weight: 600;
+    color: #17120F;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-copy span {
+    font-size: 8px;
+    font-weight: 400;
+    color: #9B9693;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #7B7370;
+    font-size: 9px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.sp-admin-modal-overlay .complaints-modal-party-role svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ================================================
+   ORDER INFORMATION
+================================================ */
+
+.sp-admin-modal-overlay .complaints-modal-order-list {
+    display: grid;
+    gap: 9px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-order-row {
+    display: grid;
+    grid-template-columns: 125px minmax(0, 1fr);
+    gap: 8px;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.sp-admin-modal-overlay
+.complaints-modal-order-row span:first-child {
+    color: #8C8784;
+}
+
+.sp-admin-modal-overlay
+.complaints-modal-order-row span:last-child {
+    color: #17120F;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+/* Ordered Product */
+
+.sp-admin-modal-overlay .complaints-modal-item-main {
+    display: grid;
+    grid-template-columns: 75px minmax(0, 1fr);
+    gap: 12px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-product-image {
+    width: 75px;
+    height: 75px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #E5E5E5;
+}
+
+.sp-admin-modal-overlay .complaints-modal-product-name {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.sp-admin-modal-overlay .complaints-modal-product-variant {
+    margin-top: 5px;
+    font-size: 10px;
+    color: #8C8784;
+}
+
+.sp-admin-modal-overlay .complaints-modal-product-price {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-product-price strong {
+    font-size: 13px;
+    font-weight: 600;
+    color: #9E231F;
+}
+
+.sp-admin-modal-overlay .complaints-modal-product-price span {
+    font-size: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-item-extra {
+    display: grid;
+    gap: 10px;
+    margin-top: 13px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-item-extra-label {
+    margin-right: 10px;
+    font-size: 10px;
+    color: #8C8784;
+}
+
+.sp-admin-modal-overlay .complaints-modal-category-pill {
+    display: inline-flex;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #F1EFEE;
+    color: #6B6663;
+    font-size: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-shop-line {
+    font-size: 11px;
+    color: #8C8784;
+}
+
+.sp-admin-modal-overlay .complaints-modal-shop-line strong {
+    font-weight: 500;
+    color: #17120F;
+}
+
+/* ================================================
+   CONTACT ADMIN CARD
+================================================ */
+
+.sp-admin-modal-overlay .sp-contact-admin-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 127px;
+}
+
+.sp-admin-modal-overlay .sp-contact-admin-copy p {
+    margin: 0;
+    color: #8C8784;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.sp-admin-modal-overlay .sp-contact-admin-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 146px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid #9E231F;
+    border-radius: 8px;
+    background: #9E231F;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .16s, transform .16s;
+}
+
+.sp-admin-modal-overlay .sp-contact-admin-button:hover {
+    background: #7F1B18;
+    transform: translateY(-1px);
+}
+
+.sp-admin-modal-overlay .sp-contact-admin-button svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* ================================================
+   STATUS UPDATES
+================================================ */
+
+.sp-admin-modal-overlay .complaints-modal-footer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+    gap: 10px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-notes-list {
+    display: grid;
+    gap: 9px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-bottom: 1px solid #EEEEEE;
+    padding-bottom: 9px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-note-avatar {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    border-radius: 50%;
+    background: #D9D9D9;
+    color: #555555;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+}
+
+.sp-admin-modal-overlay .complaints-modal-note-copy {
+    display: grid;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.sp-admin-modal-overlay .complaints-modal-note-copy strong {
+    font-size: 11px;
+    font-weight: 600;
+    color: #17120F;
+}
+
+.sp-admin-modal-overlay .complaints-modal-note-copy span {
+    font-size: 11px;
+    color: #56514E;
+    white-space: normal;
+    line-height: 1.3;
+}
+
+.sp-admin-modal-overlay .complaints-modal-note-time {
+    max-width: 110px;
+    text-align: right;
+    color: #8C8784;
+    font-size: 10px;
+    white-space: normal;
+}
+
+.sp-admin-modal-overlay .complaints-modal-notes-empty {
+    padding: 15px 0;
+    color: #8C8784;
+    font-size: 12px;
+}
+
+.sp-admin-modal-overlay .sp-modal-bottom-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 12px;
+    min-width: 0;
+}
+
+.sp-admin-modal-overlay .sp-modal-bottom-actions p {
+    margin: 0;
+    text-align: right;
+    color: #8C8784;
+    font-size: 10px;
+}
+
+/* ================================================
+   CLOSE BUTTON — NEW GRAY OUTLINE DESIGN
+================================================ */
+
+.sp-admin-modal-overlay .sp-modal-done {
+    height: 34px;
+    padding: 0 18px;
+
+    /* Gray stroke */
+    border: 1px solid #A6A6A6 !important;
+    border-radius: 8px;
+
+    /* No fill */
+    background: transparent !important;
+    background-image: none !important;
+
+    /* Gray text */
+    color: #777777 !important;
+
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+
+    box-shadow: none !important;
+    filter: none !important;
+
+    cursor: pointer;
+
+    transition:
+        background .2s,
+        border-color .2s,
+        color .2s;
+}
+
+.sp-admin-modal-overlay .sp-modal-done:hover {
+    background: #F7F7F7 !important;
+    border-color: #888888 !important;
+    color: #555555 !important;
+
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+.sp-admin-modal-overlay .sp-modal-done:focus-visible {
+    outline: 2px solid #A6A6A6;
+    outline-offset: 2px;
+}
+
+/* ================================================
+   CONTACT ADMIN DEMO DIALOG
+================================================ */
+
+.sp-contact-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(23, 18, 15, .45);
+    backdrop-filter: blur(2px);
+}
+
+.sp-contact-dialog {
+    width: min(490px, 100%);
+    padding: 22px 23px;
+    border-radius: 17px;
+    background: #FFFFFF;
+    box-shadow: 0 24px 70px rgba(42, 20, 15, .2);
+    animation: spPop .23s ease;
+}
+
+.sp-contact-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.sp-contact-header h3 {
+    margin: 0 0 5px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #17120F;
+}
+
+.sp-contact-header p {
+    margin: 0;
+    color: #8C8784;
+    font-size: 11px;
+}
+
+.sp-contact-x {
+    border: 0;
+    background: transparent;
+    color: #8C8784;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.sp-contact-x:hover {
+    color: #17120F;
+}
+
+.sp-contact-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sp-contact-dialog textarea {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    resize: vertical;
+    border: 1px solid #D9D6D4;
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: #17120F;
+    font-size: 12px;
+    line-height: 1.7;
+    outline: none;
+}
+
+.sp-contact-dialog textarea:focus {
+    border-color: #AAA7A5;
+    box-shadow: 0 0 0 2px rgba(130, 130, 130, .16);
+}
+
+.sp-contact-help {
+    margin: 9px 0 20px;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #8C8784;
+}
+
+.sp-contact-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sp-contact-actions button {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.sp-contact-cancel {
+    background: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    color: #17120F;
+}
+
+.sp-contact-copy {
+    background: #9E231F;
+    border: 1px solid #9E231F;
+    color: #FFFFFF;
+}
+
+.sp-contact-copy:hover {
+    background: #7F1B18;
+}
+
+#sp-contact-feedback {
+    margin: 12px 0 0;
+    color: #28721B;
+    font-size: 11px;
+}
+
+/* ================================================
+   EVIDENCE LIGHTBOX
+================================================ */
+
+.sp-evidence-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 100050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(22, 9, 12, .86);
+    backdrop-filter: blur(4px);
+}
+
+.sp-evidence-viewer-dialog {
+    position: relative;
+    width: min(760px, 92vw);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 34px 17px 15px;
+    border-radius: 14px;
+    background: #FFFFFF;
+    box-shadow: 0 18px 65px rgba(0, 0, 0, .3);
+    animation: spPop .2s ease;
+}
+
+.sp-evidence-viewer-dialog img {
+    display: block;
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    border-radius: 9px;
+}
+
+.sp-evidence-viewer-dialog p {
+    margin: 12px 0 0;
+    color: #6E6561;
+    font-size: 12px;
+}
+
+.sp-evidence-viewer-close {
+    position: absolute;
+    right: 10px;
+    top: 4px;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #6D1719;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.sp-evidence-viewer-close:hover {
+    background: #FFF0EE;
+}
+
+.sp-error {
+    font-size: 12px;
+    color: #C3313C;
+}
+
+body.sp-modal-open {
+    overflow: hidden;
+}
+
+/* ================================================
+   RESPONSIVE
+================================================ */
+
+@media (max-width: 1200px) {
+    .sp-top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sp-score-card {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 1050px) {
+    .sp-complaints
+    .complaints-workspace.has-selection {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .sp-complaints
+    .complaints-workspace.has-selection
+    .complaints-table-card,
+
+    .sp-complaints
+    .complaints-workspace.has-selection
+    .complaints-detail-card {
+        width: 100%;
+        flex: 1 1 100%;
+        margin-left: 0;
+    }
+
+    .sp-complaints .complaints-table {
+        min-width: 620px;
+    }
+}
+
+@media (max-width: 800px) {
+    .seller-performance-content {
+        padding: 22px 18px;
+    }
+
+    .sp-metrics {
+        gap: 10px;
+    }
+
+    .sp-score-inner {
+        gap: 20px;
+    }
+
+    .sp-panel {
+        padding: 18px;
+    }
+}
+
+@media (max-width: 700px) {
+    .sp-admin-modal-overlay .complaints-modal-grid,
+    .sp-admin-modal-overlay .complaints-modal-footer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sp-admin-modal-overlay .complaints-modal-dialog {
+        padding: 14px;
+    }
+
+    .sp-complaints .complaints-table-footer {
+        flex-wrap: wrap;
+    }
+
+    .sp-complaints .complaints-search-wrap {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .sp-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sp-metric {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        min-height: 125px;
+    }
+
+    .sp-score-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sp-notice-date {
+        white-space: normal;
+    }
+
+    .sp-complaints .complaints-date-wrap {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .sp-admin-modal-overlay .complaints-modal-party-row {
+        grid-template-columns: 34px minmax(0, 1fr);
+    }
+
+    .sp-admin-modal-overlay .complaints-modal-party-role {
+        grid-column: 2;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .seller-performance-page *,
+    .sp-admin-modal-overlay *,
+    .sp-contact-overlay *,
+    .sp-evidence-viewer * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Clickable metrics, compliance notices, and single calendar icon */
+.seller-performance-page .sp-metric-link { cursor: pointer; }
+.seller-performance-page .sp-metric-link:focus-visible,
+.seller-performance-page .sp-notice-link:focus-visible { outline: 2px solid #9B9694; outline-offset: 2px; }
+.seller-performance-page .sp-notice-link { cursor: pointer; }
+.seller-performance-page .sp-notice-link:hover { background: #FFF8F4; }
+.seller-performance-page .sp-complaints .complaints-date-input { appearance: none; -webkit-appearance: none; }
+.seller-performance-page .sp-complaints .complaints-date-input::-webkit-calendar-picker-indicator { opacity: 0; width: 0; height: 0; pointer-events: none; }
+.seller-performance-page .sp-complaints .complaints-date-input::-webkit-inner-spin-button { display: none; }

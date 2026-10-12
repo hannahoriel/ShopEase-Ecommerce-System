@@ -395,6 +395,12 @@
 
                         @forelse ($orders as $order)
                             @php
+                                // Shipping Status begins only after courier pickup.
+                                // Orders still waiting for shipment remain under Seller Order Status.
+                                if (!in_array(strtolower((string) $order->status), ['in_transit', 'out_for_delivery', 'delivered'], true)) {
+                                    continue;
+                                }
+
                                 $shippingStatus = str_replace('_', '-', $order->status);
                                 $shippingLabel = match ($order->status) {
                                     'to_ship' => 'Ready to Ship',
@@ -472,7 +478,7 @@
                                 <div class="delivery-info">
                                     <span class="status-pill {{ $order->status === 'delivered' ? 'delivered' : 'transit' }}">{{ $shippingLabel }}</span>
                                     <span class="delivery-label">Estimated Delivery</span>
-                                    <strong class="delivery-date {{ $order->status === 'delivered' ? 'delivered' : '' }}">{{ $shipment?->estimated_delivery?->format('M d, Y') ?? 'Not scheduled' }}</strong>
+                                    <strong class="delivery-date {{ $order->status === 'delivered' ? 'delivered' : '' }}">{{ $shipment?->estimated_delivery?->format('M d, Y') ?? '—' }}</strong>
                                 </div>
                                 <div class="tracking-and-courier">
                                     <div class="tracking-block">
@@ -480,7 +486,7 @@
                                             $isOutForDelivery = $order->status === 'out_for_delivery';
                                             $isDelivered = $order->status === 'delivered';
                                             $transitIcon = $isDelivered || $isOutForDelivery
-                                                ? 'in-transit-check.png'
+                                                ? ($isDelivered ? 'delivered-check.png' : 'in-transit-check.png')
                                                 : 'in-transit-blue.png';
                                             $outIcon = $isDelivered
                                                 ? 'delivered-check.png'

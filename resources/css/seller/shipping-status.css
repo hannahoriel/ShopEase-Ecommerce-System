@@ -1718,3 +1718,11 @@
 #shippingTable .order-info {
     gap: 14px !important;
 }
+
+/* Delivered timeline: all completed milestones share the same green check appearance. */
+.shipping-history-icon.green-active {
+    background: #2A8B36;
+}
+.shipping-history-icon.green-active svg {
+    stroke: #FFFFFF;
+}

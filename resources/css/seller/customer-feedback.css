@@ -3190,3 +3190,27 @@ body.seller-sidebar-collapsed #feedbackPage {
 
     color: #9CA3AF !important;
 }
+
+
+/* =========================================================
+   CENTER PRODUCT RATINGS EMPTY STATE
+   Keep message centered across the full card content area.
+   The original four fixed grid columns confined it to the left.
+========================================================= */
+#feedbackPage .product-ratings-panel.active:has(.product-rating-empty-state) {
+    min-height: 245px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#feedbackPage .product-ratings-panel:has(.product-rating-empty-state) .product-grid {
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#feedbackPage .product-ratings-panel .product-rating-empty-state {
+    width: 100% !important;
+    grid-column: 1 / -1 !important;
+    text-align: center !important;
+}

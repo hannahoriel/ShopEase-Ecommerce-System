@@ -4,7 +4,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.getElementById('sellerSidebar');
     const page = document.getElementById('shipping-status-page');
     const tabs = document.querySelectorAll('.shipping-status-tab');
-    const rows = Array.from(document.querySelectorAll('.shipping-row'));
+    const rows = Array.from(document.querySelectorAll('.shipping-row')).filter(row => ['in-transit', 'out-for-delivery', 'delivered'].includes(row.dataset.status));
+    // Exclude orders that have not been picked up, even if rendered in older markup.
+    document.querySelectorAll('.shipping-row').forEach(row => {
+        if (!rows.includes(row)) row.remove();
+    });
     const searchInput = document.getElementById('shippingSearch');
     const noResults = document.getElementById('shippingNoResults');
     const showingCount = document.getElementById('shippingShowingCount');
@@ -294,11 +298,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = document.createElement('div');
             item.className = 'shipping-history-item';
 
-            const iconClass = isLast ? (status === 'delivered' ? 'active green-active' : 'active') : '';
+            const deliveredOrder = order.status === 'delivered';
+            const iconClass = deliveredOrder ? 'active green-active' : (isLast ? 'active' : '');
 
             item.innerHTML = `
                 <div class="shipping-history-icon ${iconClass}">
-                    ${trackingIcon(type, isLast, status === 'delivered')}
+                    ${deliveredOrder ? trackingIcon('delivered', true, true) : trackingIcon(type, isLast, false)}
                 </div>
 
                 <div class="shipping-history-time">
@@ -319,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateProgress(status) {
         if (!progressTransit || !progressOut || !progressDelivered) return;
 
-        if (status === 'to_ship' || status === 'in_transit') {
+        if (status === 'in_transit') {
             progressTransit.src = '/icons/seller/shipping-status/in-transit-blue.png';
             progressOut.src = '/icons/seller/shipping-status/out-for-delivery-gray.png';
             progressDelivered.src = '/icons/seller/shipping-status/delivered-gray.png';
@@ -359,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalPhone.textContent = row.dataset.phone || '—';
         modalTracking.textContent = row.dataset.tracking || 'Pending';
         if (modalCurrentLocation) modalCurrentLocation.textContent = 'Loading…';
-        modalEstimated.textContent = row.dataset.estimated || 'Not scheduled';
+        modalEstimated.textContent = row.dataset.estimated || '—';
 
         modal.classList.add('modal-open');
         modal.setAttribute('aria-hidden', 'false');
@@ -406,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? new Date(`${estimatedDelivery}T00:00:00`).toLocaleDateString('en-US', {
                     month: 'long', day: 'numeric', year: 'numeric',
                 })
-                : 'Not scheduled';
+                : '—';
             modalTracking.textContent = shipment.tracking_number || 'Pending';
             modalStatusLabel.textContent = statusDisplay(status);
             modalStatusDot.className = `modal-status-dot ${dotClass}`;
@@ -449,7 +454,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (advanceButton) {
                 const next = ({
-                    to_ship: ['in_transit', 'Mark In Transit'],
                     in_transit: ['out_for_delivery', 'Mark Out for Delivery'],
                     out_for_delivery: ['delivered', 'Mark Delivered'],
                 })[status];
