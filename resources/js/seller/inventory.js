@@ -4373,6 +4373,111 @@ document.addEventListener(
                    UPDATE PRODUCT DETAILS MODAL CONTENT
                 ================================================== */
 
+                // Single source of truth for Archived Items modal metadata.
+                // Never infer Seller from a missing actor field.
+                function resolveArchivedProductMetadata(row, product) {
+                    const record = product || {};
+                    const rawActor = String(
+                        record.archiveActor || record.archive_actor ||
+                        record.archived_by_role || record.archivedByRole ||
+                        record.archived_by || record.archivedBy ||
+                        row?.dataset?.archivedBy || ''
+                    ).trim().toLowerCase();
+
+                    const admin =
+                        record.archivedByAdmin === true ||
+                        record.archived_by_admin === true ||
+                        ['admin', 'administrator', 'superadmin', 'super-admin']
+                            .includes(rawActor);
+
+                    const seller = !admin && (
+                        record.archivedBySeller === true ||
+                        record.archived_by_seller === true ||
+                        ['seller', 'store-owner', 'shop-owner'].includes(rawActor)
+                    );
+
+                    let actor = 'Not recorded';
+                    if (admin) actor = 'Admin';
+                    else if (seller) actor = 'Seller (You)';
+
+                    const reasonCode = String(
+                        record.archiveReason || record.archive_reason ||
+                        record.remove_reason || record.removeReason || ''
+                    ).trim();
+
+                    const rawReason = String(
+                        reasonCode || record.reason || row?.dataset?.archiveReason || ''
+                    ).trim();
+
+                    const labels = {
+                        'no-longer-selling': 'No longer selling this product',
+                        'updating-listing': 'Updating or replacing the product listing',
+                        'pricing-changes': 'Pricing or cost changes',
+                        'supplier-changes': 'Supplier or sourcing changes',
+                        'low-demand': 'Product has low customer demand',
+                        other: 'Other'
+                    };
+
+                    const archiveDetails = String(
+                        record.archiveDetails || record.archive_details ||
+                        record.remove_details || record.removeDetails || ''
+                    ).trim();
+
+                    const reason = labels[rawReason] || rawReason ||
+                        'Not recorded';
+
+                    const archivedAt = record.archivedAt || record.archived_at ||
+                        record.deleted_at || record.removed_at || '';
+
+                    return { actor, reason, details: archiveDetails, archivedAt };
+                }
+
+                function syncArchivedProductModal(row) {
+                    const isArchived = Boolean(row?.classList.contains('archived-row'));
+                    const product = getCreatedProductFromRow(row);
+                    const panel = productDetailsPanel;
+                    panel?.classList.toggle('is-archived-readonly', isArchived);
+
+                    const info = document.getElementById('productDetailsArchiveNotice');
+                    if (info) info.classList.toggle('hidden', !isArchived);
+
+                    if (!isArchived) return;
+
+                    if (productDetailsStatus) {
+                        productDetailsStatus.textContent = 'Archived';
+                        productDetailsStatus.className =
+                            'status-badge status-archived';
+                    }
+
+                    // Force existing editor mode off before locking the archive.
+                    setProductDetailsEditMode(false);
+                    const meta = resolveArchivedProductMetadata(row, product);
+                    const text = (id, value) => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = value;
+                    };
+                    text('productDetailsArchivedBy', meta.actor);
+                    text('productDetailsArchiveReason', meta.reason);
+                    text('productDetailsArchivedAt', meta.archivedAt
+                        ? formatCreatedProductDate(meta.archivedAt)
+                        : 'Not recorded');
+                    text('productDetailsArchiveDetails', meta.details);
+                    document.getElementById('productDetailsArchiveDetailsWrap')
+                        ?.classList.toggle('hidden', !meta.details);
+
+                    // Read-only even when other scripts try to enable inputs.
+                    panel?.querySelectorAll('input, textarea, select').forEach((field) => {
+                        if (field.tagName === 'SELECT') field.disabled = true;
+                        else field.readOnly = true;
+                    });
+                    if (saveProductChanges) {
+                        saveProductChanges.disabled = true;
+                    }
+                    if (removeProductButton) {
+                        removeProductButton.disabled = true;
+                    }
+                }
+
                 function getCreatedProductFromRow(
                     row
                 ) {
@@ -5648,7 +5753,8 @@ document.addEventListener(
                 ) {
 
                     productDetailsEditing =
-                        Boolean(editing);
+                        Boolean(editing) &&
+                        !currentProductRow?.classList.contains('archived-row');
 
                     const panel =
                         productDetailsPanel;
@@ -8492,6 +8598,10 @@ document.addEventListener(
                     'click',
                     function () {
 
+                        if (currentProductRow?.classList.contains('archived-row')) {
+                            return;
+                        }
+
                         const product =
                             getCreatedProductFromRow(
                                 currentProductRow
@@ -8976,17 +9086,11 @@ document.addEventListener(
                         );
 
                     if (saveProductChanges) {
-                        const archivedByAdmin = Boolean(
-                            (createdProduct && (createdProduct.archivedByAdmin || createdProduct.archived_by_admin)) ||
-                            row.dataset.archivedByAdmin === 'true'
-                        );
-
-                        saveProductChanges.textContent =
-                            row.classList.contains('archived-row')
-                                ? (archivedByAdmin ? 'Removed by Admin' : 'Unarchive')
-                                : 'Save Changes';
-
-                        saveProductChanges.disabled = archivedByAdmin && row.classList.contains('archived-row');
+                        const isArchived = row.classList.contains('archived-row');
+                        saveProductChanges.textContent = isArchived
+                            ? 'Archived — read only'
+                            : 'Save Changes';
+                        saveProductChanges.disabled = isArchived;
                     }
 
                     const isPolicy =
@@ -9634,6 +9738,8 @@ document.addEventListener(
                         currentProductRow
                     );
 
+                    syncArchivedProductModal(currentProductRow);
+
                     showProductDetailsTab(
                         'details'
                     );
@@ -9917,7 +10023,7 @@ document.addEventListener(
                    SAVE CHANGES
                 ================================================== */
 
-                function persistArchiveState(productId, archived) {
+                function persistArchiveState(productId, archived, reason = '', details = '') {
                     if (!productId || !/^\d+$/.test(String(productId))) {
                         return Promise.resolve(true);
                     }
@@ -9933,8 +10039,15 @@ document.addEventListener(
                         headers: {
                             'X-CSRF-TOKEN': csrfToken,
                             'X-XSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json'
-                        }
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: archived
+                            ? JSON.stringify({
+                                archive_reason: reasonLabel(reason),
+                                archive_details: details
+                              })
+                            : undefined
                     }).then(function (response) {
                         if (!response.ok) {
                             throw new Error('Unable to update the product archive state.');
@@ -9945,6 +10058,9 @@ document.addEventListener(
                 }
 
                 function unarchiveCurrentProduct(product) {
+                    if (currentProductRow?.classList.contains('archived-row')) {
+                        return;
+                    }
                     if (!product || !currentProductRow) {
                         return;
                     }
@@ -10116,6 +10232,10 @@ document.addEventListener(
                 saveProductChanges?.addEventListener(
                     'click',
                     async function () {
+
+                        if (currentProductRow?.classList.contains('archived-row')) {
+                            return;
+                        }
 
                         const createdProduct =
                             getCreatedProductFromRow(
@@ -10581,6 +10701,10 @@ document.addEventListener(
                 ================================================== */
 
                 function openRemoveProductModal() {
+                    if (currentProductRow?.classList.contains('archived-row')) {
+                        return;
+                    }
+
 
                     if (
                         !removeProductModal ||
@@ -10694,6 +10818,10 @@ document.addEventListener(
                 removeProductButton?.addEventListener(
                     'click',
                     function () {
+
+                        if (currentProductRow?.classList.contains('archived-row')) {
+                            return;
+                        }
 
                         if (!currentProductRow) {
                             return;
@@ -10820,7 +10948,7 @@ document.addEventListener(
                         /^\d+$/.test(String(row.dataset.createdProductId)) &&
                         !row.dataset.archivePersisted
                     ) {
-                        persistArchiveState(row.dataset.createdProductId, true)
+                        persistArchiveState(row.dataset.createdProductId, true, reason, details)
                             .then(function () {
                                 row.dataset.archivePersisted = 'true';
                                 archiveCurrentProduct(reason, details);
@@ -10896,7 +11024,7 @@ document.addEventListener(
                             </div>
                             <div class="min-w-0">
                                 <h3 class="product-name">${escapeHtml(name)}</h3>
-                                <p class="product-sold">${escapeHtml(details || reasonLabel(reason))}</p>
+                                <p class="product-sold">Archived by Seller · ${escapeHtml(reasonLabel(reason))}</p>
                             </div>
                         </div>
 
@@ -10934,7 +11062,12 @@ document.addEventListener(
                         category,
                         price,
                         stock,
-                        reason: details || reasonLabel(reason),
+                        reason: reasonLabel(reason),
+                        archiveReason: reasonLabel(reason),
+                        archiveDetails: details,
+                        archiveActor: 'seller',
+                        archivedBySeller: true,
+                        archivedByAdmin: false,
                         archivedAt: new Date().toISOString()
                     });
 
@@ -11001,11 +11134,10 @@ document.addEventListener(
                         return;
                     }
 
-                    const archiveReason = product.archiveReason || product.archive_reason || product.reason || '';
-                    const archivedByAdmin = Boolean(product.archivedByAdmin || product.archived_by_admin);
-                    const activeReason = archivedByAdmin
-                        ? (archiveReason ? `Removed by admin because ${archiveReason}` : 'Removed by admin')
-                        : (product.reason || 'Archived product');
+                    const archiveMeta = resolveArchivedProductMetadata(null, product);
+                    const activeReason = archiveMeta.actor === 'Not recorded'
+                        ? archiveMeta.reason
+                        : `Archived by ${archiveMeta.actor} · ${archiveMeta.reason}`;
                     const productName = product.name || product.title || 'Product';
 
                     const archivedRow = document.createElement('article');
@@ -11210,8 +11342,17 @@ document.addEventListener(
                         }).filter(Boolean)
                         : [];
 
-                    const archiveReason = product.archive_reason || product.archiveReason || product.reason || '';
+                    const archiveReason = product.archive_reason || product.archiveReason ||
+                        product.remove_reason || product.reason || '';
                     const archivedByAdmin = Boolean(product.archived_by_admin || product.archivedByAdmin);
+                    const archiveActor = product.archive_actor || product.archiveActor ||
+                        product.archived_by_role || product.archivedByRole ||
+                        (typeof product.archived_by === 'string' ? product.archived_by : '') || '';
+                    const archivedBySeller = Boolean(product.archived_by_seller || product.archivedBySeller);
+                    const archiveDetails = product.archive_details || product.archiveDetails ||
+                        product.remove_details || product.removeDetails || '';
+                    const archivedAt = product.archived_at || product.archivedAt ||
+                        product.deleted_at || product.removed_at || '';
                     const displayReason = archivedByAdmin
                         ? (archiveReason ? `Removed by admin because ${archiveReason}` : 'Removed by admin')
                         : (product.reason || 'Archived product');
@@ -11274,7 +11415,11 @@ document.addEventListener(
                         warningReason: warningReason,
                         warningDetails: warningDetails,
                         archivedByAdmin: archivedByAdmin,
+                        archivedBySeller: archivedBySeller,
+                        archiveActor: archiveActor,
                         archiveReason: archiveReason,
+                        archiveDetails: archiveDetails,
+                        archivedAt: archivedAt,
                         reason: displayReason,
                     };
                 }
@@ -11287,7 +11432,33 @@ document.addEventListener(
                     .map(normalizePersistedProduct);
 
                 archivedInventoryProducts = [
-                    ...serverArchivedProducts,
+                    ...serverArchivedProducts.map(function (serverProduct) {
+                        const localProduct = archivedInventoryProducts.find(function (local) {
+                            return String(local.id) === String(serverProduct.id);
+                        });
+                        if (!localProduct) return serverProduct;
+
+                        const serverAdmin = serverProduct.archivedByAdmin ||
+                            ['admin', 'administrator'].includes(
+                                String(serverProduct.archiveActor || '').toLowerCase()
+                            );
+
+                        return {
+                            ...localProduct,
+                            ...serverProduct,
+                            // Real server admin provenance overrides a local seller label.
+                            archivedByAdmin: Boolean(serverAdmin || localProduct.archivedByAdmin),
+                            archivedBySeller: serverAdmin ? false : Boolean(
+                                serverProduct.archivedBySeller || localProduct.archivedBySeller
+                            ),
+                            archiveActor: serverAdmin ? 'admin' : (
+                                serverProduct.archiveActor || localProduct.archiveActor || ''
+                            ),
+                            archiveReason: serverProduct.archiveReason || localProduct.archiveReason || '',
+                            archiveDetails: serverProduct.archiveDetails || localProduct.archiveDetails || '',
+                            archivedAt: serverProduct.archivedAt || localProduct.archivedAt || ''
+                        };
+                    }),
                     ...archivedInventoryProducts.filter(function (localProduct) {
                         return !serverArchivedProducts.some(function (serverProduct) {
                             return String(serverProduct.id) === String(localProduct.id);
@@ -12307,21 +12478,8 @@ document.addEventListener(
                             currentProductRow?.classList.contains('archived-row');
 
                         if (isArchived) {
-                            confirmRemoveProduct.disabled = true;
-                            confirmRemoveProduct.textContent = 'Removing...';
-
-                            try {
-                                await permanentlyDeleteCurrentProduct();
-                                closeRemoveProductModal();
-                                closeProductDetails(function () {
-                                    showInventoryFlash('Product permanently removed.');
-                                });
-                            } catch (error) {
-                                window.alert(error.message);
-                                confirmRemoveProduct.disabled = false;
-                                confirmRemoveProduct.textContent = 'Yes, Permanently Remove';
-                            }
-
+                            // Archived items have a read-only details modal.
+                            closeRemoveProductModal();
                             return;
                         }
 
@@ -17298,6 +17456,63 @@ document.addEventListener(
 
                 updateTabView();
 
+                /* Performance page deep links. Open tab and exact matching product. */
+                const inventoryDeepLink = new URLSearchParams(window.location.search);
+                const destinationTab = inventoryDeepLink.get('tab');
+                const destinationId = inventoryDeepLink.get('product');
+                const destinationName = inventoryDeepLink.get('product_name');
+                if (['all', 'policy', 'archived'].includes(destinationTab)) {
+                    const requestedTabButton = Array.from(tabs).find(tab => tab.dataset.tab === destinationTab);
+                    requestedTabButton?.click();
+                    if (destinationId || destinationName) {
+                        // Rows are rendered during initial inventory setup. Match exact ID first;
+                        // name fallback only when the notice has no product ID.
+                        const selector = destinationTab === 'archived'
+                            ? '#archivedItemsTable .archived-row'
+                            : destinationTab === 'policy'
+                                ? '#policyIssuesTable .policy-row'
+                                : '#allProductsTable .inventory-row';
+                        const findTargetRow = () => Array.from(document.querySelectorAll(selector)).find(row => {
+                            if (destinationId) return String(row.dataset.createdProductId || row.dataset.productId || '') === destinationId;
+                            const rowName = (row.dataset.name || row.querySelector('.product-name')?.textContent || '').trim().toLocaleLowerCase();
+                            return rowName === destinationName.trim().toLocaleLowerCase();
+                        });
+                        let linkedProductOpened = false;
+                        const openLinkedProduct = () => {
+                            if (linkedProductOpened) return true;
+                            const row = findTargetRow();
+                            if (!row) return false;
+                            // Prevent search/category filters from hiding a linked row.
+                            if (searchInput) searchInput.value = '';
+                            if (categoryFilter) categoryFilter.value = 'all';
+                            if (statusFilter) statusFilter.value = 'all';
+                            inventoryCurrentPage = 1;
+                            filterProducts();
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            linkedProductOpened = true;
+                            openProductDetails(row);
+                            return true;
+                        };
+                        if (!openLinkedProduct()) {
+                            let attempts = 0;
+                            const observer = new MutationObserver(() => {
+                                if (openLinkedProduct()) observer.disconnect();
+                            });
+                            const container = document.querySelector(selector.split(' ')[0]);
+                            if (container) observer.observe(container, { childList: true, subtree: true });
+                            const timer = window.setInterval(() => {
+                                attempts += 1;
+                                if (openLinkedProduct() || attempts >= 12) {
+                                    window.clearInterval(timer);
+                                    observer.disconnect();
+                                    if (attempts >= 12 && !findTargetRow()) {
+                                        showInventoryFlash('This product was not found in the selected Inventory tab.');
+                                    }
+                                }
+                            }, 250);
+                        }
+                    }
+                }
             }
         );
 

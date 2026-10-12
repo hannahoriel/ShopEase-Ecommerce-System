@@ -46,6 +46,13 @@
     @section('page-title', 'Order Status')
     @include('components.seller.navbar')
 
+    <div
+        id="orderStatusFlashContainer"
+        class="order-status-flash-container registration-decision-flash"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
+
     {{-- =========================================================
          PAGE
     ========================================================== --}}
@@ -69,7 +76,8 @@
                         <button type="button" data-tab="all" class="order-status-tab active relative h-full px-[8px] mr-[48px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">All Orders</button>
                         <button type="button" data-tab="new" class="order-status-tab relative h-full px-[8px] mr-[48px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">New Orders</button>
                         <button type="button" data-tab="preparing" class="order-status-tab relative h-full px-[8px] mr-[48px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">Preparing</button>
-                        <button type="button" data-tab="to-ship" class="order-status-tab relative h-full px-[8px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">To Ship</button>
+                        <button type="button" data-tab="to-ship" class="order-status-tab relative h-full px-[8px] mr-[48px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">To Ship</button>
+                        <button type="button" data-tab="cancellations" class="order-status-tab relative h-full px-[8px] text-[14px] font-medium text-[#95908E] transition-colors duration-200 ease-out hover:text-[#6F6A68]">Cancellations</button>
                     </div>
 
                     <div class="relative w-[290px] shrink-0">
@@ -79,6 +87,37 @@
                             <path d="M20 20l-4-4"></path>
                         </svg>
                     </div>
+                </div>
+
+                {{-- CANCELLATION SUBTABS --}}
+                <div
+                    id="cancellationSubtabs"
+                    class="cancellation-subtabs hidden"
+                    aria-label="Cancellation filters"
+                >
+                    <button
+                        type="button"
+                        class="cancellation-subtab active"
+                        data-cancellation-tab="cancelled"
+                    >
+                        Cancelled
+                    </button>
+
+                    <button
+                        type="button"
+                        class="cancellation-subtab"
+                        data-cancellation-tab="cancel-pending"
+                    >
+                        Pending Requests
+                    </button>
+
+                    <button
+                        type="button"
+                        class="cancellation-subtab"
+                        data-cancellation-tab="cancel-rejected"
+                    >
+                        Rejected Requests
+                    </button>
                 </div>
 
                 {{-- TABLE HEADER --}}
@@ -94,20 +133,42 @@
                 <div id="orderStatusTable" class="mt-[4px]">
                     @forelse ($orders as $order)
                         @php
-                            $displayStatus = match ($order->status) {
-                                'pending' => 'new',
-                                'to_ship' => 'to-ship',
-                                default => $order->status,
+                            $rawStatus = strtolower((string) $order->status);
+
+                            if (in_array($rawStatus, ['in_transit', 'in-transit', 'out_for_delivery', 'out-for-delivery', 'delivered'], true)) {
+                                continue;
+                            }
+                            $cancellationStatus = strtolower((string) (
+                                $order->cancellation_status
+                                ?? $order->cancellation_request_status
+                                ?? $order->cancel_request_status
+                                ?? $order->cancel_status
+                                ?? ''
+                            ));
+
+                            $displayStatus = match (true) {
+                                in_array($rawStatus, ['cancelled', 'canceled'], true) => 'cancelled',
+                                in_array($rawStatus, ['cancellation_pending', 'pending_cancellation', 'cancel_requested', 'cancellation_requested'], true) => 'cancel-pending',
+                                in_array($cancellationStatus, ['pending', 'requested', 'request_pending', 'for_approval'], true) => 'cancel-pending',
+                                $rawStatus === 'pending' => 'new',
+                                $rawStatus === 'to_ship' => 'to-ship',
+                                default => str_replace('_', '-', $rawStatus),
                             };
                             $statusLabel = match ($displayStatus) {
                                 'new' => 'New Order',
                                 'preparing' => 'Preparing',
                                 'to-ship' => 'Ready to Ship',
-                                default => str($displayStatus)->replace('_', ' ')->title(),
+                                'cancelled' => 'Cancelled',
+                                'cancel-pending' => 'Cancellation Pending',
+                                default => str($displayStatus)->replace(['_', '-'], ' ')->title(),
                             };
-                            $statusStyle = in_array($displayStatus, ['new', 'preparing', 'to-ship'], true)
-                                ? $displayStatus
-                                : 'new';
+                            $statusStyle = match ($displayStatus) {
+                                'preparing' => 'preparing',
+                                'to-ship' => 'to-ship',
+                                'cancelled' => 'cancelled',
+                                'cancel-pending' => 'cancel-pending',
+                                default => 'new',
+                            };
                             $statusIcon = match ($statusStyle) {
                                 'preparing' => 'processing.png',
                                 'to-ship' => 'ready-to-ship.png',
@@ -120,9 +181,19 @@
                         @endphp
                         <article class="order-row grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[99px] px-[20px] border-b border-[#DDD9D7] transition-all duration-200 ease-out hover:bg-[#FFFBF9]"
                             data-order-id="{{ $order->id }}"
+                            data-ordered-at="{{ $order->created_at?->toIso8601String() ?? '' }}"
+                            data-status-history="{{ json_encode($order->status_history ?? []) }}"
+                            data-prepared-at="{{ $order->prepared_at ?? $order->preparing_at ?? '' }}"
+                            data-shipment-scheduled-at="{{ $order->shipment_scheduled_at ?? $order->pickup_scheduled_at ?? $order->scheduled_at ?? '' }}"
                             data-status="{{ $displayStatus }}"
                             data-tab="{{ $displayStatus }}"
-                            data-search="{{ $searchText }}">
+                            data-cancellation-requested-at="{{ $order->cancellation_requested_at ?? $order->cancellation_request_created_at ?? $order->cancel_requested_at ?? '' }}"
+                            data-cancelled-at="{{ $order->cancelled_at ?? $order->canceled_at ?? '' }}"
+                            data-cancellation-rejected-at="{{ $order->cancellation_rejected_at ?? $order->cancel_rejected_at ?? '' }}"
+                            data-search="{{ $searchText }}"
+                            tabindex="0"
+                            role="button"
+                            aria-label="Open order {{ $orderNumber }} details">
                             <div class="flex items-center gap-[22px] min-w-0">
                                 <div class="order-icon-box {{ $statusStyle }}"><img src="{{ asset('icons/seller/order-status/' . $statusIcon) }}" alt="{{ $statusLabel }}"></div>
                                 <div class="min-w-0">
@@ -322,6 +393,11 @@
                     <p class="text-[13px] font-medium text-[#8A8582]">Ordered at</p>
                     <p id="orderModalOrderedDate" class="mt-[9px] text-[13px] text-[#17120F]">May 22, 2026</p>
                     <p id="orderModalOrderedTime" class="mt-[3px] text-[13px] text-[#17120F]">10:34 AM</p>
+                    <div id="orderModalShipmentSchedule" class="order-modal-schedule hidden" aria-label="Scheduled shipment pickup">
+                        <p class="order-modal-schedule-label">Scheduled Shipment</p>
+                        <p id="orderModalShipmentDate" class="order-modal-schedule-value">—</p>
+                        <p id="orderModalShipmentTime" class="order-modal-schedule-value">—</p>
+                    </div>
                 </div>
             </div>
 
@@ -364,50 +440,128 @@
                  TRACKING HISTORY
             ====================================================== --}}
             <section id="trackingHistorySection" class="tracking-history-section hidden">
-                <h3 class="tracking-title">Tracking History</h3>
+                <h3 id="trackingHistoryTitle" class="tracking-title">Tracking History</h3>
                 <div id="trackingHistoryList" class="tracking-history-list"></div>
             </section>
 
             {{-- ACTION --}}
             <div class="modal-section modal-footer-section">
                 <button type="button" id="printOrderWaybillButton" class="print-waybill-button" hidden>Print Waybill</button>
-                <button type="button" id="cancelScheduledShipmentButton" class="cancel-shipment-button" hidden>Cancel Scheduled Shipment</button>
-                <button type="button" id="orderModalActionButton" class="order-modal-action-button new-action"><span id="orderModalActionLabel">Prepare Order</span></button>
+
+
+                <button
+                    type="button"
+                    id="rejectCancellationRequestButton"
+                    class="cancellation-request-reject-button"
+                    hidden
+                >
+                    Reject Request
+                </button>
+
+                <button
+                    type="button"
+                    id="acceptCancellationRequestButton"
+                    class="cancellation-request-accept-button"
+                    hidden
+                >
+                    Accept Cancellation
+                </button>
+
+                <button type="button" id="orderModalActionButton" class="order-modal-action-button new-action">
+                    <span id="orderModalActionLabel">Prepare Order</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="cancelScheduledShipmentModal" class="ui-modal" aria-hidden="true">
-        <div class="schedule-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cancelScheduledShipmentTitle">
-            <div class="flex items-center justify-between px-[28px] py-[20px] border-b border-[#D9D5D3]">
-                <div>
-                    <h2 id="cancelScheduledShipmentTitle" class="text-[19px] font-semibold text-[#17120F]">Cancel Scheduled Shipment</h2>
-                    <p class="mt-[4px] text-[12px] text-[#8A8582]">Select a reason. Cancelling will restore the reserved product stock.</p>
-                </div>
-                <button type="button" id="closeCancelScheduledShipment" class="w-[34px] h-[34px] rounded-full text-[#77716E] hover:bg-[#FFF2EE]" aria-label="Close cancellation form">×</button>
+    <div id="rejectCancellationRequestModal" class="ui-modal" aria-hidden="true">
+        <div
+            id="rejectCancellationRequestModalPanel"
+            class="reject-cancellation-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rejectCancellationRequestTitle"
+        >
+            <div class="reject-cancellation-modal-header">
+                <h2 id="rejectCancellationRequestTitle">Reject Cancellation</h2>
+                <p>You are about to reject this cancellation request.</p>
             </div>
-            <div class="px-[28px] py-[24px]">
-                <label for="shipmentCancellationReason" class="block mb-[7px] text-[13px] font-semibold text-[#2F2926]">Cancellation reason</label>
-                <select id="shipmentCancellationReason" class="schedule-input" required>
-                    <option value="">Choose a reason</option>
-                    <option value="Buyer requested cancellation">Buyer requested cancellation</option>
-                    <option value="Item is out of stock">Item is out of stock</option>
-                    <option value="Unable to fulfill the order">Unable to fulfill the order</option>
-                    <option value="Pickup schedule unavailable">Pickup schedule unavailable</option>
-                    <option value="Other">Other</option>
-                </select>
-                <div id="shipmentCancellationOtherWrap" class="mt-[16px]" hidden>
-                    <label for="shipmentCancellationOtherReason" class="block mb-[7px] text-[13px] font-semibold text-[#2F2926]">Please specify</label>
-                    <textarea id="shipmentCancellationOtherReason" class="schedule-input" rows="3" maxlength="500" placeholder="Enter the cancellation reason"></textarea>
+
+            <div class="reject-cancellation-modal-body">
+                <fieldset class="reject-reason-fieldset">
+                    <legend>Reason<span aria-hidden="true">*</span></legend>
+
+                    <label class="reject-reason-option">
+                        <input type="radio" name="cancellation_rejection_reason" value="Order is already being processed">
+                        <span class="reject-reason-radio"></span>
+                        <span>Order is already being processed</span>
+                    </label>
+
+                    <label class="reject-reason-option">
+                        <input type="radio" name="cancellation_rejection_reason" value="Order is already packed">
+                        <span class="reject-reason-radio"></span>
+                        <span>Order is already packed</span>
+                    </label>
+
+                    <label class="reject-reason-option">
+                        <input type="radio" name="cancellation_rejection_reason" value="Cancellation window has already passed">
+                        <span class="reject-reason-radio"></span>
+                        <span>Cancellation window has already passed</span>
+                    </label>
+
+                    <label class="reject-reason-option">
+                        <input type="radio" name="cancellation_rejection_reason" value="Order has already been handed to the courier">
+                        <span class="reject-reason-radio"></span>
+                        <span>Order has already been handed to the courier</span>
+                    </label>
+
+                    <label class="reject-reason-option">
+                        <input type="radio" name="cancellation_rejection_reason" value="Buyer submitted repeated cancellation requests">
+                        <span class="reject-reason-radio"></span>
+                        <span>Buyer submitted repeated cancellation requests</span>
+                    </label>
+
+                    <label class="reject-reason-option">
+                        <input type="radio" name="cancellation_rejection_reason" value="Other">
+                        <span class="reject-reason-radio"></span>
+                        <span>Other (please specify)</span>
+                    </label>
+                </fieldset>
+
+                <div class="reject-additional-details">
+                    <label for="cancellationRejectionOtherReason">
+                        Additional Details <span>(Optional)</span>
+                    </label>
+
+                    <div class="reject-details-textarea-wrap">
+                        <textarea
+                            id="cancellationRejectionOtherReason"
+                            maxlength="300"
+                            placeholder="Add details about the rejection reason"
+                        ></textarea>
+                        <span id="cancellationRejectionCounter">0/300</span>
+                    </div>
                 </div>
-                <p id="shipmentCancellationError" class="mt-[12px] text-[12px] text-red-700" role="alert" hidden></p>
+
+                <p
+                    id="cancellationRejectionError"
+                    class="reject-cancellation-error"
+                    role="alert"
+                    hidden
+                ></p>
             </div>
-            <div class="flex justify-end items-center gap-[10px] px-[28px] py-[18px] border-t border-[#ECE7E5]">
-                <button type="button" id="cancelShipmentCancellation" class="h-[42px] px-[18px] rounded-[9px] border border-[#D9D3D0] bg-white text-[13px] font-medium text-[#625D5A]">Keep Shipment</button>
-                <button type="button" id="confirmShipmentCancellation" class="h-[42px] px-[20px] rounded-[9px] bg-[#9E241F] text-[13px] font-semibold text-white">Cancel Shipment</button>
+
+            <div class="reject-cancellation-modal-footer">
+                <button type="button" id="cancelRejectCancellationRequest" class="reject-modal-cancel-button">
+                    Cancel
+                </button>
+                <button type="button" id="confirmRejectCancellationRequest" class="reject-modal-confirm-button">
+                    Reject
+                </button>
             </div>
         </div>
     </div>
+
 
     {{-- =========================================================
          SCHEDULE SHIPMENT MODAL

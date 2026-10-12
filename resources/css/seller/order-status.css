@@ -1074,3 +1074,464 @@
         width: 100% !important;
     }
 }
+
+
+/* =========================================================
+   ORDER STATUS — CANCELLATION FILTERS + MODAL ROW STATES
+========================================================= */
+
+/* Secondary tabs only appear while Cancellations is selected. */
+#order-status-page .cancellation-subtabs {
+    min-height: 46px;
+    padding: 8px 16px 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    border-bottom: 1px solid #E5E7EB;
+    background: #FFFFFF;
+}
+
+#order-status-page .cancellation-subtabs.hidden {
+    display: none !important;
+}
+
+#order-status-page .cancellation-subtab {
+    position: relative;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: #9CA3AF;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        color .16s ease,
+        background-color .16s ease;
+}
+
+#order-status-page .cancellation-subtab:hover {
+    color: #6B625F;
+    background: #FFF8F5;
+}
+
+#order-status-page .cancellation-subtab.active {
+    color: #7B1B1B;
+    font-weight: 600;
+    background: #FFF5F2;
+}
+
+#order-status-page .cancellation-subtab.active::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 999px 999px 0 0;
+    background: #7B1B1B;
+}
+
+/* Cancellation row/status styling. */
+.order-icon-box.cancelled,
+.order-modal-status-box.cancelled {
+    background: #F1F2F3;
+}
+
+.order-icon-box.cancel-pending,
+.order-modal-status-box.cancel-pending {
+    background: #FFF1D6;
+}
+
+.cancelled-text {
+    color: #7A7F87 !important;
+}
+
+.cancelled-dot {
+    background: #9CA3AF !important;
+}
+
+.cancel-pending-text {
+    color: #B96800 !important;
+}
+
+.cancel-pending-dot {
+    background: #D97706 !important;
+}
+
+/* Rows are intended to be clickable for the details modal. */
+#orderStatusTable .order-row {
+    cursor: pointer;
+}
+
+#orderStatusTable .order-row:focus-visible {
+    outline: 2px solid rgba(123, 27, 27, .24);
+    outline-offset: -2px;
+    background: #FFFBF9;
+}
+
+/* Keep hidden page buttons fully removed from layout. */
+.pagination-button.hidden {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    #order-status-page .cancellation-subtabs {
+        min-width: 720px;
+    }
+}
+
+
+/* =========================================================
+   CANCELLATION REQUEST DEMO — ACCEPT / REJECT / REJECTED TAB
+========================================================= */
+
+.order-icon-box.cancel-rejected,
+.order-modal-status-box.cancel-rejected {
+    background: #F3E9E9;
+}
+
+.cancel-rejected-text {
+    color: #8B4E4E !important;
+}
+
+.cancel-rejected-dot {
+    background: #A55B5B !important;
+}
+
+/* Pending cancellation decision buttons in Order Details. */
+.cancellation-request-reject-button,
+.cancellation-request-accept-button {
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color .16s ease,
+        border-color .16s ease,
+        color .16s ease;
+}
+
+.cancellation-request-reject-button {
+    border: 1px solid #D4CCCA;
+    background: #FFFFFF;
+    color: #6D6562;
+}
+
+.cancellation-request-reject-button:hover {
+    border-color: #BDB3B0;
+    background: #F8F6F5;
+    color: #514A47;
+}
+
+.cancellation-request-accept-button {
+    border: 1px solid #7B1B1B;
+    background: #7B1B1B;
+    color: #FFFFFF;
+}
+
+.cancellation-request-accept-button:hover {
+    border-color: #68131B;
+    background: #68131B;
+}
+
+.cancellation-rejection-textarea {
+    height: auto !important;
+    min-height: 92px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    resize: vertical !important;
+}
+
+/* Three cancellation subtabs still remain compact. */
+#order-status-page .cancellation-subtabs {
+    flex-wrap: wrap;
+}
+
+
+/* =========================================================
+   ORDER STATUS — FLASH MESSAGES
+========================================================= */
+/* Registrations-matched lower-right action message */
+.order-status-flash-container.registration-decision-flash {
+    position: fixed; right: 24px; bottom: 24px; top: auto;
+    z-index: 220; width: min(370px, calc(100vw - 32px));
+    min-height: 72px; display: flex; align-items: flex-start;
+    gap: 11px; padding: 13px 14px; box-sizing: border-box;
+    background: #fff; border: 1px solid #E7E2DF;
+    border-radius: 14px; box-shadow: 0 14px 34px rgba(42,20,15,.16);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity .08s ease, transform .08s ease, visibility .08s ease;
+}
+.order-status-flash-container.show { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
+.order-status-flash-container.approved { border-color: #BFDDB8; }
+.order-status-flash-container.rejected,
+.order-status-flash-container.error { border-color: #E7A8AB; }
+.order-status-flash-icon { width: 36px; height: 36px; border-radius: 9999px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.order-status-flash-icon.positive { background:#DDF0D6; color:#28721B; }
+.order-status-flash-icon.negative { background:#FFE3E5; color:#B3262E; }
+.order-status-flash-content { flex:1; min-width:0; }
+.order-status-flash-title { font-family:Poppins,sans-serif; font-size:14px; font-weight:600; color:#111827; margin:0; }
+.order-status-flash-message { font-family:Poppins,sans-serif; margin:4px 0 0; font-size:12px; line-height:20px; color:#6B7280; }
+.order-status-flash-close { width:28px; height:28px; border:0; border-radius:9999px; background:transparent; color:#9CA3AF; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:auto; }
+.order-status-flash-close:hover { background:#F3F4F6; }
+@media (max-width:640px) { .order-status-flash-container.registration-decision-flash { right:16px; bottom:16px; } }
+
+/* =========================================================
+   REJECT CANCELLATION MODAL — MATCH REMOVE PRODUCT STYLE
+========================================================= */
+.reject-cancellation-modal-panel {
+    width: 480px;
+    max-width: calc(100vw - 28px);
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 24px;
+    background: #FFFFFF;
+    box-shadow: 0 20px 60px rgba(35, 14, 11, .18);
+}
+
+.reject-cancellation-modal-header {
+    padding: 24px 26px 10px;
+}
+
+.reject-cancellation-modal-header h2 {
+    margin: 0;
+    color: #17120F;
+    font-size: 19px;
+    line-height: 1.25;
+    font-weight: 500;
+}
+
+.reject-cancellation-modal-header p {
+    margin: 6px 0 0;
+    color: #A09A97;
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 400;
+}
+
+.reject-cancellation-modal-body {
+    padding: 8px 26px 20px;
+}
+
+.reject-reason-fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.reject-reason-fieldset legend {
+    margin-bottom: 8px;
+    color: #2F2926;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.reject-reason-fieldset legend span {
+    color: #B42318;
+}
+
+.reject-reason-option {
+    position: relative;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 6px;
+    padding: 7px 10px;
+    border: 1px solid #E7E2E0;
+    border-radius: 5px;
+    background: #FFFFFF;
+    color: #292421;
+    font-size: 11px;
+    line-height: 1.35;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.reject-reason-option:hover {
+    border-color: #D5CDCA;
+    background: #FFFCFB;
+}
+
+.reject-reason-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.reject-reason-radio {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    border: 1px solid #D6D0CD;
+    border-radius: 999px;
+    background: #FFFFFF;
+    box-shadow: inset 0 0 0 3px #FFFFFF;
+}
+
+.reject-reason-option input:checked + .reject-reason-radio {
+    border-color: #9E241F;
+    background: #9E241F;
+}
+
+.reject-reason-option:has(input:checked) {
+    border-color: #D6AAA5;
+    background: #FFF9F7;
+}
+
+.reject-additional-details {
+    margin-top: 20px;
+}
+
+.reject-additional-details > label {
+    display: block;
+    margin-bottom: 7px;
+    color: #2F2926;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.reject-additional-details > label span {
+    font-weight: 500;
+}
+
+.reject-details-textarea-wrap {
+    position: relative;
+}
+
+.reject-details-textarea-wrap textarea {
+    width: 100%;
+    min-height: 74px;
+    padding: 10px 10px 24px;
+    border: 1px solid #E1DBD8;
+    border-radius: 6px;
+    background: #FFFFFF;
+    color: #3D3734;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    line-height: 1.45;
+    resize: vertical;
+    outline: none;
+}
+
+.reject-details-textarea-wrap > span {
+    position: absolute;
+    right: 8px;
+    bottom: 7px;
+    color: #938B88;
+    font-size: 9px;
+}
+
+.reject-cancellation-error {
+    margin: 10px 0 0;
+    color: #B42318;
+    font-size: 11px;
+}
+
+.reject-cancellation-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 4px 26px 22px;
+}
+
+.reject-modal-cancel-button,
+.reject-modal-confirm-button {
+    min-width: 84px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.reject-modal-cancel-button {
+    border: 1px solid #D9D3D0;
+    background: #FFFFFF;
+    color: #9B2A25;
+}
+
+.reject-modal-cancel-button:hover {
+    background: #F9F6F5;
+}
+
+.reject-modal-confirm-button {
+    border: 1px solid #B84742;
+    background: #FCE9E7;
+    color: #A72A26;
+}
+
+.reject-modal-confirm-button:hover {
+    background: #F8DBD8;
+}
+
+/* =========================================================
+   CANCELLATION HISTORY
+========================================================= */
+.tracking-icon-wrap.cancellation-cancel-requested {
+    background: #FFF0D9;
+}
+
+.tracking-icon-wrap.cancellation-cancelled {
+    background: #DFF1E4;
+}
+
+.tracking-icon-wrap.cancellation-cancel-rejected {
+    background: #F3E9E9;
+}
+
+.tracking-icon-wrap.active.cancellation-cancel-requested {
+    background: #D97706;
+}
+
+.tracking-icon-wrap.active.cancellation-cancelled {
+    background: #198754;
+}
+
+.tracking-icon-wrap.active.cancellation-cancel-rejected {
+    background: #A55B5B;
+}
+
+/* Print Waybill should be same text size as the other footer buttons. */
+.print-waybill-button {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
+/* Hide statuses that belong on Shipping Status, not Order Status. */
+#orderStatusTable .order-row[data-status="in-transit"],
+#orderStatusTable .order-row[data-status="in_transit"],
+#orderStatusTable .order-row[data-status="out-for-delivery"],
+#orderStatusTable .order-row[data-status="out_for_delivery"],
+#orderStatusTable .order-row[data-status="delivered"] {
+    display: none !important;
+}
+
+@media (max-width: 560px) {
+    .reject-cancellation-modal-panel {
+        width: calc(100vw - 20px);
+        border-radius: 18px;
+    }
+
+    .reject-cancellation-modal-header,
+    .reject-cancellation-modal-body,
+    .reject-cancellation-modal-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+/* Scheduled shipment directly below Ordered at in the Order Details summary */
+.order-modal-schedule { margin-top: 13px; padding-top: 10px; border-top: 1px solid #EEE6E2; }
+.order-modal-schedule.hidden { display: none; }
+.order-modal-schedule-label { color: #8A8582; font-size: 12px; font-weight: 500; }
+.order-modal-schedule-value { margin-top: 4px; color: #17120F; font-size: 13px; line-height: 1.35; }

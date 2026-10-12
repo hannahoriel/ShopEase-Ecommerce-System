@@ -42,7 +42,7 @@
         sidebar-reload
     "
 >
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-h-0 overflow-y-auto seller-sidebar-scroll">
 
         {{-- =====================================================
              LOGO
@@ -434,13 +434,37 @@
 </a>
 
 
+            {{-- NOTIFICATIONS --}}
+            <a
+                href="{{ \Illuminate\Support\Facades\Route::has('seller.notifications') ? route('seller.notifications') : url('/seller/notifications') }}"
+                title="Notifications"
+                class="sidebar-link sidebar-menu-item seller-menu-delay-5 flex items-center gap-2.5 px-3 py-2.5 rounded-full transition-all duration-300 w-full {{ request()->routeIs('seller.notifications*') || request()->is('seller/notifications*') ? 'bg-maroon-700/60' : 'hover:bg-maroon-800/50 hover:translate-x-1' }}"
+            >
+                <span class="sidebar-icon-wrapper flex items-center justify-center shrink-0 w-[18px] h-[18px] transition-all duration-300">
+                    <img src="{{ asset('icons/seller/notifications.png') }}" alt="" class="sidebar-icon w-[18px] h-[18px] object-contain shrink-0">
+                </span>
+                <span class="sidebar-label text-[14px] font-medium whitespace-nowrap">Notifications</span>
+            </a>
+
+            {{-- SELLER PERFORMANCE: SELLER REPORTS + COMPLIANCE SCORE --}}
+            <a
+                href="{{ route('seller.performance') }}"
+                title="Performance"
+                class="sidebar-link sidebar-menu-item seller-menu-delay-6 flex items-center gap-2.5 px-3 py-2.5 rounded-full transition-all duration-300 w-full {{ request()->routeIs('seller.performance*') || request()->is('seller/performance*') ? 'bg-maroon-700/60' : 'hover:bg-maroon-800/50 hover:translate-x-1' }}"
+            >
+                <span class="sidebar-icon-wrapper flex items-center justify-center shrink-0 w-[18px] h-[18px] transition-all duration-300">
+                    <img src="{{ asset('icons/seller/performance.png') }}" alt="" class="sidebar-icon w-[18px] h-[18px] object-contain shrink-0">
+                </span>
+                <span class="sidebar-label text-[14px] font-medium whitespace-nowrap">Performance</span>
+            </a>
+
             {{-- MESSAGES --}}
             <a
                 href="{{ route('seller.messages') }}"
                 class="
                     sidebar-link
                     sidebar-menu-item
-                    seller-menu-delay-5
+                    seller-menu-delay-7
                     flex items-center
                     gap-2.5
                     px-3
@@ -496,7 +520,7 @@
                 class="
                     sidebar-link
                     sidebar-menu-item
-                    seller-menu-delay-6
+                    seller-menu-delay-8
                     flex items-center
                     gap-2.5
                     px-3
@@ -623,6 +647,41 @@
     }
 
 
+    /* Match Admin hover: 4px right movement, but reserve room inside the curved frame. */
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav {
+        width: calc(100% - 8px);
+        max-width: calc(100% - 8px);
+    }
+
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav .sidebar-link,
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav .seller-subnav-item {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    /* Admin-like highlighted pill + slide; the 8px gutter prevents overflow. */
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav .sidebar-link:hover,
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav .seller-subnav-item:hover {
+        translate: 4px 0;
+    }
+
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav .sidebar-link,
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav .seller-subnav-item {
+        transition: background-color .3s ease, color .3s ease, translate .3s ease;
+    }
+
+    #sellerSidebar.seller-sidebar-collapsed #seller-sidebar-nav {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Allow extra menu items without overlapping the Logout button. */
+    #sellerSidebar .seller-sidebar-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    #sellerSidebar .seller-sidebar-scroll::-webkit-scrollbar { display: none; }
+
     /* =========================================================
        ADMIN-MATCHED RELOAD UX
     ========================================================== */
@@ -653,6 +712,8 @@
     .seller-menu-delay-4 { animation-delay: 0.20s; }
     .seller-menu-delay-5 { animation-delay: 0.25s; }
     .seller-menu-delay-6 { animation-delay: 0.30s; }
+    .seller-menu-delay-7 { animation-delay: 0.35s; }
+    .seller-menu-delay-8 { animation-delay: 0.40s; }
 
 
     /* =========================================================
