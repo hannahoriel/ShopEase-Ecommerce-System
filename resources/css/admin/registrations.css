@@ -343,3 +343,51 @@
     border-color: #7B1B1B !important;
     box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
 }
+
+
+/* ==========================================================
+   ADMIN SEARCH / FILTER CONTROLS — UNIFIED GRAY DESIGN
+   Reference: User Management | applies to filters only.
+   ========================================================== */
+#registration-search,
+#user-type-filter,
+#date-filter {
+    height: 36px !important;
+    box-sizing: border-box;
+    border: 1px solid #D9D6D4 !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF !important;
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    outline: none !important;
+}
+#registration-search::placeholder {
+    color: #76716E !important;
+    opacity: 1 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+#registration-search + svg,
+#user-type-filter + svg,
+#date-calendar-button {
+    color: #76716E !important;
+}
+#registration-search:focus,
+#user-type-filter:focus,
+#date-filter:focus,
+#registration-search:focus-visible,
+#user-type-filter:focus-visible,
+#date-filter:focus-visible {
+    border-color: #9CA3AF !important;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.14) !important;
+    outline: none !important;
+}
+#date-filter::-webkit-datetime-edit {
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}

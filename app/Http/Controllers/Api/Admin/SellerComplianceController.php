@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\AccountStatusChanged;
 use App\Models\Admin\Complaint;
+use App\Models\Admin\Registration;
 use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
@@ -12,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SellerComplianceController extends Controller
 {
@@ -110,7 +112,7 @@ class SellerComplianceController extends Controller
 
             'compliance' => [
                 'nullable',
-                'in:compliant,warning,under-review,suspended',
+                'in:compliant,warning,suspended',
             ],
 
             'status' => [
@@ -140,6 +142,10 @@ class SellerComplianceController extends Controller
 
 
         $sellers = Seller::query()
+            // Only seller profiles linked to a real seller user account.
+            ->whereHas('user', fn ($query) =>
+                $query->where('role', User::ROLE_SELLER)
+            )
             ->with([
                 'user',
 
@@ -341,13 +347,8 @@ class SellerComplianceController extends Controller
                 $warningProductCount =
                     $warningProducts->count();
 
-                $categories =
-                    $seller->products
-                        ->pluck('category')
-                        ->filter()
-                        ->unique()
-                        ->values()
-                        ->all();
+                // Categories belong to the seller registration, NOT products.
+                $categories = $this->registeredCategories($seller);
 
 
                 return [
@@ -470,7 +471,7 @@ class SellerComplianceController extends Controller
                 $rows->filter(
                     fn (array $row): bool =>
                         in_array(
-                            $validated['category'],
+                            Str::slug(str_replace('&', 'and', $validated['category'])),
                             $row['categories'],
                             true
                         )
@@ -979,12 +980,7 @@ class SellerComplianceController extends Controller
                 $seller->contact_no,
 
             'categories' =>
-                $seller->products
-                    ->pluck('category')
-                    ->filter()
-                    ->unique()
-                    ->values()
-                    ->all(),
+                $this->registeredCategories($seller),
 
             'products_count' =>
                 $seller->products->count(),
@@ -1058,6 +1054,49 @@ class SellerComplianceController extends Controller
     }
 
 
+    /**
+     * Categories actually selected during registration.
+     * The sellers.line_of_business field is the primary source; older records
+     * can use registrations.business_category as a fallback.
+     * Never infer registered categories from products in stock.
+     */
+    private function registeredCategories(Seller $seller): array
+    {
+        $raw = $seller->line_of_business;
+
+        if (blank($raw) || $raw === []) {
+            $raw = Registration::query()
+                ->where('user_id', $seller->user_id)
+                ->latest('id')
+                ->value('business_category');
+        }
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $raw = $decoded;
+            } else {
+                $raw = explode(',', $raw);
+            }
+        }
+
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        return collect($raw)
+            ->flatten()
+            ->filter(fn ($value) => is_string($value) || is_numeric($value))
+            ->map(function ($value): string {
+                $value = trim(html_entity_decode((string) $value, ENT_QUOTES, 'UTF-8'));
+                return Str::slug(str_replace(['&', '’'], ['and', "'"], $value));
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     /*
     |--------------------------------------------------------------------------
     | COMPLIANCE CALCULATION
@@ -1106,44 +1145,8 @@ class SellerComplianceController extends Controller
             );
 
 
-        if (
-            $seller->registration_status
-            === 'pending'
-        ) {
-
-            return [
-
-                'status' =>
-                    'under-review',
-
-                'label' =>
-                    'Under Review',
-
-                'score' =>
-                    $score,
-
-            ];
-        }
-
-
-        if (
-            $reviewCount > 0
-        ) {
-
-            return [
-
-                'status' =>
-                    'under-review',
-
-                'label' =>
-                    'Under Review',
-
-                'score' =>
-                    $score,
-
-            ];
-        }
-
+        // Pending/under-review PRODUCTS do not change the SELLER status.
+        // They remain visible through products_under_review and product modals.
 
         if (
             $warningCount > 0
@@ -1225,8 +1228,35 @@ class SellerComplianceController extends Controller
         Product $product
     ): array {
 
+        // Grouped combinations are stored in a separate Eloquent relation.
+        // Load these real records for both the seller table and product modal.
+        $product->loadMissing(['connectedVariants', 'productSpecifications']);
+
         $payload =
             $product->toArray();
+
+        // Inventory saves category-specific fields (including subcategory)
+        // in productSpecifications, not as direct product columns.
+        $savedSpecifications = collect($product->productSpecifications ?? [])
+            ->sortBy(fn ($specification) => data_get($specification, 'sort_order', 0))
+            ->filter(fn ($specification) => filled(data_get($specification, 'key')))
+            ->mapWithKeys(fn ($specification) => [
+                (string) data_get($specification, 'key') =>
+                    data_get($specification, 'value'),
+            ])
+            ->all();
+
+        $payload['specifications'] = $savedSpecifications;
+        $payload['subcategory'] = $savedSpecifications['subcategory']
+            ?? $product->getAttribute('subcategory')
+            ?? null;
+
+
+        $payload['connected_variants'] = collect($product->connectedVariants ?? [])
+            ->sortBy(fn ($variant) => data_get($variant, 'sort_order', 0))
+            ->values()
+            ->map(fn ($variant) => is_array($variant) ? $variant : $variant->toArray())
+            ->all();
 
 
         $photos =
@@ -1287,9 +1317,6 @@ class SellerComplianceController extends Controller
         $payload['sizes'] =
             $product->sizes ?? [];
 
-
-        $payload['specifications'] =
-            $product->specifications ?? [];
 
 
         return $payload;

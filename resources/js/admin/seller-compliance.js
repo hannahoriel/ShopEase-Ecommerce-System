@@ -373,40 +373,86 @@ function initSellerCompliance(cfg) {
      * List: summary, table, pagination
      * ------------------------------------------------------------------ */
 
-    function categoryPills(categories, small = false) {
-        const list = Array.isArray(categories)
-            ? categories
-            : [];
+    // Category source must be the authenticated database/API seller record.
+    // Accept every registered category rather than displaying only the first.
+    function registeredCategories(seller) {
+        const raw = seller?.registered_categories ?? seller?.line_of_business ??
+            seller?.business_category ?? seller?.categories ?? [];
+        let entries = raw;
+        if (typeof entries === 'string') {
+            try {
+                const parsed = JSON.parse(entries);
+                entries = Array.isArray(parsed) ? parsed : entries;
+            } catch (_) { /* comma-separated registration column */ }
+            if (typeof entries === 'string') {
+                entries = entries.split(',');
+            }
+        }
+        if (entries && !Array.isArray(entries) && typeof entries === 'object') {
+            entries = Object.values(entries);
+        }
+        if (!Array.isArray(entries)) return [];
+        return [...new Set(entries.map(value => {
+            if (value && typeof value === 'object') {
+                return String(value.label ?? value.name ?? value.slug ?? '').trim();
+            }
+            return String(value ?? '').trim();
+        }).filter(Boolean))];
+    }
 
-        const size = small
-            ? ' category-pill--sm'
-            : '';
+    // Keep category slugs for filtering/CSS, but display human-friendly names.
+    function categoryLabel(value) {
+        const slug = String(value ?? '').trim()
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
 
-        if (!list.length) {
-            return `
-                <span class="category-pill${size} category-default">
-                    —
-                </span>
-            `;
+        const special = {
+            'womens-apparel': "Women's Apparel",
+            'mens-apparel': "Men's Apparel",
+            'kids-and-baby': 'Kids & Baby',
+        };
+
+        if (special[slug]) return special[slug];
+
+        const configured = cfg.categories?.[slug];
+        if (typeof configured === 'string' && configured.trim()) {
+            // Config labels can themselves contain raw slugs.
+            value = configured;
         }
 
-        return list
-            .map((slug) => {
-                const key = String(slug).toLowerCase();
+        return String(value ?? '')
+            .replace(/[-_]+/g, ' ')
+            .replace(/\band\b/gi, '&')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/\b[a-z]/g, c => c.toUpperCase());
+    }
 
-                const label =
-                    cfg.categories?.[key] ||
-                    titleCase(key);
+    function categoryPills(categories, small = false) {
+        const list = Array.isArray(categories) ? categories : [];
+        const size = small ? ' category-pill--sm' : '';
+        if (!list.length) return `<span class="category-pill${size} category-default">—</span>`;
+        return list.map(value => {
+            const key = String(value ?? '').trim().toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+            return `<span class="category-pill${size} category-${esc(key || 'default')}">${esc(categoryLabel(value))}</span>`;
+        }).join('');
+    }
 
-                return `
-                    <span
-                        class="category-pill${size} category-${esc(key)}"
-                    >
-                        ${esc(label)}
-                    </span>
-                `;
-            })
-            .join('');
+    // Seller compliance has exactly three supported states.
+    // Product-level "Under Review" stays in the Products column/modal.
+    function sellerComplianceStatus(seller) {
+        const raw = String(seller?.compliance ?? seller?.compliance_status ?? '')
+            .toLowerCase().trim().replace(/[\s_]+/g, '-');
+        if (raw === 'suspended') return 'suspended';
+        if (['warning', 'warned', 'warning-issued'].includes(raw)) return 'warning';
+        if (raw === 'compliant') return 'compliant';
+        // Do not invent a compliance state from product review or missing data.
+        return null;
     }
 
     function renderSummary(summary = {}) {
@@ -448,14 +494,10 @@ function initSellerCompliance(cfg) {
     }
 
     function rowMarkup(seller) {
-        const compliance = String(
-            seller.compliance || 'compliant'
-        ).toLowerCase();
+        const compliance = sellerComplianceStatus(seller);
 
         const label =
-            seller.compliance_label ||
-            cfg.statuses?.[compliance]?.label ||
-            titleCase(compliance);
+            compliance ? (cfg.statuses?.[compliance]?.label || titleCase(compliance)) : '—';
 
         const score = clamp(
             seller.compliance_score
@@ -491,7 +533,7 @@ function initSellerCompliance(cfg) {
                 </div>
 
                 <div class="category-pill-group">
-                    ${categoryPills(seller.categories)}
+                    ${categoryPills(registeredCategories(seller))}
                 </div>
 
                 <div class="seller-products">
@@ -770,17 +812,12 @@ function initSellerCompliance(cfg) {
 
         button.textContent = isSuspended ? 'Reactivate' : 'Suspend';
         button.classList.toggle('is-reactivate', isSuspended);
-        button.style.background = isSuspended ? '#E7F7EE' : '#D41F1F';
-        button.style.borderColor = isSuspended ? '#2E9D5C' : '#D41F1F';
-        button.style.color = isSuspended ? '#1F7A45' : '#fff';
     }
 
     function renderSeller(seller) {
         state.seller = seller;
 
-        const compliance = String(
-            seller.compliance || 'compliant'
-        ).toLowerCase();
+        const compliance = sellerComplianceStatus(seller);
 
         const status =
             cfg.statuses?.[compliance] || {};
@@ -814,7 +851,7 @@ function initSellerCompliance(cfg) {
 
         $('#sellerModalCategories').innerHTML =
             categoryPills(
-                seller.categories,
+                registeredCategories(seller),
                 true
             );
 
@@ -835,9 +872,7 @@ function initSellerCompliance(cfg) {
             `status-pill status-${compliance}`;
 
         pill.textContent =
-            seller.compliance_label ||
-            status.label ||
-            titleCase(compliance);
+            compliance ? (status.label || titleCase(compliance)) : '—';
 
         $('#sellerModalPolicyText').textContent =
             status.policy || '';
@@ -1190,9 +1225,7 @@ function initSellerCompliance(cfg) {
 
         if (submitButton) {
             submitButton.textContent = isSuspended ? 'Reactivate' : 'Suspend';
-            submitButton.style.background = isSuspended ? '#E7F7EE' : '#FFE0E0';
-            submitButton.style.borderColor = isSuspended ? '#2E9D5C' : '#D41F1F';
-            submitButton.style.color = isSuspended ? '#1F7A45' : '#AE0000';
+            submitButton.classList.toggle('is-reactivate', isSuspended);
         }
 
         syncSellerSuspendButton(seller);
@@ -1440,281 +1473,210 @@ function initSellerCompliance(cfg) {
             : [];
     }
 
+    // Read-only product details cloned from the Seller Inventory modal layout.
+    // All data is from the admin seller-compliance API, never placeholder records.
+    const pick = (object, ...names) => names.map(name => object?.[name]).find(value => value !== undefined && value !== null && value !== '');
+    const readable = (value) => {
+        if (value === undefined || value === null || value === '') return '—';
+        if (typeof value === 'object') return Array.isArray(value) ? value.map(readable).join(', ') : Object.entries(value).map(([k,v]) => `${titleCase(k)}: ${readable(v)}`).join('; ');
+        return String(value);
+    };
+    const normalizeArray = (raw) => {
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === 'object') return Object.entries(raw).map(([name, values]) => ({name, values}));
+        if (typeof raw === 'string') { try { const parsed = JSON.parse(raw); return normalizeArray(parsed); } catch (_) { return raw ? raw.split(',').map(s=>s.trim()) : []; } }
+        return [];
+    };
+    const safeImage = (value) => {
+        const src = String(value || '').trim();
+        if (/^(https?:\/\/|\/storage\/|\/images\/|\/uploads\/|data:image\/(png|jpeg|webp);base64,)/i.test(src)) return src;
+        return null;
+    };
     function renderProductImages(product) {
-        const photos =
-            productPhotos(product);
-
-        const main =
-            $('#sellerProductMainImage');
-
-        main.innerHTML = photos.length
-            ? `
-                <img
-                    src="${esc(
-                        photos[
-                            state.imageIndex
-                        ] || photos[0]
-                    )}"
-                    alt="${esc(
-                        product.name ||
-                            'Product'
-                    )}"
-                >
-            `
-            : `
-                <div class="seller-product-image-placeholder">
-                    No image
-                </div>
-            `;
-
-        $('#sellerProductThumbnails').innerHTML =
-            photos.length > 1
-                ? photos
-                      .map(
-                          (src, i) => `
-                            <button
-                                type="button"
-                                class="seller-product-thumbnail${
-                                    i ===
-                                    state.imageIndex
-                                        ? ' active'
-                                        : ''
-                                }"
-                                data-action="product-image"
-                                data-index="${i}"
-                                aria-label="Product image ${
-                                    i + 1
-                                }"
-                            >
-                                <img
-                                    src="${esc(
-                                        src
-                                    )}"
-                                    alt=""
-                                >
-                            </button>
-                        `
-                      )
-                      .join('')
-                : '';
-
-        $('#sellerProductThumbNext').hidden =
-            photos.length < 2;
+        const photos = productPhotos(product).map(safeImage).filter(Boolean);
+        const main = $('#sellerProductMainImage');
+        if (!main) return;
+        const selected = photos[state.imageIndex] || photos[0];
+        main.innerHTML = selected ? `<img src="${esc(selected)}" alt="Product photo">` : '<div class="product-details-image-fallback">No image available</div>';
+        const thumbs = $('#sellerProductThumbnails');
+        if (thumbs) thumbs.innerHTML = photos.map((src,index)=>`<button type="button" data-action="product-image" data-index="${index}" class="seller-product-thumbnail${index===state.imageIndex?' active':''}" aria-label="Photo ${index+1}"><img src="${esc(src)}" alt=""></button>`).join('');
+        const next = $('#sellerProductThumbNext');
+        if (next) next.hidden = photos.length < 2;
     }
-
+    function showAdminProductTab(tab = 'details') {
+        const permitted = ['details','variations','stock-history','price-history'];
+        if (!permitted.includes(tab)) tab = 'details';
+        $$('[data-admin-product-tab]',modals.product).forEach(node => {
+            const active = node.dataset.adminProductTab === tab;
+            node.classList.toggle('is-active',active);
+            node.setAttribute('aria-selected',String(active));
+        });
+        $$('[data-admin-product-panel]',modals.product).forEach(node => node.hidden = node.dataset.adminProductPanel !== tab);
+    }
+    function renderHistory(elementId, raw, type) {
+        const target = $(elementId);
+        if (!target) return;
+        const items = normalizeArray(raw);
+        if (!items.length) { target.innerHTML = `<p class="sc-empty">No ${esc(type)} history recorded for this product.</p>`; return; }
+        const columns = type === 'stock' ? [['created_at','Date'],['variation','Variation'],['change','Change'],['quantity','Quantity'],['reason','Reason']] : [['created_at','Date'],['variation','Variation'],['old_price','Previous Price'],['new_price','New Price'],['reason','Reason']];
+        target.innerHTML = `<table class="sc-history-table"><thead><tr>${columns.map(([,label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${items.map(row=>`<tr>${columns.map(([key])=>`<td>${esc(readable(row && typeof row === 'object' ? pick(row,key,key==='created_at'?'date':'',key==='variation'?'variant':'') : row))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
     function renderProduct(product) {
-        const status =
-            productStatus(product);
-
-        const specs = specMap(
-            product.specifications
-        );
-
-        const spec = (...keys) => {
-            const key = keys.find(
-                (k) =>
-                    specs[k] !== undefined
-            );
-
-            return key
-                ? specs[key]
-                : '';
-        };
-
+        const status = productStatus(product);
+        const specs = specMap(product.specifications);
+        const pricing = pick(product,'pricing_mode','pricing_type','price_type') || 'fixed';
+        const varies = /varies|variable|variation/i.test(String(pricing));
+        const pricingType = varies ? 'Price Varies' : 'Fixed Price';
+        const pricingSource = varies ? titleCase(pick(product,'pricing_source','base_price_source','basePriceSource') || '—') : 'Not applicable';
+        const rawVariations = normalizeArray(pick(product,'buyer_option_groups','variant_groups','variation_groups','variations'));
+        const colors = normalizeArray(product.colors);
+        const sizes = normalizeArray(product.sizes);
+        const sku = pick(product,'sku','product_sku','code');
+        const amount = pick(product,'lowest_base_price','base_price','price') || 0;
         bind(modals.product, {
-            title: product.name,
-            price: peso(product.price),
-            sold: `${Number(
-                product.sold_count || 0
-            )} sold`,
-            category:
-                cfg.categories?.[
-                    product.category
-                ] ||
-                product.category,
-            stock: `${Number(
-                product.stock_quantity || 0
-            )} pieces`,
-            uploaded: formatDate(
-                product.created_at
-            ),
-            description:
-                product.description,
-            brand: spec('brand'),
-            material: spec('material'),
-            sizes:
-                optionNames(
-                    product.sizes
-                ) ||
-                spec('sizes', 'size'),
-            colors:
-                optionNames(
-                    product.colors
-                ) ||
-                spec('colors', 'color'),
-            quantity: spec(
-                'quantity_per_pack',
-                'weight',
-                'item_weight'
-            ),
-            origin: spec(
-                'country_of_origin',
-                'origin',
-                'country'
-            ),
+            title: pick(product,'name','title') || 'Product',
+            sku: readable(sku),
+            price: peso(amount),
+            category: categoryLabel(pick(product,'category','category_slug') || ''),
+            subcategory: readable(pick(product,'subcategory','sub_category')),
+            pricingType,pricingSource,
+            stock: `${Number(pick(product,'stock_quantity','stock','total_stock') || 0).toLocaleString('en-PH')} units`,
+            uploaded: formatDate(pick(product,'created_at','createdAt')),
+            variationNames: rawVariations.length ? rawVariations.map(g=>typeof g==='object' ? (g.name || g.group_name || g.label || 'Variation') : String(g)).join(', ') : '—',
+            colors: colors.length ? colors.map(x => typeof x==='object' ? (x.name||x.label||x.value||readable(x)) : x).join(', ') : '—',
+            sizes: sizes.length ? sizes.map(x => typeof x==='object' ? (x.name||x.label||x.value||readable(x)) : x).join(', ') : '—',
+            description: readable(product.description),
+            archivedBy: product.archived_by_admin || /admin/i.test(String(product.archive_actor || '')) ? 'Admin' : readable(pick(product,'archive_actor','archived_by_role')),
+            archivedAt: formatDate(pick(product,'archived_at','archive_date')),
+            archiveReason: readable(product.archive_reason),
+            archiveDetails: readable(product.archive_details),
         });
-
-        renderProductImages(product);
-
-        /* Buyer options */
-        const options = [
-            product.variations,
-            product.colors,
-            product.sizes,
-        ]
-            .flatMap(toOptions)
-            .map(optionLine);
-
-        $('#sellerProductBuyerOptionsList').innerHTML =
-            options
-                .map(
-                    (line) => `
-                        <div class="seller-product-option-row">
-                            ${esc(line)}
-                        </div>
-                    `
-                )
-                .join('');
-
-        $('#sellerProductBuyerOptionsSection').hidden =
-            !options.length;
-
-        /* Extra specifications */
-        const extra = Object.entries(
-            specs
-        ).filter(
-            ([key]) =>
-                !DETAIL_KEYS.includes(key)
-        );
-
-        $('#sellerProductSpecificationsList').innerHTML =
-            extra
-                .map(
-                    ([key, value]) => `
-                        <div class="seller-product-spec-row">
-                            <span>
-                                ${esc(
-                                    titleCase(
-                                        key.replace(
-                                            /^category_specifications\[\]$/g,
-                                            ''
-                                        )
-                                    )
-                                )}
-                            </span>
-
-                            <strong>
-                                ${esc(
-                                    display(value)
-                                )}
-                            </strong>
-                        </div>
-                    `
-                )
-                .join('');
-
-        $('#sellerProductSpecificationsSection').hidden =
-            !extra.length;
-
-        /* Compliance notice */
-        const notice =
-            $('#sellerProductComplianceNotice');
-
-        const reason =
-            status === 'removed'
-                ? product.remove_reason ||
-                  product.archive_reason
-                : product.warning_reason;
-
-        const details =
-            status === 'removed'
-                ? product.remove_details ||
-                  product.archive_details
-                : product.warning_details;
-
-        const copy = {
-            approved: [
-                'Approved',
-                'This product is approved and available.',
-            ],
-
-            warning: [
-                'Warning Issued',
-                `${
-                    reason ||
-                    'A compliance issue was identified for this product.'
-                }${
-                    details
-                        ? ` — ${details}`
-                        : ''
-                }`,
-            ],
-
-            removed: [
-                'Removed',
-                `${
-                    reason ||
-                    "This product has been removed from the seller's store."
-                }${
-                    details
-                        ? ` — ${details}`
-                        : ''
-                }`,
-            ],
-
-            'under-review': [
-                'Under Review',
-                'This product is awaiting a compliance decision.',
-            ],
-        }[status];
-
-        notice.className =
-            `seller-product-compliance-notice ${status}`;
-
-        notice.innerHTML = `
-            <strong>
-                ${esc(copy[0])}
-            </strong>
-
-            <span>
-                ${esc(copy[1])}
-            </span>
-        `;
-
-        notice.hidden = false;
-
-        /*
-         * Moderation buttons only while under review.
-         */
-        const underReview =
-            status === 'under-review';
-
-        $$(
-            '[data-action="product-remove"], [data-action="product-warn"], [data-action="product-approve"]',
-            modals.product
-        ).forEach((button) => {
-            button.hidden = !underReview;
-        });
-
-        const closeAction = $(
-            '[data-action="product-close"].seller-product-close-action',
-            modals.product
-        );
-
-        if (closeAction) {
-            closeAction.hidden =
-                underReview;
+        // Keep the stored slug for the Inventory category color mapping.
+        const categoryBadge = $('.product-details-category-display', modals.product);
+        if (categoryBadge) {
+            const categoryValue = String(pick(product, 'category', 'category_slug') || '');
+            const categorySlug = categoryValue.toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[’']/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+            const knownCategories = new Set([
+                'pet-supplies', 'electronics-and-gadgets', 'womens-apparel',
+                'mens-apparel', 'kids-and-baby', 'home-and-garden',
+                'sports-and-outdoors', 'health-and-beauty', 'books-and-media',
+                'food-and-gourmet', 'automotive-motorcycle',
+                'furniture-and-office-equipment', 'jewelry-and-watches',
+                'office-and-school-supplies'
+            ]);
+            categoryBadge.className = 'product-details-category-display category-badge category-' +
+                (knownCategories.has(categorySlug) ? categorySlug : 'default');
         }
+        const badge = $('#sellerProductStatusBadge');
+        if (badge) { badge.textContent = PRODUCT_STATUS_LABEL[status] || titleCase(status); badge.className = `sc-product-status ${status}`; }
+        const archive = $('#sellerProductArchiveInfo');
+        if (archive) archive.hidden = !(product.is_archived || status==='removed');
+        const specContainer = $('#sellerProductSpecificationsList');
+        if (specContainer) {
+            const extra = Object.entries(specs);
+            specContainer.innerHTML = extra.length ? extra.map(([key,value]) => `<div class="sc-product-spec"><span>${esc(titleCase(key))}</span><strong>${esc(readable(value))}</strong></div>`).join('') : '<p class="sc-empty">No additional specifications recorded.</p>';
+        }
+        // Seller Inventory variation layout: stat cards, option chips, combination rows.
+        const options = $('#sellerProductBuyerOptionsList');
+        const optionGroups = [
+            {key:'variations', label:'Variation'},
+            {key:'colors', label:'Color'},
+            {key:'sizes', label:'Size'}
+        ];
+        const readChoices = input => normalizeArray(input).map(item => {
+            if(typeof item !== 'object' || item===null) return {name:String(item),additional:0};
+            return {name:String(pick(item,'name','label','value','option_name')??'—'),additional:Number(pick(item,'additional_price','price_adjustment','additional')??0)};
+        });
+        const normalizedGroups = optionGroups.map(g=>({ ...g, choices:readChoices(product[g.key]) })).filter(g=>g.choices.length);
+        const variantRows = normalizeArray(pick(product,'connectedVariants','connected_variants','variant_combinations','combinations'));
+        const totalStock = variantRows.length
+            ? variantRows.reduce((sum,v)=>sum+Math.max(0,Number(pick(v,'stock','stock_quantity')??0)),0)
+            : Number(pick(product,'stock_quantity','stock','total_stock')??0);
+        const outStock=variantRows.filter(v=>Number(pick(v,'stock','stock_quantity')??0)<=0).length;
+        const chips=normalizedGroups.map(group=>`<div class="product-details-choice-line"><strong>${esc(group.label)}</strong><div class="product-details-choice-pills">${group.choices.map(choice=>`<span class="product-details-choice-view">${esc(choice.name)}</span>`).join('')}</div></div>`).join('');
+        const stats=[['Variation types',normalizedGroups.length],['Combinations',variantRows.length],['Total stock',totalStock],['Out of stock',outStock]];
+        const statHTML=`<div class="product-details-variation-stats">${stats.map(([label,n])=>`<div class="product-details-stat-card"><span>${esc(label)}</span><strong>${Number(n).toLocaleString('en-PH')}</strong></div>`).join('')}</div>`;
+        const choiceName=(variant,group)=>{
+            // Seller Inventory saves grouped choices inside a JSON `choices`
+            // object with plural keys: variations, colors, sizes.
+            let choices = pick(variant,'choices','selected_choices','selectedChoices');
+            if (typeof choices === 'string') {
+                try { choices = JSON.parse(choices); } catch (_) { choices = {}; }
+            }
+            let value = choices && typeof choices === 'object'
+                ? (choices[group.key] ?? choices[group.label.toLowerCase()] ??
+                    choices[group.key.slice(0,-1)])
+                : null;
+            if (value == null || value === '') {
+                const aliases={
+                    variations:['variation','variation_name','variationName','variation_value','variations'],
+                    colors:['color','color_name','colorName','colors'],
+                    sizes:['size','size_name','sizeName','sizes']
+                };
+                value=pick(variant,...aliases[group.key]);
+            }
+            if (value && typeof value==='object') value=pick(value,'name','label','value');
+            return String(value??'').trim();
+        };
+        // Display the SAVED grouped combinations, not independent/guessed variants.
+        // Seller Inventory persists combinations in connected_variants / choices.
+        const variantHTML=variantRows.map((variant,i)=>{
+            const groupsForVariant = normalizedGroups.length ? normalizedGroups : optionGroups;
+            const names=groupsForVariant.map(group=>choiceName(variant,group)).filter(Boolean);
+            const title=names.join(' / ') || String(pick(variant,'name','label','title')??`Grouped Variant ${i+1}`);
+            const price=Number(pick(variant,'final_price','finalPrice','price')??amount??0);
+            const stock=Number(pick(variant,'stock','stock_quantity')??0);
+            const photos=normalizeArray(pick(variant,'photos','images'));
+            const photo=pick(variant,'image_url','photoData','photo_data','photo','image') || (typeof photos[0]==='string'?photos[0]:null);
+            const validPhoto=safeImage(photo);
+            const summary=String(pick(variant,'price_breakdown','breakdown','pricing_breakdown')??'');
+            const optionBreakdown=(normalizedGroups.length ? normalizedGroups : optionGroups).map(group=>{
+                const name=choiceName(variant,group);
+                return name ? `${group.label}: ${name}` : '';
+            }).filter(Boolean).join(' · ');
+            return `<article class="product-details-variant-card"><div class="product-details-variant-thumb">${validPhoto?`<img src="${esc(validPhoto)}" alt="">`:''}</div><div class="product-details-variant-copy"><strong>${esc(title)}</strong><span class="product-details-variant-breakdown">${esc(optionBreakdown)}</span>${summary?`<span class="product-details-variant-breakdown">${esc(summary)}</span>`:''}</div><div class="product-details-variant-number"><span>Price</span><strong>${esc(peso(price))}</strong></div><div class="product-details-variant-number"><span>Stock</span><strong>${stock.toLocaleString('en-PH')}</strong></div><div class="product-details-variant-actions"><span class="product-details-variant-status ${stock>0?'is-stock':'is-out'}">${stock>0?'In Stock':'Out of Stock'}</span></div></article>`;
+        });
+        // When the seller saved grouped combinations, show the group name and
+        // exactly which variants belong to each group. Keep row order stable.
+        const groupNames = new Map();
+        variantRows.forEach((variant,index)=>{
+            const group = normalizedGroups[0] || optionGroups.find(g=>variantRows.some(v=>choiceName(v,g)));
+            const chosen = group ? choiceName(variant,group) : '';
+            const groupLabel = chosen ? `${group.label}: ${chosen}` : 'Grouped Variants';
+            if(!groupNames.has(groupLabel)) groupNames.set(groupLabel,[]);
+            groupNames.get(groupLabel).push(variantHTML[index]);
+        });
+        const groupedVariantHTML = Array.from(groupNames,([groupLabel,rows])=>`
+            <section class="product-details-saved-variant-group" style="margin-top:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;font-family:Poppins,sans-serif">
+                    <strong style="font-size:12px;font-weight:600;color:#342B28">${esc(groupLabel)}</strong>
+                    <span style="font-size:10px;color:#8B7974">${rows.length} ${rows.length===1?'combination':'combinations'}</span>
+                </div>
+                <div class="product-details-variant-card-list">${rows.join('')}</div>
+            </section>`).join('');
+        if(options) options.innerHTML = statHTML+chips+(variantRows.length
+            ? `<div style="margin-top:16px;font-size:13px;font-weight:600;color:#342B28">Grouped Variants (${variantRows.length})</div>${groupedVariantHTML}`
+            : '<p class="sc-empty">No saved grouped variant combinations found for this product.</p>');
+        const count = $('#sellerProductVariationCount'); if(count) count.textContent=String(variantRows.length);
+        renderHistory('#sellerProductStockHistory', pick(product,'stock_history','stockHistory','stock_movements'), 'stock');
+        renderHistory('#sellerProductPriceHistory', pick(product,'price_history','priceHistory','price_changes'), 'price');
+        const notice=$('#sellerProductComplianceNotice');
+        if (notice) {
+            const reason=status==='removed'?pick(product,'remove_reason','archive_reason'):product.warning_reason;
+            const details=status==='removed'?pick(product,'remove_details','archive_details'):product.warning_details;
+            notice.hidden = !['warning','removed'].includes(status);
+            if (!notice.hidden) notice.innerHTML=`<strong>${esc(status==='warning'?'Warning Issued':'Product Removed')}</strong><span>${esc([reason,details].filter(Boolean).join(' — ') || 'Compliance action recorded.')}</span>`;
+        }
+        renderProductImages(product);
+        showAdminProductTab('details');
+        const underReview=status==='under-review';
+        $$('[data-action="product-remove"],[data-action="product-warn"],[data-action="product-approve"]',modals.product).forEach(btn=>btn.hidden=!underReview);
+        const close=$('[data-action="product-close"].seller-product-close-action',modals.product);
+        if(close) close.hidden=underReview;
     }
 
     function openProduct(id) {
@@ -1905,38 +1867,24 @@ function initSellerCompliance(cfg) {
      * ------------------------------------------------------------------ */
 
     function openDecision(type) {
-        const modal =
-            modals[type];
-
+        const modal = modals[type];
         if (!modal) return;
 
-        $$(
-            'input[type="radio"]',
-            modal
-        ).forEach(
-            (input) => {
-                input.checked = false;
-            }
-        );
-
-        $('.decision-reasons', modal)
-            ?.classList.remove(
-                'has-error'
-            );
-
-        const textarea =
-            $('textarea', modal);
-
-        if (textarea) {
-            textarea.value = '';
-        }
-
-        $('[data-counter]', modal).textContent =
-            '0/300';
+        $$('input[type="radio"]', modal).forEach(input => { input.checked = false; });
+        $('.decision-reasons', modal)?.classList.remove('has-error');
+        const otherField = $('.decision-other-field', modal);
+        if (otherField) otherField.hidden = true;
+        const otherInput = $('.decision-other-field input', modal);
+        if (otherInput) otherInput.value = '';
+        const error = $('.decision-field-error', modal);
+        if (error) error.hidden = true;
+        const textarea = $('.decision-details textarea', modal);
+        if (textarea) textarea.value = '';
+        const counter = $('[data-counter]', modal);
+        if (counter) counter.textContent = '0/300';
 
         hide(modals.product);
         show(modal);
-
         $('.decision-cancel', modal)?.focus();
     }
 
@@ -1957,19 +1905,23 @@ function initSellerCompliance(cfg) {
 
         if (!modal) return;
 
-        const reason = $(
-            'input[type="radio"]:checked',
-            modal
-        )?.value;
-
-        if (!reason) {
-            $('.decision-reasons', modal)
-                ?.classList.add(
-                    'has-error'
-                );
-
+        const selectedReason = $('input[type="radio"]:checked', modal)?.value;
+        if (!selectedReason) {
+            $('.decision-reasons', modal)?.classList.add('has-error');
             return;
         }
+
+        const otherInput = $('.decision-other-field input', modal);
+        const otherReason = otherInput?.value.trim() || '';
+        const isOther = selectedReason === 'Other';
+        const error = $('.decision-field-error', modal);
+        if (isOther && !otherReason) {
+            if (error) error.hidden = false;
+            otherInput?.focus();
+            return;
+        }
+        if (error) error.hidden = true;
+        const reason = isOther ? otherReason : selectedReason;
 
         button.disabled = true;
 
@@ -2007,6 +1959,25 @@ function initSellerCompliance(cfg) {
     /* ------------------------------------------------------------------ *
      * Event delegation
      * ------------------------------------------------------------------ */
+
+    // Figma reason selections and live character counters.
+    ['warn', 'remove'].forEach(type => {
+        const modal = modals[type];
+        if (!modal) return;
+        modal.addEventListener('change', event => {
+            if (!event.target.matches('input[type="radio"]')) return;
+            const other = $('.decision-other-field', modal);
+            if (other) other.hidden = event.target.value !== 'Other';
+            $('.decision-reasons', modal)?.classList.remove('has-error');
+            const error = $('.decision-field-error', modal);
+            if (error) error.hidden = true;
+        });
+        const textarea = $('.decision-details textarea', modal);
+        const counter = $('[data-counter]', modal);
+        textarea?.addEventListener('input', () => {
+            if (counter) counter.textContent = `${textarea.value.length}/300`;
+        });
+    });
 
     const decisionType = (node) =>
         node.closest(
@@ -2067,6 +2038,8 @@ function initSellerCompliance(cfg) {
             suspendSeller(node),
 
         'product-close': closeProduct,
+
+        'admin-product-tab': (node) => showAdminProductTab(node.dataset.adminProductTab),
 
         'product-remove': () =>
             openDecision('remove'),
@@ -2436,6 +2409,7 @@ function initSellerCompliance(cfg) {
      * No extra request is required on initial page load.
      */
     applyPayload(
-        cfg.initial || {}
+        { data: [], summary: {} }
     );
+    loadSellers();
 }

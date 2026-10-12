@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Http\Controllers\Admin\AdminNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -2242,3 +2243,11 @@ Route::middleware(['auth'])
         })->name('read-all');
 
     });
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/notifications', [AdminNotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::patch('/notifications/read-all', [AdminNotificationController::class, 'markAllRead'])
+        ->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
+        ->name('notifications.read');
+});

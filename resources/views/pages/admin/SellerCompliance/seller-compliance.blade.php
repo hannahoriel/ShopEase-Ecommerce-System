@@ -15,6 +15,42 @@
         'remove_reasons' => [],
         'warning_reasons' => [],
     ], is_array($config) ? $config : []);
+    // Keep Seller Compliance aligned with the full list in Seller Inventory.
+    // Values use the exact normalized slugs expected by the existing API filter.
+    $inventoryCategories = [
+        'pet-supplies' => 'Pet Supplies',
+        'electronics-and-gadgets' => 'Electronics & Gadgets',
+        'womens-apparel' => "Women's Apparel",
+        'mens-apparel' => "Men's Apparel",
+        'kids-and-baby' => 'Kids & Baby',
+        'home-and-garden' => 'Home & Garden',
+        'sports-and-outdoors' => 'Sports & Outdoors',
+        'health-and-beauty' => 'Health & Beauty',
+        'books-and-media' => 'Books & Media',
+        'food-and-gourmet' => 'Food & Gourmet',
+        'automotive-motorcycle' => 'Automotive & Motorcycle',
+        'furniture-and-office-equipment' => 'Furniture & Office Equipment',
+        'jewelry-and-watches' => 'Jewelry & Watches',
+        'office-and-school-supplies' => 'Office & School Supplies',
+    ];
+
+    // Also retain categories optionally added by the existing config file.
+    // Normalize their values to the same slugs used by the admin API.
+    $extraCategories = [];
+    foreach (($config['categories'] ?? []) as $slug => $label) {
+        if (!is_string($label) || trim($label) === '') continue;
+        $value = is_string($slug) ? $slug : $label;
+        $normalized = \Illuminate\Support\Str::slug(
+            str_replace(['&', '’'], ['and', "'"], $value)
+        );
+        if ($normalized !== '' && !array_key_exists($normalized, $inventoryCategories)) {
+            $extraCategories[$normalized] = $label;
+        }
+    }
+
+    $availableCategoryOptions = $inventoryCategories + $extraCategories;
+    $config['categories'] = $availableCategoryOptions;
+
     $data = $initialComplianceData ?? ['data' => [], 'summary' => []];
     $summary = $data['summary'] ?? [];
 
@@ -55,8 +91,8 @@
         'apiUrl'     => url('/admin/seller-compliance/data'),
         'perPage'    => $config['default_per_page'] ?? 10,
         'categories' => $config['categories'] ?? [],
-        'statuses'   => $config['statuses'] ?? [],
-        'initial'    => $data,
+        'statuses'   => array_intersect_key($config['statuses'] ?? [], array_flip(['compliant', 'warning', 'suspended'])),
+        'initial'    => ['data' => [], 'summary' => []],
     ];
 @endphp
 
@@ -157,7 +193,7 @@
                                     class="compliance-stat-number"
                                     data-summary="{{ $card['key'] }}"
                                 >
-                                    {{ (int) ($summary[$card['key']] ?? 0) }}
+                                    —
                                 </div>
 
                                 <div class="compliance-stat-label">
@@ -233,7 +269,7 @@
                         All Categories
                     </option>
 
-                    @foreach (($config['categories'] ?? []) as $slug => $label)
+                    @foreach ($availableCategoryOptions as $slug => $label)
 
                         <option value="{{ $slug }}">
                             {{ $label }}
@@ -255,13 +291,9 @@
                         All Compliance
                     </option>
 
-                    @foreach (($config['statuses'] ?? []) as $value => $status)
-
-                        <option value="{{ $value }}">
-                            {{ $status['label'] }}
-                        </option>
-
-                    @endforeach
+                    <option value="compliant">Compliant</option>
+                    <option value="warning">Warning</option>
+                    <option value="suspended">Suspended</option>
 
                 </select>
 
@@ -546,7 +578,7 @@
     >@json($clientConfig, JSON_HEX_TAG | JSON_HEX_AMP)</script>
 
     <script>
-        window.initialSellerComplianceData = @json($data, JSON_HEX_TAG | JSON_HEX_AMP);
+        window.initialSellerComplianceData = null;
     </script>
 
 </body>

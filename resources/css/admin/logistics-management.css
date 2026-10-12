@@ -2250,3 +2250,51 @@
             padding: 16px 18px 20px;
         }
     }
+
+
+/* ==========================================================
+   ADMIN SEARCH / FILTER CONTROLS — UNIFIED GRAY DESIGN
+   Reference: User Management | applies to filters only.
+   ========================================================== */
+.pending-logistics-search,
+.pending-date-input,
+.logistics-search {
+    height: 36px !important;
+    box-sizing: border-box;
+    border: 1px solid #D9D6D4 !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF !important;
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    outline: none !important;
+}
+.pending-logistics-search::placeholder,
+.logistics-search::placeholder {
+    color: #76716E !important;
+    opacity: 1 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+.pending-logistics-search-icon,
+.logistics-search-icon {
+    color: #76716E !important;
+}
+.pending-logistics-search:focus,
+.pending-date-input:focus,
+.logistics-search:focus,
+.pending-logistics-search:focus-visible,
+.pending-date-input:focus-visible,
+.logistics-search:focus-visible {
+    border-color: #9CA3AF !important;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.14) !important;
+    outline: none !important;
+}
+.pending-date-input::-webkit-datetime-edit {
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}

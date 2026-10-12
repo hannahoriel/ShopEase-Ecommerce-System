@@ -1201,9 +1201,7 @@
                                     @elseif(strtolower($registration->user_type) === 'buyer')
                                         <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-[18px] h-[18px] object-contain" alt="Buyer">
                                     @elseif(strtolower($registration->user_type) === 'logistics')
-                                        <img src="{{ asset('icons/admin/dashboard/body/logistics.png') }}" class="w-[18px] h-[18px] object-contain" alt="Logistics">
-                                    @elseif(strtolower($registration->user_type) === 'rider')
-                                        <img src="{{ asset('icons/admin/dashboard/body/rider.png') }}" class="w-[18px] h-[18px] object-contain" alt="Rider">
+                                        <img src="{{ asset('icons/admin/logistics/truck.png') }}" class="w-[18px] h-[18px] object-contain" alt="Logistics">
                                     @endif
                                     <span class="text-[12px] text-gray-800">{{ ucfirst($registration->user_type) }}</span>
                                 </div>
