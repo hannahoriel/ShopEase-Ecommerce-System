@@ -2108,3 +2108,137 @@ Route::middleware(['auth'])
         )->name('performance.data');
 
     });
+
+
+/*
+|--------------------------------------------------------------------------
+| SELLER ALL NOTIFICATIONS
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])
+    ->prefix('seller/notifications')
+    ->name('seller.notifications.')
+    ->group(function () {
+
+        // ALL NOTIFICATIONS PAGE
+        Route::get('/', function (Request $request) {
+
+            $user = $request->user();
+
+            abort_unless(
+                $user && $user->role === 'seller',
+                403
+            );
+
+            $filter = $request->query('filter', 'all');
+
+            if (!in_array($filter, ['all', 'unread', 'read'], true)) {
+                $filter = 'all';
+            }
+
+            $search = trim(
+                (string) $request->query('search', '')
+            );
+
+            $baseQuery = $user->notifications();
+
+            $notificationCounts = [
+                'all' => (clone $baseQuery)->count(),
+
+                'unread' => (clone $baseQuery)
+                    ->whereNull('read_at')
+                    ->count(),
+
+                'read' => (clone $baseQuery)
+                    ->whereNotNull('read_at')
+                    ->count(),
+            ];
+
+            $query = $user->notifications();
+
+            if ($filter === 'unread') {
+                $query->whereNull('read_at');
+            }
+
+            if ($filter === 'read') {
+                $query->whereNotNull('read_at');
+            }
+
+            if ($search !== '') {
+                $query->where(
+                    'data',
+                    'like',
+                    '%' . $search . '%'
+                );
+            }
+
+            $notifications = $query
+                ->latest()
+                ->paginate(10)
+                ->withQueryString();
+
+            return view(
+    'pages.seller.notifications',
+    compact('notifications', 'notificationCounts')
+);
+
+        })->name('index');
+
+
+        // MARK ONE NOTIFICATION AS READ
+        Route::patch('/{notification}/read', function (
+            Request $request,
+            string $notification
+        ) {
+
+            $user = $request->user();
+
+            abort_unless(
+                $user && $user->role === 'seller',
+                403
+            );
+
+            $item = $user->notifications()
+                ->whereKey($notification)
+                ->firstOrFail();
+
+            $item->markAsRead();
+
+            return redirect()
+                ->back()
+                ->with(
+                    'success',
+                    'Notification marked as read.'
+                );
+
+        })->name('read');
+
+
+        // MARK ALL NOTIFICATIONS AS READ
+        Route::patch('/read-all', function (
+            Request $request
+        ) {
+
+            $user = $request->user();
+
+            abort_unless(
+                $user && $user->role === 'seller',
+                403
+            );
+
+            $user->unreadNotifications()
+                ->update([
+                    'read_at' => now()
+                ]);
+
+            return redirect()
+                ->back()
+                ->with(
+                    'success',
+                    'All notifications marked as read.'
+                );
+
+        })->name('read-all');
+
+    });
