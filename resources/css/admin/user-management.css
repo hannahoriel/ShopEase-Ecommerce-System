@@ -484,3 +484,55 @@
     border-color: #7B1B1B !important;
     box-shadow: 0 0 0 2px rgba(123, 27, 27, 0.10) !important;
 }
+
+
+/* ==========================================================
+   ADMIN SEARCH / FILTER CONTROLS — UNIFIED GRAY DESIGN
+   Reference: User Management | applies to filters only.
+   ========================================================== */
+#user-management-search,
+#user-management-type,
+#user-management-status,
+#user-management-date {
+    height: 36px !important;
+    box-sizing: border-box;
+    border: 1px solid #D9D6D4 !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF !important;
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    outline: none !important;
+}
+#user-management-search::placeholder {
+    color: #76716E !important;
+    opacity: 1 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+#user-management-search + svg,
+#user-management-type + svg,
+#user-management-status + svg,
+#user-management-date-button {
+    color: #76716E !important;
+}
+#user-management-search:focus,
+#user-management-type:focus,
+#user-management-status:focus,
+#user-management-date:focus,
+#user-management-search:focus-visible,
+#user-management-type:focus-visible,
+#user-management-status:focus-visible,
+#user-management-date:focus-visible {
+    border-color: #9CA3AF !important;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.14) !important;
+    outline: none !important;
+}
+#user-management-date::-webkit-datetime-edit {
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}

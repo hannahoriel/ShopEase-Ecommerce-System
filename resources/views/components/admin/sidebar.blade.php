@@ -106,6 +106,14 @@
                     ],
 
                     [
+                        'label' => 'Notifications',
+                        'icon' => 'notifications.png',
+                        'icon_path' => 'icons/seller/notifications.png',
+                        'route' => null,
+                        'url' => url('/admin/notifications'),
+                    ],
+
+                    [
                         'label' => 'Account Management',
                         'icon' => 'account-management.png',
                         'route' => null
@@ -122,17 +130,17 @@
 
                     $isActive = $item['route']
                         ? request()->routeIs($item['route'])
-                        : false;
+                        : (!empty($item['url']) && request()->is('admin/notifications*'));
 
                 @endphp
 
 
-                @if ($item['route'])
+                @if ($item['route'] || !empty($item['url']))
 
                     <!-- ==================== AVAILABLE PAGE ==================== -->
 
                     <a
-                        href="{{ route($item['route']) }}"
+                        href="{{ $item['route'] ? route($item['route']) : $item['url'] }}"
                         class="
                             sidebar-link
                             sidebar-menu-item
@@ -151,6 +159,7 @@
                                     : 'hover:bg-maroon-800/50 hover:translate-x-1'
                             }}
                         "
+                        style="animation-delay: {{ number_format(0.05 + ($loop->index * 0.05), 2, '.', '') }}s;"
                     >
 
                         <!-- ICON -->
@@ -166,7 +175,7 @@
                         >
 
                             <img
-                                src="{{ asset('icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}"
+                                src="{{ asset($item['icon_path'] ?? ('icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}"
                                 class="
                                     sidebar-icon
                                     w-[18px] h-[18px]
@@ -215,6 +224,7 @@
                             opacity-100
                             cursor-default
                         "
+                        style="animation-delay: {{ number_format(0.05 + ($loop->index * 0.05), 2, '.', '') }}s;"
                     >
 
                         <!-- ICON -->
@@ -229,7 +239,7 @@
                         >
 
                             <img
-                                src="{{ asset('icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}"
+                                src="{{ asset($item['icon_path'] ?? ('icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}"
                                 class="
                                     sidebar-icon
                                     w-[18px] h-[18px]
@@ -379,54 +389,8 @@
     }
 
 
-    /* =========================================================
-       STRICT TOP-TO-BOTTOM ORDER
-    ========================================================== */
-
-    .sidebar-menu-item:nth-child(1) {
-        animation-delay: 0.05s;
-    }
-
-    .sidebar-menu-item:nth-child(2) {
-        animation-delay: 0.10s;
-    }
-
-    .sidebar-menu-item:nth-child(3) {
-        animation-delay: 0.15s;
-    }
-
-    .sidebar-menu-item:nth-child(4) {
-        animation-delay: 0.20s;
-    }
-
-    .sidebar-menu-item:nth-child(5) {
-        animation-delay: 0.25s;
-    }
-
-    .sidebar-menu-item:nth-child(6) {
-        animation-delay: 0.30s;
-    }
-
-    .sidebar-menu-item:nth-child(7) {
-        animation-delay: 0.35s;
-    }
-
-    .sidebar-menu-item:nth-child(8) {
-        animation-delay: 0.40s;
-    }
-
-    .sidebar-menu-item:nth-child(9) {
-        animation-delay: 0.45s;
-    }
-
-    .sidebar-menu-item:nth-child(10) {
-        animation-delay: 0.50s;
-    }
-
-    .sidebar-menu-item:nth-child(11) {
-        animation-delay: 0.55s;
-    }
-
+    /* The stagger delay is assigned per item by the Blade loop.
+       This keeps new menu items in exact top-to-bottom order. */
 
     /* =========================================================
        LOGOUT ANIMATION

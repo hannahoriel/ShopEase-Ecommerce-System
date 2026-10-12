@@ -520,3 +520,50 @@
         flex-wrap: wrap;
     }
 }
+
+/* ==========================================================
+   ADMIN SEARCH / FILTER CONTROLS — UNIFIED GRAY DESIGN
+   Reference: User Management | applies to filters only.
+   ========================================================== */
+.commission-search,
+.commission-date-trigger {
+    height: 36px !important;
+    box-sizing: border-box;
+    border: 1px solid #D9D6D4 !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF !important;
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    outline: none !important;
+}
+.commission-search::placeholder {
+    color: #76716E !important;
+    opacity: 1 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+.commission-search-icon,
+.commission-date-trigger svg,
+.commission-date-text {
+    color: #76716E !important;
+}
+.commission-search:focus,
+.commission-date-trigger:focus,
+.commission-search:focus-visible,
+.commission-date-trigger:focus-visible,
+.commission-date-wrap.is-open .commission-date-trigger {
+    border-color: #9CA3AF !important;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.14) !important;
+    outline: none !important;
+}
+.commission-date-trigger::-webkit-datetime-edit {
+    color: #76716E !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+
+.commission-date-text { font-size: 13px !important; font-weight: 400 !important; }

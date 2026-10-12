@@ -212,8 +212,10 @@ body.sc-modal-open { overflow: hidden; }
 
 .seller-details-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .seller-suspend-button, .seller-cancel-button { min-width: 108px; height: 38px; padding: 0 18px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: .18s ease; }
-.seller-suspend-button { border: 1px solid #D51818; background: #FFDCDC; color: #B40000; }
-.seller-suspend-button:hover { background: #FFCACA; }
+.seller-suspend-button { border: 1.5px solid #AD2424; background: #FFF0ED; color: #962020; }
+.seller-suspend-button:hover { background: #FFE4DE; }
+.seller-suspend-button.is-reactivate { border-color: #277B45; background: #ECF8EF; color: #246A3D; }
+.seller-suspend-button.is-reactivate:hover { background: #DDF2E4; }
 .seller-suspend-button:disabled { opacity: .5; cursor: wait; }
 .seller-cancel-button { border: 1px solid #17120F; background: #fff; color: #17120F; }
 .seller-cancel-button:hover { background: #F7F4F2; }
@@ -389,4 +391,407 @@ body.sc-modal-open { overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
     .seller-compliance-page, .compliance-refresh, .seller-compliance-row, .pagination-button { transition: none !important; }
+}
+
+/* Seller suspend/reactivate confirmation buttons: light fill, strong outline */
+#sellerSuspendModal .decision-submit { border: 1.5px solid #AD2424; background: #FFF0ED; color: #962020; }
+#sellerSuspendModal .decision-submit:hover { background: #FFE4DE; }
+#sellerSuspendModal .decision-submit.is-reactivate { border-color: #277B45; background: #ECF8EF; color: #246A3D; }
+#sellerSuspendModal .decision-submit.is-reactivate:hover { background: #DDF2E4; }
+
+/* ===========================================================
+ ADMIN PRODUCT DETAILS — Seller Inventory view-mode parity
+ Only this modal is affected; existing admin tables stay intact.
+ =========================================================== */
+#sellerProductDetailsModal.sc-overlay--product{z-index:120;align-items:center;justify-content:center;padding:14px}
+#sellerProductDetailsModal[hidden],#sellerProductDetailsModal [hidden]{display:none!important}
+#sellerProductDetailsModal .sc-inventory-product-dialog{width:min(1100px,calc(100vw - 30px));height:min(800px,calc(100vh - 30px));background:#fff;border-radius:24px;box-shadow:0 22px 70px rgba(33,21,18,.24);display:flex;flex-direction:column;overflow:hidden;font-family:Poppins,sans-serif;color:#17120F}
+#sellerProductDetailsModal .product-details-inspo-header{display:flex;align-items:center;justify-content:space-between;padding:19px 28px;border-bottom:1px solid #eee8e5;flex:none}
+#sellerProductDetailsModal .product-details-inspo-header h2{margin:0;font-size:19px;font-weight:600}
+#sellerProductDetailsModal .product-details-inspo-close{border:0;background:#F8F4F2;border-radius:50%;width:33px;height:33px;display:grid;place-items:center;cursor:pointer;color:#5c514d}
+#sellerProductDetailsModal .product-details-inspo-close svg{width:16px;height:16px}
+#sellerProductDetailsModal .product-details-inspo-body{display:grid;grid-template-columns:34% minmax(0,1fr);gap:25px;padding:24px 28px;overflow:hidden;flex:1;min-height:0}
+#sellerProductDetailsModal .product-details-inspo-gallery{min-width:0;align-self:start;position:relative}
+#sellerProductDetailsModal .product-details-inspo-main-photo{width:100%;aspect-ratio:1/1;border-radius:15px;background:#F8F6F5;display:grid;place-items:center;overflow:hidden;border:1px solid #EEE9E6}
+#sellerProductDetailsModal .product-details-inspo-main-photo img{width:100%;height:100%;object-fit:contain;display:block}
+#sellerProductDetailsModal .product-details-image-fallback{font-size:12px;color:#aaa}
+#sellerProductDetailsModal .product-details-thumbnail-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#sellerProductDetailsModal .seller-product-thumbnail{width:57px;height:57px;padding:3px;border:1px solid #DDD7D2;border-radius:8px;background:#fff;cursor:pointer;overflow:hidden}
+#sellerProductDetailsModal .seller-product-thumbnail.active{border:2px solid #9E241F}
+#sellerProductDetailsModal .seller-product-thumbnail img{width:100%;height:100%;object-fit:cover;border-radius:4px}
+#sellerProductDetailsModal .sc-photo-next{border:1px solid #E4DAD6;background:#fff;color:#7b231d;border-radius:8px;padding:4px 15px;margin-top:9px;cursor:pointer}
+#sellerProductDetailsModal .product-details-inspo-content{min-height:0;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#sellerProductDetailsModal .product-details-inspo-summary{flex:none}
+#sellerProductDetailsModal .product-details-title-display{margin:0 0 7px;font-size:20px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}
+#sellerProductDetailsModal .product-details-inspo-sku{display:flex;gap:8px;font-size:11px;color:#89817d;margin-bottom:12px}
+#sellerProductDetailsModal .product-details-inspo-sku strong{color:#403c3a;font-weight:500}
+#sellerProductDetailsModal .product-details-inspo-badges{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+#sellerProductDetailsModal .product-details-category-display,#sellerProductDetailsModal .product-details-soft-badge,#sellerProductDetailsModal .sc-product-status{display:inline-flex;border-radius:999px;padding:5px 12px;background:#F5E9E4;color:#8f2a24;font-size:10px;font-weight:500}
+#sellerProductDetailsModal .product-details-soft-badge{background:#F4F1EF;color:#756b66}
+#sellerProductDetailsModal .sc-product-status.warning{background:#FFE9C9;color:#9f6407}
+#sellerProductDetailsModal .sc-product-status.removed{background:#FFE0E2;color:#A82930}
+#sellerProductDetailsModal .sc-product-status.approved{background:#E2F4DF;color:#267b2e}
+#sellerProductDetailsModal .product-details-inspo-price strong{font-size:23px;font-weight:600;color:#A02220}
+#sellerProductDetailsModal .product-details-inspo-pricing-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 15px}
+#sellerProductDetailsModal .product-details-inspo-pricing-meta div,#sellerProductDetailsModal .product-details-inspo-detail-item{display:flex;flex-direction:column;gap:3px}
+#sellerProductDetailsModal .product-details-inspo-pricing-meta span,#sellerProductDetailsModal .product-details-inspo-detail-item span{font-size:10px;color:#928a86}
+#sellerProductDetailsModal .product-details-inspo-pricing-meta strong,#sellerProductDetailsModal .product-details-inspo-detail-item strong{font-size:12px;font-weight:500;overflow-wrap:anywhere}
+#sellerProductDetailsModal .product-details-inspo-tabs{display:flex;gap:22px;flex:none;border-bottom:1px solid #E7E0DC;overflow-x:auto;scrollbar-width:none}
+#sellerProductDetailsModal .product-details-tab{position:relative;white-space:nowrap;cursor:pointer;padding:12px 0;border:0;background:transparent;color:#827a76;font:500 11px Poppins,sans-serif}
+#sellerProductDetailsModal .product-details-tab.is-active{color:#9E241F;font-weight:600}
+#sellerProductDetailsModal .product-details-tab.is-active:after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:3px;background:#9E241F}
+#sellerProductDetailsModal .product-details-tab-count{border-radius:9px;background:#F4ECE9;padding:2px 6px;font-size:9px}
+#sellerProductDetailsModal .product-details-inspo-tab-scroll{min-height:0;flex:1;overflow-y:auto;padding:17px 9px 12px 0;scrollbar-width:thin}
+#sellerProductDetailsModal .product-details-inspo-basic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 20px;margin-bottom:21px}
+#sellerProductDetailsModal .product-details-inspo-specs h3,#sellerProductDetailsModal .product-details-inspo-variations h3,#sellerProductDetailsModal .product-details-inspo-description h3{font-size:13px;font-weight:600;margin:0 0 13px}
+#sellerProductDetailsModal .product-details-inspo-spec-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:21px}
+#sellerProductDetailsModal .sc-product-spec{padding:10px 12px;border:1px solid #EEE7E3;background:#FFFBF9;border-radius:9px;min-width:0}
+#sellerProductDetailsModal .sc-product-spec span{display:block;font-size:10px;color:#938a85;margin-bottom:4px}
+#sellerProductDetailsModal .sc-product-spec strong{display:block;font-size:11px;font-weight:500;overflow-wrap:anywhere}
+#sellerProductDetailsModal .product-details-inspo-description{margin-top:18px;border-top:1px solid #EEE8E5;padding-top:18px}
+#sellerProductDetailsModal .product-details-inspo-description p{font-size:11px;line-height:1.9;white-space:pre-wrap;margin:0;color:#635b56}
+#sellerProductDetailsModal .sc-variant-group{border:1px solid #E6DEDA;border-radius:12px;padding:14px;margin-bottom:12px;background:#FFFBF9}
+#sellerProductDetailsModal .sc-variant-group h4{margin:0 0 8px;font-size:12px;font-weight:600}
+#sellerProductDetailsModal .sc-variant-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid #F0EAE6;font-size:11px}
+#sellerProductDetailsModal .sc-variant-row strong{font-weight:500}
+#sellerProductDetailsModal .sc-history-table{width:100%;border-collapse:collapse;font-size:11px}
+#sellerProductDetailsModal .sc-history-table th,#sellerProductDetailsModal .sc-history-table td{padding:12px 9px;text-align:left;border-bottom:1px solid #EAE5E2}
+#sellerProductDetailsModal .sc-history-table th{color:#938984;font-weight:500}
+#sellerProductDetailsModal .sc-empty{font-size:11px;color:#99918b;padding:22px 0}
+#sellerProductDetailsModal .sc-product-compliance-notice{margin:15px 0;background:#FFF5E8;border:1px solid #EFD9B4;padding:12px;border-radius:10px;font-size:11px;color:#885d28}
+#sellerProductDetailsModal .sc-product-compliance-notice strong{display:block;margin-bottom:5px}
+#sellerProductDetailsModal .sc-product-archive-notice{padding:12px;border:1px solid #E9D8D2;border-radius:12px;background:#FFF7F4;margin-bottom:14px}
+#sellerProductDetailsModal .sc-product-archive-notice h3{font-size:12px;margin:0 0 4px}
+#sellerProductDetailsModal .sc-product-archive-notice p{font-size:10px;color:#82736b;margin:0 0 10px}
+#sellerProductDetailsModal .sc-product-archive-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#sellerProductDetailsModal .sc-product-archive-grid span{display:block;color:#9a8780;font-size:10px}
+#sellerProductDetailsModal .sc-product-archive-grid strong{font-size:11px;font-weight:500}
+#sellerProductDetailsModal .product-details-inspo-footer{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:17px 28px;border-top:1px solid #eee7e3;flex:none}
+#sellerProductDetailsModal .product-details-inspo-footer>div{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+#sellerProductDetailsModal .product-details-inspo-footer button{min-width:100px;height:37px;border-radius:8px;padding:0 15px;font:600 11px Poppins,sans-serif;cursor:pointer}
+#sellerProductDetailsModal .seller-product-remove{border:1px solid #b82929;background:#FFF0EE;color:#aa2222}
+#sellerProductDetailsModal .seller-product-warning{border:1px solid #b87c15;background:#FFF5E4;color:#995d07}
+#sellerProductDetailsModal .seller-product-approve{border:1px solid #29763b;background:#EBF8EE;color:#236834}
+#sellerProductDetailsModal .seller-product-close-action{border:1px solid #49413e;background:#fff;color:#34302f}
+#sellerProductDetailsModal button:hover{filter:brightness(.97)}
+@media(max-width:760px){#sellerProductDetailsModal .sc-inventory-product-dialog{height:calc(100vh - 25px)}#sellerProductDetailsModal .product-details-inspo-body{grid-template-columns:1fr;overflow:auto;gap:12px;padding:14px}#sellerProductDetailsModal .product-details-inspo-gallery{max-width:220px}#sellerProductDetailsModal .product-details-inspo-content{overflow:visible}#sellerProductDetailsModal .product-details-inspo-tab-scroll{overflow:visible}#sellerProductDetailsModal .product-details-inspo-header,#sellerProductDetailsModal .product-details-inspo-footer{padding:13px 16px}}
+
+
+/* ============================================================
+   SELLER INVENTORY EXACT MODAL LAYOUT — ADMIN READ ONLY
+   Header and footer stay fixed. Gallery stays fixed on left.
+   Entire right column (summary, tabs, sections) scrolls together.
+   ============================================================ */
+#sellerProductDetailsModal .sc-inventory-product-dialog {
+    width: min(1220px, calc(100vw - 16px));
+    height: min(790px, calc(100dvh - 28px));
+    border-radius: 30px;
+    overflow: hidden !important;
+}
+#sellerProductDetailsModal .product-details-inspo-header {
+    min-height: 94px;
+    padding: 20px 36px;
+    flex: 0 0 auto;
+}
+#sellerProductDetailsModal .product-details-inspo-header h2 {font-size:27px;font-weight:700;letter-spacing:-.6px}
+#sellerProductDetailsModal .product-details-inspo-close {width:54px;height:54px;background:#F9F0F2;color:#800E1C}
+#sellerProductDetailsModal .product-details-inspo-close svg {width:21px;height:21px}
+#sellerProductDetailsModal .product-details-inspo-body {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    grid-template-columns: 274px minmax(0,1fr);
+    gap: 15px;
+    padding: 20px 35px;
+    overflow: hidden !important;
+    align-items: stretch !important;
+}
+#sellerProductDetailsModal .product-details-inspo-gallery {
+    position:relative !important;
+    align-self:start !important;
+    overflow:visible !important;
+    min-height:0 !important;
+}
+#sellerProductDetailsModal .product-details-inspo-main-photo {width:274px;max-width:100%;height:386px;aspect-ratio:auto;border-radius:16px;overflow:hidden}
+#sellerProductDetailsModal .product-details-inspo-main-photo img {object-fit:cover}
+#sellerProductDetailsModal .seller-product-thumbnail {width:80px;height:80px;border-radius:11px}
+#sellerProductDetailsModal .product-details-inspo-content {
+    display:block !important;
+    align-self:stretch !important;
+    min-height:0 !important;
+    height:auto !important;
+    max-height:100% !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    box-sizing:border-box !important;
+    padding:0 9px 36px 0 !important;
+    overscroll-behavior:contain !important;
+    scrollbar-width:thin !important;
+    scrollbar-color:#AAA29E transparent !important;
+}
+#sellerProductDetailsModal .product-details-inspo-content::-webkit-scrollbar {width:6px}
+#sellerProductDetailsModal .product-details-inspo-content::-webkit-scrollbar-thumb {background:#AAA29E;border-radius:999px}
+#sellerProductDetailsModal .product-details-inspo-tab-scroll {
+    flex:none !important;
+    min-height:0 !important;
+    height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+    padding:16px 0 18px !important;
+}
+#sellerProductDetailsModal .product-details-inspo-summary {margin-bottom:16px}
+#sellerProductDetailsModal .product-details-title-display {font-size:28px;font-weight:700;line-height:1.25}
+#sellerProductDetailsModal .product-details-inspo-price strong {font-size:32px;color:#7A1620;font-weight:700}
+#sellerProductDetailsModal .product-details-inspo-badges {gap:10px}
+#sellerProductDetailsModal .product-details-category-display,
+#sellerProductDetailsModal .product-details-soft-badge,
+#sellerProductDetailsModal .sc-product-status {font-size:12px;padding:8px 13px}
+#sellerProductDetailsModal .product-details-inspo-pricing-meta span {font-size:12px}
+#sellerProductDetailsModal .product-details-inspo-pricing-meta strong {font-size:14px}
+#sellerProductDetailsModal .product-details-inspo-tabs {gap:38px;overflow-x:auto;margin-top:20px}
+#sellerProductDetailsModal .product-details-tab {font-size:13px;padding:14px 3px;font-weight:600}
+#sellerProductDetailsModal .product-details-inspo-basic-grid {gap:20px 34px}
+#sellerProductDetailsModal .product-details-inspo-detail-item span {font-size:12px}
+#sellerProductDetailsModal .product-details-inspo-detail-item strong {font-size:14px}
+#sellerProductDetailsModal .product-details-inspo-spec-grid {gap:16px 38px}
+#sellerProductDetailsModal .sc-product-spec {border:0;background:transparent;padding:0}
+#sellerProductDetailsModal .sc-product-spec span {font-size:12px}
+#sellerProductDetailsModal .sc-product-spec strong {font-size:14px}
+#sellerProductDetailsModal .product-details-inspo-description p {font-size:14px;line-height:1.65}
+#sellerProductDetailsModal .product-details-variation-stats {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 20px}
+#sellerProductDetailsModal .product-details-stat-card {border:1px solid #E6DBD8;border-radius:14px;background:#FFFBFA;padding:15px 17px;min-height:78px;box-sizing:border-box}
+#sellerProductDetailsModal .product-details-stat-card span {display:block;font-size:12px;color:#918784}
+#sellerProductDetailsModal .product-details-stat-card strong {display:block;font-size:23px;font-weight:700;color:#7A1620;margin-top:4px}
+#sellerProductDetailsModal .product-details-choice-line {display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;margin:12px 0}
+#sellerProductDetailsModal .product-details-choice-line>strong {font-size:12px;font-weight:700}
+#sellerProductDetailsModal .product-details-choice-pills {display:flex;gap:8px;flex-wrap:wrap}
+#sellerProductDetailsModal .product-details-choice-view {display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:6px 15px;border:1px solid #E3D5D1;border-radius:999px;background:#fff;font-size:11px;color:#625854}
+#sellerProductDetailsModal .product-details-variant-card-list {display:grid;gap:9px;margin-top:20px}
+#sellerProductDetailsModal .product-details-variant-card {display:grid;grid-template-columns:65px minmax(0,1fr) 84px 65px 100px;gap:15px;align-items:center;min-height:100px;padding:13px;border:1px solid #E6DBD8;border-radius:16px;background:#fff;box-sizing:border-box}
+#sellerProductDetailsModal .product-details-variant-thumb {height:60px;width:60px;border:1px solid #E7E0DD;border-radius:10px;background:repeating-linear-gradient(45deg,#FCF7F8,#FCF7F8 7px,#F6EEF1 7px,#F6EEF1 14px);overflow:hidden}
+#sellerProductDetailsModal .product-details-variant-thumb img {height:100%;width:100%;object-fit:cover}
+#sellerProductDetailsModal .product-details-variant-copy {min-width:0}
+#sellerProductDetailsModal .product-details-variant-copy>strong {display:block;font-size:13px;font-weight:700;overflow-wrap:anywhere}
+#sellerProductDetailsModal .product-details-variant-breakdown {display:block;margin-top:5px;font-size:11px;color:#918783;overflow-wrap:anywhere}
+#sellerProductDetailsModal .product-details-variant-number span {display:block;font-size:10px;color:#968b87;text-align:right}
+#sellerProductDetailsModal .product-details-variant-number strong {display:block;font-size:12px;font-weight:700;text-align:right}
+#sellerProductDetailsModal .product-details-variant-status {display:flex;justify-content:center;align-items:center;min-height:34px;border-radius:999px;font-size:11px;font-weight:600}
+#sellerProductDetailsModal .product-details-variant-status.is-stock {border:1px solid #68A677;background:#E9F8ED;color:#327B43}
+#sellerProductDetailsModal .product-details-variant-status.is-out {border:1px solid #D3A4A4;background:#FFF0F0;color:#9F4242}
+#sellerProductDetailsModal .product-details-inspo-footer {min-height:82px;padding:14px 36px;background:#FFFCFB;flex:0 0 auto}
+#sellerProductDetailsModal .product-details-inspo-footer button {height:49px;font-size:13px;min-width:120px}
+#sellerProductDetailsModal .sc-photo-next {display:none}
+@media(max-width:850px){
+ #sellerProductDetailsModal .product-details-inspo-body {grid-template-columns:220px minmax(0,1fr);gap:15px;padding:15px}
+ #sellerProductDetailsModal .product-details-inspo-main-photo {width:220px;height:300px}
+ #sellerProductDetailsModal .product-details-variant-card {grid-template-columns:48px minmax(0,1fr) 64px 48px 75px;gap:8px}
+ #sellerProductDetailsModal .product-details-variant-thumb {width:45px;height:45px}
+ #sellerProductDetailsModal .product-details-variation-stats {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+ #sellerProductDetailsModal .sc-inventory-product-dialog {width:calc(100vw - 12px);height:calc(100dvh - 12px)}
+ #sellerProductDetailsModal .product-details-inspo-header {min-height:70px;padding:12px 18px}
+ #sellerProductDetailsModal .product-details-inspo-header h2 {font-size:20px}
+ #sellerProductDetailsModal .product-details-inspo-body {display:block !important;overflow-y:auto !important;padding:15px}
+ #sellerProductDetailsModal .product-details-inspo-gallery {max-width:100%;margin-bottom:18px}
+ #sellerProductDetailsModal .product-details-inspo-main-photo {width:100%;height:250px}
+ #sellerProductDetailsModal .product-details-inspo-content {max-height:none !important;overflow:visible !important;height:auto !important}
+ #sellerProductDetailsModal .product-details-variant-card {grid-template-columns:45px 1fr 65px;gap:8px}
+ #sellerProductDetailsModal .product-details-variant-number:nth-of-type(4),#sellerProductDetailsModal .product-details-variant-actions {grid-column:2}
+ #sellerProductDetailsModal .product-details-inspo-footer {padding:10px 15px;gap:6px}
+ #sellerProductDetailsModal .product-details-inspo-footer button {min-width:0;height:38px;padding:0 10px;font-size:10px}
+}
+
+/* ============================================================
+   ADMIN PRODUCT DETAILS — COMPACT SIZE + SHARED INVENTORY PILLS
+   Scoped to the modal; no impact on Seller Compliance table.
+   ============================================================ */
+#sellerProductDetailsModal .sc-inventory-product-dialog {
+    width: min(1050px, calc(100vw - 36px)) !important;
+    height: min(700px, calc(100dvh - 36px)) !important;
+    border-radius: 24px !important;
+}
+#sellerProductDetailsModal .product-details-inspo-header {
+    min-height: 75px !important;
+    padding: 15px 29px !important;
+}
+#sellerProductDetailsModal .product-details-inspo-header h2 {font-size:23px !important}
+#sellerProductDetailsModal .product-details-inspo-close {width:44px !important;height:44px !important}
+#sellerProductDetailsModal .product-details-inspo-body {
+    grid-template-columns: 230px minmax(0,1fr) !important;
+    gap: 16px !important;
+    padding: 18px 28px !important;
+    overflow: hidden !important;
+}
+#sellerProductDetailsModal .product-details-inspo-gallery {width:230px;max-width:100%}
+#sellerProductDetailsModal .product-details-inspo-main-photo {
+    width:230px !important;
+    height:325px !important;
+    max-width:100% !important;
+}
+#sellerProductDetailsModal .seller-product-thumbnail {width:65px !important;height:65px !important}
+#sellerProductDetailsModal .product-details-inspo-footer {
+    min-height:68px !important;
+    padding:11px 29px !important;
+}
+#sellerProductDetailsModal .product-details-inspo-footer button {height:40px !important;font-size:12px !important}
+#sellerProductDetailsModal .product-details-variation-stats {gap:9px !important}
+#sellerProductDetailsModal .product-details-stat-card {padding:12px !important;min-height:70px !important}
+#sellerProductDetailsModal .product-details-variant-card {gap:9px !important;padding:10px !important;grid-template-columns:52px minmax(0,1fr) 65px 48px 86px !important}
+#sellerProductDetailsModal .product-details-variant-thumb {width:50px !important;height:50px !important}
+
+/* Exact category fills/text from Seller Inventory; no generic maroon pill. */
+#sellerProductDetailsModal .product-details-category-display.category-badge {
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    min-height:32px!important;width:fit-content!important;padding:5px 12px!important;
+    border:0!important;border-radius:999px!important;font-size:11px!important;
+    line-height:1.2!important;font-weight:500!important;white-space:nowrap!important;
+}
+#sellerProductDetailsModal .product-details-category-display.category-pet-supplies {background:#E7F5E9!important;color:#2F6B3A!important}
+#sellerProductDetailsModal .product-details-category-display.category-electronics-and-gadgets {background:#DDEBFF!important;color:#185FA3!important}
+#sellerProductDetailsModal .product-details-category-display.category-womens-apparel {background:#F9DFEA!important;color:#A12763!important}
+#sellerProductDetailsModal .product-details-category-display.category-mens-apparel {background:#E6E2F8!important;color:#5A4A9A!important}
+#sellerProductDetailsModal .product-details-category-display.category-kids-and-baby {background:#FFE5B8!important;color:#9A5B00!important}
+#sellerProductDetailsModal .product-details-category-display.category-home-and-garden {background:#EEF0D8!important;color:#596126!important}
+#sellerProductDetailsModal .product-details-category-display.category-sports-and-outdoors {background:#DDECF2!important;color:#23627A!important}
+#sellerProductDetailsModal .product-details-category-display.category-health-and-beauty {background:#FFE0DC!important;color:#A63B2C!important}
+#sellerProductDetailsModal .product-details-category-display.category-books-and-media {background:#E6E8F2!important;color:#3F4A68!important}
+#sellerProductDetailsModal .product-details-category-display.category-food-and-gourmet {background:#FFF0C7!important;color:#8A5A00!important}
+#sellerProductDetailsModal .product-details-category-display.category-automotive-motorcycle {background:#E3E3E3!important;color:#434343!important}
+#sellerProductDetailsModal .product-details-category-display.category-furniture-and-office-equipment {background:#EBDCCF!important;color:#795548!important}
+#sellerProductDetailsModal .product-details-category-display.category-jewelry-and-watches {background:#F8E2B8!important;color:#946B00!important}
+#sellerProductDetailsModal .product-details-category-display.category-office-and-school-supplies {background:#E2F0F7!important;color:#2B617D!important}
+#sellerProductDetailsModal .product-details-category-display.category-default {background:#D8E6FF!important;color:#07588A!important}
+
+/* Product status — consistent in all admin modal states. */
+#sellerProductDetailsModal .sc-product-status {
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    padding:5px 12px!important;min-height:32px!important;border-radius:999px!important;
+    border:1px solid transparent!important;font-size:11px!important;font-weight:500!important;
+    line-height:1.2!important;white-space:nowrap!important;
+}
+#sellerProductDetailsModal .sc-product-status.under-review {background:#FFF5EA!important;color:#A36530!important;border-color:#D5B8A7!important}
+#sellerProductDetailsModal .sc-product-status.approved {background:#D9EED3!important;color:#27721F!important;border-color:#B5D9AF!important}
+#sellerProductDetailsModal .sc-product-status.warning {background:#FFE9BE!important;color:#9B5A00!important;border-color:#ECC98D!important}
+#sellerProductDetailsModal .sc-product-status.removed {background:#E8E8E8!important;color:#777!important;border-color:#C9C9C9!important}
+
+@media(max-width:850px) and (min-width:651px) {
+  #sellerProductDetailsModal .product-details-inspo-body {grid-template-columns:200px minmax(0,1fr)!important;padding:15px!important}
+  #sellerProductDetailsModal .product-details-inspo-gallery {width:200px}
+  #sellerProductDetailsModal .product-details-inspo-main-photo {width:200px!important;height:280px!important}
+  #sellerProductDetailsModal .product-details-variant-card {grid-template-columns:45px minmax(0,1fr) 55px 43px 75px!important}
+}
+@media(max-width:650px) {
+  #sellerProductDetailsModal .sc-inventory-product-dialog {width:calc(100vw - 12px)!important;height:calc(100dvh - 12px)!important}
+  #sellerProductDetailsModal .product-details-inspo-body {display:block!important;overflow-y:auto!important;padding:15px!important}
+  #sellerProductDetailsModal .product-details-inspo-gallery {width:100%!important}
+  #sellerProductDetailsModal .product-details-inspo-main-photo {width:100%!important;height:250px!important}
+  #sellerProductDetailsModal .product-details-inspo-content {height:auto!important;max-height:none!important;overflow:visible!important}
+  #sellerProductDetailsModal .product-details-variant-card {grid-template-columns:45px minmax(0,1fr) 65px!important}
+}
+
+/* ================================================================
+   FIGMA EXACT: ISSUE WARNING / REMOVE PRODUCT REASON MODALS
+   Scoped to these two dialogs; seller account suspension unaffected.
+   ================================================================ */
+#decisionModal-warn, #decisionModal-remove { align-items: center; justify-content: center; padding: 12px; }
+#decisionModal-warn .decision-dialog,
+#decisionModal-remove .decision-dialog {
+    width: min(580px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
+    overflow-y: auto; padding: 32px 34px 29px; border-radius: 22px;
+    background: #fff; box-shadow: 0 18px 50px rgba(39, 22, 17, .16);
+    font-family: Poppins, sans-serif;
+}
+#decisionModal-warn .decision-dialog h2,
+#decisionModal-remove .decision-dialog h2 { margin: 0; font-size: 19px; font-weight: 600; line-height: 1.35; color: #17120F; }
+#decisionModal-warn .decision-intro,
+#decisionModal-remove .decision-intro { max-width: none; margin: 9px 0 22px; color: #AAA5A4; font-size: 13px; font-weight: 400; line-height: 1.6; }
+#decisionModal-warn .decision-reasons,
+#decisionModal-remove .decision-reasons { margin: 0; padding: 0 4px; border: 0; min-width: 0; }
+#decisionModal-warn .decision-reasons legend,
+#decisionModal-remove .decision-reasons legend { margin: 0 0 9px; padding: 0; font-size: 14px; font-weight: 500; line-height: 1.25; color: #17120F; }
+#decisionModal-warn .decision-reasons legend span,
+#decisionModal-remove .decision-reasons legend span { margin-left: 0; color: #CF2128; }
+#decisionModal-warn .decision-option,
+#decisionModal-remove .decision-option { width: 100%; min-height: 40px; margin-top: 7px; padding: 7px 12px; gap: 11px; border: 1px solid #EAE7E6; border-radius: 4px; background: #FCFCFC; color: #262222; font-size: 12px; font-weight: 400; line-height: 1.4; }
+#decisionModal-warn .decision-option:hover,
+#decisionModal-remove .decision-option:hover { background: #FAF7F6; border-color: #D9D3CF; }
+#decisionModal-warn .decision-radio,
+#decisionModal-remove .decision-radio { width: 16px; height: 16px; flex-basis: 16px; border: 1px solid #D7D7D7; background: #fff; }
+#decisionModal-warn .decision-option input:checked + .decision-radio { background: #E89135; border-color: #E89135; box-shadow: inset 0 0 0 3px #fff; }
+#decisionModal-remove .decision-option input:checked + .decision-radio { background: #C52D35; border-color: #C52D35; box-shadow: inset 0 0 0 3px #fff; }
+#decisionModal-warn .decision-option:has(input:checked) { background: #FFF9F3; border-color: #E8AB77; }
+#decisionModal-remove .decision-option:has(input:checked) { background: #FFF7F7; border-color: #EAB1B4; }
+#decisionModal-warn .decision-details,
+#decisionModal-remove .decision-details { margin-top: 24px; padding: 0 4px; }
+#decisionModal-warn .decision-details > label,
+#decisionModal-remove .decision-details > label { margin: 0 0 9px; font-size: 14px; line-height: 1.5; font-weight: 500; color: #17120F; }
+#decisionModal-warn .decision-textarea-wrap textarea,
+#decisionModal-remove .decision-textarea-wrap textarea { width: 100%; height: 72px; min-height: 72px; padding: 11px 12px 22px; border-radius: 4px; border: 1px solid #E9E6E5; font-size: 12px; line-height: 1.5; resize: vertical; }
+#decisionModal-warn .decision-textarea-wrap [data-counter],
+#decisionModal-remove .decision-textarea-wrap [data-counter] { right: 10px; bottom: 7px; font-size: 10px; color: #8B8581; }
+#decisionModal-warn .decision-actions,
+#decisionModal-remove .decision-actions { margin-top: 23px; gap: 10px; padding: 0 4px; flex-wrap: nowrap; }
+#decisionModal-warn .decision-actions button,
+#decisionModal-remove .decision-actions button { flex: 0 0 auto; height: 39px; min-width: 96px; padding: 0 18px; border-radius: 7px; font-size: 12px; line-height: 1; font-weight: 500; }
+#decisionModal-warn .decision-cancel,
+#decisionModal-remove .decision-cancel { border: 1px solid #DDD8D6; background: #fff; color: #9B2828; }
+#decisionModal-warn .decision-submit { min-width: 137px; border: 1px solid #E18A38; background: #FFE6CE; color: #AD5512; }
+#decisionModal-remove .decision-submit { min-width: 108px; border: 1px solid #DA555B; background: #FFD9DB; color: #B51E29; }
+#decisionModal-warn .decision-submit:hover { background: #FFD7B4; }
+#decisionModal-remove .decision-submit:hover { background: #FFC9CD; }
+#decisionModal-warn .decision-other-field,
+#decisionModal-remove .decision-other-field { margin: 17px 4px 0; }
+#decisionModal-warn .decision-other-field[hidden],
+#decisionModal-remove .decision-other-field[hidden],
+#decisionModal-warn .decision-field-error[hidden],
+#decisionModal-remove .decision-field-error[hidden] { display: none !important; }
+#decisionModal-warn .decision-other-field label,
+#decisionModal-remove .decision-other-field label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 500; }
+#decisionModal-warn .decision-other-field label span,
+#decisionModal-remove .decision-other-field label span { color: #D6222B; }
+#decisionModal-warn .decision-other-field input,
+#decisionModal-remove .decision-other-field input { width: 100%; height: 42px; padding: 0 12px; box-sizing: border-box; border: 1px solid #E9E6E5; border-radius: 5px; background: #fff; outline: none; font: inherit; font-size: 12px; }
+#decisionModal-warn .decision-field-error,
+#decisionModal-remove .decision-field-error { display: block; padding-top: 5px; color: #C6262B; font-size: 11px; }
+@media (max-width: 480px) {
+ #decisionModal-warn .decision-dialog, #decisionModal-remove .decision-dialog { padding: 23px 18px 20px; }
+}
+
+
+/* ==========================================================
+   SELLER COMPLIANCE — GRAY SEARCH & FILTER STYLING
+   Matched to Admin User Management. Scoped to filter toolbar.
+   ========================================================== */
+.seller-compliance-page .compliance-filter-card .compliance-search,
+.seller-compliance-page .compliance-filter-card .compliance-filter {
+    height: 36px;
+    box-sizing: border-box;
+    border: 1px solid #D9D6D4;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #76716E;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.seller-compliance-page .compliance-filter-card .compliance-search::placeholder {
+    color: #76716E;
+    opacity: 1;
+    font-size: 13px;
+    font-weight: 400;
+}
+.seller-compliance-page .compliance-filter-card .compliance-search-icon {
+    color: #76716E;
+}
+.seller-compliance-page .compliance-filter-card .compliance-search:focus,
+.seller-compliance-page .compliance-filter-card .compliance-search:focus-visible,
+.seller-compliance-page .compliance-filter-card .compliance-filter:focus,
+.seller-compliance-page .compliance-filter-card .compliance-filter:focus-visible {
+    border-color: #9CA3AF;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, .14);
+    outline: none;
 }
