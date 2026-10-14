@@ -2276,3 +2276,5 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/admin/account', [AdminAccountController::class, 'update'])->name('admin.account.update');
     Route::post('/admin/account/notifications', [AdminAccountController::class, 'notifications'])->name('admin.account.notifications.update');
 });
+
+Route::view('/logistics/partner', 'pages.logistics-partner')->name('logistics.partner.info');
