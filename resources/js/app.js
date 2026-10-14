@@ -1,458 +1,87 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('admin-sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+    const navbarLeft = document.getElementById('navbar-left');
+    const sidebarLogo = document.getElementById('sidebar-logo');
 
-    // ==========================================
-    // ELEMENTS
-    // ==========================================
+    // One state manager for every Admin page, including standalone Account and Notifications.
+    if (sidebar && toggle && sidebar.dataset.shopeaseToggleReady !== '1') {
+        sidebar.dataset.shopeaseToggleReady = '1';
+        const links = Array.from(sidebar.querySelectorAll('.sidebar-link'));
+        const originalLinks = new Map(links.map(link => [link, link.className]));
+        const logout = sidebar.querySelector('.sidebar-logout');
+        const originalLogout = logout ? logout.className : '';
+        const logoImage = sidebarLogo?.querySelector('img');
+        const labelNodes = Array.from(sidebar.querySelectorAll('.sidebar-label'));
+        const iconNodes = Array.from(sidebar.querySelectorAll('.sidebar-icon'));
+        const wrapperNodes = Array.from(sidebar.querySelectorAll('.sidebar-icon-wrapper'));
+        const originalIcons = new Map(iconNodes.map(el => [el, el.className]));
+        const originalWrappers = new Map(wrapperNodes.map(el => [el, el.className]));
+        const originalLogo = sidebarLogo?.className || '';
+        const originalNavbarLeft = navbarLeft?.className || '';
 
-    const sidebar =
-        document.getElementById('admin-sidebar');
+        let collapsed = document.body.classList.contains('sidebar-collapsed');
+        function applySidebarState() {
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            document.body.classList.toggle('sidebar-hidden', collapsed);
+            document.body.classList.toggle('sidebar-closed', collapsed);
+            sidebar.classList.toggle('w-20', collapsed);
+            sidebar.classList.toggle('w-72', !collapsed);
+            toggle.setAttribute('aria-expanded', String(!collapsed));
+            toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
 
-    const toggle =
-        document.getElementById('sidebar-toggle');
-
-    const content =
-        document.getElementById('admin-content');
-
-    const navbarLeft =
-        document.getElementById('navbar-left');
-
-    const sidebarLogo =
-        document.getElementById('sidebar-logo');
-
-
-    if (!sidebar || !toggle) {
-        return;
-    }
-
-
-    // ==========================================
-    // STORE ORIGINAL SIDEBAR CLASSES
-    // ==========================================
-    //
-    // This is important because the sidebar has
-    // specific hover, radius, spacing and active
-    // classes that must return exactly after expand.
-    //
-
-    const originalSidebarLinkClasses = new Map();
-
-    sidebar
-        .querySelectorAll('.sidebar-link')
-        .forEach(link => {
-
-            originalSidebarLinkClasses.set(
-                link,
-                link.className
-            );
-
-        });
-
-
-    const logout =
-        sidebar.querySelector('.sidebar-logout');
-
-
-    const originalLogoutClasses =
-        logout
-            ? logout.className
-            : '';
-
-
-    // ==========================================
-    // COLLAPSED STATE
-    // ==========================================
-
-    let collapsed = false;
-
-
-    // ==========================================
-    // SIDEBAR TOGGLE
-    // ==========================================
-
-    toggle.addEventListener('click', () => {
-
-        collapsed = !collapsed;
-
-
-        // ==================================================
-        // COLLAPSED
-        // ==================================================
-
-        if (collapsed) {
-
-
-            // ==========================================
-            // SIDEBAR WIDTH
-            // ==========================================
-
-            sidebar.classList.remove(
-                'w-72'
-            );
-
-            sidebar.classList.add(
-                'w-20'
-            );
-
-
-            // ==========================================
-            // LOGO
-            // ==========================================
-
+            labelNodes.forEach(label => label.classList.toggle('hidden', collapsed));
             if (sidebarLogo) {
-
-                sidebarLogo.classList.remove(
-                    'px-2',
-                    'mb-10'
-                );
-
-                sidebarLogo.classList.add(
-                    'h-20',
-                    'mb-6'
-                );
-
-
-                const logoImage =
-                    sidebarLogo.querySelector('img');
-
-
-                if (logoImage) {
-
-                    logoImage.classList.add(
-                        'hidden'
-                    );
-
+                sidebarLogo.className = originalLogo;
+                if (collapsed) {
+                    sidebarLogo.classList.remove('px-2', 'px-1', 'mb-7', 'mb-10');
+                    sidebarLogo.classList.add('h-20', 'mb-6');
                 }
-
             }
+            if (logoImage) logoImage.classList.toggle('hidden', collapsed);
 
-
-            // ==========================================
-            // HIDE LABELS
-            // ==========================================
-
-            sidebar
-                .querySelectorAll('.sidebar-label')
-                .forEach(label => {
-
-                    label.classList.add(
-                        'hidden'
-                    );
-
-                });
-
-
-            // ==========================================
-            // SIDEBAR LINKS
-            // ==========================================
-            //
-            // IMPORTANT:
-            // We only change the dimensions/position.
-            //
-            // We DO NOT remove the original hover
-            // background classes or rounded-full.
-            // This keeps the sidebar beautiful when
-            // collapsed.
-            //
-
-            sidebar
-                .querySelectorAll('.sidebar-link')
-                .forEach(link => {
-
-                    link.classList.remove(
-                        'gap-3',
-                        'px-4',
-                        'py-3',
-                        'w-full',
-                        'hover:translate-x-1'
-                    );
-
-
-                    link.classList.add(
-                        'w-10',
-                        'h-10',
-                        'p-0',
-                        'mx-auto',
-                        'justify-center',
-                        'rounded-full'
-                    );
-
-
-                    // ==================================
-                    // ACTIVE ITEM
-                    // ==================================
-
-                    if (
-                        link.classList.contains(
-                            'bg-maroon-700/60'
-                        )
-                    ) {
-
-                        link.classList.remove(
-                            'bg-maroon-700/60'
-                        );
-
-                        link.classList.add(
-                            'bg-maroon-700'
-                        );
-
+            links.forEach(link => {
+                link.className = originalLinks.get(link);
+                if (collapsed) {
+                    link.classList.remove('gap-2.5', 'gap-3', 'px-3', 'px-4', 'py-2.5', 'py-3', 'w-full', 'hover:translate-x-1');
+                    link.classList.add('w-10', 'h-10', 'p-0', 'mx-auto', 'justify-center', 'rounded-full');
+                    if (link.classList.contains('bg-maroon-700/60')) {
+                        link.classList.remove('bg-maroon-700/60');
+                        link.classList.add('bg-maroon-700');
                     }
-
-                });
-
-
-            // ==========================================
-            // ICON WRAPPERS
-            // ==========================================
-
-            sidebar
-                .querySelectorAll(
-                    '.sidebar-icon-wrapper'
-                )
-                .forEach(wrapper => {
-
-                    wrapper.classList.remove(
-                        'w-5',
-                        'h-5'
-                    );
-
-                    wrapper.classList.add(
-                        'w-5',
-                        'h-5',
-                        'shrink-0'
-                    );
-
-                });
-
-
-            // ==========================================
-            // ICONS
-            // ==========================================
-
-            sidebar
-                .querySelectorAll('.sidebar-icon')
-                .forEach(icon => {
-
-                    icon.classList.remove(
-                        'w-6',
-                        'h-6'
-                    );
-
-                    icon.classList.add(
-                        'w-5',
-                        'h-5',
-                        'object-contain'
-                    );
-
-                });
-
-
-            // ==========================================
-            // LOGOUT
-            // ==========================================
-
+                }
+            });
+            wrapperNodes.forEach(el => {
+                el.className = originalWrappers.get(el);
+                if (collapsed) el.classList.add('shrink-0');
+            });
+            iconNodes.forEach(el => {
+                el.className = originalIcons.get(el);
+                if (collapsed) {
+                    el.classList.remove('w-6', 'h-6');
+                    el.classList.add('w-5', 'h-5');
+                }
+            });
             if (logout) {
-
-                logout.classList.remove(
-                    'gap-2',
-                    'py-3',
-                    'w-full'
-                );
-
-                logout.classList.add(
-                    'w-10',
-                    'h-10',
-                    'p-0',
-                    'mx-auto',
-                    'rounded-full'
-                );
-
-            }
-
-
-            // ==========================================
-            // CONTENT
-            // ==========================================
-
-            if (content) {
-
-                content.classList.remove(
-                    'ml-60'
-                );
-
-                content.classList.add(
-                    'ml-20'
-                );
-
-            }
-
-
-            // ==========================================
-            // NAVBAR LEFT
-            // ==========================================
-
-            if (navbarLeft) {
-
-                navbarLeft.classList.remove(
-                    'ml-[338px]'
-                );
-
-                navbarLeft.classList.add(
-                    'ml-[108px]'
-                );
-
-            }
-
-        }
-
-
-        // ==================================================
-        // EXPANDED
-        // ==================================================
-
-        else {
-
-
-            // ==========================================
-            // SIDEBAR WIDTH
-            // ==========================================
-
-            sidebar.classList.remove(
-                'w-20'
-            );
-
-            sidebar.classList.add(
-                'w-72'
-            );
-
-
-            // ==========================================
-            // LOGO
-            // ==========================================
-
-            if (sidebarLogo) {
-
-                sidebarLogo.classList.remove(
-                    'h-20',
-                    'mb-6'
-                );
-
-                sidebarLogo.classList.add(
-                    'px-2',
-                    'mb-10'
-                );
-
-
-                const logoImage =
-                    sidebarLogo.querySelector('img');
-
-
-                if (logoImage) {
-
-                    logoImage.classList.remove(
-                        'hidden'
-                    );
-
+                logout.className = originalLogout;
+                if (collapsed) {
+                    logout.classList.remove('gap-2', 'py-2.5', 'py-3', 'w-full');
+                    logout.classList.add('w-10', 'h-10', 'p-0', 'mx-auto', 'rounded-full');
                 }
-
             }
-
-
-            // ==========================================
-            // SHOW LABELS
-            // ==========================================
-
-            sidebar
-                .querySelectorAll('.sidebar-label')
-                .forEach(label => {
-
-                    label.classList.remove(
-                        'hidden'
-                    );
-
-                });
-
-
-            // ==========================================
-            // RESTORE ORIGINAL SIDEBAR LINKS
-            // ==========================================
-            //
-            // Instead of manually rebuilding classes,
-            // restore the EXACT class list each item
-            // originally had.
-            //
-
-            sidebar
-                .querySelectorAll('.sidebar-link')
-                .forEach(link => {
-
-                    const originalClasses =
-                        originalSidebarLinkClasses.get(
-                            link
-                        );
-
-
-                    if (originalClasses) {
-
-                        link.className =
-                            originalClasses;
-
-                    }
-
-                });
-
-
-            // ==========================================
-            // RESTORE ORIGINAL LOGOUT
-            // ==========================================
-
-            if (
-                logout &&
-                originalLogoutClasses
-            ) {
-
-                logout.className =
-                    originalLogoutClasses;
-
-            }
-
-
-            // ==========================================
-            // CONTENT
-            // ==========================================
-
-            if (content) {
-
-                content.classList.remove(
-                    'ml-20'
-                );
-
-                content.classList.add(
-                    'ml-60'
-                );
-
-            }
-
-
-            // ==========================================
-            // NAVBAR LEFT
-            // ==========================================
-
+            // Do NOT directly set margins on pages: the shared sidebar CSS synchronizes all containers.
             if (navbarLeft) {
-
-                navbarLeft.classList.remove(
-                    'ml-[108px]'
-                );
-
-                navbarLeft.classList.add(
-                    'ml-[338px]'
-                );
-
+                navbarLeft.className = originalNavbarLeft;
+                if (collapsed) navbarLeft.classList.add('shopease-sidebar-collapsed-navbar');
             }
-
+            window.dispatchEvent(new Event('resize'));
         }
-
-    });
-
+        toggle.addEventListener('click', () => {
+            collapsed = !collapsed;
+            applySidebarState();
+        });
+        applySidebarState();
+    }
 
     // ==========================================
     // PROFILE DROPDOWN

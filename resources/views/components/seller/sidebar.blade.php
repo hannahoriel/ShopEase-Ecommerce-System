@@ -515,8 +515,7 @@
 
             {{-- ACCOUNT --}}
             <a
-                href="#"
-                onclick="return false;"
+                href="{{ route('seller.account') }}"
                 class="
                     sidebar-link
                     sidebar-menu-item
@@ -529,8 +528,12 @@
                     transition-all
                     duration-300
                     w-full
-                    opacity-100
-                    cursor-default
+                    cursor-pointer
+                    {{
+                        request()->routeIs('seller.account') || request()->routeIs('seller.account.*')
+                            ? 'bg-maroon-700/60'
+                            : 'hover:bg-maroon-800/50 hover:translate-x-1'
+                    }}
                 "
             >
                 <span

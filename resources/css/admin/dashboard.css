@@ -92,3 +92,61 @@
         min-height: 104px;
     }
 }
+
+/* =========================================================
+   SHOPEASE ADMIN — UNIFORM SELLER COMPLIANCE CONTENT LAYOUT
+   Expanded: 260px | Collapsed: 80px | Motion: .3s ease
+   Matches seller-compliance.css, not page-specific guessed sizes.
+   ========================================================= */
+@media (min-width: 761px) {
+  #admin-content {
+    box-sizing: border-box;
+    width: auto !important;
+    min-width: 0;
+    max-width: none !important;
+    margin-left: 260px !important;
+    padding-left: 25px !important;
+    padding-right: 25px !important;
+    transition: margin-left .3s ease !important;
+  }
+  body:has(#admin-sidebar.w-20) #admin-content,
+  body:has(#admin-sidebar.collapsed) #admin-content,
+  body.sidebar-collapsed #admin-content,
+  body.sidebar-hidden #admin-content,
+  body.sidebar-closed #admin-content { margin-left: 80px !important; }
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  #admin-content { margin-left: 80px !important; }
+}
+@media (max-width: 760px) {
+  #admin-content { margin-left: 0 !important; width: auto !important; min-width: 0; transition: margin-left .3s ease !important; }
+}
+
+
+/* ==========================================================
+   UNIFIED ADMIN CONTENT — EXACT SELLER COMPLIANCE FRAME
+   260px expanded / 80px collapsed / 300ms ease
+   Driven by the SAME #admin-sidebar.w-20 state as resources/js/app.js.
+   CSS :has() makes the resize start in the same frame as the sidebar.
+   ========================================================== */
+@media (min-width: 901px) {
+  html body #admin-content {
+    box-sizing: border-box !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-left: 260px !important;
+    padding-left: 25px !important;
+    padding-right: 25px !important;
+    transition: margin-left 300ms ease !important;
+  }
+  html body:has(#admin-sidebar.w-20) #admin-content,
+  html body:has(#admin-sidebar.collapsed) #admin-content,
+  html body.sidebar-collapsed #admin-content { margin-left: 80px !important; }
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  html body #admin-content { box-sizing: border-box !important; width: auto !important; min-width: 0 !important; max-width: none !important; margin-left: 80px !important; padding-left: 24px !important; padding-right: 24px !important; transition: margin-left 300ms ease !important; }
+}
+@media (max-width: 760px) {
+  html body #admin-content { box-sizing: border-box !important; width: auto !important; min-width: 0 !important; max-width: none !important; margin-left: 0 !important; padding-left: 16px !important; padding-right: 16px !important; transition: margin-left 300ms ease !important; }
+}

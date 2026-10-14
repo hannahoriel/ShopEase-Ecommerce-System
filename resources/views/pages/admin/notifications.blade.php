@@ -740,7 +740,19 @@
 
 
         }
-    </style>
+    
+/* FINAL: same Seller Compliance content frame and 300ms sidebar movement. */
+@media (min-width:901px){
+ html body #admin-content.admin-notifications-page{box-sizing:border-box!important;width:auto!important;min-width:0!important;max-width:none!important;margin-left:260px!important;transition:margin-left 300ms ease!important}
+ html body:has(#admin-sidebar.w-20) #admin-content.admin-notifications-page,
+ html body:has(#admin-sidebar.collapsed) #admin-content.admin-notifications-page,
+ html body.sidebar-collapsed #admin-content.admin-notifications-page{margin-left:80px!important}
+ html body .admin-notifications-content{box-sizing:border-box;width:100%!important;max-width:none!important;padding-left:25px!important;padding-right:25px!important}
+}
+@media (min-width:761px) and (max-width:900px){html body #admin-content.admin-notifications-page{margin-left:80px!important;transition:margin-left 300ms ease!important}html body .admin-notifications-content{padding-left:24px!important;padding-right:24px!important}}
+@media (max-width:760px){html body #admin-content.admin-notifications-page{margin-left:0!important;transition:margin-left 300ms ease!important}html body .admin-notifications-content{padding-left:16px!important;padding-right:16px!important}}
+
+</style>
 </head>
 
 <body class="m-0 p-0 font-[Poppins,sans-serif] bg-[#FCF8F6]">
@@ -1232,27 +1244,6 @@
         </div>
     </main>
 
-    {{-- Keep content aligned to the existing admin sidebar collapse UI. --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const page = document.getElementById('admin-content');
-            const sidebar = document.getElementById('admin-sidebar');
-            if (!page || !sidebar) return;
-            const syncOffset = function () {
-                if (window.innerWidth <= 760) {
-                    page.style.marginLeft = '0px';
-                    return;
-                }
-                page.style.marginLeft = sidebar.classList.contains('w-20')
-                    ? '80px' : '260px';
-            };
-            syncOffset();
-            window.addEventListener('resize', syncOffset);
-            new MutationObserver(syncOffset).observe(sidebar, {
-                attributes: true, attributeFilter: ['class']
-            });
-        });
-    </script>
 
 </body>
 </html>
