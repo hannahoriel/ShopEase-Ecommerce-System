@@ -937,7 +937,7 @@
                 18px;
 
             border-radius:
-                50%;
+                4px;
 
             border:
                 1.7px solid
@@ -972,23 +972,17 @@
         }
 
 
+        .category-option input:checked + .custom-checkbox {
+            background: #7B1B1B;
+            border-color: #7B1B1B;
+        }
         .category-option input:checked + .custom-checkbox::after {
-
-            content:
-                "";
-
-            width:
-                7px;
-
-            height:
-                7px;
-
-            border-radius:
-                50%;
-
-            background:
-                #C92B2B;
-
+            content: "";
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg) translateY(-1px);
         }
 
 
@@ -1309,7 +1303,24 @@
 
         }
 
-    </style>
+        .se-business-permit-list {margin-top:10px;display:grid;gap:8px;}
+    .se-permit-list-item {display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #EADAD5;border-radius:9px;font-size:12px;color:#651319;overflow-wrap:anywhere;}
+    .se-permit-list-item small {margin-left:auto;color:#7A7A7A;}
+    .se-permit-error{color:#C62828;border-color:#F1C6C6;}
+    .se-permit-thumb{height:40px;width:40px;object-fit:cover;border-radius:6px;}
+</style>
+
+
+<style>
+/* ShopEase seller registration: validation feedback only; existing layout unchanged */
+.se-validation-message{display:block;margin:6px 0 0;font:400 11px/1.5 'Poppins',sans-serif;color:#C62828}
+.se-validation-invalid{border-color:#C62828!important;box-shadow:0 0 0 2px rgba(198,40,40,.06)!important}
+.se-password-rules{margin-top:10px;padding:12px 14px;border:1px solid #EEE0DC;border-radius:9px;background:#FFFBFA;font:400 12px/1.8 'Poppins',sans-serif}
+.se-password-rules span{display:block;color:#8A7774}
+.se-password-rules span.ok{color:#25804B}
+.se-password-rules span::before{content:'○ ';font-weight:700}
+.se-password-rules span.ok::before{content:'✓ '}
+</style>
 
 </head>
 
@@ -1556,7 +1567,8 @@
                             <input
                                 type="file"
                                 id="business_permit"
-                                name="business_permit"
+                                name="business_permits[]"
+                                multiple
                                 accept=".jpg,.jpeg,.png,.pdf"
                             >
 
@@ -1594,8 +1606,7 @@
 
                                     <small class="permit-existing">
 
-                                        Business permit already uploaded.
-                                        Choose another file to replace it.
+                                        Existing permit saved. Select additional permits to upload.
 
                                     </small>
 
@@ -1636,7 +1647,7 @@
 
                                     <p class="permit-text">
 
-                                        Upload your permit here
+                                        Upload business permits (multiple files allowed)
 
                                     </p>
 
@@ -1648,6 +1659,21 @@
 
                         </label>
 
+
+                        <div id="selectedBusinessPermits" class="se-business-permit-list" aria-live="polite">
+                            @php
+                                $previousPermits = $sellerData['business_permits'] ?? $sellerData['business_permit_paths'] ?? [];
+                                if (!is_array($previousPermits)) $previousPermits = [];
+                            @endphp
+                            @foreach($previousPermits as $permitIndex => $permit)
+                                @php
+                                    $permitName = is_array($permit)
+                                        ? ($permit['original_name'] ?? $permit['name'] ?? basename($permit['path'] ?? 'permit'))
+                                        : basename((string) $permit);
+                                @endphp
+                                <div class="se-permit-list-item" data-persisted="1">✓ {{ $permitName }} <small>Previously uploaded</small></div>
+                            @endforeach
+                        </div>
 
                         @error('business_permit')
 
@@ -2165,46 +2191,42 @@ document.addEventListener(
                     }
 
 
-                    const file =
-                        this.files[0];
-
-
-                    permitPlaceholder.innerHTML = `
-
-                        <svg
-                            class="permit-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#7B1B1B"
-                            stroke-width="1.7"
-                        >
-
-                            <path
-                                d="M20 6L9 17l-5-5"
-                            />
-
-                        </svg>
-
-
-                        <p
-                            class="permit-text permit-selected"
-                        >
-
-                            ${file.name}
-
-                        </p>
-
-
-                        <small
-                            class="permit-existing"
-                        >
-
-                            File selected.
-                            It will be saved when you continue.
-
-                        </small>
-
-                    `;
+                    const files = Array.from(this.files);
+                    const valid = files.filter(file => {
+                        const extension = file.name.split('.').pop().toLowerCase();
+                        return ['jpg','jpeg','png','pdf'].includes(extension) && file.size <= 5120 * 1024;
+                    });
+                    const invalid = files.filter(file => !valid.includes(file));
+                    permitPlaceholder.innerHTML = `<p class="permit-text permit-selected">${valid.length} permit(s) selected</p><small class="permit-existing">JPG, PNG or PDF, max 5 MB each</small>`;
+                    const list = document.getElementById('selectedBusinessPermits');
+                    if (list) {
+                        const preserved = Array.from(list.querySelectorAll('[data-persisted]'));
+                        list.replaceChildren(...preserved);
+                        for (const file of valid) {
+                            const item = document.createElement('div');
+                            item.className = 'se-permit-list-item';
+                            const title = document.createElement('span');
+                            title.textContent = file.name + ' (' + (file.size / 1048576).toFixed(2) + ' MB)';
+                            item.appendChild(title);
+                            if (file.type.startsWith('image/')) {
+                                const thumb = document.createElement('img');
+                                thumb.className = 'se-permit-thumb';
+                                const url = URL.createObjectURL(file);
+                                thumb.src = url;
+                                thumb.onload = () => URL.revokeObjectURL(url);
+                                item.prepend(thumb);
+                            }
+                            list.appendChild(item);
+                        }
+                        for (const file of invalid) {
+                            const item = document.createElement('div');
+                            item.className = 'se-permit-list-item se-permit-error';
+                            item.textContent = file.name + ': JPG/PNG/PDF only, max 5 MB each.';
+                            list.appendChild(item);
+                        }
+                    }
+                    if (invalid.length) this.setCustomValidity('Remove invalid permit files (JPG, PNG, PDF, max 5 MB each).');
+                    else this.setCustomValidity('');
 
                 }
             );
@@ -2308,7 +2330,7 @@ document.addEventListener(
                         @json(
                             !empty(
                                 $sellerData['business_permit_path']
-                                ?? null
+                                ?? ($sellerData['business_permits'] ?? $sellerData['business_permit_paths'] ?? null)
                             )
                         );
 
@@ -2326,7 +2348,7 @@ document.addEventListener(
 
 
                         alert(
-                            'Please upload your Business Permit.'
+                            'Please upload at least one Business Permit.'
                         );
 
 
@@ -2361,6 +2383,125 @@ document.addEventListener(
 
 </script>
 
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('sellerRegistrationForm') || document.getElementById('businessRegistrationForm');
+  if (!form) return;
+  const stepOne = form.id === 'sellerRegistrationForm';
+  const field = id => document.getElementById(id);
+  const rules = {
+    first_name: v => nameCheck(v),
+    last_name: v => nameCheck(v),
+    middle_name: v => v.trim() ? nameCheck(v) : '',
+    email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.',
+    contact_no: v => /^(?:9\d{9}|09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter a valid Philippine mobile number (09XXXXXXXXX).',
+    zip_code: v => /^\d{4}$/.test(v.trim()) ? '' : 'Postal code must contain exactly 4 digits.',
+    password: v => v.length < 8 ? 'Password must be at least 8 characters.' :
+      !/[A-Z]/.test(v) ? 'Include at least one uppercase letter.' :
+      !/[a-z]/.test(v) ? 'Include at least one lowercase letter.' :
+      !/\d/.test(v) ? 'Include at least one number.' :
+      !/[^A-Za-z0-9]/.test(v) ? 'Include at least one special character.' : '',
+    password_confirmation: v => v !== (field('password')?.value || '') ? 'Passwords do not match.' : '',
+    business_name: v => v.trim().length < 3 || v.trim().length > 30 ? 'Business name must be 3–30 characters.' : '',
+    valid_id: () => fileCheck(field('valid_id')),
+    business_permit: () => fileCheck(field('business_permit'))
+  };
+  function nameCheck(value) {
+    const v=value.trim();
+    if (v.length < 2 || v.length > 50) return 'Name must contain 2–50 characters.';
+    return /^[\p{L}]+(?:[ .'-][\p{L}]+)*$/u.test(v) ? '' : 'Only letters are allowed in name fields.';
+  }
+  function fileCheck(el) {
+    const f=el?.files?.[0];
+    if (!f) return '';
+    const ext=f.name.split('.').pop().toLowerCase();
+    if (!['jpg','jpeg','png','pdf'].includes(ext)) return 'Accepted file types: JPG, PNG, PDF only.';
+    if (f.size > 5120*1024) return 'File must not exceed 5 MB (5,120 KB).';
+    return '';
+  }
+  function messageNode(el) {
+    let node=document.getElementById('se-error-'+el.id);
+    if (!node) {
+      node=document.createElement('small');
+      node.id='se-error-'+el.id;
+      node.className='se-validation-message';
+      node.setAttribute('role','alert');
+      node.hidden=true;
+      const wrapper=el.closest('.password-input-wrapper,.contact-wrapper') || el;
+      wrapper.insertAdjacentElement('afterend',node);
+    }
+    return node;
+  }
+  function show(el,msg) {
+    if (!el) return true;
+    const node=messageNode(el);
+    node.textContent=msg;
+    node.hidden=!msg;
+    el.classList.toggle('se-validation-invalid',!!msg);
+    el.setAttribute('aria-invalid',msg?'true':'false');
+    return !msg;
+  }
+  function validate(el) {
+    const fn=rules[el.id];
+    if (!fn) return true;
+    return show(el,fn(el.value));
+  }
+  const ids=stepOne ?
+    ['last_name','first_name','middle_name','email','contact_no','zip_code','password','password_confirmation','valid_id'] :
+    ['business_name','business_permit'];
+  ids.forEach(id => {
+    const el=field(id);
+    if (!el) return;
+    el.addEventListener(el.type==='file'?'change':'blur',()=>validate(el));
+    if (el.type!=='file') el.addEventListener('input',()=> {
+      if (document.getElementById('se-error-'+id)) validate(el);
+      if (id==='password' && field('password_confirmation')?.value) validate(field('password_confirmation'));
+      updatePasswordRules();
+    });
+  });
+  const password=field('password');
+  let passwordBox=null;
+  if (password) {
+    passwordBox=document.createElement('div');
+    passwordBox.className='se-password-rules';
+    passwordBox.innerHTML='<strong>Password requirements</strong><div id="se-password-checks"></div>';
+    const anchor=password.closest('.password-input-wrapper') || password;
+    anchor.insertAdjacentElement('afterend',passwordBox);
+  }
+  function updatePasswordRules() {
+    if (!passwordBox) return;
+    const v=password.value;
+    const checks=[
+      ['At least 8 characters',v.length>=8],
+      ['One uppercase letter',/[A-Z]/.test(v)],
+      ['One lowercase letter',/[a-z]/.test(v)],
+      ['One number',/\d/.test(v)],
+      ['One special character',/[^A-Za-z0-9]/.test(v)]
+    ];
+    passwordBox.querySelector('#se-password-checks').innerHTML=checks.map(([label,ok])=>
+      '<span class="'+(ok?'ok':'')+'">'+label+'</span>').join('');
+  }
+  updatePasswordRules();
+  // Capture-phase validation runs before the existing form submit handler.
+  // It does not replace the Laravel controller's validation.
+  form.addEventListener('submit', event => {
+    let firstInvalid=null;
+    ids.forEach(id => {
+      const el=field(id);
+      if (!el) return;
+      if (!validate(el) && !firstInvalid) firstInvalid=el;
+    });
+    if (firstInvalid) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      firstInvalid.focus();
+      firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },true);
+});
+</script>
 
 </body>
 
