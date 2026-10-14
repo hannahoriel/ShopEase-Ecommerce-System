@@ -2836,7 +2836,18 @@
 
         }
 
-    </style>
+
+/* Seller review Step 3 – unobtrusive verification feedback */
+.se-review-feedback{margin:0 0 14px;padding:10px 14px;border:1px solid #efc3bb;background:#fff5f2;color:#a12a28;border-radius:10px;font-size:12px;line-height:1.5}
+.se-review-feedback[hidden]{display:none!important}
+.se-review-feedback.se-success{background:#edf8f0;color:#24753d;border-color:#bde1c8}
+.email-code-input.se-otp-invalid{border-color:#c72a2a;box-shadow:0 0 0 2px rgba(199,42,42,.08)}
+.email-verify-button:disabled,.continue-button:disabled{cursor:wait;opacity:.7}
+
+        .se-review-incomplete {background:#FFF1E9!important;color:#A44A19!important;}
+    .se-review-incomplete::before{content:'! ';font-weight:700;}
+    .se-review-form-note{font-size:12px;color:#A44A19;margin:12px 0;}
+</style>
 
 </head>
 
@@ -2986,6 +2997,16 @@
                 </h2>
 
 
+@php
+    $seHas = fn($key) => filled($sellerData[$key] ?? null);
+    $seSellerFieldsComplete = collect(['last_name','first_name','email','contact_no','birthday','province','municipality','barangay','zip_code'])->every($seHas);
+    $seCategories = $sellerData['categories'] ?? [];
+    if (is_string($seCategories)) $seCategories = json_decode($seCategories, true) ?: [];
+    $seHasPermit = filled($sellerData['business_permit_path'] ?? null)
+        || !empty($sellerData['business_permits'] ?? $sellerData['business_permit_paths'] ?? []);
+    $seBusinessFieldsComplete = filled($sellerData['business_name'] ?? null) && !empty($seCategories) && $seHasPermit;
+    $seDocumentsComplete = filled($sellerData['valid_id_path'] ?? null) && $seHasPermit;
+@endphp
                 <!-- =================================================
                      SELLER INFORMATION
                 ================================================== -->
@@ -2998,8 +3019,8 @@
                             Seller Information
                         </h3>
 
-                        <span class="review-section-badge">
-                            Completed
+                        <span class="review-section-badge {{ $seSellerFieldsComplete ? '' : 'se-review-incomplete' }}">
+                            {{ $seSellerFieldsComplete ? 'Completed' : 'Incomplete' }}
                         </span>
 
                     </div>
@@ -3333,8 +3354,8 @@
                             Business Information
                         </h3>
 
-                        <span class="review-section-badge">
-                            Completed
+                        <span class="review-section-badge {{ $seBusinessFieldsComplete ? '' : 'se-review-incomplete' }}">
+                            {{ $seBusinessFieldsComplete ? 'Completed' : 'Incomplete' }}
                         </span>
 
                     </div>
@@ -3519,10 +3540,21 @@
                             : null;
 
 
-                    $businessPermitPath =
-                        is_array($sellerData ?? null)
-                            ? ($sellerData['business_permit_path'] ?? null)
-                            : null;
+                    $sePermitRecords = $sellerData['business_permits'] ?? $sellerData['business_permit_paths'] ?? [];
+                    if (!is_array($sePermitRecords)) $sePermitRecords = [];
+                    $sePermitRecords = array_values(array_filter(array_map(function ($item) {
+                        if (is_string($item)) return ['path' => $item, 'original_name' => basename($item)];
+                        if (!is_array($item)) return null;
+                        $path = $item['path'] ?? $item['file_path'] ?? null;
+                        return $path ? ['path' => $path, 'original_name' => $item['original_name'] ?? $item['name'] ?? basename($path)] : null;
+                    }, $sePermitRecords)));
+                    if (empty($sePermitRecords) && !empty($sellerData['business_permit_path'])) {
+                        $sePermitRecords[] = [
+                            'path' => $sellerData['business_permit_path'],
+                            'original_name' => $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path'])
+                        ];
+                    }
+                    $businessPermitPath = $sePermitRecords[0]['path'] ?? null;
 
 
                     $businessPermitUrl =
@@ -3558,8 +3590,8 @@
                             Uploaded Documents
                         </h3>
 
-                        <span class="review-section-badge">
-                            Review
+                        <span class="review-section-badge {{ $seDocumentsComplete ? '' : 'se-review-incomplete' }}">
+                            {{ $seDocumentsComplete ? 'Completed' : 'Incomplete' }}
                         </span>
 
                     </div>
@@ -3906,6 +3938,27 @@
 
                             </div>
 
+                            @foreach(array_slice($sePermitRecords, 1) as $permitIndex => $permitRecord)
+                                @php
+                                    $extraPermitPath = $permitRecord['path'];
+                                    $extraPermitUrl = \Illuminate\Support\Facades\Storage::url($extraPermitPath);
+                                    $extraPermitExt = strtolower(pathinfo($extraPermitPath, PATHINFO_EXTENSION));
+                                @endphp
+                                <div class="document-section">
+                                    <label class="document-label">Business Permit {{ $permitIndex + 2 }}</label>
+                                    <div class="document-preview se-extra-permit-preview" tabindex="0" role="button"
+                                         data-permit-url="{{ $extraPermitUrl }}"
+                                         data-permit-name="{{ $permitRecord['original_name'] }}"
+                                         data-permit-extension="{{ $extraPermitExt }}">
+                                        @if(in_array($extraPermitExt, ['jpg','jpeg','png','webp']))
+                                            <img src="{{ $extraPermitUrl }}" alt="Business Permit {{ $permitIndex + 2 }}" class="document-image">
+                                        @else
+                                            <div class="pdf-preview-content"><p>PDF Document</p><small>Click to view</small></div>
+                                        @endif
+                                    </div>
+                                    <div class="document-file-name">{{ $permitRecord['original_name'] }}</div>
+                                </div>
+                            @endforeach
 
                         </div>
 
@@ -3931,6 +3984,10 @@
                      SUBMIT
                 ================================================== -->
 
+                <div id="seReviewPageFeedback" class="se-review-feedback" role="alert" aria-live="polite" hidden></div>
+                @unless($seSellerFieldsComplete && $seBusinessFieldsComplete && $seDocumentsComplete)
+                    <p class="se-review-form-note" role="status">Some required information or documents are missing. Please return to the relevant registration step to complete them before submitting.</p>
+                @endunless
                 <div class="form-actions">
 
                     <button
@@ -4085,6 +4142,8 @@
 
         </div>
 
+
+        <div id="seOtpFeedback" class="se-review-feedback" role="alert" aria-live="polite" hidden></div>
 
         <div class="email-spam-message">
 
@@ -4380,6 +4439,12 @@ document.addEventListener(
                 'continueButton'
             );
 
+
+        document.querySelectorAll('.se-extra-permit-preview').forEach(preview => {
+            const show = () => openModal(preview.dataset.permitUrl, preview.dataset.permitName, preview.dataset.permitExtension);
+            preview.addEventListener('click', show);
+            preview.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); show(); } });
+        });
 
         /* =========================================================
            CHECK PDF
@@ -4753,6 +4818,22 @@ document.addEventListener(
 );
 
 
+/* Step 3 references also used by the OTP module below. */
+const seCompletionForm = document.getElementById('completionForm');
+const seContinueButton = document.getElementById('continueButton');
+const seOtpFeedback = document.getElementById('seOtpFeedback');
+let seOtpRequestPending = false;
+let seOtpVerifyPending = false;
+function seOtpNotice(message, kind='error') {
+    if (!seOtpFeedback) return;
+    seOtpFeedback.textContent = message || '';
+    seOtpFeedback.hidden = !message;
+    seOtpFeedback.classList.toggle('se-success', kind === 'success');
+    document.querySelectorAll('.email-code-input').forEach(input => {
+        input.classList.toggle('se-otp-invalid', !!message && kind !== 'success');
+    });
+}
+
 /* =========================================================
    EMAIL VERIFICATION
 ========================================================= */
@@ -4905,14 +4986,20 @@ function startResendCooldown(seconds) {
     resendCooldownTimer = setInterval(updateCooldown, 1000);
 }
 
-if (completionForm) {
+if (seCompletionForm) {
 
-    completionForm.addEventListener(
+    seCompletionForm.addEventListener(
         'submit',
         async function (event) {
 
             event.preventDefault();
-
+            if (seOtpRequestPending || emailVerificationModal?.classList.contains('active')) return;
+            seOtpRequestPending = true;
+            if (seContinueButton) {
+                seContinueButton.disabled = true;
+                seContinueButton.textContent = 'Sending code...';
+            }
+            seOtpNotice('');
             try {
                 const response = await fetch(
                     "{{ route('seller.register.send-code') }}",
@@ -4933,10 +5020,17 @@ if (completionForm) {
                 openEmailVerificationModal();
                 startResendCooldown(2 * 60);
             } catch (error) {
-                alert(error.message);
-                if (continueButton) {
-                    continueButton.disabled = false;
-                    continueButton.textContent = 'Submit';
+                seOtpNotice(error.message);
+                // Display the server error in the page where the form was submitted.
+                if (seOtpFeedback && !emailVerificationModal?.classList.contains('active')) {
+                    const pageNotice = document.getElementById('seReviewPageFeedback');
+                    if (pageNotice) { pageNotice.hidden = false; pageNotice.textContent = error.message; }
+                }
+            } finally {
+                seOtpRequestPending = false;
+                if (seContinueButton) {
+                    seContinueButton.disabled = false;
+                    seContinueButton.textContent = 'Submit';
                 }
             }
 
@@ -4956,7 +5050,7 @@ emailCodeInputs.forEach(
         input.addEventListener(
             'input',
             function () {
-
+                seOtpNotice('');
                 this.value =
                     this.value.replace(
                         /[^0-9]/g,
@@ -5078,6 +5172,8 @@ if (emailVerifyButton) {
         'click',
         async function () {
 
+            if (seOtpVerifyPending) return;
+            seOtpNotice('');
             let verificationCode =
                 '';
 
@@ -5096,14 +5192,17 @@ if (emailVerifyButton) {
                 verificationCode.length !== 6
             ) {
 
-                emailCodeInputs[0].focus();
+                seOtpNotice('Please enter the complete 6-digit verification code.');
+                emailCodeInputs[0]?.focus();
 
                 return;
 
             }
 
 
+            seOtpVerifyPending = true;
             emailVerifyButton.disabled = true;
+            emailVerifyButton.textContent = 'Verifying...';
 
             try {
                 const response = await fetch(
@@ -5158,9 +5257,11 @@ if (emailVerifyButton) {
 
                 }
             } catch (error) {
-                alert(error.message);
+                seOtpNotice(error.message || 'Unable to verify the code.');
             } finally {
+                seOtpVerifyPending = false;
                 emailVerifyButton.disabled = false;
+                emailVerifyButton.textContent = 'Verify Email';
             }
 
         }
@@ -5200,11 +5301,13 @@ if (emailResendButton) {
                     throw new Error(result.message || 'Unable to resend the verification code.');
                 }
 
+                emailCodeInputs.forEach(input => { input.value = ''; });
+                seOtpNotice(result.message || 'A new verification code was sent.', 'success');
+                emailCodeInputs[0]?.focus();
                 startResendCooldown(10 * 60);
-                alert(result.message);
             } catch (error) {
                 if (response?.status !== 429) {
-                    alert(error.message);
+                    seOtpNotice(error.message);
                 }
             } finally {
                 if (!resendCooldownTimer) {
@@ -5230,7 +5333,7 @@ if (
         'click',
         function () {
 
-            completionForm.submit();
+            seCompletionForm.submit();
 
         }
     );

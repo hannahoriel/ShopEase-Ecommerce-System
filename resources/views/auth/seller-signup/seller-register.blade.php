@@ -1903,6 +1903,18 @@
 
     </style>
 
+
+<style>
+/* ShopEase seller registration: validation feedback only; existing layout unchanged */
+.se-validation-message{display:block;margin:6px 0 0;font:400 11px/1.5 'Poppins',sans-serif;color:#C62828}
+.se-validation-invalid{border-color:#C62828!important;box-shadow:0 0 0 2px rgba(198,40,40,.06)!important}
+.se-password-rules{margin-top:10px;padding:12px 14px;border:1px solid #EEE0DC;border-radius:9px;background:#FFFBFA;font:400 12px/1.8 'Poppins',sans-serif}
+.se-password-rules span{display:block;color:#8A7774}
+.se-password-rules span.ok{color:#25804B}
+.se-password-rules span::before{content:'○ ';font-weight:700}
+.se-password-rules span.ok::before{content:'✓ '}
+</style>
+
 </head>
 
 
@@ -5344,6 +5356,125 @@ document.addEventListener(
 
 </script>
 
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('sellerRegistrationForm') || document.getElementById('businessRegistrationForm');
+  if (!form) return;
+  const stepOne = form.id === 'sellerRegistrationForm';
+  const field = id => document.getElementById(id);
+  const rules = {
+    first_name: v => nameCheck(v),
+    last_name: v => nameCheck(v),
+    middle_name: v => v.trim() ? nameCheck(v) : '',
+    email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.',
+    contact_no: v => /^(?:9\d{9}|09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter a valid Philippine mobile number (09XXXXXXXXX).',
+    zip_code: v => /^\d{4}$/.test(v.trim()) ? '' : 'Postal code must contain exactly 4 digits.',
+    password: v => v.length < 8 ? 'Password must be at least 8 characters.' :
+      !/[A-Z]/.test(v) ? 'Include at least one uppercase letter.' :
+      !/[a-z]/.test(v) ? 'Include at least one lowercase letter.' :
+      !/\d/.test(v) ? 'Include at least one number.' :
+      !/[^A-Za-z0-9]/.test(v) ? 'Include at least one special character.' : '',
+    password_confirmation: v => v !== (field('password')?.value || '') ? 'Passwords do not match.' : '',
+    business_name: v => v.trim().length < 3 || v.trim().length > 30 ? 'Business name must be 3–30 characters.' : '',
+    valid_id: () => fileCheck(field('valid_id')),
+    business_permit: () => fileCheck(field('business_permit'))
+  };
+  function nameCheck(value) {
+    const v=value.trim();
+    if (v.length < 2 || v.length > 50) return 'Name must contain 2–50 characters.';
+    return /^[\p{L}]+(?:[ .'-][\p{L}]+)*$/u.test(v) ? '' : 'Only letters are allowed in name fields.';
+  }
+  function fileCheck(el) {
+    const f=el?.files?.[0];
+    if (!f) return '';
+    const ext=f.name.split('.').pop().toLowerCase();
+    if (!['jpg','jpeg','png','pdf'].includes(ext)) return 'Accepted file types: JPG, PNG, PDF only.';
+    if (f.size > 5120*1024) return 'File must not exceed 5 MB (5,120 KB).';
+    return '';
+  }
+  function messageNode(el) {
+    let node=document.getElementById('se-error-'+el.id);
+    if (!node) {
+      node=document.createElement('small');
+      node.id='se-error-'+el.id;
+      node.className='se-validation-message';
+      node.setAttribute('role','alert');
+      node.hidden=true;
+      const wrapper=el.closest('.password-input-wrapper,.contact-wrapper') || el;
+      wrapper.insertAdjacentElement('afterend',node);
+    }
+    return node;
+  }
+  function show(el,msg) {
+    if (!el) return true;
+    const node=messageNode(el);
+    node.textContent=msg;
+    node.hidden=!msg;
+    el.classList.toggle('se-validation-invalid',!!msg);
+    el.setAttribute('aria-invalid',msg?'true':'false');
+    return !msg;
+  }
+  function validate(el) {
+    const fn=rules[el.id];
+    if (!fn) return true;
+    return show(el,fn(el.value));
+  }
+  const ids=stepOne ?
+    ['last_name','first_name','middle_name','email','contact_no','zip_code','password','password_confirmation','valid_id'] :
+    ['business_name','business_permit'];
+  ids.forEach(id => {
+    const el=field(id);
+    if (!el) return;
+    el.addEventListener(el.type==='file'?'change':'blur',()=>validate(el));
+    if (el.type!=='file') el.addEventListener('input',()=> {
+      if (document.getElementById('se-error-'+id)) validate(el);
+      if (id==='password' && field('password_confirmation')?.value) validate(field('password_confirmation'));
+      updatePasswordRules();
+    });
+  });
+  const password=field('password');
+  let passwordBox=null;
+  if (password) {
+    passwordBox=document.createElement('div');
+    passwordBox.className='se-password-rules';
+    passwordBox.innerHTML='<strong>Password requirements</strong><div id="se-password-checks"></div>';
+    const anchor=password.closest('.password-input-wrapper') || password;
+    anchor.insertAdjacentElement('afterend',passwordBox);
+  }
+  function updatePasswordRules() {
+    if (!passwordBox) return;
+    const v=password.value;
+    const checks=[
+      ['At least 8 characters',v.length>=8],
+      ['One uppercase letter',/[A-Z]/.test(v)],
+      ['One lowercase letter',/[a-z]/.test(v)],
+      ['One number',/\d/.test(v)],
+      ['One special character',/[^A-Za-z0-9]/.test(v)]
+    ];
+    passwordBox.querySelector('#se-password-checks').innerHTML=checks.map(([label,ok])=>
+      '<span class="'+(ok?'ok':'')+'">'+label+'</span>').join('');
+  }
+  updatePasswordRules();
+  // Capture-phase validation runs before the existing form submit handler.
+  // It does not replace the Laravel controller's validation.
+  form.addEventListener('submit', event => {
+    let firstInvalid=null;
+    ids.forEach(id => {
+      const el=field(id);
+      if (!el) return;
+      if (!validate(el) && !firstInvalid) firstInvalid=el;
+    });
+    if (firstInvalid) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      firstInvalid.focus();
+      firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },true);
+});
+</script>
 
 </body>
 
