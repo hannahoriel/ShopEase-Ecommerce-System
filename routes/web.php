@@ -30,6 +30,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Seller\SellerAccountController;
+use App\Http\Controllers\Seller\SellerAccountSettingsController;
+use App\Http\Controllers\Admin\AdminAccountController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -2251,3 +2255,26 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::patch('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
         ->name('notifications.read');
 });
+
+Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('/account', [SellerAccountController::class, 'index'])->name('account');
+    Route::put('/account', [SellerAccountController::class, 'update'])->name('account.update');
+    Route::get('/account/document/{type}', [SellerAccountController::class, 'document'])->name('account.document');
+    Route::post('/account/category-change-request', [SellerAccountController::class, 'requestCategoryChange'])->name('account.categories.request');
+});
+
+Route::middleware(['auth', 'throttle:60,1'])->prefix('seller/account/settings')->name('seller.account.settings.')->group(function () {
+    Route::post('/otp/send', [SellerAccountSettingsController::class, 'sendOtp'])->name('otp.send');
+    Route::post('/otp/verify', [SellerAccountSettingsController::class, 'verifyOtp'])->name('otp.verify');
+    Route::post('/password/change', [SellerAccountSettingsController::class, 'changePassword'])->name('password.change');
+    Route::post('/password/reset', [SellerAccountSettingsController::class, 'resetPassword'])->name('password.reset');
+    Route::post('/notifications', [SellerAccountSettingsController::class, 'saveNotifications'])->name('notifications');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/account', [AdminAccountController::class, 'index'])->name('admin.account');
+    Route::put('/admin/account', [AdminAccountController::class, 'update'])->name('admin.account.update');
+    Route::post('/admin/account/notifications', [AdminAccountController::class, 'notifications'])->name('admin.account.notifications.update');
+});
+
+Route::view('/logistics/partner', 'pages.logistics-partner')->name('logistics.partner.info');

@@ -116,7 +116,8 @@
                     [
                         'label' => 'Account Management',
                         'icon' => 'account-management.png',
-                        'route' => null
+                        'route' => null,
+                        'url' => url('/admin/account')
                     ],
 
                 ];
@@ -130,7 +131,7 @@
 
                     $isActive = $item['route']
                         ? request()->routeIs($item['route'])
-                        : (!empty($item['url']) && request()->is('admin/notifications*'));
+                        : (!empty($item['url']) && request()->is($item['label'] === 'Account Management' ? 'admin/account*' : 'admin/notifications*'));
 
                 @endphp
 
@@ -454,8 +455,45 @@
        still use the original w-72 / w-20 state classes.
     ========================================================== */
 
-    #admin-sidebar.sidebar-reload:not(.w-20) {
-        width: 256px !important;
+    #admin-sidebar.sidebar-reload { width: 260px !important; transition: width .3s ease !important; }
+    #admin-sidebar.sidebar-reload.w-20 { width: 80px !important; }
+
+    /* Unified layout: identical to Seller Compliance across Admin pages. */
+    body:has(#admin-sidebar) #admin-content,
+    body:has(#admin-sidebar) .seller-compliance-page,
+    body:has(#admin-sidebar) .admin-messages-page,
+    body:has(#admin-sidebar) .admin-notifications-page,
+    body:has(#admin-sidebar) .seller-account-page {
+        margin-left: 260px !important;
+        width: calc(100% - 260px) !important;
+        max-width: none !important;
+        min-width: 0;
+        box-sizing: border-box;
+        transition: margin-left .3s ease, width .3s ease !important;
+    }
+    body:has(#admin-sidebar) #admin-content { padding-left: 25px !important; padding-right: 25px !important; }
+    body:has(#admin-sidebar) .admin-messages-content { max-width: none !important; width: 100%; }
+    body.sidebar-collapsed:has(#admin-sidebar) #admin-content,
+    body.sidebar-collapsed:has(#admin-sidebar) .seller-compliance-page,
+    body.sidebar-collapsed:has(#admin-sidebar) .admin-messages-page,
+    body.sidebar-collapsed:has(#admin-sidebar) .admin-notifications-page,
+    body.sidebar-collapsed:has(#admin-sidebar) .seller-account-page {
+        margin-left: 80px !important;
+        width: calc(100% - 80px) !important;
+    }
+    body:has(#admin-sidebar) #navbar-left {
+        margin-left: 310px !important;
+        transition: margin-left .3s ease !important;
+    }
+    body.sidebar-collapsed:has(#admin-sidebar) #navbar-left {
+        margin-left: 108px !important;
+    }
+    @media(max-width: 767px) {
+        body:has(#admin-sidebar) #admin-content,
+        body:has(#admin-sidebar) .seller-compliance-page,
+        body:has(#admin-sidebar) .admin-messages-page,
+        body:has(#admin-sidebar) .admin-notifications-page,
+        body:has(#admin-sidebar) .seller-account-page { min-width: 0; }
     }
 
 
@@ -558,3 +596,6 @@ document.addEventListener(
 );
 
 </script>
+
+{{-- Ensures Admin sidebar toggle works in standalone pages (Account and Notifications too). --}}
+@vite('resources/js/app.js')

@@ -3128,13 +3128,12 @@
 
 
         .footer-brand img {
-            width: 505px;
+            width: 170px;
+            max-width: 100%;
             height: auto;
             display: block;
             object-fit: contain;
-            margin-top: -160px;
-            margin-bottom: -142px;
-            margin-left: -88px;
+            margin: 0 0 15px;
             transform: translateY(-0px);
         }
 
@@ -4685,7 +4684,595 @@
             }
         }
 
-    </style>
+
+/* ===========================================================
+   PARTNERSHIPS + MOBILE APP / RESPONSIVE POLISH (2026)
+   These rules deliberately remain scoped to the landing page.
+=========================================================== */
+.landing-page{width:100%;min-width:0;overflow:clip}
+.landing-page section[id]{scroll-margin-top:88px}
+.landing-nav-quick{display:flex;align-items:center;gap:18px;margin-left:auto;margin-right:18px}
+.landing-nav-quick a{font-size:11px;font-weight:600;color:#6e3336;white-space:nowrap;transition:color .2s}
+.landing-nav-quick a:hover{color:var(--maroon-light)}
+.landing-nav-quick a:focus-visible,.partner-cta:focus-visible,.mobile-cta:focus-visible{outline:3px solid #f9a792;outline-offset:4px}
+.partner-section{position:relative;padding:100px clamp(18px,7vw,110px);background:#fffaf7;overflow:hidden}
+.partner-section:before{content:'';position:absolute;width:450px;height:450px;right:-220px;top:-210px;border-radius:50%;background:#ffe9df;pointer-events:none}
+.partner-inner{position:relative;max-width:1210px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);align-items:start;gap:clamp(32px,5vw,90px)}
+.partner-kicker,.mobile-kicker{display:inline-flex;align-items:center;gap:9px;font-size:11px;letter-spacing:2px;font-weight:700;text-transform:uppercase;color:#a52a2a}
+.partner-kicker:before,.mobile-kicker:before{content:'';width:25px;height:2px;background:#ff876e}
+.partner-copy h2,.mobile-copy h2{font-size:clamp(30px,3.8vw,54px);line-height:1.12;letter-spacing:-1.6px;font-weight:750;color:#52070b;margin:15px 0 18px}
+.partner-copy h2 em{font-style:normal;color:#bd554c}
+.partner-copy>p,.mobile-copy>p{max-width:570px;font-size:14px;line-height:1.85;color:#756c69;margin:0 0 25px}
+.partner-benefits{list-style:none;margin:0 0 30px;padding:0;display:grid;gap:13px}
+.partner-benefits li{display:flex;gap:10px;align-items:start;font-size:12px;line-height:1.65;color:#514747}
+.partner-benefits svg{width:19px;height:19px;flex:none;color:#9a292b;margin-top:1px}
+.partner-actions,.mobile-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.partner-cta,.mobile-cta{min-height:48px;padding:0 22px;border:0;border-radius:999px;background:#8b201a;color:#fff!important;display:inline-flex;gap:10px;align-items:center;justify-content:center;font-size:12px;font-weight:650;cursor:pointer;transition:transform .22s,background .22s}
+.partner-cta:hover,.mobile-cta:hover{background:#a52a2a;transform:translateY(-2px)}
+.partner-text-link,.mobile-text-link{font-size:12px;font-weight:650;color:#822221;text-underline-offset:4px;text-decoration:underline}
+.partner-note,.mobile-availability{display:block;margin-top:14px;font-size:10px;color:#877875}
+.partner-art{position:relative;min-height:445px;display:grid;place-items:center}
+.partner-art-base{position:relative;width:min(100%,490px);min-height:350px;border-radius:34px;background:linear-gradient(148deg,#641015,#8b201a 72%,#ac3a31);padding:38px;box-shadow:0 26px 60px rgba(82,7,11,.18);overflow:hidden}
+.partner-art-base:before{content:'';position:absolute;width:310px;height:310px;border:1px solid #ffffff24;border-radius:50%;right:-90px;top:-130px}
+.partner-art-base:after{content:'';position:absolute;width:225px;height:225px;background:#ffffff12;border-radius:50%;left:-90px;bottom:-110px}
+.partner-art-label{position:relative;z-index:1;color:#ffc1ad;letter-spacing:2px;text-transform:uppercase;font-size:10px;font-weight:700}
+.partner-art-base h3{position:relative;z-index:1;color:white;font-size:clamp(24px,3vw,34px);line-height:1.3;font-weight:700;max-width:280px;margin:20px 0}
+.partner-art-base>svg{width:min(100%,310px);height:auto;position:relative;z-index:2;filter:drop-shadow(0 16px 12px #2c000038)}
+.partner-float{position:absolute;background:white;border-radius:17px;padding:14px 16px;box-shadow:0 14px 35px #411b1b24;font-size:11px;font-weight:600;color:#5c2828;z-index:3;display:flex;align-items:center;gap:8px}
+.partner-float svg{width:20px;height:20px;color:#ca5548}
+.partner-float.one{right:-15px;top:45px}.partner-float.two{left:-25px;bottom:36px}
+.mobile-section{position:relative;padding:100px clamp(18px,7vw,110px);background:linear-gradient(140deg,#f9e8e0,#fff9f6 65%);overflow:hidden}
+.mobile-inner{max-width:1210px;margin:auto;display:grid;grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr);gap:clamp(35px,6vw,100px);align-items:center}
+.mobile-showcase{position:relative;min-height:460px;display:grid;place-items:center}
+.mobile-glow{position:absolute;width:min(95%,390px);height:380px;background:#edac9e69;filter:blur(42px);border-radius:50%}
+.mobile-device{position:relative;z-index:2;width:227px;height:430px;border:8px solid #381519;border-radius:40px;background:#fff;box-shadow:18px 22px 35px #4c1a1a30,0 0 0 2px #f8c8bb;overflow:hidden;transform:rotate(-7deg)}
+.mobile-notch{position:absolute;top:7px;left:50%;transform:translateX(-50%);height:18px;width:84px;background:#381519;border-radius:20px;z-index:2}
+.mobile-screen-top{height:175px;background:linear-gradient(145deg,#521019,#a32d2a);padding:48px 16px 14px;color:white}
+.mobile-screen-top strong{display:block;font-size:24px;line-height:1.15}.mobile-screen-top span{font-size:9px;color:#ffcbbf}
+.mobile-screen-bottom{padding:18px;background:#fff}.mobile-screen-line{height:11px;border-radius:8px;background:#f1e1dc;margin-bottom:11px}.mobile-screen-line.short{width:60%}
+.mobile-screen-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:17px}.mobile-screen-tiles span{height:83px;background:linear-gradient(130deg,#ffddd5,#fff5f0);border-radius:13px}
+.mobile-chip{position:absolute;z-index:4;padding:12px 16px;background:white;border-radius:14px;box-shadow:0 12px 30px #6f282820;font-size:11px;font-weight:650;color:#68242b}.mobile-chip.buyer{left:12px;top:80px}.mobile-chip.rider{right:8px;bottom:83px}
+.mobile-feature-list{display:grid;gap:15px;margin-bottom:27px}.mobile-feature{display:flex;align-items:start;gap:12px}.mobile-feature-icon{display:grid;place-items:center;width:37px;height:37px;flex:none;background:#fff;border:1px solid #f2d6ce;border-radius:12px;color:#9d3032}.mobile-feature-icon svg{width:19px;height:19px}.mobile-feature strong{display:block;font-size:13px;color:#4e1b1e}.mobile-feature span{display:block;font-size:11px;line-height:1.65;color:#777;margin-top:3px}
+.mobile-cta.secondary{background:white;color:#832020!important;border:1px solid #d6aaa2}.mobile-cta.secondary:hover{background:#fff0eb}
+.landing-info-modal[hidden]{display:none!important}.landing-info-modal{position:fixed;z-index:11000;inset:0;display:grid;place-items:center;padding:20px;background:#180b0bd9;backdrop-filter:blur(4px)}
+.landing-info-dialog{width:min(100%,430px);padding:30px;border-radius:22px;background:white;box-shadow:0 20px 65px #0004;text-align:center;position:relative}
+.landing-info-close{position:absolute;right:13px;top:12px;border:0;background:#fff1ed;width:31px;height:31px;border-radius:50%;font-size:22px;cursor:pointer;color:#752021}
+.landing-info-symbol{width:67px;height:67px;display:grid;place-items:center;margin:0 auto 18px;border-radius:19px;background:#fff0eb;color:#8b201a}.landing-info-symbol svg{width:33px;height:33px}
+.landing-info-dialog h2{font-size:21px;font-weight:700;color:#52070b;margin:0 0 10px}.landing-info-dialog p{font-size:12px;color:#746967;line-height:1.75;margin:0 0 22px}
+@media(max-width:1100px){.landing-nav-quick{gap:11px;margin-right:12px}.landing-nav-quick a{font-size:10px}.partner-inner,.mobile-inner{gap:30px}.partner-float.one{right:0}.partner-float.two{left:0}}
+@media(max-width:850px){.landing-nav-quick{display:none}.partner-inner,.mobile-inner{grid-template-columns:1fr;gap:28px}.partner-section,.mobile-section{padding:72px 5%}.partner-art{min-height:380px;position:relative;top:auto}.partner-art-base{min-height:320px}.mobile-inner .mobile-showcase{order:2}.mobile-inner .mobile-copy{order:1}.mobile-showcase{min-height:420px}}
+@media(max-width:600px){
+ .landing-navbar{width:calc(100% - 20px);padding:0 12px}.landing-page{overflow-x:clip}
+ .hero{padding-left:16px;padding-right:16px}.hero-copy{min-width:0}.hero-title{font-size:clamp(37px,10.5vw,48px);overflow-wrap:normal}.hero-visual{min-height:295px;width:100%;min-width:0;margin:0 auto}.visual-card{width:min(100%,330px);height:220px;transform:none!important}.visual-bag{width:88px;top:32px}.visual-brand{top:140px;width:100px}
+ .floating-product.left{left:-3px;top:-15px;width:101px;min-height:103px}.floating-product.watch{right:-3px;top:-15px;width:101px;min-height:103px}.floating-product.shoes{display:none}.floating-product .product-photo{height:46px}.floating-product .product-photo svg{width:35px;height:35px}.floating-product .product-name{font-size:7px}.floating-product .product-price{font-size:7px}.visual-stat{left:0;bottom:-10px;width:132px}.floating-circle.heart-one{right:43px;top:30px}
+ .partner-section,.mobile-section{padding:65px 18px}.partner-copy h2,.mobile-copy h2{font-size:clamp(29px,8vw,39px);letter-spacing:-1px}.partner-copy>p,.mobile-copy>p{font-size:12px}.partner-benefits li{font-size:11px}.partner-art{min-height:300px}.partner-art-base{min-height:280px;padding:27px;width:100%;border-radius:23px}.partner-art-base h3{font-size:24px}.partner-art-base>svg{width:235px}.partner-float{font-size:9px;padding:9px 11px}.partner-float.one{right:0;top:21px}.partner-float.two{left:0;bottom:8px}
+ .mobile-showcase{min-height:390px}.mobile-device{width:205px;height:382px}.mobile-screen-top{height:160px}.mobile-chip.buyer{left:0;top:75px}.mobile-chip.rider{right:0;bottom:60px}.partner-cta,.mobile-cta{width:100%;min-height:48px}.partner-actions,.mobile-actions{align-items:stretch}.partner-text-link{width:100%;text-align:center;padding:9px}
+ .footer-main{grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 14px}.footer-column{min-width:0}.footer-brand{grid-column:1/-1}
+}
+@media(max-width:375px){.landing-logo-wordmark{width:84px}.login-button,.signup-button{min-width:0;padding:0 9px;font-size:9px}.hero-visual{min-height:255px}.visual-card{height:195px}.floating-product.watch{display:none}.visual-brand{top:127px}.partner-float.one{display:none}.mobile-chip.buyer{left:-2px}.mobile-chip.rider{right:-2px}}
+@media(prefers-reduced-motion:reduce){.partner-cta,.mobile-cta{transition:none}.mobile-device{transform:none}}
+
+    
+/* ================= UX POLISH: LOGISTICS + MOBILE ================= */
+html {scroll-padding-top:100px}
+#logisticsPartners,#mobileApp,#guestShop,#whyShopease {scroll-margin-top:105px}
+.landing-nav-quick a{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 10px;border-radius:999px;transition:background .2s,color .2s,transform .2s}
+.landing-nav-quick a:hover,.landing-nav-quick a.is-current{background:#fff0eb;color:#81201d}
+.landing-nav-quick a[aria-current="location"]{background:#fce7df;color:#7b1b1b}
+.landing-mobile-quick{display:none}
+.partner-art{position:sticky;top:125px;align-self:start}
+.partner-experience{margin-top:22px;border:1px solid #efdbd5;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 28px rgba(82,7,11,.04)}
+.partner-experience details+details{border-top:1px solid #f3e6e1}
+.partner-experience summary{display:flex;gap:12px;align-items:center;cursor:pointer;list-style:none;padding:16px 18px;font-size:13px;font-weight:650;color:#542027}
+.partner-experience summary::-webkit-details-marker{display:none}
+.partner-experience summary .step-number{flex:0 0 28px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:#ffede6;color:#a52a2a;font-size:12px}
+.partner-experience summary .step-chevron{margin-left:auto;width:17px;height:17px;transition:transform .2s ease}
+.partner-experience details[open] .step-chevron{transform:rotate(180deg)}
+.partner-experience details p{margin:0;padding:0 19px 17px 58px;font-size:12px;line-height:1.75;color:#7a6562}
+.partner-experience summary:focus-visible,.mobile-journey button:focus-visible,.landing-mobile-quick a:focus-visible{outline:3px solid #f9a792;outline-offset:2px}
+.partner-subheading{margin:22px 0 0;font-size:13px;color:#743539;font-weight:650}
+.mobile-journey{margin:20px 0 15px;padding:5px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:#f8e7e1;border:1px solid #f0d8d0;border-radius:14px;gap:5px}
+.mobile-journey button{border:0;background:transparent;cursor:pointer;border-radius:10px;padding:11px 12px;font:600 12px Poppins,sans-serif;color:#875e59;transition:background .2s,box-shadow .2s,color .2s}
+.mobile-journey button[aria-selected="true"]{background:#fff;color:#78191d;box-shadow:0 4px 12px rgba(82,7,11,.08)}
+.mobile-journey-details{min-height:92px;padding:15px 18px;background:rgba(255,255,255,.8);border:1px solid #f0dcd5;border-radius:14px;line-height:1.7}
+.mobile-journey-details strong{font-size:13px;display:block;color:#581318}
+.mobile-journey-details p{margin:5px 0 0;font-size:12px;color:#806661}
+.mobile-journey-details[hidden]{display:none!important}
+@media(max-width:1150px){.landing-nav-quick{gap:2px;margin-right:8px}.landing-nav-quick a{font-size:10px;padding:0 7px}}
+@media(max-width:860px){
+ .landing-nav-quick{display:none!important}
+ .landing-mobile-quick{display:flex;position:fixed;z-index:999;left:12px;right:12px;top:79px;justify-content:center;gap:7px;padding:7px;border:1px solid #efd6ce;border-radius:17px;background:rgba(255,250,247,.96);box-shadow:0 9px 22px rgba(82,7,11,.08);backdrop-filter:blur(16px)}
+ .landing-mobile-quick a{flex:1;display:flex;align-items:center;justify-content:center;min-height:36px;gap:6px;text-align:center;padding:7px 10px;border-radius:11px;font-size:11px;font-weight:650;color:#772a2e;white-space:nowrap}
+ .landing-mobile-quick a.is-current,.landing-mobile-quick a[aria-current="location"]{background:#7b1b1b;color:#fff}
+ .hero{padding-top:max(170px, 15vh)}
+ #logisticsPartners,#mobileApp,#guestShop,#whyShopease{scroll-margin-top:144px}
+ html{scroll-padding-top:144px}
+}
+@media(max-width:560px){.mobile-journey{grid-template-columns:1fr}}
+@media(max-width:420px){.landing-mobile-quick a{font-size:10px;padding:7px 4px;gap:4px}.landing-mobile-quick{gap:3px;left:10px;right:10px}.partner-experience summary{font-size:12px;padding:14px 12px}.partner-experience details p{padding:0 12px 15px 52px}.mobile-journey button{font-size:11px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.landing-nav-quick a,.mobile-journey button{transition:none}}
+
+
+/* ===============================================================
+   FINAL UX: CENTERED NAV, EXACT ANCHOR ALIGNMENT, ACTIVE INDICATOR
+   =============================================================== */
+@media(min-width:1101px){
+ .landing-navbar{position:fixed;justify-content:space-between}
+ .landing-nav-quick{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;gap:3px;justify-content:center;z-index:1}
+ .landing-nav-actions{margin-left:auto;z-index:2}
+ .landing-logo{position:relative;z-index:2}
+}
+.landing-nav-quick a{position:relative;min-height:38px;padding:0 13px;border-radius:99px;font-weight:600;transition:color .24s ease,background .24s ease,box-shadow .24s ease}
+.landing-nav-quick a::after{content:'';position:absolute;height:3px;width:0;left:50%;bottom:1px;border-radius:99px;background:var(--maroon);transform:translateX(-50%);transition:width .25s ease}
+.landing-nav-quick a.is-current,.landing-nav-quick a[aria-current='location']{background:#ffe9e1;color:var(--maroon-dark);box-shadow:inset 0 0 0 1px #f4d6cb}
+.landing-nav-quick a.is-current::after,.landing-nav-quick a[aria-current='location']::after{width:35%}
+.landing-nav-quick a:hover{background:#fff0eb;transform:translateY(-1px)}
+.landing-mobile-quick a.is-current,.landing-mobile-quick a[aria-current='location']{background:#7b1b1b;color:#fff;box-shadow:0 3px 9px rgba(82,7,11,.18)}
+/* Heading-target anchor spacing even when browser handles a hash natively */
+#guestShop .guest-shop-heading,#whyShopease .ease-heading,
+#logisticsPartners .partner-copy,#mobileApp .mobile-copy{scroll-margin-top:112px}
+/* Section heights and padding are preserved: JS scrolls to the text, not the outer section */
+.landing-ux-js #logisticsPartners .ux-reveal,
+.landing-ux-js #mobileApp .ux-reveal{
+ opacity:0;transform:translate3d(0,32px,0) scale(.985);
+ transition:opacity .82s cubic-bezier(.2,.7,.2,1),transform .82s cubic-bezier(.2,.7,.2,1);
+ transition-delay:var(--reveal-delay,0ms);
+}
+.landing-ux-js #logisticsPartners .ux-reveal.in-view,
+.landing-ux-js #mobileApp .ux-reveal.in-view{
+ opacity:1;transform:translate3d(0,0,0) scale(1);
+}
+/* gentle accent motion only once visible */
+#logisticsPartners .partner-float,#mobileApp .mobile-chip{transition:filter .35s ease,box-shadow .35s ease}
+#logisticsPartners .partner-art.in-view:hover .partner-float,#mobileApp .mobile-showcase.in-view:hover .mobile-chip{filter:brightness(1.035);box-shadow:0 17px 28px rgba(82,7,11,.12)}
+@media(max-width:1100px){.landing-nav-quick{display:none!important}}
+@media(max-width:860px){
+ #guestShop .guest-shop-heading,#whyShopease .ease-heading,
+ #logisticsPartners .partner-copy,#mobileApp .mobile-copy{scroll-margin-top:154px}
+ .landing-mobile-quick{gap:5px}
+ .landing-mobile-quick a{min-width:0;letter-spacing:-.15px}
+}
+@media(max-width:440px){.landing-mobile-quick a{font-size:9.5px;padding:7px 3px}}
+@media(prefers-reduced-motion:reduce){
+ .landing-ux-js #logisticsPartners .ux-reveal,.landing-ux-js #mobileApp .ux-reveal{
+  opacity:1!important;transform:none!important;transition:none!important;
+ }
+ .landing-nav-quick a,.landing-nav-quick a::after{transition:none}
+}
+
+
+/* ===============================================================
+   SHOP EASE — REVERSIBLE REVEAL + LIVING LOGISTICS + APP PREVIEW
+   =============================================================== */
+html.landing-ux-js #logisticsPartners .ux-reveal,
+html.landing-ux-js #mobileApp .ux-reveal {
+  opacity:0;
+  transform:translate3d(0,38px,0) scale(.985);
+  transition:opacity .72s cubic-bezier(.22,.65,.23,1),transform .72s cubic-bezier(.22,.65,.23,1);
+  transition-delay:var(--reveal-delay,0ms);
+  will-change:opacity,transform;
+}
+html.landing-ux-js #logisticsPartners .ux-reveal.in-view,
+html.landing-ux-js #mobileApp .ux-reveal.in-view {
+  opacity:1;
+  transform:translate3d(0,0,0) scale(1);
+}
+/* The outer column controls the section entrance; its children add stagger. */
+html.landing-ux-js #logisticsPartners .se-reveal-child,
+html.landing-ux-js #mobileApp .se-reveal-child {transform:translateY(20px)}
+html.landing-ux-js #logisticsPartners .se-reveal-child.in-view,
+html.landing-ux-js #mobileApp .se-reveal-child.in-view {transform:translateY(0)}
+
+/* Animated partnership network (illustration only; not live tracking). */
+.partner-art-base>svg{animation:se-truck-idle 3.1s ease-in-out infinite}
+@keyframes se-truck-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.se-delivery-live{position:relative;z-index:4;margin:2px auto 0;max-width:360px;padding:13px 15px;background:#fff8f3;border-radius:15px;box-shadow:0 9px 24px #3506083b}
+.se-delivery-live-top,.se-delivery-caption,.se-delivery-route{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.se-delivery-live-top{font-size:9px;color:#80565a;font-weight:700;letter-spacing:.4px}
+.se-delivery-live-top strong{color:#8b201a;font-size:9px;letter-spacing:0}
+.se-delivery-live-top i{display:inline-block;width:6px;height:6px;background:#36a16c;border-radius:50%;margin-right:4px;animation:se-live-pulse 1.8s infinite}
+@keyframes se-live-pulse{50%{box-shadow:0 0 0 5px #36a16c28}}
+.se-delivery-route{margin-top:13px;gap:8px}
+.se-route-stop{font-size:10px;font-weight:700;color:#6c222a}
+.se-route-line{height:4px;position:relative;flex:1;border-radius:20px;background:repeating-linear-gradient(90deg,#f2b6a5 0 10px,#fff4ed 10px 16px)}
+.se-route-parcel{position:absolute;font-size:19px;top:50%;left:0;transform:translate(-50%,-50%);animation:se-parcel-drive 5s ease-in-out infinite}
+@keyframes se-parcel-drive{0%,8%{left:0}78%,93%{left:100%}100%{left:0}}
+.se-delivery-caption{margin-top:10px;color:#a07975;font-size:8px}
+.partner-art.in-view .partner-float.one{animation:se-float-one 4.2s ease-in-out infinite}
+.partner-art.in-view .partner-float.two{animation:se-float-one 4.2s ease-in-out -2.1s infinite}
+@keyframes se-float-one{50%{translate:0 -9px}}
+
+/* Phone: actual looping UI storyboard — browse → cart → checkout → track. */
+.mobile-device{isolation:isolate}
+.se-app-demo{position:absolute;inset:0;background:#fff9f6;overflow:hidden;color:#54202b}
+.se-demo-bar{height:54px;padding:26px 13px 9px;display:flex;align-items:end;justify-content:space-between;background:#68141b;color:white}
+.se-demo-bar strong{font-size:13px;line-height:1;font-weight:800}.se-demo-bar strong span{color:#ff9a80}
+.se-demo-status{font-size:6px;font-weight:700;letter-spacing:.4px;color:#ffe0d7}.se-demo-status i{display:inline-block;width:5px;height:5px;background:#70e0a4;border-radius:100%;margin-right:3px}
+.se-demo-screen{position:absolute;top:54px;bottom:48px;left:0;right:0;padding:17px 13px;opacity:0;transform:translateX(24px) scale(.97);pointer-events:none;transition:opacity .5s ease,transform .5s ease}
+.se-app-demo[data-demo-stage='0'] .se-demo-browse,.se-app-demo[data-demo-stage='1'] .se-demo-cart,.se-app-demo[data-demo-stage='2'] .se-demo-checkout,.se-app-demo[data-demo-stage='3'] .se-demo-track{opacity:1;transform:translateX(0) scale(1)}
+.se-demo-headline{font-weight:750;font-size:16px;line-height:1.3;color:#581a21;margin-bottom:15px}
+.se-demo-headline>span{font-size:8px;float:right;margin-top:6px;color:#a27872}
+.se-demo-search{background:white;border:1px solid #eedad3;border-radius:11px;padding:10px 9px;font-size:9px;color:#b6a2a0;box-shadow:0 4px 10px #8126210c}
+.se-demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.se-demo-product{background:white;border-radius:13px;border:1px solid #f2e5e0;padding:9px;box-shadow:0 5px 11px #671b140c}
+.se-demo-item-icon{display:grid;place-items:center;background:linear-gradient(135deg,#ffe3d8,#ffefea);border-radius:10px;height:74px;font-size:34px}
+.se-demo-product b,.se-demo-product small{display:block;font-size:8px;margin-top:7px;color:#562229}.se-demo-product small{font-size:10px;color:#a52a2a;margin-top:3px;font-weight:750}
+.se-demo-float-action,.se-demo-button{background:#8b201a;color:white;text-align:center;border-radius:10px;padding:12px 6px;font-size:9px;font-weight:700;margin-top:16px}
+.se-demo-float-action span{background:#fff3e8;color:#7d2026;border-radius:50%;padding:2px 4px;margin-left:5px}
+.se-demo-cart-row{display:flex;align-items:center;gap:8px;background:white;border-radius:13px;padding:12px 8px;margin:9px 0;border:1px solid #f1e0d9}
+.se-demo-cart-row>span{font-size:24px}.se-demo-cart-row>div{flex:1}.se-demo-cart-row b,.se-demo-cart-row small{display:block;font-size:8px}.se-demo-cart-row small{color:#9d7976;margin-top:4px}.se-demo-cart-row>strong{color:#38a06d}
+.se-demo-total{display:flex;justify-content:space-between;align-items:center;margin-top:19px;border-top:1px solid #efdfd9;padding-top:13px;font-size:10px}.se-demo-total b{color:#971d22;font-size:14px}
+.se-demo-check-card{background:#fff;border:1px solid #f1e0d9;border-radius:13px;padding:12px;margin:10px 0}.se-demo-check-card small,.se-demo-check-card b,.se-demo-check-card span{display:block}.se-demo-check-card small{font-size:7px;color:#b07f79}.se-demo-check-card b{font-size:10px;margin:5px 0}.se-demo-check-card span{font-size:8px;color:#8f7772}
+.se-demo-success{width:55px;height:55px;border-radius:50%;background:#e1f6e8;color:#168750;display:grid;place-items:center;font-size:30px;font-weight:700;margin:22px auto 14px;animation:se-check-in 1s ease-in-out infinite alternate}
+@keyframes se-check-in{to{transform:scale(1.07);box-shadow:0 0 0 9px #e1f6e865}}
+.se-demo-track{text-align:center}.se-demo-track .se-demo-headline{margin-bottom:7px}.se-demo-track p{font-size:9px;line-height:1.5;color:#92716e}.se-demo-order-code{background:#fff0eb;border-radius:8px;padding:9px;font-weight:700;font-size:9px;color:#8b201a;margin-top:20px}
+.se-demo-track-steps{display:flex;flex-direction:column;gap:9px;text-align:left;margin:20px 0 0 17px}.se-demo-track-steps span{font-size:9px;color:#a59b98}.se-demo-track-steps span.done{color:#33885b}.se-demo-track-steps b{margin-left:7px}
+.se-demo-bottom{position:absolute;bottom:0;left:0;right:0;height:48px;background:#fff;border-top:1px solid #f0e3e0;display:grid;place-content:center;gap:4px;text-align:center}
+.se-demo-progress{display:flex;gap:5px;justify-content:center}.se-demo-progress i{width:19px;height:4px;border-radius:10px;background:#e7d5cf;transition:background .4s ease}
+.se-app-demo[data-demo-stage='0'] .se-demo-progress i:nth-child(1),.se-app-demo[data-demo-stage='1'] .se-demo-progress i:nth-child(2),.se-app-demo[data-demo-stage='2'] .se-demo-progress i:nth-child(3),.se-app-demo[data-demo-stage='3'] .se-demo-progress i:nth-child(4){background:#992526}
+.se-demo-bottom>span{font-size:8px;font-weight:650;color:#a0716c}
+@media(max-width:760px){.se-delivery-live{padding:10px}.se-delivery-live-top{font-size:8px}.partner-art-base{overflow:hidden}}
+@media(prefers-reduced-motion:reduce){html.landing-ux-js #logisticsPartners .ux-reveal,html.landing-ux-js #mobileApp .ux-reveal{opacity:1!important;transform:none!important;transition:none!important}.partner-art-base>svg,.se-route-parcel,.se-demo-success,.partner-art.in-view .partner-float{animation:none!important}.se-demo-screen{transition:none}}
+
+
+/* ===== ShopEase community introduction / mobile CTA simplification ===== */
+.se-community-eyebrow{
+    display:inline-flex;align-items:center;gap:9px;
+    margin:0 0 17px;padding:8px 13px;
+    border:1px solid #f0d6cc;border-radius:999px;background:#fff6f2;
+    color:#962e2d;font-size:10px;font-weight:750;letter-spacing:1.55px;
+}
+.se-community-dot{height:8px;width:8px;border-radius:100%;background:#e67662;box-shadow:0 0 0 4px #fce0d8;}
+.se-role-intro{margin-top:21px;max-width:510px;}
+.se-role-intro-caption{font-size:11.5px;line-height:1.6;font-weight:650;color:#7c5551;margin:0 0 11px;}
+.se-role-links{display:flex;flex-wrap:wrap;gap:8px;}
+.se-role-link{
+    min-height:36px;display:inline-flex;align-items:center;gap:7px;
+    padding:8px 13px;border:1px solid #eed1c9;border-radius:999px;
+    background:#fff;color:#742126;font-size:11px;font-weight:650;
+    box-shadow:0 5px 13px rgba(80,10,12,.035);
+    transition:background .25s,color .25s,transform .25s,border-color .25s;
+}
+.se-role-link:hover,.se-role-link:focus-visible{background:#7b1b1b;color:#fff;border-color:#7b1b1b;transform:translateY(-2px);}
+.se-role-symbol{font-size:14px;line-height:1;}
+.hero-copy .hero-actions{margin-top:23px;}
+/* Three benefits now live on the phone illustration. */
+.mobile-chip.seller{
+    left:-5px;bottom:80px;top:auto;
+    border:1px solid #f5ddd6;
+    background:#fff9f6;
+}
+.mobile-actions{margin-top:29px;}
+.mobile-copy .mobile-availability{display:block;margin-top:14px;}
+@media(max-width:850px){
+    .se-role-intro{max-width:620px;}
+    .mobile-chip.seller{left:0;bottom:22px;}
+}
+@media(max-width:560px){
+    .se-community-eyebrow{font-size:9px;padding:7px 10px;letter-spacing:1px;}
+    .se-role-links{gap:7px;}
+    .se-role-link{font-size:10px;padding:8px 10px;min-height:34px;}
+    .mobile-chip.seller{left:1px;bottom:20px;font-size:9px;max-width:170px;padding:10px;}
+    .mobile-chip.rider{right:0;bottom:98px;}
+    .mobile-chip.buyer{top:37px;left:0;}
+}
+@media(prefers-reduced-motion:reduce){.se-role-link{transition:none;}}
+
+
+/* Role links: matching icon family and centered alignment */
+.se-role-links{align-items:center;justify-content:flex-start;}
+.se-role-intro-caption{text-align:left;}
+.se-role-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;}
+.se-role-symbol{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;line-height:1;}
+.se-role-symbol svg{display:block;width:18px;height:18px;stroke:currentColor;}
+/* Keep mobile benefit icons dead center in their tiles and align the row */
+.mobile-feature{align-items:center;}
+.mobile-feature-icon{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 42px;width:42px;height:42px;padding:9px;line-height:0;}
+.mobile-feature-icon svg{display:block;width:22px;height:22px;min-width:22px;min-height:22px;vertical-align:middle;}
+.mobile-feature>div{min-width:0;}
+@media(max-width:560px){.se-role-links{justify-content:flex-start;gap:8px}.se-role-link{white-space:nowrap}}
+
+
+/* =============================================================
+   SINGLE RESPONSIVE LAYOUT — original layout at every viewport
+   No second mobile nav; header participates in document flow
+   at tablet / phone widths and cannot overlap the hero.
+============================================================= */
+html, body {max-width:100%;overflow-x:clip;}
+.landing-page {width:100%;min-width:0;overflow-x:clip;}
+.landing-page :is(section,footer) {max-width:100%;}
+.landing-page :is(img,svg) {max-width:100%;}
+.landing-mobile-quick {display:none!important;}
+.hero-copy,.hero-visual,.partner-copy,.partner-art,.mobile-copy,.mobile-showcase {min-width:0;}
+.hero-title,.partner-copy h2,.mobile-copy h2 {overflow-wrap:normal;}
+/* Do not use huge negative logo offsets on any screen. */
+.footer-brand img {width:clamp(120px,12vw,170px);height:auto;max-width:100%;
+    margin:0 0 15px;position:static;transform:none;object-fit:contain;object-position:left center;}
+.footer-brand {min-width:0;}
+.footer-main,.footer-inner,.footer-column {min-width:0;}
+.footer-link {overflow-wrap:anywhere;}
+
+/* Tablet: retain original ShopEase navbar, put it in the flow,
+   and let it expand to two lines without hiding any tabs. */
+@media (max-width:1150px) {
+  .landing-navbar {
+    position:sticky;top:8px;left:auto;right:auto;transform:none;
+    margin:8px auto 0;width:calc(100% - 32px);max-width:1080px;
+    height:auto;min-height:0;padding:12px 19px 9px;
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:'logo actions' 'nav nav';column-gap:15px;row-gap:9px;
+    border-radius:20px;z-index:1000;
+  }
+  .landing-logo {grid-area:logo;min-width:0;}
+  .landing-logo-wordmark {width:clamp(98px,12vw,135px);height:auto;max-width:100%;}
+  .landing-nav-actions {grid-area:actions;justify-self:end;margin:0;gap:9px;}
+  .landing-nav-quick {
+    grid-area:nav;display:flex!important;position:static;left:auto;top:auto;
+    transform:none;margin:0;width:100%;min-width:0;justify-content:center;
+    align-items:center;gap:clamp(2px,1vw,15px);padding:8px 0 0;
+    border-top:1px solid #f1e0da;overflow:visible;
+  }
+  .landing-nav-quick a {display:inline-flex;flex:0 1 auto;text-align:center;
+    font-size:clamp(10px,1.08vw,12px);padding:7px clamp(8px,1.3vw,16px);
+    min-height:32px;white-space:nowrap;}
+  .login-button,.signup-button {min-width:0;height:32px;padding:0 13px;font-size:11px;}
+  .hero {
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    align-items:center;gap:clamp(18px,3vw,45px);text-align:left;
+    min-height:auto;padding:clamp(33px,5vw,70px) 5% 65px;overflow:hidden;
+  }
+  .hero-copy {margin:0;width:100%;max-width:580px;transform:none;text-align:left;}
+  .hero-title {font-size:clamp(41px,5vw,61px);line-height:1.05;letter-spacing:-1.8px;}
+  .hero-description {max-width:520px;font-size:clamp(12px,1.32vw,15px);margin:19px 0 0;}
+  .hero-actions {justify-content:flex-start;flex-direction:row;margin-top:23px;}
+  .hero-primary {width:auto;max-width:none;min-width:162px;}
+  .hero-visual {width:100%;min-height:360px;transform:none;margin:0;}
+  .visual-card {width:min(100%,485px);height:295px;}
+  .se-role-intro {max-width:100%;text-align:left;}
+  .se-role-links {justify-content:flex-start;}
+  .guest-products {grid-template-columns:repeat(3,minmax(0,1fr));max-width:100%;gap:16px;}
+  .ease-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+  .ease-tracking {grid-template-columns:1fr;gap:30px;padding:28px;}
+  .partner-inner,.mobile-inner {gap:clamp(24px,4vw,52px);}
+  .partner-art-base {width:100%;}
+  .footer-main {grid-template-columns:1.3fr repeat(3,minmax(0,1fr));gap:20px;}
+  html {scroll-padding-top:128px;}
+  #guestShop,#whyShopease,#logisticsPartners,#mobileApp {scroll-margin-top:128px;}
+}
+/* Small tablet: keep a single-column content flow, with well-sized
+   illustrations, never a desktop layout squeezed onto a phone. */
+@media (max-width:850px) {
+  .hero {grid-template-columns:minmax(0,1fr);gap:28px;padding:40px 6% 60px;}
+  .hero-copy {max-width:690px;margin:0 auto;}
+  .hero-title {font-size:clamp(44px,7.8vw,65px);}
+  .hero-visual {min-height:380px;max-width:580px;margin:0 auto;}
+  .visual-card {width:min(100%,475px);height:285px;}
+  .guest-products {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .guest-shop-section,.ease-section {padding:65px 6%;}
+  .partner-section,.mobile-section {padding:72px 6%;}
+  .partner-inner,.mobile-inner {grid-template-columns:minmax(0,1fr);gap:30px;}
+  .partner-art {position:relative;top:auto;width:100%;max-width:520px;min-height:340px;margin:0 auto;}
+  .mobile-showcase {width:100%;max-width:520px;min-height:420px;margin:0 auto;}
+  .mobile-inner .mobile-copy {order:1;}
+  .mobile-inner .mobile-showcase {order:2;}
+  .footer-main {grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;}
+  .footer-brand {grid-column:1/-1;}
+}
+/* Phones: normal flow header prevents heading overlap on every height.
+   Tight typography, flexible role pills and right-sized visual blocks. */
+@media (max-width:600px) {
+  .landing-navbar {top:6px;width:calc(100% - 20px);margin:6px auto 0;
+    padding:10px 12px 9px;border-radius:16px;column-gap:5px;row-gap:7px;}
+  .landing-logo-wordmark {width:clamp(104px,27vw,125px);}
+  .landing-nav-actions {gap:5px;}
+  .login-button,.signup-button {height:30px;padding:0 clamp(8px,2.4vw,12px);font-size:10px;}
+  .landing-nav-quick {gap:1px;padding-top:7px;justify-content:space-between;}
+  .landing-nav-quick a {font-size:clamp(8.5px,2.55vw,11px);
+    padding:5px clamp(2px,1.2vw,6px);min-height:30px;white-space:nowrap;}
+  .hero {padding:31px 18px 56px;gap:30px;}
+  .hero-copy {width:100%;max-width:500px;margin:0;transform:none;}
+  .hero-title {font-size:clamp(36px,10.3vw,49px);line-height:1.07;letter-spacing:-1.4px;}
+  .hero-description {font-size:12px;line-height:1.7;margin-top:15px;max-width:450px;}
+  .se-role-intro {margin-top:18px;}
+  .se-role-intro-caption {font-size:10.5px;}
+  .se-role-links {display:flex;flex-wrap:wrap;justify-content:flex-start;gap:7px;}
+  .se-role-link {font-size:10px;padding:7px 10px;min-height:33px;white-space:nowrap;}
+  .se-role-symbol,.se-role-symbol svg {width:15px;height:15px;flex:0 0 15px;}
+  .hero-actions {display:flex;justify-content:flex-start;flex-direction:row;margin-top:23px;}
+  .hero-primary {width:auto;min-width:155px;height:43px;padding:0 22px;font-size:11px;}
+  .hero-visual {min-height:270px;margin:0 auto;max-width:440px;}
+  .visual-card {width:min(100%,335px);height:212px;border-radius:25px;transform:none!important;}
+  .visual-bag {width:100px;top:26px;}
+  .visual-brand {width:112px;top:127px;}
+  .floating-product.left {left:-4px;top:-13px;width:103px;min-height:93px;}
+  .floating-product.watch {right:-3px;top:-14px;width:100px;min-height:93px;}
+  .floating-product.shoes {display:none;}
+  .floating-product .product-photo {height:40px;}
+  .floating-product .product-photo svg {width:31px;height:31px;}
+  .floating-product .product-name,.floating-product .product-price {font-size:7.5px;}
+  .visual-stat {left:0;bottom:-11px;width:125px;}
+  .floating-circle.heart-two {display:none;}
+  .category-strip {min-height:49px;}
+  .category-track {gap:23px;padding:0 22px;}
+  .guest-shop-section,.ease-section {padding:51px 18px 58px;}
+  .guest-shop-heading h2,.ease-heading h2 {font-size:clamp(25px,7.5vw,33px);}
+  .guest-products {grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;}
+  .guest-product-image {height:clamp(115px,38vw,175px);}
+  .guest-product-content {padding:12px;}
+  .guest-product-name {font-size:11px;}
+  .guest-product-price {font-size:13px;}
+  .guest-product-bottom {flex-wrap:wrap;gap:7px;}
+  .ease-grid {grid-template-columns:minmax(0,1fr);gap:13px;}
+  .ease-card {padding:20px;}
+  .ease-tracking {padding:19px;}
+  .partner-section,.mobile-section {padding:60px 18px;}
+  .partner-copy h2,.mobile-copy h2 {font-size:clamp(29px,8.8vw,39px);line-height:1.12;}
+  .partner-copy>p,.mobile-copy>p {font-size:12px;}
+  .partner-art {max-width:100%;min-height:300px;}
+  .partner-art-base {width:100%;min-height:290px;padding:24px;border-radius:25px;}
+  .partner-art-base h3 {font-size:clamp(21px,6vw,26px);}
+  .partner-art-base>svg {width:min(100%,260px);}
+  .partner-float {font-size:9px;padding:8px 10px;max-width:150px;}
+  .partner-float.one {right:0;top:17px;}
+  .partner-float.two {left:0;bottom:7px;}
+  .partner-cta,.mobile-cta {width:100%;min-height:45px;font-size:11px;}
+  .mobile-showcase {min-height:380px;}
+  .mobile-device {width:190px;height:355px;}
+  .mobile-chip {font-size:9px;padding:9px 10px;max-width:155px;}
+  .mobile-chip.buyer {left:0;top:56px;}
+  .mobile-chip.rider {right:0;bottom:102px;}
+  .mobile-chip.seller {left:0;bottom:9px;}
+  .landing-footer {width:100%;padding:33px 18px 20px;overflow:visible;}
+  .footer-main {grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 15px;}
+  .footer-brand {grid-column:1/-1;}
+  .footer-brand img {width:144px;height:auto;margin:0 0 12px;max-width:100%;}
+  .footer-brand-tagline {max-width:100%;font-size:11px;}
+  .footer-column-title {font-size:12px;}
+  .footer-link {font-size:10px;}
+  .footer-trust-row {gap:7px;}
+  .footer-trust-chip {font-size:9px;padding:7px;}
+  .footer-bottom {flex-direction:column;align-items:flex-start;gap:12px;}
+  html {scroll-padding-top:120px;}
+  #guestShop,#whyShopease,#logisticsPartners,#mobileApp {scroll-margin-top:120px;}
+}
+@media (max-width:375px) {
+  .landing-navbar {padding:9px 8px 8px;}
+  .landing-logo-wordmark {width:96px;}
+  .login-button,.signup-button {padding:0 8px;font-size:9px;}
+  .landing-nav-quick a {font-size:8.5px;padding:5px 2px;}
+  .hero {padding-left:14px;padding-right:14px;}
+  .hero-title {font-size:clamp(34px,10vw,39px);}
+  .se-role-link {padding:7px 9px;font-size:9.3px;}
+  .hero-visual {min-height:247px;}
+  .visual-card {width:min(100%,300px);height:195px;}
+  .floating-product.watch {width:90px;}
+  .visual-brand {top:123px;}
+  .guest-shop-section,.ease-section,.partner-section,.mobile-section {padding-left:14px;padding-right:14px;}
+  .mobile-chip {font-size:8px;max-width:135px;}
+  .footer-main {gap:21px 11px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .landing-navbar,.hero-visual,.visual-card {transition:none!important;}
+}
+
+/* ===========================================================
+   COMPACT MOBILE HEADER & CORRECT HERO CARD WORDMARK
+   These rules target only phone layouts; desktop remains intact.
+   =========================================================== */
+@media (max-width:600px) {
+  .landing-navbar {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-rows:32px 34px!important;
+    grid-template-areas:"logo actions" "nav nav"!important;
+    align-items:center!important;
+    align-content:center!important;
+    justify-content:space-between!important;
+    height:82px!important;
+    min-height:0!important;
+    max-height:82px!important;
+    padding:6px 11px!important;
+    row-gap:4px!important;
+    column-gap:6px!important;
+    border-radius:17px!important;
+  }
+  .landing-logo {grid-area:logo!important;min-height:0!important;align-self:center!important;}
+  .landing-logo-wordmark {width:116px!important;height:auto!important;max-height:30px!important;object-fit:contain!important;}
+  .landing-nav-actions {grid-area:actions!important;align-self:center!important;margin:0!important;}
+  .landing-nav-quick {
+    grid-area:nav!important;display:flex!important;align-items:center!important;
+    min-height:0!important;height:32px!important;padding:4px 0 0!important;
+    margin:0!important;gap:1px!important;align-self:center!important;
+    border-top:1px solid #f1e0da!important;
+  }
+  .landing-nav-quick a {min-height:26px!important;height:26px!important;font-size:clamp(8px,2.43vw,10px)!important;padding:2px 3px!important;}
+  /* Explicitly size the wordmark INSIDE the red hero animation,
+     not the navbar logo. */
+  .hero-visual .visual-brand {top:125px!important;width:158px!important;max-width:60%!important;}
+  .hero-visual .visual-brand img {width:100%!important;height:auto!important;object-fit:contain!important;}
+}
+@media (max-width:375px) {
+  .landing-navbar {height:80px!important;max-height:80px!important;padding:6px 9px!important;}
+  .landing-logo-wordmark {width:104px!important;}
+  .hero-visual .visual-brand {top:115px!important;width:140px!important;}
+}
+
+
+/* ================================================================
+   NAVBAR LOGO + HERO MOCKUP PROPORTIONS
+   Mobile uses the SAME markup as desktop, with all product cards.
+   ================================================================ */
+@media (max-width:600px) {
+  /* Enlarge only the LOGO artwork, not the header height or buttons.
+     Transform doesn't consume layout width; the header geometry stays fixed. */
+  .landing-navbar .landing-logo {overflow:visible!important;position:relative;z-index:1;min-width:0;}
+  .landing-navbar .landing-logo-wordmark {
+    width:116px!important;max-height:32px!important;height:auto!important;
+    transform:scale(1.43)!important;transform-origin:left center!important;
+    display:block!important;
+  }
+  /* Preserve the exact red-card landscape proportion, and deliberately
+     render all three product cards like the desktop reference. */
+  .hero-visual {width:100%!important;max-width:370px!important;min-height:290px!important;
+    margin:7px auto 0!important;transform:none!important;overflow:visible!important;}
+  .hero-visual .visual-card {
+    position:relative!important;width:calc(100% - 22px)!important;max-width:340px!important;
+    height:auto!important;aspect-ratio:1.6!important;
+    margin:14px auto 20px!important;border-radius:27px!important;
+    overflow:visible!important;transform:none!important;
+  }
+  .hero-visual .visual-bag {
+    width:clamp(162px,53%,205px)!important;top:8%!important;
+    left:50%!important;z-index:4!important;
+  }
+  .hero-visual .visual-brand {
+    top:51%!important;left:50%!important;width:clamp(150px,51%,185px)!important;
+    max-width:none!important;z-index:5!important;
+  }
+  .hero-visual .visual-brand img {width:100%!important;height:auto!important;display:block!important;}
+  .hero-visual .floating-product {padding:8px!important;border-radius:15px!important;min-height:0!important;}
+  .hero-visual .floating-product.left {display:block!important;width:31%!important;left:-7%!important;top:-12%!important;right:auto!important;bottom:auto!important;z-index:10!important;}
+  .hero-visual .floating-product.watch {display:block!important;width:30%!important;right:-8%!important;top:-15%!important;left:auto!important;bottom:auto!important;z-index:10!important;}
+  .hero-visual .floating-product.shoes {display:block!important;width:30%!important;right:-11%!important;bottom:-14%!important;top:auto!important;left:auto!important;z-index:10!important;}
+  .hero-visual .floating-product .product-photo {height:40px!important;margin-bottom:6px!important;}
+  .hero-visual .floating-product .product-photo svg {width:31px!important;height:31px!important;}
+  .hero-visual .floating-product .product-name {font-size:8px!important;line-height:1.35!important;}
+  .hero-visual .floating-product .product-price {font-size:8px!important;}
+  .hero-visual .floating-product .product-stars {font-size:7px!important;}
+  .hero-visual .visual-stat {width:36%!important;left:-9%!important;bottom:-13%!important;z-index:11!important;}
+  .hero-visual .floating-circle.heart-one {right:-13%!important;top:25%!important;}
+  .hero-visual .floating-circle.heart-two {display:none!important;}
+  .hero-visual .floating-circle.cart {right:20%!important;bottom:0!important;}
+}
+@media (max-width:375px) {
+  .landing-navbar .landing-logo-wordmark {width:104px!important;transform:scale(1.38)!important;}
+  .hero-visual {min-height:265px!important;}
+  .hero-visual .visual-card {width:calc(100% - 32px)!important;}
+  .hero-visual .floating-product .product-photo {height:33px!important;}
+  .hero-visual .floating-product .product-photo svg {width:27px!important;height:27px!important;}
+  .hero-visual .floating-product .product-name,.hero-visual .floating-product .product-price {font-size:7px!important;}
+}
+
+
+/* Mobile PNG logo ONLY: keep the original image and navbar geometry untouched. */
+@media (max-width:600px) {
+  .landing-navbar .landing-logo-wordmark {
+    width:60px !important;
+    max-width:none !important;
+    max-height:none !important;
+    height:auto !important;
+    display:block !important;
+    transform:scale(2.12) !important;
+    transform-origin:left center !important;
+  }
+}
+@media (max-width:375px) {
+  .landing-navbar .landing-logo-wordmark {
+    transform:scale(1.94) !important;
+  }
+}
+
+</style>
 
 </head>
 
@@ -4721,6 +5308,13 @@
         </a>
 
 
+
+        <nav class="landing-nav-quick" aria-label="Explore ShopEase">
+            <a href="#guestShop" data-landing-jump="guestShop">Shop</a>
+            <a href="#whyShopease" data-landing-jump="whyShopease">Why ShopEase</a>
+            <a href="#logisticsPartners" data-landing-jump="logisticsPartners">Logistics Partners</a>
+            <a href="#mobileApp" data-landing-jump="mobileApp">Mobile App</a>
+        </nav>
 
         <!-- ACTIONS -->
 
@@ -4758,6 +5352,10 @@
 
 
 
+
+    <!-- Always-visible section shortcuts on phones and small tablets. -->
+    
+
     <!-- =========================================================
          HERO
     ========================================================== -->
@@ -4780,7 +5378,6 @@
 
         <div class="hero-copy">
 
-
             <h1 class="hero-title">
 
                 Shop Easier,<br>
@@ -4800,6 +5397,24 @@
 
             </p>
 
+
+            <div class="se-role-intro">
+                <p class="se-role-intro-caption">One marketplace. Four ways to be part of it.</p>
+                <div class="se-role-links" aria-label="Explore ShopEase opportunities">
+                    <a href="#guestShop" class="se-role-link" data-landing-jump="guestShop">
+                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></span><span>Buyer</span>
+                    </a>
+                    <a href="#mobileApp" class="se-role-link" data-landing-jump="mobileApp">
+                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9 5 4h14l2 5v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-2-2Z"/><path d="M5 14v6h14v-6M10 20v-5h4v5"/></svg></span><span>Seller</span>
+                    </a>
+                    <a href="#logisticsPartners" class="se-role-link" data-landing-jump="logisticsPartners">
+                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7z"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg></span><span>Logistics</span>
+                    </a>
+                    <a href="#mobileApp" class="se-role-link" data-landing-jump="mobileApp">
+                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="m5 17 4-8h4l3 8h3M8 13h8l-2-4M13 9l2-3h3M7 7h3"/></svg></span><span>Rider</span>
+                    </a>
+                </div>
+            </div>
 
             <div class="hero-actions">
 
@@ -7042,6 +7657,89 @@
 
 
 
+
+    <!-- =========================================================
+         LOGISTICS PARTNERSHIP: dedicated information page CTA
+    ========================================================== -->
+    <section class="partner-section" id="logisticsPartners" aria-labelledby="partnerSectionTitle">
+        <div class="partner-inner">
+            <div class="partner-copy ux-reveal">
+                <span class="partner-kicker">Grow with ShopEase</span>
+                <h2 id="partnerSectionTitle">Your deliveries.<br><em>Our growing marketplace.</em></h2>
+                <p>Is your logistics company looking for a new partnership opportunity? Explore becoming a ShopEase logistics partner and helping connect sellers, buyers, and deliveries.</p>
+                <ul class="partner-benefits">
+                    <li class="ux-reveal se-reveal-child"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Discover opportunities to serve ShopEase orders and customers.</li>
+                    <li class="ux-reveal se-reveal-child"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Learn about company registration and partnership review.</li>
+                    <li class="ux-reveal se-reveal-child"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Join an ecosystem built for shopping and delivery.</li>
+                </ul>
+                <p class="partner-subheading">How does partnering work?</p>
+                <div class="partner-experience ux-reveal" aria-label="Logistics partnership process">
+                    <details open><summary><span class="step-number">01</span>Explore the partnership <svg class="step-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><p>Open the partner information page to see how ShopEase works with registered logistics companies.</p></details>
+                    <details><summary><span class="step-number">02</span>Submit company information <svg class="step-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><p>When registration is connected, your company can provide the details and documents required for a partnership request.</p></details>
+                    <details><summary><span class="step-number">03</span>Wait for review <svg class="step-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary><p>ShopEase reviews submitted partnership requests. Registration does not guarantee approval.</p></details>
+                </div>
+                <div class="partner-actions">
+                    <a class="partner-cta" href="{{ url('/logistics/partner') }}">Become a Logistics Partner <span aria-hidden="true">↗</span></a>
+                    <a class="partner-text-link" href="{{ url('/logistics/partner') }}">How partnership works</a>
+                </div>
+                <span class="partner-note">Partnership requests are subject to review and approval.</span>
+            </div>
+            <div class="partner-art ux-reveal" aria-hidden="true">
+                <div class="partner-art-base">
+                    <span class="partner-art-label">SHOPEASE PARTNER NETWORK</span>
+                    <h3>Let's move more together.</h3>
+                    <svg viewBox="0 0 360 184" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="181" cy="164" rx="151" ry="15" fill="#30080D" fill-opacity=".29"/><rect x="23" y="65" width="191" height="85" rx="15" fill="#FFF1EA"/><rect x="32" y="74" width="173" height="67" rx="9" fill="#FFD8C9"/><rect x="50" y="88" width="80" height="8" rx="4" fill="#A52A2A"/><rect x="50" y="102" width="117" height="5" rx="2.5" fill="#C97467"/><rect x="50" y="112" width="100" height="5" rx="2.5" fill="#C97467"/><path d="M214 95H272L322 132V150H214V95Z" fill="#F8AF96"/><path d="M274 102V132H305L274 102Z" fill="#FFEDE6"/><path d="M238 106H261V132H238V106Z" fill="#FFEDE6"/><circle cx="91" cy="150" r="23" fill="#4C131B"/><circle cx="91" cy="150" r="11" fill="#FFF1EA"/><circle cx="271" cy="150" r="23" fill="#4C131B"/><circle cx="271" cy="150" r="11" fill="#FFF1EA"/><path d="M22 139H321" stroke="#FFCFBF" stroke-width="7" stroke-linecap="round"/></svg>
+                    <div class="se-delivery-live" aria-label="Illustrative delivery journey">
+                      <div class="se-delivery-live-top"><span><i></i> DELIVERY NETWORK</span><strong>On the move ↗</strong></div>
+                      <div class="se-delivery-route"><span class="se-route-stop">Seller</span><span class="se-route-line"><i class="se-route-parcel">📦</i></span><span class="se-route-stop">Buyer</span></div>
+                      <div class="se-delivery-caption"><span>Order picked up</span><span>Delivering with care</span></div>
+                    </div>
+                </div>
+                <div class="partner-float one"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg> Logistics partners</div>
+                <div class="partner-float two"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Grow with every delivery</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================
+         MOBILE APP: buttons are UI placeholders until APK/links exist
+    ========================================================== -->
+    <section class="mobile-section" id="mobileApp" aria-labelledby="mobileSectionTitle">
+        <div class="mobile-inner">
+            <div class="mobile-showcase ux-reveal" aria-hidden="true">
+                <div class="mobile-glow"></div>
+                <div class="mobile-device">
+                    <div class="mobile-notch"></div>
+                    <div class="se-app-demo" data-demo-stage="0" aria-label="Animated preview of browsing, cart, checkout and order tracking">
+                      <div class="se-demo-bar"><strong>Shop<span>Ease</span></strong><span class="se-demo-status"><i></i> APP PREVIEW</span></div>
+                      <div class="se-demo-screen se-demo-browse"><div class="se-demo-headline">What are we shopping for?</div><div class="se-demo-search">⌕ &nbsp; Search products...</div><div class="se-demo-grid"><div class="se-demo-product"><span class="se-demo-item-icon">🎧</span><b>Headphones</b><small>₱899</small></div><div class="se-demo-product"><span class="se-demo-item-icon">⌚</span><b>Smart Watch</b><small>₱1,299</small></div></div><div class="se-demo-float-action">+ Add to cart <span>✓</span></div></div>
+                      <div class="se-demo-screen se-demo-cart"><div class="se-demo-headline">Your cart <span>2 items</span></div><div class="se-demo-cart-row"><span>🎧</span><div><b>Wireless Headphones</b><small>Qty 1 · ₱899</small></div><strong>✓</strong></div><div class="se-demo-cart-row"><span>⌚</span><div><b>Smart Watch</b><small>Qty 1 · ₱1,299</small></div><strong>✓</strong></div><div class="se-demo-total">Total <b>₱2,198</b></div><div class="se-demo-button">Proceed to Checkout →</div></div>
+                      <div class="se-demo-screen se-demo-checkout"><div class="se-demo-headline">Secure checkout</div><div class="se-demo-check-card"><small>DELIVER TO</small><b>Home · Laguna, PH</b><span>Standard delivery</span></div><div class="se-demo-check-card"><small>PAYMENT METHOD</small><b>Cash on Delivery</b><span>Safe & convenient</span></div><div class="se-demo-total">Order total <b>₱2,198</b></div><div class="se-demo-button">Place Order ✓</div></div>
+                      <div class="se-demo-screen se-demo-track"><div class="se-demo-success">✓</div><div class="se-demo-headline">Order placed!</div><p>Your ShopEase order is on its way.</p><div class="se-demo-order-code">Order #SE-2048</div><div class="se-demo-track-steps"><span class="done">● <b>Confirmed</b></span><span class="done">● <b>Preparing</b></span><span>○ <b>In transit</b></span></div></div>
+                      <div class="se-demo-bottom"><div class="se-demo-progress"><i></i><i></i><i></i><i></i></div><span data-demo-caption>01 / 04 · Discover products</span></div>
+                    </div>
+                </div>
+                <span class="mobile-chip buyer">✦ Shop anywhere</span>
+                <span class="mobile-chip rider">↗ Rider applications</span>
+                <span class="mobile-chip seller">▣ Manage your shop anywhere</span>
+            </div>
+            <div class="mobile-copy ux-reveal">
+                <span class="mobile-kicker">ShopEase goes mobile</span>
+                <h2 id="mobileSectionTitle">One app.<br>More ways to <span style="color:#b74d47">move forward.</span></h2>
+                <p>Discover ShopEase on your phone—from browsing products and managing a shop to exploring opportunities as a delivery rider. Our mobile experience brings shoppers, sellers, and riders closer together.</p>
+                <div class="mobile-feature-list">
+                    <div class="mobile-feature ux-reveal se-reveal-child"><span class="mobile-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></span><div><strong>Shop on your phone</strong><span>Browse products, place orders, and track purchases wherever you are.</span></div></div>
+                    <div class="mobile-feature ux-reveal se-reveal-child"><span class="mobile-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9 5 4h14l2 5v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-2-2Z"/><path d="M5 14v6h14v-6M10 20v-5h4v5"/></svg></span><div><strong>Sell with ShopEase</strong><span>Manage product listings, monitor orders, and check your store updates.</span></div></div>
+                    <div class="mobile-feature ux-reveal se-reveal-child"><span class="mobile-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="m5 17 4-8h4l3 8h3M8 13h8l-2-4M13 9l2-3h3M7 7h3"/></svg></span><div><strong>Apply as a rider</strong><span>Rider applications are offered exclusively through the ShopEase mobile application.</span></div></div>
+                </div>
+                <div class="mobile-actions">
+                    <button type="button" class="mobile-cta" data-app-info="download"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg> Download ShopEase App</button>
+                </div>
+                <span class="mobile-availability">The official mobile app download will be available here once released.</span>
+            </div>
+        </div>
+    </section>
+
     <!-- =========================================================
          REALISTIC FOOTER
     ========================================================== -->
@@ -7167,6 +7865,8 @@
                         <a href="#" class="footer-link">Seller Guidelines</a>
                         <a href="#" class="footer-link">Seller Compliance</a>
                         <a href="#" class="footer-link">Seller Support</a>
+                        <a href="{{ url('/logistics/partner') }}" class="footer-link">Logistics Partnership</a>
+                        <a href="#mobileApp" class="footer-link">Download Mobile App</a>
                     </div>
 
                     <div style="margin-top:18px;">
@@ -8781,6 +9481,164 @@ document.addEventListener(
     }
 );
 
+</script>
+
+
+<!-- Mobile release information (buttons deliberately do not download a missing app). -->
+<div class="landing-info-modal" id="mobileInfoModal" role="presentation" hidden>
+  <div class="landing-info-dialog" role="dialog" aria-modal="true" aria-labelledby="mobileInfoTitle" aria-describedby="mobileInfoBody">
+    <button class="landing-info-close" type="button" id="mobileInfoClose" aria-label="Close">×</button>
+    <div class="landing-info-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/></svg></div>
+    <h2 id="mobileInfoTitle">Mobile App Coming Soon</h2>
+    <p id="mobileInfoBody">The download link will be available once the ShopEase mobile app is ready.</p>
+    <button type="button" class="mobile-cta" id="mobileInfoOkay">Got it</button>
+  </div>
+</div>
+<script>
+(function(){
+ const modal=document.getElementById('mobileInfoModal');
+ if(!modal)return;
+ const title=document.getElementById('mobileInfoTitle');
+ const body=document.getElementById('mobileInfoBody');
+ const close=document.getElementById('mobileInfoClose');
+ const okay=document.getElementById('mobileInfoOkay');
+ let previousFocus=null;
+ function hide(){modal.hidden=true;document.body.style.overflow='';if(previousFocus)previousFocus.focus();}
+ document.querySelectorAll('[data-app-info]').forEach(button=>button.addEventListener('click',()=>{
+   const type=button.dataset.appInfo;
+   title.textContent=type==='rider'?'Rider Applications on Mobile':type==='seller'?'ShopEase Seller Mobile':'ShopEase App Download';
+   body.textContent=type==='rider'?'Rider applications will be accessible through the ShopEase mobile app. The app download will be linked here once released.':type==='seller'?'The seller mobile experience will be connected once the official ShopEase mobile app is released.':'The ShopEase app download is not available yet. This button is ready for the official app link when the mobile release is published.';
+   previousFocus=button;modal.hidden=false;document.body.style.overflow='hidden';close.focus();
+ }));
+ close.addEventListener('click',hide);okay.addEventListener('click',hide);
+ modal.addEventListener('click',e=>{if(e.target===modal)hide()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)hide();});
+})();
+</script>
+
+
+<script>
+(function () {
+  'use strict';
+  const ids = ['guestShop', 'whyShopease', 'logisticsPartners', 'mobileApp'];
+  const links = [...document.querySelectorAll('[data-landing-jump]')];
+  const targets = {
+    guestShop: document.querySelector('#guestShop .guest-shop-heading'),
+    whyShopease: document.querySelector('#whyShopease .ease-heading'),
+    logisticsPartners: document.querySelector('#logisticsPartners .partner-copy'),
+    mobileApp: document.querySelector('#mobileApp .mobile-copy')
+  };
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const offset = () => window.innerWidth <= 860 ? 154 : 112;
+  let lockSelectionUntil = 0;
+
+  function markCurrent(id) {
+    links.forEach(link => {
+      const selected = link.dataset.landingJump === id;
+      link.classList.toggle('is-current', selected);
+      if (selected) link.setAttribute('aria-current','location');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  function targetY(id) {
+    const element = targets[id] || document.getElementById(id);
+    if (!element) return null;
+    return Math.max(0, window.scrollY + element.getBoundingClientRect().top - offset());
+  }
+
+  function jumpTo(id, updateHistory, animate) {
+    const y = targetY(id);
+    if (y === null) return;
+    lockSelectionUntil = Date.now() + (animate ? 1200 : 120);
+    markCurrent(id);
+    window.scrollTo({top:y,behavior:animate && !prefersReducedMotion.matches ? 'smooth' : 'instant'});
+    if (updateHistory && window.history.replaceState) {
+      window.history.replaceState(null,'','#' + id);
+    }
+  }
+
+  links.forEach(link => link.addEventListener('click', e => {
+    const id = link.dataset.landingJump;
+    if (!targets[id]) return;
+    e.preventDefault();
+    jumpTo(id, true, true);
+  }));
+
+  function updateActiveByScroll() {
+    if (Date.now() < lockSelectionUntil) return;
+    const referenceLine = offset() + 35;
+    let current = null;
+    ids.forEach(id => {
+      const target = targets[id];
+      if (target && target.getBoundingClientRect().top <= referenceLine) current = id;
+    });
+    markCurrent(current);
+  }
+  let frameQueued = false;
+  window.addEventListener('scroll', () => {
+    if (frameQueued) return;
+    frameQueued = true;
+    window.requestAnimationFrame(() => {frameQueued = false;updateActiveByScroll();});
+  }, {passive:true});
+  window.addEventListener('resize', updateActiveByScroll, {passive:true});
+  window.addEventListener('load', () => {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    if (ids.includes(hash)) jumpTo(hash, false, false);
+    else updateActiveByScroll();
+  }, {once:true});
+
+  // Reversible reveal: matches the earlier info cards and works in BOTH directions.
+  // Deliberately do not unobserve: users should see a fade-out as content leaves
+  // either edge of the viewport, then a fade-in when they scroll back.
+  const revealElements = [...document.querySelectorAll('#logisticsPartners .ux-reveal, #mobileApp .ux-reveal')];
+  if ('IntersectionObserver' in window && !prefersReducedMotion.matches) {
+    document.documentElement.classList.add('landing-ux-js');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        entry.target.classList.toggle('in-view', entry.isIntersecting);
+      });
+    }, {threshold: 0.08, rootMargin: '-7% 0px -9% 0px'});
+    revealElements.forEach((el, index) => {
+      const localIndex = [...el.parentElement.children].indexOf(el);
+      el.style.setProperty('--reveal-delay', `${Math.min(Math.max(localIndex,0),3)*75}ms`);
+      observer.observe(el);
+    });
+  } else {
+    revealElements.forEach(el => el.classList.add('in-view'));
+  }
+
+  // Purely visual ShopEase app preview, not a real shopping checkout.
+  // Pause the sequence when its phone is offscreen to avoid needless work.
+  const appPreview = document.querySelector('.se-app-demo');
+  if (appPreview) {
+    const captions = ['01 / 04 · Discover products','02 / 04 · Review your cart','03 / 04 · Secure checkout','04 / 04 · Track your order'];
+    const caption = appPreview.querySelector('[data-demo-caption]');
+    let step = 0, timer = null;
+    const advance = () => {
+      step = (step + 1) % 4;
+      appPreview.dataset.demoStage = String(step);
+      if (caption) caption.textContent = captions[step];
+    };
+    const start = () => {
+      if (timer || prefersReducedMotion.matches) return;
+      timer = window.setInterval(advance, 2750);
+    };
+    const stop = () => { if (timer) window.clearInterval(timer); timer = null; };
+    if ('IntersectionObserver' in window) {
+      const demoObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => entry.isIntersecting ? start() : stop());
+      }, {threshold: 0.12});
+      demoObserver.observe(appPreview);
+    } else start();
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else if (appPreview.getBoundingClientRect().top < innerHeight && appPreview.getBoundingClientRect().bottom > 0) start();
+    });
+  }
+
+
+})();
 </script>
 
 </body>
