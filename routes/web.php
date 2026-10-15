@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Seller\SellerAccountController;
 use App\Http\Controllers\Seller\SellerAccountSettingsController;
 use App\Http\Controllers\Admin\AdminAccountController;
+use App\Http\Controllers\Admin\AdminAccountSecurityController;
 
 
 /*
@@ -2275,6 +2276,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/account', [AdminAccountController::class, 'index'])->name('admin.account');
     Route::put('/admin/account', [AdminAccountController::class, 'update'])->name('admin.account.update');
     Route::post('/admin/account/notifications', [AdminAccountController::class, 'notifications'])->name('admin.account.notifications.update');
+    Route::middleware('throttle:60,1')->prefix('/admin/account/security')->name('admin.account.security.')->group(function () {
+        Route::post('/otp/send', [AdminAccountSecurityController::class, 'sendOtp'])->name('otp.send');
+        Route::post('/otp/verify', [AdminAccountSecurityController::class, 'verifyOtp'])->name('otp.verify');
+        Route::post('/password/change', [AdminAccountSecurityController::class, 'changePassword'])->name('password.change');
+        Route::post('/password/reset', [AdminAccountSecurityController::class, 'resetPassword'])->name('password.reset');
+    });
 });
 
 Route::view('/logistics/partner', 'pages.logistics-partner')->name('logistics.partner.info');

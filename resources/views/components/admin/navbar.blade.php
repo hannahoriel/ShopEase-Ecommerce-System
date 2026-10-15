@@ -1,3 +1,13 @@
+@php
+    $adminUser = auth()->user();
+    $adminUnreadNotificationCount = $adminUser
+        ? $adminUser->unreadNotifications()->count()
+        : 0;
+    $adminUnreadNotifications = $adminUser
+        ? $adminUser->unreadNotifications()->latest()->take(5)->get()
+        : collect();
+@endphp
+
 <header
     class="
         fixed
@@ -112,26 +122,28 @@
                     alt="Notifications"
                 >
 
-
-                <span
-                    class="
-                        absolute
-                        -top-1.5
-                        -right-1.5
-                        bg-red-600
-                        text-white
-                        text-[10px]
-                        font-semibold
-                        rounded-full
-                        w-[18px]
-                        h-[18px]
-                        flex
-                        items-center
-                        justify-center
-                    "
-                >
-                    4
-                </span>
+                @if($adminUnreadNotificationCount > 0)
+                    <span
+                        class="
+                            absolute
+                            -top-1.5
+                            -right-1.5
+                            bg-red-600
+                            text-white
+                            text-[10px]
+                            font-semibold
+                            rounded-full
+                            w-[18px]
+                            h-[18px]
+                            flex
+                            items-center
+                            justify-center
+                        "
+                        aria-label="{{ $adminUnreadNotificationCount }} unread notifications"
+                    >
+                        {{ $adminUnreadNotificationCount > 99 ? '99+' : $adminUnreadNotificationCount }}
+                    </span>
+                @endif
 
             </button>
 
@@ -173,89 +185,43 @@
                     </h3>
 
                     <span class="text-[11px] text-maroon-700 font-medium">
-                        4 new
+                        {{ $adminUnreadNotificationCount > 0 ? $adminUnreadNotificationCount.' new' : 'No new notifications' }}
                     </span>
 
                 </div>
 
 
                 <div class="max-h-[260px] overflow-y-auto">
-
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            New seller registration
+                    @forelse($adminUnreadNotifications as $notification)
+                        @php
+                            $notificationData = is_array($notification->data) ? $notification->data : [];
+                        @endphp
+                        <a
+                            href="{{ route('admin.notifications.index', ['filter' => 'unread']) }}"
+                            class="block px-4 py-3 hover:bg-gray-50 transition border-b border-gray-50"
+                        >
+                            <p class="text-[13px] font-semibold text-gray-800">
+                                {{ $notificationData['title'] ?? $notificationData['subject'] ?? 'ShopEase Notification' }}
+                            </p>
+                            <p class="text-[11px] text-gray-500 mt-1">
+                                {{ $notificationData['message'] ?? $notificationData['body'] ?? $notificationData['description'] ?? 'You have a new update regarding your ShopEase account.' }}
+                            </p>
+                            <p class="text-[10px] text-gray-400 mt-1">
+                                {{ $notification->created_at?->diffForHumans() ?? 'Date unavailable' }}
+                            </p>
+                        </a>
+                    @empty
+                        <p class="px-4 py-6 text-center text-[12px] text-gray-500">
+                            You have no unread notifications.
                         </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            A new seller is waiting for approval.
-                        </p>
-
-                    </div>
-
-
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            New complaint received
-                        </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            A complaint requires your attention.
-                        </p>
-
-                    </div>
-
-
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            Pending registrations
-                        </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            There are pending registrations to review.
-                        </p>
-
-                    </div>
-
+                    @endforelse
                 </div>
 
 
                 <div class="px-4 py-2.5 text-center border-t border-gray-100">
 
                     <a
-                        href="#"
+                        href="{{ route('admin.notifications.index') }}"
                         class="
                             text-[12px]
                             font-medium

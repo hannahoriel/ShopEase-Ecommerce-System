@@ -15,6 +15,16 @@
      - Seller-specific text, icons, and notifications preserved
 ========================================================= --}}
 
+@php
+    $sellerUser = auth()->user();
+    $sellerUnreadNotificationCount = $sellerUser && $sellerUser->role === 'seller'
+        ? $sellerUser->unreadNotifications()->count()
+        : 0;
+    $sellerRecentNotifications = $sellerUser && $sellerUser->role === 'seller'
+        ? $sellerUser->notifications()->latest()->take(5)->get()
+        : collect();
+@endphp
+
 <header
     id="seller-navbar"
     class="
@@ -137,25 +147,29 @@
                     alt="Notifications"
                 >
 
-                <span
-                    class="
-                        absolute
-                        -top-1.5
-                        -right-1.5
-                        bg-red-600
-                        text-white
-                        text-[10px]
-                        font-semibold
-                        rounded-full
-                        w-[18px]
-                        h-[18px]
-                        flex
-                        items-center
-                        justify-center
-                    "
-                >
-                    4
-                </span>
+                @if($sellerUnreadNotificationCount > 0)
+                    <span
+                        class="
+                            absolute
+                            -top-1.5
+                            -right-1.5
+                            bg-red-600
+                            text-white
+                            text-[10px]
+                            font-semibold
+                            rounded-full
+                            min-w-[18px]
+                            h-[18px]
+                            px-1
+                            flex
+                            items-center
+                            justify-center
+                        "
+                        aria-label="{{ $sellerUnreadNotificationCount }} unread notifications"
+                    >
+                        {{ $sellerUnreadNotificationCount }}
+                    </span>
+                @endif
             </button>
 
 
@@ -193,96 +207,49 @@
                     </h3>
 
                     <span class="text-[11px] text-maroon-700 font-medium">
-                        4 new
+                        {{ $sellerUnreadNotificationCount > 0 ? $sellerUnreadNotificationCount . ' new' : 'No new notifications' }}
                     </span>
                 </div>
 
 
                 <div class="max-h-[260px] overflow-y-auto">
+                    @forelse($sellerRecentNotifications as $notification)
+                        @php
+                            $notificationData = is_array($notification->data)
+                                ? $notification->data
+                                : [];
+                            $notificationTitle = $notificationData['title']
+                                ?? $notificationData['subject']
+                                ?? 'ShopEase Notification';
+                            $notificationMessage = $notificationData['message']
+                                ?? $notificationData['body']
+                                ?? $notificationData['description']
+                                ?? 'You have a new update regarding your ShopEase account.';
+                        @endphp
 
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            New Order Received
+                        <a
+                            href="{{ route('seller.notifications.index') }}"
+                            class="block px-4 py-3 hover:bg-gray-50 transition border-b border-gray-50 {{ $notification->read_at ? '' : 'bg-red-50/50' }}"
+                        >
+                            <p class="text-[13px] font-semibold text-gray-800">
+                                {{ $notificationTitle }}
+                            </p>
+
+                            <p class="text-[11px] text-gray-500 mt-1">
+                                {{ $notificationMessage }}
+                            </p>
+
+                            @if($notification->created_at)
+                                <p class="text-[10px] text-gray-400 mt-1">
+                                    {{ $notification->created_at->diffForHumans() }}
+                                </p>
+                            @endif
+                        </a>
+                    @empty
+                        <p class="px-4 py-6 text-center text-[12px] text-gray-500">
+                            No notifications yet.
                         </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            Order #ORD-2089 has been placed.
-                        </p>
-                    </div>
-
-
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            Shipment In Transit
-                        </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            Order #ORD-2087 is now in transit.
-                        </p>
-                    </div>
-
-
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            Low Stock Alert
-                        </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            Wireless Headphones has only 10 units left.
-                        </p>
-                    </div>
-
-
-                    <div
-                        class="
-                            px-4
-                            py-3
-                            hover:bg-gray-50
-                            transition
-                            cursor-pointer
-                            border-b
-                            border-gray-50
-                        "
-                    >
-                        <p class="text-[13px] font-semibold text-gray-800">
-                            New Customer Feedback
-                        </p>
-
-                        <p class="text-[11px] text-gray-400 mt-1">
-                            A customer left feedback on your product.
-                        </p>
-                    </div>
-
+                    @endforelse
                 </div>
 
 
@@ -296,7 +263,7 @@
                     "
                 >
                     <a
-                        href="#"
+                        href="{{ route('seller.notifications.index') }}"
                         class="
                             text-[12px]
                             font-medium

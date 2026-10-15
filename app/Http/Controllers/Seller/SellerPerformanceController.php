@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Complaint;
+use App\Models\Seller\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,8 +39,8 @@ class SellerPerformanceController extends Controller
             $seller = DB::table('sellers')->where('user_id', $user->id)->first();
         }
 
-        // The admin Seller Compliance UI expects compliance_score and compliance.
-        // Prefer actual recorded values: never invent a default 100% score.
+        // Keep recorded compliance values authoritative; derive them only when
+        // the seller record has no stored score or status.
         $score = $this->field($seller, ['compliance_score'])
             ?? $this->field($user, ['compliance_score']);
         $status = $this->field($seller, ['compliance', 'compliance_status'])
@@ -47,13 +49,46 @@ class SellerPerformanceController extends Controller
             ?? $this->field($user, ['store_name', 'name']);
         $policy = $this->field($seller, ['compliance_policy', 'policy_message']) ?? null;
         $notices = $this->notices((int) $user->id, $seller);
-        $complaints = $this->complaints((int) $user->id, $seller);
+        $complaints = $this->complaints($seller);
+        $label = $this->field($seller, ['compliance_label']);
+
+        if ($seller) {
+            $products = Product::query()->where('seller_id', $seller->id);
+            $reviewCount = (clone $products)->whereIn(DB::raw('LOWER(status)'), ['pending', 'under_review', 'review'])->count();
+            $warningCount = (clone $products)->whereRaw('LOWER(status) = ?', ['warning'])->count();
+            $activeComplaintCount = collect($complaints)
+                ->filter(fn (array $complaint): bool => in_array($complaint['status'], ['open', 'in-progress'], true))
+                ->count();
+
+            if ($score === null) {
+                $registrationStatus = strtolower((string) $seller->registration_status);
+                $score = in_array($registrationStatus, ['suspended', 'rejected'], true)
+                    ? 0
+                    : max(0, 100 - ($reviewCount * 5) - ($activeComplaintCount * 10));
+            }
+
+            if ($status === null && $score !== null) {
+                $status = in_array(strtolower((string) $seller->registration_status), ['suspended', 'rejected'], true)
+                    ? 'suspended'
+                    : ($warningCount > 0 || $activeComplaintCount > 0 || (float) $score < 80 ? 'warning' : 'compliant');
+            }
+
+            if ($label === null && $status !== null) {
+                $label = match (strtolower((string) $status)) {
+                    'compliant' => 'Compliant',
+                    'warning' => 'Warning',
+                    'under-review' => 'Under Review',
+                    'suspended', 'rejected' => 'Suspended',
+                    default => ucfirst(str_replace(['-', '_'], ' ', (string) $status)),
+                };
+            }
+        }
 
         return [
             'compliance' => [
                 'score' => is_numeric($score) ? min(100, max(0, (float) $score)) : null,
                 'status' => $status,
-                'label' => $this->field($seller, ['compliance_label']),
+                'label' => $label,
                 'policy' => $policy,
                 'store_name' => $name,
             ],
@@ -95,13 +130,10 @@ class SellerPerformanceController extends Controller
             ]) ?? '')));
             $actor = str_replace(['_', ' '], '-', $actor);
 
-            $adminFlag = filter_var(
-                $this->field($product, ['archived_by_admin']) ?? false,
-                FILTER_VALIDATE_BOOLEAN
-            );
-            $adminActor = $adminFlag || in_array($actor, [
-                'admin', 'administrator', 'superadmin', 'super-admin',
-            ], true);
+            $adminFlag = $this->field($product, ['archived_by_admin']);
+            $adminActor = $adminFlag !== null
+                ? filter_var($adminFlag, FILTER_VALIDATE_BOOLEAN)
+                : in_array($actor, ['admin', 'administrator', 'superadmin', 'super-admin'], true);
             $isArchived = filter_var(
                 $this->field($product, ['is_archived']) ?? false,
                 FILTER_VALIDATE_BOOLEAN
@@ -163,62 +195,73 @@ class SellerPerformanceController extends Controller
         return array_slice($result, 0, 100);
     }
 
-    private function complaints(int $userId, ?object $seller): array
+    private function complaints(?object $seller): array
     {
-        // Find complaints by an EXPLICIT seller owner column only, never by a
-        // name substring: names can collide across different seller accounts.
-        $table = Schema::hasTable('complaints') ? 'complaints'
-            : (Schema::hasTable('complaints_disputes') ? 'complaints_disputes' : null);
-        if (!$table) return [];
-        $sellerIdCol = $this->column($table, ['seller_id', 'seller_user_id']);
-        if (!$sellerIdCol) return [];
-        $ownerId = $sellerIdCol === 'seller_user_id' ? $userId : ($seller->id ?? null);
-        if ($ownerId === null) return [];
-        $rows = DB::table($table)->where($sellerIdCol, $ownerId)->orderByDesc('id')->limit(500)->get();
-        return $rows->map(function ($row) {
-            $status = strtolower(str_replace('_', '-', (string) ($this->field($row, ['status']) ?? 'open')));
-            if ($status === 'in progress') $status = 'in-progress';
-            return [
-                'id' => $this->field($row, ['complaint_id', 'case_id', 'id']),
-                'type' => $this->field($row, ['type', 'complaint_type', 'category']),
-                'order_id' => $this->field($row, ['order_id']),
-                'status' => $status,
-                'filed_at' => $this->field($row, ['date_filed', 'filed_at', 'created_at']),
-                'updated_at' => $this->field($row, ['updated_at']),
-                'complainant' => $this->field($row, ['complainant_name', 'buyer_name']),
-                'product_name' => $this->field($row, ['product_name']),
-                'description' => $this->field($row, ['description', 'complaint_description', 'details']),
-                'resolution' => $this->field($row, ['resolution', 'admin_response']),
-                // Additional complaint detail fields are optional. Return only
-                // values already scoped to the authenticated seller above.
-                'party1' => $this->field($row, ['party1', 'buyer_name', 'complainant_name']),
-                'role1' => 'Buyer',
-                'party2' => $this->field($row, ['party2', 'shop_name', 'store_name']),
-                'role2' => 'Seller',
-                'party1Email' => $this->field($row, ['buyer_email', 'complainant_email']),
-                'orderDate' => $this->field($row, ['order_date']),
-                'paymentMethod' => $this->field($row, ['payment_method']),
-                'paymentStatus' => $this->field($row, ['payment_status']),
-                'shippingMethod' => $this->field($row, ['shipping_method']),
-                'orderStatus' => $this->field($row, ['order_status']),
-                'orderTotal' => $this->field($row, ['order_total']),
-                'productVariant' => $this->field($row, ['product_variant']),
-                'productPrice' => $this->field($row, ['product_price']),
-                'productQuantity' => $this->field($row, ['product_quantity']),
-                'productCategory' => $this->field($row, ['product_category']),
-                'sellerResponse' => $this->field($row, ['seller_response']),
-                'evidence' => $this->jsonArray($this->field($row, ['evidence', 'attachments'])),
-                'updates' => $this->jsonArray($this->field($row, ['updates'])),
-            ];
-        })->all();
-    }
+        if (! $seller || ! Schema::hasTable('complaints') || ! Schema::hasTable('orders')) {
+            return [];
+        }
 
-    private function jsonArray(mixed $value): array
-    {
-        if (is_array($value)) return $value;
-        if (!is_string($value)) return [];
-        $decoded = json_decode($value, true);
-        return is_array($decoded) ? $decoded : [];
+        return Complaint::query()
+            ->whereHas('order', fn ($query) => $query->where('seller_id', $seller->id))
+            ->with([
+                'user:id,name,email',
+                'order.seller',
+                'order.buyer:id,name,email',
+                'order.items.product',
+                'order.shipment',
+                'updates.user:id,name',
+            ])
+            ->latest()
+            ->limit(500)
+            ->get()
+            ->map(function (Complaint $complaint): array {
+                $order = $complaint->order;
+                $seller = $order?->seller;
+                $buyer = $complaint->user ?? $order?->buyer;
+                $item = $order?->items->first();
+                $product = $item?->product;
+                $status = strtolower(str_replace('_', '-', (string) $complaint->status));
+                $photos = is_array($product?->photos) ? $product->photos : [];
+
+                return [
+                    'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
+                    'type' => $complaint->type ?: $complaint->subject,
+                    'status' => $status,
+                    'filed_at' => $complaint->created_at?->toISOString(),
+                    'updated_at' => $complaint->updated_at?->toISOString(),
+                    'order_id' => $order?->order_number ?: ($order ? 'ORD-'.$order->id : null),
+                    'orderId' => $order?->order_number ?: ($order ? 'ORD-'.$order->id : null),
+                    'complainant' => $buyer?->name ?? 'Deleted buyer',
+                    'party1' => $buyer?->name ?? 'Deleted buyer',
+                    'role1' => 'Buyer',
+                    'party2' => $seller?->store_name ?? 'Your Shop',
+                    'role2' => 'Seller',
+                    'party1Email' => $buyer?->email,
+                    'description' => $complaint->description ?: $complaint->subject,
+                    'orderDate' => $order?->created_at?->toISOString(),
+                    'paymentMethod' => $order?->payment_method,
+                    'paymentStatus' => $order?->status === 'refunded' ? 'Refunded' : null,
+                    'shippingMethod' => $order?->shipment?->courier,
+                    'orderStatus' => $order?->status,
+                    'orderTotal' => $order?->total,
+                    'product_name' => $item?->product_name,
+                    'productName' => $item?->product_name,
+                    'productVariant' => collect([$item?->variation, $item?->color, $item?->size])->filter()->implode(' · '),
+                    'productPrice' => $item?->unit_price,
+                    'productQuantity' => $item?->quantity,
+                    'productCategory' => $product?->category,
+                    'productImage' => $photos[0] ?? null,
+                    'shopName' => $seller?->store_name,
+                    'evidence' => [],
+                    'updates' => $complaint->updates->map(fn ($update): array => [
+                        'type' => $update->type,
+                        'message' => $update->message,
+                        'actor' => $update->user?->name ?? 'ShopEase Support',
+                        'timestamp' => $update->created_at?->toISOString(),
+                    ])->values()->all(),
+                ];
+            })
+            ->all();
     }
 
     private function column(string $table, array $choices): ?string

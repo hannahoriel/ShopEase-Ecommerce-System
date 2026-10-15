@@ -7,6 +7,8 @@ use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
+use App\Models\Seller\SellerConversation;
+use App\Models\Seller\SellerMessage;
 use App\Models\User;
 use Database\Seeders\DemoMarketplaceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +69,8 @@ class DemoMarketplaceSeederTest extends TestCase
         $this->assertSame(2, CartItem::where('user_id', $buyer->id)->count());
         $this->assertDatabaseHas('registrations', ['email' => 'demo-registration-pending@shopease.test', 'status' => 'pending']);
         $this->assertDatabaseHas('platform_policies', ['title' => 'Buyer Purchase Policy']);
+        $this->assertSame(0, SellerConversation::count());
+        $this->assertSame(0, SellerMessage::count());
 
         $this->actingAs($buyer)
             ->getJson('/api/v1/buyer/orders')

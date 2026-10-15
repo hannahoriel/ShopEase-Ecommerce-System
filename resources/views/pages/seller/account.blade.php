@@ -785,7 +785,7 @@
                                 <div class="sa-field"><label for="saFirst">First Name <span class="sa-required">*</span></label><input class="sa-control" id="saFirst" name="first_name" value="{{ $pick('first_name') }}" placeholder="Enter your first name" autocomplete="given-name" required></div>
                                 <div class="sa-field"><label for="saMiddle">Middle Name</label><input class="sa-control" id="saMiddle" name="middle_initial" value="{{ $pick('middle_initial', data_get($registration, 'middle_name', '')) }}" placeholder="Enter your middle name"></div>
                                 <div class="sa-field"><label for="saSex">Sex <span class="sa-required">*</span></label><select class="sa-control" id="saSex" name="sex" required><option value="">Select sex</option><option value="Male" @selected($pick('sex')==='Male')>Male</option><option value="Female" @selected($pick('sex')==='Female')>Female</option><option value="Prefer not to say" @selected($pick('sex')==='Prefer not to say')>Prefer not to say</option></select></div>
-                                <div class="sa-field"><label for="saEmail">Email <span class="sa-required">*</span></label><input class="sa-control" id="saEmail" type="email" name="email" value="{{ old('email', data_get(auth()->user(), 'email', '')) }}" placeholder="Enter your email" autocomplete="email" required></div>
+                                <div class="sa-field"><label for="saEmail">Email <span class="sa-required">*</span></label><input class="sa-control" id="saEmail" type="email" name="email" value="{{ old('email', data_get(auth()->user(), 'email', '')) }}" autocomplete="email" readonly required><small>Email changes require a separate verification step.</small></div>
                                 <div class="sa-field"><label for="saPhone">Contact No. <span class="sa-required">*</span></label><div class="sa-phone"><span class="sa-phone-prefix">+63</span><input id="saPhone" name="contact_no" type="tel" inputmode="numeric" value="{{ $pick('contact_no', data_get($registration, 'phone', '')) }}" placeholder="Enter your contact number" autocomplete="tel-national" required></div></div>
                                 <div class="sa-field"><label for="saDob">Birthday <span class="sa-required">*</span></label><input class="sa-control" id="saDob" name="birthday" type="date" value="{{ $birthdayDate }}" max="{{ now()->toDateString() }}" required></div>
                                 <div class="sa-field"><label for="saAge">Age</label><input class="sa-control" id="saAge" placeholder="Auto generated" readonly></div>
@@ -996,8 +996,7 @@
       </section>
     </div>
 
-    {{-- Password email verification: follows the 6-digit registration UI pattern --}}
-    {{-- UI-only email verification preview. No OTP delivery or password changes until backend integration. --}}
+    {{-- Password email verification --}}
     <div class="sa-modal-overlay" id="saSecurityOtpModal" hidden>
       <section class="email-verification-card" role="dialog" aria-modal="true" aria-labelledby="saSecurityOtpTitle" style="position:relative">
         <button type="button" class="sa-modal-close" id="saCloseOtp" aria-label="Close">×</button>
@@ -1011,7 +1010,7 @@
         </div>
         <div class="email-spam-message">
           <svg class="email-spam-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><circle cx="12" cy="16.5" r=".5" fill="currentColor"/></svg>
-          <span>Didn’t receive the code? Check your spam folder</span>
+          <span>Didn’t receive the code? Check your spam folder or resend it</span>
         </div>
         <div class="email-divider"><div class="email-divider-line"></div><span class="email-divider-text">or</span><div class="email-divider-line"></div></div>
         <button type="button" class="email-resend-button" id="saResendOtp">
@@ -1025,9 +1024,9 @@
       <section class="sa-modal-dialog sa-security-dialog" role="dialog" aria-modal="true" aria-labelledby="saForgotTitle">
         <button type="button" class="sa-modal-close" id="saCloseForgot" aria-label="Close">×</button>
         <h2 id="saForgotTitle">Create a New Password</h2>
-        <p class="sa-modal-description">UI preview only. Enter a new password to view the reset flow; no password will be updated.</p>
+        <p class="sa-modal-description">Enter a new password after verifying your registered email.</p>
         <form id="saForgotFinalForm"><div class="sa-settings-form single"><div><label for="saResetNew">New Password</label><input id="saResetNew" type="password" autocomplete="new-password" class="sa-control" minlength="8" required></div><div><label for="saResetConfirm">Confirm New Password</label><input id="saResetConfirm" type="password" autocomplete="new-password" class="sa-control" minlength="8" required></div></div>
-          <p class="sa-security-message" id="saResetError" role="alert" hidden></p><button class="sa-settings-primary sa-otp-verify" type="submit">Preview Password Reset</button></form>
+          <p class="sa-security-message" id="saResetError" role="alert" hidden></p><button class="sa-settings-primary sa-otp-verify" type="submit">Reset Password</button></form>
       </section>
     </div>
 <style>.sa-floating-flash{position:fixed;z-index:99999;top:90px;right:24px;max-width:390px;padding:14px 18px;border-radius:10px;font:500 12px Poppins,sans-serif;box-shadow:0 8px 25px #0002;display:none}.sa-floating-flash.success{display:block;color:#246238;background:#eef9f0;border:1px solid #b9dec2}.sa-floating-flash.error{display:block;color:#9a2f26;background:#fff2ec;border:1px solid #f0c8b8}</style>
@@ -1173,10 +1172,15 @@
 
         const csrf=document.querySelector('meta[name="csrf-token"]')?.content;
         const settingsBase=@json(url('/seller/account/settings'));
+        const sellerUserId=@json((int) auth()->id());
         async function settingsPost(path,payload){
           const r=await fetch(settingsBase+path,{method:'POST',headers:{'X-CSRF-TOKEN':csrf,'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});
           let data={};try{data=await r.json();}catch(e){}
-          if(!r.ok)throw Error(data.message||(data.errors&&Object.values(data.errors).flat()[0])||'The request could not be completed.');
+          if(!r.ok){
+            const error=new Error(data.message||(data.errors&&Object.values(data.errors).flat()[0])||'The request could not be completed.');
+            error.retryAfter=Number(data.retry_after||r.headers.get('Retry-After')||0);
+            throw error;
+          }
           return data;
         }
         function settingsToast(message,isError=false){window.showAccountFlash(message,isError,isError?"Action Failed":"Changes Saved");}
@@ -1189,18 +1193,65 @@
         const otpInputs=[...document.querySelectorAll('.sa-otp-digit')];
         const otpError=document.getElementById('saOtpError'),verifyOtp=document.getElementById('saVerifyOtp'),resendOtp=document.getElementById('saResendOtp');
         let securityPurpose=null,verifiedToken=null;
+        let otpRequestInProgress=false,otpCooldownInterval=null;
+        const otpCooldownSeconds=600;
+        const otpResendLabel=resendOtp.querySelector('span');
+        const otpCooldownKey=purpose=>`seller-security-resend-cooldown-v2:${sellerUserId}:${purpose}`;
+        function otpCooldownRemaining(purpose){
+          return Math.max(0,Math.ceil((Number(sessionStorage.getItem(otpCooldownKey(purpose))||0)-Date.now())/1000));
+        }
+        function renderOtpCooldown(){
+          const remaining=securityPurpose?otpCooldownRemaining(securityPurpose):0;
+          if(remaining>0){
+            const minutes=String(Math.floor(remaining/60)).padStart(2,'0');
+            const seconds=String(remaining%60).padStart(2,'0');
+            otpResendLabel.textContent=`Resend code in ${minutes}:${seconds}`;
+            resendOtp.disabled=true;
+            if(!otpCooldownInterval)otpCooldownInterval=setInterval(renderOtpCooldown,1000);
+            return;
+          }
+          otpResendLabel.textContent='Resend Code';
+          resendOtp.disabled=otpRequestInProgress;
+          if(otpCooldownInterval){clearInterval(otpCooldownInterval);otpCooldownInterval=null;}
+          if(securityPurpose)sessionStorage.removeItem(otpCooldownKey(securityPurpose));
+        }
+        function startOtpCooldown(purpose,seconds=otpCooldownSeconds){
+          sessionStorage.setItem(otpCooldownKey(purpose),String(Date.now()+seconds*1000));
+          securityPurpose=purpose;
+          renderOtpCooldown();
+        }
         function closeSecurityModal(modal){modal.hidden=true;document.body.classList.remove('sa-modal-open');}
         function showSecurityError(message,where=otpError){where.textContent=message;where.hidden=false;}
-        // UI-only OTP preview. No email is sent and no password is changed.
-        function requestSecurityOtp(purpose){
+        async function requestSecurityOtp(purpose,isResend=false){
           securityPurpose=purpose;
           verifiedToken=null;
           document.getElementById('saSecurityOtpTitle').textContent='Verify Your Email';
           otpInputs.forEach(x=>x.value='');
           otpError.hidden=true;
-          otpModal.hidden=false;
-          document.body.classList.add('sa-modal-open');
-          otpInputs[0]?.focus();
+          if(otpCooldownRemaining(purpose)>0){
+            otpModal.hidden=false;
+            document.body.classList.add('sa-modal-open');
+            renderOtpCooldown();
+            otpInputs[0]?.focus();
+            settingsToast('A verification code was already sent. Please check your email.',true);
+            return;
+          }
+          otpRequestInProgress=true;
+          renderOtpCooldown();
+          try{
+            const result=await settingsPost('/otp/send',{purpose});
+            if(isResend)startOtpCooldown(purpose);
+            otpModal.hidden=false;
+            document.body.classList.add('sa-modal-open');
+            otpInputs[0]?.focus();
+            settingsToast(result.message||'A verification code was sent to your registered email.');
+          }catch(err){
+            if(err.retryAfter>0)startOtpCooldown(purpose,err.retryAfter);
+            settingsToast(err.message,true);
+          }finally{
+            otpRequestInProgress=false;
+            renderOtpCooldown();
+          }
         }
         pwForm.addEventListener('submit',async e=>{e.preventDefault();if(pwButton.disabled)return;await requestSecurityOtp('change');});
         document.getElementById('saForgotPasswordButton').addEventListener('click',()=>requestSecurityOtp('forgot'));
@@ -1211,38 +1262,69 @@
         });
         document.getElementById('saCloseOtp').addEventListener('click',()=>closeSecurityModal(otpModal));
         document.getElementById('saCloseForgot').addEventListener('click',()=>closeSecurityModal(forgotModal));
-        resendOtp.addEventListener('click',()=>{
-          otpInputs.forEach(x=>x.value='');otpError.hidden=true;
-          otpInputs[0]?.focus();
-          // UI demonstration only: no email is sent.
+        resendOtp.addEventListener('click',async()=>{
+          if(resendOtp.disabled||!securityPurpose)return;
+          otpInputs.forEach(x=>x.value='');
+          await requestSecurityOtp(securityPurpose,true);
         });
-        verifyOtp.addEventListener('click',()=>{
+        renderOtpCooldown();
+        verifyOtp.addEventListener('click',async()=>{
           otpError.hidden=true;
           const code=otpInputs.map(x=>x.value).join('');
           if(!/^\d{6}$/.test(code)){
-            showSecurityError('Please enter all six digits to preview the next screen.');
+            showSecurityError('Please enter the six-digit verification code.');
             return;
           }
-          // A six-digit input is NOT real email verification.
-          if(securityPurpose==='forgot'){
-            closeSecurityModal(otpModal);
-            forgotModal.hidden=false;
-            document.body.classList.add('sa-modal-open');
-            document.getElementById('saResetNew').focus();
-          } else {
-            closeSecurityModal(otpModal);
-            
+          verifyOtp.disabled=true;
+          try{
+            const result=await settingsPost('/otp/verify',{purpose:securityPurpose,code});
+            verifiedToken=result.verification_token;
+            if(securityPurpose==='forgot'){
+              closeSecurityModal(otpModal);
+              forgotModal.hidden=false;
+              document.body.classList.add('sa-modal-open');
+              document.getElementById('saResetNew').focus();
+            }else{
+              await settingsPost('/password/change',{
+                current_password:currentPw.value,
+                new_password:newPw.value,
+                new_password_confirmation:confirmPw.value,
+                verification_token:verifiedToken
+              });
+              closeSecurityModal(otpModal);
+              pwForm.reset();
+              pwDirty();
+              settingsToast('Password changed successfully.');
+            }
+          }catch(err){
+            showSecurityError(err.message);
+          }finally{
+            verifyOtp.disabled=false;
           }
         });
-        document.getElementById('saForgotFinalForm').addEventListener('submit',e=>{
+        document.getElementById('saForgotFinalForm').addEventListener('submit',async e=>{
           e.preventDefault();
           const pw=document.getElementById('saResetNew').value;
           const confirm=document.getElementById('saResetConfirm').value;
           const box=document.getElementById('saResetError');box.hidden=true;
           if(pw!==confirm){showSecurityError('New passwords do not match.',box);return;}
-          closeSecurityModal(forgotModal);
-          e.target.reset();
-          
+          const submitButton=e.currentTarget.querySelector('button[type="submit"]');
+          submitButton.disabled=true;
+          try{
+            await settingsPost('/password/reset',{
+              new_password:pw,
+              new_password_confirmation:confirm,
+              verification_token:verifiedToken
+            });
+            closeSecurityModal(forgotModal);
+            e.target.reset();
+            verifiedToken=null;
+            settingsToast('Password reset successfully.');
+          }catch(err){
+            showSecurityError(err.message,box);
+          }finally{
+            submitButton.disabled=false;
+          }
         });
         [otpModal,forgotModal].forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeSecurityModal(m);}));
         const prefsForm=document.getElementById('saNotificationSettingsForm'),prefsButton=document.getElementById('saSaveNotifications');

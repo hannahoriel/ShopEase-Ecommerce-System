@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Seller\Seller;
 use App\Models\Admin\Registration;
 use App\Models\User;
+use App\Services\SellerNotificationPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -72,6 +73,7 @@ class SellerAccountController extends Controller
             'pendingCategoryRequest' => $pending,
             'approvedPermits' => DB::table('seller_business_permits')->where('seller_id', $seller->id)->orderBy('id')->get()->all(),
             'pendingDocumentRequests' => DB::table('seller_document_change_requests')->where('seller_id', $seller->id)->where('status','pending')->pluck('id','request_type')->all(),
+            'notificationPreferences' => app(SellerNotificationPreferences::class)->forUser($request->user()),
             'coverUrl' => $this->publicImageUrl($seller, 'cover_photo_path'),
             'avatarUrl' => $this->publicImageUrl($seller, 'profile_photo_path'),
         ]);
@@ -107,16 +109,6 @@ class SellerAccountController extends Controller
 
     public function update(Request $request)
     {
-
-    $file = $request->file('cover_photo');
-
-dd([
-    'file_received' => $file !== null,
-    'upload_error' => $file?->getError(),
-    'is_valid' => $file?->isValid(),
-    'php_upload_limit' => ini_get('upload_max_filesize'),
-    'php_post_limit' => ini_get('post_max_size'),
-]);
         $seller = $this->seller($request);
         $validated = $request->validate([
             'last_name' => ['required','string','max:150'],
