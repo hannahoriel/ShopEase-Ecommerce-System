@@ -109,16 +109,6 @@ class SellerAccountController extends Controller
 
     public function update(Request $request)
     {
-
-    $file = $request->file('cover_photo');
-
-dd([
-    'file_received' => $file !== null,
-    'upload_error' => $file?->getError(),
-    'is_valid' => $file?->isValid(),
-    'php_upload_limit' => ini_get('upload_max_filesize'),
-    'php_post_limit' => ini_get('post_max_size'),
-]);
         $seller = $this->seller($request);
         $validated = $request->validate([
             'last_name' => ['required','string','max:150'],
