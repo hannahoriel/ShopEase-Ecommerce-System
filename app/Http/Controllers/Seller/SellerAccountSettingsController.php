@@ -34,16 +34,27 @@ class SellerAccountSettingsController extends Controller
         return "seller-security-verified:{$id}:{$purpose}";
     }
 
+    private function initialOtpSentKey(int $id, string $purpose): string
+    {
+        return "seller-security-initial-sent:{$id}:{$purpose}";
+    }
+
     public function sendOtp(Request $request)
     {
         $user = $this->user($request);
         $data = $request->validate(['purpose' => ['required','in:change,forgot']]);
         $purpose = $data['purpose'];
-        $limit = "seller-security-send:{$user->id}";
-        if (RateLimiter::tooManyAttempts($limit, 5)) {
-            return response()->json(['message' => 'Too many code requests. Try again later.'], 429);
+        $limit = "seller-security-resend-v2:{$user->id}:{$purpose}";
+        $isResend = Cache::has($this->initialOtpSentKey($user->id, $purpose));
+
+        if ($isResend && RateLimiter::tooManyAttempts($limit, 1)) {
+            $retryAfter = RateLimiter::availableIn($limit);
+
+            return response()->json([
+                'message' => 'Please wait before requesting another verification code.',
+                'retry_after' => $retryAfter,
+            ], 429)->header('Retry-After', (string) $retryAfter);
         }
-        RateLimiter::hit($limit, 600);
 
         $code = (string) random_int(100000, 999999);
         // Store only a hash. OTP bound to authenticated account and security purpose.
@@ -58,9 +69,19 @@ class SellerAccountSettingsController extends Controller
             });
         } catch (\Throwable $exception) {
             Cache::forget($this->otpKey($user->id, $purpose));
+            if ($isResend) {
+                RateLimiter::clear($limit);
+            }
             report($exception);
             return response()->json(['message' => 'Email could not be sent. Please check your ShopEase mail configuration.'], 503);
         }
+
+        if ($isResend) {
+            RateLimiter::hit($limit, 600);
+        } else {
+            Cache::put($this->initialOtpSentKey($user->id, $purpose), true, now()->addDays(30));
+        }
+
         return response()->json(['message' => 'A verification code was sent to your registered email.']);
     }
 

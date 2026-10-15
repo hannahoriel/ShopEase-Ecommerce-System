@@ -1172,10 +1172,15 @@
 
         const csrf=document.querySelector('meta[name="csrf-token"]')?.content;
         const settingsBase=@json(url('/seller/account/settings'));
+        const sellerUserId=@json((int) auth()->id());
         async function settingsPost(path,payload){
           const r=await fetch(settingsBase+path,{method:'POST',headers:{'X-CSRF-TOKEN':csrf,'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});
           let data={};try{data=await r.json();}catch(e){}
-          if(!r.ok)throw Error(data.message||(data.errors&&Object.values(data.errors).flat()[0])||'The request could not be completed.');
+          if(!r.ok){
+            const error=new Error(data.message||(data.errors&&Object.values(data.errors).flat()[0])||'The request could not be completed.');
+            error.retryAfter=Number(data.retry_after||r.headers.get('Retry-After')||0);
+            throw error;
+          }
           return data;
         }
         function settingsToast(message,isError=false){window.showAccountFlash(message,isError,isError?"Action Failed":"Changes Saved");}
@@ -1188,25 +1193,64 @@
         const otpInputs=[...document.querySelectorAll('.sa-otp-digit')];
         const otpError=document.getElementById('saOtpError'),verifyOtp=document.getElementById('saVerifyOtp'),resendOtp=document.getElementById('saResendOtp');
         let securityPurpose=null,verifiedToken=null;
+        let otpRequestInProgress=false,otpCooldownInterval=null;
+        const otpCooldownSeconds=600;
+        const otpResendLabel=resendOtp.querySelector('span');
+        const otpCooldownKey=purpose=>`seller-security-resend-cooldown-v2:${sellerUserId}:${purpose}`;
+        function otpCooldownRemaining(purpose){
+          return Math.max(0,Math.ceil((Number(sessionStorage.getItem(otpCooldownKey(purpose))||0)-Date.now())/1000));
+        }
+        function renderOtpCooldown(){
+          const remaining=securityPurpose?otpCooldownRemaining(securityPurpose):0;
+          if(remaining>0){
+            const minutes=String(Math.floor(remaining/60)).padStart(2,'0');
+            const seconds=String(remaining%60).padStart(2,'0');
+            otpResendLabel.textContent=`Resend code in ${minutes}:${seconds}`;
+            resendOtp.disabled=true;
+            if(!otpCooldownInterval)otpCooldownInterval=setInterval(renderOtpCooldown,1000);
+            return;
+          }
+          otpResendLabel.textContent='Resend Code';
+          resendOtp.disabled=otpRequestInProgress;
+          if(otpCooldownInterval){clearInterval(otpCooldownInterval);otpCooldownInterval=null;}
+          if(securityPurpose)sessionStorage.removeItem(otpCooldownKey(securityPurpose));
+        }
+        function startOtpCooldown(purpose,seconds=otpCooldownSeconds){
+          sessionStorage.setItem(otpCooldownKey(purpose),String(Date.now()+seconds*1000));
+          securityPurpose=purpose;
+          renderOtpCooldown();
+        }
         function closeSecurityModal(modal){modal.hidden=true;document.body.classList.remove('sa-modal-open');}
         function showSecurityError(message,where=otpError){where.textContent=message;where.hidden=false;}
-        async function requestSecurityOtp(purpose){
+        async function requestSecurityOtp(purpose,isResend=false){
           securityPurpose=purpose;
           verifiedToken=null;
           document.getElementById('saSecurityOtpTitle').textContent='Verify Your Email';
           otpInputs.forEach(x=>x.value='');
           otpError.hidden=true;
-          resendOtp.disabled=true;
+          if(otpCooldownRemaining(purpose)>0){
+            otpModal.hidden=false;
+            document.body.classList.add('sa-modal-open');
+            renderOtpCooldown();
+            otpInputs[0]?.focus();
+            settingsToast('A verification code was already sent. Please check your email.',true);
+            return;
+          }
+          otpRequestInProgress=true;
+          renderOtpCooldown();
           try{
             const result=await settingsPost('/otp/send',{purpose});
+            if(isResend)startOtpCooldown(purpose);
             otpModal.hidden=false;
             document.body.classList.add('sa-modal-open');
             otpInputs[0]?.focus();
             settingsToast(result.message||'A verification code was sent to your registered email.');
           }catch(err){
+            if(err.retryAfter>0)startOtpCooldown(purpose,err.retryAfter);
             settingsToast(err.message,true);
           }finally{
-            resendOtp.disabled=false;
+            otpRequestInProgress=false;
+            renderOtpCooldown();
           }
         }
         pwForm.addEventListener('submit',async e=>{e.preventDefault();if(pwButton.disabled)return;await requestSecurityOtp('change');});
@@ -1219,9 +1263,11 @@
         document.getElementById('saCloseOtp').addEventListener('click',()=>closeSecurityModal(otpModal));
         document.getElementById('saCloseForgot').addEventListener('click',()=>closeSecurityModal(forgotModal));
         resendOtp.addEventListener('click',async()=>{
+          if(resendOtp.disabled||!securityPurpose)return;
           otpInputs.forEach(x=>x.value='');
-          await requestSecurityOtp(securityPurpose);
+          await requestSecurityOtp(securityPurpose,true);
         });
+        renderOtpCooldown();
         verifyOtp.addEventListener('click',async()=>{
           otpError.hidden=true;
           const code=otpInputs.map(x=>x.value).join('');

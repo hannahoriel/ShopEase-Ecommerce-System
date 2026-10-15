@@ -20,7 +20,7 @@ class SellerAccountSecurityTest extends TestCase
         $sentCode = null;
 
         Mail::shouldReceive('raw')
-            ->once()
+            ->twice()
             ->withArgs(function (string $text, callable $callback) use ($seller, &$sentCode): bool {
                 preg_match('/verification code is (\d{6})\./', $text, $matches);
                 $sentCode = $matches[1] ?? null;
@@ -41,6 +41,18 @@ class SellerAccountSecurityTest extends TestCase
         $record = Cache::get("seller-security-otp:{$seller->id}:change");
         $this->assertNotNull($sentCode);
         $this->assertTrue(Hash::check($sentCode, $record['hash']));
+
+        $this->actingAs($seller)
+            ->postJson('/seller/account/settings/otp/send', ['purpose' => 'change'])
+            ->assertOk()
+            ->assertJsonPath('message', 'A verification code was sent to your registered email.');
+
+        $this->actingAs($seller)
+            ->postJson('/seller/account/settings/otp/send', ['purpose' => 'change'])
+            ->assertStatus(429)
+            ->assertJsonPath('message', 'Please wait before requesting another verification code.')
+            ->assertJsonPath('retry_after', 600)
+            ->assertHeader('Retry-After', '600');
     }
 
     public function test_verified_email_allows_seller_to_change_password(): void
