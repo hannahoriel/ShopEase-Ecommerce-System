@@ -26,8 +26,6 @@ use App\Models\Seller\ProductOption;
 use App\Models\Seller\ProductReview;
 use App\Models\Seller\ProductVariantCombination;
 use App\Models\Seller\Seller;
-use App\Models\Seller\SellerConversation;
-use App\Models\Seller\SellerMessage;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -151,7 +149,6 @@ class DemoMarketplaceSeeder extends Seeder
         $products = $this->seedProducts($seller);
         $this->seedOrders($buyerUser, $seller, $sellerUser, $products);
         $this->seedAdminRecords($admin);
-        $this->seedBuyerSellerConversation($buyerUser, $seller, $sellerUser, $products['backpack']);
 
         $this->command?->info('Demo marketplace accounts and connected feature data are ready.');
     }
@@ -626,33 +623,4 @@ class DemoMarketplaceSeeder extends Seeder
         }
     }
 
-    private function seedBuyerSellerConversation(User $buyer, Seller $seller, User $sellerUser, Product $product): void
-    {
-        $order = Order::query()->where('order_number', 'SE-DEMO-BUYER-PREPARING')->firstOrFail();
-        $conversation = SellerConversation::updateOrCreate(
-            ['seed_key' => 'demo-marketplace-buyer-conversation'],
-            [
-                'seller_id' => $seller->id,
-                'type' => SellerConversation::TYPE_BUYER,
-                'buyer_id' => $buyer->id,
-                'order_id' => $order->id,
-                'product_id' => $product->id,
-            ],
-        );
-
-        foreach ([
-            ['key' => 'demo-marketplace-message-1', 'sender' => $buyer, 'body' => 'Hi! Can you confirm whether this item is available?', 'read_at' => now()],
-            ['key' => 'demo-marketplace-message-2', 'sender' => $sellerUser, 'body' => 'Hi! Yes, it is available and your order is being prepared.', 'read_at' => null],
-        ] as $message) {
-            SellerMessage::updateOrCreate(
-                ['seed_key' => $message['key']],
-                [
-                    'conversation_id' => $conversation->id,
-                    'sender_id' => $message['sender']->id,
-                    'body' => $message['body'],
-                    'read_at' => $message['read_at'],
-                ],
-            );
-        }
-    }
 }
