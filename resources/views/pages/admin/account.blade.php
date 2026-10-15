@@ -1058,15 +1058,165 @@ document.addEventListener('DOMContentLoaded',()=>{
  photoPreview.addEventListener('click',e=>{if(e.target===photoPreview)closePhotoPreview();});
 
  const notify=$('aaNotificationsForm'),switches=$$('#aaNotificationsForm input[type=checkbox]'),start=switches.map(i=>i.checked);function checkPrefs(){$('aaSavePreferences').disabled=!switches.some((i,k)=>i.checked!==start[k]);}switches.forEach(i=>i.addEventListener('change',checkPrefs));
- const otp=$('aaOtpModal'),reset=$('aaResetModal'),cells=$$('.sa-otp-cell');let otpPurpose='forgot';
- function openOtp(purpose){otpPurpose=purpose;cells.forEach(x=>x.value='');$('aaOtpError').hidden=true;otp.hidden=false;cells[0].focus();}function close(m){m.hidden=true;}
+ const otp=$('aaOtpModal'),reset=$('aaResetModal'),cells=$$('.sa-otp-cell');
+ const otpError=$('aaOtpError'),verifyOtp=$('aaVerifyOtp'),resendOtp=$('aaResendOtp');
+ const resendLabel=resendOtp.querySelector('span');
+ const csrfToken=document.querySelector('meta[name="csrf-token"]')?.content;
+ const securityBase=@json(url('/admin/account/security'));
+ const adminUserId=@json((int) $adminUser->id);
+ let otpPurpose='forgot',verifiedToken=null,otpRequestInProgress=false,otpCooldownInterval=null;
+ const otpCooldownKey=purpose=>`admin-security-resend-v1:${adminUserId}:${purpose}`;
+ function cooldownRemaining(purpose){return Math.max(0,Math.ceil((Number(sessionStorage.getItem(otpCooldownKey(purpose))||0)-Date.now())/1000));}
+ function renderOtpCooldown(){
+  const remaining=otpPurpose?cooldownRemaining(otpPurpose):0;
+  if(remaining>0){
+   resendLabel.textContent=`Resend code in ${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;
+   resendOtp.disabled=true;
+   if(!otpCooldownInterval)otpCooldownInterval=setInterval(renderOtpCooldown,1000);
+   return;
+  }
+  resendLabel.textContent='Resend Code';
+  resendOtp.disabled=otpRequestInProgress;
+  if(otpCooldownInterval){clearInterval(otpCooldownInterval);otpCooldownInterval=null;}
+  if(otpPurpose)sessionStorage.removeItem(otpCooldownKey(otpPurpose));
+ }
+ function startOtpCooldown(purpose,seconds=600){
+  sessionStorage.setItem(otpCooldownKey(purpose),String(Date.now()+seconds*1000));
+  otpPurpose=purpose;
+  renderOtpCooldown();
+ }
+ function close(modal){modal.hidden=true;}
+ function showOtpError(message){otpError.textContent=message;otpError.hidden=false;}
+ async function securityPost(path,payload){
+  const response=await fetch(`${securityBase}${path}`,{
+   method:'POST',
+   credentials:'same-origin',
+   headers:{'X-CSRF-TOKEN':csrfToken,'Content-Type':'application/json','Accept':'application/json'},
+   body:JSON.stringify(payload)
+  });
+  let result={};try{result=await response.json();}catch(error){}
+  if(!response.ok){
+   const error=new Error(result.message||(result.errors&&Object.values(result.errors).flat()[0])||'The request could not be completed.');
+   error.retryAfter=Number(result.retry_after||response.headers.get('Retry-After')||0);
+   throw error;
+  }
+  return result;
+ }
+ async function requestOtp(purpose,isResend=false){
+  otpPurpose=purpose;
+  verifiedToken=null;
+  otpError.hidden=true;
+  if(isResend&&cooldownRemaining(purpose)>0){renderOtpCooldown();return;}
+  otpRequestInProgress=true;
+  resendOtp.disabled=true;
+  try{
+   const payload={purpose};
+   if(purpose==='change')payload.current_password=$('aaCurrentPassword').value;
+   const result=await securityPost('/otp/send',payload);
+   if(isResend)startOtpCooldown(purpose);
+   else renderOtpCooldown();
+   toast(result.message);
+  }catch(error){
+   if(error.retryAfter>0)startOtpCooldown(purpose,error.retryAfter);
+   showOtpError(error.message);
+  }finally{
+   otpRequestInProgress=false;
+   renderOtpCooldown();
+  }
+ }
+ async function openOtp(purpose){
+  otpPurpose=purpose;
+  cells.forEach(cell=>cell.value='');
+  otpError.hidden=true;
+  otp.hidden=false;
+  renderOtpCooldown();
+  cells[0].focus();
+  await requestOtp(purpose);
+ }
  $('aaForgotPasswordButton').addEventListener('click',()=>openOtp('forgot'));
- const changeForm=$('aaChangePasswordForm'),pw=$('aaCurrentPassword'),np=$('aaNewPassword'),cp=$('aaConfirmPassword');function verifyPwForm(){$('aaChangePasswordButton').disabled=!(pw.value&&np.value.length>=8&&np.value===cp.value);}[pw,np,cp].forEach(i=>i.addEventListener('input',verifyPwForm));changeForm.addEventListener('submit',e=>{e.preventDefault();if(!changeForm.reportValidity())return;openOtp('change');});
- cells.forEach((el,i)=>{el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'').slice(-1);if(el.value&&i<5)cells[i+1].focus();});el.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!el.value&&i>0)cells[i-1].focus();});el.addEventListener('paste',e=>{e.preventDefault();const arr=(e.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);arr.split('').forEach((d,j)=>cells[j].value=d);cells[Math.min(arr.length,5)].focus();});});
- $('aaVerifyOtp').addEventListener('click',()=>{if(!/^\d{6}$/.test(cells.map(i=>i.value).join(''))){$('aaOtpError').textContent='Enter all six digits.';$('aaOtpError').hidden=false;return;}if(otpPurpose==='forgot'){close(otp);reset.hidden=false;$('aaResetNew').focus();}else {$('aaOtpError').textContent='Email verification must be enabled before updating your password.';$('aaOtpError').hidden=false;}});
- $('aaResendOtp').addEventListener('click',()=>{cells.forEach(i=>i.value='');cells[0].focus();$('aaOtpError').textContent='Email delivery has not been configured.'; $('aaOtpError').hidden=false;});
- $('aaCloseOtp').addEventListener('click',()=>close(otp));$('aaCloseReset').addEventListener('click',()=>close(reset));[otp,reset].forEach(m=>m.addEventListener('click',e=>{if(e.target===m)close(m);}));
- $('aaResetForm').addEventListener('submit',e=>{e.preventDefault();if($('aaResetNew').value!==$('aaResetConfirm').value){$('aaResetError').textContent='Passwords do not match.';$('aaResetError').hidden=false;return;}$('aaResetError').textContent='Password reset is not yet configured.';$('aaResetError').hidden=false;});
+ const changeForm=$('aaChangePasswordForm'),pw=$('aaCurrentPassword'),np=$('aaNewPassword'),cp=$('aaConfirmPassword');
+ function verifyPwForm(){$('aaChangePasswordButton').disabled=!(pw.value&&np.value.length>=8&&np.value===cp.value);}
+ [pw,np,cp].forEach(input=>input.addEventListener('input',verifyPwForm));
+ changeForm.addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(!changeForm.reportValidity())return;
+  await openOtp('change');
+ });
+ cells.forEach((cell,index)=>{
+  cell.addEventListener('input',()=>{cell.value=cell.value.replace(/\D/g,'').slice(-1);if(cell.value&&index<5)cells[index+1].focus();});
+  cell.addEventListener('keydown',event=>{if(event.key==='Backspace'&&!cell.value&&index>0)cells[index-1].focus();});
+  cell.addEventListener('paste',event=>{
+   event.preventDefault();
+   const digits=(event.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);
+   digits.split('').forEach((digit,position)=>cells[position].value=digit);
+   cells[Math.min(digits.length,5)].focus();
+  });
+ });
+ resendOtp.addEventListener('click',async()=>{
+  if(resendOtp.disabled||otpRequestInProgress||!otpPurpose)return;
+  cells.forEach(cell=>cell.value='');
+  cells[0].focus();
+  await requestOtp(otpPurpose,true);
+ });
+ renderOtpCooldown();
+ verifyOtp.addEventListener('click',async()=>{
+  otpError.hidden=true;
+  const code=cells.map(cell=>cell.value).join('');
+  if(!/^\d{6}$/.test(code)){showOtpError('Enter all six digits.');return;}
+  verifyOtp.disabled=true;
+  try{
+   const result=await securityPost('/otp/verify',{purpose:otpPurpose,code});
+   verifiedToken=result.verification_token;
+   if(otpPurpose==='forgot'){
+    close(otp);
+    reset.hidden=false;
+    $('aaResetNew').focus();
+    return;
+   }
+   await securityPost('/password/change',{
+    current_password:pw.value,
+    new_password:np.value,
+    new_password_confirmation:cp.value,
+    verification_token:verifiedToken
+   });
+   close(otp);
+   changeForm.reset();
+   verifyPwForm();
+   verifiedToken=null;
+   toast('Password changed successfully.');
+  }catch(error){
+   showOtpError(error.message);
+  }finally{
+   verifyOtp.disabled=false;
+  }
+ });
+ $('aaCloseOtp').addEventListener('click',()=>close(otp));
+ $('aaCloseReset').addEventListener('click',()=>close(reset));
+ [otp,reset].forEach(modal=>modal.addEventListener('click',event=>{if(event.target===modal)close(modal);}));
+ $('aaResetForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const newPassword=$('aaResetNew').value,confirmation=$('aaResetConfirm').value,errorBox=$('aaResetError');
+  errorBox.hidden=true;
+  if(newPassword!==confirmation){errorBox.textContent='Passwords do not match.';errorBox.hidden=false;return;}
+  const submitButton=event.currentTarget.querySelector('button[type="submit"]');
+  submitButton.disabled=true;
+  try{
+   await securityPost('/password/reset',{
+    new_password:newPassword,
+    new_password_confirmation:confirmation,
+    verification_token:verifiedToken
+   });
+   close(reset);
+   event.currentTarget.reset();
+   verifiedToken=null;
+   toast('Password reset successfully.');
+  }catch(error){
+   errorBox.textContent=error.message;
+   errorBox.hidden=false;
+  }finally{
+   submitButton.disabled=false;
+  }
+ });
  document.addEventListener('keydown',e=>{if(e.key==='Escape'){close(otp);close(reset);closePhotoPreview();}});
 });
 </script>

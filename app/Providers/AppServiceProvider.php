@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\AdminNotificationPreferences;
 use App\Services\SellerNotificationPreferences;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Event;
@@ -29,8 +30,10 @@ class AppServiceProvider extends ServiceProvider
                 return null;
             }
 
-            $allowed = app(SellerNotificationPreferences::class)
-                ->allows($event->notifiable, $event->notification);
+            $preferences = $event->notifiable->role === User::ROLE_ADMIN
+                ? app(AdminNotificationPreferences::class)
+                : app(SellerNotificationPreferences::class);
+            $allowed = $preferences->allows($event->notifiable, $event->notification);
 
             return $allowed ? null : false;
         });
