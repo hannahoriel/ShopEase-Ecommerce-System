@@ -2308,6 +2308,7 @@
                             placeholder="Enter your email"
                             value="{{ old('email', $sellerData['email'] ?? '') }}"
                             autocomplete="email"
+                            maxlength="254"
                             required
                         >
 
@@ -2349,19 +2350,16 @@
                         <div class="contact-wrapper">
 
 
-                            <div class="contact-prefix">
-                                +63
-                            </div>
-
-
                             <input
                                 type="text"
                                 id="contact_no"
                                 name="contact_no"
                                 class="contact-input"
-                                placeholder="Enter your contact number"
-                                maxlength="10"
-                                inputmode="numeric"
+                                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                                maxlength="13"
+                                pattern="(09[0-9]{9}|\+639[0-9]{9})"
+                                inputmode="tel"
+                                title="Enter 09XXXXXXXXX or +639XXXXXXXXX."
                                 autocomplete="tel"
                                 value="{{ old('contact_no', $sellerData['contact_no'] ?? '') }}"
                                 required
@@ -2407,6 +2405,7 @@
                         <input
                             type="date"
                             id="birthday"
+                            max="{{ now()->subYears(18)->format('Y-m-d') }}"
                             name="birthday"
                             class="form-input"
                             value="{{ old('birthday', $sellerData['birthday'] ?? '') }}"
@@ -2493,6 +2492,37 @@
 
                         <div class="address-grid">
 
+
+                            <!-- REGION (required by seller registration test cases) -->
+                            <div class="form-group">
+                                <label class="form-label" for="region">
+                                    Region <span class="required">*</span>
+                                </label>
+                                <select id="region" name="region" class="form-input" required>
+                                    <option value="">Select region</option>
+                                    @foreach ([
+                                        'National Capital Region (NCR)',
+                                        'Cordillera Administrative Region (CAR)',
+                                        'Region I (Ilocos Region)',
+                                        'Region II (Cagayan Valley)',
+                                        'Region III (Central Luzon)',
+                                        'Region IV-A (CALABARZON)',
+                                        'MIMAROPA Region',
+                                        'Region V (Bicol Region)',
+                                        'Region VI (Western Visayas)',
+                                        'Region VII (Central Visayas)',
+                                        'Region VIII (Eastern Visayas)',
+                                        'Region IX (Zamboanga Peninsula)',
+                                        'Region X (Northern Mindanao)',
+                                        'Region XI (Davao Region)',
+                                        'Region XII (SOCCSKSARGEN)',
+                                        'Region XIII (Caraga)',
+                                        'Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)'
+                                    ] as $regionOption)
+                                        <option value="{{ $regionOption }}" {{ old('region', $sellerData['region'] ?? '') === $regionOption ? 'selected' : '' }}>{{ $regionOption }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
                             <!-- PROVINCE -->
 
@@ -2717,7 +2747,9 @@
                                     class="form-input"
                                     placeholder="Enter zip code"
                                     maxlength="4"
+                                    pattern="[0-9]{4}"
                                     inputmode="numeric"
+                                    title="Postal code must contain exactly 4 digits."
                                     value="{{ old('zip_code', $sellerData['zip_code'] ?? '') }}"
                                     required
                                 >
@@ -2874,7 +2906,7 @@
                                 type="file"
                                 id="valid_id"
                                 name="valid_id"
-                                accept=".jpg,.jpeg,.png"
+                                accept=".jpg,.jpeg,.png,.pdf"
                                 {{ empty($sellerData['valid_id_path'] ?? null) ? 'required' : '' }}
                             >
 
@@ -3125,6 +3157,27 @@
                 </div>
 
 
+
+                <!-- =================================================
+                     TERMS AND PRIVACY POLICY
+                ================================================== -->
+                <div class="form-group se-terms-group" style="grid-column: 1 / -1; margin-top: 12px;">
+                    <label for="terms" style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;cursor:pointer;">
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            name="terms"
+                            value="1"
+                            {{ old('terms', $sellerData['terms'] ?? false) ? 'checked' : '' }}
+                            required
+                            style="margin-top:4px;accent-color:#7B1B1B;"
+                        >
+                        <span>I agree to the Terms and Conditions and Privacy Policy. <span class="required">*</span></span>
+                    </label>
+                    @error('terms')
+                        <p class="error-message">{{ $message }}</p>
+                    @enderror
+                </div>
 
                 <!-- =================================================
                      BUTTON
@@ -5369,7 +5422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     last_name: v => nameCheck(v),
     middle_name: v => v.trim() ? nameCheck(v) : '',
     email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.',
-    contact_no: v => /^(?:9\d{9}|09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter a valid Philippine mobile number (09XXXXXXXXX).',
+    contact_no: v => /^(?:09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter 09XXXXXXXXX or +639XXXXXXXXX.',
     zip_code: v => /^\d{4}$/.test(v.trim()) ? '' : 'Postal code must contain exactly 4 digits.',
     password: v => v.length < 8 ? 'Password must be at least 8 characters.' :
       !/[A-Z]/.test(v) ? 'Include at least one uppercase letter.' :
@@ -5460,6 +5513,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // Capture-phase validation runs before the existing form submit handler.
   // It does not replace the Laravel controller's validation.
   form.addEventListener('submit', event => {
+    const mobile = field('contact_no');
+    if (mobile) mobile.value = mobile.value.trim();
+    const email = field('email');
+    if (email) email.value = email.value.trim();
+    const terms = field('terms');
+    if (terms && !terms.checked) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      alert('Please accept the Terms and Privacy Policy to continue.');
+      terms.focus();
+      return;
+    }
+    const birthday = field('birthday');
+    if (birthday && birthday.value) {
+      const cutoff = new Date();
+      cutoff.setFullYear(cutoff.getFullYear() - 18);
+      const chosen = new Date(birthday.value + 'T00:00:00');
+      if (chosen > cutoff) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        alert('Seller must be at least 18 years old.');
+        birthday.focus();
+        return;
+      }
+    }
     let firstInvalid=null;
     ids.forEach(id => {
       const el=field(id);

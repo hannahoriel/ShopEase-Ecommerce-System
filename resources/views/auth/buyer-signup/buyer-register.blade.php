@@ -2046,6 +2046,35 @@
 
         }
 
+    
+        .terms-field {
+            margin-top: 8px;
+        }
+
+        .terms-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #4a3a3a;
+            cursor: pointer;
+        }
+
+        .terms-label input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            margin-top: 3px;
+            flex: 0 0 auto;
+            accent-color: #7B1B1B;
+        }
+
+        .terms-label a {
+            color: #7B1B1B;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
     </style>
 
 </head>
@@ -2216,6 +2245,10 @@
                             placeholder="Enter your last name"
                             value="{{ old('last_name', $buyerData['last_name'] ?? '') }}"
                             autocomplete="family-name"
+                            minlength="2"
+                            maxlength="50"
+                            pattern="[A-Za-z .'-]{2,50}"
+                            title="Use 2–50 characters: letters, spaces, hyphens, apostrophes, or periods."
                             required
                         >
 
@@ -2257,6 +2290,10 @@
                             placeholder="Enter your first name"
                             value="{{ old('first_name', $buyerData['first_name'] ?? '') }}"
                             autocomplete="given-name"
+                            minlength="2"
+                            maxlength="50"
+                            pattern="[A-Za-z .'-]{2,50}"
+                            title="Use 2–50 characters: letters, spaces, hyphens, apostrophes, or periods."
                             required
                         >
 
@@ -2414,6 +2451,7 @@
                             placeholder="Enter your email"
                             value="{{ old('email', $buyerData['email'] ?? '') }}"
                             autocomplete="email"
+                            maxlength="255"
                             required
                         >
 
@@ -2478,20 +2516,17 @@
                             </svg>
 
 
-                            <span class="country-code">
-                                +63
-                            </span>
-
-
                             <input
                                 type="text"
                                 id="contact_no"
                                 name="contact_no"
                                 class="contact-input"
-                                placeholder="Enter your contact number"
+                                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
                                 value="{{ old('contact_no', $buyerData['contact_no'] ?? '') }}"
-                                inputmode="numeric"
-                                maxlength="10"
+                                inputmode="tel"
+                                maxlength="13"
+                                pattern="(09[0-9]{9}|\+639[0-9]{9})"
+                                title="Enter 09XXXXXXXXX or +639XXXXXXXXX."
                                 autocomplete="tel"
                                 required
                             >
@@ -2534,6 +2569,7 @@
                             name="birthday"
                             class="form-input"
                             value="{{ old('birthday', $buyerData['birthday'] ?? '') }}"
+                            max="{{ now()->subYears(18)->toDateString() }}"
                             required
                         >
 
@@ -3180,6 +3216,8 @@
                             class="form-input"
                             placeholder="Create a password"
                             minlength="8"
+                            pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}"
+                            title="Use at least 8 characters with uppercase and lowercase letters, a number, and a special character."
                             autocomplete="new-password"
                             required
                         >
@@ -3277,6 +3315,29 @@
 
                 </div>
 
+
+
+                <!-- =================================================
+                     TERMS AND PRIVACY POLICY (REQUIRED BY TEST CASES)
+                ================================================== -->
+
+                <div class="field-group full-width terms-field">
+                    <label class="terms-label" for="terms">
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            name="terms"
+                            value="1"
+                            {{ old('terms', $buyerData['terms'] ?? false) ? 'checked' : '' }}
+                            required
+                        >
+                        <span>
+                            I agree to the <strong>Terms and Conditions</strong> and acknowledge the <strong>Privacy Policy</strong>.
+                            <span class="required">*</span>
+                        </span>
+                    </label>
+                    <div class="field-error" id="termsError">You must agree to the Terms and Conditions and Privacy Policy.</div>
+                </div>
 
 
                 <!-- =================================================
@@ -3747,16 +3808,10 @@ document.addEventListener(
             'input',
             function () {
 
-                this.value =
-                    this.value
-                        .replace(
-                            /\D/g,
-                            ''
-                        )
-                        .slice(
-                            0,
-                            10
-                        );
+                const rawValue = this.value.trim();
+                const hasLeadingPlus = rawValue.startsWith('+');
+                const digits = rawValue.replace(/\D/g, '');
+                this.value = (hasLeadingPlus ? '+' : '') + digits.slice(0, hasLeadingPlus ? 12 : 11);
 
 
                 contactWrapper?.classList.remove(
@@ -5332,8 +5387,9 @@ document.addEventListener(
 
 
             if (
-                !lastName.value.trim()
+                !/^[A-Za-z .'-]{2,50}$/.test(lastName.value.trim())
             ) {
+                lastNameError.textContent = 'Enter 2–50 characters using letters, spaces, hyphens, apostrophes, or periods.';
 
                 showError(
                     lastName,
@@ -5369,8 +5425,9 @@ document.addEventListener(
 
 
             if (
-                !firstName.value.trim()
+                !/^[A-Za-z .'-]{2,50}$/.test(firstName.value.trim())
             ) {
+                firstNameError.textContent = 'Enter 2–50 characters using letters, spaces, hyphens, apostrophes, or periods.';
 
                 showError(
                     firstName,
@@ -5511,26 +5568,16 @@ document.addEventListener(
                 );
 
 
-            if (
-                !contactInput.value.trim()
-            ) {
+            const normalizedContact = contactInput.value.trim();
+            const validContact = /^(09[0-9]{9}|\+639[0-9]{9})$/.test(normalizedContact);
 
-                showError(
-                    contactWrapper,
-                    contactError
-                );
-
-
-                isValid =
-                    false;
-
+            if (!validContact) {
+                contactError.textContent = 'Enter a valid number in 09XXXXXXXXX or +639XXXXXXXXX format.';
+                showError(contactWrapper, contactError);
+                isValid = false;
             } else {
-
-                clearError(
-                    contactWrapper,
-                    contactError
-                );
-
+                contactError.textContent = 'Please enter your contact number.';
+                clearError(contactWrapper, contactError);
             }
 
 
@@ -5542,26 +5589,13 @@ document.addEventListener(
                 );
 
 
-            if (
-                !birthday.value
-            ) {
-
-                showError(
-                    birthday,
-                    birthdayError
-                );
-
-
-                isValid =
-                    false;
-
+            if (!birthday.value || !age.value || Number(age.value) < 18) {
+                showError(birthday, birthdayError);
+                ageError?.classList.toggle('show', Boolean(birthday.value) && Number(age.value) < 18);
+                isValid = false;
             } else {
-
-                clearError(
-                    birthday,
-                    birthdayError
-                );
-
+                clearError(birthday, birthdayError);
+                ageError?.classList.remove('show');
             }
 
 
@@ -5767,24 +5801,28 @@ document.addEventListener(
                 passwordConfirmationInput.value.trim();
 
 
-            if (
-                !password
-            ) {
+            const passwordMeetsRules =
+                password.length >= 8 &&
+                /[A-Z]/.test(password) &&
+                /[a-z]/.test(password) &&
+                /[0-9]/.test(password) &&
+                /[^A-Za-z0-9]/.test(password);
 
-                passwordInput.classList.add(
-                    'required-error'
-                );
-
-
-                isValid =
-                    false;
-
+            if (!passwordMeetsRules) {
+                passwordInput.classList.add('required-error');
+                isValid = false;
+                let passwordRuleError = document.getElementById('passwordRuleError');
+                if (!passwordRuleError) {
+                    passwordRuleError = document.createElement('div');
+                    passwordRuleError.id = 'passwordRuleError';
+                    passwordRuleError.className = 'field-error show';
+                    passwordInput.closest('.field-group')?.appendChild(passwordRuleError);
+                }
+                passwordRuleError.textContent = 'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.';
+                passwordRuleError.classList.add('show');
             } else {
-
-                passwordInput.classList.remove(
-                    'required-error'
-                );
-
+                passwordInput.classList.remove('required-error');
+                document.getElementById('passwordRuleError')?.classList.remove('show');
             }
 
 
@@ -5844,6 +5882,17 @@ document.addEventListener(
 
             }
 
+
+            const termsCheckbox = document.getElementById('terms');
+            const termsError = document.getElementById('termsError');
+            if (termsCheckbox && !termsCheckbox.checked) {
+                termsCheckbox.classList.add('required-error');
+                termsError?.classList.add('show');
+                isValid = false;
+            } else {
+                termsCheckbox?.classList.remove('required-error');
+                termsError?.classList.remove('show');
+            }
 
             return isValid;
 

@@ -2284,4 +2284,38 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-Route::view('/logistics/partner', 'pages.logistics-partner')->name('logistics.partner.info');
+Route::get('/logistics/landing', function () {
+    return view('pages.logistics-landing');
+})->name('logistics.landing.info');
+
+use App\Http\Controllers\Logistics\LogisticsRegistrationController;
+
+// STEP 1 — Company Details
+Route::get('/logistics/register/company',
+    [LogisticsRegistrationController::class, 'companyPage']
+)->name('logistics.register.company');
+
+Route::post('/logistics/register/company',
+    [LogisticsRegistrationController::class, 'saveCompany']
+)->name('logistics.register.company.submit');
+
+// STEP 2 — Permits & Certificates
+Route::get('/logistics/register/permits',
+    [LogisticsRegistrationController::class, 'permitsPage']
+)->name('logistics.register.permits');
+
+Route::post('/logistics/register/permits',
+    [LogisticsRegistrationController::class, 'savePermits']
+)->name('logistics.register.permits.submit');
+
+Route::get('/logistics/register/review',
+    [LogisticsRegistrationController::class, 'reviewPage']
+)->name('logistics.register.review');
+
+Route::get('/logistics/register/review/document/{type}',
+    [LogisticsRegistrationController::class, 'reviewDocument']
+)->name('logistics.register.review.document');
+
+//for now lang to beh 
+Route::view('/logistics/dashboard', 'pages.logistics.dashboard')
+    ->name('logistics.dashboard');

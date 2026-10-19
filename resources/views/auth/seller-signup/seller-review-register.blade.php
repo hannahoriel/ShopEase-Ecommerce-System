@@ -2999,13 +2999,19 @@
 
 @php
     $seHas = fn($key) => filled($sellerData[$key] ?? null);
-    $seSellerFieldsComplete = collect(['last_name','first_name','email','contact_no','birthday','province','municipality','barangay','zip_code'])->every($seHas);
+    $seSellerFieldsComplete = collect(['last_name','first_name','email','contact_no','birthday','region','province','municipality','barangay','street','zip_code','tin','seller_type'])->every($seHas) && !empty($sellerData['terms']);
     $seCategories = $sellerData['categories'] ?? [];
     if (is_string($seCategories)) $seCategories = json_decode($seCategories, true) ?: [];
     $seHasPermit = filled($sellerData['business_permit_path'] ?? null)
         || !empty($sellerData['business_permits'] ?? $sellerData['business_permit_paths'] ?? []);
-    $seBusinessFieldsComplete = filled($sellerData['business_name'] ?? null) && !empty($seCategories) && $seHasPermit;
-    $seDocumentsComplete = filled($sellerData['valid_id_path'] ?? null) && $seHasPermit;
+    $seSellerType = $sellerData['seller_type'] ?? '';
+    $seRequiredBusinessDocsComplete = $seSellerType === 'Sole Proprietorship'
+        ? filled($sellerData['dti_certificate_path'] ?? null) && filled($sellerData['bir_2303_path'] ?? null)
+        : ($seSellerType === 'Corporation'
+            ? filled($sellerData['sec_certificate_path'] ?? null) && filled($sellerData['bir_2303_path'] ?? null)
+            : in_array($seSellerType, ['Individual'], true));
+    $seBusinessFieldsComplete = filled($sellerData['business_name'] ?? null) && !empty($seCategories) && filled($sellerData['tin'] ?? null) && $seRequiredBusinessDocsComplete;
+    $seDocumentsComplete = filled($sellerData['valid_id_path'] ?? null) && $seRequiredBusinessDocsComplete;
 @endphp
                 <!-- =================================================
                      SELLER INFORMATION
@@ -3183,6 +3189,14 @@
                             </div>
 
 
+                            <!-- REGION -->
+                            <div class="information-item address-item">
+                                <span class="information-label">Region</span>
+                                <div class="information-value {{ empty($sellerData['region'] ?? null) ? 'empty' : '' }}">
+                                    {{ $sellerData['region'] ?? 'Not provided' }}
+                                </div>
+                            </div>
+
                             <!-- PROVINCE -->
 
                             <div class="information-item address-item">
@@ -3334,6 +3348,14 @@
 
                             </div>
 
+                            <!-- TERMS AND PRIVACY POLICY -->
+                            <div class="information-item full-width">
+                                <span class="information-label">Terms and Privacy Policy</span>
+                                <div class="information-value {{ empty($sellerData['terms'] ?? null) ? 'empty' : '' }}">
+                                    {{ !empty($sellerData['terms']) ? 'Accepted' : 'Not accepted' }}
+                                </div>
+                            </div>
+
 
                         </div>
 
@@ -3371,7 +3393,7 @@
                             <div class="information-item business-name-field">
 
                                 <span class="information-label">
-                                    Business Name
+                                    Shop Name
                                 </span>
 
                                 <div class="information-value
@@ -3385,12 +3407,28 @@
                             </div>
 
 
+                            <!-- SELLER TYPE -->
+                            <div class="information-item">
+                                <span class="information-label">Seller Type</span>
+                                <div class="information-value {{ empty($sellerData['seller_type'] ?? null) ? 'empty' : '' }}">
+                                    {{ $sellerData['seller_type'] ?? 'Not provided' }}
+                                </div>
+                            </div>
+
+                            <!-- TIN -->
+                            <div class="information-item">
+                                <span class="information-label">TIN</span>
+                                <div class="information-value {{ empty($sellerData['tin'] ?? null) ? 'empty' : '' }}">
+                                    {{ $sellerData['tin'] ?? 'Not provided' }}
+                                </div>
+                            </div>
+
                             <!-- CATEGORIES -->
 
                             <div class="information-item full-width">
 
                                 <span class="information-label">
-                                    Business Categories
+                                    Shop Category
                                 </span>
 
 
