@@ -1,0 +1,1398 @@
+/* Exact base styles extracted from the provided ShopEase auth.css; selectors scoped for modal use. */
+.logistics-auth {
+
+    
+
+    --maroon-dark: #52070B;
+    --maroon: #8B201A;
+    --maroon-mid: #A52D2C;
+    --maroon-soft: #C94A45;
+
+    --btn-maroon: #8B201A;
+    --btn-maroon-hover: #741613;
+
+    --accent: #DD4B4C;
+    --accent-light: #FF9876;
+    --accent-orange: #FFA370;
+
+    --cream: #FFFDFC;
+
+    --text-dark: #201212;
+    --text-muted: #9C9088;
+
+    --border: #ECE3DA;
+    --placeholder: #B7ABA1;
+
+    
+    --focus-gray: #AFAFAF;
+    --focus-gray-shadow: rgba(100, 100, 100, 0.10);
+}
+.logistics-auth * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+.logistics-auth .card {
+
+    display:
+        flex;
+
+    width:
+        100%;
+
+    max-width:
+        938px;
+
+    min-height:
+        600px;
+
+    background:
+        var(--cream);
+
+    border-radius:
+        20px;
+
+    overflow:
+        hidden;
+
+    position:
+        relative;
+
+    z-index:
+        5;
+
+    box-shadow:
+
+        0 28px 70px
+        rgba(
+            82,
+            7,
+            11,
+            0.18
+        ),
+
+        0 8px 25px
+        rgba(
+            82,
+            7,
+            11,
+            0.08
+        );
+}
+.logistics-auth .left {
+
+    position:
+        relative;
+
+    flex:
+        0 0 47%;
+
+    background:
+        linear-gradient(
+            145deg,
+            #52070B 0%,
+            #65090D 48%,
+            #7C1115 100%
+        );
+
+    color:
+        #fff;
+
+    padding:
+        40px 42px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    justify-content:
+        space-between;
+
+    overflow:
+        hidden;
+
+    border-radius:
+        0 70px 0 0;
+
+    z-index:
+        2;
+}
+.logistics-auth .circle {
+
+    position:
+        absolute;
+
+    border-radius:
+        50%;
+
+    pointer-events:
+        none;
+}
+.logistics-auth .c1 {
+
+    width:
+        280px;
+
+    height:
+        280px;
+
+    top:
+        -70px;
+
+    right:
+        -90px;
+
+    background:
+        radial-gradient(
+            circle,
+            #A52D2C 0%,
+            #8B201A 62%,
+            rgba(
+                139,
+                32,
+                26,
+                0.20
+            ) 100%
+        );
+
+    opacity:
+        0.85;
+}
+.logistics-auth .c2 {
+
+    width:
+        210px;
+
+    height:
+        210px;
+
+    top:
+        60px;
+
+    right:
+        -70px;
+
+    background:
+        radial-gradient(
+            circle,
+            #B83A38 0%,
+            #A52D2C 58%,
+            rgba(
+                165,
+                45,
+                44,
+                0.15
+            ) 100%
+        );
+
+    opacity:
+        0.55;
+}
+.logistics-auth .c3 {
+
+    width:
+        190px;
+
+    height:
+        190px;
+
+    bottom:
+        -30px;
+
+    right:
+        60px;
+
+    background:
+        radial-gradient(
+            circle,
+            #8B201A 0%,
+            #741613 58%,
+            rgba(
+                116,
+                22,
+                19,
+                0.12
+            ) 100%
+        );
+
+    opacity:
+        0.65;
+}
+.logistics-auth .left::before {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    width:
+        150px;
+
+    height:
+        105px;
+
+    top:
+        18px;
+
+    left:
+        18px;
+
+    background-image:
+        radial-gradient(
+            circle,
+            rgba(
+                255,
+                163,
+                112,
+                0.42
+            ) 0,
+            rgba(
+                255,
+                163,
+                112,
+                0.42
+            ) 1.6px,
+            transparent 2px
+        );
+
+    background-size:
+        13px 13px;
+
+    opacity:
+        0.65;
+
+    pointer-events:
+        none;
+
+    z-index:
+        1;
+}
+.logistics-auth .left::after {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    width:
+        175px;
+
+    height:
+        125px;
+
+    bottom:
+        0;
+
+    right:
+        0;
+
+    background-image:
+        radial-gradient(
+            circle,
+            rgba(
+                255,
+                152,
+                118,
+                0.46
+            ) 0,
+            rgba(
+                255,
+                152,
+                118,
+                0.46
+            ) 1.6px,
+            transparent 2px
+        );
+
+    background-size:
+        14px 14px;
+
+    opacity:
+        0.60;
+
+    pointer-events:
+        none;
+
+    z-index:
+        1;
+}
+.logistics-auth .brand {
+
+    position:
+        relative;
+
+    z-index:
+        2;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    width:
+        100%;
+
+    transform:
+        translateY(-35px);
+}
+.logistics-auth .login-logo {
+
+    width:
+        350px;
+
+    height:
+        auto;
+
+    display:
+        block;
+
+    object-fit:
+        contain;
+}
+.logistics-auth .brand-logo {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+    margin-bottom:
+        10px;
+}
+.logistics-auth .hamburger {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        4px;
+}
+.logistics-auth .hamburger span {
+
+    width:
+        20px;
+
+    height:
+        2.5px;
+
+    background:
+        #F0E6DF;
+
+    border-radius:
+        2px;
+
+    display:
+        block;
+}
+.logistics-auth .bag-icon {
+
+    width:
+        32px;
+
+    height:
+        32px;
+
+    background:
+        var(--accent-light);
+
+    border-radius:
+        9px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+}
+.logistics-auth .brand-name {
+
+    font-size:
+        27px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        0.2px;
+
+    color:
+        #fff;
+}
+.logistics-auth .brand-name span {
+
+    color:
+        var(--accent-light);
+}
+.logistics-auth .tagline {
+
+    position:
+        relative;
+
+    z-index:
+        2;
+
+    font-size:
+        26px;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.3;
+
+    margin-top:
+        auto;
+
+    color:
+        #fff;
+}
+.logistics-auth .tagline em {
+
+    display:
+        block;
+
+    font-style:
+        normal;
+
+    color:
+        var(--accent-light);
+
+    font-weight:
+        800;
+}
+.logistics-auth .subtext {
+
+    position:
+        relative;
+
+    z-index:
+        2;
+
+    margin-top:
+        14px;
+
+    font-size:
+        13.5px;
+
+    line-height:
+        1.65;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.72
+        );
+
+    max-width:
+        270px;
+
+    font-weight:
+        400;
+}
+.logistics-auth .right {
+
+    flex:
+        1;
+
+    padding:
+        46px 54px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    justify-content:
+        center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #FFFDFC 0%,
+            #FFF9F5 100%
+        );
+}
+.logistics-auth h1 {
+
+    font-size:
+        29px;
+
+    font-weight:
+        700;
+
+    color:
+        var(--text-dark);
+
+    letter-spacing:
+        -0.3px;
+
+    text-align:
+        center;
+
+    margin-top:
+        -14px;
+}
+.logistics-auth .subhead {
+
+    color:
+        var(--text-muted);
+
+    font-size:
+        14px;
+
+    margin-top:
+        2px;
+
+    margin-bottom:
+        38px;
+
+    font-weight:
+        400;
+
+    text-align:
+        center;
+}
+.logistics-auth .field-group {
+
+    margin-bottom:
+        20px;
+}
+.logistics-auth label {
+
+    display:
+        block;
+
+    font-size:
+        13.5px;
+
+    font-weight:
+        600;
+
+    color:
+        var(--text-dark);
+
+    margin-bottom:
+        8px;
+}
+.logistics-auth .input-wrap {
+
+    position:
+        relative;
+}
+.logistics-auth .input-wrap > svg {
+
+    position:
+        absolute;
+
+    left:
+        14px;
+
+    top:
+        50%;
+
+    transform:
+        translateY(-50%);
+
+    width:
+        16px;
+
+    height:
+        16px;
+
+    color:
+        #A89B93;
+
+    pointer-events:
+        none;
+
+    z-index:
+        2;
+}
+.logistics-auth input[type="email"], .logistics-auth input[type="password"], .logistics-auth input[type="text"] {
+
+    width:
+        100%;
+
+    padding:
+        13px 16px 13px 40px;
+
+    border:
+        1.5px solid
+        var(--border);
+
+    border-radius:
+        9px;
+
+    font-size:
+        14px;
+
+    font-family:
+        "Poppins",
+        sans-serif;
+
+    background:
+        #fff;
+
+    color:
+        var(--text-dark);
+
+    outline:
+        none;
+
+    transition:
+
+        border-color
+        0.2s ease,
+
+        box-shadow
+        0.2s ease,
+
+        background
+        0.2s ease;
+}
+.logistics-auth input::placeholder {
+
+    color:
+        var(--placeholder);
+
+    font-weight:
+        400;
+}
+.logistics-auth input[type="email"]:focus, .logistics-auth input[type="password"]:focus, .logistics-auth input[type="text"]:focus {
+
+    border-color:
+        var(--focus-gray);
+
+    box-shadow:
+        0 0 0 3px
+        var(--focus-gray-shadow);
+
+    background:
+        #fff;
+}
+.logistics-auth input:-webkit-autofill, .logistics-auth input:-webkit-autofill:hover, .logistics-auth input:-webkit-autofill:focus, .logistics-auth input:-webkit-autofill:active {
+
+    -webkit-text-fill-color:
+        var(--text-dark);
+
+    -webkit-box-shadow:
+        0 0 0 1000px #fff inset;
+
+    box-shadow:
+        0 0 0 1000px #fff inset;
+
+    transition:
+        background-color
+        5000s
+        ease-in-out
+        0s;
+}
+.logistics-auth input[type="email"]:-webkit-autofill:focus, .logistics-auth input[type="password"]:-webkit-autofill:focus, .logistics-auth input[type="text"]:-webkit-autofill:focus {
+
+    border-color:
+        var(--focus-gray);
+
+    -webkit-box-shadow:
+        0 0 0 1000px #fff inset,
+        0 0 0 3px var(--focus-gray-shadow);
+
+    box-shadow:
+        0 0 0 1000px #fff inset,
+        0 0 0 3px var(--focus-gray-shadow);
+}
+.logistics-auth input[type="password"]::-ms-reveal, .logistics-auth input[type="password"]::-ms-clear {
+
+    display:
+        none !important;
+
+    width:
+        0 !important;
+
+    height:
+        0 !important;
+
+    opacity:
+        0 !important;
+
+    visibility:
+        hidden !important;
+
+    pointer-events:
+        none !important;
+}
+.logistics-auth #logisticsLoginPass {
+
+    width:
+        100%;
+
+    padding:
+        13px 50px 13px 40px;
+}
+.logistics-auth #logisticsEyeBtn {
+    position: absolute;
+
+    right: 14px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 20px;
+    height: 20px;
+
+    padding: 0;
+    margin: 0;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    z-index: 10;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    opacity: 1;
+    pointer-events: auto;
+}
+.logistics-auth #logisticsEyeIcon {
+    width: 18px;
+    height: 18px;
+
+    display: block;
+
+    object-fit: contain;
+
+    pointer-events: none;
+}
+.logistics-auth #logisticsEyeBtn:hover #logisticsEyeIcon {
+    opacity: 0.75;
+}
+.logistics-auth .row-between {
+
+    display:
+        flex;
+
+    justify-content:
+        flex-end;
+
+    margin-top:
+        8px;
+}
+.logistics-auth .link {
+
+    color:
+        var(--btn-maroon);
+
+    font-size:
+        13px;
+
+    text-decoration:
+        none;
+
+    font-weight:
+        600;
+}
+.logistics-auth .link:hover {
+
+    color:
+        var(--accent);
+
+    text-decoration:
+        underline;
+}
+.logistics-auth .btn-primary {
+
+    width:
+        100%;
+
+    padding:
+        14px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #8B201A 0%,
+            #A52D2C 100%
+        );
+
+    color:
+        #fff;
+
+    border:
+        none;
+
+    border-radius:
+        9px;
+
+    font-size:
+        15px;
+
+    font-weight:
+        600;
+
+    font-family:
+        "Poppins",
+        sans-serif;
+
+    cursor:
+        pointer;
+
+    margin-top:
+        10px;
+
+    transition:
+
+        background
+        0.2s ease,
+
+        transform
+        0.1s ease,
+
+        box-shadow
+        0.2s ease;
+}
+.logistics-auth .btn-primary:hover {
+
+    background:
+        linear-gradient(
+            135deg,
+            #741613 0%,
+            #8B201A 100%
+        );
+
+    box-shadow:
+        0 7px 18px
+        rgba(
+            139,
+            32,
+            26,
+            0.20
+        );
+}
+.logistics-auth .btn-primary:active {
+
+    transform:
+        scale(0.99);
+}
+.logistics-auth .foot-note {
+
+    text-align:
+        center;
+
+    font-size:
+        13.5px;
+
+    color:
+        var(--text-muted);
+
+    margin-top:
+        22px;
+
+    font-weight:
+        400;
+}
+.logistics-auth .role-label {
+
+    font-size:
+        14.5px;
+
+    font-weight:
+        600;
+
+    color:
+        var(--text-dark);
+
+    margin-bottom:
+        14px;
+}
+.logistics-auth .roles {
+
+    display:
+        flex;
+
+    gap:
+        16px;
+
+    margin-bottom:
+        28px;
+}
+.logistics-auth .role-card {
+
+    flex:
+        1;
+
+    border:
+        1.5px solid
+        var(--border);
+
+    border-radius:
+        12px;
+
+    padding:
+        20px 14px 18px;
+
+    text-align:
+        center;
+
+    cursor:
+        pointer;
+
+    position:
+        relative;
+
+    transition:
+
+        border-color
+        0.2s ease,
+
+        background
+        0.2s ease,
+
+        transform
+        0.15s ease;
+}
+.logistics-auth .role-card:hover {
+
+    transform:
+        translateY(-1px);
+
+    border-color:
+        rgba(
+            139,
+            32,
+            26,
+            0.30
+        );
+}
+.logistics-auth .role-card.selected {
+
+    border-color:
+        var(--btn-maroon);
+
+    background:
+        #FFF5F2;
+}
+.logistics-auth .role-radio {
+
+    position:
+        absolute;
+
+    top:
+        12px;
+
+    left:
+        12px;
+
+    width:
+        15px;
+
+    height:
+        15px;
+
+    border:
+        2px solid
+        var(--border);
+
+    border-radius:
+        50%;
+}
+.logistics-auth .role-card.selected .role-radio {
+
+    border-color:
+        var(--btn-maroon);
+}
+.logistics-auth .role-card.selected .role-radio::after {
+
+    content:
+        "";
+
+    display:
+        block;
+
+    width:
+        7px;
+
+    height:
+        7px;
+
+    background:
+        var(--btn-maroon);
+
+    border-radius:
+        50%;
+
+    margin:
+        2px auto;
+}
+.logistics-auth .role-icon {
+
+    width:
+        48px;
+
+    height:
+        48px;
+
+    margin:
+        4px auto 12px;
+
+    background:
+        #FFE0D2;
+
+    color:
+        var(--btn-maroon);
+
+    border-radius:
+        50%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+}
+.logistics-auth .role-icon svg {
+
+    width:
+        22px;
+
+    height:
+        22px;
+}
+.logistics-auth .role-title {
+
+    font-weight:
+        700;
+
+    font-size:
+        15px;
+
+    color:
+        var(--text-dark);
+
+    margin-bottom:
+        5px;
+}
+.logistics-auth .role-desc {
+
+    font-size:
+        11.5px;
+
+    color:
+        var(--text-muted);
+
+    line-height:
+        1.45;
+
+    font-weight:
+        400;
+}
+.logistics-auth .view {
+
+    display:
+        none;
+}
+.logistics-auth .view.active {
+
+    display:
+        block;
+}
+@media (max-width: 760px){.logistics-auth .card {
+
+        flex-direction:
+            column;
+
+        min-height:
+            auto;
+
+        width:
+            100%;
+    }
+.logistics-auth .left {
+
+        flex:
+            none;
+
+        padding:
+            36px 30px;
+
+        min-height:
+            380px;
+
+        border-radius:
+            0 55px 55px 0;
+    }
+.logistics-auth .login-logo {
+
+        width:
+            140px;
+    }
+.logistics-auth .tagline {
+
+        font-size:
+            22px;
+
+        margin-top:
+            24px;
+    }
+.logistics-auth .right {
+
+        padding:
+            36px 28px;
+    }
+.logistics-auth .roles {
+
+        flex-direction:
+            column;
+    }}
+@media (max-width: 480px){.logistics-auth .card {
+
+        border-radius:
+            16px;
+    }
+.logistics-auth .left {
+
+        min-height:
+            330px;
+
+        padding:
+            30px 24px;
+
+        border-radius:
+            0 45px 45px 0;
+    }
+.logistics-auth .login-logo {
+
+        width:
+            125px;
+    }
+.logistics-auth .tagline {
+
+        font-size:
+            20px;
+    }
+.logistics-auth .subtext {
+
+        font-size:
+            12px;
+
+        max-width:
+            230px;
+    }
+.logistics-auth .right {
+
+        padding:
+            32px 22px;
+    }
+.logistics-auth h1 {
+
+        font-size:
+            25px;
+    }
+.logistics-auth .subhead {
+
+        font-size:
+            13px;
+
+        margin-bottom:
+            28px;
+    }
+.logistics-auth #logisticsEyeBtn {
+
+        right:
+            12px;
+
+        width:
+            20px;
+
+        height:
+            20px;
+
+        background-size:
+            17px 17px;
+    }}
+/* Component-only rules: replace the original body centering and protect against landing-page CSS */
+.logistics-auth {font-family:'Poppins',Arial,sans-serif; width:100%;max-width:938px;margin:0 auto;color:#201212;}
+.logistics-auth, .logistics-auth * {box-sizing:border-box;}
+.logistics-auth .card{margin:0 auto;}
+.logistics-auth .brand{transform:translateY(-35px);}
+.logistics-auth .brand .login-logo{width:350px;max-width:100%;height:auto;display:block;object-fit:contain;}
+.logistics-auth #logisticsEyeBtn{visibility:visible!important;display:flex!important;opacity:1!important;}
+.logistics-auth #logisticsEyeIcon{display:block!important;width:18px;height:18px;opacity:1;}
+.logistics-auth .right h1{margin-top:-14px;}
+.logistics-auth :is(a,button):focus-visible{outline:2px solid #FF9876;outline-offset:2px;}
+/* Keep the EXACT neutral gray input indication from the original auth.css, including keyboard focus. */
+.logistics-auth input[type="email"]:focus-visible, .logistics-auth input[type="password"]:focus-visible, .logistics-auth input[type="text"]:focus-visible{outline:none;border-color:#AFAFAF;box-shadow:0 0 0 3px rgba(100,100,100,.10);}
+.logistics-auth .logistics-form-feedback{font-size:12px;color:#b02020;margin-top:12px;text-align:center;}
+.logistics-auth .logistics-form-feedback[hidden]{display:none;}
+@media(max-width:760px){.logistics-auth .left{min-height:380px}}
+@media(max-width:480px){.logistics-auth .left{min-height:330px}}
+
+/* =========================================================
+   RESPONSIVE LOGISTICS LOGIN: phone / tablet / desktop
+   Keep ShopEase PNGs, button gradient and gray input glow.
+   ========================================================= */
+.logistics-auth {
+    width: min(100%, 938px);
+    min-width: 0;
+    container-type: inline-size; /* Resizes within a modal, not just the viewport */
+}
+.logistics-auth .card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    max-height: calc(100vh - 32px); /* Fallback for older browsers */
+    max-height: calc(100dvh - 32px);
+    overflow-x: hidden;
+    overflow-y: auto; /* Short laptop/mobile screens can scroll inside the dialog */
+    overscroll-behavior: contain;
+}
+.logistics-auth .left,
+.logistics-auth .right { min-width: 0; }
+.logistics-auth .brand .login-logo { width: min(350px, 100%); max-width:100%; height:auto; }
+.logistics-auth .input-wrap input { min-width:0; }
+.logistics-auth #logisticsEyeBtn { min-width: 20px; }
+.logistics-auth .btn-primary { min-height: 46px; }
+
+/* Tablet, narrow modal and portrait devices */
+@container (max-width: 760px) {
+    .logistics-auth .card { flex-direction: column; min-height: 0; }
+    .logistics-auth .left {
+        flex: none;
+        min-height: 0;
+        padding: 26px 30px 24px;
+        border-radius: 0 0 48px 0;
+        gap: 12px;
+    }
+    .logistics-auth .brand { transform:none; justify-content:center; }
+    .logistics-auth .brand .login-logo { width: clamp(155px, 45%, 240px); }
+    .logistics-auth .tagline { margin-top: 0; font-size: 21px; line-height:1.25; }
+    .logistics-auth .subtext { margin-top: 7px; max-width: 100%; font-size: 12px; }
+    .logistics-auth .right { flex: none; padding: 30px clamp(22px, 5%, 46px) 34px; }
+    .logistics-auth .right h1 { margin-top: 0; }
+    .logistics-auth .subhead { margin-bottom: 24px; }
+}
+
+/* Standard phones / small modal widths */
+@container (max-width: 480px) {
+    .logistics-auth .card { border-radius: 16px; }
+    .logistics-auth .left {
+        min-height:0;
+        padding: 20px 22px 21px;
+        border-radius: 0 0 36px 0;
+        gap: 7px;
+    }
+    .logistics-auth .brand .login-logo { width: clamp(145px, 52%, 190px); }
+    .logistics-auth .tagline { font-size: 19px; margin-top: 0; }
+    .logistics-auth .subtext { font-size: 11px; line-height: 1.5; margin-top: 6px; }
+    .logistics-auth .right { padding: 26px 20px 28px; }
+    .logistics-auth .right h1 { font-size: 24px; }
+    .logistics-auth .subhead { font-size: 12px; margin-bottom: 23px; }
+    .logistics-auth .field-group { margin-bottom: 16px; }
+    .logistics-auth label { font-size: 12.5px; }
+    .logistics-auth .input-wrap input { font-size: 13px; padding-top: 12px; padding-bottom:12px; }
+    .logistics-auth .foot-note { font-size: 12px; }
+}
+
+/* Very narrow phones (320px devices and modal sidebars) */
+@container (max-width: 350px) {
+    .logistics-auth .left { padding: 15px 16px 17px; }
+    .logistics-auth .brand .login-logo { width: 145px; }
+    .logistics-auth .tagline { font-size: 17px; }
+    .logistics-auth .right { padding: 22px 14px 25px; }
+    .logistics-auth .right h1 { font-size: 22px; }
+    .logistics-auth .link { font-size: 11px; }
+}
+
+/* Short landscape screens: preserve access to all fields */
+@media (max-height: 650px) and (min-width: 761px) {
+    .logistics-auth .card { min-height: 0; }
+    .logistics-auth .left { padding-top: 25px; padding-bottom:25px; }
+    .logistics-auth .right { padding-top: 27px; padding-bottom:27px; }
+    .logistics-auth .subhead { margin-bottom: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .logistics-auth *, .logistics-auth *::before, .logistics-auth *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+
+/* COMPACT PHONE MODAL: reduce vertical size while retaining original theme. */
+@media (max-width: 760px) {
+  .logistics-auth { width:100%; max-width:100%; }
+  .logistics-auth .card {
+    min-height:0; max-height:calc(100dvh - 24px);
+    overflow-y:auto; border-radius:16px;
+  }
+  .logistics-auth .left {
+    flex:none; min-height:0; padding:12px 22px 14px;
+    border-radius:0 0 27px 0; gap:4px;
+  }
+  .logistics-auth .brand {transform:none; margin:0;}
+  .logistics-auth .brand .login-logo {width:125px; max-width:100%;}
+  .logistics-auth .tagline {font-size:16px; line-height:1.15; margin:0;}
+  .logistics-auth .tagline em {display:inline; margin-left:5px;}
+  .logistics-auth .subtext {display:none;}
+  .logistics-auth .right {flex:none; padding:17px 22px 20px;}
+  .logistics-auth .right h1 {font-size:22px; margin:0;}
+  .logistics-auth .subhead {font-size:11.5px; margin:1px 0 17px;}
+  .logistics-auth .field-group {margin-bottom:12px;}
+  .logistics-auth label {font-size:12px; margin-bottom:5px;}
+  .logistics-auth .input-wrap input {padding-top:10px; padding-bottom:10px; font-size:13px;}
+  .logistics-auth .row-between {margin-top:5px;}
+  .logistics-auth .link {font-size:11.5px;}
+  .logistics-auth .btn-primary {min-height:40px; padding:10px; margin-top:3px; font-size:13px;}
+  .logistics-auth .foot-note {margin-top:14px; font-size:11.5px;}
+}
+@media (max-width: 380px) {
+  .logistics-auth .left {padding:10px 16px 12px;}
+  .logistics-auth .brand .login-logo {width:105px;}
+  .logistics-auth .tagline {font-size:14px;}
+  .logistics-auth .right {padding:14px 16px 17px;}
+  .logistics-auth .subhead {margin-bottom:14px;}
+}
+/* Also respond to the actual dialog width, not only screen width. */
+@container (max-width: 760px) {
+  .logistics-auth .left {min-height:0;}
+}
+@media (max-height: 640px) and (max-width: 760px) {
+  .logistics-auth .left {padding-top:7px; padding-bottom:9px;}
+  .logistics-auth .brand .login-logo {width:95px;}
+  .logistics-auth .tagline {font-size:14px;}
+  .logistics-auth .right {padding-top:12px; padding-bottom:13px;}
+  .logistics-auth .subhead {margin-bottom:11px;}
+  .logistics-auth .field-group {margin-bottom:9px;}
+  .logistics-auth .foot-note {margin-top:9px;}
+}

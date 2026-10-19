@@ -3239,6 +3239,23 @@
                 </div>
 
 
+                <!-- TERMS AND PRIVACY POLICY -->
+                <div class="review-section">
+                    <div class="review-section-header">
+                        <h3 class="review-section-title">Terms and Privacy Policy</h3>
+                        <span class="review-section-badge">Required</span>
+                    </div>
+                    <div class="review-section-body">
+                        <div class="information-item">
+                            <span class="information-label">Agreement</span>
+                            <div class="information-value {{ !empty($buyerData['terms'] ?? null) ? '' : 'empty' }}">
+                                {{ !empty($buyerData['terms'] ?? null) ? 'Accepted' : 'Not provided' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <!-- =================================================
                      VALID ID
                 ================================================== -->

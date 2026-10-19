@@ -1498,7 +1498,7 @@
                             class="form-label"
                         >
 
-                            Business Name
+                            Shop Name
 
                             <span class="required">
 
@@ -1514,8 +1514,10 @@
                             id="business_name"
                             name="business_name"
                             class="form-input"
-                            placeholder="Enter your business name"
+                            placeholder="Enter your shop name"
                             value="{{ old('business_name', $sellerData['business_name'] ?? '') }}"
+                            minlength="3"
+                            maxlength="30"
                             required
                         >
 
@@ -1690,10 +1692,47 @@
 
 
 
-                    <!-- =================================================
-                         CATEGORY
-                    ================================================== -->
 
+                    <!-- =================================================
+                         SELLER TYPE, TIN AND REQUIRED CERTIFICATES
+                    ================================================== -->
+                    <div class="form-group">
+                        <label class="form-label" for="seller_type">Seller Type <span class="required">*</span></label>
+                        <select id="seller_type" name="seller_type" class="form-input" required>
+                            <option value="">Select seller type</option>
+                            <option value="Individual" {{ old('seller_type', $sellerData['seller_type'] ?? '') === 'Individual' ? 'selected' : '' }}>Individual</option>
+                            <option value="Sole Proprietorship" {{ old('seller_type', $sellerData['seller_type'] ?? '') === 'Sole Proprietorship' ? 'selected' : '' }}>Sole Proprietorship</option>
+                            <option value="Corporation" {{ old('seller_type', $sellerData['seller_type'] ?? '') === 'Corporation' ? 'selected' : '' }}>Corporation</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="tin">TIN <span class="required">*</span></label>
+                        <input type="text" id="tin" name="tin" class="form-input" placeholder="000-000-000-000" value="{{ old('tin', $sellerData['tin'] ?? '') }}" maxlength="15" inputmode="numeric" pattern="[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}" title="Enter a 12-digit TIN in 000-000-000-000 format." required>
+                        @error('tin') <p class="error-message">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="form-group" id="dtiUploadGroup" hidden>
+                        <label class="form-label" for="dti_certificate">DTI Certificate <span class="required">*</span></label>
+                        <input type="file" id="dti_certificate" name="dti_certificate" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
+                        <small class="field-help">JPG, PNG, or PDF; maximum 5 MB.</small>
+                    </div>
+
+                    <div class="form-group" id="secUploadGroup" hidden>
+                        <label class="form-label" for="sec_certificate">SEC Certificate <span class="required">*</span></label>
+                        <input type="file" id="sec_certificate" name="sec_certificate" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
+                        <small class="field-help">JPG, PNG, or PDF; maximum 5 MB.</small>
+                    </div>
+
+                    <div class="form-group" id="birUploadGroup" hidden>
+                        <label class="form-label" for="bir_2303">BIR Form 2303 <span class="required">*</span></label>
+                        <input type="file" id="bir_2303" name="bir_2303" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
+                        <small class="field-help">JPG, PNG, or PDF; maximum 5 MB.</small>
+                    </div>
+
+                    <!-- =================================================
+                         SHOP CATEGORY
+                    ================================================== -->
                     <div class="category-section">
 
 
@@ -2142,16 +2181,37 @@ document.addEventListener(
             );
 
 
-        const permitInput =
-            document.getElementById(
-                'business_permit'
-            );
-
-
-        const permitPlaceholder =
-            document.getElementById(
-                'permitPlaceholder'
-            );
+        const permitInput = document.getElementById('business_permit');
+        const permitPlaceholder = document.getElementById('permitPlaceholder');
+        const sellerTypeInput = document.getElementById('seller_type');
+        const categorySelect = document.getElementById('shop_category');
+        const docGroups = {
+            dti: document.getElementById('dtiUploadGroup'),
+            sec: document.getElementById('secUploadGroup'),
+            bir: document.getElementById('birUploadGroup')
+        };
+        const docInputs = {
+            dti: document.getElementById('dti_certificate'),
+            sec: document.getElementById('sec_certificate'),
+            bir: document.getElementById('bir_2303')
+        };
+        function updateSellerDocuments() {
+            const type = sellerTypeInput?.value || '';
+            const showDTI = type === 'Sole Proprietorship';
+            const showSEC = type === 'Corporation';
+            const showBIR = showDTI || showSEC;
+            [[docGroups.dti, docInputs.dti, showDTI],
+             [docGroups.sec, docInputs.sec, showSEC],
+             [docGroups.bir, docInputs.bir, showBIR]].forEach(([group, input, visible]) => {
+                if (group) group.hidden = !visible;
+                if (input) {
+                    input.required = !!visible;
+                    if (!visible) input.value = '';
+                }
+            });
+        }
+        sellerTypeInput?.addEventListener('change', updateSellerDocuments);
+        updateSellerDocuments();
 
 
         const continueButton =
@@ -2160,10 +2220,8 @@ document.addEventListener(
             );
 
 
-        const categoryInputs =
-            document.querySelectorAll(
-                'input[name="categories[]"]'
-            );
+        const categoryInputs = [];
+
 
 
 
@@ -2236,48 +2294,6 @@ document.addEventListener(
 
 
         /* =========================================================
-           CATEGORY VALIDATION
-           KEEP AT LEAST ONE CATEGORY
-        ========================================================== */
-
-        categoryInputs.forEach(
-            function (input) {
-
-                input.addEventListener(
-                    'change',
-                    function () {
-
-
-                        const selectedCount =
-                            Array.from(
-                                categoryInputs
-                            ).filter(
-                                function (item) {
-
-                                    return item.checked;
-
-                                }
-                            ).length;
-
-
-                        if (
-                            selectedCount === 0
-                        ) {
-
-                            this.checked =
-                                true;
-
-                        }
-
-                    }
-                );
-
-            }
-        );
-
-
-
-        /* =========================================================
            NORMAL FORM SUBMISSION
         ========================================================== */
 
@@ -2288,72 +2304,48 @@ document.addEventListener(
                 function (event) {
 
 
-                    const selectedCategories =
-                        Array.from(
-                            categoryInputs
-                        ).filter(
-                            function (input) {
-
-                                return input.checked;
-
-                            }
-                        );
-
-
-                    /* ---------------------------------------------
-                       REQUIRE AT LEAST ONE CATEGORY
-                    ---------------------------------------------- */
-
-                    if (
-                        selectedCategories.length === 0
-                    ) {
-
+                    if (!categorySelect || !categorySelect.value) {
                         event.preventDefault();
-
-
-                        alert(
-                            'Please select at least one category.'
-                        );
-
-
+                        alert('Please select one shop category.');
+                        categorySelect?.focus();
                         return;
-
                     }
 
 
-
-                    /* ---------------------------------------------
-                       BUSINESS PERMIT VALIDATION
-                    ---------------------------------------------- */
-
-                    const existingPermit =
-                        @json(
-                            !empty(
-                                $sellerData['business_permit_path']
-                                ?? ($sellerData['business_permits'] ?? $sellerData['business_permit_paths'] ?? null)
-                            )
-                        );
-
-
-                    if (
-                        !existingPermit &&
-                        (
-                            !permitInput ||
-                            !permitInput.files ||
-                            !permitInput.files.length
-                        )
-                    ) {
-
+                    const sellerType = sellerTypeInput?.value || '';
+                    const requiredDocs = sellerType === 'Sole Proprietorship'
+                        ? [['DTI Certificate', docInputs.dti], ['BIR Form 2303', docInputs.bir]]
+                        : sellerType === 'Corporation'
+                            ? [['SEC Certificate', docInputs.sec], ['BIR Form 2303', docInputs.bir]]
+                            : [];
+                    for (const [label, input] of requiredDocs) {
+                        if (!input || !input.files || !input.files.length) {
+                            event.preventDefault();
+                            alert('Please upload the required ' + label + '.');
+                            input?.focus();
+                            return;
+                        }
+                        const file = input.files[0];
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        if (!['jpg','jpeg','png','pdf'].includes(ext) || file.size > 5120 * 1024) {
+                            event.preventDefault();
+                            alert(label + ' must be JPG, PNG, or PDF and no larger than 5 MB.');
+                            input.focus();
+                            return;
+                        }
+                    }
+                    const tin = document.getElementById('tin');
+                    if (!tin || !/^\d{3}-\d{3}-\d{3}-\d{3}$/.test(tin.value.trim())) {
                         event.preventDefault();
-
-
-                        alert(
-                            'Please upload at least one Business Permit.'
-                        );
-
-
+                        alert('Enter a valid TIN in 000-000-000-000 format.');
+                        tin?.focus();
                         return;
-
+                    }
+                    if (!categorySelect?.value) {
+                        event.preventDefault();
+                        alert('Please select one shop category.');
+                        categorySelect?.focus();
+                        return;
                     }
 
 
@@ -2396,7 +2388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     last_name: v => nameCheck(v),
     middle_name: v => v.trim() ? nameCheck(v) : '',
     email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.',
-    contact_no: v => /^(?:9\d{9}|09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter a valid Philippine mobile number (09XXXXXXXXX).',
+    contact_no: v => /^(?:09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter 09XXXXXXXXX or +639XXXXXXXXX.',
     zip_code: v => /^\d{4}$/.test(v.trim()) ? '' : 'Postal code must contain exactly 4 digits.',
     password: v => v.length < 8 ? 'Password must be at least 8 characters.' :
       !/[A-Z]/.test(v) ? 'Include at least one uppercase letter.' :
@@ -2404,7 +2396,8 @@ document.addEventListener('DOMContentLoaded', () => {
       !/\d/.test(v) ? 'Include at least one number.' :
       !/[^A-Za-z0-9]/.test(v) ? 'Include at least one special character.' : '',
     password_confirmation: v => v !== (field('password')?.value || '') ? 'Passwords do not match.' : '',
-    business_name: v => v.trim().length < 3 || v.trim().length > 30 ? 'Business name must be 3–30 characters.' : '',
+    business_name: v => v.trim().length < 3 || v.trim().length > 30 ? 'Shop name must be 3–30 characters.' : '',
+    tin: v => /^\d{3}-\d{3}-\d{3}-\d{3}$/.test(v.trim()) ? '' : 'Enter a 12-digit TIN in 000-000-000-000 format.',
     valid_id: () => fileCheck(field('valid_id')),
     business_permit: () => fileCheck(field('business_permit'))
   };
@@ -2450,7 +2443,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const ids=stepOne ?
     ['last_name','first_name','middle_name','email','contact_no','zip_code','password','password_confirmation','valid_id'] :
-    ['business_name','business_permit'];
+    ['business_name','tin'];
   ids.forEach(id => {
     const el=field(id);
     if (!el) return;
