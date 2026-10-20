@@ -4994,3 +4994,7 @@ body.shopease-landing-enter.shopease-landing-entered > .landing-page { opacity: 
   body.shopease-landing-leaving > .landing-page,
   body.shopease-landing-enter > .landing-page { opacity: 1; }
 }
+
+/* Android APK download link: preserve existing .mobile-cta button appearance. */
+a.mobile-cta { text-decoration: none; }
+a.mobile-cta:visited { color: #fff; }
