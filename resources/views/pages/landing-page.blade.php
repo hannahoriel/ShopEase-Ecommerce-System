@@ -2469,7 +2469,7 @@
     </section>
 
     <!-- =========================================================
-         MOBILE APP: buttons are UI placeholders until APK/links exist
+         MOBILE APP: Android APK direct download
     ========================================================== -->
     <section class="mobile-section" id="mobileApp" aria-labelledby="mobileSectionTitle">
         <div class="mobile-inner">
@@ -2500,9 +2500,9 @@
                     <div class="mobile-feature ux-reveal se-reveal-child"><span class="mobile-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="m5 17 4-8h4l3 8h3M8 13h8l-2-4M13 9l2-3h3M7 7h3"/></svg></span><div><strong>Apply as a rider</strong><span>Rider applications are offered exclusively through the ShopEase mobile application.</span></div></div>
                 </div>
                 <div class="mobile-actions">
-                    <button type="button" class="mobile-cta" data-app-info="download"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg> Download ShopEase App</button>
+                    <a href="{{ asset('downloads/ShopEase.apk') }}" class="mobile-cta" download="ShopEase.apk" aria-label="Download ShopEase Android APK"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg> Download ShopEase App</a>
                 </div>
-                <span class="mobile-availability">The official mobile app download will be available here once released.</span>
+                <span class="mobile-availability">Android APK · Download and install on your Android device.</span>
             </div>
         </div>
     </section>
