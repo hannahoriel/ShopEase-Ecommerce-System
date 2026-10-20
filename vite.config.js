@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import tailwindcss from '@tailwindcss/vite';
+import { existsSync } from 'node:fs';
 
 export default defineConfig({
     plugins: [
@@ -14,6 +15,31 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/components/dashboard-announcement-carousel.js',
                 'resources/js/auth.js',
+
+
+                // =========================
+                // MAIN LANDING PAGE
+                // =========================
+                'resources/css/landing-page.css',
+                'resources/js/landing-page.js',
+
+                // =========================
+                // LOGISTICS
+                // Only include optional assets that exist in this checkout.
+                // =========================
+                ...[
+                    'resources/css/logistics/login.css',
+                    'resources/css/logistics/logistics-landing.css',
+                    'resources/css/logistics/signup-firstpage.css',
+                    'resources/css/logistics/signup-secpage.css',
+                    'resources/css/logistics/signup-review.css',
+                    'resources/js/logistics/login.js',
+                    'resources/js/logistics/logistics-landing.js',
+                    'resources/js/logistics/logistics-registration-navigation.js',
+                    'resources/js/logistics/signup-firstpage.js',
+                    'resources/js/logistics/signup-secpage.js',
+                    'resources/js/logistics/signup-review.js',
+                ].filter((path) => existsSync(path)),
 
                 // =========================
                 // ADMIN
