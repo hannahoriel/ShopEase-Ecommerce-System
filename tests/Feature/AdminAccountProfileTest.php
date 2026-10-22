@@ -22,6 +22,7 @@ class AdminAccountProfileTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.account'))
             ->assertOk()
+            ->assertSee('href="'.route('admin.account').'"', false)
             ->assertSee('Old Admin Name');
 
         $this->put(route('admin.account.update'), [

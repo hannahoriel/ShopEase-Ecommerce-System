@@ -116,8 +116,7 @@
                     [
                         'label' => 'Account Management',
                         'icon' => 'account-management.png',
-                        'route' => null,
-                        'url' => url('/admin/account')
+                        'route' => 'admin.account'
                     ],
 
                 ];
