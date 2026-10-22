@@ -22,6 +22,7 @@ export default defineConfig({
                 // CSS
                 'resources/css/admin/commission.css',
                 'resources/css/admin/complaints-disputes.css',
+                'resources/css/admin/account.css',
                 'resources/css/admin/dashboard.css',
                 'resources/css/admin/logistics-management.css',
                 'resources/css/admin/messages.css',
@@ -33,6 +34,7 @@ export default defineConfig({
                 // JS
                 'resources/js/admin/commission.js',
                 'resources/js/admin/complaints-disputes.js',
+                'resources/js/admin/account.js',
                 'resources/js/admin/dashboard.js',
                 'resources/js/admin/logistics-management.js',
                 'resources/js/admin/messages.js',
