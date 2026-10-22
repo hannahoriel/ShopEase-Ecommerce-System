@@ -81,6 +81,7 @@ export default defineConfig({
                 // JS
                 'resources/js/buyer/components/floating-chat.js',
                 'resources/js/buyer/components/navbar.js',
+                'resources/js/buyer/components/buyer-likes.js',
 
                 // =========================
                 // BUYER PAGES
