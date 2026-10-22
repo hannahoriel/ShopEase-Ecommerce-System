@@ -163,7 +163,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const renderDashboardNotifications = () => {
                 if (!notificationList) return;
                 if (!dashboardNotifications.length) {
-                    notificationList.innerHTML = '<p class="buyer-dashboard-notifications-state">You have no notifications yet.</p>';
+                    notificationList.innerHTML = `
+                        <div class="buyer-dashboard-notifications-empty" role="status">
+                            <span class="buyer-dashboard-notifications-empty-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+                                    <path d="M10 21h4"/>
+                                    <path d="m9.5 11.5 1.8 1.8 3.6-3.8"/>
+                                </svg>
+                            </span>
+                            <strong>No notifications yet</strong>
+                            <span>You're all caught up! New updates will appear here.</span>
+                        </div>`;
                     return;
                 }
 
@@ -204,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (failures.length) {
                     setDashboardError(failures.map((result) => result.reason.message).join(' '));
                     if (notificationList && failures.some((result) => result.reason.message.startsWith('Notifications'))) {
-                        notificationList.innerHTML = '<p class="buyer-dashboard-notifications-state">Notifications could not be loaded. Please refresh to try again.</p>';
+                        notificationList.innerHTML = '<div class="buyer-dashboard-notifications-feedback" role="status"><strong>Unable to load notifications</strong><span>Please refresh the page to try again.</span></div>';
                     }
                 }
             };
@@ -493,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `
                     <a href="${escapeHtml(productUrl)}" class="product-card">
                         <div class="product-image-box">
-                            <button type="button" class="favorite-button" aria-label="Add to favorites" data-product-id="${escapeHtml(product.id)}">♡</button>
+                            <button type="button" class="favorite-button" aria-label="Add to favorites" data-like-product="${escapeHtml(product.id)}" data-like-name="${escapeHtml(product.name)}" data-like-price="${escapeHtml(product.price)}" data-like-image="${escapeHtml(imageUrl)}" data-like-seller="${escapeHtml(product.seller?.store_name || 'ShopEase Seller')}" data-like-url="${escapeHtml(productUrl)}" aria-pressed="false">♡</button>
                             ${imageHtml}
                         </div>
                         <h3>${escapeHtml(product.name)}</h3>
@@ -536,15 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, { once: true });
                 });
 
-                recommendedProducts?.querySelectorAll('.favorite-button').forEach((button) => {
-                    button.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        const active = button.classList.toggle('is-favorite');
-                        button.textContent = active ? '\u2665' : '\u2661';
-                        button.setAttribute('aria-pressed', active ? 'true' : 'false');
-                    });
-                });
+                // Heart clicks and persistent state are handled by shared buyer-likes.js.
+                window.ShopEaseBuyerLikes?.syncButtons(recommendedProducts);
 
                 recommendedProducts?.querySelectorAll('.product-cart-button').forEach((button) => {
                     button.addEventListener('click', (event) => {
