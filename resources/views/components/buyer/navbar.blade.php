@@ -346,8 +346,7 @@
                         aria-label="Buyer account menu"
                     >
                         <a
-                            href="#"
-                            onclick="return false;"
+                            href="{{ route('buyer.my-purchases', ['section' => 'account']) }}"
                             class="buyer-account-menu-link"
                             role="menuitem"
                         >

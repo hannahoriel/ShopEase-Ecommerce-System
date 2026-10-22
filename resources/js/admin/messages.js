@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeSubtitle =
         document.getElementById('adminActiveSubtitle');
 
+    const headerComplaintActions = document.getElementById('adminComplaintHeaderActions');
+    const headerComplaintStatus = document.getElementById('adminHeaderComplaintStatus');
+    const headerViewComplaint = document.getElementById('adminHeaderViewComplaint');
+
     const complaintPartySwitchWrap =
         document.getElementById('complaintPartySwitchWrap');
 
@@ -436,12 +440,132 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    let activeTab = 'logistics';
+    // Complaint intake bridge from Complaints & Disputes.
+    // These entries are browser-local case records, NOT confirmed backend chats.
+    const COMPLAINT_INBOX_KEY = 'shopease.messages.complaints.v1';
+    const PENDING_COMPLAINT_KEY = 'shopease.pendingComplaintMessage.v1';
+    const SENT_COMPLAINT_KEY = 'shopease.complaintMessageSent.v1';
+    const deepLink = new URLSearchParams(window.location.search);
+    const requestedTab = deepLink.get('tab') || deepLink.get('category');
+    const requestedComplaintId = deepLink.get('complaint') || '';
+    const requestedConversationKey = deepLink.get('conversation') || '';
+    const requestedRecipient = (deepLink.get('recipient') || '').toLowerCase();
+    const initialComplaintsTab = requestedTab === 'complaints' || Boolean(requestedComplaintId);
+    const localIntakeIds = new Set();
+
+    function safeReadStorage(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; }
+        catch (_) { return fallback; }
+    }
+
+    function normalizeRole(role) {
+        return /seller/i.test(String(role || '')) ? 'seller' : 'buyer';
+    }
+
+    function formatCaseStatus(value) {
+        const label = String(value || 'open').replace(/[-_]/g, ' ');
+        return label.replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function createLocalComplaintThread(records) {
+        const record = records[0];
+        const recordedAt = record.createdAt || record.timestamp || null;
+        const complaintId = String(record.complaintId || '').trim();
+        const cleanId = complaintId.replace(/^Complaint\s*#?\s*/i, '');
+        const thread = {
+            id: `local-complaint-${cleanId}`,
+            type: 'complaints',
+            localIntake: true,
+            complaintId: `Complaint #${cleanId}`,
+            rawComplaintId: cleanId,
+            initials: 'CD',
+            role: 'Complaint',
+            subtitle: `Buyer vs Seller · ${formatCaseStatus(record.status)}`,
+            status: formatCaseStatus(record.status),
+            contextLabel: 'Complaint / Order Reference',
+            contextValue: `${cleanId}${record.orderId ? ` · Order #${record.orderId}` : ''}`,
+            contextButton: 'View Complaint',
+            contextUrl: record.complaintDatabaseId ? `/admin/complaints-disputes?complaint=${encodeURIComponent(cleanId)}` : '/admin/complaints-disputes',
+            preview: `${record.complaintType || 'Complaint'}${record.description ? ` · ${record.description}` : ''}`,
+            time: 'New',
+            unread: 0,
+            parties: {}
+        };
+        for (const role of ['buyer', 'seller']) {
+            const match = records.find(entry => normalizeRole(entry.recipientRole) === role);
+            const name = match?.recipientName || (role === 'buyer' ? record.party1 : record.party2) || (role === 'buyer' ? 'Buyer' : 'Seller');
+            thread.parties[role] = {
+                name,
+                email: match?.recipientEmail || '',
+                initials: name.trim().split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase(),
+                subtitle: `${role === 'buyer' ? 'Buyer' : 'Seller'} · Complaint Party`,
+                unread: 0,
+                localIntake: true,
+                messages: [{
+                    type: 'system',
+                    ...(recordedAt ? { timestamp: recordedAt } : {}),
+                    text: match
+                        ? `Complaint ${cleanId} is recorded for ${name}. This is a case record, not yet a sent message.`
+                        : `No conversation with the ${role} has been started yet.`
+                }]
+            };
+        }
+        return thread;
+    }
+
+    function mergeLocalComplaintIntake() {
+        const records = safeReadStorage(COMPLAINT_INBOX_KEY, []);
+        if (!Array.isArray(records)) return;
+        const grouped = new Map();
+        records.filter(r => r && r.complaintId).forEach(record => {
+            const id = String(record.complaintId).trim().replace(/^Complaint\s*#?\s*/i, '');
+            if (!grouped.has(id)) grouped.set(id, []);
+            grouped.get(id).push(record);
+        });
+        // Refresh local-only entries without duplicating actual API conversations.
+        conversations.complaints = conversations.complaints.filter(t => !t.localIntake);
+        localIntakeIds.clear();
+        grouped.forEach((entries, id) => {
+            const matchedServer = conversations.complaints.some(t =>
+                String(t.complaintId || '').includes(id) ||
+                String(t.rawComplaintId || '') === id
+            );
+            if (!matchedServer) {
+                const thread = createLocalComplaintThread(entries);
+                conversations.complaints.unshift(thread);
+                localIntakeIds.add(thread.id);
+            }
+        });
+    }
+
+    function selectComplaintFromUrl() {
+        if (!initialComplaintsTab) return null;
+        const matching = conversations.complaints.find(thread => {
+            const raw = String(thread.rawComplaintId || thread.complaintId || '')
+                .replace(/^Complaint\s*#?\s*/i, '');
+            return requestedComplaintId && raw === requestedComplaintId;
+        });
+        const pending = safeReadStorage(PENDING_COMPLAINT_KEY, {});
+        const chosen = matching || conversations.complaints[0] || null;
+        if (chosen) {
+            const roleFromRecord = safeReadStorage(COMPLAINT_INBOX_KEY, []).find(r =>
+                r.complaintId === requestedComplaintId &&
+                (r.key === requestedConversationKey || String(r.recipientEmail || '').toLowerCase() === requestedRecipient)
+            );
+            const role = roleFromRecord?.recipientRole || (
+                pending.complaintId === requestedComplaintId ? pending.recipientRole : ''
+            );
+            activeComplaintParty = normalizeRole(role);
+            updateComplaintPartyTabs();
+        }
+        return chosen;
+    }
+
+    let activeTab = initialComplaintsTab ? 'complaints' : 'logistics';
     let activeThreadId = null;
     let activeComplaintParty = 'buyer';
     const apiBase = '/admin/messages/api';
     const attachmentInput = document.getElementById('adminMessageAttachment');
-    const photoInput = document.getElementById('adminMessagePhoto');
     const newConversationDialog = document.getElementById('adminNewConversationDialog');
     const newConversationContact = document.getElementById('adminNewConversationContact');
 
@@ -625,61 +749,100 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // Render a date marker at the beginning of a conversation and whenever
+    // the calendar day changes. API timestamps take priority over demo labels.
+    function messageCalendarDate(message) {
+        const raw = message.created_at ?? message.createdAt ??
+            message.sent_at ?? message.sentAt ?? message.timestamp ??
+            message.datetime ?? message.date ?? message.sent_at_iso ??
+            message.created_at_iso ?? message.createdAtIso ??
+            message.meta?.created_at ?? message.meta?.timestamp;
+        if (!raw) return null;
+        const parsed = raw instanceof Date ? raw : new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function localDayKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function dateSeparatorLabel(date) {
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayDifference = Math.round((todayStart - targetStart) / 86400000);
+        if (dayDifference === 0) return 'Today';
+        if (dayDifference === 1) return 'Yesterday';
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'long', day: 'numeric', year: 'numeric'
+        }).format(date);
+    }
+
     function renderMessageBody(thread) {
-        if (!chatBody || !thread) {
-            return;
-        }
+        if (!chatBody || !thread) return;
 
-        const messages =
-            getActiveMessages(thread);
+        const messages = getActiveMessages(thread);
+        let lastDayKey = null;
+        let pendingLegacyDivider = null;
+        const parts = [];
+        const appendDate = (label) => {
+            parts.push(`<div class="admin-message-date" role="separator" aria-label="${escapeHtml(label)}"><span>${escapeHtml(label)}</span></div>`);
+        };
 
-        chatBody.innerHTML =
-            messages.map(message => {
-                if (message.type === 'divider') {
-                    return `
-                        <div class="admin-message-date">
-                            <span>${escapeHtml(message.label)}</span>
-                        </div>
-                    `;
+        messages.forEach(message => {
+            // Existing demo conversations already have manually authored date
+            // labels. Keep these when the following messages lack real dates.
+            if (message.type === 'divider') {
+                pendingLegacyDivider = String(message.label || 'Today');
+                return;
+            }
+
+            const date = messageCalendarDate(message);
+            if (date) {
+                const key = localDayKey(date);
+                if (key !== lastDayKey) {
+                    appendDate(dateSeparatorLabel(date));
+                    lastDayKey = key;
                 }
-
-                if (message.type === 'system') {
-                    return `
-                        <div class="admin-system-note">
-                            ${escapeHtml(message.text)}
-                        </div>
-                    `;
+                pendingLegacyDivider = null;
+            } else if (pendingLegacyDivider) {
+                const legacyKey = `legacy:${pendingLegacyDivider}`;
+                if (legacyKey !== lastDayKey) {
+                    appendDate(pendingLegacyDivider);
+                    lastDayKey = legacyKey;
                 }
+                pendingLegacyDivider = null;
+            } else if (lastDayKey !== 'undated') {
+                // No calendar date exists for this historical message. Show a
+                // neutral divider instead of inventing Today or hiding all dates.
+                appendDate('Earlier messages');
+                lastDayKey = 'undated';
+            }
 
-                const isAdmin =
-                    message.sender === 'admin';
-                const attachment = message.attachment
-                    ? `<a href="${escapeHtml(message.attachment.url)}" target="_blank" rel="noopener">${escapeHtml(message.attachment.name || 'Download attachment')}</a>`
-                    : '';
+            if (message.type === 'system') {
+                parts.push(`<div class="admin-system-note">${escapeHtml(message.text)}</div>`);
+                return;
+            }
 
-                return `
-                    <div class="admin-chat-message-row ${isAdmin ? 'is-admin' : ''}">
-                        <div class="admin-chat-bubble-wrap">
-                            <div class="admin-chat-bubble">
-                                ${escapeHtml(message.text)}
-                                ${attachment ? `<div class="admin-message-attachment">${attachment}</div>` : ''}
-                            </div>
-
-                            <div class="admin-message-meta">
-                                ${escapeHtml(message.time)}
-                                ${
-                                    isAdmin && message.seen
-                                        ? ' · Seen'
-                                        : ''
-                                }
-                            </div>
-                        </div>
+            const isAdmin = message.sender === 'admin';
+            const attachment = message.attachment
+                ? `<a href="${escapeHtml(message.attachment.url)}" target="_blank" rel="noopener">${escapeHtml(message.attachment.name || 'Download attachment')}</a>`
+                : '';
+            const time = message.time || (date
+                ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit'}).format(date)
+                : '');
+            parts.push(`
+                <div class="admin-chat-message-row ${isAdmin ? 'is-admin' : ''}">
+                    <div class="admin-chat-bubble-wrap">
+                        <div class="admin-chat-bubble">${escapeHtml(message.text ?? '')}${attachment ? `<div class="admin-message-attachment">${attachment}</div>` : ''}</div>
+                        <div class="admin-message-meta">${escapeHtml(time)}${isAdmin && message.seen ? ' · Seen' : ''}</div>
                     </div>
-                `;
-            }).join('');
+                </div>
+            `);
+        });
 
-        chatBody.scrollTop =
-            chatBody.scrollHeight;
+        chatBody.innerHTML = parts.join('');
+        chatBody.scrollTop = chatBody.scrollHeight;
     }
 
 
@@ -690,6 +853,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const complaint =
             thread.type === 'complaints';
+
+        // Complaint-only actions replace Search and More in the chat header.
+        if (headerComplaintActions) headerComplaintActions.hidden = !complaint;
+        if (complaint && headerComplaintStatus) {
+            const label = String(thread.status || 'Open');
+            headerComplaintStatus.textContent = label;
+            headerComplaintStatus.dataset.status = label.toLowerCase().replace(/\s+/g, '-');
+        }
 
         chatPanel?.classList.toggle(
             'is-logistics',
@@ -1004,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const text =
             (composerInput?.value || '')
                 .trim();
-        const attachment = attachmentInput?.files?.[0] || photoInput?.files?.[0];
+        const attachment = attachmentInput?.files?.[0];
         if (!text && !attachment) {
             composerInput?.focus();
             return;
@@ -1021,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? thread.parties?.[activeComplaintParty]?.conversationId
             : thread.id;
         if (!conversationId) {
-            alert('This complaint party does not have a conversation yet.');
+            alert('Complaint recorded under Messages → Complaints. To send a real message, the complaint party needs a server-side conversation first.');
             return;
         }
 
@@ -1043,10 +1214,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             thread.preview = text || attachment.name;
             thread.time = 'Now';
+            if (thread.type === 'complaints') {
+                const complaintId = String(thread.rawComplaintId || thread.complaintId || '').replace(/^Complaint\s*#?\s*/i, '');
+                const recipientName = thread.parties?.[activeComplaintParty]?.name || activeComplaintParty;
+                try {
+                    localStorage.setItem(SENT_COMPLAINT_KEY, JSON.stringify({
+                        complaintId, recipientName, sentAt: new Date().toISOString(),
+                        id: `complaint-message-${data?.id || Date.now()}`
+                    }));
+                } catch (_) { /* Sending already succeeded; bridge is optional. */ }
+            }
             composerInput.value = '';
             composerInput.style.height = 'auto';
             if (attachmentInput) attachmentInput.value = '';
-            if (photoInput) photoInput.value = '';
             renderThread(thread);
         } catch (error) {
             alert(error.message);
@@ -1058,9 +1238,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const { data } = await request(apiBase);
             Object.values(conversations).forEach(items => items.splice(0, items.length));
             data.forEach(thread => conversations[thread.type]?.push(thread));
+            mergeLocalComplaintIntake();
             const activeItems = conversations[activeTab];
             const preferred = allThreads().find(thread => thread.id === preferredId);
-            const next = preferred || activeItems[0] || allThreads()[0] || null;
+            const urlMatch = selectComplaintFromUrl();
+            const next = preferred || urlMatch || activeItems[0] || allThreads()[0] || null;
             if (next) {
                 if (next.type !== activeTab) {
                     activeTab = next.type;
@@ -1071,7 +1253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 if (next.type === 'complaints') {
-                    activeComplaintParty = next.parties?.buyer ? 'buyer' : 'seller';
+                    if (!initialComplaintsTab || !urlMatch) {
+                        activeComplaintParty = next.parties?.buyer ? 'buyer' : 'seller';
+                    }
                     updateComplaintPartyTabs();
                 }
                 renderThread(next);
@@ -1082,7 +1266,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (chatBody) chatBody.textContent = 'No conversations yet. Start a conversation to contact a user.';
             }
         } catch (error) {
-            if (chatBody) chatBody.textContent = `Unable to load messages: ${error.message}`;
+            // Network/API unavailable: only local complaint intake can be displayed.
+            Object.values(conversations).forEach(items => items.splice(0, items.length));
+            mergeLocalComplaintIntake();
+            const fallback = selectComplaintFromUrl() || conversations.complaints[0];
+            if (fallback) {
+                activeTab = 'complaints';
+                tabs.forEach(tab => {
+                    const active = tab.dataset.adminMessageTab === 'complaints';
+                    tab.classList.toggle('is-active', active);
+                    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                renderThread(fallback);
+            } else if (chatBody) {
+                chatBody.textContent = `Unable to load messages: ${error.message}`;
+                renderThreadList();
+                updateCounts();
+            }
         }
     }
 
@@ -1149,9 +1349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
 
             if (thread?.type === 'complaints') {
-                activeComplaintParty =
-                    'buyer';
-
+                activeComplaintParty = 'buyer';
                 updateComplaintPartyTabs();
             }
 
@@ -1209,19 +1407,10 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
 
-    document
-        .getElementById('adminChatSearchButton')
-        ?.addEventListener(
-            'click',
-            () => {
-                searchInput?.focus();
-            }
-        );
 
 
     document.getElementById('adminAttachButton')?.addEventListener('click', () => attachmentInput?.click());
 
-    document.getElementById('adminPhotoButton')?.addEventListener('click', () => photoInput?.click());
     document.getElementById('adminNewConversationButton')?.addEventListener('click', openNewConversation);
     document.getElementById('adminCancelNewConversation')?.addEventListener('click', () => newConversationDialog.close());
     document.getElementById('adminNewConversationForm')?.addEventListener('submit', async event => {
@@ -1249,6 +1438,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    headerViewComplaint?.addEventListener('click', () => {
+        const thread = getThread(activeThreadId);
+        if (!thread || thread.type !== 'complaints') return;
+        // Reuse the existing complaint-details destination when available.
+        const rawId = String(thread.rawComplaintId || thread.complaintId || '')
+            .replace(/^Complaint\s*#?\s*/i, '').trim();
+        const destination = thread.contextUrl || '/admin/complaints-disputes';
+        const url = new URL(destination, window.location.origin);
+        if (rawId && !url.searchParams.has('complaint')) {
+            url.searchParams.set('complaint', rawId);
+        }
+        window.location.assign(url.pathname + url.search);
+    });
+
     viewContextButton?.addEventListener(
         'click',
         () => {
@@ -1266,6 +1469,11 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
 
+    tabs.forEach(tab => {
+        const selected = tab.dataset.adminMessageTab === activeTab;
+        tab.classList.toggle('is-active', selected);
+        tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+    });
     updateCounts();
     loadConversations();
 });

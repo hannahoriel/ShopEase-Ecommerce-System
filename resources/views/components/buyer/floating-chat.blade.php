@@ -49,7 +49,7 @@
             id="buyerFloatingChatBadge"
             class="buyer-floating-chat-badge"
         >
-            2
+            0
         </span>
     </button>
 
@@ -307,6 +307,7 @@
                 >
                     <div class="buyer-floating-chat-active-header">
                         <span class="buyer-floating-chat-active-avatar">
+                            <span class="buyer-floating-chat-admin-initials" aria-hidden="true">SA</span>
                             <svg viewBox="0 0 48 48" aria-hidden="true">
                                 <circle cx="24" cy="24" r="24" fill="#E3ECDF"/>
                                 <circle cx="24" cy="18" r="8" fill="#D59E7A"/>
@@ -319,10 +320,17 @@
                             <strong id="buyerFloatingChatActiveName">
                                 The Shop PH
                             </strong>
-                            <span>Active now</span>
+                            <span id="buyerFloatingChatActiveSubtitle">ShopEase Messages</span>
                         </div>
                     </div>
 
+                    <div id="buyerFloatingChatComplaintContext" class="buyer-floating-chat-complaint-context" hidden>
+                        <div class="buyer-chat-complaint-top"><div class="buyer-chat-complaint-copy">
+                            <span id="buyerChatComplaintId" class="buyer-chat-complaint-id"></span>
+                            <span id="buyerChatComplaintType" class="buyer-chat-complaint-type"></span>
+                        </div><span id="buyerChatComplaintStatus" class="buyer-chat-complaint-status"></span></div>
+                        <button type="button" id="buyerChatViewComplaint" class="buyer-chat-view-complaint">View Complaint <span aria-hidden="true">→</span></button>
+                    </div>
                     <div
                         id="buyerFloatingChatMessages"
                         class="buyer-floating-chat-messages"
