@@ -1174,3 +1174,395 @@ body.sidebar-closed .admin-messages-page {
 
 /* Remove the 1500px inner cap so Messages fills the same content area. */
 .admin-messages-content{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important}
+
+
+/* =========================================================
+   Readable admin message typography (matches other admin pages)
+   ========================================================= */
+.admin-message-tab { font-size: 12px; padding-inline: 3px; }
+.admin-tab-count { font-size: 10px; min-width: 20px; height: 20px; }
+.admin-messages-search input { font-size: 13px; }
+.admin-thread-title { font-size: 13px; }
+.admin-thread-badge { font-size: 10px; padding: 3px 7px; }
+.admin-thread-preview { font-size: 12px; line-height: 1.45; }
+.admin-thread-secondary { font-size: 11px; }
+.admin-thread-time { font-size: 11px; }
+.admin-thread-unread { font-size: 10px; }
+.admin-empty-thread-list strong { font-size: 13px; }
+.admin-empty-thread-list span { font-size: 12px; }
+.admin-chat-avatar, .admin-thread-avatar { font-size: 13px; }
+.admin-chat-title-line h2 { font-size: 17px; }
+.admin-chat-role-badge { font-size: 11px; }
+.admin-chat-heading-copy p { font-size: 12px; line-height: 1.4; }
+.complaint-case-summary-copy span { font-size: 11px; }
+.complaint-case-summary-copy strong { font-size: 12px; }
+.complaint-case-status { font-size: 11px; }
+.complaint-party-tab { font-size: 12px; min-height: 44px; }
+.complaint-party-unread { font-size: 10px; }
+.admin-chat-context-copy span { font-size: 11px; }
+.admin-chat-context-copy strong { font-size: 12px; line-height: 1.45; }
+.admin-view-context { font-size: 11px; }
+.admin-message-date span { font-size: 11px; }
+.admin-chat-bubble { font-size: 13px; line-height: 1.6; padding: 11px 14px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-message-meta { font-size: 10px; }
+.admin-system-note { font-size: 12px; line-height: 1.55; }
+.admin-message-input-shell textarea { font-size: 13px; }
+.admin-message-thread { min-height: 88px; }
+.admin-thread-title-row { flex-wrap: wrap; row-gap: 4px; }
+.admin-chat-heading-copy, .admin-thread-copy { overflow-wrap: anywhere; }
+@media (max-width: 540px) {
+  .admin-message-tab { font-size: 11px; }
+  .admin-tab-count { min-width: 17px; height: 17px; font-size: 9px; }
+  .admin-chat-bubble { font-size: 12px; }
+}
+
+/* =========================================================
+   MESSAGES: compact complaint header and clean thread previews
+   ========================================================= */
+.admin-chat-actions[hidden] { display: none !important; }
+.admin-chat-actions { gap: 10px; flex: 0 0 auto; align-items: center; }
+.admin-header-complaint-status {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 29px; max-width: 145px; padding: 5px 11px;
+    border-radius: 999px; background: #fff0d6; color: #96600a;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.admin-header-complaint-status[data-status="resolved"] { background: #e6f5e8; color: #277641; }
+.admin-header-complaint-status[data-status="in-progress"] { background: #ffebd8; color: #a76519; }
+.admin-header-view-complaint {
+    min-height: 35px; padding: 7px 13px; border: 1px solid #e6c9c9;
+    border-radius: 9px; background: #fff; color: #7a1822;
+    font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.admin-header-view-complaint:hover { background: #fff1ee; border-color: #a74d55; }
+/* Only the Buyer / Seller switch remains under the chat header. */
+.complaint-party-switch-wrap { padding: 10px 14px; }
+.complaint-party-switch { border-top: 1px solid #ECDDCB; border-radius: 10px; }
+.admin-chat-panel { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.admin-chat-panel > .admin-chat-body { min-height: 0; }
+/* Reserve the right-hand column for time and unread count. */
+.admin-message-thread { grid-template-columns: 46px minmax(0,1fr) max-content; }
+.admin-thread-copy { display: block; min-width: 0; max-width: 100%; overflow: hidden; }
+.admin-thread-title-row { min-width: 0; max-width: 100%; overflow: hidden; }
+.admin-thread-title { min-width: 0; max-width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.admin-thread-preview {
+    display: block; width: 100%; max-width: 100%; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.admin-thread-meta { position: relative; flex: 0 0 auto; min-width: 28px; z-index: 1; }
+.admin-thread-unread { flex: 0 0 auto; }
+@media (max-width: 760px) {
+  .admin-header-view-complaint { padding: 7px 9px; font-size: 11px; }
+  .admin-header-complaint-status { font-size: 11px; padding: 5px 8px; }
+}
+
+
+/* ============================================================
+   Compact chat bubbles — fit content instead of stretched cards
+   ============================================================ */
+.admin-chat-body .admin-chat-message-row {
+    display: flex;
+    width: 100%;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+.admin-chat-body .admin-chat-message-row.is-admin {
+    justify-content: flex-end;
+}
+.admin-chat-body .admin-chat-bubble-wrap {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    width: fit-content;
+    max-width: min(76%, 510px);
+    min-width: 0;
+}
+.admin-chat-body .admin-chat-message-row.is-admin .admin-chat-bubble-wrap {
+    align-items: flex-end;
+}
+.admin-chat-body .admin-chat-bubble {
+    display: inline-block;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    margin: 0;
+    border-radius: 13px 13px 13px 4px;
+    font-size: 13px;
+    line-height: 1.55;
+    text-align: left;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+.admin-chat-body .admin-chat-message-row.is-admin .admin-chat-bubble {
+    border-radius: 13px 13px 4px 13px;
+}
+.admin-chat-body .admin-message-meta {
+    margin-top: 4px;
+    line-height: 1.4;
+}
+@media (max-width: 740px) {
+    .admin-chat-body .admin-chat-bubble-wrap {
+        max-width: 86%;
+    }
+}
+/* Keep the only attachment icon accessible on mobile too. */
+@media (max-width: 540px) {
+    .admin-message-composer {
+        grid-template-columns: 34px minmax(0, 1fr) 40px;
+    }
+    .admin-message-composer .admin-composer-tools {
+        display: flex;
+    }
+}
+
+/* Final chat bubble sizing — no preserved template whitespace */
+.admin-chat-body .admin-chat-message-row {
+    display: flex !important;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    align-items: flex-start !important;
+    justify-content: flex-start;
+    margin-bottom: 14px;
+}
+.admin-chat-body .admin-chat-message-row.is-admin {
+    justify-content: flex-end !important;
+}
+.admin-chat-body .admin-chat-bubble-wrap {
+    display: flex !important;
+    width: max-content !important;
+    max-width: min(74%, 440px) !important;
+    min-width: 0 !important;
+    flex: 0 1 auto !important;
+    flex-direction: column;
+    align-items: flex-start !important;
+}
+.admin-chat-body .admin-chat-message-row.is-admin .admin-chat-bubble-wrap {
+    align-items: flex-end !important;
+}
+.admin-chat-body .admin-chat-bubble {
+    display: block !important;
+    box-sizing: border-box;
+    width: fit-content !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 10px 14px !important;
+    margin: 0 !important;
+    text-align: left !important;
+    white-space: pre-line !important;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.5 !important;
+    font-size: 13px;
+}
+.admin-chat-body .admin-message-meta {
+    align-self: flex-start;
+    text-align: left;
+    font-size: 10px;
+    margin-top: 4px;
+}
+.admin-chat-body .admin-chat-message-row.is-admin .admin-message-meta {
+    align-self: flex-end;
+    text-align: right;
+}
+@media (max-width: 740px) {
+    .admin-chat-body .admin-chat-bubble-wrap {
+        max-width: 86% !important;
+    }
+}
+
+
+/* ============================================================
+   ShopEase Messages • distinct muted category tones / maroon palette
+   Brand base: #52070B #8B201A #DD4B4C #FF876E #FFA370
+   Keeps all four categories recognizable without bright colors.
+   ============================================================ */
+:root {
+    --msg-ink: #52070B;
+    --msg-maroon: #8B201A;
+    --msg-rose: #A84855;
+    --msg-blush: #F8E9EC;
+    --msg-line: #EEDDE2;
+}
+
+/* Category colors: separated by hue for easy scanning (slate / coral / lavender / terracotta). */
+.admin-message-thread[data-type="logistics"] {
+    --msg-category-bg: #DFE6EE;
+    --msg-category-fg: #465F7A;
+    --msg-category-selected: #F0F4F8;
+}
+.admin-message-thread[data-type="complaints"] {
+    --msg-category-bg: #F5D7DB;
+    --msg-category-fg: #993543;
+    --msg-category-selected: #FDF0F1;
+}
+.admin-message-thread[data-type="buyers"] {
+    --msg-category-bg: #E7DDF3;
+    --msg-category-fg: #704B8E;
+    --msg-category-selected: #F5F0FB;
+}
+.admin-message-thread[data-type="sellers"] {
+    --msg-category-bg: #F5E1D3;
+    --msg-category-fg: #925B39;
+    --msg-category-selected: #FCF3EC;
+}
+.admin-message-thread[data-type] .admin-thread-avatar {
+    background: var(--msg-category-bg);
+    color: var(--msg-category-fg);
+}
+.admin-message-thread[data-type] .admin-thread-badge {
+    background: var(--msg-category-bg);
+    color: var(--msg-category-fg);
+}
+.admin-message-thread[data-type].is-active {
+    background: var(--msg-category-selected);
+}
+.admin-message-thread[data-type].is-unread::before {
+    background: var(--msg-category-fg);
+}
+.admin-message-thread[data-type]:hover {
+    background: var(--msg-category-selected);
+}
+
+/* Active conversation uses the same category identity. */
+.admin-chat-panel {
+    --msg-chat-accent: #8B201A;
+    --msg-chat-tint: #F5E6E8;
+    --msg-chat-soft: #FCF6F6;
+}
+.admin-chat-panel.is-logistics {
+    --msg-chat-accent: #465F7A;
+    --msg-chat-tint: #DFE6EE;
+    --msg-chat-soft: #F1F5F9;
+}
+.admin-chat-panel.is-complaint {
+    --msg-chat-accent: #993543;
+    --msg-chat-tint: #F5D7DB;
+    --msg-chat-soft: #FFF2F3;
+}
+.admin-chat-panel.is-seller {
+    --msg-chat-accent: #925B39;
+    --msg-chat-tint: #F5E1D3;
+    --msg-chat-soft: #FCF4ED;
+}
+/* Existing JS uses is-logistics / is-complaint / is-seller; Buyer is the default. */
+.admin-chat-panel .admin-chat-avatar,
+.admin-chat-panel.is-logistics .admin-chat-avatar,
+.admin-chat-panel.is-complaint .admin-chat-avatar,
+.admin-chat-panel.is-seller .admin-chat-avatar {
+    background: var(--msg-chat-tint);
+    color: var(--msg-chat-accent);
+}
+.admin-chat-panel .admin-chat-role-badge,
+.admin-chat-panel.is-complaint .admin-chat-role-badge,
+.admin-chat-panel.is-seller .admin-chat-role-badge {
+    background: var(--msg-chat-tint);
+    color: var(--msg-chat-accent);
+}
+.admin-chat-panel .admin-chat-message-row:not(.is-admin) .admin-chat-bubble,
+.admin-chat-panel.is-complaint .admin-chat-message-row:not(.is-admin) .admin-chat-bubble {
+    background: var(--msg-chat-tint);
+    color: #492B34;
+}
+.admin-chat-panel .admin-chat-message-row.is-admin .admin-chat-bubble {
+    background: linear-gradient(135deg, #8B201A 0%, #52070B 100%);
+    color: #FFFFFF;
+}
+
+/* Complaint conversations: gentle cool-pink separation, no yellow / green / blue. */
+.complaint-party-switch {
+    border-color: #E9D8DE;
+}
+.complaint-party-tab + .complaint-party-tab { border-left-color: #E9D8DE; }
+.complaint-party-tab { color: #795D68; }
+.complaint-party-tab:hover,
+.complaint-party-tab.is-active {
+    background: #F9EDF1;
+    color: #7E283F;
+}
+.complaint-party-dot.buyer { background: #A46A93; }
+.complaint-party-dot.seller { background: #B66B6C; }
+.complaint-party-unread { background: #8B201A; }
+.admin-header-complaint-status,
+.admin-header-complaint-status[data-status="in-progress"] {
+    background: #F6E6E8;
+    color: #853D4E;
+}
+.admin-header-complaint-status[data-status="resolved"] {
+    background: #F0E4EC;
+    color: #755071;
+}
+.admin-header-view-complaint {
+    border-color: #E4C7CE;
+    color: #741C2B;
+}
+.admin-header-view-complaint:hover { background: #F9EDF1; }
+
+/* Restrained brand color for composer and interaction. */
+.admin-send-button { background: #8B201A; }
+.admin-send-button:hover { background: #52070B; }
+.admin-message-tab.is-active { color: #8B201A; }
+.admin-message-tab.is-active::after { background: #8B201A; }
+.admin-message-tab.is-active .admin-tab-count { background: #8B201A; }
+
+/* Category-specific active tab accents: muted, still readable. */
+.admin-message-tab[data-admin-message-tab="logistics"].is-active { color: #465F7A; }
+.admin-message-tab[data-admin-message-tab="logistics"].is-active::after,
+.admin-message-tab[data-admin-message-tab="logistics"].is-active .admin-tab-count { background: #465F7A; }
+.admin-message-tab[data-admin-message-tab="complaints"].is-active { color: #993543; }
+.admin-message-tab[data-admin-message-tab="complaints"].is-active::after,
+.admin-message-tab[data-admin-message-tab="complaints"].is-active .admin-tab-count { background: #993543; }
+.admin-message-tab[data-admin-message-tab="buyers"].is-active { color: #704B8E; }
+.admin-message-tab[data-admin-message-tab="buyers"].is-active::after,
+.admin-message-tab[data-admin-message-tab="buyers"].is-active .admin-tab-count { background: #704B8E; }
+.admin-message-tab[data-admin-message-tab="sellers"].is-active { color: #925B39; }
+.admin-message-tab[data-admin-message-tab="sellers"].is-active::after,
+.admin-message-tab[data-admin-message-tab="sellers"].is-active .admin-tab-count { background: #925B39; }
+
+
+/* Automatic message date separators — brand-neutral and readable. */
+.admin-chat-body .admin-message-date {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 22px 12px 18px;
+    width: auto;
+}
+.admin-chat-body .admin-message-date::before,
+.admin-chat-body .admin-message-date::after {
+    content: "";
+    height: 1px;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: #EDE1E3;
+}
+.admin-chat-body .admin-message-date span {
+    flex: 0 0 auto;
+    padding: 6px 13px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #754453;
+    background: #F7ECEF;
+    border-radius: 999px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+/* Date dividers inherit the currently selected chat category colors. */
+.admin-chat-panel .admin-chat-body .admin-message-date::before,
+.admin-chat-panel .admin-chat-body .admin-message-date::after {
+    background: color-mix(in srgb, var(--msg-chat-accent) 20%, white);
+}
+.admin-chat-panel .admin-chat-body .admin-message-date span {
+    background: var(--msg-chat-soft);
+    border: 1px solid color-mix(in srgb, var(--msg-chat-accent) 18%, white);
+    color: var(--msg-chat-accent);
+}

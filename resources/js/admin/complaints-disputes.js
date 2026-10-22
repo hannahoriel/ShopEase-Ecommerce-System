@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalStatusMenu = document.getElementById('complaints-modal-status-menu');
     const modalNotesList = document.getElementById('complaints-modal-notes-list');
     const modalMessageButtons = Array.from(
-        document.querySelectorAll('.complaints-modal-message-button')
+        document.querySelectorAll('.complaints-modal-message-button, .complaints-party-message-button')
     );
 
     /*
@@ -117,6 +117,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const MESSAGE_SENT_STORAGE_KEY =
         'shopease.complaintMessageSent.v1';
+
+    // Inbox intake records for Messages > Complaints (not sent chat messages).
+    const COMPLAINT_INBOX_STORAGE_KEY = 'shopease.messages.complaints.v1';
 
     const flash = document.getElementById('complaints-flash');
     const flashIcon = document.getElementById('complaints-flash-icon');
@@ -491,6 +494,50 @@ document.addEventListener('DOMContentLoaded', function () {
         filterRows();
     }
 
+    // Register the complaint for the Messages > Complaints inbox BEFORE navigation.
+    // Re-opening a complaint refreshes its record instead of duplicating it.
+    // This is browser-local intake data; a real shared inbox requires backend persistence.
+    function registerComplaintInMessages(complaint, context) {
+        if (!complaint || !context) return false;
+        try {
+            const stored = safeJsonParse(localStorage.getItem(COMPLAINT_INBOX_STORAGE_KEY), []);
+            const items = Array.isArray(stored) ? stored : [];
+            const key = `${complaint.id}:${context.recipientRole}:${context.recipientEmail || context.recipientName}`;
+            const existingIndex = items.findIndex(item => item.key === key);
+            const record = {
+                key,
+                id: key,
+                complaintId: complaint.id,
+                complaintDatabaseId: complaint.databaseId ?? null,
+                complaintType: complaint.type || '',
+                orderId: complaint.orderId || '',
+                description: complaint.description || '',
+                status: complaint.status || 'open',
+                dateFiled: complaint.date || '',
+                complainantName: complaint.party1 || '',
+                party1: complaint.party1 || '',
+                party2: complaint.party2 || '',
+                recipientName: context.recipientName || '',
+                recipientEmail: context.recipientEmail || '',
+                recipientRole: context.recipientRole || '',
+                category: 'complaints',
+                tab: 'complaints',
+                source: 'complaints-disputes',
+                createdAt: existingIndex >= 0 ? items[existingIndex].createdAt : new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                messages: existingIndex >= 0 && Array.isArray(items[existingIndex].messages)
+                    ? items[existingIndex].messages : []
+            };
+            if (existingIndex >= 0) items[existingIndex] = record;
+            else items.unshift(record);
+            localStorage.setItem(COMPLAINT_INBOX_STORAGE_KEY, JSON.stringify(items));
+            return true;
+        } catch (error) {
+            console.warn('Could not store complaint inbox entry:', error);
+            return false;
+        }
+    }
+
     function storePendingMessageContext(complaint, partyIndex) {
         if (!complaint) {
             return null;
@@ -507,6 +554,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const context = {
             complaintId: complaint.id,
+            complaintDatabaseId: complaint.databaseId,
+            complaintType: complaint.type,
+            orderId: complaint.orderId || null,
+            source: 'complaints-disputes',
+            targetTab: 'complaints',
             recipientName:
                 isFirstParty
                     ? complaint.party1
@@ -645,6 +697,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         pendingMessageStorageKey:
             PENDING_MESSAGE_STORAGE_KEY,
+
+        complaintInboxStorageKey: COMPLAINT_INBOX_STORAGE_KEY,
 
         messageSentStorageKey:
             MESSAGE_SENT_STORAGE_KEY,
@@ -1241,14 +1295,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     button.dataset.partyIndex
                 );
 
-            window.dispatchEvent(
-                new CustomEvent(
-                    'shopease:complaint-message-requested',
-                    {
-                        detail: context
-                    }
-                )
-            );
+            // Record complaint intake locally before opening the Complaints inbox.
+            // No outgoing message is marked as sent by this action.
+            registerComplaintInMessages(complaint, context);
+            // Messages must read the intake key to render these conversations.
+            const messagesUrl = complaintsConfig.messagesUrl || '/admin/messages';
+            const target = new URL(messagesUrl, window.location.origin);
+            target.searchParams.set('tab', 'complaints');
+            target.searchParams.set('complaint', String(complaint.id));
+            target.searchParams.set('recipient', String(context.recipientEmail || ''));
+            target.searchParams.set('category', 'complaints');
+            target.searchParams.set('conversation', `${complaint.id}:${context.recipientRole}:${context.recipientEmail || context.recipientName}`);
+            window.location.assign(target.toString());
         });
     });
 
