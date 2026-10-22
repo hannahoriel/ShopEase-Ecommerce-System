@@ -1309,3 +1309,141 @@ body.seller-sidebar-collapsed .seller-messages-page {
     line-height: 1.4 !important;
     font-weight: 400 !important;
 }
+
+/* ShopEase seller messaging — match updated Admin Messages */
+.messages-chat-context {display:none!important;}
+.messages-chat-panel {grid-template-rows:auto minmax(0,1fr) auto auto auto!important;}
+.messages-chat-panel.is-complaint {--seller-incoming:#F5D7DB;--seller-ink:#993543;}
+.messages-chat-panel:not(.is-complaint) {--seller-incoming:#E7DDF3;--seller-ink:#704B8E;}
+.messages-thread[data-type="buyers"] .messages-thread-avatar {background:#E7DDF3;color:#704B8E;}
+.messages-thread[data-type="complaints"] .messages-thread-avatar {background:#F5D7DB;color:#993543;}
+.messages-thread[data-type="buyers"].is-active {background:#F5F0FA;}
+.messages-thread[data-type="complaints"].is-active {background:#FFF0F2;}
+.messages-chat-panel .message-row {display:flex;align-items:flex-start;justify-content:flex-start;width:100%;margin:0 0 12px;}
+.messages-chat-panel .message-row.is-seller {justify-content:flex-end;}
+.messages-chat-panel .message-bubble-wrap,.messages-chat-panel .message-row.is-seller .message-bubble-wrap {display:flex;flex:0 1 auto;flex-direction:column;align-items:flex-start;max-width:min(72%,540px);min-width:0;width:max-content;}
+.messages-chat-panel .message-bubble {display:block!important;width:fit-content!important;min-width:0!important;max-width:100%!important;height:auto!important;min-height:0!important;padding:10px 14px!important;white-space:pre-line!important;overflow-wrap:anywhere;word-break:normal;text-align:left!important;background:var(--seller-incoming)!important;color:var(--seller-ink)!important;border-radius:14px 14px 14px 4px!important;font-size:13px!important;line-height:1.55!important;}
+.messages-chat-panel .message-row.is-seller .message-bubble {background:#52070B!important;color:white!important;border-radius:14px 14px 4px 14px!important;}
+.messages-chat-panel .message-row.is-seller .message-meta {align-self:flex-end;}
+.messages-chat-panel .messages-date-divider span {background:var(--seller-incoming);color:var(--seller-ink);font-size:11px;font-weight:600;}
+.messages-thread-copy{min-width:0;overflow:hidden;}
+.messages-thread-preview {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.messages-thread {grid-template-columns:44px minmax(0,1fr) auto;}
+.messages-tab,.messages-thread-title{font-size:13px!important;}
+.messages-thread-preview,.messages-chat-heading-copy p{font-size:11px!important;}
+.seller-header-context-actions {display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.seller-complaint-status {font-size:11px;font-weight:600;background:#F5D7DB;color:#993543;border-radius:999px;padding:6px 10px;}
+.seller-view-complaint{font-size:12px;font-weight:600;color:white;background:#75171F;border-radius:8px;padding:9px 13px;cursor:pointer;}
+.seller-view-complaint:hover{background:#52070B;}
+.seller-complaint-status[hidden],.seller-view-complaint[hidden]{display:none!important;}
+@media(max-width:720px){.messages-chat-panel .message-bubble-wrap{max-width:85%;}}
+
+
+/* =========================================================
+   COMPLAINTS: unify yellow/gold accents with the pink TA avatar
+   ShopEase muted dusty rose palette
+   ========================================================= */
+:root {
+    --seller-complaint-pink: #F5D7DB;
+    --seller-complaint-pink-soft: #FFF0F2;
+    --seller-complaint-ink: #993543;
+}
+.messages-thread[data-type="complaints"] .messages-thread-avatar,
+.messages-chat-panel.is-complaint .messages-chat-avatar {
+    background: var(--seller-complaint-pink) !important;
+    color: var(--seller-complaint-ink) !important;
+}
+.messages-thread[data-type="complaints"] .messages-thread-type,
+.messages-chat-panel.is-complaint .messages-conversation-badge,
+.messages-chat-panel.is-complaint .messages-chat-context-icon,
+.messages-chat-panel.is-complaint .messages-date-divider span,
+.seller-complaint-status {
+    background: var(--seller-complaint-pink) !important;
+    color: var(--seller-complaint-ink) !important;
+}
+.messages-thread[data-type="complaints"].is-active {
+    background: var(--seller-complaint-pink-soft) !important;
+}
+.messages-chat-panel.is-complaint .message-row:not(.is-seller) .message-bubble {
+    background: var(--seller-complaint-pink) !important;
+    color: #68323B !important;
+}
+.messages-chat-panel.is-complaint .message-system-note {
+    background: #FFF6F7 !important;
+    color: #8E5661 !important;
+    border-color: #F1DDE1 !important;
+}
+
+/* =========================================================
+   SHOP EASE — SELLER / ADMIN MESSAGES VISUAL PARITY
+   Mirrors the Admin Messages category palette and date dividers.
+   Keep this last to override legacy yellow/gold styling.
+   ========================================================= */
+.messages-chat-panel {
+    --msg-chat-accent: #704B8E;
+    --msg-chat-tint: #E7DDF3;
+    --msg-chat-soft: #F7F2FA;
+}
+.messages-chat-panel.is-complaint {
+    --msg-chat-accent: #993543;
+    --msg-chat-tint: #F5D7DB;
+    --msg-chat-soft: #FFF2F3;
+}
+.messages-thread[data-type="buyers"] .messages-thread-avatar,
+.messages-chat-panel:not(.is-complaint) .messages-chat-avatar,
+.messages-thread[data-type="buyers"] .messages-thread-type,
+.messages-chat-panel:not(.is-complaint) .messages-conversation-badge {
+    background: #E7DDF3 !important;
+    color: #704B8E !important;
+}
+.messages-thread[data-type="complaints"] .messages-thread-avatar,
+.messages-thread[data-type="complaints"] .messages-thread-type,
+.messages-chat-panel.is-complaint .messages-chat-avatar,
+.messages-chat-panel.is-complaint .messages-conversation-badge,
+.seller-complaint-status {
+    background: #F5D7DB !important;
+    color: #993543 !important;
+}
+.messages-thread[data-type="buyers"].is-active { background: #F7F2FA !important; }
+.messages-thread[data-type="complaints"].is-active { background: #FFF2F3 !important; }
+.messages-chat-panel .message-row:not(.is-seller) .message-bubble {
+    background: var(--msg-chat-tint) !important;
+    color: #492B34 !important;
+}
+.messages-chat-panel .message-row.is-seller .message-bubble {
+    background: linear-gradient(135deg, #8B201A 0%, #52070B 100%) !important;
+    color: #FFFFFF !important;
+}
+/* Same horizontal rules + soft category pill as Admin Messages. */
+.messages-chat-panel .messages-chat-body .messages-date-divider {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    width: auto !important;
+    margin: 22px 12px 18px !important;
+}
+.messages-chat-panel .messages-chat-body .messages-date-divider::before,
+.messages-chat-panel .messages-chat-body .messages-date-divider::after {
+    content: "";
+    display: block;
+    height: 1px;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: color-mix(in srgb, var(--msg-chat-accent) 20%, white);
+}
+.messages-chat-panel .messages-chat-body .messages-date-divider span,
+.messages-chat-panel.is-complaint .messages-chat-body .messages-date-divider span {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 13px !important;
+    border: 1px solid color-mix(in srgb, var(--msg-chat-accent) 18%, white) !important;
+    border-radius: 999px !important;
+    background: var(--msg-chat-soft) !important;
+    color: var(--msg-chat-accent) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    white-space: nowrap;
+}

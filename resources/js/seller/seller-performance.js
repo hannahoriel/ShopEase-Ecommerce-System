@@ -153,6 +153,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function selectCase(id) { const c = complaints().find(x => String(x.id) === String(id)); if (!c)
         return; state.selected = c; renderTable(); }
+    // Deep link from Seller Messages: select complaint row and open the RIGHT preview.
+    // Uses a URL query (not the large View Details modal).
+    const linkedComplaintId = new URLSearchParams(window.location.search).get('complaint');
+    let complaintDeepLinkHandled = false;
+    function openLinkedComplaintPreview() {
+        if (!linkedComplaintId || complaintDeepLinkHandled) return;
+        const normalizeId = value => String(value ?? '').replace(/^Complaint\s*#?\s*/i, '').trim().toLowerCase();
+        const target = complaints().find(c => normalizeId(c.id) === normalizeId(linkedComplaintId));
+        if (!target) return; // May arrive from async API response; try again after load.
+        complaintDeepLinkHandled = true;
+        state.search = '';
+        state.date = '';
+        state.status = 'all';
+        $('complaints-search').value = '';
+        $('complaints-date-filter').value = '';
+        document.querySelectorAll('.complaints-tab').forEach(tab => {
+            const active = tab.dataset.tab === 'all';
+            tab.classList.toggle('active', active);
+            tab.setAttribute('aria-selected', String(active));
+        });
+        const index = filtered().findIndex(c => normalizeId(c.id) === normalizeId(target.id));
+        state.page = Math.floor(Math.max(0, index) / state.size) + 1;
+        selectCase(target.id);
+        requestAnimationFrame(() => {
+            const section = document.querySelector('.sp-complaints');
+            section?.scrollIntoView({ behavior: 'auto', block: 'start' });
+            const row = [...document.querySelectorAll('#complaints-table-body .complaint-row')]
+                .find(el => normalizeId(el.dataset.id) === normalizeId(target.id));
+            row?.setAttribute('aria-selected', 'true');
+        });
+    }
     function closePreview() { state.selected = null; $('complaints-workspace').classList.remove('has-selection'); $('complaints-detail-card').setAttribute('aria-hidden', 'true'); $('complaints-table-body').querySelectorAll('.complaint-row.active').forEach(el => el.classList.remove('active')); }
     function sectionRows(fields) { return fields.map(([key, value]) => `<div class="complaints-modal-order-row"><span>${safe(key)}</span><span>${safe(blank(value))}</span></div>`).join(''); }
     function statusUpdateMessage(status) {
@@ -312,7 +343,13 @@ document.addEventListener('DOMContentLoaded', () => {
         contactOverlay.setAttribute('aria-hidden', 'false');
         $('sp-contact-message').focus();
     }
-    $('sp-contact-admin').addEventListener('click', openContact);
+    // Navigate directly to Seller Messages > Complaints (no copy-only dialog).
+    $('sp-contact-admin').addEventListener('click', () => {
+        const c = state.selected;
+        if (!c) return;
+        const params = new URLSearchParams({ tab: 'complaints', complaint: String(c.id), source: 'performance' });
+        window.location.assign('/seller/messages?' + params.toString());
+    });
     $('sp-contact-close').addEventListener('click', closeContact);
     $('sp-contact-cancel').addEventListener('click', closeContact);
     contactOverlay.addEventListener('click', event => {
@@ -362,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(`Could not load performance (${r.status})`);
         state.data = await r.json();
         render();
+        openLinkedComplaintPreview();
     }
     catch (error) {
         text('spError', error.message);
@@ -400,5 +438,6 @@ document.addEventListener('DOMContentLoaded', () => {
             closeEvidence();
     });
     render();
+    openLinkedComplaintPreview();
     if (settings.endpoint) load();
 });

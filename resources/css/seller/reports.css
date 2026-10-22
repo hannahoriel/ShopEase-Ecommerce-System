@@ -2751,3 +2751,82 @@
     line-height: 1.2 !important;
     font-weight: 400 !important;
 }
+
+
+/* ============================================================
+   RESPONSIVE ORDER SUMMARY — PREVENT ORDER ID OVERLAP
+   Keep each value inside its own cell at any browser zoom.
+   At narrow widths the table scrolls horizontally rather than
+   compressing six columns until their contents collide.
+============================================================ */
+.seller-reports-page .order-summary-card,
+.seller-reports-page .order-summary-table-wrap {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.seller-reports-page .order-summary-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+.seller-reports-page .order-summary-table {
+    width: 100% !important;
+    min-width: 1100px !important;
+    table-layout: fixed !important;
+}
+
+/* Give long order references enough space without stealing from
+   other headings, including Admin Commission and Payment Method. */
+.seller-reports-page .order-summary-table th:nth-child(1) { width: 23% !important; }
+.seller-reports-page .order-summary-table th:nth-child(2) { width: 15% !important; }
+.seller-reports-page .order-summary-table th:nth-child(3) { width: 18% !important; }
+.seller-reports-page .order-summary-table th:nth-child(4) { width: 14% !important; }
+.seller-reports-page .order-summary-table th:nth-child(5) { width: 17% !important; }
+.seller-reports-page .order-summary-table th:nth-child(6) { width: 13% !important; }
+
+.seller-reports-page .order-summary-table th,
+.seller-reports-page .order-summary-table td {
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+/* Prefer wrapping an unusually long reference, not drawing over
+   the Date column. Row height grows only when necessary. */
+.seller-reports-page .order-summary-table tbody td.order-id-cell {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    line-height: 1.5 !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}
+
+/* Prevent other unbroken values from painting into neighbors. */
+.seller-reports-page .order-summary-table tbody td:not(.order-id-cell) {
+    white-space: nowrap !important;
+    text-overflow: ellipsis;
+}
+
+
+/* ============================================================
+   REPORT DATE FILTER — SINGLE CALENDAR ICON
+   Keep the browser's native, functional date picker icon and
+   hide the duplicate decorative SVG in each date field.
+============================================================ */
+.seller-reports-page .reports-date-field > svg {
+    display: none !important;
+}
+
+.seller-reports-page .reports-date-field {
+    gap: 0 !important;
+}
+
+.seller-reports-page .reports-date-field input[type="date"] {
+    width: 100% !important;
+    min-width: 0 !important;
+}

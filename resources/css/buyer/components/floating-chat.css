@@ -766,3 +766,35 @@
             transition: none !important;
         }
     }
+
+/* Buyer Admin complaint conversation integration */
+#buyerFloatingChat .buyer-floating-chat-admin-avatar { width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:#f5d7db;color:#993543;font-size:11px;font-weight:700; }
+#buyerFloatingChat .buyer-floating-chat-complaint-context {padding:8px 12px;background:#fff0f2;color:#893744;border-bottom:1px solid #efd5d9;font-size:10px;font-weight:600;line-height:1.45;overflow-wrap:anywhere;}
+#buyerFloatingChat .buyer-floating-chat-complaint-context[hidden] {display:none!important;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) {grid-template-rows:52px auto minmax(0,1fr) auto 51px;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) .buyer-floating-chat-active-avatar {background:#f5d7db;display:grid;place-items:center;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) .buyer-floating-chat-active-avatar svg {display:none;}
+#buyerFloatingChat .buyer-floating-chat-message.is-seller span {overflow-wrap:anywhere;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) .buyer-floating-chat-message.is-seller span {background:#f5d7db;border-color:#efd5d9;color:#68323b;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) #buyerFloatingChatStatus:not([hidden]) {grid-row:4;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) .buyer-floating-chat-composer {grid-row:5;}
+
+#buyerFloatingChat .buyer-floating-chat-admin-initials {display:none;font-size:11px;font-weight:700;color:#993543;}
+#buyerFloatingChat .buyer-floating-chat-active-conversation:has(.buyer-floating-chat-complaint-context:not([hidden])) .buyer-floating-chat-admin-initials {display:block;}
+
+/* Buyer Admin complaint chat — status, navigation, and date separators */
+#buyerFloatingChat .buyer-floating-chat-complaint-context {display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#fff4f5;}
+#buyerFloatingChat .buyer-chat-complaint-top{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+#buyerFloatingChat .buyer-chat-complaint-copy{display:flex;flex-wrap:wrap;gap:3px 7px;align-items:baseline;}
+#buyerFloatingChat .buyer-chat-complaint-id{color:#7c2632;font-size:10px;font-weight:700;}
+#buyerFloatingChat .buyer-chat-complaint-type{color:#987a80;font-size:9px;font-weight:500;}
+#buyerFloatingChat .buyer-chat-complaint-status{font-size:9px;font-weight:700;border-radius:999px;padding:4px 8px;white-space:nowrap;background:#ffe6d5;color:#ac6526;}
+#buyerFloatingChat .buyer-chat-complaint-status.is-in-progress{background:#fff0bf;color:#9c760e;}
+#buyerFloatingChat .buyer-chat-complaint-status.is-resolved{background:#ddf1e1;color:#29783b;}
+#buyerFloatingChat .buyer-chat-view-complaint{border:1px solid #dcb5bb;border-radius:7px;background:#fff;color:#8d2f40;padding:6px 8px;flex-shrink:0;cursor:pointer;font-size:9px;font-weight:700;white-space:nowrap;}
+#buyerFloatingChat .buyer-chat-view-complaint:hover{background:#f9e3e7;border-color:#c9919a;}
+#buyerFloatingChat .buyer-chat-date-divider{display:flex;align-items:center;gap:10px;width:100%;margin:4px 0;color:#9a6570;flex-shrink:0;}
+#buyerFloatingChat .buyer-chat-date-divider:before,#buyerFloatingChat .buyer-chat-date-divider:after{content:"";height:1px;flex:1;background:#e9cbd0;}
+#buyerFloatingChat .buyer-chat-date-divider span{padding:4px 10px;background:#fff0f2;border:1px solid #f0d8de;border-radius:999px;font-size:9px;font-weight:600;white-space:nowrap;color:#993543;}
+#buyerFloatingChat .buyer-floating-chat-complaint-context[hidden]{display:none!important;}
+@media(max-width:460px){#buyerFloatingChat .buyer-floating-chat-complaint-context{gap:5px;padding:8px;}#buyerFloatingChat .buyer-chat-view-complaint{padding:5px;font-size:8px;}}

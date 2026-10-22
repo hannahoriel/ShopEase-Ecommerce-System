@@ -569,7 +569,7 @@
     width: calc(34% - 6px);
     flex: 0 0 calc(34% - 6px);
     height: auto;
-    min-height: 594px;
+    min-height: 0;
     margin-left: 12px;
     border-width: 1px;
     opacity: 1;
@@ -957,7 +957,7 @@
 }
 
 .sp-complaints .complaints-detail-body {
-    flex: 1;
+    flex: 0 0 auto;
     padding: 13px 14px 8px;
 }
 
@@ -1920,3 +1920,17 @@ body.sp-modal-open {
 .seller-performance-page .sp-complaints .complaints-date-input { appearance: none; -webkit-appearance: none; }
 .seller-performance-page .sp-complaints .complaints-date-input::-webkit-calendar-picker-indicator { opacity: 0; width: 0; height: 0; pointer-events: none; }
 .seller-performance-page .sp-complaints .complaints-date-input::-webkit-inner-spin-button { display: none; }
+
+/* Compact complaint preview: end after evidence and View Details. */
+.sp-complaints .complaints-workspace.has-selection .complaints-detail-card {
+    min-height: 0 !important;
+    height: fit-content !important;
+    align-self: flex-start;
+}
+.sp-complaints .complaints-detail-body {
+    flex: 0 0 auto !important;
+}
+.sp-complaints .complaints-detail-actions {
+    flex: 0 0 auto;
+    padding-top: 4px;
+}

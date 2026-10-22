@@ -27,6 +27,8 @@
         'resources/js/buyer/pages/dashboard.js',
     ])
 
+    @vite('resources/js/buyer/components/buyer-likes.js')
+    <meta name="buyer-likes-user-id" content="{{ auth()->id() ?? 'guest' }}">
     <script id="buyerDashboardConfig" type="application/json">
         {!! json_encode([
             'productsUrl'    => '/api/v1/buyer/dashboard/products',
@@ -339,7 +341,7 @@
                     </div>
 
                     <div class="notifications-list" id="buyerDashboardNotifications" aria-live="polite">
-                        <p class="buyer-dashboard-notifications-state">Loading notifications…</p>
+                        <p class="buyer-dashboard-notifications-state" role="status">Loading notifications…</p>
                     </div>
                     <p id="buyerDashboardNotificationsError" role="alert" hidden></p>
                 </section>

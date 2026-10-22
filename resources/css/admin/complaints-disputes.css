@@ -1912,3 +1912,53 @@
 @media (max-width: 760px) {
   html body #admin-content { box-sizing: border-box !important; width: auto !important; min-width: 0 !important; max-width: none !important; margin-left: 0 !important; padding-left: 16px !important; padding-right: 16px !important; transition: margin-left 300ms ease !important; }
 }
+
+/* --- Complaints usability refinements --- */
+.complaints-modal-order-id {
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    font-weight: 600;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.complaints-modal-type-order {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr);
+    align-items: start;
+    column-gap: 14px;
+}
+.complaints-modal-type-order > div { min-width: 0; }
+.complaints-modal-type-value { line-height: 1.5; overflow-wrap: anywhere; }
+.complaints-modal-meta { gap: 8px 18px; line-height: 1.5; }
+.complaints-modal-meta-item { flex-wrap: wrap; gap: 3px 8px; }
+.complaints-modal-meta-item strong { white-space: normal; overflow-wrap: anywhere; }
+.complaints-modal-description { line-height: 1.75; overflow-wrap: anywhere; }
+.complaints-modal-party-copy { line-height: 1.4; }
+.complaints-modal-party-copy strong { font-size: 11px; line-height: 1.4; }
+.complaints-modal-party-copy span { font-size: 10px; line-height: 1.5; }
+.complaints-modal-party-row { column-gap: 10px; }
+.complaints-party-detail-copy { line-height: 1.4; }
+.complaints-party-detail-name { overflow-wrap: anywhere; }
+.complaints-party-message-button {
+    width: 30px; height: 30px; flex: 0 0 30px;
+    border: 0; border-radius: 50%; background: transparent;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background .2s ease, transform .2s ease;
+}
+.complaints-party-message-button:hover,
+.complaints-modal-message-button:hover { background: #fff0ee; transform: translateY(-1px); }
+.complaints-party-message-button:focus-visible,
+.complaints-modal-message-button:focus-visible { outline: 2px solid #9e231f; outline-offset: 2px; }
+@media (max-width: 600px) {
+    .complaints-modal-type-order { grid-template-columns: minmax(0, 1fr) minmax(0, .85fr); gap: 10px; }
+    .complaints-modal-order-id { font-size: 12px; }
+}
+
+/* Final refinements: compact Order ID and consistent readable text hierarchy. */
+.complaints-modal-order-id { font-size: 12px !important; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.complaints-modal-type-order { align-items: start; gap: 14px; }
+.complaints-modal-type-order > div { min-width: 0; }
+.complaints-modal-label { line-height: 1.5; }
+.complaints-modal-description { line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.complaints-modal-meta-item strong, .complaints-detail-text { line-height: 1.55; overflow-wrap: anywhere; }
+.complaints-party-message-button img, .complaints-modal-message-button img { object-fit: contain; }

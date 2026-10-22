@@ -838,3 +838,88 @@ body:has(#admin-sidebar.collapsed) #sellerAccountPage.seller-account-page {
 @media (min-width:761px) and (max-width:900px){html body #sellerAccountPage.seller-account-page{width:auto!important;max-width:none!important;margin-left:80px!important;padding-left:24px!important;padding-right:24px!important;transition:margin-left 300ms ease!important}}
 @media (max-width:760px){html body #sellerAccountPage.seller-account-page{width:auto!important;max-width:none!important;margin-left:0!important;padding-left:16px!important;padding-right:16px!important}}
 #sellerAccountPage .sa-layout{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important}
+
+
+/* Admin Management UI — scoped to the account page */
+#sellerAccountPage .aam-group-heading{padding-top:25px;margin-top:19px;border-top:1px solid #f0e8e8}
+#sellerAccountPage .aam-eyebrow{font-size:10px;letter-spacing:.13em;color:#9b1239;font-weight:600;margin-bottom:6px}
+#sellerAccountPage .aam-heading-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+#sellerAccountPage .aam-preview-pill{white-space:nowrap;padding:7px 12px;background:#fff4e8;border:1px solid #f0dcc5;border-radius:50px;font-size:10px;font-weight:600;color:#9b581b}
+#sellerAccountPage .aam-info-strip{display:flex;gap:10px;align-items:flex-start;background:#fff9ef;border:1px solid #f1dfbf;border-radius:9px;padding:12px 14px;font-size:11px;color:#805e2b;line-height:1.7;margin:9px 0 17px}
+#sellerAccountPage .aam-info-strip>span:first-child{font-size:17px;line-height:1.2}
+#sellerAccountPage .aam-section{margin-bottom:13px}
+#sellerAccountPage .aam-file{padding:8px 10px;height:auto;min-height:39px}
+#sellerAccountPage .aam-role-toolbar{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-bottom:13px;color:#697387;font-size:11px}
+#sellerAccountPage .aam-role-toolbar span{margin-right:auto}
+#sellerAccountPage .aam-text-button{background:transparent;border:0;color:#9b1239;cursor:pointer;font-size:11px;font-weight:600;padding:5px}
+#sellerAccountPage .aam-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#sellerAccountPage .aam-permission{display:flex;align-items:center;gap:10px;min-height:42px;background:#fff;border:1px solid #e3e6eb;border-radius:9px;padding:10px 12px;font-size:11px;color:#343d4e;cursor:pointer;transition:background .18s,border-color .18s}
+#sellerAccountPage .aam-permission:has(input:checked){background:#fff4f6;border-color:#deb8c4}
+#sellerAccountPage .aam-permission input,#sellerAccountPage .aam-confirm-line input{width:15px;height:15px;flex-shrink:0;accent-color:#9b1239}
+#sellerAccountPage .aam-message-permission{grid-column:1/-1;border:1px solid #e3e6eb;border-radius:10px;padding:10px;background:#fcfcfd}
+#sellerAccountPage .aam-message-main{border:0;background:transparent;padding:5px 4px}
+#sellerAccountPage .aam-message-main:has(input:checked){background:transparent}
+#sellerAccountPage .aam-message-main small{margin-left:auto;color:#8790a0;font-size:10px}
+#sellerAccountPage .aam-message-categories{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding-top:9px}
+#sellerAccountPage .aam-subpermission{min-height:36px;background:#fff;font-size:10px}
+#sellerAccountPage .aam-subpermission:has(input:disabled){opacity:.48;cursor:not-allowed}
+#sellerAccountPage .aam-credentials-layout{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+#sellerAccountPage .aam-password-field{flex:1 1 260px;min-width:220px}
+#sellerAccountPage .aam-password-field label{display:block;font-size:11px;font-weight:500;margin-bottom:5px}
+#sellerAccountPage .aam-password-field small{display:block;font-size:10px;color:#929aa6;margin-top:6px}
+#sellerAccountPage .aam-password-control{display:flex;height:39px;border:1px solid #d8dbe1;border-radius:7px;overflow:hidden}
+#sellerAccountPage .aam-password-control input{flex:1;min-width:0;border:0;padding:0 11px;font-size:12px;outline:none;background:#fafafa}
+#sellerAccountPage .aam-password-control button{padding:0 13px;color:#9b1239;font-size:11px;font-weight:600;background:#fff;border:0;border-left:1px solid #e3e4e7;cursor:pointer}
+#sellerAccountPage .aam-outline-btn{min-height:39px;border:1px solid #d3bbc2;border-radius:7px;background:#fff;color:#8c1c3c;padding:9px 14px;font-size:11px;font-weight:600;cursor:pointer}
+#sellerAccountPage .aam-outline-btn:hover{background:#fff4f6}
+#sellerAccountPage .aam-confirm-line{display:flex;align-items:center;gap:9px;margin-top:17px;font-size:11px;color:#424b59}
+#sellerAccountPage .aam-confirm-line span{font-size:10px;color:#929aa6}
+#sellerAccountPage .aam-form-actions{display:flex;justify-content:flex-end;gap:10px;margin:17px 0}
+#sellerAccountPage .aam-result{border:1px solid #d7e3d5;border-radius:12px;background:#f9fdf9;padding:20px;margin-top:16px}
+#sellerAccountPage .aam-result[hidden]{display:none!important}
+#sellerAccountPage .aam-result-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#sellerAccountPage .aam-result-heading h2{margin:0;font-size:15px;font-weight:600}
+#sellerAccountPage .aam-result-heading span{font-size:10px;color:#9b581b;background:#fff0df;padding:5px 10px;border-radius:30px}
+#sellerAccountPage .aam-result p{color:#687381;font-size:11px;line-height:1.7}
+#sellerAccountPage .aam-result-credentials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:13px 0}
+#sellerAccountPage .aam-result-credentials>div{padding:12px;background:white;border:1px solid #e2e9e1;border-radius:8px;overflow-wrap:anywhere}
+#sellerAccountPage .aam-result-credentials small{display:block;font-size:10px;color:#8a94a1;margin-bottom:6px}
+#sellerAccountPage .aam-result-credentials strong{font-size:12px}
+@media(max-width:700px){#sellerAccountPage .aam-permission-grid{grid-template-columns:1fr}#sellerAccountPage .aam-message-categories{grid-template-columns:repeat(2,minmax(0,1fr))}#sellerAccountPage .aam-result-credentials{grid-template-columns:1fr}}
+
+/* Account navigation: fixed, compact, and never scrolls with the page. */
+@media (min-width: 1021px) {
+  html body #sellerAccountPage .sa-navigation {
+    position: fixed !important;
+    top: 126px !important;
+    left: 285px !important;
+    width: 284px !important;
+    height: fit-content !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 142px) !important;
+    overflow: hidden !important;
+    align-self: flex-start !important;
+    z-index: 20;
+  }
+  html body #sellerAccountPage .sa-workspace {
+    grid-column: 2 !important;
+  }
+  html body:has(#admin-sidebar.w-20) #sellerAccountPage .sa-navigation,
+  html body:has(#admin-sidebar.collapsed) #sellerAccountPage .sa-navigation,
+  html body.sidebar-collapsed #sellerAccountPage .sa-navigation {
+    left: 105px !important;
+  }
+}
+@media (min-width: 1021px) and (max-width: 1280px) {
+  html body #sellerAccountPage .sa-navigation { width: 230px !important; }
+}
+@media (max-width: 1020px) {
+  html body #sellerAccountPage .sa-navigation {
+    position: static !important;
+    width: auto !important;
+    height: fit-content !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}

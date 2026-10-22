@@ -375,11 +375,9 @@
                                 <span id="detail-role-1" class="complaints-party-detail-role">Buyer</span>
                             </span>
 
-                            <img
-                                src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}"
-                                class="complaints-message-icon"
-                                alt="Message"
-                            >
+                            <button type="button" class="complaints-party-message-button" data-party-index="1" aria-label="Open this complaint in Messages for first party" title="Open in Messages → Complaints">
+                                <img src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}" class="complaints-message-icon" alt="">
+                            </button>
                         </div>
 
                         <div class="complaints-party-detail">
@@ -390,11 +388,9 @@
                                 <span id="detail-role-2" class="complaints-party-detail-role">Seller</span>
                             </span>
 
-                            <img
-                                src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}"
-                                class="complaints-message-icon"
-                                alt="Message"
-                            >
+                            <button type="button" class="complaints-party-message-button" data-party-index="2" aria-label="Open this complaint in Messages for second party" title="Open in Messages → Complaints">
+                                <img src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}" class="complaints-message-icon" alt="">
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -551,7 +547,7 @@
                                 type="button"
                                 class="complaints-modal-message-button"
                                 data-party-index="1"
-                                aria-label="Message first party"
+                                aria-label="Open this complaint in Messages for first party" title="Open in Messages → Complaints"
                             >
                                 <img
                                     src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}"
@@ -581,7 +577,7 @@
                                 type="button"
                                 class="complaints-modal-message-button"
                                 data-party-index="2"
-                                aria-label="Message second party"
+                                aria-label="Open this complaint in Messages for second party" title="Open in Messages → Complaints"
                             >
                                 <img
                                     src="{{ asset('icons/admin/complaints-disputes/message-icon.png') }}"
@@ -790,6 +786,7 @@
 @php
     $complaintsDisputesClientConfig = [
         'complaints' => $complaintRows,
+        'messagesUrl' => route('admin.messages'),
         'icons' => [
             'buyer' => asset('icons/admin/dashboard/body/buyer.png'),
             'seller' => asset('icons/admin/dashboard/body/seller.png'),

@@ -1279,3 +1279,71 @@
     background: linear-gradient(135deg, #edf3ee, #ded8d1);
     border-radius: 8px;
 }
+
+
+/* Buyer Dashboard — clean Notifications empty and feedback states */
+.notifications-panel .notifications-list {
+    min-height: 199px;
+}
+
+.notifications-panel .buyer-dashboard-notifications-empty,
+.notifications-panel .buyer-dashboard-notifications-feedback {
+    width: 100%;
+    min-height: 199px;
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0;
+}
+
+.notifications-panel .buyer-dashboard-notifications-empty-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 11px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #EDD7D4;
+    border-radius: 15px;
+    background: #FFF8F6;
+    color: #AC7479;
+}
+
+.notifications-panel .buyer-dashboard-notifications-empty-icon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.notifications-panel .buyer-dashboard-notifications-empty strong,
+.notifications-panel .buyer-dashboard-notifications-feedback strong {
+    color: #635452;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.notifications-panel .buyer-dashboard-notifications-empty > span:last-child,
+.notifications-panel .buyer-dashboard-notifications-feedback > span {
+    max-width: 275px;
+    margin-top: 5px;
+    color: #9A8D8A;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.notifications-panel .buyer-dashboard-notifications-state {
+    width: 100%;
+    min-height: 199px;
+    margin: 0;
+    padding: 25px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #9A8D8A;
+    font-size: 12px;
+    text-align: center;
+}
