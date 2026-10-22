@@ -135,7 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function formatDateLabel(dateValue) {
-        const date = new Date(`${dateValue}T00:00:00`);
+        const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(dateValue)) ? `${dateValue}T00:00:00` : dateValue);
+        if (Number.isNaN(date.getTime())) return 'Earlier messages';
         const today = new Date();
         const yesterday = new Date();
         yesterday.setDate(today.getDate() - 1);
@@ -157,6 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
         activeContextLabel.textContent = conversation.context_label;
         activeContextValue.textContent = conversation.context_value;
         viewContextButton.textContent = conversation.context_button;
+        const complaintMode = conversation.type === 'complaints';
+        const complaintStatus = document.getElementById('sellerComplaintStatus');
+        const viewComplaint = document.getElementById('sellerViewComplaint');
+        if (complaintStatus) {
+            complaintStatus.hidden = !complaintMode;
+            complaintStatus.textContent = complaintMode ? (conversation.status || 'Open') : '';
+        }
+        if (viewComplaint) {
+            viewComplaint.hidden = !complaintMode;
+            viewComplaint.dataset.complaintId = String(conversation.complaint_id || conversation.complaintId || conversation.title || '').replace(/^Complaint\s*#?/i, '').trim();
+        }
         composerInput.placeholder = conversation.type === 'complaints'
             ? 'Reply to ShopEase Admin...'
             : 'Type a message...';
@@ -275,6 +287,37 @@ document.addEventListener('DOMContentLoaded', () => {
         renderThreads();
     }
 
+    // TEST-ONLY Seller Messages thread; not saved to DB and never sent via the API.
+    const requested = new URLSearchParams(window.location.search);
+    const requestedComplaint = requested.get('complaint');
+    const demoEnabled = requested.get('demo') === '1' && requestedComplaint === 'TEST-CMP-001';
+    const DEMO_THREAD = {
+        id: 'demo-seller-complaint-001', type: 'complaints', title: 'TEST-CMP-001',
+        complaint_id: 'TEST-CMP-001', initials: 'TA', badge: 'Test Complaint',
+        status: 'Open', subtitle: 'ShopEase Admin · Testing only',
+        context_label: 'Complaint Reference', context_value: 'TEST-CMP-001 · TEST-ORD-001',
+        context_button: 'View Complaint', preview: 'TEST ONLY: Please verify the dispatched item.',
+        time: 'Today', unread: 0, __testOnly: true,
+        messages: [
+            {sender: 'admin', text: 'TEST ONLY: A buyer reported receiving the wrong item. Please check the order.', date: new Date().toISOString().slice(0,10), time: '9:00 AM'},
+            {sender: 'seller', text: 'TEST ONLY: I will review the packing record.', date: new Date().toISOString().slice(0,10), time: '9:05 AM', seen: true}
+        ]
+    };
+    function ensureDemoThread() {
+        if (demoEnabled && !conversations.complaints.some(c => String(c.id) === DEMO_THREAD.id)) {
+            conversations.complaints.unshift(DEMO_THREAD);
+        }
+    }
+    async function selectRequestedComplaint() {
+        if (!requestedComplaint || activeTab !== 'complaints') return;
+        const match = conversations.complaints.find(c =>
+            [c.complaint_id, c.complaintId, c.title, c.context_value].some(v => String(v || '').includes(requestedComplaint))
+        );
+        if (!match) return;
+        if (match.__testOnly) renderConversation(match);
+        else await openConversation(match.id);
+    }
+
     async function loadThreads({ selectFirst = true } = {}) {
         const requestId = ++listRequestId;
         showStatus(status);
@@ -286,8 +329,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = await apiFetch(`?${query.toString()}`);
             if (requestId !== listRequestId) return;
             conversations[activeTab] = payload.data || [];
+            ensureDemoThread();
             setCounts(payload);
             renderThreads();
+            if (requestedComplaint && activeTab === 'complaints') {
+                await selectRequestedComplaint();
+                return;
+            }
 
             const current = conversations[activeTab].find(item => String(item.id) === String(activeConversationId));
             if (current) {
@@ -298,7 +346,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearConversation();
             }
         } catch (error) {
-            showStatus(status, error.message);
+            if (demoEnabled && activeTab === 'complaints') {
+                ensureDemoThread();
+                renderThreads();
+                renderConversation(DEMO_THREAD);
+                flashStatus('Testing mode: sample conversation shown locally. Live messages API is unavailable.');
+            } else {
+                showStatus(status, error.message);
+            }
         }
     }
 
@@ -350,6 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (!activeConversationId) return;
+        if (String(activeConversationId) === DEMO_THREAD.id) { flashStatus('Testing only: no message was sent.'); return; }
 
         sendButton.disabled = true;
         showStatus(status);
@@ -446,7 +502,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     threadList?.addEventListener('click', event => {
         const thread = event.target.closest('[data-conversation-id]');
-        if (thread) openConversation(thread.dataset.conversationId);
+        if (thread) {
+            if (thread.dataset.conversationId === DEMO_THREAD.id) renderConversation(DEMO_THREAD);
+            else openConversation(thread.dataset.conversationId);
+        }
     });
 
     searchInput?.addEventListener('input', () => {
@@ -475,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('attachFileButton')?.addEventListener('click', () => fileInput?.click());
-    document.getElementById('sendPhotoButton')?.addEventListener('click', () => mediaInput?.click());
+
     [fileInput, mediaInput].forEach(input => input?.addEventListener('change', () => {
         const file = input.files?.[0];
         if (!file) return;
@@ -503,9 +562,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (conversation) window.alert(conversation.context_value);
     });
 
+    document.getElementById('sellerViewComplaint')?.addEventListener('click', () => {
+        const id = document.getElementById('sellerViewComplaint')?.dataset.complaintId;
+        if (!id) { flashStatus('No complaint reference is associated with this chat.'); return; }
+        const url = new URL('/seller/performance', window.location.origin);
+        url.searchParams.set('complaint', id);
+        url.hash = 'complaints';
+        window.location.assign(url.pathname + url.search + url.hash);
+    });
+    if (requested.get('tab') === 'complaints') {
+        activeTab = 'complaints';
+        tabs.forEach(tab => { const active = tab.dataset.messageTab === 'complaints'; tab.classList.toggle('is-active', active); tab.setAttribute('aria-selected', String(active)); });
+    }
     loadThreads();
     window.setInterval(() => {
-        if (activeConversationId) openConversation(activeConversationId);
+        if (activeConversationId && activeConversationId !== DEMO_THREAD.id) openConversation(activeConversationId);
         else loadThreads({ selectFirst: false });
     }, 15000);
     window.addEventListener('beforeunload', () => {

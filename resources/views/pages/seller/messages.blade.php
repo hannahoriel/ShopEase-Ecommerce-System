@@ -159,44 +159,9 @@
                             </div>
                         </div>
 
-                        <div class="messages-chat-header-actions">
-                            <button
-                                type="button"
-                                class="messages-icon-button"
-                                id="chatSearchButton"
-                                aria-label="Search in conversation"
-                                title="Search in conversation"
-                            >
-                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <circle
-                                        cx="11"
-                                        cy="11"
-                                        r="6.5"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                    />
-                                    <path
-                                        d="m16 16 4 4"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                        stroke-linecap="round"
-                                    />
-                                </svg>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="messages-icon-button"
-                                id="chatMoreButton"
-                                aria-label="More conversation options"
-                                title="More"
-                            >
-                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <circle cx="5" cy="12" r="1.7"/>
-                                    <circle cx="12" cy="12" r="1.7"/>
-                                    <circle cx="19" cy="12" r="1.7"/>
-                                </svg>
-                            </button>
+                        <div class="messages-chat-header-actions seller-header-context-actions">
+                            <span class="seller-complaint-status" id="sellerComplaintStatus" hidden></span>
+                            <button type="button" class="seller-view-complaint" id="sellerViewComplaint" hidden>View Complaint</button>
                         </div>
                     </header>
 
@@ -285,6 +250,7 @@
                             <input
                                 type="file"
                                 id="messageFileInput"
+                                accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
                                 class="messages-hidden-file-input"
                                 aria-label="Choose a file attachment"
                             >
@@ -296,39 +262,7 @@
                                 aria-label="Choose a photo or video attachment"
                             >
 
-                            <button
-                                type="button"
-                                class="messages-composer-icon"
-                                id="sendPhotoButton"
-                                aria-label="Send photo"
-                                title="Send photo"
-                            >
-                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <rect
-                                        x="3"
-                                        y="5"
-                                        width="18"
-                                        height="14"
-                                        rx="2"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                    />
-                                    <circle
-                                        cx="9"
-                                        cy="10"
-                                        r="2"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                    />
-                                    <path
-                                        d="m5 17 4.5-4 3.2 2.8 2.8-2.4L19 17"
-                                        stroke="currentColor"
-                                        stroke-width="1.7"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    />
-                                </svg>
-                            </button>
+
                         </div>
 
                         <div class="messages-input-shell">
