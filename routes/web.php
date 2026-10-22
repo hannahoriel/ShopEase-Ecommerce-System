@@ -2319,3 +2319,6 @@ Route::get('/logistics/register/review/document/{type}',
 //for now lang to beh 
 Route::view('/logistics/dashboard', 'pages.logistics.dashboard')
     ->name('logistics.dashboard');
+
+Route::view('/buyer/view-order', 'pages.buyer.view-order')
+    ->name('buyer.view-order');
