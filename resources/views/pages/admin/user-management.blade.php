@@ -103,6 +103,7 @@
                     <option value="all">All User Types</option>
                     <option value="buyer">Buyer</option>
                     <option value="seller">Seller</option>
+                    <option value="logistics">Logistics</option>
                 </select>
                 <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>

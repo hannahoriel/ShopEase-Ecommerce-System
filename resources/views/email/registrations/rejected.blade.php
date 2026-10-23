@@ -6,6 +6,7 @@
     <title>An update to your ShopEase registration</title>
 </head>
 <body style="margin: 0; padding: 32px 16px; background: #fff4ef; color: #201918; font-family: Arial, sans-serif;">
+    @include('emails.partials.brand-header')
     <main style="max-width: 560px; margin: 0 auto; padding: 32px; border-radius: 12px; background: #ffffff;">
         <h1 style="margin-top: 0; color: #75171f;">Update on your ShopEase registration</h1>
         <p>Hi {{ $registration->first_name }}, thanks for your interest in ShopEase. After reviewing your {{ ucfirst($registration->user_type) }} registration, we're unable to approve it at this time.</p>

@@ -207,9 +207,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 : 'buyer.png';
 
         const label =
-            type === 'seller'
-                ? 'Seller'
-                : 'Buyer';
+            type === 'seller' ? 'Seller'
+                : type === 'logistics' ? 'Logistics'
+                    : 'Buyer';
 
         const iconBase =
             userManagementConfig.iconBase || '';

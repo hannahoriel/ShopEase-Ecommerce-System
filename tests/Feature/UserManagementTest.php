@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AccountStatusChanged;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
@@ -34,7 +36,10 @@ class UserManagementTest extends TestCase
             'role' => User::ROLE_SELLER,
             'registration_status' => 'deactivated',
         ]);
-        User::factory()->create(['role' => User::ROLE_LOGISTICS]);
+        User::factory()->create([
+            'role' => User::ROLE_LOGISTICS,
+            'registration_status' => 'active',
+        ]);
 
         $response = $this->actingAs($admin)->getJson(route('admin.user.management.list', [
             'search' => 'maria',
@@ -47,7 +52,7 @@ class UserManagementTest extends TestCase
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.id', $buyer->id)
             ->assertJsonPath('data.0.type', 'buyer')
-            ->assertJsonPath('counts.total', 2);
+            ->assertJsonPath('counts.total', 3);
 
         $this->actingAs($admin)
             ->getJson(route('admin.user.management.show', $buyer))
@@ -57,6 +62,7 @@ class UserManagementTest extends TestCase
 
     public function test_admin_can_suspend_deactivate_and_activate_an_account(): void
     {
+        Mail::fake();
         Carbon::setTestNow('2026-09-04 12:00:00');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $user = User::factory()->create([
@@ -104,6 +110,58 @@ class UserManagementTest extends TestCase
             'registration_status' => 'active',
             'account_action_reason' => null,
         ]);
+
+        Mail::assertSent(AccountStatusChanged::class, 3);
+        foreach (['suspended', 'deactivated', 'active'] as $status) {
+            Mail::assertSent(AccountStatusChanged::class, function ($mail) use ($user, $status) {
+                return $mail->hasTo($user->email) && $mail->status === $status;
+            });
+        }
+    }
+
+    public function test_admin_can_manage_logistics_accounts_and_each_status_change_sends_an_email(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $logistics = User::factory()->create([
+            'role' => User::ROLE_LOGISTICS,
+            'registration_status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.user.management.list', ['type' => 'logistics']))
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.type', 'logistics')
+            ->assertJsonPath('data.0.id', $logistics->id);
+
+        $this->actingAs($admin)
+            ->patchJson(route('admin.user.management.status', $logistics), [
+                'status' => 'suspended',
+                'reason' => 'Fraudulent activity',
+                'duration' => 5,
+            ])
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->patchJson(route('admin.user.management.status', $logistics), [
+                'status' => 'deactivated',
+                'reason' => 'Request by the user',
+            ])
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->patchJson(route('admin.user.management.status', $logistics), [
+                'status' => 'active',
+            ])
+            ->assertOk();
+
+        Mail::assertSent(AccountStatusChanged::class, 3);
+        foreach (['suspended', 'deactivated', 'active'] as $status) {
+            Mail::assertSent(AccountStatusChanged::class, function ($mail) use ($logistics, $status) {
+                return $mail->hasTo($logistics->email) && $mail->status === $status;
+            });
+        }
     }
 
     public function test_status_changes_require_valid_action_data(): void
