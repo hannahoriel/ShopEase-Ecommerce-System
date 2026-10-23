@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'archived': navigateInventory('archived'); break;
             case 'active': chooseComplaintsTab('open'); break;
             case 'resolved': chooseComplaintsTab('resolved'); break;
+            case 'returns': window.location.assign('/seller/returns-refunds'); break;
         }
     }
     document.querySelectorAll('.sp-metric-link').forEach(metric => {
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const complianceNotices = data => (Array.isArray(data?.notices) ? data.notices : [])
         .filter(notice => {
             const status = norm(notice.status);
+            if (['violation-confirmed','seller-at-fault','guilty'].includes(status) && ['complaint','return-refund','return_refund','refund'].includes(norm(notice.source || notice.type || notice.category))) return true;
             if (status === 'warning') return true;
             if (['removed', 'archived', 'product-removed'].includes(status)) return isAdminRemoval(notice);
             return false;
@@ -89,11 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
         text('spScoreHeading', compliance.store_name || 'Your shop compliance');
         text('spPolicyMessage', compliance.policy || 'Your compliance status and policy message will appear once provided by your account records.');
         text('spWarnings', notices.filter(n => norm(n.status) === 'warning').length);
-        text('spRemoved', notices.filter(n => norm(n.status) !== 'warning').length);
+        text('spRemoved', notices.filter(n => ['removed','archived','product-removed'].includes(norm(n.status))).length);
         text('spActiveCases', complaints.filter(c => ['open', 'in-progress'].includes(norm(c.status))).length);
         text('spResolved', complaints.filter(c => norm(c.status) === 'resolved').length);
+        const rrCount = d.return_refund_count ?? d.returnRefundCount ?? (Array.isArray(d.return_refunds) ? d.return_refunds.length : null);
+        text('spReturnRefunds', rrCount === null ? '—' : rrCount);
         text('spNoticeCount', `${notices.length} ${notices.length === 1 ? 'record' : 'records'}`);
-        $('spNoticeList').innerHTML = notices.length ? notices.map(n => `<article class="sp-notice sp-notice-link" data-notice-status="${norm(n.status) === 'warning' ? 'warning' : 'removed'}" data-product-id="${safeNoticeAttr(n.product_id ?? n.productId ?? n.id ?? '')}" data-product-name="${safeNoticeAttr(n.product_name ?? '')}" role="link" tabindex="0" aria-label="View ${safeNoticeAttr(n.product_name || 'product')} in Inventory"><div class="sp-notice-icon ${norm(n.status) !== 'warning' ? 'removed' : 'warning'}">${norm(n.status) !== 'warning' ? '×' : '!'}</div><div class="sp-notice-content"><strong>${htmlEscape(n.product_name || 'Product notice')} · ${norm(n.status) !== 'warning' ? 'Product Removed' : 'Warning Issued'}</strong><p>${htmlEscape(n.reason || 'No reason provided')}${n.details ? ` — ${htmlEscape(n.details)}` : ''}</p></div><time class="sp-notice-date">${htmlEscape(date(n.date))}</time></article>`).join('') : '<div class="sp-empty">No warnings or product removals on record.</div>';
+        $('spNoticeList').innerHTML = notices.length ? notices.map(n => {
+            const confirmed = ['violation-confirmed','seller-at-fault','guilty'].includes(norm(n.status));
+            const removed = !confirmed && norm(n.status) !== 'warning';
+            const kind = confirmed ? 'Seller Violation Confirmed' : removed ? 'Product Removed' : 'Warning Issued';
+            const source = confirmed ? norm(n.source || n.type || n.category).replace(/[-_]/g, ' ') : 'Product';
+            return `<article class="sp-notice ${confirmed ? '' : 'sp-notice-link'}" ${confirmed ? '' : `data-notice-status="${removed ? 'removed':'warning'}" data-product-id="${safeNoticeAttr(n.product_id ?? n.productId ?? n.id ?? '')}" data-product-name="${safeNoticeAttr(n.product_name ?? '')}" role="link" tabindex="0"`}><div class="sp-notice-icon ${removed ? 'removed' : 'warning'}">${removed ? '×' : '!'}</div><div class="sp-notice-content"><strong>${htmlEscape(confirmed ? `${source} · ${kind}` : `${n.product_name || 'Product notice'} · ${kind}`)}</strong><p>${htmlEscape(n.reason || 'No reason provided')}${n.details ? ` — ${htmlEscape(n.details)}` : ''}</p></div><time class="sp-notice-date">${htmlEscape(date(n.date))}</time></article>`;
+        }).join('') : '<div class="sp-empty">No confirmed compliance notices on record.</div>';
         renderTable();
     }
     const safe = htmlEscape;

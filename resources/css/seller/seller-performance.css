@@ -1934,3 +1934,6 @@ body.sp-modal-open {
     flex: 0 0 auto;
     padding-top: 4px;
 }
+
+/* Five metric cards: keep the fifth card full width */
+.sp-metrics>.sp-metric:last-child:nth-child(odd){grid-column:span 2;}

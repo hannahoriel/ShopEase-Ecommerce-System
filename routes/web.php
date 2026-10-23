@@ -2322,3 +2322,6 @@ Route::view('/logistics/dashboard', 'pages.logistics.dashboard')
 
 Route::view('/buyer/view-order', 'pages.buyer.view-order')
     ->name('buyer.view-order');
+
+Route::view('/seller/returns-refunds', 'pages.seller.returns-refunds')
+    ->name('seller.returns.index');

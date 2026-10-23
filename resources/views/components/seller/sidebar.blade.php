@@ -358,7 +358,7 @@
 
                 {{-- RETURNS AND REFUNDS: link activates when its Laravel route is available --}}
                 <a
-                    href="{{ \Illuminate\Support\Facades\Route::has('seller.returns.index') ? route('seller.returns.index') : (\Illuminate\Support\Facades\Route::has('seller.returns.refunds') ? route('seller.returns.refunds') : '#') }}"
+                    href="{{ route('seller.returns.index') }}"
                     class="
                         seller-subnav-item
                         flex items-center
@@ -375,11 +375,6 @@
                             ? 'bg-maroon-800/70 font-medium'
                             : 'hover:bg-maroon-800/50 hover:translate-x-1' }}
                     "
-                    @unless (\Illuminate\Support\Facades\Route::has('seller.returns.index') || \Illuminate\Support\Facades\Route::has('seller.returns.refunds'))
-                        aria-disabled="true"
-                        title="Returns and Refunds page is not set up yet"
-                        onclick="event.preventDefault()"
-                    @endunless
                 >
                     Returns and Refunds
                 </a>
