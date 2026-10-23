@@ -16,7 +16,7 @@ const userManagementConfig = userManagementConfigElement
     };
 
 document.addEventListener('DOMContentLoaded', function () {
-    const users = userManagementConfig.users || [];
+    let users = userManagementConfig.users || [];
     const counts = userManagementConfig.counts || {};
     const statusUrl = userManagementConfig.statusUrl || '';
     const detailUrl = userManagementConfig.detailUrl || '';
@@ -2718,4 +2718,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
     render();
     updateCards();
+
+    async function loadUsersFromApi() {
+        const allUsers = [];
+        let page = 1;
+        let lastPage = 1;
+
+        do {
+            const url = new URL(userManagementConfig.listUrl, window.location.origin);
+            url.searchParams.set('page', String(page));
+            url.searchParams.set('per_page', '100');
+
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.message || 'Unable to load user management data.');
+            }
+
+            allUsers.push(...(payload.data || []));
+            Object.assign(counts, payload.counts || {});
+            lastPage = Number(payload.last_page || 1);
+            page += 1;
+        } while (page <= lastPage);
+
+        users = allUsers;
+        state.filtered = [...users];
+        state.page = 1;
+        render();
+        updateCards();
+    }
+
+    loadUsersFromApi().catch(error => {
+        console.error(error);
+        showActionFlash(error.message, true);
+    });
 });

@@ -22,7 +22,11 @@
  $adminBirthday = old('birthday',data_get($adminProfile,'birthday'));
  try { $adminBirthday = $adminBirthday ? \Carbon\Carbon::parse($adminBirthday)->format('Y-m-d') : ''; } catch (\Throwable $e) { $adminBirthday = ''; }
  $adminAccountConfig = [
-   'securityBase' => url('/admin/account/security'),
+   'securityBase' => url('/api/v1/admin/account/security'),
+   'profileUrl' => url('/api/v1/admin/account'),
+   'notificationsUrl' => url('/api/v1/admin/account/notifications'),
+   'adminManagementUrl' => url('/api/v1/admin/account/admins'),
+   'canManageAdmins' => $canManageAdmins ?? true,
    'adminUserId' => (int) $adminUser->id,
    'initialSuccess' => session('success'),
    'initialError' => session('error'),
@@ -59,7 +63,7 @@
    </aside>
    <div class="sa-workspace sa-tab-panel" id="profile" data-admin-panel="profile">
     <h1 class="sa-page-title">Profile</h1><p class="sa-intro">Manage your administrator information, identity and profile photos.</p>
-    <form id="adminProfileForm" method="POST" action="{{ route('admin.account.update') }}" enctype="multipart/form-data">
+    <form id="adminProfileForm" method="POST" action="{{ url('/api/v1/admin/account') }}" enctype="multipart/form-data">
      @csrf @method('PUT')
      <div class="sa-cover" id="saCover">
       <img id="saCoverImage" src="{{ $adminCover ?: '' }}" alt="Admin cover photo" @if(!$adminCover) style="display:none" @endif>
@@ -133,7 +137,7 @@
    </div>
    <div class="sa-workspace sa-tab-panel" id="notifications" data-admin-panel="notifications" hidden>
     <h1 class="sa-page-title">Notification Settings</h1><p class="sa-intro">Manage notification types for your assigned administrator role.</p>
-    <form id="aaNotificationsForm" method="POST" action="{{ route('admin.account.notifications.update') }}">
+    <form id="aaNotificationsForm" method="POST" action="{{ url('/api/v1/admin/account/notifications') }}">
      @csrf
      <section class="sa-settings-card">
       <div class="sa-settings-top"><span class="sa-settings-emblem"><img src="{{ asset('icons/seller/account/notification.png') }}" alt=""></span><div><h2>Role-based Notifications</h2><p>Only settings relevant to your access role appear below.</p></div><span class="sa-notification-role">{{ $roleLabel }}</span></div>
@@ -146,14 +150,19 @@
      <div class="sa-settings-actions"><button type="submit" class="sa-settings-primary" id="aaSavePreferences" disabled>Save Preferences</button></div>
     </form>
    </div>
-   {{-- UI preview only. Never save an administrator or signing credentials in browser storage. --}}
    <div class="sa-workspace sa-tab-panel aam-workspace" id="admin-management" data-admin-panel="admin-management" hidden>
      <div class="aam-heading-row">
-       <div><div class="aam-eyebrow">ADMIN ACCOUNT / ACCESS MANAGEMENT</div><h1 class="sa-page-title">Admin Management</h1><p class="sa-intro">Prepare an administrator profile, assign module access, and generate temporary login credentials.</p></div>
-       <span class="aam-preview-pill">UI Preview</span>
+       <div><div class="aam-eyebrow">ADMIN ACCOUNT / ACCESS MANAGEMENT</div><h1 class="sa-page-title">Admin Management</h1><p class="sa-intro">Create administrator accounts, assign module access, and manage their access status.</p></div>
      </div>
-     <form id="aamCreateForm" autocomplete="off">
-       <section class="sa-section aam-section">
+     @if($canManageAdmins)
+     <section class="sa-section aam-section" id="aamAccountsSection">
+       <div class="sa-section-heading"><div><h3 class="sa-section-title">Administrator Accounts</h3><p class="sa-section-subtitle">Review accounts and their assigned module access.</p></div></div>
+       <p class="sa-request-hint" id="aamAccountsError" role="alert" hidden></p>
+       <div id="aamAccountsList" aria-live="polite"><p class="sa-request-hint">Loading administrator accounts…</p></div>
+     </section>
+     <form id="aamCreateForm" action="{{ $adminManagementUrl }}" method="POST" enctype="multipart/form-data" autocomplete="off">
+       @csrf
+       <section class="sa-section aam-section" data-aam-profile>
          <div class="sa-section-heading"><span class="sa-section-icon"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/admin.png') }}" alt=""></span><div><h3 class="sa-section-title">Administrator Profile</h3><p class="sa-section-subtitle">Basic details for the new administrator account.</p></div></div>
          <div class="sa-fields">
            <div class="sa-field half"><label for="aamFirst">First Name <span class="sa-required">*</span></label><input class="sa-control" id="aamFirst" name="first_name" autocomplete="off" maxlength="80" required placeholder="Enter first name"></div>
@@ -164,11 +173,11 @@
            <div class="sa-field half"><label for="aamBirthday">Birthday</label><input type="date" class="sa-control" id="aamBirthday" name="birthday" max="{{ now()->toDateString() }}"></div>
            <div class="sa-field half"><label for="aamSex">Sex</label><select class="sa-control" id="aamSex" name="sex"><option value="">Select sex</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>
            <div class="sa-field half"><label for="aamAge">Age</label><input class="sa-control" id="aamAge" readonly placeholder="Calculated from birthday"></div>
-           <div class="sa-field half"><label for="aamProfilePhoto">Profile Photo</label><input class="sa-control aam-file" type="file" id="aamProfilePhoto" name="profile_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · JPG, PNG, or WebP · Max 5 MB (preview only)</p></div>
-           <div class="sa-field half"><label for="aamIdPhoto">Admin ID Photo</label><input class="sa-control aam-file" type="file" id="aamIdPhoto" name="admin_id_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · For later identity verification (preview only)</p></div>
+           <div class="sa-field half"><label for="aamProfilePhoto">Profile Photo</label><input class="sa-control aam-file" type="file" id="aamProfilePhoto" name="profile_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · JPG, PNG, or WebP · Max 5 MB</p></div>
+           <div class="sa-field half"><label for="aamIdPhoto">Admin ID Photo</label><input class="sa-control aam-file" type="file" id="aamIdPhoto" name="admin_id_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · Stored for administrator identity records.</p></div>
          </div>
        </section>
-       <section class="sa-section aam-section">
+       <section class="sa-section aam-section" data-aam-access>
          <div class="sa-section-heading"><span class="sa-section-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="23" height="23"><path d="M12 3 3 7v5c0 5 3 8 9 10 6-2 9-5 9-10V7l-9-4Z"/><path d="m8 12 3 3 5-6"/></svg></span><div><h3 class="sa-section-title">Role & Access Permissions</h3><p class="sa-section-subtitle">Choose which Admin Sidebar modules this administrator can access.</p></div></div>
          <div class="aam-role-toolbar"><span id="aamRoleCount">0 modules selected</span><button type="button" id="aamSelectAll" class="aam-text-button">Select all</button><button type="button" id="aamClearAll" class="aam-text-button">Clear all</button></div>
          <div class="aam-permission-grid">
@@ -184,20 +193,23 @@
              </div>
            </div>
          </div>
-         <p class="sa-request-hint">These selections are only a UI preview. They will not grant actual permissions until server-side policies and middleware are implemented.</p>
+         <p class="sa-request-hint">Module access is enforced by the server. Administrators can only open the modules selected here.</p>
        </section>
-       <section class="sa-section aam-section">
+       <section class="sa-section aam-section" data-aam-credentials>
          <div class="sa-section-heading"><span class="sa-section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="23" height="23"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><div><h3 class="sa-section-title">Temporary Login Credentials</h3><p class="sa-section-subtitle">Generate a strong password to provide securely to the administrator.</p></div></div>
          <div class="aam-credentials-layout">
-           <div class="aam-password-field"><label for="aamPassword">Auto-generated Password <span class="sa-required">*</span></label><div class="aam-password-control"><input type="password" id="aamPassword" readonly required autocomplete="off" placeholder="Click Generate Password"><button type="button" id="aamRevealPassword" aria-label="Show or hide password">Show</button></div><small>Randomly generated in your browser. Not saved or sent anywhere.</small></div>
+           <div class="aam-password-field"><label for="aamPassword">Temporary Password <span class="sa-required">*</span></label><div class="aam-password-control"><input type="password" id="aamPassword" name="password" readonly required autocomplete="new-password" placeholder="Click Generate Password"><button type="button" id="aamRevealPassword" aria-label="Show or hide password">Show</button></div><small>Generated securely and stored as a password hash. Share it through a secure channel.</small></div>
            <button type="button" class="aam-outline-btn" id="aamGenerate">↻ Generate Password</button>
            <button type="button" class="aam-outline-btn" id="aamCopyPassword">Copy Password</button>
          </div>
-         <label class="aam-confirm-line"><input type="checkbox" id="aamRequireReset" checked> Require password change on first login <span>(UI placeholder)</span></label>
+         <label class="aam-confirm-line"><input type="checkbox" id="aamRequireReset" checked disabled> Require password change on first login <span>(not available yet)</span></label>
        </section>
-       <div class="aam-form-actions"><button type="reset" class="sa-action" id="aamReset">Clear Form</button><button type="submit" class="sa-action primary" id="aamCreate">Create Admin (Preview)</button></div>
-     </form>
-     <section class="aam-result" id="aamResult" hidden aria-live="polite"><div class="aam-result-heading"><h2>Administrator Setup Preview</h2><span>Not saved to database</span></div><p id="aamResultSummary"></p><div class="aam-result-credentials"><div><small>Login Email</small><strong id="aamResultEmail"></strong></div><div><small>Temporary Password</small><strong id="aamResultPassword">Hidden — use Copy Credentials</strong></div></div><p id="aamResultRoles"></p><button type="button" class="aam-outline-btn" id="aamCopyCredentials">Copy Credentials</button><p class="sa-request-hint">Share credentials through a secure channel. Actual admin creation, forced password reset, notifications and role enforcement require backend development.</p></section>
+       <div class="aam-form-actions"><button type="reset" class="sa-action" id="aamReset">Clear Form</button><button type="submit" class="sa-action primary" id="aamCreate">Create Admin Account</button></div>
+       </form>
+       <section class="aam-result" id="aamResult" hidden aria-live="polite"><div class="aam-result-heading"><h2>Administrator Account Created</h2><span>Saved securely</span></div><p id="aamResultSummary"></p><div class="aam-result-credentials"><div><small>Login Email</small><strong id="aamResultEmail"></strong></div><div><small>Temporary Password</small><strong id="aamResultPassword">Hidden — use Copy Credentials</strong></div></div><p id="aamResultRoles"></p><button type="button" class="aam-outline-btn" id="aamCopyCredentials">Copy Credentials</button><p class="sa-request-hint">The password is not shown again after leaving this page. Share it through a secure channel.</p></section>
+       @else
+         <section class="sa-section aam-section"><p class="sa-request-hint" role="status">Only a full administrator can create or manage administrator accounts.</p></section>
+       @endif
    </div>
 
   </div>

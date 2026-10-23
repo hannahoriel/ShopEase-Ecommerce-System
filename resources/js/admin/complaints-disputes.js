@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const response = await fetch(
-                `/admin/complaints-disputes/${complaint.databaseId}/status`,
+                `/api/v1/admin/complaints/${complaint.databaseId}/status`,
                 {
                     method: 'PATCH',
                     headers: {
@@ -1398,4 +1398,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeComplaintDetails();
     filterRows();
+
+    async function loadComplaintsFromApi() {
+        const response = await fetch(
+            complaintsConfig.apiUrl || '/api/v1/admin/complaints',
+            {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            }
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.message || 'Unable to load complaints data.');
+        }
+
+        complaints.splice(0, complaints.length, ...(payload.data || []));
+        const counts = payload.counts || {};
+        statOpen.textContent = counts.open || 0;
+        statInProgress.textContent = counts.in_progress || 0;
+        statResolved.textContent = counts.resolved || 0;
+        statTotal.textContent = counts.total || 0;
+    }
+
+    loadComplaintsFromApi().catch(error => {
+        console.error(error);
+        const errorElement = document.getElementById('complaints-api-error');
+        if (errorElement) {
+            errorElement.textContent = error.message;
+            errorElement.hidden = false;
+        }
+    });
 });

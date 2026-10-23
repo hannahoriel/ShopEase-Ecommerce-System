@@ -100,6 +100,29 @@ class AdminAccountProfileTest extends TestCase
         $this->assertNotSame('Rejected Update', $admin->fresh()->name);
     }
 
+    public function test_admin_profile_api_reads_and_updates_the_account(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+            'name' => 'API Admin',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/admin/account')
+            ->assertOk()
+            ->assertJsonPath('user.name', 'API Admin')
+            ->assertJsonPath('profile.first_name', '');
+
+        $this->putJson('/api/v1/admin/account', [
+            'first_name' => 'Taylor',
+            'last_name' => 'API Admin',
+            'contact_number' => '9123456789',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Admin profile changes saved successfully.')
+            ->assertJsonPath('account.user.name', 'Taylor API Admin')
+            ->assertJsonPath('account.profile.contact_number', '9123456789');
+    }
+
     public function test_non_admin_cannot_view_or_update_admin_profile(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);

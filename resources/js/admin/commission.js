@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', function () {
     /* =========================================================
        DATA
     ========================================================== */
-    const commissionRows =
+    let commissionRows =
         commissionConfig.rows || [];
 
-    const originalTotalEntries =
+    let originalTotalEntries =
         Number(commissionConfig.totalEntries || 0);
 
     /* =========================================================
@@ -95,6 +95,48 @@ document.addEventListener('DOMContentLoaded', function () {
         return `₱ ${new Intl.NumberFormat('en-PH', {
             maximumFractionDigits: 0
         }).format(Number(value || 0))}`;
+    }
+
+    async function loadCommissionData() {
+        const loadedRows = [];
+        let page = 1;
+        let lastPage = 1;
+        let stats = null;
+
+        do {
+            const url = new URL(commissionConfig.apiUrl, window.location.origin);
+            url.searchParams.set('page', String(page));
+            url.searchParams.set('per_page', '100');
+
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.message || 'Unable to load commission data.');
+            }
+
+            loadedRows.push(...(payload.data || []));
+            lastPage = Number(payload.meta?.last_page || 1);
+            originalTotalEntries = Number(payload.meta?.total || 0);
+            stats = payload.stats || stats;
+            page += 1;
+        } while (page <= lastPage);
+
+        commissionRows = loadedRows;
+        if (stats) {
+            document.querySelectorAll('[data-commission-stat]').forEach(element => {
+                const key = element.dataset.commissionStat;
+                const value = stats[key] || 0;
+                element.textContent = key === 'rate'
+                    ? `${Number(value).toLocaleString('en-PH')}%`
+                    : key === 'total_commission'
+                        ? formatCompactAmount(value)
+                        : Number(value).toLocaleString('en-PH');
+            });
+        }
+        render();
     }
 
     function formatDateInput(value) {
@@ -687,4 +729,12 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
     render();
+    loadCommissionData().catch(error => {
+        console.error(error);
+        const errorElement = document.getElementById('commission-api-error');
+        if (errorElement) {
+            errorElement.textContent = error.message;
+            errorElement.hidden = false;
+        }
+    });
 });

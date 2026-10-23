@@ -2,6 +2,7 @@
 @php
     $logisticsName = data_get(auth()->user(), 'name') ?: 'Logistics Partner';
     $demoStats = $logisticsStats ?? ['sorting_centers'=>0,'delivery_hubs'=>0,'parcels_in_network'=>0,'earnings'=>0];
+    $dashboardAnnouncements = $dashboardAnnouncements ?? collect();
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -124,7 +125,20 @@
         </div>
         <section class="lg-panel lg-announcements" aria-label="Platform announcements">
             <div class="lg-panel-header"><div><h2>Platform Announcements</h2><p>Updates from the ShopEase administration.</p></div></div>
-            <p class="lg-help">No platform announcements available yet.</p>
+            <div class="lg-announcement-slides">
+                @forelse($dashboardAnnouncements as $index => $announcement)
+                    <article data-logistics-announcement @if($index > 0) hidden @endif>
+                        <small>{{ $announcement->badge_label ?: ($announcement->type ?: 'Announcement') }} · {{ ($announcement->published_at ?? $announcement->created_at)?->format('F Y') }}</small>
+                        <h3>{{ $announcement->title }}</h3>
+                        <p>{{ $announcement->body ?: 'There are no details for this announcement.' }}</p>
+                    </article>
+                @empty
+                    <p class="lg-help">No platform announcements available yet.</p>
+                @endforelse
+            </div>
+            @if($dashboardAnnouncements->count() > 1)
+                <button class="lg-btn lg-btn-outline" type="button" data-dashboard-announcement-next aria-label="Next announcement">Next announcement</button>
+            @endif
         </section>
     </main>
     <div class="lg-modal" id="lgHubModal" hidden role="dialog" aria-modal="true" aria-labelledby="lgModalTitle"><div class="lg-modal-card">
@@ -228,6 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('lgProfileButton').addEventListener('click',()=>{const menu=$('lgProfileMenu');menu.hidden=!menu.hidden;$('lgProfileButton').setAttribute('aria-expanded',String(!menu.hidden));});
   document.addEventListener('click',e=>{if(!e.target.closest('.lg-profile-wrap')){$('lgProfileMenu').hidden=true;$('lgProfileButton').setAttribute('aria-expanded','false');}});
   $('lgNotifyButton').addEventListener('click',()=>toast('No live notifications connected yet.'));
+  const announcements=[...document.querySelectorAll('[data-logistics-announcement]')];
+  let currentAnnouncement=0;
+  document.querySelector('[data-dashboard-announcement-next]')?.addEventListener('click',()=>{
+    announcements[currentAnnouncement].hidden=true;
+    currentAnnouncement=(currentAnnouncement+1)%announcements.length;
+    announcements[currentAnnouncement].hidden=false;
+  });
   renderFacilities();renderScans();syncType();
 });
 

@@ -57,7 +57,7 @@ class AdminLogisticsManagementTest extends TestCase
         $pending = $this->createLogisticsApplication('pending', 'Approve Carrier');
 
         $this->actingAs($admin)
-            ->postJson("/admin/logistics-management/api/registrations/{$pending['registration']->id}/approve")
+            ->postJson("/api/v1/admin/logistics-management/registrations/{$pending['registration']->id}/approve")
             ->assertOk()
             ->assertJsonPath('counts.approved', 1);
 
@@ -78,7 +78,7 @@ class AdminLogisticsManagementTest extends TestCase
 
         $toReject = $this->createLogisticsApplication('pending', 'Reject Carrier');
         $this->actingAs($admin)
-            ->postJson("/admin/logistics-management/api/registrations/{$toReject['registration']->id}/reject", [
+            ->postJson("/api/v1/admin/logistics-management/registrations/{$toReject['registration']->id}/reject", [
                 'reason' => 'Insufficient delivery coverage or operational capacity.',
                 'details' => 'Limited region coverage.',
             ])
@@ -102,7 +102,7 @@ class AdminLogisticsManagementTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $application = $this->createLogisticsApplication('approved', 'Branch Carrier');
         $branch = $this->actingAs($admin)
-            ->postJson("/admin/logistics-management/api/companies/{$application['profile']->id}/branches", [
+            ->postJson("/api/v1/admin/logistics-management/companies/{$application['profile']->id}/branches", [
                 'name' => 'Manila Hub',
                 'address' => 'Manila',
                 'contact_person' => 'Alex Santos',
@@ -138,14 +138,14 @@ class AdminLogisticsManagementTest extends TestCase
             ->assertJsonPath('data.0.riders', 1);
 
         $this->actingAs($admin)
-            ->patchJson("/admin/logistics-management/api/branches/{$branch['id']}", [
+            ->patchJson("/api/v1/admin/logistics-management/branches/{$branch['id']}", [
                 'name' => 'Manila Central Hub',
             ])
             ->assertOk()
             ->assertJsonPath('data.name', 'Manila Central Hub');
 
         $this->actingAs($admin)
-            ->deleteJson("/admin/logistics-management/api/branches/{$branch['id']}")
+            ->deleteJson("/api/v1/admin/logistics-management/branches/{$branch['id']}")
             ->assertOk();
 
         $this->assertDatabaseMissing('logistics_branches', ['id' => $branch['id']]);

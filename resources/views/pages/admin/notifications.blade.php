@@ -100,6 +100,7 @@
         class="admin-notifications-page"
     >
         <div class="admin-notifications-content">
+            <p id="notifications-api-error" class="mb-4 text-sm text-red-700" role="alert" hidden></p>
 
             @if(session('success'))
                 <div class="sn-flash" role="status">
@@ -172,7 +173,7 @@
 
                     </form>
 
-                    <form method="POST" action="{{ route('admin.notifications.read-all') }}" class="sn-toolbar-mark-all">
+                    <form method="POST" action="{{ url('/api/v1/admin/notifications/read-all') }}" class="sn-toolbar-mark-all">
                         @csrf
                         @method('PATCH')
                         <button class="sn-mark-all" type="submit" {{ $unreadNotifications === 0 ? 'disabled' : '' }}>
@@ -420,7 +421,7 @@
 
                                         <form
                                             method="POST"
-                                            action="{{ route('admin.notifications.read', $notification->id) }}"
+                                            action="{{ url('/api/v1/admin/notifications/'.$notification->id.'/read') }}"
                                         >
                                             @csrf
                                             @method('PATCH')

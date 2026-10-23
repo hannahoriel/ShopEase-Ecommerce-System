@@ -249,6 +249,7 @@
     id="admin-content"
     class="ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
+    <p id="commission-api-error" class="mb-4 text-sm text-red-700" role="alert" hidden></p>
     <!-- =====================================================
          STAT CARDS
     ====================================================== -->
@@ -264,7 +265,7 @@
                 >
 
                 <div class="commission-stat-copy">
-                    <p class="commission-stat-number">
+                    <p class="commission-stat-number" data-commission-stat="rate">
                         {{ number_format($commissionStats['rate']) }}%
                     </p>
 
@@ -285,7 +286,7 @@
                 >
 
                 <div class="commission-stat-copy">
-                    <p class="commission-stat-number">
+                    <p class="commission-stat-number" data-commission-stat="total_commission">
                         ₱ {{ number_format($commissionStats['total_commission']) }}
                     </p>
 
@@ -306,7 +307,7 @@
                 >
 
                 <div class="commission-stat-copy">
-                    <p class="commission-stat-number">
+                    <p class="commission-stat-number" data-commission-stat="total_orders">
                         {{ number_format($commissionStats['total_orders']) }}
                     </p>
 
@@ -327,7 +328,7 @@
                 >
 
                 <div class="commission-stat-copy">
-                    <p class="commission-stat-number">
+                    <p class="commission-stat-number" data-commission-stat="total_sellers_charged">
                         {{ number_format($commissionStats['total_sellers_charged']) }}
                     </p>
 
@@ -582,6 +583,7 @@
     $commissionClientConfig = [
         'rows' => $commissionRows,
         'totalEntries' => $commissionTotalEntries,
+        'apiUrl' => url('/api/v1/admin/commissions'),
     ];
 @endphp
 

@@ -56,6 +56,27 @@ class AdminNotificationsTest extends TestCase
             ->assertSee('No new notifications');
     }
 
+    public function test_admin_notifications_api_lists_and_marks_items_read(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin->notify(new SellerCategoryChangeRequested(42, 'North Store'));
+        $notification = $admin->unreadNotifications()->firstOrFail();
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/admin/notifications?filter=unread')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('counts.unread', 1);
+
+        $this->patchJson("/api/v1/admin/notifications/{$notification->id}/read")
+            ->assertOk()
+            ->assertJsonPath('message', 'Notification marked as read.');
+
+        $this->patchJson('/api/v1/admin/notifications/read-all')
+            ->assertOk()
+            ->assertJsonPath('message', 'All notifications marked as read.');
+    }
+
     public function test_non_admin_cannot_open_admin_notifications(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);

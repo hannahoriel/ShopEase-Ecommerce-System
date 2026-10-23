@@ -121,7 +121,7 @@ Route::post('/auth/logout', function (
 
     $request->session()->regenerateToken();
 
-    return redirect()->route('landing.page');
+    return redirect()->route('login');
 
 })->middleware('auth')
     ->name('logout');
@@ -2316,10 +2316,6 @@ Route::get('/logistics/register/review/document/{type}',
     [LogisticsRegistrationController::class, 'reviewDocument']
 )->name('logistics.register.review.document');
 
-//for now lang to beh 
-Route::view('/logistics/dashboard', 'pages.logistics.dashboard')
-    ->name('logistics.dashboard');
-
 Route::view('/buyer/view-order', 'pages.buyer.view-order')
     ->name('buyer.view-order');
 
@@ -2331,4 +2327,3 @@ Route::middleware(['auth', 'role:seller'])->group(function () {
     Route::view('/seller/vouchers-promotions', 'pages.seller.vouchers-promotions')
         ->name('seller.vouchers.index');
 });
-

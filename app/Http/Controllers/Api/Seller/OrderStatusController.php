@@ -49,7 +49,11 @@ class OrderStatusController extends Controller
             ]);
 
         if ($request->filled('status')) {
-            $query->whereIn('status', (array) $request->input('status'));
+            $statuses = array_map(
+                fn (string $status): string => str_replace('-', '_', strtolower($status)),
+                (array) $request->input('status')
+            );
+            $query->whereIn('status', $statuses);
         }
 
         if ($request->filled('search')) {
@@ -84,6 +88,11 @@ class OrderStatusController extends Controller
     public function update(Request $request, Order $order): JsonResponse
     {
         $order = $this->ownedOrder($request->user(), $order);
+        if ($request->filled('status')) {
+            $request->merge([
+                'status' => str_replace('-', '_', strtolower((string) $request->input('status'))),
+            ]);
+        }
         $validated = $request->validate([
             'status' => ['required', Rule::in(array_keys(self::TRANSITIONS))],
             'notes' => ['nullable', 'string', 'max:1000'],

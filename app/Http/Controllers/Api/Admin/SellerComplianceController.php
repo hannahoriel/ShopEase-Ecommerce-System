@@ -112,7 +112,7 @@ class SellerComplianceController extends Controller
 
             'compliance' => [
                 'nullable',
-                'in:compliant,warning,suspended',
+                'in:compliant,warning,under-review,suspended',
             ],
 
             'status' => [
@@ -492,9 +492,9 @@ class SellerComplianceController extends Controller
 
             $rows =
                 $rows->filter(
-                    fn (array $row): bool =>
-                        $row['compliance']
-                        === $validated['compliance']
+                    fn (array $row): bool => $validated['compliance'] === 'under-review'
+                        ? ($row['products_under_review'] ?? 0) > 0
+                        : $row['compliance'] === $validated['compliance']
                 );
 
         }
@@ -1145,8 +1145,13 @@ class SellerComplianceController extends Controller
             );
 
 
-        // Pending/under-review PRODUCTS do not change the SELLER status.
-        // They remain visible through products_under_review and product modals.
+        if ($reviewCount > 0) {
+            return [
+                'status' => 'under-review',
+                'label' => 'Under Review',
+                'score' => $score,
+            ];
+        }
 
         if (
             $warningCount > 0

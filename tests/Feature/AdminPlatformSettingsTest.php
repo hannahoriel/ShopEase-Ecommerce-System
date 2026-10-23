@@ -22,7 +22,7 @@ class AdminPlatformSettingsTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($buyer)
-            ->getJson('/admin/platform-settings/api')
+            ->getJson('/api/v1/admin/platform-settings')
             ->assertForbidden();
     }
 
@@ -32,7 +32,7 @@ class AdminPlatformSettingsTest extends TestCase
 
         $this->travelTo(now()->startOfDay());
 
-        $created = $this->actingAs($admin)->postJson('/admin/platform-settings/api/announcements', [
+        $created = $this->actingAs($admin)->postJson('/api/v1/admin/platform-settings/announcements', [
             'title' => 'Delivery update',
             'description' => 'New delivery hours are now in effect.',
             'type' => 'Announcement',
@@ -54,7 +54,7 @@ class AdminPlatformSettingsTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->postJson("/admin/platform-settings/api/announcements/{$announcementId}", [
+            ->patchJson("/api/v1/admin/platform-settings/announcements/{$announcementId}", [
                 '_method' => 'PATCH',
                 'title' => 'Updated delivery update',
                 'description' => 'Updated announcement copy.',
@@ -67,7 +67,7 @@ class AdminPlatformSettingsTest extends TestCase
             ->assertJsonPath('announcement.status', 'Published');
 
         $this->actingAs($admin)
-            ->deleteJson("/admin/platform-settings/api/announcements/{$announcementId}")
+            ->deleteJson("/api/v1/admin/platform-settings/announcements/{$announcementId}")
             ->assertOk();
 
         $this->assertDatabaseMissing('announcements', ['id' => $announcementId]);
@@ -78,7 +78,7 @@ class AdminPlatformSettingsTest extends TestCase
         Storage::fake('public');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $response = $this->actingAs($admin)->post('/admin/platform-settings/api/announcements', [
+        $response = $this->actingAs($admin)->post('/api/v1/admin/platform-settings/announcements', [
             'title' => 'Banner announcement',
             'description' => 'Announcement with a cover image.',
             'type' => 'Announcement',
@@ -109,7 +109,7 @@ class AdminPlatformSettingsTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/platform-settings/api')
+            ->getJson('/api/v1/admin/platform-settings')
             ->assertOk()
             ->assertJsonPath('announcements.0.status', 'Published');
 
@@ -138,7 +138,7 @@ class AdminPlatformSettingsTest extends TestCase
         ];
 
         $created = $this->actingAs($admin)
-            ->postJson('/admin/platform-settings/api/policies', $payload)
+            ->postJson('/api/v1/admin/platform-settings/policies', $payload)
             ->assertCreated()
             ->assertJsonPath('policy.status', 'Scheduled');
 
@@ -152,12 +152,12 @@ class AdminPlatformSettingsTest extends TestCase
         $payload['title'] = 'Updated Seller Policy';
 
         $this->actingAs($admin)
-            ->patchJson("/admin/platform-settings/api/policies/{$policyId}", $payload)
+            ->patchJson("/api/v1/admin/platform-settings/policies/{$policyId}", $payload)
             ->assertOk()
             ->assertJsonPath('policy.title', 'Updated Seller Policy');
 
         $this->actingAs($admin)
-            ->deleteJson("/admin/platform-settings/api/policies/{$policyId}")
+            ->deleteJson("/api/v1/admin/platform-settings/policies/{$policyId}")
             ->assertOk();
 
         $this->assertDatabaseMissing('platform_policies', ['id' => $policyId]);
@@ -166,7 +166,7 @@ class AdminPlatformSettingsTest extends TestCase
         $payload['status'] = 'Published';
 
         $this->actingAs($admin)
-            ->postJson('/admin/platform-settings/api/policies', $payload)
+            ->postJson('/api/v1/admin/platform-settings/policies', $payload)
             ->assertCreated()
             ->assertJsonPath('policy.status', 'Published');
     }
@@ -176,7 +176,7 @@ class AdminPlatformSettingsTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($admin)
-            ->postJson('/admin/platform-settings/api/announcements', [
+            ->postJson('/api/v1/admin/platform-settings/announcements', [
                 'title' => str_repeat('a', 81),
                 'description' => 'Description',
                 'type' => 'Announcement',
@@ -187,7 +187,7 @@ class AdminPlatformSettingsTest extends TestCase
             ->assertJsonValidationErrors('title');
 
         $this->actingAs($admin)
-            ->postJson('/admin/platform-settings/api/announcements', [
+            ->postJson('/api/v1/admin/platform-settings/announcements', [
                 'title' => 'Scheduled notice',
                 'description' => 'Description',
                 'type' => 'Announcement',
@@ -200,7 +200,7 @@ class AdminPlatformSettingsTest extends TestCase
             ->assertJsonValidationErrors('publish_date');
 
         $this->actingAs($admin)
-            ->postJson('/admin/platform-settings/api/policies', [
+            ->postJson('/api/v1/admin/platform-settings/policies', [
                 'title' => 'Policy',
                 'category' => 'Unknown',
                 'description' => 'Description',
@@ -211,7 +211,7 @@ class AdminPlatformSettingsTest extends TestCase
             ->assertJsonValidationErrors('category');
 
         $this->actingAs($admin)
-            ->postJson('/admin/platform-settings/api/policies', [
+            ->postJson('/api/v1/admin/platform-settings/policies', [
                 'title' => 'Scheduled policy',
                 'category' => 'Seller Policy',
                 'description' => 'Description',

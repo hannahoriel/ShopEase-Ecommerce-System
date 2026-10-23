@@ -635,7 +635,9 @@ class SellerInventoryTest extends TestCase
         ]);
 
         $this->actingAs($sellerUser)
-            ->patchJson("/api/v1/seller/inventory/{$product->id}/archive")
+            ->patchJson("/api/v1/seller/inventory/{$product->id}/archive", [
+                'archive_reason' => 'Seller no longer carries this item',
+            ])
             ->assertOk()
             ->assertJsonPath('is_archived', true);
 

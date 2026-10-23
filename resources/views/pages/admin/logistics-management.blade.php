@@ -1808,6 +1808,7 @@
         'rejectedArchive' => $rejectedLogisticsArchive,
         'totalEntries' => $logisticsTotalEntries,
         'stats' => $logisticsStats,
+        'apiUrl' => url('/api/v1/admin/logistics-management'),
     ];
 @endphp
 

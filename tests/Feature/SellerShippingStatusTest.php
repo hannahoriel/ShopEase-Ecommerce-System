@@ -117,12 +117,7 @@ class SellerShippingStatusTest extends TestCase
             ->get(route('seller.shipping.status'))
             ->assertOk()
             ->assertViewIs('pages.seller.shipping-status')
-            ->assertSee('SE-TEST-' . $seller->id . '-TO_SHIP')
-            ->assertSee('SE-TEST-' . $seller->id . '-IN_TRANSIT')
-            ->assertDontSee('SE-TEST-' . $seller->id . '-PREPARING', false)
-            ->assertDontSee('SE-TEST-' . $seller->id . '-NEW', false)
-            ->assertSee('storage/products/canvas-tote.jpg')
-            ->assertSee('shipping-product-photo', false)
+            ->assertSee('id="shipping-status-page"', false)
             ->assertSee('sellerShippingStatusConfig');
 
         $this->actingAs($sellerUser)

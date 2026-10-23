@@ -17,6 +17,7 @@
     id="admin-content"
     class="ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
+    <p id="platform-settings-api-error" class="mb-4 text-sm text-red-700" role="alert" hidden></p>
 
     <div class="platform-toolbar">
 
@@ -976,7 +977,7 @@
     $platformSettingsClientConfig = [
         'announcements' => $announcements,
         'policies' => $policies,
-        'apiUrl' => url('/admin/platform-settings/api'),
+        'apiUrl' => url('/api/v1/admin/platform-settings'),
         'csrfToken' => csrf_token(),
     ];
 @endphp

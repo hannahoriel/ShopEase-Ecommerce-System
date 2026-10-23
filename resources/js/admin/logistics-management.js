@@ -22,16 +22,16 @@ document.addEventListener('DOMContentLoaded', function () {
     /* =========================================================
        DATA
     ========================================================== */
-    const pendingLogisticsRequests =
+    let pendingLogisticsRequests =
         logisticsManagementConfig.pendingRequests || [];
 
     let pendingOriginalTotalEntries =
         Number(logisticsManagementConfig.pendingTotalEntries || 0);
 
-    const logisticsCompanies =
+    let logisticsCompanies =
         logisticsManagementConfig.companies || [];
 
-    const rejectedLogisticsArchive =
+    let rejectedLogisticsArchive =
         logisticsManagementConfig.rejectedArchive || [];
 
     let originalTotalEntries =
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelector('meta[name="csrf-token"]')?.content;
 
         const response = await fetch(
-            `/admin/logistics-management/api/registrations/${registrationId}/${decision}`,
+            `/api/v1/admin/logistics-management/registrations/${registrationId}/${decision}`,
             {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -1269,6 +1269,35 @@ document.addEventListener('DOMContentLoaded', function () {
         renderPendingCount(
             filteredRows
         );
+    }
+
+    async function loadLogisticsData() {
+        const response = await fetch(
+            logisticsManagementConfig.apiUrl || '/api/v1/admin/logistics-management',
+            {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            }
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.message || 'Unable to load logistics management data.');
+        }
+
+        pendingLogisticsRequests = payload.pendingRequests || [];
+        logisticsCompanies = payload.companies || [];
+        rejectedLogisticsArchive = payload.rejectedArchive || [];
+        pendingOriginalTotalEntries = Number(payload.pendingTotalEntries || 0);
+        originalTotalEntries = Number(payload.totalEntries || 0);
+        pendingStatValue = Number(payload.stats?.pending_requests || 0);
+        acceptedStatValue = Number(payload.stats?.accepted_logistics || 0);
+        rejectedStatValue = Number(payload.stats?.rejected_logistics || 0);
+        totalStatValue = Number(payload.stats?.total_companies || 0);
+
+        renderPending();
+        render();
+        renderLogisticsStats();
+        renderRejectedLogisticsArchive();
     }
 
     pendingSearch.addEventListener(
@@ -2326,4 +2355,8 @@ document.addEventListener('DOMContentLoaded', function () {
     render();
     renderLogisticsStats();
     renderRejectedLogisticsArchive();
+    loadLogisticsData().catch(error => {
+        console.error(error);
+        showLogisticsFlash('error', error.message);
+    });
 });

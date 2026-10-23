@@ -2389,4 +2389,20 @@ document.addEventListener('DOMContentLoaded', function () {
     renderAllAnnouncementCards();
     renderAllPolicyCards();
 
+    requestPlatformApi('')
+        .then(payload => {
+            announcementItems = payload.announcements || [];
+            policyItems = payload.policies || [];
+            renderAllAnnouncementCards();
+            renderAllPolicyCards();
+        })
+        .catch(error => {
+            console.error(error);
+            const errorElement = document.getElementById('platform-settings-api-error');
+            if (errorElement) {
+                errorElement.textContent = error.message;
+                errorElement.hidden = false;
+            }
+        });
+
 });

@@ -718,8 +718,9 @@
     $userManagementClientConfig = [
         'users' => $users,
         'counts' => $counts,
-        'statusUrl' => route('admin.user.management.status', ['user' => '__USER__']),
-        'detailUrl' => route('admin.user.management.show', ['user' => '__USER__']),
+        'listUrl' => url('/api/v1/admin/users'),
+        'statusUrl' => url('/api/v1/admin/users/__USER__/status'),
+        'detailUrl' => url('/api/v1/admin/users/__USER__'),
         'iconBase' => asset('icons/admin/dashboard/body'),
         'icons' => [
             'seller' => asset('icons/admin/dashboard/body/seller.png'),
