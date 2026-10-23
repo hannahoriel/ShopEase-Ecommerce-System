@@ -6,6 +6,7 @@
     <title>Your ShopEase registration has been approved</title>
 </head>
 <body style="margin: 0; padding: 32px 16px; background: #fff4ef; color: #201918; font-family: Arial, sans-serif;">
+    @include('emails.partials.brand-header')
     <main style="max-width: 560px; margin: 0 auto; padding: 32px; border-radius: 12px; background: #ffffff;">
         <h1 style="margin-top: 0; color: #75171f;">Welcome to ShopEase, {{ $registration->first_name }}!</h1>
         <p>Your {{ ucfirst($registration->user_type) }} registration has been reviewed and approved. You can now log in and start using your account.</p>

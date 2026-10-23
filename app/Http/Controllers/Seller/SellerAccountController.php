@@ -137,6 +137,8 @@ class SellerAccountController extends Controller
         unset($validated['email'], $validated['cover_photo'], $validated['profile_photo']);
         $columns = Schema::getColumnListing($seller->getTable());
         $validated['age'] = \Carbon\Carbon::parse($validated['birthday'])->age;
+        $oldProfilePhotoPath = $seller->profile_photo_path;
+        $newProfilePhotoPath = null;
         foreach ($validated as $field => $value) {
             if (in_array($field, $columns, true)) $seller->{$field} = $value;
         }
@@ -144,11 +146,21 @@ class SellerAccountController extends Controller
             if ($request->hasFile($input) && in_array($column, $columns, true)) {
                 $newPath = $request->file($input)->store('seller-account/'.$seller->id, 'public');
                 $seller->{$column} = $newPath;
+                if ($input === 'profile_photo') {
+                    $newProfilePhotoPath = $newPath;
+                }
             }
         }
-        DB::transaction(function () use ($seller, $request) {
+        DB::transaction(function () use ($seller, $request, $newProfilePhotoPath) {
             $seller->save();
+            if ($newProfilePhotoPath) {
+                $request->user()->profile_photo_path = $newProfilePhotoPath;
+                $request->user()->save();
+            }
         });
+        if ($newProfilePhotoPath && $oldProfilePhotoPath) {
+            Storage::disk('public')->delete($oldProfilePhotoPath);
+        }
         return redirect()->route('seller.account')->with('success', 'Your profile information has been updated successfully.');
     }
 

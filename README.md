@@ -21,6 +21,24 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Admin API
+
+Admin data and actions are available under `/api/v1/admin`. Requests require Laravel Sanctum authentication and the `admin` role. The Blade admin pages use same-origin requests with the current session and CSRF token.
+
+| Resource | Endpoints |
+| --- | --- |
+| Dashboard | `GET /dashboard` |
+| Registrations | `GET /registrations`, `/registrations/approved`, `/registrations/rejected`, `/registrations/{id}`; `POST /registrations/{id}/approve`, `/registrations/{id}/reject` |
+| User management | `GET /users`, `/users/{id}`; `PATCH /users/{id}/status` |
+| Seller compliance | `GET /seller-compliance`, `/seller-compliance/{id}`; `POST /seller-compliance/{id}/suspend`, `/seller-compliance/products/{id}/approve`, `/warn`, `/remove` |
+| Complaints and commissions | `GET /complaints`, `PATCH /complaints/{id}/status`; `GET /commissions` |
+| Logistics | `GET /logistics-management`; registration decisions and branch CRUD under `/logistics-management` |
+| Platform settings | `GET /platform-settings`; announcement and policy CRUD under `/platform-settings` |
+| Messages | Conversations, contacts, messages, and attachments under `/messages` |
+| Notifications | `GET /notifications`; `PATCH /notifications/read-all` and `/notifications/{id}/read` |
+| Admin account | `GET` and `PUT /account`; `POST /account/notifications` and password-security actions under `/account/security` |
+| Admin account management | Full administrators can `GET /account/admins`, `POST /account/admins`, and `PATCH /account/admins/{id}` to manage enabled status, module access, and credentials. Restricted administrator permissions are enforced for admin routes; ID photos are served through an authenticated endpoint. |
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

@@ -188,6 +188,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const createdAt = order.created_at ? new Date(order.created_at) : null;
             const pickupDate = order.pickup_date_display || order.pickup_date || '';
             const pickupTime = order.pickup_time_display || order.pickup_time || '';
+            const cancellationActor = normalizedStatus === 'cancelled' ? order.cancellation_actor : '';
+            const pickupWasScheduled = (order.status_history || []).some((record) =>
+                ['to_ship', 'ready_to_ship', 'shipment_scheduled'].includes(String(record.to_status || '').toLowerCase())
+            );
             const orderNumber = order.order_number || `ORD-${order.id}`;
             const customer = order.delivery_name || order.buyer?.name || 'Customer';
             const phone = order.delivery_phone || order.buyer?.contact_no || '';
@@ -217,6 +221,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     data-tab="${escapeHtml(normalizedStatus)}"
                     data-pickup-date="${escapeHtml(pickupDate)}"
                     data-pickup-time="${escapeHtml(pickupTime)}"
+                    data-cancellation-actor="${escapeHtml(cancellationActor)}"
+                    data-cancellation-request-id="${escapeHtml(order.latest_cancellation_request?.id || '')}"
+                    data-pickup-was-scheduled="${pickupWasScheduled ? 'true' : 'false'}"
                     data-cancellation-requested-at="${escapeHtml(order.cancellation_requested_at || order.cancellation_request_created_at || order.cancel_requested_at || '')}"
                     data-cancelled-at="${escapeHtml(order.cancelled_at || order.canceled_at || '')}"
                     data-cancellation-rejected-at="${escapeHtml(order.cancellation_rejected_at || order.cancel_rejected_at || '')}"
@@ -234,6 +241,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="min-w-0">
                             <h3 class="order-id">#${escapeHtml(orderNumber)}</h3>
                             <p class="order-status ${status.style}-text"><span class="status-dot ${status.style}-dot"></span>${escapeHtml(status.label)}</p>
+                            ${cancellationActor ? `<p class="order-cancellation-detail mt-1 text-[10px] text-[#8A8582]">${pickupWasScheduled ? 'Pickup cancelled · ' : ''}Cancelled by ${escapeHtml(cancellationActor.charAt(0).toUpperCase() + cancellationActor.slice(1))}</p>` : ''}
                         </div>
                     </div>
                     <div class="min-w-0"><p class="customer-name">${escapeHtml(customer)}</p><p class="customer-phone">${escapeHtml(phone)}</p></div>
@@ -1683,10 +1691,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const cancelled = cancellationStampFromDate(row.dataset.cancelledAt);
         if (cancelled) {
+            const actor = row.dataset.cancellationActor;
             events.push({
                 type: 'cancelled',
-                title: 'Cancellation Accepted',
-                description: 'The cancellation request was accepted and the order was cancelled.',
+                title: 'Order Cancelled',
+                description: `${row.dataset.pickupWasScheduled === 'true' ? 'The pickup schedule was cancelled. ' : ''}Order cancelled by ${actor || 'the buyer or seller'}.`,
                 ...cancelled,
             });
         }
@@ -1836,7 +1845,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 : ['cancelled', 'canceled'].includes(status) ? 'cancelled'
                 : ['cancellation_rejected', 'cancel_rejected'].includes(status) ? 'cancel-rejected' : null;
             if (!type) return;
-            addDatedEvent(type, record.created_at || record.timestamp || record.changed_at || record.updated_at);
+            const cancellationDescription = type === 'cancelled'
+                ? `${row.dataset.pickupWasScheduled === 'true' ? 'The pickup schedule was cancelled. ' : ''}Order cancelled by ${row.dataset.cancellationActor || 'the buyer or seller'}.`
+                : '';
+            addDatedEvent(type, record.created_at || record.timestamp || record.changed_at || record.updated_at, cancellationDescription);
         });
 
         getTrackingEvents(row).forEach((event) => {
@@ -2341,12 +2353,14 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    // The seller never needs a separate Cancel Scheduled Shipment button.
-    // If a pickup exists, approving a cancellation first cancels the shipment
-    // through the existing endpoint, which also restores reserved stock.
-    async function cancelScheduledShipmentForApprovedRequest(row) {
-        if (!row || !row.dataset.pickupDate) return false;
-        const response = await fetch(`${config.ordersUrl}/${row.dataset.orderId}/cancel-shipment`, {
+    // Approving a buyer cancellation must be a single atomic server operation.
+    async function approveBuyerCancellationRequest(row) {
+        if (!row?.dataset.cancellationRequestId) {
+            throw new Error('The buyer cancellation request could not be found. Refresh the order and try again.');
+        }
+        const response = await fetch(
+            `${config.ordersUrl}/${row.dataset.orderId}/cancellation-requests/${row.dataset.cancellationRequestId}/approve`,
+            {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -2355,16 +2369,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-Requested-With': 'XMLHttpRequest',
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ reason: 'Buyer requested cancellation' }),
-        });
+            },
+        );
         let result = {};
         try { result = await response.json(); } catch { /* HTTP fallback below */ }
         if (!response.ok) {
             const message = Object.values(result.errors || {}).flat()[0];
-            throw new Error(message || result.message || `Shipment cancellation failed (${response.status}).`);
+            throw new Error(message || result.message || `Cancellation approval failed (${response.status}).`);
         }
+        const pickupWasScheduled = Boolean(row.dataset.pickupDate) || row.dataset.pickupWasScheduled === 'true';
         row.dataset.pickupDate = '';
         row.dataset.pickupTime = '';
+        row.dataset.cancellationActor = 'buyer';
+        row.dataset.pickupWasScheduled = pickupWasScheduled ? 'true' : 'false';
+        const cancellationHistory = (result.status_history || []).find((record) => record.to_status === 'cancelled');
+        if (cancellationHistory?.created_at) row.dataset.cancelledAt = cancellationHistory.created_at;
+        if (Array.isArray(result.status_history)) row.dataset.statusHistory = JSON.stringify(result.status_history);
         return true;
     }
 
@@ -2401,6 +2421,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 rowStatus.innerHTML =
                     '<span class="status-dot cancelled-dot"></span>Cancelled';
+
+                let cancellationDetail = row.querySelector('.order-cancellation-detail');
+                if (!cancellationDetail) {
+                    cancellationDetail = document.createElement('p');
+                    cancellationDetail.className = 'order-cancellation-detail mt-1 text-[10px] text-[#8A8582]';
+                    rowStatus.insertAdjacentElement('afterend', cancellationDetail);
+                }
+                const actor = row.dataset.cancellationActor || 'buyer';
+                cancellationDetail.textContent = `${row.dataset.pickupWasScheduled === 'true' ? 'Pickup cancelled · ' : ''}Cancelled by ${actor.charAt(0).toUpperCase() + actor.slice(1)}`;
             } else if (
                 status ===
                 'cancel-rejected'
@@ -2430,13 +2459,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 // Demo cancellation requests have no persisted server shipment.
                 if (selectedOrderRow.dataset.hardcodedCancellation !== 'true') {
-                    await cancelScheduledShipmentForApprovedRequest(selectedOrderRow);
-                    // Persist the order status using the existing seller status API.
-                    // A dedicated cancellation decision endpoint is still recommended.
-                    await saveOrderStatus(selectedOrderRow.dataset.orderId, {
-                        status: 'cancelled',
-                        notes: 'Seller approved the buyer cancellation request.',
-                    });
+                    await approveBuyerCancellationRequest(selectedOrderRow);
                 }
             } catch (error) {
                 showOrderFlash(error.message || 'Could not approve cancellation.', 'error');

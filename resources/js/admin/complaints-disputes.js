@@ -99,6 +99,55 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.complaints-modal-message-button, .complaints-party-message-button')
     );
 
+    function fillPartyAvatar(element, name, imageUrl) {
+        if (!element) return;
+        element.textContent = '';
+        element.style.background = '#FFE6DE';
+        element.style.color = '#650B12';
+        element.style.display = 'inline-flex';
+        element.style.alignItems = 'center';
+        element.style.justifyContent = 'center';
+        element.style.position = 'relative';
+        element.style.overflow = 'hidden';
+        element.textContent = String(name || 'User')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(part => part[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase() || 'U';
+        if (!imageUrl) return;
+        const image = document.createElement('img');
+        image.src = imageUrl;
+        image.alt = '';
+        image.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;';
+        image.addEventListener('error', () => image.remove(), {once: true});
+        element.append(image);
+    }
+
+    function syncComplaintAvatars() {
+        rows.forEach(row => {
+            const complaint = complaints[Number(row.dataset.index)];
+            if (!complaint) return;
+            row.querySelectorAll('.complaint-avatar').forEach((avatar, index) => {
+                fillPartyAvatar(
+                    avatar,
+                    index === 0 ? complaint.party1 : complaint.party2,
+                    index === 0 ? complaint.party1Photo : complaint.party2Photo
+                );
+            });
+        });
+        const complaint = activeIndex === null ? null : complaints[activeIndex];
+        if (!complaint) return;
+        document.querySelectorAll('.complaints-party-detail .complaint-avatar').forEach((avatar, index) => {
+            fillPartyAvatar(avatar, index === 0 ? complaint.party1 : complaint.party2, index === 0 ? complaint.party1Photo : complaint.party2Photo);
+        });
+        document.querySelectorAll('.complaints-modal-party-row .complaints-modal-party-avatar').forEach((avatar, index) => {
+            fillPartyAvatar(avatar, index === 0 ? complaint.party1 : complaint.party2, index === 0 ? complaint.party1Photo : complaint.party2Photo);
+        });
+    }
+
     /*
      * Complaint tracking storage.
      *
@@ -299,17 +348,20 @@ document.addEventListener('DOMContentLoaded', function () {
                         )
                     );
 
-                const initial =
-                    escapeTrackingHtml(
-                        (update.actor || 'Admin')
-                            .trim()
-                            .charAt(0)
-                            .toUpperCase() || 'A'
-                    );
+                const initial = escapeTrackingHtml(
+                    String(update.actor || 'Admin')
+                        .trim()
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .map(part => part[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase() || 'A'
+                );
 
                 return `
                     <div class="complaints-modal-note" data-update-id="${escapeTrackingHtml(update.id)}">
-                        <span class="complaints-modal-note-avatar">${initial}</span>
+                        <span class="complaints-modal-note-avatar">${initial}${update.profile_photo_url ? `<img src="${escapeTrackingHtml(update.profile_photo_url)}" alt="" onerror="this.remove()">` : ''}</span>
 
                         <div class="complaints-modal-note-copy">
                             <strong>${actor}</strong>
@@ -441,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const response = await fetch(
-                `/admin/complaints-disputes/${complaint.databaseId}/status`,
+                `/api/v1/admin/complaints/${complaint.databaseId}/status`,
                 {
                     method: 'PATCH',
                     headers: {
@@ -839,6 +891,17 @@ document.addEventListener('DOMContentLoaded', function () {
         modalParty2Role.textContent =
             complaint.role2;
 
+        fillPartyAvatar(
+            document.querySelector('.complaints-modal-party-row .complaints-modal-party-avatar'),
+            complaint.party1,
+            complaint.party1Photo
+        );
+        fillPartyAvatar(
+            document.querySelectorAll('.complaints-modal-party-row .complaints-modal-party-avatar')[1],
+            complaint.party2,
+            complaint.party2Photo
+        );
+
         syncModalPartyRoleIcon(
             modalParty2RoleIcon,
             complaint.role2
@@ -938,6 +1001,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         detailRole2.textContent =
             complaint.role2;
+
+        syncComplaintAvatars();
 
         syncComplaintModal(complaint);
     }
@@ -1398,4 +1463,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeComplaintDetails();
     filterRows();
+    syncComplaintAvatars();
+
+    async function loadComplaintsFromApi() {
+        const response = await fetch(
+            complaintsConfig.apiUrl || '/api/v1/admin/complaints',
+            {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            }
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.message || 'Unable to load complaints data.');
+        }
+
+        complaints.splice(0, complaints.length, ...(payload.data || []));
+        syncComplaintAvatars();
+        const counts = payload.counts || {};
+        statOpen.textContent = counts.open || 0;
+        statInProgress.textContent = counts.in_progress || 0;
+        statResolved.textContent = counts.resolved || 0;
+        statTotal.textContent = counts.total || 0;
+    }
+
+    loadComplaintsFromApi().catch(error => {
+        console.error(error);
+        const errorElement = document.getElementById('complaints-api-error');
+        if (errorElement) {
+            errorElement.textContent = error.message;
+            errorElement.hidden = false;
+        }
+    });
 });

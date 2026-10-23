@@ -306,9 +306,10 @@
     }
 
     .buyer-profile-image {
-        background: transparent !important;
-        border: none !important;
+        background: #FFE6DE !important;
+        border: 1px solid rgba(255, 255, 255, 0.65) !important;
         box-shadow: none !important;
+        color: #650B12 !important;
     }
 
     .buyer-profile-image img {

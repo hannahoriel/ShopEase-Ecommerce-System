@@ -1,6 +1,6 @@
 Chart.defaults.font.family = 'Poppins, sans-serif';
 
-new Chart(document.getElementById('overviewChart'), {
+const overviewChart = new Chart(document.getElementById('overviewChart'), {
 
     type: 'line',
 
@@ -212,7 +212,7 @@ new Chart(document.getElementById('overviewChart'), {
 });
 
 
-new Chart(document.getElementById('complaintsChart'), {
+const complaintsChart = new Chart(document.getElementById('complaintsChart'), {
 
     type: 'doughnut',
 
@@ -290,6 +290,85 @@ new Chart(document.getElementById('complaintsChart'), {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    const configElement = document.getElementById('adminDashboardConfig');
+    const errorElement = document.getElementById('admin-dashboard-error');
+
+    async function loadDashboardData() {
+        try {
+            const config = configElement ? JSON.parse(configElement.textContent) : {};
+            const response = await fetch(config.apiUrl || '/api/v1/admin/dashboard', {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.message || 'Unable to load admin dashboard data.');
+            }
+
+            const money = value => new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(Number(value || 0));
+            const number = value => new Intl.NumberFormat('en-PH').format(Number(value || 0));
+
+            const stats = payload.stats || {};
+            const growthKeys = ['pending_registrations', 'active_users', 'active_sellers', 'total_commission'];
+            document.querySelectorAll('[data-dashboard-stat]').forEach(element => {
+                const key = element.dataset.dashboardStat;
+                const value = stats[key]?.value || 0;
+                element.textContent = key === 'total_commission' ? money(value) : number(value);
+            });
+            document.querySelectorAll('[data-dashboard-growth]').forEach(element => {
+                const key = element.dataset.dashboardGrowth;
+                const values = stats[key] || {};
+                const previous = Number(values.yesterday || 0);
+                const current = Number(values.today || 0);
+                const change = previous === 0 ? (current > 0 ? 100 : 0) : ((current - previous) / previous) * 100;
+                element.textContent = `${number(Math.abs(change))}%`;
+                const arrow = element.closest('.dashboard-stat-growth')?.querySelector('.dashboard-growth-arrow');
+                if (arrow) arrow.textContent = change < 0 ? '↓' : '↑';
+            });
+
+            const sales = payload.sales_summary || {};
+            document.querySelectorAll('[data-dashboard-sales]').forEach(element => {
+                const key = element.dataset.dashboardSales;
+                const value = sales[key] || 0;
+                element.textContent = key === 'gross_sales' || key === 'average_order_value' ? money(value) : number(value);
+            });
+            document.querySelectorAll('[data-dashboard-complaint]').forEach(element => {
+                element.textContent = number(payload.complaints?.[element.dataset.dashboardComplaint] || 0);
+            });
+            document.querySelectorAll('[data-dashboard-pending]').forEach(element => {
+                element.textContent = number(payload.pending_breakdown?.[element.dataset.dashboardPending] || 0);
+            });
+
+            const chart = payload.overview_chart || {};
+            overviewChart.data.labels = chart.labels || [];
+            overviewChart.data.datasets[0].data = chart.registrations || [];
+            overviewChart.data.datasets[1].data = chart.active_users || [];
+            overviewChart.data.datasets[2].data = chart.active_sellers || [];
+            overviewChart.update();
+
+            complaintsChart.data.datasets[0].data = [
+                payload.complaints?.open || 0,
+                payload.complaints?.in_progress || 0,
+                payload.complaints?.resolved || 0
+            ];
+            complaintsChart.update();
+        } catch (error) {
+            console.error(error);
+            if (errorElement) {
+                errorElement.textContent = error.message;
+                errorElement.hidden = false;
+            }
+        }
+    }
+
+    loadDashboardData();
 
     setTimeout(() => {
 

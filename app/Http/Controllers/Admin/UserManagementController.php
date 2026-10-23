@@ -65,7 +65,7 @@ class UserManagementController extends Controller
     {
         $this->authorizeAdmin(request());
 
-        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER], true), 404);
+        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_LOGISTICS], true), 404);
 
         return response()->json($this->serializeUser($user, true));
     }
@@ -74,7 +74,7 @@ class UserManagementController extends Controller
     {
         $this->authorizeAdmin($request);
 
-        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER], true), 404);
+        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_LOGISTICS], true), 404);
 
         $validated = $request->validate([
             'status' => ['required', Rule::in(['active', 'suspended', 'deactivated'])],
@@ -132,7 +132,7 @@ class UserManagementController extends Controller
     private function userQuery()
     {
         return User::query()
-            ->whereIn('role', [User::ROLE_BUYER, User::ROLE_SELLER])
+            ->whereIn('role', [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_LOGISTICS])
             ->whereIn('registration_status', ['active', 'suspended', 'deactivated']);
     }
 
@@ -148,11 +148,12 @@ class UserManagementController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhereHas('buyerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"))
-                    ->orWhereHas('sellerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"));
+                    ->orWhereHas('sellerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"))
+                    ->orWhereHas('logisticsProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"));
             });
         }
 
-        if (in_array($type = $request->string('type')->value(), ['buyer', 'seller'], true)) {
+        if (in_array($type = $request->string('type')->value(), ['buyer', 'seller', 'logistics'], true)) {
             $query->where('role', $type);
         }
 
@@ -200,6 +201,11 @@ class UserManagementController extends Controller
             'suspensionDays' => $user->suspended_until?->isFuture()
                 ? (int) round(now()->diffInDays($user->suspended_until))
                 : 0,
+            'profile_photo_url' => $user->profile_photo_path
+                ? Storage::disk('public')->url($user->profile_photo_path)
+                : ($user->role === User::ROLE_SELLER && $profile?->profile_photo_path
+                    ? Storage::disk('public')->url($profile->profile_photo_path)
+                    : null),
         ];
 
         if ($details) {
@@ -215,6 +221,7 @@ class UserManagementController extends Controller
                 'valid_id_url' => $profile?->upload_id
                     ? Storage::disk('public')->url($profile->upload_id)
                     : null,
+                'profile_photo_url' => $data['profile_photo_url'],
                 'business_permit_url' => $profile?->upload_business_permit
                     ? Storage::disk('public')->url($profile->upload_business_permit)
                     : null,

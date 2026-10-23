@@ -50,6 +50,27 @@ class SellerComplianceTest extends TestCase
             ->assertSee('initialSellerComplianceData');
     }
 
+    public function test_seller_compliance_api_includes_seller_profile_photo_url(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'profile_photo_path' => 'profile-photos/seller/profile.png',
+        ]);
+        Seller::create([
+            'user_id' => $sellerUser->id,
+            'first_name' => 'Photo',
+            'last_name' => 'Seller',
+            'store_name' => 'Photo Shop',
+            'registration_status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/admin/seller-compliance')
+            ->assertOk()
+            ->assertJsonPath('data.0.profile_photo_url', \Illuminate\Support\Facades\Storage::disk('public')->url($sellerUser->profile_photo_path));
+    }
+
     public function test_admin_can_suspend_a_seller_from_seller_compliance(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
@@ -67,7 +88,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->postJson('/admin/seller-compliance/data/' . $seller->id . '/suspend', [
+            ->postJson('/api/v1/admin/seller-compliance/' . $seller->id . '/suspend', [
                 'reason' => 'Fraudulent activity',
                 'duration' => 7,
                 'details' => 'Suspicious listings detected.',
@@ -106,7 +127,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->postJson('/admin/seller-compliance/data/' . $seller->id . '/suspend', [
+            ->postJson('/api/v1/admin/seller-compliance/' . $seller->id . '/suspend', [
                 'action' => 'reactivate',
             ])
             ->assertOk()
@@ -158,12 +179,12 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.total_sellers', 1);
 
         $this->actingAs($admin)
-            ->postJson('/admin/seller-compliance/data/products/' . $sampleProduct->id . '/remove', [
+            ->postJson('/api/v1/admin/seller-compliance/products/' . $sampleProduct->id . '/remove', [
                 'reason' => 'Prohibited product',
                 'details' => 'The product violates platform policy.',
             ])
@@ -334,7 +355,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.warnings', 1)
             ->assertJsonPath('data.0.compliance', 'warning');
@@ -359,7 +380,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?compliance=under-review&per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?compliance=under-review&per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.under_review', 1)
             ->assertJsonPath('data.0.compliance', 'under-review')
@@ -394,7 +415,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?compliance=under-review&per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?compliance=under-review&per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.under_review', 1)
             ->assertJsonPath('summary.warnings', 1)

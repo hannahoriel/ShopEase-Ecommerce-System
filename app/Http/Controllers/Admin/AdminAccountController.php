@@ -61,16 +61,59 @@ class AdminAccountController extends Controller
         $profile = $this->profile($request);
         $role = $this->role($user, $profile);
         $prefs = json_decode($profile->preferences ?? '{}', true);
-        return view('pages.admin.account', [
+        $data = [
             'adminProfile' => $profile,
             'adminRole' => $role,
             'roleLabel' => ucwords(str_replace(['_', '-'], ' ', $role)),
             'adminId' => 'ADM-'.str_pad((string)$user->id, 5, '0', STR_PAD_LEFT),
             'adminPhoto' => !empty($profile->profile_photo_path) ? Storage::disk('public')->url($profile->profile_photo_path) : null,
             'adminCover' => !empty($profile->cover_photo_path) ? Storage::disk('public')->url($profile->cover_photo_path) : null,
-            'adminIdPhoto' => !empty($profile->admin_id_photo_path) ? Storage::disk('public')->url($profile->admin_id_photo_path) : null,
+            'adminIdPhoto' => !empty($profile->admin_id_photo_path)
+                ? route('admin.api.account.admins.id-photo', $user)
+                : null,
             'adminNotificationOptions' => $this->optionsFor($role),
             'adminPreferences' => is_array($prefs) ? $prefs : [],
+            'adminManagementUrl' => url('/api/v1/admin/account/admins'),
+            'canManageAdmins' => ($profile->permissions ?? null) === null,
+        ];
+
+        return view('pages.admin.account', $data);
+    }
+
+    public function show(Request $request)
+    {
+        $user = $this->admin($request);
+        $profile = $this->profile($request);
+        $role = $this->role($user, $profile);
+        $preferences = json_decode($profile->preferences ?? '{}', true);
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'profile' => [
+                'first_name' => $profile->first_name ?? '',
+                'last_name' => $profile->last_name ?? '',
+                'birthday' => $profile->birthday ?? null,
+                'sex' => $profile->sex ?? null,
+                'contact_number' => $profile->contact_number ?? '',
+                'profile_photo_url' => ! empty($profile->profile_photo_path)
+                    ? Storage::disk('public')->url($profile->profile_photo_path)
+                    : null,
+                'cover_photo_url' => ! empty($profile->cover_photo_path)
+                    ? Storage::disk('public')->url($profile->cover_photo_path)
+                    : null,
+                'admin_id_photo_url' => ! empty($profile->admin_id_photo_path)
+                    ? route('admin.api.account.admins.id-photo', $user)
+                    : null,
+            ],
+            'role' => $role,
+            'role_label' => ucwords(str_replace(['_', '-'], ' ', $role)),
+            'admin_id' => 'ADM-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
+            'notification_options' => $this->optionsFor($role),
+            'preferences' => is_array($preferences) ? $preferences : [],
         ]);
     }
 
@@ -103,13 +146,16 @@ class AdminAccountController extends Controller
             'contact_number' => $data['contact_number'] ?? null,
             'updated_at' => now(),
         ] + $files;
-        DB::transaction(function () use ($user, $row) {
+        DB::transaction(function () use ($user, $row, $files) {
             if (DB::table('admin_account_profiles')->where('user_id', $user->id)->exists()) {
                 DB::table('admin_account_profiles')->where('user_id', $user->id)->update($row);
             } else {
                 DB::table('admin_account_profiles')->insert(['user_id'=>$user->id] + $row + ['created_at'=>now()]);
             }
             $user->name = trim($row['first_name'].' '.$row['last_name']);
+            if (isset($files['profile_photo_path'])) {
+                $user->profile_photo_path = $files['profile_photo_path'];
+            }
             $user->save();
         });
         // Existing approved photos are only deleted AFTER a successful save.
@@ -118,6 +164,13 @@ class AdminAccountController extends Controller
                 Storage::disk('public')->delete($profile->$column);
             }
         }
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Admin profile changes saved successfully.',
+                'account' => $this->show($request)->getData(true),
+            ]);
+        }
+
         return redirect()->route('admin.account')->with('success', 'Admin profile changes saved successfully.');
     }
 
@@ -135,6 +188,10 @@ class AdminAccountController extends Controller
             ['user_id'=>$user->id],
             ['preferences'=>json_encode($current), 'updated_at'=>now(), 'created_at'=>now()]
         );
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Notification preferences saved.']);
+        }
+
         return redirect(route('admin.account').'#notifications')->with('success', 'Notification preferences saved.');
     }
 }

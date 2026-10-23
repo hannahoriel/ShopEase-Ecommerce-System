@@ -16,6 +16,8 @@ class ComplaintWorkflowTest extends TestCase
     public function test_buyer_complaint_is_saved_and_available_to_the_admin_ui_and_api(): void
     {
         [$buyer, $order] = $this->createBuyerOrder();
+        $buyer->forceFill(['profile_photo_path' => 'profile-photos/buyer/profile.png'])->save();
+        $order->seller->user->forceFill(['profile_photo_path' => 'profile-photos/seller/profile.png'])->save();
 
         $created = $this->actingAs($buyer)
             ->postJson("/api/v1/buyer/orders/{$order->id}/complaints", [
@@ -54,6 +56,8 @@ class ComplaintWorkflowTest extends TestCase
             ->assertJsonPath('counts.open', 1)
             ->assertJsonPath('data.0.id', 'CMP-0001')
             ->assertJsonPath('data.0.party1', $buyer->name)
+            ->assertJsonPath('data.0.party1Photo', \Illuminate\Support\Facades\Storage::disk('public')->url($buyer->profile_photo_path))
+            ->assertJsonPath('data.0.party2Photo', \Illuminate\Support\Facades\Storage::disk('public')->url($order->seller->user->profile_photo_path))
             ->assertJsonPath('data.0.type', 'Wrong Item')
             ->assertJsonPath('data.0.orderId', $order->order_number)
             ->assertJsonPath('data.0.status', 'open');
@@ -79,7 +83,7 @@ class ComplaintWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($admin)
-            ->patchJson("/admin/complaints-disputes/{$complaint->id}/status", [
+            ->patchJson("/api/v1/admin/complaints/{$complaint->id}/status", [
                 'status' => 'in-progress',
             ])
             ->assertOk()

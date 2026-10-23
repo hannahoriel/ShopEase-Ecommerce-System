@@ -19,7 +19,16 @@
 ])
 
 @php
-    $buyerCartCount = auth()->check() && auth()->user()->role === \App\Models\User::ROLE_BUYER
+    $buyerUser = auth()->user();
+    $buyerProfile = $buyerUser && $buyerUser->role === \App\Models\User::ROLE_BUYER
+        ? $buyerUser->buyerProfile
+        : null;
+    $buyerDisplayName = trim(implode(' ', array_filter([
+        data_get($buyerProfile, 'first_name'),
+        data_get($buyerProfile, 'middle_initial'),
+        data_get($buyerProfile, 'last_name'),
+    ]))) ?: data_get($buyerUser, 'name', 'Buyer');
+    $buyerCartCount = auth()->check() && $buyerUser->role === \App\Models\User::ROLE_BUYER
         ? \App\Models\Buyer\CartItem::where('user_id', auth()->id())->sum('quantity')
         : 0;
 @endphp
@@ -257,31 +266,12 @@
                         "
                     >
 
-                        {{-- PROFILE IMAGE / NO WHITE BACKGROUND --}}
-                        <div
-                            class="
-                                buyer-profile-image
-                                w-[34px]
-                                h-[34px]
-                                shrink-0
-                                rounded-full
-                                bg-transparent
-                                overflow-hidden
-                                flex
-                                items-center
-                                justify-center
-                            "
-                        >
-                            <img
-                                src="{{ asset('icons/buyer/profile.png') }}"
-                                alt="Buyer"
-                                class="
-                                    w-full
-                                    h-full
-                                    object-contain
-                                "
-                            >
-                        </div>
+                        <x-account-avatar
+                            :name="$buyerDisplayName"
+                            :image="$buyerUser->profile_photo_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyerUser->profile_photo_path) : null"
+                            size="34px"
+                            class="buyer-profile-image"
+                        />
 
                         {{-- ACCOUNT TEXT --}}
                         <div
@@ -302,7 +292,7 @@
                                     whitespace-nowrap
                                 "
                             >
-                                Buyer
+                                {{ $buyerDisplayName }}
                             </span>
 
                             <span

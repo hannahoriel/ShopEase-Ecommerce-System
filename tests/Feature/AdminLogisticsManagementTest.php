@@ -22,6 +22,7 @@ class AdminLogisticsManagementTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $this->createLogisticsApplication('pending');
         $active = $this->createLogisticsApplication('approved', 'Active Carrier');
+        $active['user']->forceFill(['profile_photo_path' => 'profile-photos/logistics/company.png'])->save();
         $rejected = $this->createLogisticsApplication('rejected', 'Rejected Carrier');
         LogisticsBranch::create([
             'logistics_id' => $active['profile']->id,
@@ -42,6 +43,7 @@ class AdminLogisticsManagementTest extends TestCase
             ->assertJsonCount(1, 'companies')
             ->assertJsonCount(1, 'rejectedArchive')
             ->assertJsonPath('companies.0.company', 'Active Carrier')
+            ->assertJsonPath('companies.0.logo', \Illuminate\Support\Facades\Storage::disk('public')->url($active['user']->profile_photo_path))
             ->assertJsonPath('companies.0.branches', 1)
             ->assertJsonPath('stats.pending_requests', 1)
             ->assertJsonPath('stats.accepted_logistics', 1)
@@ -57,7 +59,7 @@ class AdminLogisticsManagementTest extends TestCase
         $pending = $this->createLogisticsApplication('pending', 'Approve Carrier');
 
         $this->actingAs($admin)
-            ->postJson("/admin/logistics-management/api/registrations/{$pending['registration']->id}/approve")
+            ->postJson("/api/v1/admin/logistics-management/registrations/{$pending['registration']->id}/approve")
             ->assertOk()
             ->assertJsonPath('counts.approved', 1);
 
@@ -78,7 +80,7 @@ class AdminLogisticsManagementTest extends TestCase
 
         $toReject = $this->createLogisticsApplication('pending', 'Reject Carrier');
         $this->actingAs($admin)
-            ->postJson("/admin/logistics-management/api/registrations/{$toReject['registration']->id}/reject", [
+            ->postJson("/api/v1/admin/logistics-management/registrations/{$toReject['registration']->id}/reject", [
                 'reason' => 'Insufficient delivery coverage or operational capacity.',
                 'details' => 'Limited region coverage.',
             ])
@@ -102,7 +104,7 @@ class AdminLogisticsManagementTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $application = $this->createLogisticsApplication('approved', 'Branch Carrier');
         $branch = $this->actingAs($admin)
-            ->postJson("/admin/logistics-management/api/companies/{$application['profile']->id}/branches", [
+            ->postJson("/api/v1/admin/logistics-management/companies/{$application['profile']->id}/branches", [
                 'name' => 'Manila Hub',
                 'address' => 'Manila',
                 'contact_person' => 'Alex Santos',
@@ -138,14 +140,14 @@ class AdminLogisticsManagementTest extends TestCase
             ->assertJsonPath('data.0.riders', 1);
 
         $this->actingAs($admin)
-            ->patchJson("/admin/logistics-management/api/branches/{$branch['id']}", [
+            ->patchJson("/api/v1/admin/logistics-management/branches/{$branch['id']}", [
                 'name' => 'Manila Central Hub',
             ])
             ->assertOk()
             ->assertJsonPath('data.name', 'Manila Central Hub');
 
         $this->actingAs($admin)
-            ->deleteJson("/admin/logistics-management/api/branches/{$branch['id']}")
+            ->deleteJson("/api/v1/admin/logistics-management/branches/{$branch['id']}")
             ->assertOk();
 
         $this->assertDatabaseMissing('logistics_branches', ['id' => $branch['id']]);

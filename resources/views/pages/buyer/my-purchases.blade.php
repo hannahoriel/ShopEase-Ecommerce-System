@@ -16,6 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>ShopEase - My Purchases</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,16 +109,16 @@
                 {{-- LEFT PROFILE / ACCOUNT NAV --}}
                 <aside class="purchases-sidebar" aria-label="Buyer account navigation">
                     <div class="buyer-profile-card">
-                        <div
+                        <x-account-avatar
+                            :name="$buyerDisplayName ?? auth()->user()->name"
+                            :image="$buyerAvatarUrl ?? null"
+                            size="56px"
                             class="buyer-profile-avatar"
                             id="buyerProfilePhoto"
-                            aria-label="Buyer profile photo"
-                        >
-                            {{-- Backend profile photo will be rendered here --}}
-                        </div>
+                        />
 
                         <div class="buyer-profile-copy">
-                            <strong>{{ auth()->user()->name }}</strong>
+                            <strong>{{ $buyerDisplayName ?? auth()->user()->name }}</strong>
                             <button type="button" class="buyer-edit-profile">
                                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path
@@ -591,10 +592,10 @@
                         </section>
 
                         @php
-                            $buyerProfile = auth()->user();
+                            $buyerProfile = $buyerProfile ?? auth()->user()->buyerProfile;
                             $buyerBirthday = old('birthday', data_get($buyerProfile, 'birthday', data_get($buyerProfile, 'birthdate', '')));
                             try { $buyerBirthday = $buyerBirthday ? \Carbon\Carbon::parse($buyerBirthday)->format('Y-m-d') : ''; } catch (\Throwable $e) { $buyerBirthday = ''; }
-                            $buyerDisplayName = trim(data_get($buyerProfile, 'first_name', '') . ' ' . data_get($buyerProfile, 'last_name', '')) ?: data_get($buyerProfile, 'name', 'Buyer');
+                            $buyerDisplayName = $buyerDisplayName ?? trim(data_get($buyerProfile, 'first_name', '') . ' ' . data_get($buyerProfile, 'last_name', '')) ?: auth()->user()->name;
                             // Optional URLs from controller; no fake images or records.
                             $buyerCoverUrl = $buyerCoverUrl ?? null;
                             $buyerAvatarUrl = $buyerAvatarUrl ?? null;
@@ -602,13 +603,8 @@
                         @endphp
                         <section class="bp-workspace" aria-label="Buyer profile details">
                             <h2 class="bp-title">Account Details</h2>
-                            <p class="bp-intro">Manage your profile. Any proposed changes require administrator approval.</p>
-                            <div id="bpPendingApproval" class="bp-pending-card" role="status" aria-live="polite" hidden>
-                                <span class="bp-pending-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-                                <div class="bp-pending-copy"><div class="bp-pending-heading"><strong>Profile changes pending approval</strong><span class="bp-pending-pill">Pending</span></div><p>Your profile is temporarily locked while the requested changes await administrator review. You can't edit your information or photos during this period.</p><small>UI demonstration only — this request has not actually been sent to an administrator.</small></div>
-                                <svg class="bp-pending-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-                            </div>
-                            <form id="buyerProfileForm" data-buyer-id="{{ auth()->id() }}" novalidate>
+                            <p class="bp-intro">Update your personal information, contact details, address, and account photos.</p>
+                            <form id="buyerProfileForm" data-update-url="{{ url('/api/v1/buyer/account') }}" novalidate>
                                 <div class="bp-cover" id="bpCover">
                                     <img id="bpCoverPreview" src="{{ $buyerCoverUrl ?? '' }}" alt="Buyer cover photo" @if(!$buyerCoverUrl) hidden @endif>
                                     <label class="bp-photo-button bp-cover-action" for="bpCoverInput"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/></svg> Change Cover</label>
@@ -617,13 +613,13 @@
                                 <div class="bp-identity">
                                     <div class="bp-avatar" id="bpAvatar">
                                         <img id="bpAvatarPreview" src="{{ $buyerAvatarUrl ?? '' }}" alt="Buyer profile photo" @if(!$buyerAvatarUrl) hidden @endif>
-                                        <span id="bpAvatarFallback" @if($buyerAvatarUrl) hidden @endif>{{ strtoupper(mb_substr($buyerDisplayName, 0, 1)) }}</span>
+                                        <span id="bpAvatarFallback" @if($buyerAvatarUrl) hidden @endif>{{ strtoupper(collect(preg_split('/\s+/u', trim($buyerDisplayName), -1, PREG_SPLIT_NO_EMPTY) ?: [])->map(fn ($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode('') ?: 'B') }}</span>
                                         <label class="bp-avatar-action" for="bpAvatarInput" title="Change profile photo" aria-label="Change profile photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/></svg></label>
                                     </div>
                                     <div class="bp-identity-copy"><h3>{{ $buyerDisplayName }}</h3><p>Buyer Profile</p><label class="bp-photo-button" for="bpAvatarInput">Change Profile Photo</label><input id="bpAvatarInput" name="profile_photo" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>
                                 </div>
                                 <section class="bp-section"><div class="bp-section-heading"><span class="bp-section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-5 3.4-7 8-7s7.5 2 8 7"/></svg></span><div><h3>Personal Information</h3><p>Your registered personal and contact details</p></div></div>
-                                    <div class="bp-fields"><div class="bp-field"><label for="bp-last-name">Last Name <span class="bp-required">*</span></label><input class="bp-control" id="bp-last-name" name="last_name" type="text" value="{{ old('last_name', data_get($buyerProfile, 'last_name', '')) }}" placeholder="Enter your last name" required autocomplete="family-name"></div><div class="bp-field"><label for="bp-first-name">First Name <span class="bp-required">*</span></label><input class="bp-control" id="bp-first-name" name="first_name" type="text" value="{{ old('first_name', data_get($buyerProfile, 'first_name', '')) }}" placeholder="Enter your first name" required autocomplete="given-name"></div><div class="bp-field"><label for="bp-middle-name">Middle Name <span class="bp-required">*</span></label><input class="bp-control" id="bp-middle-name" name="middle_name" type="text" value="{{ old('middle_name', data_get($buyerProfile, 'middle_name', data_get($buyerProfile, 'middle_initial', ''))) }}" placeholder="Enter your middle name" required autocomplete="off"></div><div class="bp-field"><label for="bp-sex">Sex <span class="bp-required">*</span></label><select class="bp-control" id="bp-sex" name="sex" required><option value="">Select sex</option><option value="Male" @selected(old('sex', data_get($buyerProfile, 'sex', '')) === 'Male')>Male</option><option value="Female" @selected(old('sex', data_get($buyerProfile, 'sex', '')) === 'Female')>Female</option><option value="Prefer not to say" @selected(old('sex', data_get($buyerProfile, 'sex', '')) === 'Prefer not to say')>Prefer not to say</option></select></div><div class="bp-field"><label for="bp-email">Email <span class="bp-required">*</span></label><input class="bp-control" id="bp-email" name="email" type="email" value="{{ old('email', data_get($buyerProfile, 'email', '')) }}" placeholder="Enter your email" required autocomplete="email"></div><div class="bp-field"><label for="bp-contact-no">Contact No. <span class="bp-required">*</span></label><input class="bp-control" id="bp-contact-no" name="contact_no" type="tel" value="{{ old('contact_no', data_get($buyerProfile, 'contact_no', data_get($buyerProfile, 'phone', ''))) }}" placeholder="09XXXXXXXXX or +639XXXXXXXXX" required autocomplete="tel"></div><div class="bp-field"><label for="bp-birthday">Birthday <span class="bp-required">*</span></label><input class="bp-control" id="bp-birthday" name="birthday" type="date" value="{{ old('birthday', $buyerBirthday) }}" placeholder="" required max="{{ now()->toDateString() }}" autocomplete="off"></div><div class="bp-field"><label for="bp-age">Age</label><input class="bp-control" id="bp-age" type="text" value="" placeholder="Auto generated" readonly aria-readonly="true"></div></div>
+                                    <div class="bp-fields"><div class="bp-field"><label for="bp-last-name">Last Name <span class="bp-required">*</span></label><input class="bp-control" id="bp-last-name" name="last_name" type="text" value="{{ old('last_name', data_get($buyerProfile, 'last_name', '')) }}" placeholder="Enter your last name" required autocomplete="family-name"></div><div class="bp-field"><label for="bp-first-name">First Name <span class="bp-required">*</span></label><input class="bp-control" id="bp-first-name" name="first_name" type="text" value="{{ old('first_name', data_get($buyerProfile, 'first_name', '')) }}" placeholder="Enter your first name" required autocomplete="given-name"></div><div class="bp-field"><label for="bp-middle-name">Middle Name</label><input class="bp-control" id="bp-middle-name" name="middle_name" type="text" value="{{ old('middle_name', data_get($buyerProfile, 'middle_name', data_get($buyerProfile, 'middle_initial', ''))) }}" placeholder="Enter your middle name" autocomplete="off"></div><div class="bp-field"><label for="bp-sex">Sex <span class="bp-required">*</span></label><select class="bp-control" id="bp-sex" name="sex" required><option value="">Select sex</option><option value="Male" @selected(old('sex', data_get($buyerProfile, 'sex', '')) === 'Male')>Male</option><option value="Female" @selected(old('sex', data_get($buyerProfile, 'sex', '')) === 'Female')>Female</option><option value="Prefer not to say" @selected(old('sex', data_get($buyerProfile, 'sex', '')) === 'Prefer not to say')>Prefer not to say</option></select></div><div class="bp-field"><label for="bp-email">Email <span class="bp-required">*</span></label><input class="bp-control" id="bp-email" name="email" type="email" value="{{ old('email', $buyerEmail ?? auth()->user()->email) }}" placeholder="Enter your email" required autocomplete="email"></div><div class="bp-field"><label for="bp-contact-no">Contact No. <span class="bp-required">*</span></label><input class="bp-control" id="bp-contact-no" name="contact_no" type="tel" value="{{ old('contact_no', data_get($buyerProfile, 'contact_no', data_get($buyerProfile, 'phone', ''))) }}" placeholder="09XXXXXXXXX or +639XXXXXXXXX" required autocomplete="tel"></div><div class="bp-field"><label for="bp-birthday">Birthday <span class="bp-required">*</span></label><input class="bp-control" id="bp-birthday" name="birthday" type="date" value="{{ old('birthday', $buyerBirthday) }}" placeholder="" required max="{{ now()->toDateString() }}" autocomplete="off"></div><div class="bp-field"><label for="bp-age">Age</label><input class="bp-control" id="bp-age" type="text" value="{{ data_get($buyerProfile, 'age', '') }}" placeholder="Auto generated" readonly aria-readonly="true"></div></div>
                                 </section>
                                 <section class="bp-section"><div class="bp-section-heading"><span class="bp-section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10 12 3l8 7v11H4Z"/><path d="M9 21v-8h6v8"/></svg></span><div><h3>Address Information</h3><p>Your registered address details</p></div></div>
                                     <div class="bp-fields bp-fields-address"><div class="bp-field"><label for="bp-province">Province <span class="bp-required">*</span></label><div class="bp-location-picker" data-bp-location="province">
@@ -653,7 +649,7 @@
                                 <section class="bp-section"><div class="bp-section-heading"><span class="bp-section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10h5M7 14h10"/></svg></span><div><h3>Identity Verification</h3><p>Approved Valid ID is view-only and cannot be edited here.</p></div></div>
                                     <div class="bp-id-grid"><div class="bp-id-tile"><span class="bp-id-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m5 18 5-5 3 3 3-4 3 6"/></svg></span><strong>Valid ID</strong><small>Approved document · Read only</small>@if($buyerValidIdUrl)<a href="{{ $buyerValidIdUrl }}" target="_blank" rel="noopener noreferrer" class="bp-id-view">View approved ID</a>@else<span class="bp-id-no-document">No approved ID available</span>@endif</div><p class="bp-id-note">For security, you cannot replace or modify your Valid ID from this form. Contact support for identity document concerns.</p></div>
                                 </section>
-                                <div class="bp-actions"><button type="button" class="bp-reset" id="bpDiscard" disabled>Discard Changes</button><button type="submit" class="bp-save" id="bpRequestChanges" disabled>Request Changes</button></div>
+                                <div class="bp-actions"><button type="button" class="bp-reset" id="bpDiscard" disabled>Discard Changes</button><button type="submit" class="bp-save" id="bpRequestChanges" disabled>Save Changes</button></div>
                             </form>
                         </section>
                     </div>
@@ -720,26 +716,6 @@
     </main>
 
     {{-- Profile change approval notice — UI-only; no request is sent to admin. --}}
-    <div id="bpApprovalModal" class="bp-overlay" hidden aria-hidden="true">
-        <section class="bp-modal bp-modal-waiting" role="dialog" aria-modal="true" aria-labelledby="bpModalTitle" aria-describedby="bpModalDescription" tabindex="-1">
-            <div class="bp-waiting-icon" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 7h15l9 9v24a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3V10a3 3 0 0 1 3-3Z" fill="currentColor"/>
-                    <path d="M27 7v9h9" stroke="#FFE4E4" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M17 25h14M17 31h14" stroke="#FFE4E4" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <h2 id="bpModalTitle">Waiting for Admin Approval</h2>
-            <p id="bpModalDescription" class="bp-waiting-description">Changes to your personal information must be reviewed and approved by ShopEase administration before they can take effect.</p>
-            <div class="bp-waiting-notice" role="note">
-                <span class="bp-waiting-check" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="m6 12 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <div><strong>Waiting for Administrator’s Approval</strong><p>This is a preview of the approval process. No request has been sent and no email will be generated.</p></div>
-            </div>
-            <button type="button" id="bpModalOkay" class="bp-waiting-okay">Okay, Got it</button>
-        </section>
-    </div>
     <div id="bpProfileToast" class="bp-toast" role="status" aria-live="polite" hidden></div>
 
     <div id="buyerComplaintModal" class="fixed inset-0 z-[220] hidden items-center justify-center bg-black/40 px-4 py-6" aria-hidden="true">
@@ -880,7 +856,7 @@
              <input type="text" class="email-code-input buyer-otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" aria-label="Digit {{ $i }}">
            @endfor
         </div>
-        <p class="buyer-security-demo-disclaimer">Demo only — no verification email is being sent. Enter any six digits to preview the next step.</p><div class="email-spam-message">
+        <p class="buyer-security-demo-disclaimer" id="buyerOtpDeliveryMessage" role="status" hidden></p><div class="email-spam-message">
           <svg class="email-spam-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><circle cx="12" cy="16.5" r=".5" fill="currentColor"/></svg>
           <span>Didn’t receive the code? Check your spam folder or resend it</span>
         </div>

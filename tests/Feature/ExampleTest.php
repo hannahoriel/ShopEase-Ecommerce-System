@@ -9,10 +9,11 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_the_application_shows_the_login_page_first(): void
+    public function test_the_application_shows_the_public_landing_page_first(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirectToRoute('login');
+        $response->assertOk()
+            ->assertViewIs('pages.landing-page');
     }
 }

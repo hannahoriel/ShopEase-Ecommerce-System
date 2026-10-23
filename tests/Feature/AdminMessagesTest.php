@@ -24,14 +24,14 @@ class AdminMessagesTest extends TestCase
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
 
         $conversationId = $this->actingAs($admin)
-            ->postJson('/admin/messages/api/conversations', [
+            ->postJson('/api/v1/admin/messages/conversations', [
                 'type' => AdminConversation::CATEGORY_BUYERS,
                 'user_id' => $buyer->id,
             ])
             ->assertCreated()
             ->json('data.id');
 
-        $this->postJson("/admin/messages/api/conversations/{$conversationId}/messages", [
+        $this->postJson("/api/v1/admin/messages/conversations/{$conversationId}/messages", [
             'body' => 'How can we help?',
             'attachment' => UploadedFile::fake()->image('details.png'),
         ])
@@ -40,7 +40,7 @@ class AdminMessagesTest extends TestCase
             ->assertJsonPath('data.text', 'How can we help?')
             ->assertJsonPath('data.attachment.name', 'details.png');
 
-        $this->getJson('/admin/messages/api?type=buyers')
+        $this->getJson('/api/v1/admin/messages?type=buyers')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', $buyer->name)
@@ -75,7 +75,7 @@ class AdminMessagesTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->postJson('/admin/messages/api/conversations', [
+            ->postJson('/api/v1/admin/messages/conversations', [
                 'type' => AdminConversation::CATEGORY_COMPLAINTS,
                 'user_id' => $buyer->id,
                 'complaint_id' => $complaint->id,
@@ -83,7 +83,7 @@ class AdminMessagesTest extends TestCase
             ])
             ->assertCreated();
 
-        $this->getJson('/admin/messages/api?type=complaints')
+        $this->getJson('/api/v1/admin/messages?type=complaints')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.parties.buyer.name', $buyer->name)
@@ -103,7 +103,7 @@ class AdminMessagesTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($buyer)
-            ->getJson('/admin/messages/api')
+            ->getJson('/api/v1/admin/messages')
             ->assertForbidden();
     }
 
@@ -117,7 +117,7 @@ class AdminMessagesTest extends TestCase
 
         $admin = User::query()->where('role', User::ROLE_ADMIN)->firstOrFail();
         $this->actingAs($admin)
-            ->getJson('/admin/messages/api')
+            ->getJson('/api/v1/admin/messages')
             ->assertOk()
             ->assertJsonCount(4, 'data')
             ->assertJsonPath('counts.logistics', 1)
@@ -125,7 +125,7 @@ class AdminMessagesTest extends TestCase
             ->assertJsonPath('counts.sellers', 1)
             ->assertJsonPath('counts.complaints', 2);
 
-        $this->getJson('/admin/messages/api?type=complaints')
+        $this->getJson('/api/v1/admin/messages?type=complaints')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.parties.buyer.name', 'Juan Dela Cruz')

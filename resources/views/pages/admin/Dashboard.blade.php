@@ -14,13 +14,14 @@
     <h2 class="text-[21px] font-semibold text-black mb-5">
         Welcome, Admin!
     </h2>
+    <p id="admin-dashboard-error" class="mb-4 text-sm text-red-700" role="alert" hidden></p>
 
 
     <!-- ==================== STAT CARDS ==================== -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 
         @php
-            $stats = [
+            $stats = $stats ?? [
                 [
                     'icon' => 'pending.png',
                     'value' => '236',
@@ -46,6 +47,16 @@
                     'change' => '5%'
                 ],
             ];
+            $salesSummary = $salesSummary ?? [
+                'gross_sales' => '₱145,560,000.00',
+                'total_orders' => '1,256',
+                'average_order_value' => '₱145.00',
+                'completed_orders' => '1,256',
+                'returns_refunds' => '25',
+            ];
+            $complaints = $complaints ?? ['open' => 20, 'in_progress' => 10, 'resolved' => 45];
+            $pendingBreakdown = $pendingBreakdown ?? ['sellers' => 12, 'buyers' => 15, 'logistics' => 8];
+            $dashboardAnnouncements = $dashboardAnnouncements ?? collect();
         @endphp
 
         @foreach ($stats as $stat)
@@ -64,7 +75,7 @@
                     <!-- CONTENT -->
                     <div class="dashboard-stat-content">
 
-                        <div class="dashboard-stat-number">
+                        <div class="dashboard-stat-number" data-dashboard-stat="{{ ['pending_registrations', 'active_users', 'active_sellers', 'total_commission'][$loop->index] }}">
                             {{ $stat['value'] }}
                         </div>
 
@@ -83,8 +94,8 @@
                         ↑
                     </span>
 
-                    <strong>
-                        {{ $stat['change'] }}
+                    <strong data-dashboard-growth="{{ ['pending_registrations', 'active_users', 'active_sellers', 'total_commission'][$loop->index] }}">
+                        {{ is_array($stat['change']) ? $stat['change']['value'] : $stat['change'] }}
                     </strong>
 
                     from yesterday
@@ -136,8 +147,8 @@
                             Gross Sales
                         </span>
 
-                        <span class="font-medium text-right">
-                            ₱145,560,000.00
+                        <span class="font-medium text-right" data-dashboard-sales="gross_sales">
+                            {{ $salesSummary['gross_sales'] }}
                         </span>
                     </div>
 
@@ -146,8 +157,8 @@
                             Total Orders
                         </span>
 
-                        <span class="font-medium">
-                            1,256
+                        <span class="font-medium" data-dashboard-sales="total_orders">
+                            {{ $salesSummary['total_orders'] }}
                         </span>
                     </div>
 
@@ -156,8 +167,8 @@
                             Average Order Value
                         </span>
 
-                        <span class="font-medium">
-                            ₱145.00
+                        <span class="font-medium" data-dashboard-sales="average_order_value">
+                            {{ $salesSummary['average_order_value'] }}
                         </span>
                     </div>
 
@@ -166,8 +177,8 @@
                             Completed Orders
                         </span>
 
-                        <span class="font-medium">
-                            1,256
+                        <span class="font-medium" data-dashboard-sales="completed_orders">
+                            {{ $salesSummary['completed_orders'] }}
                         </span>
                     </div>
 
@@ -176,8 +187,8 @@
                             Return/Refund
                         </span>
 
-                        <span class="font-medium">
-                            25
+                        <span class="font-medium" data-dashboard-sales="returns_refunds">
+                            {{ $salesSummary['returns_refunds'] }}
                         </span>
                     </div>
 
@@ -227,19 +238,19 @@
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-maroon-900"></span>
                         <span>Open</span>
-                        <span class="ml-auto font-medium">20</span>
+                        <span class="ml-auto font-medium" data-dashboard-complaint="open">{{ $complaints['open'] }}</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-red-500"></span>
                         <span>In Progress</span>
-                        <span class="ml-auto font-medium">10</span>
+                        <span class="ml-auto font-medium" data-dashboard-complaint="in_progress">{{ $complaints['in_progress'] }}</span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-peach-dark"></span>
                         <span>Resolved</span>
-                        <span class="ml-auto font-medium">45</span>
+                        <span class="ml-auto font-medium" data-dashboard-complaint="resolved">{{ $complaints['resolved'] }}</span>
                     </div>
 
                 </div>
@@ -275,8 +286,8 @@
 
                     <span>Sellers</span>
 
-                    <span class="ml-auto font-medium">
-                        12
+                    <span class="ml-auto font-medium" data-dashboard-pending="sellers">
+                        {{ $pendingBreakdown['sellers'] }}
                     </span>
                 </div>
 
@@ -289,8 +300,8 @@
 
                     <span>Couriers</span>
 
-                    <span class="ml-auto font-medium">
-                        8
+                    <span class="ml-auto font-medium" data-dashboard-pending="logistics">
+                        {{ $pendingBreakdown['logistics'] ?? 0 }}
                     </span>
                 </div>
 
@@ -303,8 +314,8 @@
 
                     <span>Buyers</span>
 
-                    <span class="ml-auto font-medium">
-                        15
+                    <span class="ml-auto font-medium" data-dashboard-pending="buyers">
+                        {{ $pendingBreakdown['buyers'] }}
                     </span>
                 </div>
 
@@ -365,5 +376,8 @@
 ])
 
 @endpush
+
+<script type="application/json" id="adminDashboardConfig">@json(['apiUrl' => url('/api/v1/admin/dashboard')])</script>
+
 
 @endsection

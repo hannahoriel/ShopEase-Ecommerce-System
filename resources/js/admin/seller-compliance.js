@@ -509,6 +509,14 @@ function initSellerCompliance(cfg) {
 
         const name =
             seller.store_name || 'Seller';
+        const ownerInitials = (seller.owner_name || name)
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(part => part[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase() || 'S';
 
         return `
             <article
@@ -519,7 +527,10 @@ function initSellerCompliance(cfg) {
                 aria-label="View details for ${esc(name)}"
             >
                 <div class="seller-cell">
-                    <div class="seller-avatar"></div>
+                    <div class="seller-avatar" aria-label="${esc(seller.owner_name || name)} profile photo">
+                        <span>${esc(ownerInitials)}</span>
+                        ${seller.profile_photo_url ? `<img src="${esc(seller.profile_photo_url)}" alt="" onerror="this.remove()">` : ''}
+                    </div>
 
                     <div class="seller-name-group">
                         <div class="seller-store-name">
@@ -848,6 +859,17 @@ function initSellerCompliance(cfg) {
             ),
             score: `${score}%`,
         });
+
+        const sellerAvatar = $('.seller-details-avatar', modals.seller);
+        const sellerInitials = (seller.owner_name || seller.store_name || 'Seller')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(part => part[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase() || 'S';
+        sellerAvatar.innerHTML = `<span>${esc(sellerInitials)}</span>${seller.profile_photo_url ? `<img src="${esc(seller.profile_photo_url)}" alt="${esc(seller.owner_name || 'Seller')} profile photo" onerror="this.remove()">` : ''}`;
 
         $('#sellerModalCategories').innerHTML =
             categoryPills(

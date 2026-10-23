@@ -1,14 +1,23 @@
 <?php
 
 use App\Http\Controllers\Admin\CommissionController;
+use App\Http\Controllers\Admin\AdminAccountController;
+use App\Http\Controllers\Admin\AdminManagementController;
+use App\Http\Controllers\Admin\AdminAccountSecurityController;
+use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LogisticsManagementController;
+use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfilePhotoController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
+use App\Http\Controllers\Api\Buyer\AccountController as BuyerAccountController;
+use App\Http\Controllers\Api\Buyer\AccountSecurityController as BuyerAccountSecurityController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
@@ -41,12 +50,15 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/auth/me', fn (Request $request) => response()->json($request->user()));
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::put('/profile/photo', [ProfilePhotoController::class, 'update'])->name('profile.photo.update');
+        Route::put('/buyer/account', [BuyerAccountController::class, 'update'])->name('buyer.api.account.update');
         Route::get('/dashboard', fn (Request $request) => response()->json([
             'user' => $request->user(),
             'role' => $request->user()->role,
         ]));
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');
             Route::get('/messages', [AdminMessagesController::class, 'index'])->name('admin.api.messages.index');
             Route::get('/messages/contacts', [AdminMessagesController::class, 'contacts'])->name('admin.api.messages.contacts');
             Route::post('/messages/conversations', [AdminMessagesController::class, 'storeConversation'])->name('admin.api.messages.conversations.store');
@@ -55,6 +67,22 @@ Route::prefix('v1')->group(function () {
             Route::get('/messages/conversations/{conversation}/messages/{message}/attachment', [AdminMessagesController::class, 'attachment'])
                 ->name('admin.api.messages.attachment');
             Route::get('/commissions', [CommissionController::class, 'index'])->name('admin.api.commissions.index');
+            Route::get('/notifications', [AdminNotificationController::class, 'apiIndex'])->name('admin.api.notifications.index');
+            Route::patch('/notifications/read-all', [AdminNotificationController::class, 'markAllRead'])->name('admin.api.notifications.read-all');
+            Route::patch('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('admin.api.notifications.read');
+            Route::get('/account', [AdminAccountController::class, 'show'])->name('admin.api.account.show');
+            Route::put('/account', [AdminAccountController::class, 'update'])->name('admin.api.account.update');
+            Route::post('/account/notifications', [AdminAccountController::class, 'notifications'])->name('admin.api.account.notifications');
+            Route::get('/account/admins', [AdminManagementController::class, 'index'])->name('admin.api.account.admins.index');
+            Route::post('/account/admins', [AdminManagementController::class, 'store'])->name('admin.api.account.admins.store');
+            Route::get('/account/admins/{user}/id-photo', [AdminManagementController::class, 'idPhoto'])->name('admin.api.account.admins.id-photo');
+            Route::patch('/account/admins/{user}', [AdminManagementController::class, 'update'])->name('admin.api.account.admins.update');
+            Route::middleware('throttle:60,1')->prefix('account/security')->name('admin.api.account.security.')->group(function () {
+                Route::post('/otp/send', [AdminAccountSecurityController::class, 'sendOtp'])->name('otp.send');
+                Route::post('/otp/verify', [AdminAccountSecurityController::class, 'verifyOtp'])->name('otp.verify');
+                Route::post('/password/change', [AdminAccountSecurityController::class, 'changePassword'])->name('password.change');
+                Route::post('/password/reset', [AdminAccountSecurityController::class, 'resetPassword'])->name('password.reset');
+            });
             Route::get('/logistics-management', [LogisticsManagementController::class, 'index'])->name('admin.api.logistics.index');
             Route::post('/logistics-management/registrations/{registration}/approve', [LogisticsManagementController::class, 'approve'])
                 ->name('admin.api.logistics.approve');
@@ -70,27 +98,42 @@ Route::prefix('v1')->group(function () {
                 ->name('admin.api.logistics.branches.destroy');
             Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('admin.api.complaints.index');
             Route::patch('/complaints/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])->name('admin.api.complaints.status');
-            Route::get('/registrations', [RegistrationController::class, 'list']);
-            Route::get('/registrations/approved', [RegistrationController::class, 'approvedArchive']);
-            Route::get('/registrations/rejected', [RegistrationController::class, 'rejectedArchive']);
-            Route::get('/registrations/{registration}', [RegistrationController::class, 'show']);
-            Route::post('/registrations/{registration}/approve', [RegistrationController::class, 'approve']);
-            Route::post('/registrations/{registration}/reject', [RegistrationController::class, 'reject']);
-            Route::get('/users', [UserManagementController::class, 'list']);
-            Route::get('/users/{user}', [UserManagementController::class, 'show']);
-            Route::patch('/users/{user}/status', [UserManagementController::class, 'updateStatus']);
+            Route::prefix('platform-settings')->controller(PlatformSettingsController::class)->name('admin.api.platform-settings.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/announcements', 'storeAnnouncement')->name('announcements.store');
+                Route::patch('/announcements/{announcement}', 'updateAnnouncement')->name('announcements.update');
+                Route::delete('/announcements/{announcement}', 'destroyAnnouncement')->name('announcements.destroy');
+                Route::post('/policies', 'storePolicy')->name('policies.store');
+                Route::patch('/policies/{policy}', 'updatePolicy')->name('policies.update');
+                Route::delete('/policies/{policy}', 'destroyPolicy')->name('policies.destroy');
+            });
+            Route::get('/registrations', [RegistrationController::class, 'list'])->name('admin.api.registrations.index');
+            Route::get('/registrations/approved', [RegistrationController::class, 'approvedArchive'])->name('admin.api.registrations.approved');
+            Route::get('/registrations/rejected', [RegistrationController::class, 'rejectedArchive'])->name('admin.api.registrations.rejected');
+            Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('admin.api.registrations.show');
+            Route::post('/registrations/{registration}/approve', [RegistrationController::class, 'approve'])->name('admin.api.registrations.approve');
+            Route::post('/registrations/{registration}/reject', [RegistrationController::class, 'reject'])->name('admin.api.registrations.reject');
+            Route::get('/users', [UserManagementController::class, 'list'])->name('admin.api.users.index');
+            Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('admin.api.users.show');
+            Route::patch('/users/{user}/status', [UserManagementController::class, 'updateStatus'])->name('admin.api.users.status');
 
-            Route::prefix('seller-compliance')->controller(SellerComplianceController::class)->group(function () {
-                Route::get('', 'index');
-                Route::get('{seller}', 'show');
-                Route::post('{seller}/suspend', 'suspend');
-                Route::post('products/{product}/approve', 'approveProduct');
-                Route::post('products/{product}/warn', 'warnProduct');
-                Route::post('products/{product}/remove', 'removeProduct');
+            Route::prefix('seller-compliance')->controller(SellerComplianceController::class)->name('admin.api.seller-compliance.')->group(function () {
+                Route::get('', 'index')->name('index');
+                Route::get('{seller}', 'show')->name('show');
+                Route::post('{seller}/suspend', 'suspend')->name('suspend');
+                Route::post('products/{product}/approve', 'approveProduct')->name('products.approve');
+                Route::post('products/{product}/warn', 'warnProduct')->name('products.warn');
+                Route::post('products/{product}/remove', 'removeProduct')->name('products.remove');
             });
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::prefix('account/security')->name('buyer.api.account.security.')->middleware('throttle:10,1')->group(function () {
+                Route::post('/otp/send', [BuyerAccountSecurityController::class, 'sendOtp'])->name('otp.send');
+                Route::post('/otp/verify', [BuyerAccountSecurityController::class, 'verifyOtp'])->name('otp.verify');
+                Route::post('/password/change', [BuyerAccountSecurityController::class, 'changePassword'])->name('password.change');
+                Route::post('/password/reset', [BuyerAccountSecurityController::class, 'resetPassword'])->name('password.reset');
+            });
             Route::get('/notifications', [BuyerNotificationController::class, 'index'])->name('buyer.api.notifications.index');
             Route::patch('/notifications/{notification}/read', [BuyerNotificationController::class, 'markRead'])->name('buyer.api.notifications.read');
             Route::post('/notifications/read-all', [BuyerNotificationController::class, 'markAllRead'])->name('buyer.api.notifications.read-all');

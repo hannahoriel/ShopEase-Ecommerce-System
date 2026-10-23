@@ -19,7 +19,7 @@ class SellerOrderStatusFlowTest extends TestCase
             'email' => 'seller-flow@example.com',
         ]);
 
-        Seller::create([
+        $seller = Seller::create([
             'user_id' => $sellerUser->id,
             'registration_status' => 'active',
         ]);
@@ -31,7 +31,7 @@ class SellerOrderStatusFlowTest extends TestCase
 
         $order = Order::create([
             'buyer_id' => $buyer->id,
-            'seller_id' => $sellerUser->id,
+            'seller_id' => $seller->id,
             'total' => 559.00,
             'commission_amount' => 55.90,
             'status' => 'to_ship',
@@ -53,7 +53,7 @@ class SellerOrderStatusFlowTest extends TestCase
             'email' => 'seller-update@example.com',
         ]);
 
-        Seller::create([
+        $seller = Seller::create([
             'user_id' => $sellerUser->id,
             'registration_status' => 'active',
         ]);
@@ -65,7 +65,7 @@ class SellerOrderStatusFlowTest extends TestCase
 
         $order = Order::create([
             'buyer_id' => $buyer->id,
-            'seller_id' => $sellerUser->id,
+            'seller_id' => $seller->id,
             'total' => 559.00,
             'commission_amount' => 55.90,
             'status' => 'preparing',

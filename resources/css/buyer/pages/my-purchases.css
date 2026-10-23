@@ -749,7 +749,8 @@
         }
 
 
-        .buyer-side-panel[hidden] {
+        .buyer-side-panel[hidden],
+        .buyer-side-panel:not(.is-active) {
             display: none !important;
         }
 

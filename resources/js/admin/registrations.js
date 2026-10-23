@@ -2047,7 +2047,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const response =
                 await fetch(
-                    `/admin/registrations/${row.dataset.id}`,
+                    `/api/v1/admin/registrations/${row.dataset.id}`,
                     {
                         headers: {
                             'Accept':
@@ -2786,7 +2786,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const response =
             await fetch(
-                `/admin/registrations/${row.dataset.id}/${action}`,
+                `/api/v1/admin/registrations/${row.dataset.id}/${action}`,
                 {
                     method:
                         'POST',
@@ -3173,7 +3173,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
 
                     await loadArchiveUsers(
-                        '/admin/registrations/approved/list',
+                        '/api/v1/admin/registrations/approved',
                         approvedUsersBody,
                         'approved'
                     );
@@ -3327,7 +3327,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
 
                     await loadArchiveUsers(
-                        '/admin/registrations/rejected/list',
+                        '/api/v1/admin/registrations/rejected',
                         rejectedUsersBody,
                         'rejected'
                     );

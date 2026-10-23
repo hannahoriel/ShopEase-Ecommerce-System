@@ -46,10 +46,15 @@ class OrderStatusController extends Controller
                 'items.product:id,name,photos',
                 'latestCancellationRequest.buyer:id,name',
                 'latestCancellationRequest.decidedBy:id,name',
+                'statusHistory.changedBy:id,role',
             ]);
 
         if ($request->filled('status')) {
-            $query->whereIn('status', (array) $request->input('status'));
+            $statuses = array_map(
+                fn (string $status): string => str_replace('-', '_', strtolower($status)),
+                (array) $request->input('status')
+            );
+            $query->whereIn('status', $statuses);
         }
 
         if ($request->filled('search')) {
@@ -73,7 +78,7 @@ class OrderStatusController extends Controller
         $this->ownedOrder($request->user(), $order)->load([
             'buyer:id,name,email,contact_no',
             'items.product:id,name,photos',
-            'statusHistory.changedBy:id,name',
+            'statusHistory.changedBy:id,name,role',
             'latestCancellationRequest.buyer:id,name',
             'latestCancellationRequest.decidedBy:id,name',
         ]);
@@ -84,6 +89,11 @@ class OrderStatusController extends Controller
     public function update(Request $request, Order $order): JsonResponse
     {
         $order = $this->ownedOrder($request->user(), $order);
+        if ($request->filled('status')) {
+            $request->merge([
+                'status' => str_replace('-', '_', strtolower((string) $request->input('status'))),
+            ]);
+        }
         $validated = $request->validate([
             'status' => ['required', Rule::in(array_keys(self::TRANSITIONS))],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -94,7 +104,7 @@ class OrderStatusController extends Controller
             $this->changeStatus($lockedOrder, $validated['status'], $request->user(), $validated['notes'] ?? null);
         });
 
-        return response()->json($order->fresh(['statusHistory']));
+        return response()->json($order->fresh(['statusHistory.changedBy:id,role', 'latestCancellationRequest']));
     }
 
     public function schedule(Request $request, Order $order): JsonResponse
@@ -146,7 +156,11 @@ class OrderStatusController extends Controller
 
             $this->inventory->restoreOrder($lockedOrder);
 
-            $lockedOrder->update(['status' => 'cancelled']);
+            $lockedOrder->update([
+                'status' => 'cancelled',
+                'pickup_date' => null,
+                'pickup_time' => null,
+            ]);
             OrderStatusHistory::create([
                 'order_id' => $lockedOrder->id,
                 'from_status' => 'to_ship',
@@ -157,7 +171,7 @@ class OrderStatusController extends Controller
             BuyerNotification::createForOrderStatus($lockedOrder, 'cancelled');
         });
 
-        return response()->json($order->fresh(['statusHistory']));
+        return response()->json($order->fresh(['statusHistory.changedBy:id,role', 'latestCancellationRequest']));
     }
 
     public function approveCancellationRequest(Request $request, Order $order, OrderCancellationRequest $cancellationRequest): JsonResponse
@@ -178,7 +192,11 @@ class OrderStatusController extends Controller
 
             $this->inventory->restoreOrder($lockedOrder);
             $previousStatus = $lockedOrder->status;
-            $lockedOrder->update(['status' => 'cancelled']);
+            $lockedOrder->update([
+                'status' => 'cancelled',
+                'pickup_date' => null,
+                'pickup_time' => null,
+            ]);
             $lockedRequest->update([
                 'status' => 'approved',
                 'decided_by' => $request->user()->id,
@@ -195,7 +213,10 @@ class OrderStatusController extends Controller
             BuyerNotification::createForOrderStatus($lockedOrder, 'cancelled');
         });
 
-        return response()->json($order->fresh(['latestCancellationRequest', 'statusHistory']));
+        return response()->json($order->fresh([
+            'latestCancellationRequest',
+            'statusHistory.changedBy:id,role',
+        ]));
     }
 
     public function rejectCancellationRequest(Request $request, Order $order, OrderCancellationRequest $cancellationRequest): JsonResponse
@@ -317,7 +338,9 @@ class OrderStatusController extends Controller
         }
 
         $fromStatus = $order->status;
-        $order->update(['status' => $newStatus]);
+        $order->update($newStatus === 'cancelled'
+            ? ['status' => $newStatus, 'pickup_date' => null, 'pickup_time' => null]
+            : ['status' => $newStatus]);
 
         OrderStatusHistory::create([
             'order_id' => $order->id,

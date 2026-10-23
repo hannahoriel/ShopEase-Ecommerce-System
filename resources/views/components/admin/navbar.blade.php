@@ -1,5 +1,13 @@
 @php
     $adminUser = auth()->user();
+    $adminDisplayName = data_get($adminUser, 'name') ?: 'Administrator';
+    $adminProfile = $adminUser
+        ? \Illuminate\Support\Facades\DB::table('admin_account_profiles')->where('user_id', $adminUser->id)->first()
+        : null;
+    $adminAvatarPath = data_get($adminUser, 'profile_photo_path') ?: data_get($adminProfile, 'profile_photo_path');
+    $adminAvatarUrl = !empty($adminAvatarPath)
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($adminAvatarPath)
+        : null;
     $adminUnreadNotificationCount = $adminUser
         ? $adminUser->unreadNotifications()->count()
         : 0;
@@ -265,11 +273,7 @@
                 "
             >
 
-                <img
-                    src="{{ asset('icons/admin/dashboard/sidebar&navbar/admin-profile.png') }}"
-                    class="w-9 h-9 object-contain"
-                    alt="Admin Profile"
-                >
+                <x-account-avatar :name="$adminDisplayName" :image="$adminAvatarUrl" size="36px" />
 
 
                 <div class="text-sm min-w-[135px] text-left">
@@ -282,7 +286,7 @@
                             text-[16px]
                         "
                     >
-                        Admin
+                        {{ $adminDisplayName }}
                     </p>
 
                     <p class="text-[12px] text-gray-400 leading-tight">
@@ -342,7 +346,7 @@
                 <div class="px-4 py-3 border-b border-gray-100">
 
                     <p class="text-[14px] font-semibold text-gray-800">
-                        Admin
+                        {{ $adminDisplayName }}
                     </p>
 
                     <p class="text-[11px] text-gray-400 mt-1">

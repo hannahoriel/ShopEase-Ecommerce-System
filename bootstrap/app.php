@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+    $middleware->statefulApi();
+    $middleware->web(append: [
+        \App\Http\Middleware\AdminModuleAccess::class,
+    ]);
     $middleware->alias([
         'role' => \App\Http\Middleware\EnsureUserHasRole::class,
     ]);

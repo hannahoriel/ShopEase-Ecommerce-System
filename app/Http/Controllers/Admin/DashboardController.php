@@ -192,6 +192,7 @@ class DashboardController extends Controller
             'pending_breakdown' => [
                 'sellers' => Registration::pending()->where('user_type', 'seller')->count(),
                 'buyers' => Registration::pending()->where('user_type', 'buyer')->count(),
+                'logistics' => Registration::pending()->where('user_type', User::ROLE_LOGISTICS)->count(),
             ],
             'announcement' => Announcement::publishedForAudience([
                 'All Users',

@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -26,8 +27,13 @@ class MessagesController extends Controller
             'type' => ['nullable', Rule::in(AdminConversation::CATEGORIES)],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
+        $allowedCategories = $this->allowedCategories($request->user());
+        if (isset($validated['type'])) {
+            abort_unless(in_array($validated['type'], $allowedCategories, true), 403);
+        }
 
         $query = AdminConversation::query()
+            ->whereIn('category', $allowedCategories)
             ->with(['user:id,name,email,role', 'complaint.order', 'messages.sender:id,name,role'])
             ->withCount([
                 'messages as unread_count' => fn (Builder $messages) => $messages
@@ -80,6 +86,7 @@ class MessagesController extends Controller
         $validated = $request->validate([
             'type' => ['required', Rule::in(AdminConversation::CATEGORIES)],
         ]);
+        $this->authorizeCategory($request->user(), $validated['type']);
 
         if ($validated['type'] === AdminConversation::CATEGORY_COMPLAINTS) {
             $contacts = Complaint::query()
@@ -148,6 +155,7 @@ class MessagesController extends Controller
         ]);
 
         $category = $validated['type'];
+        $this->authorizeCategory($request->user(), $category);
         $user = User::query()->findOrFail($validated['user_id']);
         $expectedRole = match ($category) {
             AdminConversation::CATEGORY_LOGISTICS => User::ROLE_LOGISTICS,
@@ -199,6 +207,7 @@ class MessagesController extends Controller
 
     public function show(Request $request, AdminConversation $conversation): JsonResponse
     {
+        $this->authorizeCategory($request->user(), $conversation->category);
         $conversation->messages()
             ->where('sender_id', '!=', $request->user()->id)
             ->whereNull('read_at')
@@ -214,6 +223,7 @@ class MessagesController extends Controller
 
     public function send(Request $request, AdminConversation $conversation): JsonResponse
     {
+        $this->authorizeCategory($request->user(), $conversation->category);
         $validated = $request->validate([
             'body' => ['nullable', 'string', 'max:5000'],
             'attachment' => ['nullable', 'file', 'max:15360'],
@@ -253,6 +263,7 @@ class MessagesController extends Controller
 
     public function attachment(Request $request, AdminConversation $conversation, AdminMessage $message): StreamedResponse
     {
+        $this->authorizeCategory($request->user(), $conversation->category);
         abort_unless(
             $message->conversation_id === $conversation->id && $message->attachment_path,
             404
@@ -321,6 +332,44 @@ class MessagesController extends Controller
             ->all();
     }
 
+    private function authorizeCategory(User $admin, string $category): void
+    {
+        abort_unless(in_array($category, $this->allowedCategories($admin), true), 403);
+    }
+
+    private function allowedCategories(User $admin): array
+    {
+        $profile = DB::table('admin_account_profiles')
+            ->where('user_id', $admin->id)
+            ->first(['permissions', 'message_permissions']);
+
+        if (! $profile || $profile->permissions === null) {
+            return AdminConversation::CATEGORIES;
+        }
+
+        $permissions = json_decode($profile->permissions, true);
+        if (! is_array($permissions) || ! in_array('Messages', $permissions, true)) {
+            return [];
+        }
+
+        $categories = json_decode($profile->message_permissions ?? '[]', true);
+        if (! is_array($categories)) {
+            return [];
+        }
+
+        return collect($categories)
+            ->map(fn ($permission): ?string => match ($permission) {
+                'Logistics' => AdminConversation::CATEGORY_LOGISTICS,
+                'Complaints' => AdminConversation::CATEGORY_COMPLAINTS,
+                'Buyer' => AdminConversation::CATEGORY_BUYERS,
+                'Seller' => AdminConversation::CATEGORY_SELLERS,
+                default => null,
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
     private function serializeConversation(AdminConversation $conversation, bool $includeMessages = true): array
     {
         $user = $conversation->user;
@@ -355,7 +404,7 @@ class MessagesController extends Controller
             'contextButton' => 'View '.($role === 'Logistics' ? 'Logistics' : $role),
             'contextUrl' => $conversation->category === AdminConversation::CATEGORY_LOGISTICS
                 ? route('admin.logistics.management')
-                : route('admin.user.management.show', ['user' => $user?->id]),
+                : route('admin.api.users.show', ['user' => $user?->id]),
             'preview' => $latest?->body ?? $latest?->attachment_name ?? 'Conversation started.',
             'time' => $latest?->created_at?->diffForHumans(short: true) ?? $conversation->created_at?->diffForHumans(short: true) ?? '',
             'unread' => $conversation->unread_count ?? 0,
@@ -378,7 +427,7 @@ class MessagesController extends Controller
                 'name' => $message->attachment_name,
                 'mime_type' => $message->attachment_mime_type,
                 'size' => $message->attachment_size,
-                'url' => route('admin.messages.api.attachment', [
+                'url' => route('admin.api.messages.attachment', [
                     'conversation' => $message->conversation_id,
                     'message' => $message->id,
                 ]),

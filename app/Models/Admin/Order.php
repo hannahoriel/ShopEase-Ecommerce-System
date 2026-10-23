@@ -51,6 +51,7 @@ class Order extends Model
     protected $appends = [
         'pickup_date_display',
         'pickup_time_display',
+        'cancellation_actor',
     ];
 
     public function getPickupDateDisplayAttribute(): ?string
@@ -61,6 +62,25 @@ class Order extends Model
     public function getPickupTimeDisplayAttribute(): ?string
     {
         return $this->pickup_time?->format('H:i');
+    }
+
+    public function getCancellationActorAttribute(): ?string
+    {
+        if ($this->status !== 'cancelled' || ! $this->relationLoaded('statusHistory')) {
+            return null;
+        }
+
+        $cancellation = $this->statusHistory->firstWhere('to_status', 'cancelled');
+        if (! $cancellation) {
+            return null;
+        }
+
+        if ($this->relationLoaded('latestCancellationRequest')
+            && $this->latestCancellationRequest?->status === 'approved') {
+            return 'buyer';
+        }
+
+        return $cancellation->changedBy?->role;
     }
 
     public function buyer(): BelongsTo

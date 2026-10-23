@@ -31,11 +31,11 @@ class ComplaintController extends Controller
     {
         $complaints = Complaint::query()
             ->with([
-                'user:id,name,email',
-                'order.seller.user:id,name,email',
+                'user:id,name,email,profile_photo_path',
+                'order.seller.user:id,name,email,profile_photo_path',
                 'order.items.product',
                 'order.shipment',
-                'updates.user:id,name',
+                'updates.user:id,name,profile_photo_path',
             ])
             ->latest()
             ->get()
@@ -119,9 +119,17 @@ class ComplaintController extends Controller
             'databaseId' => $complaint->id,
             'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
             'party1' => $buyer?->name ?? 'Deleted buyer',
+            'party1Photo' => $buyer?->profile_photo_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyer->profile_photo_path)
+                : null,
             'party1Email' => $buyer?->email ?? '—',
             'role1' => 'Buyer',
             'party2' => $seller?->store_name ?? 'ShopEase Support',
+            'party2Photo' => $sellerUser?->profile_photo_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($sellerUser->profile_photo_path)
+                : ($seller?->profile_photo_path
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($seller->profile_photo_path)
+                    : null),
             'party2Email' => $sellerUser?->email ?? '—',
             'role2' => 'Seller',
             'type' => $complaint->type ?: 'Other',
@@ -149,6 +157,9 @@ class ComplaintController extends Controller
                 'type' => $update->type,
                 'message' => $update->message,
                 'actor' => $update->user?->name ?? 'System',
+                'profile_photo_url' => $update->user?->profile_photo_path
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($update->user->profile_photo_path)
+                    : null,
                 'timestamp' => $update->created_at?->toISOString(),
             ])->values(),
         ];

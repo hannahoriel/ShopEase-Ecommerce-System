@@ -22,16 +22,16 @@ document.addEventListener('DOMContentLoaded', function () {
     /* =========================================================
        DATA
     ========================================================== */
-    const pendingLogisticsRequests =
+    let pendingLogisticsRequests =
         logisticsManagementConfig.pendingRequests || [];
 
     let pendingOriginalTotalEntries =
         Number(logisticsManagementConfig.pendingTotalEntries || 0);
 
-    const logisticsCompanies =
+    let logisticsCompanies =
         logisticsManagementConfig.companies || [];
 
-    const rejectedLogisticsArchive =
+    let rejectedLogisticsArchive =
         logisticsManagementConfig.rejectedArchive || [];
 
     let originalTotalEntries =
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelector('meta[name="csrf-token"]')?.content;
 
         const response = await fetch(
-            `/admin/logistics-management/api/registrations/${registrationId}/${decision}`,
+            `/api/v1/admin/logistics-management/registrations/${registrationId}/${decision}`,
             {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -624,6 +624,14 @@ document.addEventListener('DOMContentLoaded', function () {
             pageRows.map(request => {
                 const requestIndex =
                     pendingLogisticsRequests.indexOf(request);
+                const initials = String(request.contact_person || request.company || 'Logistics')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map(part => part[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase() || 'L';
 
                 return `
                 <tr
@@ -636,11 +644,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>
                         <div class="pending-company-cell">
                             <span class="pending-company-avatar">
-                                ${
-                                    request.logo
-                                        ? `<img src="${escapeHtml(request.logo)}" alt="${escapeHtml(request.company)} logo">`
-                                        : ''
-                                }
+                                <span>${escapeHtml(initials)}</span>
+                                ${request.logo ? `<img src="${escapeHtml(request.logo)}" alt="${escapeHtml(request.contact_person || request.company)} profile photo" onerror="this.remove()">` : ''}
                             </span>
 
                             <span class="pending-company-name">
@@ -881,6 +886,10 @@ document.addEventListener('DOMContentLoaded', function () {
         pendingReviewDate.textContent =
             request.registered_display || '—';
 
+        document.getElementById('pending-review-logo-initials').textContent =
+            String(request.contact_person || request.company || 'L')
+                .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'L';
+
         const dtiPermitSource =
             request.dti_permit ||
             makePermitPlaceholder(
@@ -917,6 +926,8 @@ document.addEventListener('DOMContentLoaded', function () {
             pendingReviewLogoBox.classList.add(
                 'has-image'
             );
+            pendingReviewLogoBox.dataset.initials = String(request.contact_person || request.company || 'L')
+                .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase();
         } else {
             pendingReviewLogo.removeAttribute(
                 'src'
@@ -928,6 +939,8 @@ document.addEventListener('DOMContentLoaded', function () {
             pendingReviewLogoBox.classList.remove(
                 'has-image'
             );
+            pendingReviewLogoBox.dataset.initials = String(request.contact_person || request.company || 'L')
+                .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'L';
         }
     }
 
@@ -1269,6 +1282,35 @@ document.addEventListener('DOMContentLoaded', function () {
         renderPendingCount(
             filteredRows
         );
+    }
+
+    async function loadLogisticsData() {
+        const response = await fetch(
+            logisticsManagementConfig.apiUrl || '/api/v1/admin/logistics-management',
+            {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            }
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.message || 'Unable to load logistics management data.');
+        }
+
+        pendingLogisticsRequests = payload.pendingRequests || [];
+        logisticsCompanies = payload.companies || [];
+        rejectedLogisticsArchive = payload.rejectedArchive || [];
+        pendingOriginalTotalEntries = Number(payload.pendingTotalEntries || 0);
+        originalTotalEntries = Number(payload.totalEntries || 0);
+        pendingStatValue = Number(payload.stats?.pending_requests || 0);
+        acceptedStatValue = Number(payload.stats?.accepted_logistics || 0);
+        rejectedStatValue = Number(payload.stats?.rejected_logistics || 0);
+        totalStatValue = Number(payload.stats?.total_companies || 0);
+
+        renderPending();
+        render();
+        renderLogisticsStats();
+        renderRejectedLogisticsArchive();
     }
 
     pendingSearch.addEventListener(
@@ -1661,6 +1703,14 @@ document.addEventListener('DOMContentLoaded', function () {
             pageRows.map(company => {
                 const companyIndex =
                     logisticsCompanies.indexOf(company);
+                const initials = String(company.company || 'Logistics')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map(part => part[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase() || 'L';
 
                 return `
                     <tr
@@ -1673,11 +1723,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>
                             <div class="logistics-company-cell">
                                 <span class="logistics-company-avatar">
-                                    ${
-                                        company.logo
-                                            ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.company)} logo">`
-                                            : ''
-                                    }
+                                    <span>${escapeHtml(initials)}</span>
+                                    ${company.logo ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.company)} profile photo" onerror="this.remove()">` : ''}
                                 </span>
 
                                 <span class="logistics-company-name">
@@ -2037,6 +2084,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const companyName =
             company.company ||
             'Logistics Company';
+        const companyInitials = String(company.contact_person || company.company || 'L')
+            .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'L';
+        detailsAvatar.querySelector('span').textContent = companyInitials;
 
         detailsCompanyHeading.textContent =
             companyName;
@@ -2104,6 +2154,10 @@ document.addEventListener('DOMContentLoaded', function () {
             detailsAvatar.classList.add(
                 'has-image'
             );
+            detailsAvatarImage.onerror = () => {
+                detailsAvatar.classList.remove('has-image');
+                detailsAvatarImage.removeAttribute('src');
+            };
         } else {
             detailsAvatarImage.removeAttribute(
                 'src'
@@ -2326,4 +2380,8 @@ document.addEventListener('DOMContentLoaded', function () {
     render();
     renderLogisticsStats();
     renderRejectedLogisticsArchive();
+    loadLogisticsData().catch(error => {
+        console.error(error);
+        showLogisticsFlash('error', error.message);
+    });
 });

@@ -20,6 +20,7 @@
     id="admin-content"
     class="ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300"
 >
+    <p id="complaints-api-error" class="mb-4 text-sm text-red-700" role="alert" hidden></p>
     <!-- ==================== STAT CARDS ==================== -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 
@@ -527,7 +528,7 @@
 
                     <div class="complaints-modal-party-list">
                         <div class="complaints-modal-party-row">
-                            <span class="complaints-modal-party-avatar"></span>
+                            <span class="complaints-modal-party-avatar" id="modal-party-1-avatar">U</span>
 
                             <div class="complaints-modal-party-copy">
                                 <strong id="modal-party-1-name">JunjunDura</strong>
@@ -557,7 +558,7 @@
                         </div>
 
                         <div class="complaints-modal-party-row">
-                            <span class="complaints-modal-party-avatar"></span>
+                            <span class="complaints-modal-party-avatar" id="modal-party-2-avatar">U</span>
 
                             <div class="complaints-modal-party-copy">
                                 <strong id="modal-party-2-name">DelaCruzShop</strong>
@@ -786,6 +787,7 @@
 @php
     $complaintsDisputesClientConfig = [
         'complaints' => $complaintRows,
+        'apiUrl' => url('/api/v1/admin/complaints'),
         'messagesUrl' => route('admin.messages'),
         'icons' => [
             'buyer' => asset('icons/admin/dashboard/body/buyer.png'),
