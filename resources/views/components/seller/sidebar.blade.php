@@ -358,7 +358,7 @@
 
                 {{-- RETURNS AND REFUNDS: link activates when its Laravel route is available --}}
                 <a
-                    href="{{ \Illuminate\Support\Facades\Route::has('seller.returns.index') ? route('seller.returns.index') : (\Illuminate\Support\Facades\Route::has('seller.returns.refunds') ? route('seller.returns.refunds') : '#') }}"
+                    href="{{ route('seller.returns.index') }}"
                     class="
                         seller-subnav-item
                         flex items-center
@@ -375,11 +375,6 @@
                             ? 'bg-maroon-800/70 font-medium'
                             : 'hover:bg-maroon-800/50 hover:translate-x-1' }}
                     "
-                    @unless (\Illuminate\Support\Facades\Route::has('seller.returns.index') || \Illuminate\Support\Facades\Route::has('seller.returns.refunds'))
-                        aria-disabled="true"
-                        title="Returns and Refunds page is not set up yet"
-                        onclick="event.preventDefault()"
-                    @endunless
                 >
                     Returns and Refunds
                 </a>
@@ -409,17 +404,44 @@
                 </a>
             </div>
 
-            {{-- VOUCHERS & PROMOTIONS --}}
+            {{-- SHOPEASE WALLET --}}
             @php
-                $vouchersRoute = \Illuminate\Support\Facades\Route::has('seller.vouchers.index')
-                    ? 'seller.vouchers.index'
-                    : (\Illuminate\Support\Facades\Route::has('seller.vouchers.promotions')
-                        ? 'seller.vouchers.promotions'
+                $walletRoute = \Illuminate\Support\Facades\Route::has('seller.wallet.index')
+                    ? 'seller.wallet.index'
+                    : (\Illuminate\Support\Facades\Route::has('seller.wallet')
+                        ? 'seller.wallet'
                         : null);
             @endphp
             <a
-                href="{{ $vouchersRoute ? route($vouchersRoute) : '#' }}"
-                title="{{ $vouchersRoute ? 'Vouchers & Promotions' : 'Vouchers & Promotions page is not set up yet' }}"
+                href="{{ $walletRoute ? route($walletRoute) : '#' }}"
+                title="{{ $walletRoute ? 'ShopEase Wallet' : 'ShopEase Wallet page is not set up yet' }}"
+                class="
+                    sidebar-link sidebar-menu-item seller-menu-delay-4
+                    flex items-center gap-2.5 px-3 py-2.5 rounded-full
+                    transition-all duration-300 w-full
+                    {{ request()->routeIs('seller.wallet') || request()->routeIs('seller.wallet.*')
+                        ? 'bg-maroon-700/60'
+                        : 'hover:bg-maroon-800/50 hover:translate-x-1' }}
+                "
+                @unless ($walletRoute)
+                    aria-disabled="true"
+                    onclick="event.preventDefault()"
+                @endunless
+            >
+                <span class="sidebar-icon-wrapper flex items-center justify-center shrink-0 w-[18px] h-[18px] transition-all duration-300">
+                    <img
+                        src="{{ asset('icons/seller/sidebar&navbar/wallet.png') }}"
+                        alt=""
+                        class="sidebar-icon w-[18px] h-[18px] object-contain shrink-0"
+                    >
+                </span>
+                <span class="sidebar-label text-[14px] font-medium whitespace-nowrap">ShopEase Wallet</span>
+            </a>
+
+            {{-- VOUCHERS & PROMOTIONS --}}
+            <a
+                href="{{ route('seller.vouchers.index') }}"
+                title="Vouchers & Promotions"
                 class="
                     sidebar-link sidebar-menu-item seller-menu-delay-4
                     flex items-center gap-2.5 px-3 py-2.5 rounded-full
@@ -428,10 +450,6 @@
                         ? 'bg-maroon-700/60'
                         : 'hover:bg-maroon-800/50 hover:translate-x-1' }}
                 "
-                @unless ($vouchersRoute)
-                    aria-disabled="true"
-                    onclick="event.preventDefault()"
-                @endunless
             >
                 <span class="sidebar-icon-wrapper flex items-center justify-center shrink-0 w-[18px] h-[18px] transition-all duration-300">
                     <img
