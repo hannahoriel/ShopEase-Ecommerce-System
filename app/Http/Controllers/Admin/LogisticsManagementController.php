@@ -109,7 +109,7 @@ class LogisticsManagementController extends Controller
 
         $logistics = Logistics::query()
             ->where('registration_status', 'active')
-            ->with(['user:id,name,email,created_at', 'branches.riders'])
+            ->with(['user:id,name,email,created_at,profile_photo_path', 'branches.riders'])
             ->orderBy('business_name')
             ->get();
 
@@ -156,7 +156,9 @@ class LogisticsManagementController extends Controller
             'registered_display' => $registration->created_at?->format('M d, Y g:i A'),
             'office_address' => $this->address($profile, $registration),
             'description' => '',
-            'logo' => '',
+            'logo' => $registration->user?->profile_photo_path
+                ? Storage::disk('public')->url($registration->user->profile_photo_path)
+                : '',
             'dti_permit' => '',
             'business_permit' => $businessPermit
                 ? Storage::disk('public')->url($businessPermit)
@@ -184,7 +186,9 @@ class LogisticsManagementController extends Controller
             'partnership_since' => $logistics->approved_at?->year ?? $logistics->created_at?->year,
             'account_created_date' => $logistics->created_at?->format('F d, Y'),
             'account_created_time' => $logistics->created_at?->format('g:i A'),
-            'logo' => '',
+            'logo' => $logistics->user?->profile_photo_path
+                ? Storage::disk('public')->url($logistics->user->profile_photo_path)
+                : '',
             'branches_data' => $branches->map(fn (LogisticsBranch $branch): array => [
                 'id' => $branch->id,
                 'name' => $branch->name,

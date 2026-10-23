@@ -16,6 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>ShopEase - My Purchases</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,16 +109,16 @@
                 {{-- LEFT PROFILE / ACCOUNT NAV --}}
                 <aside class="purchases-sidebar" aria-label="Buyer account navigation">
                     <div class="buyer-profile-card">
-                        <div
+                        <x-account-avatar
+                            :name="$buyerDisplayName ?? auth()->user()->name"
+                            :image="$buyerAvatarUrl ?? null"
+                            size="56px"
                             class="buyer-profile-avatar"
                             id="buyerProfilePhoto"
-                            aria-label="Buyer profile photo"
-                        >
-                            {{-- Backend profile photo will be rendered here --}}
-                        </div>
+                        />
 
                         <div class="buyer-profile-copy">
-                            <strong>{{ auth()->user()->name }}</strong>
+                            <strong>{{ $buyerDisplayName ?? auth()->user()->name }}</strong>
                             <button type="button" class="buyer-edit-profile">
                                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path
@@ -591,10 +592,10 @@
                         </section>
 
                         @php
-                            $buyerProfile = auth()->user();
+                            $buyerProfile = $buyerProfile ?? auth()->user()->buyerProfile;
                             $buyerBirthday = old('birthday', data_get($buyerProfile, 'birthday', data_get($buyerProfile, 'birthdate', '')));
                             try { $buyerBirthday = $buyerBirthday ? \Carbon\Carbon::parse($buyerBirthday)->format('Y-m-d') : ''; } catch (\Throwable $e) { $buyerBirthday = ''; }
-                            $buyerDisplayName = trim(data_get($buyerProfile, 'first_name', '') . ' ' . data_get($buyerProfile, 'last_name', '')) ?: data_get($buyerProfile, 'name', 'Buyer');
+                            $buyerDisplayName = $buyerDisplayName ?? trim(data_get($buyerProfile, 'first_name', '') . ' ' . data_get($buyerProfile, 'last_name', '')) ?: auth()->user()->name;
                             // Optional URLs from controller; no fake images or records.
                             $buyerCoverUrl = $buyerCoverUrl ?? null;
                             $buyerAvatarUrl = $buyerAvatarUrl ?? null;
@@ -617,7 +618,7 @@
                                 <div class="bp-identity">
                                     <div class="bp-avatar" id="bpAvatar">
                                         <img id="bpAvatarPreview" src="{{ $buyerAvatarUrl ?? '' }}" alt="Buyer profile photo" @if(!$buyerAvatarUrl) hidden @endif>
-                                        <span id="bpAvatarFallback" @if($buyerAvatarUrl) hidden @endif>{{ strtoupper(mb_substr($buyerDisplayName, 0, 1)) }}</span>
+                                        <span id="bpAvatarFallback" @if($buyerAvatarUrl) hidden @endif>{{ strtoupper(collect(preg_split('/\s+/u', trim($buyerDisplayName), -1, PREG_SPLIT_NO_EMPTY) ?: [])->map(fn ($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode('') ?: 'B') }}</span>
                                         <label class="bp-avatar-action" for="bpAvatarInput" title="Change profile photo" aria-label="Change profile photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/></svg></label>
                                     </div>
                                     <div class="bp-identity-copy"><h3>{{ $buyerDisplayName }}</h3><p>Buyer Profile</p><label class="bp-photo-button" for="bpAvatarInput">Change Profile Photo</label><input id="bpAvatarInput" name="profile_photo" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>

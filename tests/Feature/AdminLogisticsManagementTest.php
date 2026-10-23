@@ -22,6 +22,7 @@ class AdminLogisticsManagementTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $this->createLogisticsApplication('pending');
         $active = $this->createLogisticsApplication('approved', 'Active Carrier');
+        $active['user']->forceFill(['profile_photo_path' => 'profile-photos/logistics/company.png'])->save();
         $rejected = $this->createLogisticsApplication('rejected', 'Rejected Carrier');
         LogisticsBranch::create([
             'logistics_id' => $active['profile']->id,
@@ -42,6 +43,7 @@ class AdminLogisticsManagementTest extends TestCase
             ->assertJsonCount(1, 'companies')
             ->assertJsonCount(1, 'rejectedArchive')
             ->assertJsonPath('companies.0.company', 'Active Carrier')
+            ->assertJsonPath('companies.0.logo', \Illuminate\Support\Facades\Storage::disk('public')->url($active['user']->profile_photo_path))
             ->assertJsonPath('companies.0.branches', 1)
             ->assertJsonPath('stats.pending_requests', 1)
             ->assertJsonPath('stats.accepted_logistics', 1)

@@ -33,6 +33,7 @@ class User extends Authenticatable
         'suspended_until',
         'account_action_reason',
         'account_action_details',
+        'profile_photo_path',
     ];
 
     protected $hidden = [

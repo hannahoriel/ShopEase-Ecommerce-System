@@ -220,10 +220,9 @@
                     <!-- LEFT PROFILE SUMMARY -->
                     <aside class="px-1 lg:pr-2">
                         <div class="flex items-start gap-4">
-                            <div class="w-[76px] h-[76px] rounded-full bg-[#D9D9D9] flex items-center justify-center shrink-0">
-                                <svg class="w-10 h-10 text-black" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.42 0-8 2.24-8 5v2h16v-2c0-2.76-3.58-5-8-5Z"/>
-                                </svg>
+                            <div id="user-profile-avatar" class="w-[76px] h-[76px] rounded-full bg-[#FFE6DE] text-[#650B12] flex items-center justify-center shrink-0 overflow-hidden text-[22px] font-semibold" aria-label="User profile photo">
+                                <span id="user-profile-initials">U</span>
+                                <img id="user-profile-photo" class="hidden w-full h-full object-cover" alt="">
                             </div>
 
                             <div class="min-w-0 pt-1">

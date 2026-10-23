@@ -146,13 +146,16 @@ class AdminAccountController extends Controller
             'contact_number' => $data['contact_number'] ?? null,
             'updated_at' => now(),
         ] + $files;
-        DB::transaction(function () use ($user, $row) {
+        DB::transaction(function () use ($user, $row, $files) {
             if (DB::table('admin_account_profiles')->where('user_id', $user->id)->exists()) {
                 DB::table('admin_account_profiles')->where('user_id', $user->id)->update($row);
             } else {
                 DB::table('admin_account_profiles')->insert(['user_id'=>$user->id] + $row + ['created_at'=>now()]);
             }
             $user->name = trim($row['first_name'].' '.$row['last_name']);
+            if (isset($files['profile_photo_path'])) {
+                $user->profile_photo_path = $files['profile_photo_path'];
+            }
             $user->save();
         });
         // Existing approved photos are only deleted AFTER a successful save.

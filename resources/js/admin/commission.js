@@ -366,6 +366,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 startIndex + itemsPerPage
             );
 
+        const sellerAvatar = row => {
+            const initials = String(row.seller_owner || row.seller || 'Seller')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(part => part[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase() || 'S';
+            return `<span class="commission-seller-avatar">${escapeHtml(initials)}${row.seller_photo_url ? `<img src="${escapeHtml(row.seller_photo_url)}" alt="" onerror="this.remove()">` : ''}</span>`;
+        };
+
         tbody.innerHTML =
             pageRows.map(row => `
                 <tr>
@@ -384,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <td>
                         <div class="commission-seller-cell">
-                            <span class="commission-seller-avatar"></span>
+                            ${sellerAvatar(row)}
 
                             <span class="commission-seller-copy">
                                 <span class="commission-seller-name">

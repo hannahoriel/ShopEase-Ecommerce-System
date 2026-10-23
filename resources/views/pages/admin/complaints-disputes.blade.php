@@ -528,7 +528,7 @@
 
                     <div class="complaints-modal-party-list">
                         <div class="complaints-modal-party-row">
-                            <span class="complaints-modal-party-avatar"></span>
+                            <span class="complaints-modal-party-avatar" id="modal-party-1-avatar">U</span>
 
                             <div class="complaints-modal-party-copy">
                                 <strong id="modal-party-1-name">JunjunDura</strong>
@@ -558,7 +558,7 @@
                         </div>
 
                         <div class="complaints-modal-party-row">
-                            <span class="complaints-modal-party-avatar"></span>
+                            <span class="complaints-modal-party-avatar" id="modal-party-2-avatar">U</span>
 
                             <div class="complaints-modal-party-copy">
                                 <strong id="modal-party-2-name">DelaCruzShop</strong>

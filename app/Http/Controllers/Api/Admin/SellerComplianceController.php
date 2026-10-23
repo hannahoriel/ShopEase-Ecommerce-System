@@ -365,6 +365,12 @@ class SellerComplianceController extends Controller
                             "{$seller->first_name} {$seller->last_name}"
                         ),
 
+                    'profile_photo_url' => $seller->user?->profile_photo_path
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($seller->user->profile_photo_path)
+                        : ($seller->profile_photo_path
+                            ? \Illuminate\Support\Facades\Storage::disk('public')->url($seller->profile_photo_path)
+                            : null),
+
                     'email' =>
                         $seller->user?->email,
 

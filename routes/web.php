@@ -1954,9 +1954,23 @@ Route::get('/buyer/product', function () {
 
 Route::get('/buyer/my-purchases', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
-    $apiToken = Auth::user()->createToken('buyer-purchases')->plainTextToken;
+    $user = Auth::user();
+    $buyerProfile = $user->buyerProfile;
+    $buyerDisplayName = trim(implode(' ', array_filter([
+        data_get($buyerProfile, 'first_name'),
+        data_get($buyerProfile, 'middle_initial'),
+        data_get($buyerProfile, 'last_name'),
+    ]))) ?: $user->name;
+    $apiToken = $user->createToken('buyer-purchases')->plainTextToken;
 
-    return view('pages.buyer.my-purchases', ['apiToken' => $apiToken]);
+    return view('pages.buyer.my-purchases', [
+        'apiToken' => $apiToken,
+        'buyerProfile' => $buyerProfile,
+        'buyerDisplayName' => $buyerDisplayName,
+        'buyerAvatarUrl' => $user->profile_photo_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_photo_path)
+            : null,
+    ]);
 })->middleware('auth')->name('buyer.my-purchases');
 
 Route::get('/buyer/checkout', function () {

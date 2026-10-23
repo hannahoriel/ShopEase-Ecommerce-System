@@ -59,6 +59,7 @@ class SellerAccountProfileTest extends TestCase
         $seller->refresh();
         $this->assertNotEmpty($seller->cover_photo_path);
         $this->assertNotEmpty($seller->profile_photo_path);
+        $this->assertSame($seller->profile_photo_path, $sellerUser->fresh()->profile_photo_path);
         Storage::disk('public')->assertExists($seller->cover_photo_path);
         Storage::disk('public')->assertExists($seller->profile_photo_path);
     }

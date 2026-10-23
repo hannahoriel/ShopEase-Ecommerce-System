@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintControll
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfilePhotoController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
@@ -47,6 +48,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/auth/me', fn (Request $request) => response()->json($request->user()));
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::put('/profile/photo', [ProfilePhotoController::class, 'update'])->name('profile.photo.update');
         Route::get('/dashboard', fn (Request $request) => response()->json([
             'user' => $request->user(),
             'role' => $request->user()->role,

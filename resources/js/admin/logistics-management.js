@@ -624,6 +624,14 @@ document.addEventListener('DOMContentLoaded', function () {
             pageRows.map(request => {
                 const requestIndex =
                     pendingLogisticsRequests.indexOf(request);
+                const initials = String(request.contact_person || request.company || 'Logistics')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map(part => part[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase() || 'L';
 
                 return `
                 <tr
@@ -636,11 +644,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>
                         <div class="pending-company-cell">
                             <span class="pending-company-avatar">
-                                ${
-                                    request.logo
-                                        ? `<img src="${escapeHtml(request.logo)}" alt="${escapeHtml(request.company)} logo">`
-                                        : ''
-                                }
+                                <span>${escapeHtml(initials)}</span>
+                                ${request.logo ? `<img src="${escapeHtml(request.logo)}" alt="${escapeHtml(request.contact_person || request.company)} profile photo" onerror="this.remove()">` : ''}
                             </span>
 
                             <span class="pending-company-name">
@@ -881,6 +886,10 @@ document.addEventListener('DOMContentLoaded', function () {
         pendingReviewDate.textContent =
             request.registered_display || '—';
 
+        document.getElementById('pending-review-logo-initials').textContent =
+            String(request.contact_person || request.company || 'L')
+                .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'L';
+
         const dtiPermitSource =
             request.dti_permit ||
             makePermitPlaceholder(
@@ -917,6 +926,8 @@ document.addEventListener('DOMContentLoaded', function () {
             pendingReviewLogoBox.classList.add(
                 'has-image'
             );
+            pendingReviewLogoBox.dataset.initials = String(request.contact_person || request.company || 'L')
+                .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase();
         } else {
             pendingReviewLogo.removeAttribute(
                 'src'
@@ -928,6 +939,8 @@ document.addEventListener('DOMContentLoaded', function () {
             pendingReviewLogoBox.classList.remove(
                 'has-image'
             );
+            pendingReviewLogoBox.dataset.initials = String(request.contact_person || request.company || 'L')
+                .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'L';
         }
     }
 
@@ -1690,6 +1703,14 @@ document.addEventListener('DOMContentLoaded', function () {
             pageRows.map(company => {
                 const companyIndex =
                     logisticsCompanies.indexOf(company);
+                const initials = String(company.company || 'Logistics')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map(part => part[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase() || 'L';
 
                 return `
                     <tr
@@ -1702,11 +1723,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>
                             <div class="logistics-company-cell">
                                 <span class="logistics-company-avatar">
-                                    ${
-                                        company.logo
-                                            ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.company)} logo">`
-                                            : ''
-                                    }
+                                    <span>${escapeHtml(initials)}</span>
+                                    ${company.logo ? `<img src="${escapeHtml(company.logo)}" alt="${escapeHtml(company.company)} profile photo" onerror="this.remove()">` : ''}
                                 </span>
 
                                 <span class="logistics-company-name">
@@ -2066,6 +2084,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const companyName =
             company.company ||
             'Logistics Company';
+        const companyInitials = String(company.contact_person || company.company || 'L')
+            .trim().split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase() || 'L';
+        detailsAvatar.querySelector('span').textContent = companyInitials;
 
         detailsCompanyHeading.textContent =
             companyName;
@@ -2133,6 +2154,10 @@ document.addEventListener('DOMContentLoaded', function () {
             detailsAvatar.classList.add(
                 'has-image'
             );
+            detailsAvatarImage.onerror = () => {
+                detailsAvatar.classList.remove('has-image');
+                detailsAvatarImage.removeAttribute('src');
+            };
         } else {
             detailsAvatarImage.removeAttribute(
                 'src'

@@ -17,6 +17,12 @@
 
 @php
     $sellerUser = auth()->user();
+    $sellerDisplayName = data_get($sellerUser, 'name') ?: 'Seller';
+    $sellerProfilePhoto = data_get($sellerUser, 'profile_photo_path')
+        ?: data_get($sellerUser, 'sellerProfile.profile_photo_path');
+    $sellerAvatarUrl = $sellerProfilePhoto
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($sellerProfilePhoto)
+        : null;
     $sellerUnreadNotificationCount = $sellerUser && $sellerUser->role === 'seller'
         ? $sellerUser->unreadNotifications()->count()
         : 0;
@@ -307,11 +313,7 @@
                 aria-expanded="false"
                 aria-controls="seller-profile-dropdown"
             >
-                <img
-                    src="{{ asset('icons/seller/sidebar&navbar/seller-profile.png') }}"
-                    class="w-9 h-9 object-contain"
-                    alt="Seller Profile"
-                >
+                <x-account-avatar :name="$sellerDisplayName" :image="$sellerAvatarUrl" size="36px" />
 
                 <div class="text-sm min-w-[135px] text-left">
                     <p
@@ -322,7 +324,7 @@
                             text-[16px]
                         "
                     >
-                        Seller
+                        {{ $sellerDisplayName }}
                     </p>
 
                     <p class="text-[12px] text-gray-400 leading-tight">
@@ -374,7 +376,7 @@
             >
                 <div class="px-4 py-3 border-b border-gray-100">
                     <p class="text-[14px] font-semibold text-gray-800">
-                        Seller
+                        {{ $sellerDisplayName }}
                     </p>
 
                     <p class="text-[11px] text-gray-400 mt-1">

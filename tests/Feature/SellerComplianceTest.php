@@ -50,6 +50,27 @@ class SellerComplianceTest extends TestCase
             ->assertSee('initialSellerComplianceData');
     }
 
+    public function test_seller_compliance_api_includes_seller_profile_photo_url(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'profile_photo_path' => 'profile-photos/seller/profile.png',
+        ]);
+        Seller::create([
+            'user_id' => $sellerUser->id,
+            'first_name' => 'Photo',
+            'last_name' => 'Seller',
+            'store_name' => 'Photo Shop',
+            'registration_status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/admin/seller-compliance')
+            ->assertOk()
+            ->assertJsonPath('data.0.profile_photo_url', \Illuminate\Support\Facades\Storage::disk('public')->url($sellerUser->profile_photo_path));
+    }
+
     public function test_admin_can_suspend_a_seller_from_seller_compliance(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);

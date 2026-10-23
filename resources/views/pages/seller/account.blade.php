@@ -6,6 +6,14 @@
     // Data is loaded by SellerAccountController from the authenticated seller.
     $account = $seller ?? auth()->user();
     $shopName = data_get($account, 'store_name') ?: data_get($account, 'business_name') ?: 'Your Shop';
+    $avatarName = data_get(auth()->user(), 'name') ?: $shopName;
+    $avatarNameParts = preg_split('/\s+/u', trim($avatarName), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $avatarInitialParts = count($avatarNameParts) > 1
+        ? [$avatarNameParts[0], $avatarNameParts[count($avatarNameParts) - 1]]
+        : $avatarNameParts;
+    $avatarInitials = collect($avatarInitialParts)
+        ->map(fn ($part) => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($part, 0, 1)))
+        ->implode('') ?: 'S';
     $registration = $registration ?? null;
     $pick = fn ($key, $fallback = '') => old($key, data_get($account, $key) ?? data_get($registration, $key) ?? $fallback);
     $coverUrl = $coverUrl ?? null;
@@ -761,7 +769,8 @@
                     </div>
                     <div class="sa-shop-strip">
                         <div class="sa-avatar" id="saAvatar">
-                            @if($avatarUrl)<img id="saAvatarImage" src="{{ $avatarUrl }}" alt="Shop profile photo">@else<img id="saAvatarImage" alt="Shop profile photo" style="display:none"><span id="saAvatarFallback" class="sa-avatar-fallback">♧</span>@endif
+                            <img id="saAvatarImage" src="{{ $avatarUrl ?: '' }}" alt="Shop profile photo" @if(!$avatarUrl) style="display:none" @endif onerror="this.style.display='none';document.getElementById('saAvatarFallback')?.removeAttribute('hidden')">
+                            <span id="saAvatarFallback" class="sa-avatar-fallback" @if($avatarUrl) hidden @endif>{{ $avatarInitials }}</span>
                             <label class="sa-avatar-camera" for="saAvatarInput" title="Change profile photo">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="3"/></svg>
                             </label>

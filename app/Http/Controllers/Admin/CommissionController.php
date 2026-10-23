@@ -76,7 +76,7 @@ class CommissionController extends Controller
     {
         return CommissionTransaction::query()
             ->where('status', 'earned')
-            ->with(['order:id,order_number', 'seller:id,store_name,user_id', 'seller.user:id,name'])
+            ->with(['order:id,order_number', 'seller:id,store_name,user_id,profile_photo_path', 'seller.user:id,name,profile_photo_path'])
             ->orderByDesc('earned_at')
             ->orderByDesc('id');
     }
@@ -115,6 +115,11 @@ class CommissionController extends Controller
                 : '#ORD-'.$item->order_id,
             'seller' => $item->seller?->store_name ?: 'Seller',
             'seller_owner' => $item->seller?->user?->name ?: '—',
+            'seller_photo_url' => $item->seller?->user?->profile_photo_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($item->seller->user->profile_photo_path)
+                : ($item->seller?->profile_photo_path
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($item->seller->profile_photo_path)
+                    : null),
             'order_amount' => (float) $item->order_amount,
             'commission' => (float) $item->commission_amount,
         ];

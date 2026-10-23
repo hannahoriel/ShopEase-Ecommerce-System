@@ -12,11 +12,8 @@
         </div>
 
         <div class="seller-details-profile-card">
-            <div class="seller-details-avatar">
-                <svg viewBox="0 0 100 100" aria-hidden="true">
-                    <circle cx="50" cy="31" r="13" fill="currentColor" />
-                    <path d="M23 70c0-11.5 10.5-21 27-21s27 9.5 27 21v3c0 2.8-2.2 5-5 5H28c-2.8 0-5-2.2-5-5z" fill="currentColor" />
-                </svg>
+            <div class="seller-details-avatar" aria-label="Seller profile photo">
+                <span>S</span>
             </div>
 
             <div class="seller-details-main">

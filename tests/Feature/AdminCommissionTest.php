@@ -17,6 +17,7 @@ class AdminCommissionTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         [$seller, $order] = $this->createOrder('completed', 1000, 100);
+        $seller->user->forceFill(['profile_photo_path' => 'profile-photos/seller/commission.png'])->save();
         $this->createOrder('pending', 2000, 200);
 
         $this->assertDatabaseHas('commission_transactions', [
@@ -36,6 +37,7 @@ class AdminCommissionTest extends TestCase
             ->getJson('/api/v1/admin/commissions?per_page=1')
             ->assertOk()
             ->assertJsonPath('data.0.order_id', '#'.$order->order_number)
+            ->assertJsonPath('data.0.seller_photo_url', \Illuminate\Support\Facades\Storage::disk('public')->url($seller->user->profile_photo_path))
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('stats.total_commission', 100)
             ->assertJsonPath('stats.total_orders', 1)

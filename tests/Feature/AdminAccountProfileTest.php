@@ -70,6 +70,7 @@ class AdminAccountProfileTest extends TestCase
             ->first();
         $this->assertNotEmpty($profile['profile_photo_path']);
         $this->assertNotEmpty($profile['cover_photo_path']);
+        $this->assertSame($profile['profile_photo_path'], $admin->fresh()->profile_photo_path);
         Storage::disk('public')->assertExists($profile['profile_photo_path']);
         Storage::disk('public')->assertExists($profile['cover_photo_path']);
 

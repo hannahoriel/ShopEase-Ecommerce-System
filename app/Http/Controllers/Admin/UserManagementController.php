@@ -201,6 +201,11 @@ class UserManagementController extends Controller
             'suspensionDays' => $user->suspended_until?->isFuture()
                 ? (int) round(now()->diffInDays($user->suspended_until))
                 : 0,
+            'profile_photo_url' => $user->profile_photo_path
+                ? Storage::disk('public')->url($user->profile_photo_path)
+                : ($user->role === User::ROLE_SELLER && $profile?->profile_photo_path
+                    ? Storage::disk('public')->url($profile->profile_photo_path)
+                    : null),
         ];
 
         if ($details) {
@@ -216,6 +221,7 @@ class UserManagementController extends Controller
                 'valid_id_url' => $profile?->upload_id
                     ? Storage::disk('public')->url($profile->upload_id)
                     : null,
+                'profile_photo_url' => $data['profile_photo_url'],
                 'business_permit_url' => $profile?->upload_business_permit
                     ? Storage::disk('public')->url($profile->upload_business_permit)
                     : null,

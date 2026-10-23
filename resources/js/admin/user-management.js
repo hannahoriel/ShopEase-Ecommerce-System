@@ -146,8 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let flashTimeout = null;
 
     function initials(name) {
-        return name
-            .split(' ')
+        return String(name || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
             .map(
                 value =>
                     value[0]
@@ -158,6 +160,16 @@ document.addEventListener('DOMContentLoaded', function () {
             )
             .join('')
             .toUpperCase();
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[character]);
     }
 
     function statusBadge(status) {
@@ -357,13 +369,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                             font-semibold
                                             text-[#7B1B1B]
                                             shrink-0
+                                            overflow-hidden
+                                            relative
                                         "
                                     >
-                                        ${initials(user.name)}
+                                        <span class="user-row-initials">${escapeHtml(initials(user.name))}</span>
+                                        ${user.profile_photo_url ? `<img src="${escapeHtml(user.profile_photo_url)}" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">` : ''}
                                     </div>
 
                                     <span class="text-[12px] font-medium text-gray-800">
-                                        ${user.name}
+                                        ${escapeHtml(user.name)}
                                     </span>
 
                                 </div>
@@ -1245,6 +1260,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 await response.json()
             ).details ||
             {};
+        if (selectedUser?.id === user.id) {
+            const avatarPhoto = document.getElementById('user-profile-photo');
+            const avatarInitials = document.getElementById('user-profile-initials');
+            avatarPhoto.src = details.profile_photo_url || user.profile_photo_url || '';
+            avatarPhoto.classList.toggle('hidden', !avatarPhoto.src);
+            avatarInitials.classList.toggle('hidden', Boolean(avatarPhoto.src));
+        }
 
         const fields = {
             'user-modal-last-name':
@@ -1435,6 +1457,18 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById(
                 'user-profile-status'
             );
+
+        const avatarInitials = document.getElementById('user-profile-initials');
+        const avatarPhoto = document.getElementById('user-profile-photo');
+        avatarInitials.textContent = initials(user.name) || 'U';
+        avatarPhoto.onerror = () => {
+            avatarPhoto.classList.add('hidden');
+            avatarInitials.classList.remove('hidden');
+        };
+        avatarPhoto.onload = () => avatarInitials.classList.add('hidden');
+        avatarPhoto.src = user.profile_photo_url || '';
+        avatarPhoto.classList.toggle('hidden', !user.profile_photo_url);
+        avatarInitials.classList.toggle('hidden', Boolean(user.profile_photo_url));
 
         profileStatus.innerHTML =
             statusBadge(

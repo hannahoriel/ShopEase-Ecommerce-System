@@ -1034,35 +1034,8 @@
                     class="pending-review-logo-box"
                 >
                     <div class="pending-review-logo-placeholder">
-                        <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <rect
-                                x="3"
-                                y="4"
-                                width="18"
-                                height="16"
-                                rx="2"
-                                stroke-width="1.8"
-                            />
-                            <circle
-                                cx="8.5"
-                                cy="9"
-                                r="1.5"
-                                stroke-width="1.8"
-                            />
-                            <path
-                                d="m5 17 4.2-4.2 3.2 3.2 2.1-2.1L19 18"
-                                stroke-width="1.8"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
-
-                        <span>No company logo uploaded</span>
+                        <strong id="pending-review-logo-initials">L</strong>
+                        <span>Profile photo not available</span>
                     </div>
 
                     <img
@@ -1520,6 +1493,7 @@
                     id="logistics-details-avatar"
                     class="logistics-details-avatar"
                 >
+                    <span>L</span>
                     <img
                         id="logistics-details-avatar-image"
                         src=""

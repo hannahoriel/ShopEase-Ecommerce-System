@@ -60,6 +60,28 @@ class UserManagementTest extends TestCase
             ->assertJsonPath('details.first_name', $buyer->first_name);
     }
 
+    public function test_user_management_list_and_details_include_the_profile_photo_url(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $buyer = User::factory()->create([
+            'name' => 'Photo Buyer',
+            'role' => User::ROLE_BUYER,
+            'registration_status' => 'active',
+        ]);
+        $buyer->forceFill(['profile_photo_path' => 'profile-photos/'.$buyer->id.'/buyer.jpg'])->save();
+        $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($buyer->profile_photo_path);
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/admin/users?type=buyer')
+            ->assertOk()
+            ->assertJsonPath('data.0.profile_photo_url', $photoUrl);
+
+        $this->getJson("/api/v1/admin/users/{$buyer->id}")
+            ->assertOk()
+            ->assertJsonPath('profile_photo_url', $photoUrl)
+            ->assertJsonPath('details.profile_photo_url', $photoUrl);
+    }
+
     public function test_admin_can_suspend_deactivate_and_activate_an_account(): void
     {
         Mail::fake();
