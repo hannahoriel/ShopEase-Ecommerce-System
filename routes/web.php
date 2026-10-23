@@ -1970,6 +1970,13 @@ Route::get('/buyer/my-purchases', function () {
         'buyerAvatarUrl' => $user->profile_photo_path
             ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_photo_path)
             : null,
+        'buyerCoverUrl' => $buyerProfile?->cover_photo_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyerProfile->cover_photo_path)
+            : null,
+        'buyerValidIdUrl' => $buyerProfile?->upload_id
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyerProfile->upload_id)
+            : null,
+        'buyerEmail' => $user->email,
     ]);
 })->middleware('auth')->name('buyer.my-purchases');
 

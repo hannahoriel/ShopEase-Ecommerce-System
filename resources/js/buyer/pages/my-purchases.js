@@ -760,57 +760,196 @@ document.addEventListener('DOMContentLoaded', () => {
             applyPurchaseFilters();
             tabs.find(tab => tab.dataset.purchaseTab === activeTab)?.click();
         });
-// Buyer profile: local-only edits; no fake backend submission.
+// Buyer account details are saved through the authenticated account API.
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('buyerProfileForm');
     if (!form) return;
     const get = id => document.getElementById(id);
     const save = get('bpRequestChanges'), discard = get('bpDiscard');
-    const original = new Map([...form.querySelectorAll('input:not([type=file]),select,textarea')].filter(x=>x.name).map(x=>[x,x.value]));
+    const original = new Map([...form.querySelectorAll('input:not([type=file]),select,textarea')].filter(input => input.name).map(input => [input, input.value]));
     const files = [get('bpCoverInput'),get('bpAvatarInput')];
     const urls = [];
     const previews = [get('bpCoverPreview'),get('bpAvatarPreview')];
     const originalImage = previews.map(x=>({src:x.getAttribute('src'),hidden:x.hidden}));
     const fallback = get('bpAvatarFallback');
-    const toast = message => { const el=get('bpProfileToast'); el.textContent=message;el.hidden=false;clearTimeout(el._hideTimer);el._hideTimer=setTimeout(()=>el.hidden=true,3900); };
-    function dirty(){return [...original].some(([el,value])=>el.value!==value)||files.some(el=>el.files?.length>0);}
-    // Demo-only pending approval. Browser-local state; never interpreted as a real admin record.
-    const pendingStorageKey = 'shopease:buyer:profile-pending-demo:' + String(form.dataset.buyerId || 'current');
-    let approvalPending = false;
-    const pendingCard = get('bpPendingApproval');
-    const editable = [...form.querySelectorAll('input,select,textarea')].filter(el => el.id !== 'bp-age');
-    const photoLabels = [...form.querySelectorAll('label[for="bpCoverInput"], label[for="bpAvatarInput"]')];
-    const initiallyDisabled = new Map(editable.map(el => [el,el.disabled]));
-    function applyPending(pending) {
-        approvalPending = Boolean(pending);
-        form.dataset.approvalPending = String(approvalPending);
-        if (pendingCard) pendingCard.hidden = !approvalPending;
-        form.classList.toggle('bp-profile-locked',approvalPending);
-        editable.forEach(el => { el.disabled = approvalPending || initiallyDisabled.get(el); });
-        photoLabels.forEach(el => {el.setAttribute('aria-disabled',String(approvalPending));el.tabIndex=approvalPending?-1:0;});
-        refresh();
-    }
-    function refresh(){const yes=!approvalPending && dirty();save.disabled=!yes;discard.disabled=!yes;save.title=approvalPending?'Profile editing is locked while approval is pending.':'';}
-    function refreshAge(){const dob=get('bp-birthday').value, age=get('bp-age');if(!dob){age.value='';return;}const value=new Date(dob+'T00:00:00'),now=new Date();if(Number.isNaN(value.valueOf())||value>now){age.value='';return;}let years=now.getFullYear()-value.getFullYear();if(now.getMonth()<value.getMonth()||(now.getMonth()===value.getMonth()&&now.getDate()<value.getDate()))years--;age.value=String(Math.max(0,years));}
-    form.addEventListener('input', e=>{e.target.classList?.remove('bp-invalid');refreshAge();refresh();});
-    form.addEventListener('change',()=>{refreshAge();refresh();});
-    files.forEach((input,index)=>input.addEventListener('change',async()=>{const file=input.files?.[0];if(!file){refresh();return;}if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){input.value='';toast('Choose a JPG, PNG, or WebP image smaller than 5 MB.');refresh();return;}const url=URL.createObjectURL(file);urls.push(url);previews[index].src=url;previews[index].hidden=false;if(index===1)fallback.hidden=true;refresh();if(index!==1)return;try{const body=new FormData();body.append('profile_photo',file);const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body});const result=await response.json();if(!response.ok)throw new Error(result.message||'Unable to update the profile photo.');previews[index].src=result.profile_photo_url;originalImage[index]={src:result.profile_photo_url,hidden:false};input.value='';document.querySelectorAll('.account-avatar').forEach(avatar=>{let image=avatar.querySelector('img');if(!image){image=document.createElement('img');image.alt='';image.setAttribute('aria-hidden','true');image.style.cssText='position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover;';avatar.append(image);}image.src=result.profile_photo_url;});refresh();toast('Profile photo updated successfully.');}catch(error){input.value='';previews[index].src=originalImage[index].src||'';previews[index].hidden=originalImage[index].hidden;fallback.hidden=!originalImage[index].hidden;refresh();toast(error.message||'Unable to update the profile photo.');}}));
-    discard.addEventListener('click',()=>{original.forEach((value,el)=>{el.value=value;el.classList.remove('bp-invalid')});files.forEach(input=>input.value='');previews.forEach((el,i)=>{if(originalImage[i].src)el.setAttribute('src',originalImage[i].src);else el.removeAttribute('src');el.hidden=originalImage[i].hidden;});fallback.hidden=!originalImage[1].hidden;refreshAge();refresh();toast('Unsaved edits discarded.');});
-    const modal=get('bpApprovalModal');
-    const closeModal=()=>{modal.hidden=true;modal.setAttribute('aria-hidden','true');document.body.style.overflow='';};
-    form.addEventListener('submit',e=>{e.preventDefault();if(approvalPending||!dirty())return;const required=[...form.querySelectorAll('[required]')];const invalid=required.find(x=>!x.value.trim()||(x.type==='email'&&!x.validity.valid));if(invalid){invalid.classList.add('bp-invalid');invalid.focus();toast('Please complete the required fields with valid information.');return;}modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';get('bpModalOkay').focus();});
-    get('bpModalOkay').addEventListener('click',()=>{
-        // UI simulation only: locks profile locally after the user acknowledges the modal.
-        try {localStorage.setItem(pendingStorageKey,'1');} catch(e) {}
-        closeModal();
-        applyPending(true);
+    const toast = message => {
+        const element = get('bpProfileToast');
+        element.textContent = message;
+        element.hidden = false;
+        clearTimeout(element._hideTimer);
+        element._hideTimer = setTimeout(() => { element.hidden = true; }, 3900);
+    };
+    const isDirty = () =>
+        [...original].some(([element, value]) => element.value !== value) ||
+        files.some(input => input.files?.length > 0);
+    const refresh = () => {
+        save.disabled = !isDirty();
+        discard.disabled = !isDirty();
+    };
+    const refreshAge = () => {
+        const birthday = get('bp-birthday').value;
+        const age = get('bp-age');
+        if (!birthday) {
+            age.value = '';
+            return;
+        }
+        const birthDate = new Date(`${birthday}T00:00:00`);
+        const today = new Date();
+        let years = today.getFullYear() - birthDate.getFullYear();
+        if (today.getMonth() < birthDate.getMonth() ||
+            (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+            years--;
+        }
+        age.value = String(Math.max(0, years));
+    };
+    const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const requestHeaders = () => ({
+        Accept: 'application/json',
+        'X-CSRF-TOKEN': csrfToken(),
     });
-    modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeModal();});
-    window.addEventListener('beforeunload',()=>urls.forEach(url=>URL.revokeObjectURL(url)));
+    const setAccountPhoto = photoUrl => {
+        document.querySelectorAll('.account-avatar').forEach(avatar => {
+            let image = avatar.querySelector('img');
+            if (!image) {
+                image = document.createElement('img');
+                image.alt = '';
+                image.setAttribute('aria-hidden', 'true');
+                image.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover;';
+                avatar.append(image);
+            }
+            image.src = photoUrl;
+        });
+    };
+
+    form.addEventListener('input', event => {
+        event.target.classList?.remove('bp-invalid');
+        refreshAge();
+        refresh();
+    });
+    form.addEventListener('change', refresh);
+    files.forEach((input, index) => input.addEventListener('change', async () => {
+        const file = input.files?.[0];
+        if (!file) {
+            refresh();
+            return;
+        }
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+            input.value = '';
+            toast('Choose a JPG, PNG, or WebP image smaller than 5 MB.');
+            refresh();
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+        urls.push(previewUrl);
+        previews[index].src = previewUrl;
+        previews[index].hidden = false;
+        if (index === 1) fallback.hidden = true;
+
+        if (index === 1) {
+            try {
+                const body = new FormData();
+                body.append('profile_photo', file);
+                const response = await fetch('/api/v1/profile/photo', {
+                    method: 'PUT',
+                    credentials: 'same-origin',
+                    headers: requestHeaders(),
+                    body,
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Unable to update the profile photo.');
+                }
+                previews[index].src = result.profile_photo_url;
+                originalImage[index] = {src: result.profile_photo_url, hidden: false};
+                input.value = '';
+                setAccountPhoto(result.profile_photo_url);
+                toast('Profile photo updated successfully.');
+            } catch (error) {
+                input.value = '';
+                previews[index].src = originalImage[index].src || '';
+                previews[index].hidden = originalImage[index].hidden;
+                fallback.hidden = !originalImage[index].hidden;
+                toast(error.message || 'Unable to update the profile photo.');
+            }
+        }
+        refresh();
+    }));
+
+    discard.addEventListener('click', () => {
+        original.forEach((value, element) => {
+            element.value = value;
+            element.classList.remove('bp-invalid');
+        });
+        files.forEach(input => { input.value = ''; });
+        previews.forEach((preview, index) => {
+            if (originalImage[index].src) preview.setAttribute('src', originalImage[index].src);
+            else preview.removeAttribute('src');
+            preview.hidden = originalImage[index].hidden;
+        });
+        fallback.hidden = !originalImage[1].hidden;
+        refreshAge();
+        refresh();
+        toast('Unsaved edits discarded.');
+    });
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!isDirty()) return;
+        if (!form.reportValidity()) return;
+
+        save.disabled = true;
+        const body = new FormData(form);
+        body.delete('profile_photo');
+        try {
+            const response = await fetch(form.dataset.updateUrl, {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: requestHeaders(),
+                body,
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const validationError = Object.values(result.errors || {}).flat()[0];
+                throw new Error(validationError || result.message || 'Unable to save your account details.');
+            }
+
+            original.clear();
+            form.querySelectorAll('input:not([type=file]),select,textarea').forEach(input => {
+                if (input.name) original.set(input, input.value);
+            });
+            files.forEach(input => { input.value = ''; });
+            const displayName = result.user.name;
+            document.querySelectorAll('.buyer-profile-copy strong, .bp-identity-copy h3').forEach(element => {
+                element.textContent = displayName;
+            });
+            const nameParts = displayName.trim().split(/\s+/);
+            const initials = nameParts.length > 1
+                ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+                : (nameParts[0]?.[0] || 'B');
+            document.querySelectorAll('.account-avatar').forEach(avatar => {
+                avatar.setAttribute('aria-label', `${displayName} profile picture`);
+                const fallbackInitials = avatar.querySelector('span[aria-hidden="true"]');
+                if (fallbackInitials) fallbackInitials.textContent = initials.toUpperCase();
+            });
+            fallback.textContent = initials.toUpperCase();
+            if (result.profile.cover_photo_url) {
+                previews[0].src = result.profile.cover_photo_url;
+                previews[0].hidden = false;
+                originalImage[0] = {src: result.profile.cover_photo_url, hidden: false};
+            }
+            refreshAge();
+            refresh();
+            toast(result.message);
+        } catch (error) {
+            refresh();
+            toast(error.message || 'Unable to save your account details.');
+        }
+    });
+
+    window.addEventListener('beforeunload', () => urls.forEach(url => URL.revokeObjectURL(url)));
     refreshAge();
-    let demoPending = false;try { demoPending = localStorage.getItem(pendingStorageKey)==='1'; } catch(e) {}
-    applyPending(demoPending);
+    refresh();
 });
 
 // Profile address: same searchable Province -> City/Municipality -> Barangay cascade as buyer registration.
@@ -1115,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-/* BUYER SETTINGS — isolated UI demo (no security backend calls) */
+/* Buyer password changes require a verified email OTP. */
 document.addEventListener('DOMContentLoaded', () => {
   const $ = id => document.getElementById(id);
   const passwordForm = $('buyerChangePasswordForm');
@@ -1126,17 +1265,74 @@ document.addEventListener('DOMContentLoaded', () => {
   const otpDigits = [...document.querySelectorAll('.buyer-otp-digit')];
   const otpError = $('buyerOtpError'), resetError = $('buyerResetError');
   const otpVerify = $('buyerVerifyOtp'), resend = $('buyerResendOtp');
+  const deliveryMessage = $('buyerOtpDeliveryMessage');
   const toast = $('buyerSettingsToast');
+  const endpoints = {
+    send: '/api/v1/buyer/account/security/otp/send',
+    verify: '/api/v1/buyer/account/security/otp/verify',
+    change: '/api/v1/buyer/account/security/password/change',
+    reset: '/api/v1/buyer/account/security/password/reset',
+  };
   let flow = 'change';
+  let verificationToken = '';
+  let sending = false;
   let noticeTimer = null;
   function notify(message) { if (!toast) return; toast.textContent = message; toast.hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { toast.hidden = true; }, 4500); }
   function refreshPasswordButton() {changeBtn.disabled = !(current.value.trim() && next.value.length >= 8 && next.value === confirm.value);}
   [current,next,confirm].forEach(input => input?.addEventListener('input',refreshPasswordButton));
   const open = modal => {modal.hidden=false; document.body.classList.add('buyer-security-dialog-open');};
   const close = modal => {modal.hidden=true; if (otpModal.hidden && resetModal.hidden) document.body.classList.remove('buyer-security-dialog-open');};
-  function otpOpen(purpose) {flow=purpose; otpDigits.forEach(i => i.value=''); otpError.hidden=true; open(otpModal); otpDigits[0]?.focus();}
-  passwordForm.addEventListener('submit', e => {e.preventDefault();if (!changeBtn.disabled) otpOpen('change');});
-  $('buyerForgotPasswordButton')?.addEventListener('click',()=>otpOpen('forgot'));
+  const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+  async function request(url, data) {
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken(),
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      const validationError = Object.values(result.errors || {}).flat()[0];
+      throw new Error(validationError || result.message || 'The security request failed.');
+    }
+    return result;
+  }
+  async function sendCode(purpose) {
+    if (sending) return;
+    sending = true;
+    otpError.hidden = true;
+    try {
+      const result = await request(endpoints.send, {
+        purpose,
+        ...(purpose === 'change' ? {current_password: current.value} : {}),
+      });
+      flow = purpose;
+      otpDigits.forEach(input => { input.value = ''; });
+      deliveryMessage.textContent = result.message;
+      deliveryMessage.hidden = false;
+      open(otpModal);
+      otpDigits[0]?.focus();
+    } catch (error) {
+      if (purpose === 'change' && error.message.toLowerCase().includes('current password')) {
+        current.setCustomValidity(error.message);
+        current.reportValidity();
+        current.addEventListener('input', () => current.setCustomValidity(''), {once: true});
+      } else {
+        notify(error.message);
+      }
+    } finally {
+      sending = false;
+    }
+  }
+  passwordForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!changeBtn.disabled) sendCode('change');
+  });
+  $('buyerForgotPasswordButton')?.addEventListener('click', () => sendCode('forgot'));
   $('buyerCloseOtp')?.addEventListener('click',()=>close(otpModal));
   $('buyerCloseForgot')?.addEventListener('click',()=>close(resetModal));
   [otpModal,resetModal].forEach(modal=>modal?.addEventListener('click',event=>{if (event.target===modal) close(modal);}));
@@ -1145,17 +1341,72 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!input.value)otpDigits[index-1]?.focus();});
     input.addEventListener('paste',e=>{e.preventDefault();const code=(e.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);[...code].forEach((v,i)=>otpDigits[i].value=v);otpDigits[Math.min(code.length,5)]?.focus();});
   });
-  resend?.addEventListener('click',()=>{otpDigits.forEach(i=>i.value='');notify('Demo only: No verification email was sent. Enter any six digits to test this modal.');otpDigits[0]?.focus();});
-  otpVerify?.addEventListener('click',()=>{
-    if(!/^\d{6}$/.test(otpDigits.map(i=>i.value).join(''))){otpError.textContent='Please enter the six-digit verification code.';otpError.hidden=false;return;}
-    otpError.hidden=true;close(otpModal);
-    if(flow==='forgot'){open(resetModal);$('buyerResetNew')?.focus();}
-    else {notify('UI preview complete. Your password has NOT been changed; connect a secure backend for actual verification.');}
+  resend?.addEventListener('click', () => sendCode(flow));
+  otpVerify?.addEventListener('click', async () => {
+    const code = otpDigits.map(input => input.value).join('');
+    if (!/^\d{6}$/.test(code)) {
+      otpError.textContent = 'Please enter the six-digit verification code.';
+      otpError.hidden = false;
+      return;
+    }
+    otpVerify.disabled = true;
+    otpError.hidden = true;
+    try {
+      const result = await request(endpoints.verify, {purpose: flow, code});
+      verificationToken = result.verification_token;
+      close(otpModal);
+      if (flow === 'forgot') {
+        open(resetModal);
+        $('buyerResetNew')?.focus();
+        return;
+      }
+
+      const changed = await request(endpoints.change, {
+        current_password: current.value,
+        new_password: next.value,
+        new_password_confirmation: confirm.value,
+        verification_token: verificationToken,
+      });
+      verificationToken = '';
+      passwordForm.reset();
+      refreshPasswordButton();
+      notify(changed.message);
+    } catch (error) {
+      otpError.textContent = error.message;
+      otpError.hidden = false;
+      if (otpModal.hidden) open(otpModal);
+    } finally {
+      otpVerify.disabled = false;
+    }
   });
-  $('buyerForgotFinalForm')?.addEventListener('submit',event=>{
-    event.preventDefault();const pw=$('buyerResetNew').value, pw2=$('buyerResetConfirm').value;
-    if(pw.length<8||pw!==pw2){resetError.textContent='Use at least 8 characters and enter matching passwords.';resetError.hidden=false;return;}
-    resetError.hidden=true;close(resetModal);notify('UI preview complete. Your password has NOT been reset.');
+  $('buyerForgotFinalForm')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const password = $('buyerResetNew').value;
+    const confirmation = $('buyerResetConfirm').value;
+    if (password.length < 8 || password !== confirmation) {
+      resetError.textContent = 'Use at least 8 characters and enter matching passwords.';
+      resetError.hidden = false;
+      return;
+    }
+    const submit = event.currentTarget.querySelector('[type="submit"]');
+    submit.disabled = true;
+    resetError.hidden = true;
+    try {
+      const result = await request(endpoints.reset, {
+        new_password: password,
+        new_password_confirmation: confirmation,
+        verification_token: verificationToken,
+      });
+      verificationToken = '';
+      event.currentTarget.reset();
+      close(resetModal);
+      notify(result.message);
+    } catch (error) {
+      resetError.textContent = error.message;
+      resetError.hidden = false;
+    } finally {
+      submit.disabled = false;
+    }
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!otpModal.hidden)close(otpModal);if(!resetModal.hidden)close(resetModal);}});
   const preferenceForm=$('buyerNotificationSettingsForm');

@@ -2,6 +2,7 @@
 
 namespace App\Models\Buyer;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,10 @@ class Buyer extends Model
         'barangay',
         'street',
         'house_number',
+        'zip_code',
+        'building',
+        'subdivision',
+        'cover_photo_path',
         'upload_id',
         'registration_status',
         'approved_at',
