@@ -7,7 +7,6 @@ use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
-use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\Seller\InventoryController as ApiSellerInventoryController;
 use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
@@ -33,7 +32,6 @@ use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Seller\SellerAccountController;
 use App\Http\Controllers\Seller\SellerAccountSettingsController;
 use App\Http\Controllers\Admin\AdminAccountController;
-use App\Http\Controllers\Admin\AdminAccountSecurityController;
 
 
 /*
@@ -262,43 +260,6 @@ Route::get('/admin/registrations', function () {
 })->middleware('auth')
     ->name('admin.registrations');
 
-Route::get('/admin/registrations/{registration}', [
-    RegistrationController::class,
-    'show',
-])->middleware('auth')
-    ->name('admin.registrations.show');
-
-Route::get('/admin/registrations/approved/list', [
-    RegistrationController::class,
-    'approvedArchive',
-])->middleware('auth')
-    ->name('admin.registrations.approved.list');
-
-Route::get('/admin/registrations/rejected/list', [
-    RegistrationController::class,
-    'rejectedArchive',
-])->middleware('auth')
-    ->name('admin.registrations.rejected.list');
-
-Route::get('/admin/registrations/{registration}/approve', function () {
-    return redirect()
-        ->route('admin.registrations')
-        ->with('error', 'Approvals must be submitted from the registration review page.');
-})->middleware('auth')
-    ->name('admin.registrations.approve.get');
-
-Route::post('/admin/registrations/{registration}/approve', [
-    RegistrationController::class,
-    'approve',
-])->middleware('auth')
-    ->name('admin.registrations.approve');
-
-Route::post('/admin/registrations/{registration}/reject', [
-    RegistrationController::class,
-    'reject',
-])->middleware('auth')
-    ->name('admin.registrations.reject');
-
 /*
 |--------------------------------------------------------------------------
 | ADMIN USER MANAGEMENT
@@ -318,24 +279,6 @@ Route::get('/admin/user-management', function () {
 
 })->middleware('auth')
     ->name('admin.user.management');
-
-Route::get('/admin/user-management/list', [
-    UserManagementController::class,
-    'list',
-])->middleware('auth')
-    ->name('admin.user.management.list');
-
-Route::get('/admin/user-management/{user}', [
-    UserManagementController::class,
-    'show',
-])->middleware('auth')
-    ->name('admin.user.management.show');
-
-Route::patch('/admin/user-management/{user}/status', [
-    UserManagementController::class,
-    'updateStatus',
-])->middleware('auth')
-    ->name('admin.user.management.status');
 
 Route::get('/seller/register', function () {
 
@@ -1980,32 +1923,9 @@ Route::get('/admin/seller-compliance', function () {
 })->middleware('auth')
     ->name('admin.seller.compliance');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/admin/seller-compliance/data', [SellerComplianceController::class, 'index'])
-        ->name('admin.seller.compliance.data');
-
-    Route::get('/admin/seller-compliance/data/{seller}', [SellerComplianceController::class, 'show'])
-        ->name('admin.seller.compliance.show');
-
-    Route::post('/admin/seller-compliance/data/{seller}/suspend', [SellerComplianceController::class, 'suspend'])
-        ->name('admin.seller.compliance.suspend');
-
-    Route::post('/admin/seller-compliance/data/products/{product}/approve', [SellerComplianceController::class, 'approveProduct'])
-        ->name('admin.seller.compliance.approve');
-
-    Route::post('/admin/seller-compliance/data/products/{product}/warn', [SellerComplianceController::class, 'warnProduct'])
-        ->name('admin.seller.compliance.warn');
-
-    Route::post('/admin/seller-compliance/data/products/{product}/remove', [SellerComplianceController::class, 'removeProduct'])
-        ->name('admin.seller.compliance.remove');
-});
-
 Route::get('/admin/complaints-disputes', [AdminComplaintController::class, 'page'])
     ->middleware(['auth', 'role:admin'])
     ->name('admin.complaints.disputes');
-Route::patch('/admin/complaints-disputes/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])
-    ->middleware(['auth', 'role:admin'])
-    ->name('admin.complaints.disputes.status');
 
 Route::get('/admin/commission', [CommissionController::class, 'page'])
     ->middleware(['auth', 'role:admin'])
@@ -2013,34 +1933,10 @@ Route::get('/admin/commission', [CommissionController::class, 'page'])
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin/logistics-management')->group(function () {
     Route::get('/', [LogisticsManagementController::class, 'page'])->name('admin.logistics.management');
-    Route::get('/api', [LogisticsManagementController::class, 'index'])->name('admin.logistics.management.api');
-    Route::post('/api/registrations/{registration}/approve', [LogisticsManagementController::class, 'approve'])
-        ->whereNumber('registration')
-        ->name('admin.logistics.management.approve');
-    Route::post('/api/registrations/{registration}/reject', [LogisticsManagementController::class, 'reject'])
-        ->whereNumber('registration')
-        ->name('admin.logistics.management.reject');
-    Route::get('/api/companies/{logistics}/branches', [LogisticsManagementController::class, 'branches'])
-        ->name('admin.logistics.management.branches.index');
-    Route::post('/api/companies/{logistics}/branches', [LogisticsManagementController::class, 'storeBranch'])
-        ->name('admin.logistics.management.branches.store');
-    Route::patch('/api/branches/{branch}', [LogisticsManagementController::class, 'updateBranch'])
-        ->name('admin.logistics.management.branches.update');
-    Route::delete('/api/branches/{branch}', [LogisticsManagementController::class, 'destroyBranch'])
-        ->name('admin.logistics.management.branches.destroy');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin/platform-settings')->group(function () {
     Route::get('/', [PlatformSettingsController::class, 'page'])->name('admin.platform.settings');
-    Route::prefix('api')->group(function () {
-        Route::get('/', [PlatformSettingsController::class, 'index']);
-        Route::post('/announcements', [PlatformSettingsController::class, 'storeAnnouncement']);
-        Route::patch('/announcements/{announcement}', [PlatformSettingsController::class, 'updateAnnouncement']);
-        Route::delete('/announcements/{announcement}', [PlatformSettingsController::class, 'destroyAnnouncement']);
-        Route::post('/policies', [PlatformSettingsController::class, 'storePolicy']);
-        Route::patch('/policies/{policy}', [PlatformSettingsController::class, 'updatePolicy']);
-        Route::delete('/policies/{policy}', [PlatformSettingsController::class, 'destroyPolicy']);
-    });
 });
 
 Route::get('/buyer/cart', function () {
@@ -2078,16 +1974,6 @@ Route::get('/seller/messages', function () {
     ]);
 })->middleware('auth')
     ->name('seller.messages');
-
-Route::middleware(['auth', 'role:admin'])->prefix('/admin/messages/api')->controller(AdminMessagesController::class)->group(function () {
-    Route::get('/', 'index')->name('admin.messages.api.index');
-    Route::get('/contacts', 'contacts')->name('admin.messages.api.contacts');
-    Route::post('/conversations', 'storeConversation')->name('admin.messages.api.conversations.store');
-    Route::get('/conversations/{conversation}', 'show')->name('admin.messages.api.conversations.show');
-    Route::post('/conversations/{conversation}/messages', 'send')->name('admin.messages.api.send');
-    Route::get('/conversations/{conversation}/messages/{message}/attachment', 'attachment')
-        ->name('admin.messages.api.attachment');
-});
 
 Route::get('/admin/messages', function () {
     abort_unless(Auth::user()->role === User::ROLE_ADMIN, 403);
@@ -2251,10 +2137,6 @@ Route::middleware(['auth'])
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/notifications', [AdminNotificationController::class, 'index'])
         ->name('notifications.index');
-    Route::patch('/notifications/read-all', [AdminNotificationController::class, 'markAllRead'])
-        ->name('notifications.read-all');
-    Route::patch('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])
-        ->name('notifications.read');
 });
 
 Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
@@ -2274,14 +2156,6 @@ Route::middleware(['auth', 'throttle:60,1'])->prefix('seller/account/settings')-
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin/account', [AdminAccountController::class, 'index'])->name('admin.account');
-    Route::put('/admin/account', [AdminAccountController::class, 'update'])->name('admin.account.update');
-    Route::post('/admin/account/notifications', [AdminAccountController::class, 'notifications'])->name('admin.account.notifications.update');
-    Route::middleware('throttle:60,1')->prefix('/admin/account/security')->name('admin.account.security.')->group(function () {
-        Route::post('/otp/send', [AdminAccountSecurityController::class, 'sendOtp'])->name('otp.send');
-        Route::post('/otp/verify', [AdminAccountSecurityController::class, 'verifyOtp'])->name('otp.verify');
-        Route::post('/password/change', [AdminAccountSecurityController::class, 'changePassword'])->name('password.change');
-        Route::post('/password/reset', [AdminAccountSecurityController::class, 'resetPassword'])->name('password.reset');
-    });
 });
 
 Route::get('/logistics/landing', function () {

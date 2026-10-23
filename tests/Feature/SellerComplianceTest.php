@@ -67,7 +67,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->postJson('/admin/seller-compliance/data/' . $seller->id . '/suspend', [
+            ->postJson('/api/v1/admin/seller-compliance/' . $seller->id . '/suspend', [
                 'reason' => 'Fraudulent activity',
                 'duration' => 7,
                 'details' => 'Suspicious listings detected.',
@@ -106,7 +106,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->postJson('/admin/seller-compliance/data/' . $seller->id . '/suspend', [
+            ->postJson('/api/v1/admin/seller-compliance/' . $seller->id . '/suspend', [
                 'action' => 'reactivate',
             ])
             ->assertOk()
@@ -158,12 +158,12 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.total_sellers', 1);
 
         $this->actingAs($admin)
-            ->postJson('/admin/seller-compliance/data/products/' . $sampleProduct->id . '/remove', [
+            ->postJson('/api/v1/admin/seller-compliance/products/' . $sampleProduct->id . '/remove', [
                 'reason' => 'Prohibited product',
                 'details' => 'The product violates platform policy.',
             ])
@@ -334,7 +334,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.warnings', 1)
             ->assertJsonPath('data.0.compliance', 'warning');
@@ -359,7 +359,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?compliance=under-review&per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?compliance=under-review&per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.under_review', 1)
             ->assertJsonPath('data.0.compliance', 'under-review')
@@ -394,7 +394,7 @@ class SellerComplianceTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/admin/seller-compliance/data?compliance=under-review&per_page=10')
+            ->getJson('/api/v1/admin/seller-compliance?compliance=under-review&per_page=10')
             ->assertOk()
             ->assertJsonPath('summary.under_review', 1)
             ->assertJsonPath('summary.warnings', 1)

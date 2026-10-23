@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class AuthRegistrationTest extends TestCase
@@ -245,7 +246,7 @@ class AuthRegistrationTest extends TestCase
             ->assertSee('registration-search');
     }
 
-    public function test_getting_approval_url_redirects_without_approving_registration(): void
+    public function test_getting_approval_api_url_is_not_allowed_and_does_not_approve_registration(): void
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMIN,
@@ -270,9 +271,8 @@ class AuthRegistrationTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.registrations.approve.get', $registration))
-            ->assertRedirect(route('admin.registrations'))
-            ->assertSessionHas('error');
+            ->getJson("/api/v1/admin/registrations/{$registration->id}/approve")
+            ->assertStatus(405);
 
         $this->assertDatabaseHas('registrations', [
             'id' => $registration->id,
@@ -332,9 +332,10 @@ class AuthRegistrationTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->post(route('admin.registrations.approve', $registration))
-            ->assertRedirect();
+            ->postJson("/api/v1/admin/registrations/{$registration->id}/approve")
+            ->assertOk();
 
+        Auth::shouldUse('web');
         $this->post(route('logout'));
 
         $this->post(route('login.attempt'), [
@@ -376,9 +377,10 @@ class AuthRegistrationTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->post(route('admin.registrations.approve', $registration))
-            ->assertRedirect();
+            ->postJson("/api/v1/admin/registrations/{$registration->id}/approve")
+            ->assertOk();
 
+        Auth::shouldUse('web');
         $this->post(route('logout'));
 
         $this->post(route('login.attempt'), [

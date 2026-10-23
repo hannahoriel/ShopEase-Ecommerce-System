@@ -48,7 +48,7 @@ class AdminAccountSecurityTest extends TestCase
             });
 
         $this->actingAs($admin)
-            ->postJson(route('admin.account.security.otp.send'), ['purpose' => 'forgot'])
+            ->postJson(route('admin.api.account.security.otp.send'), ['purpose' => 'forgot'])
             ->assertOk()
             ->assertJsonPath('message', 'A verification code was sent to your registered email.');
 
@@ -56,10 +56,10 @@ class AdminAccountSecurityTest extends TestCase
         $this->assertNotNull($sentCode);
         $this->assertTrue(Hash::check($sentCode, $record['hash']));
 
-        $this->postJson(route('admin.account.security.otp.send'), ['purpose' => 'forgot'])
+        $this->postJson(route('admin.api.account.security.otp.send'), ['purpose' => 'forgot'])
             ->assertOk();
 
-        $this->postJson(route('admin.account.security.otp.send'), ['purpose' => 'forgot'])
+        $this->postJson(route('admin.api.account.security.otp.send'), ['purpose' => 'forgot'])
             ->assertStatus(429)
             ->assertJsonPath('retry_after', 600)
             ->assertHeader('Retry-After', '600');
@@ -86,18 +86,18 @@ class AdminAccountSecurityTest extends TestCase
             });
 
         $this->actingAs($admin)
-            ->postJson(route('admin.account.security.otp.send'), [
+            ->postJson(route('admin.api.account.security.otp.send'), [
                 'purpose' => 'change',
                 'current_password' => 'Old-password-123',
             ])
             ->assertOk();
 
-        $verificationToken = $this->postJson(route('admin.account.security.otp.verify'), [
+        $verificationToken = $this->postJson(route('admin.api.account.security.otp.verify'), [
             'purpose' => 'change',
             'code' => $sentCode,
         ])->assertOk()->json('verification_token');
 
-        $this->postJson(route('admin.account.security.password.change'), [
+        $this->postJson(route('admin.api.account.security.password.change'), [
             'current_password' => 'Old-password-123',
             'new_password' => 'New-password-456',
             'new_password_confirmation' => 'New-password-456',
@@ -106,7 +106,7 @@ class AdminAccountSecurityTest extends TestCase
             ->assertJsonPath('message', 'Password changed successfully.');
 
         $this->assertTrue(Hash::check('New-password-456', $admin->fresh()->password));
-        $this->postJson(route('admin.account.security.password.change'), [
+        $this->postJson(route('admin.api.account.security.password.change'), [
             'current_password' => 'Old-password-123',
             'new_password' => 'Another-password-789',
             'new_password_confirmation' => 'Another-password-789',
@@ -135,15 +135,15 @@ class AdminAccountSecurityTest extends TestCase
             });
 
         $this->actingAs($admin)
-            ->postJson(route('admin.account.security.otp.send'), ['purpose' => 'forgot'])
+            ->postJson(route('admin.api.account.security.otp.send'), ['purpose' => 'forgot'])
             ->assertOk();
 
-        $verificationToken = $this->postJson(route('admin.account.security.otp.verify'), [
+        $verificationToken = $this->postJson(route('admin.api.account.security.otp.verify'), [
             'purpose' => 'forgot',
             'code' => $sentCode,
         ])->assertOk()->json('verification_token');
 
-        $this->postJson(route('admin.account.security.password.reset'), [
+        $this->postJson(route('admin.api.account.security.password.reset'), [
             'new_password' => 'Reset-password-789',
             'new_password_confirmation' => 'Reset-password-789',
             'verification_token' => $verificationToken,
@@ -163,7 +163,7 @@ class AdminAccountSecurityTest extends TestCase
         Mail::shouldReceive('raw')->never();
 
         $this->actingAs($admin)
-            ->postJson(route('admin.account.security.otp.send'), [
+            ->postJson(route('admin.api.account.security.otp.send'), [
                 'purpose' => 'change',
                 'current_password' => 'incorrect-password',
             ])
@@ -176,7 +176,7 @@ class AdminAccountSecurityTest extends TestCase
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
 
         $this->actingAs($buyer)
-            ->postJson(route('admin.account.security.otp.send'), ['purpose' => 'forgot'])
+            ->postJson(route('admin.api.account.security.otp.send'), ['purpose' => 'forgot'])
             ->assertForbidden();
     }
 }

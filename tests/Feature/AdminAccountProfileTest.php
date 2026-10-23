@@ -25,14 +25,14 @@ class AdminAccountProfileTest extends TestCase
             ->assertSee('href="'.route('admin.account').'"', false)
             ->assertSee('Old Admin Name');
 
-        $this->put(route('admin.account.update'), [
+        $this->putJson('/api/v1/admin/account', [
             'first_name' => 'Taylor',
             'last_name' => 'Admin',
             'birthday' => '1990-05-12',
             'sex' => 'Prefer not to say',
             'contact_number' => '9123456789',
-        ])->assertRedirect(route('admin.account'))
-            ->assertSessionHas('success');
+        ])->assertOk()
+            ->assertJsonPath('message', 'Admin profile changes saved successfully.');
 
         $this->assertDatabaseHas('admin_account_profiles', [
             'user_id' => $admin->id,
@@ -58,12 +58,12 @@ class AdminAccountProfileTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($admin)
-            ->put(route('admin.account.update'), [
+            ->putJson('/api/v1/admin/account', [
                 'first_name' => 'Photo',
                 'last_name' => 'Admin',
                 'profile_photo' => UploadedFile::fake()->image('profile.png'),
                 'cover_photo' => UploadedFile::fake()->image('cover.jpg'),
-            ])->assertRedirect(route('admin.account'));
+            ])->assertOk();
 
         $profile = (array) \Illuminate\Support\Facades\DB::table('admin_account_profiles')
             ->where('user_id', $admin->id)
@@ -84,14 +84,13 @@ class AdminAccountProfileTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($admin)
-            ->from(route('admin.account'))
-            ->put(route('admin.account.update'), [
+            ->putJson('/api/v1/admin/account', [
                 'first_name' => 'Rejected',
                 'last_name' => 'Update',
                 'contact_number' => 'not-a-phone-number',
             ])
-            ->assertRedirect(route('admin.account'))
-            ->assertSessionHasErrors('contact_number');
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('contact_number');
 
         $this->assertDatabaseMissing('admin_account_profiles', [
             'user_id' => $admin->id,
@@ -128,10 +127,10 @@ class AdminAccountProfileTest extends TestCase
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
 
         $this->actingAs($buyer)
-            ->get(route('admin.account'))
+            ->getJson('/api/v1/admin/account')
             ->assertForbidden();
 
-        $this->put(route('admin.account.update'), [
+        $this->putJson('/api/v1/admin/account', [
             'first_name' => 'Unauthorized',
             'last_name' => 'Update',
         ])->assertForbidden();

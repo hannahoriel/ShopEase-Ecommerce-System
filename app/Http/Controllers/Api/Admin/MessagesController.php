@@ -404,7 +404,7 @@ class MessagesController extends Controller
             'contextButton' => 'View '.($role === 'Logistics' ? 'Logistics' : $role),
             'contextUrl' => $conversation->category === AdminConversation::CATEGORY_LOGISTICS
                 ? route('admin.logistics.management')
-                : route('admin.user.management.show', ['user' => $user?->id]),
+                : route('admin.api.users.show', ['user' => $user?->id]),
             'preview' => $latest?->body ?? $latest?->attachment_name ?? 'Conversation started.',
             'time' => $latest?->created_at?->diffForHumans(short: true) ?? $conversation->created_at?->diffForHumans(short: true) ?? '',
             'unread' => $conversation->unread_count ?? 0,
@@ -427,7 +427,7 @@ class MessagesController extends Controller
                 'name' => $message->attachment_name,
                 'mime_type' => $message->attachment_mime_type,
                 'size' => $message->attachment_size,
-                'url' => route('admin.messages.api.attachment', [
+                'url' => route('admin.api.messages.attachment', [
                     'conversation' => $message->conversation_id,
                     'message' => $message->id,
                 ]),

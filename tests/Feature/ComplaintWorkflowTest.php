@@ -79,7 +79,7 @@ class ComplaintWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($admin)
-            ->patchJson("/admin/complaints-disputes/{$complaint->id}/status", [
+            ->patchJson("/api/v1/admin/complaints/{$complaint->id}/status", [
                 'status' => 'in-progress',
             ])
             ->assertOk()

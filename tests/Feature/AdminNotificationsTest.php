@@ -41,8 +41,8 @@ class AdminNotificationsTest extends TestCase
         $notification = $admin->unreadNotifications()->firstOrFail();
 
         $this->actingAs($admin)
-            ->patch(route('admin.notifications.read', $notification->id))
-            ->assertRedirect();
+            ->patchJson("/api/v1/admin/notifications/{$notification->id}/read")
+            ->assertOk();
 
         $this->assertDatabaseHas('notifications', [
             'id' => $notification->id,
@@ -91,7 +91,7 @@ class AdminNotificationsTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $this->actingAs($admin);
 
-        $this->post(route('admin.account.notifications.update'), [
+        $this->postJson('/api/v1/admin/account/notifications', [
             'preferences' => [
                 'seller_compliance' => '0',
                 'registrations' => '1',
@@ -102,12 +102,12 @@ class AdminNotificationsTest extends TestCase
                 'platform' => '1',
                 'reports' => '1',
             ],
-        ])->assertRedirect(route('admin.account').'#notifications');
+        ])->assertOk();
 
         $admin->notify(new SellerCategoryChangeRequested(42, 'North Store'));
         $this->assertDatabaseCount('notifications', 0);
 
-        $this->post(route('admin.account.notifications.update'), [
+        $this->postJson('/api/v1/admin/account/notifications', [
             'preferences' => [
                 'seller_compliance' => '1',
                 'registrations' => '1',
@@ -118,7 +118,7 @@ class AdminNotificationsTest extends TestCase
                 'platform' => '1',
                 'reports' => '1',
             ],
-        ])->assertRedirect(route('admin.account').'#notifications');
+        ])->assertOk();
 
         $admin->notify(new SellerCategoryChangeRequested(43, 'South Store'));
         $this->assertDatabaseCount('notifications', 1);

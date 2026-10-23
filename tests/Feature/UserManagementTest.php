@@ -41,7 +41,7 @@ class UserManagementTest extends TestCase
             'registration_status' => 'active',
         ]);
 
-        $response = $this->actingAs($admin)->getJson(route('admin.user.management.list', [
+        $response = $this->actingAs($admin)        ->getJson('/api/v1/admin/users?'.http_build_query([
             'search' => 'maria',
             'type' => 'buyer',
             'status' => 'active',
@@ -55,7 +55,7 @@ class UserManagementTest extends TestCase
             ->assertJsonPath('counts.total', 3);
 
         $this->actingAs($admin)
-            ->getJson(route('admin.user.management.show', $buyer))
+            ->getJson("/api/v1/admin/users/{$buyer->id}")
             ->assertOk()
             ->assertJsonPath('details.first_name', $buyer->first_name);
     }
@@ -71,7 +71,7 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $user), [
+            ->patchJson("/api/v1/admin/users/{$user->id}/status", [
                 'status' => 'suspended',
                 'reason' => 'Fraudulent activity',
                 'duration' => 7,
@@ -89,7 +89,7 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $user), [
+            ->patchJson("/api/v1/admin/users/{$user->id}/status", [
                 'status' => 'deactivated',
                 'reason' => 'Request by the user',
             ])
@@ -102,7 +102,7 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $user), ['status' => 'active'])
+            ->patchJson("/api/v1/admin/users/{$user->id}/status", ['status' => 'active'])
             ->assertOk();
 
         $this->assertDatabaseHas('users', [
@@ -129,14 +129,14 @@ class UserManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson(route('admin.user.management.list', ['type' => 'logistics']))
+            ->getJson('/api/v1/admin/users?type=logistics')
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.type', 'logistics')
             ->assertJsonPath('data.0.id', $logistics->id);
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $logistics), [
+            ->patchJson("/api/v1/admin/users/{$logistics->id}/status", [
                 'status' => 'suspended',
                 'reason' => 'Fraudulent activity',
                 'duration' => 5,
@@ -144,14 +144,14 @@ class UserManagementTest extends TestCase
             ->assertOk();
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $logistics), [
+            ->patchJson("/api/v1/admin/users/{$logistics->id}/status", [
                 'status' => 'deactivated',
                 'reason' => 'Request by the user',
             ])
             ->assertOk();
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $logistics), [
+            ->patchJson("/api/v1/admin/users/{$logistics->id}/status", [
                 'status' => 'active',
             ])
             ->assertOk();
@@ -170,12 +170,12 @@ class UserManagementTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_BUYER]);
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $user), ['status' => 'suspended'])
+            ->patchJson("/api/v1/admin/users/{$user->id}/status", ['status' => 'suspended'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['reason', 'duration']);
 
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $user), [
+            ->patchJson("/api/v1/admin/users/{$user->id}/status", [
                 'status' => 'suspended',
                 'reason' => 'Request by the user',
                 'duration' => 3,
@@ -184,7 +184,7 @@ class UserManagementTest extends TestCase
 
         $adminTarget = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $this->actingAs($admin)
-            ->patchJson(route('admin.user.management.status', $adminTarget), ['status' => 'active'])
+            ->patchJson("/api/v1/admin/users/{$adminTarget->id}/status", ['status' => 'active'])
             ->assertNotFound();
     }
 }
