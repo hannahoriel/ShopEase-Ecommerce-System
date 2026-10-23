@@ -2323,5 +2323,12 @@ Route::view('/logistics/dashboard', 'pages.logistics.dashboard')
 Route::view('/buyer/view-order', 'pages.buyer.view-order')
     ->name('buyer.view-order');
 
-Route::view('/seller/returns-refunds', 'pages.seller.returns-refunds')
-    ->name('seller.returns.index');
+// Seller-only pages (the views must exist under resources/views/pages/seller/).
+Route::middleware(['auth', 'role:seller'])->group(function () {
+    Route::view('/seller/returns-refunds', 'pages.seller.returns-refunds')
+        ->name('seller.returns.index');
+
+    Route::view('/seller/vouchers-promotions', 'pages.seller.vouchers-promotions')
+        ->name('seller.vouchers.index');
+});
+
