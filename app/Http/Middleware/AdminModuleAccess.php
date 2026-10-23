@@ -6,6 +6,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class AdminModuleAccess
@@ -28,6 +29,8 @@ class AdminModuleAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+        $path = $request->path();
+        $module = $this->moduleForPath($path);
 
         if ($user?->role === User::ROLE_ADMIN) {
             $profile = DB::table('admin_account_profiles')
@@ -36,21 +39,33 @@ class AdminModuleAccess
 
             abort_if($profile && ! $profile->is_enabled, 403, 'This administrator account is disabled.');
 
-            if ($profile?->permissions !== null) {
-                $permission = $this->moduleForPath($request->path());
-                $permissions = json_decode($profile->permissions, true);
+            $permissions = $profile?->permissions === null
+                ? null
+                : json_decode($profile->permissions, true);
+            $isFullAdmin = $profile === null || $profile->permissions === null;
+            $canManageModule = $isFullAdmin
+                || ($module !== null && is_array($permissions) && in_array($module, $permissions, true));
 
-                abort_unless(
-                    $permission !== null
-                    && is_array($permissions)
-                    && in_array($permission, $permissions, true),
-                    403,
-                    'You do not have access to this admin module.'
-                );
+            $request->attributes->set('adminModuleAccess', [
+                'module' => $module,
+                'canManage' => $canManageModule,
+                'readOnly' => ! $canManageModule,
+            ]);
+
+            if (! $isFullAdmin && $this->isAdminPath($path) && ! $request->isMethodSafe()) {
+                abort_unless($canManageModule, 403, 'You do not have permission to edit this admin module.');
             }
         }
 
         return $next($request);
+    }
+
+    private function isAdminPath(string $path): bool
+    {
+        return $path === 'admin'
+            || Str::startsWith($path, 'admin/')
+            || $path === 'api/v1/admin'
+            || Str::startsWith($path, 'api/v1/admin/');
     }
 
     private function moduleForPath(string $path): ?string

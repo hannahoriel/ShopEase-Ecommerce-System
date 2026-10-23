@@ -83,7 +83,20 @@ class AdminManagementTest extends TestCase
 
         $this->actingAs($limitedAdmin)
             ->getJson('/api/v1/admin/registrations')
+            ->assertOk();
+
+        $this->actingAs($limitedAdmin)
+            ->get('/admin/registrations')
+            ->assertOk()
+            ->assertSee('Read-only access');
+
+        $this->actingAs($limitedAdmin)
+            ->postJson('/api/v1/admin/account/admins', [])
             ->assertForbidden();
+
+        $this->actingAs($limitedAdmin)
+            ->getJson('/api/v1/admin/account/admins')
+            ->assertOk();
 
         $this->actingAs($fullAdmin)
             ->patchJson("/api/v1/admin/account/admins/{$limitedAdmin->id}", [
@@ -93,6 +106,46 @@ class AdminManagementTest extends TestCase
 
         $this->actingAs($limitedAdmin)
             ->getJson('/api/v1/admin/dashboard')
+            ->assertForbidden();
+    }
+
+    public function test_restricted_admin_can_edit_assigned_module_but_not_other_modules(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+
+        $restrictedAdmin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        DB::table('admin_account_profiles')->insert([
+            'user_id' => $restrictedAdmin->id,
+            'permissions' => json_encode(['User Management']),
+            'message_permissions' => json_encode([]),
+            'is_enabled' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $buyer = User::factory()->create([
+            'role' => User::ROLE_BUYER,
+            'registration_status' => 'active',
+        ]);
+
+        $this->actingAs($restrictedAdmin)
+            ->getJson('/api/v1/admin/complaints')
+            ->assertOk();
+
+        $this->actingAs($restrictedAdmin)
+            ->patchJson("/api/v1/admin/users/{$buyer->id}/status", [
+                'status' => 'suspended',
+                'reason' => 'Violation of platform policies',
+                'duration' => 7,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $buyer->id,
+            'registration_status' => 'suspended',
+        ]);
+
+        $this->actingAs($restrictedAdmin)
+            ->postJson('/api/v1/admin/platform-settings/announcements', [])
             ->assertForbidden();
     }
 

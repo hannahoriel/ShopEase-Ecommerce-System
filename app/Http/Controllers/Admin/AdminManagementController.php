@@ -32,7 +32,7 @@ class AdminManagementController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $this->requireManager($request);
+        abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
 
         $admins = User::query()
             ->where('role', User::ROLE_ADMIN)

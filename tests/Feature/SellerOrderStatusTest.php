@@ -93,6 +93,90 @@ class SellerOrderStatusTest extends TestCase
         $this->assertSame('pending', $newOrder->fresh()->status);
     }
 
+    public function test_buyer_cancellation_clears_pickup_schedule_and_is_attributed_to_buyer(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-16 12:00:00'));
+        [$sellerUser, $seller] = $this->seller('Seller One');
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $order = $this->order($seller, $buyer, 'to_ship', 559);
+        $order->update([
+            'pickup_date' => '2026-09-18',
+            'pickup_time' => '14:30',
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", [
+                'reason' => 'changed_mind',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertNull($order->fresh()->pickup_date);
+        $this->assertNull($order->fresh()->pickup_time);
+
+        $this->actingAs($sellerUser)
+            ->getJson('/api/v1/seller/order-status')
+            ->assertOk()
+            ->assertJsonPath('data.0.cancellation_actor', 'buyer')
+            ->assertJsonPath('data.0.pickup_date', null)
+            ->assertJsonPath('data.0.pickup_time', null);
+    }
+
+    public function test_seller_approval_of_buyer_cancellation_clears_pickup_schedule(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-16 18:00:00'));
+        [$sellerUser, $seller] = $this->seller('Seller One');
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $order = $this->order($seller, $buyer, 'to_ship', 559);
+        $order->update([
+            'pickup_date' => '2026-09-18',
+            'pickup_time' => '14:30',
+        ]);
+        $order->forceFill(['created_at' => now()->subHours(6)])->save();
+
+        $requestId = $this->actingAs($buyer)
+            ->postJson("/api/v1/buyer/orders/{$order->id}/cancel", [
+                'reason' => 'changed_mind',
+            ])
+            ->assertStatus(202)
+            ->json('data.cancellation_request.id');
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$order->id}/cancellation-requests/{$requestId}/approve")
+            ->assertOk()
+            ->assertJsonPath('status', 'cancelled')
+            ->assertJsonPath('cancellation_actor', 'buyer')
+            ->assertJsonPath('pickup_date', null)
+            ->assertJsonPath('pickup_time', null);
+
+        $this->assertNull($order->fresh()->pickup_date);
+        $this->assertNull($order->fresh()->pickup_time);
+    }
+
+    public function test_seller_cancellation_clears_pickup_schedule_and_is_attributed_to_seller(): void
+    {
+        [$sellerUser, $seller] = $this->seller('Seller One');
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $order = $this->order($seller, $buyer, 'to_ship', 559);
+        $order->update([
+            'pickup_date' => '2026-09-18',
+            'pickup_time' => '14:30',
+        ]);
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$order->id}/cancel-shipment", [
+                'reason' => 'Unable to fulfill the order',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'cancelled')
+            ->assertJsonPath('cancellation_actor', 'seller')
+            ->assertJsonPath('pickup_date', null)
+            ->assertJsonPath('pickup_time', null);
+
+        $this->assertNull($order->fresh()->pickup_date);
+        $this->assertNull($order->fresh()->pickup_time);
+    }
+
     public function test_seller_can_print_a_waybill_and_qr_scans_record_location_and_status(): void
     {
         [$sellerUser, $seller] = $this->seller('Seller One');

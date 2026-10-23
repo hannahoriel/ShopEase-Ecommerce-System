@@ -345,7 +345,11 @@ class OrderController extends Controller
         $this->inventory->restoreOrder($order);
 
         $previousStatus = $order->status;
-        $order->update(['status' => 'cancelled']);
+        $order->update([
+            'status' => 'cancelled',
+            'pickup_date' => null,
+            'pickup_time' => null,
+        ]);
 
         $reason = $cancellationRequest->buyer_reason === 'other'
             ? 'Other: '.$cancellationRequest->buyer_other_reason
