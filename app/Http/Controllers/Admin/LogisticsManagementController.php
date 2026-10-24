@@ -53,7 +53,7 @@ class LogisticsManagementController extends Controller
 
         return response()->json([
             'data' => $logistics->branches()
-                ->withCount('riders')
+                ->withCount($this->branchCounts())
                 ->orderBy('name')
                 ->get()
                 ->map(fn (LogisticsBranch $branch): array => $this->serializeBranch($branch)),
@@ -70,7 +70,7 @@ class LogisticsManagementController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
         ]);
 
-        $branch = $logistics->branches()->create($data)->loadCount('riders');
+        $branch = $logistics->branches()->create($data)->loadCount($this->branchCounts());
 
         return response()->json(['data' => $this->serializeBranch($branch)], 201);
     }
@@ -86,12 +86,20 @@ class LogisticsManagementController extends Controller
         $branch->update($data);
 
         return response()->json([
-            'data' => $this->serializeBranch($branch->loadCount('riders')),
+            'data' => $this->serializeBranch($branch->loadCount($this->branchCounts())),
         ]);
     }
 
     public function destroyBranch(LogisticsBranch $branch): JsonResponse
     {
+        abort_unless(
+            ! $branch->riders()->whereHas(
+                'shipments.order',
+                fn ($query) => $query->whereIn('status', ['to_ship', 'in_transit', 'out_for_delivery'])
+            )->exists(),
+            422,
+            'A branch with active rider deliveries cannot be deleted.'
+        );
         $branch->delete();
 
         return response()->json(['message' => 'Logistics branch deleted.']);
@@ -109,7 +117,11 @@ class LogisticsManagementController extends Controller
 
         $logistics = Logistics::query()
             ->where('registration_status', 'active')
-            ->with(['user:id,name,email,created_at,profile_photo_path', 'branches.riders'])
+            ->with([
+                'user:id,name,email,created_at,profile_photo_path',
+                'branches' => fn ($query) => $query->withCount($this->branchCounts()),
+                'branches.riders',
+            ])
             ->orderBy('business_name')
             ->get();
 
@@ -175,6 +187,7 @@ class LogisticsManagementController extends Controller
             'company' => $logistics->business_name ?: $logistics->user?->name ?: 'Logistics Company',
             'branches' => $branches->count(),
             'riders' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->riders->count()),
+            'active_deliveries' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->active_deliveries_count),
             'contact_number' => $logistics->contact_no ?: '—',
             'company_email' => $logistics->user?->email ?: '—',
             'office_address' => $this->address($logistics),
@@ -196,6 +209,7 @@ class LogisticsManagementController extends Controller
                 'contact_person' => $branch->contact_person,
                 'phone' => $branch->phone,
                 'riders' => $branch->riders->count(),
+                'active_deliveries' => $branch->active_deliveries_count,
             ])->values(),
         ];
     }
@@ -235,6 +249,18 @@ class LogisticsManagementController extends Controller
             'contact_person' => $branch->contact_person,
             'phone' => $branch->phone,
             'riders' => $branch->riders_count,
+            'active_deliveries' => $branch->active_deliveries_count,
+        ];
+    }
+
+    private function branchCounts(): array
+    {
+        return [
+            'riders',
+            'riders as active_deliveries_count' => fn ($query) => $query->whereHas(
+                'shipments.order',
+                fn ($orders) => $orders->whereIn('status', ['to_ship', 'in_transit', 'out_for_delivery'])
+            ),
         ];
     }
 }

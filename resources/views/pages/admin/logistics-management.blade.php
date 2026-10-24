@@ -677,6 +677,7 @@
                             <th>Company Name</th>
                             <th>Number of Branches</th>
                             <th>Number of Riders</th>
+                            <th>Active Deliveries</th>
                         </tr>
                     </thead>
 
@@ -1741,6 +1742,7 @@
                                         <th>Contact Person</th>
                                         <th>Phone Number</th>
                                         <th>Riders</th>
+                                        <th>Active Deliveries</th>
                                     </tr>
                                 </thead>
 

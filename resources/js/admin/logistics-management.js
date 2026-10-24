@@ -1682,7 +1682,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     company.company,
                     company.company_email,
                     company.branches,
-                    company.riders
+                    company.riders,
+                    company.active_deliveries
                 ].join(' ')
             ).includes(query)
         );
@@ -1742,6 +1743,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>
                             <span class="logistics-number">
                                 ${escapeHtml(company.riders)}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="logistics-number">
+                                ${escapeHtml(company.active_deliveries ?? 0)}
                             </span>
                         </td>
                     </tr>
@@ -2072,6 +2078,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${escapeHtml(branch.contact_person || '—')}</td>
                     <td>${escapeHtml(branch.phone || '—')}</td>
                     <td>${escapeHtml(branch.riders ?? '—')}</td>
+                    <td>${escapeHtml(branch.active_deliveries ?? 0)}</td>
                 </tr>
             `).join('');
     }

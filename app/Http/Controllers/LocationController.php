@@ -18,6 +18,65 @@ class LocationController extends Controller
         return view('location');
     }
 
+    public function regions(): JsonResponse
+    {
+        return response()->json($this->fetchPsgcCached('regions', '/regions'));
+    }
+
+    public function regionProvinces(string $code): JsonResponse
+    {
+        return response()->json(
+            $this->fetchPsgcCached("regions:{$code}:provinces", "/regions/{$code}/provinces")
+        );
+    }
+
+    public function regionDistricts(string $code): JsonResponse
+    {
+        return response()->json(
+            $this->fetchPsgcCached("regions:{$code}:districts", "/regions/{$code}/districts")
+        );
+    }
+
+    public function regionCities(string $code): JsonResponse
+    {
+        return response()->json(
+            $this->fetchPsgcCached(
+                "regions:{$code}:cities",
+                "/v2/regions/{$code}/cities-municipalities"
+            )
+        );
+    }
+
+    public function provinceCities(string $code): JsonResponse
+    {
+        return response()->json(
+            $this->fetchPsgcCached(
+                "provinces:{$code}:cities",
+                "/provinces/{$code}/cities-municipalities"
+            )
+        );
+    }
+
+    public function districtCities(string $code): JsonResponse
+    {
+        return response()->json(
+            $this->fetchPsgcCached(
+                "districts:{$code}:cities",
+                "/districts/{$code}/cities-municipalities"
+            )
+        );
+    }
+
+    public function cityBarangays(string $code): JsonResponse
+    {
+        return response()->json(
+            $this->fetchPsgcCached(
+                "cities:{$code}:barangays",
+                "/cities-municipalities/{$code}/barangays"
+            )
+        );
+    }
+
     public function provinces(): JsonResponse
     {
         $provinces = Cache::remember('locations:provinces', config('locations.cache_ttl'), function () {
@@ -133,5 +192,18 @@ class LocationController extends Controller
 
             return null;
         }
+    }
+
+    private function fetchPsgcCached(string $key, string $path): array
+    {
+        return Cache::remember("locations:psgc:{$key}", config('locations.cache_ttl'), function () use ($path): array {
+            $url = rtrim(config('locations.base_urls.psgc'), '/').$path;
+            $data = $this->getJson($url);
+            if ($data === null) {
+                throw new \RuntimeException("The PSGC location service failed for [{$path}].");
+            }
+
+            return collect($data)->sortBy('name')->values()->all();
+        });
     }
 }

@@ -630,6 +630,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             const placedAt = order.created_at
                                 ? new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(order.created_at))
                                 : '';
+                            const deliveryDetails = order.shipment
+                                ? `<span>${escapeHtml(order.shipment.estimated_delivery || 'Delivery in progress')}</span>${order.shipment.tracking_number ? `<small>Tracking ${escapeHtml(order.shipment.tracking_number)}</small>` : ''}`
+                                : '—';
                             const moreItems = Math.max(0, order.items.length - 1);
                             return `
                                 <article class="purchase-shop-card" data-purchase-row data-view-order-id="${escapeHtml(order.order_number)}" role="link" tabindex="0" aria-label="View order ${escapeHtml(order.order_number)}" data-status="${statusClass}" data-search="${escapeHtml(`${order.order_number} ${order.shop} ${order.items.map(item => item.product_name).join(' ')}`.toLowerCase())}">
@@ -668,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                         <div class="purchase-quantity">${firstItem.quantity || 0}</div>
                                         <div class="purchase-total">${money(order.total)}</div>
-                                        <div class="purchase-estimated-delivery">—</div>
+                                        <div class="purchase-estimated-delivery">${deliveryDetails}</div>
                                         <div class="purchase-status-cell"><span class="purchase-status purchase-status--${statusClass}">${escapeHtml(statusLabel)}</span></div>
                                     </div>
                                     <div class="purchase-order-qr">
