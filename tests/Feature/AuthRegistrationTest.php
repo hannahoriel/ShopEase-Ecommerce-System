@@ -116,6 +116,9 @@ class AuthRegistrationTest extends TestCase
             'house_number' => '8',
             'vehicle' => 'motorcycle',
             'plate_number' => 'ABC 1234',
+            'courier_company' => 'J&T Express',
+            'logistics_operation' => 'Deliver parcels (Rider Delivery)',
+            'municipal_hub' => 'Rider Dispatch Depot',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
         ]);
@@ -130,8 +133,71 @@ class AuthRegistrationTest extends TestCase
             'user_id' => User::where('email', 'rider.reg@example.com')->value('id'),
             'vehicle' => 'motorcycle',
             'plate_number' => 'ABC 1234',
+            'courier_company' => 'J&T Express',
+            'logistics_operation' => 'Deliver parcels (Rider Delivery)',
+            'municipal_hub' => 'Rider Dispatch Depot',
             'registration_status' => 'pending',
         ]);
+    }
+
+    public function test_rider_mobile_registration_endpoint_accepts_only_rider_role(): void
+    {
+        $response = $this->postJson('/api/v1/rider/register', [
+            'role' => User::ROLE_RIDER,
+            'last_name' => 'Santos',
+            'first_name' => 'Rina',
+            'sex' => 'female',
+            'email' => 'mobile.rider@example.com',
+            'contact_no' => '09171234567',
+            'birthday' => '1995-04-12',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'street' => 'Main Street',
+            'house_number' => '12',
+            'vehicle' => 'motorcycle',
+            'plate_number' => 'DEF 5678',
+            'courier_company' => 'Flash Express',
+            'logistics_operation' => 'Deliver parcels (Rider Delivery)',
+            'municipal_hub' => 'Rider Dispatch Depot',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'pending')
+            ->assertJsonStructure(['application_id', 'status_token']);
+
+        $statusToken = $response->json('status_token');
+        $registration = \App\Models\Admin\Registration::query()
+            ->where('email', 'mobile.rider@example.com')
+            ->firstOrFail();
+        $this->assertSame(hash('sha256', $statusToken), $registration->status_token_hash);
+        $this->getJson("/api/v1/rider/registration-status/{$statusToken}")
+            ->assertOk()
+            ->assertJsonPath('status', 'pending')
+            ->assertJsonPath('application_id', $response->json('application_id'));
+
+        $registration->update([
+            'status' => 'rejected',
+            'rejection_reason' => 'Please provide a clearer license photo.',
+            'reviewed_at' => now(),
+        ]);
+        $this->getJson("/api/v1/rider/registration-status/{$statusToken}")
+            ->assertOk()
+            ->assertJsonPath('status', 'rejected')
+            ->assertJsonPath('rejection_reason', 'Please provide a clearer license photo.');
+        $this->getJson('/api/v1/rider/registration-status/not-a-valid-token')
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('riders', [
+            'courier_company' => 'Flash Express',
+            'logistics_operation' => 'Deliver parcels (Rider Delivery)',
+            'municipal_hub' => 'Rider Dispatch Depot',
+        ]);
+
+        $this->postJson('/api/v1/rider/register', ['role' => User::ROLE_BUYER])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('role');
     }
 
     public function test_logistics_registration_saves_company_name_for_admin_management(): void

@@ -37,6 +37,7 @@ class Registration extends Model
         'reviewed_by',
         'reviewed_at',
         'user_id',
+        'status_token_hash',
     ];
 
     protected $hidden = [

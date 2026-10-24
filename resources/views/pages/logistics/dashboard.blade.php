@@ -49,6 +49,8 @@
         <p class="lg-nav-category">OVERVIEW</p>
         <a class="lg-nav-link active" href="{{ url('/logistics/dashboard') }}" title="Dashboard"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/dashboard.png') }}" alt=""><span>Dashboard</span></a>
         <p class="lg-nav-category">NETWORK MANAGEMENT</p>
+        <a class="lg-nav-link" href="{{ route('logistics.deliveries') }}" title="Manage Deliveries"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/logistic-management.png') }}" alt=""><span>Deliveries & Riders</span></a>
+        <a class="lg-nav-link" href="{{ route('logistics.rider-operations') }}" title="Rider Finance"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/commission.png') }}" alt=""><span>Rider Finance Review</span></a>
         <button class="lg-nav-link" type="button" data-modal="hub" title="Branches and Hubs"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/logistic-management.png') }}" alt=""><span>Branches & Hubs</span></button>
         <a class="lg-nav-link" href="#lgScanForm" title="Parcel Scanner"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/registrations.png') }}" alt=""><span>Parcel Scanner</span></a>
         <a class="lg-nav-link" href="#lgActivityRows" title="Parcel Tracking"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/reports.png') }}" alt=""><span>Parcel Tracking</span></a>

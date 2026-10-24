@@ -161,6 +161,7 @@ class OrderStatusController extends Controller
                 'pickup_date' => null,
                 'pickup_time' => null,
             ]);
+            $lockedOrder->shipment()->update(['rider_id' => null]);
             OrderStatusHistory::create([
                 'order_id' => $lockedOrder->id,
                 'from_status' => 'to_ship',
@@ -197,6 +198,7 @@ class OrderStatusController extends Controller
                 'pickup_date' => null,
                 'pickup_time' => null,
             ]);
+            $lockedOrder->shipment()->update(['rider_id' => null]);
             $lockedRequest->update([
                 'status' => 'approved',
                 'decided_by' => $request->user()->id,
@@ -332,6 +334,12 @@ class OrderStatusController extends Controller
 
         $allowedStatuses = self::TRANSITIONS[$order->status] ?? [];
         abort_unless(in_array($newStatus, $allowedStatuses, true), 422, "Order cannot move from {$order->status} to {$newStatus}.");
+        abort_unless(
+            ! in_array($newStatus, ['in_transit', 'out_for_delivery', 'delivered'], true)
+                || ! $order->shipment()->whereNotNull('rider_id')->exists(),
+            422,
+            'This delivery is assigned to a rider and must be updated by that rider.'
+        );
 
         if ($newStatus === 'cancelled') {
             $this->inventory->restoreOrder($order);
@@ -341,6 +349,22 @@ class OrderStatusController extends Controller
         $order->update($newStatus === 'cancelled'
             ? ['status' => $newStatus, 'pickup_date' => null, 'pickup_time' => null]
             : ['status' => $newStatus]);
+
+        if ($newStatus === 'cancelled') {
+            $order->shipment()->update(['rider_id' => null]);
+        }
+
+        if ($newStatus === 'to_ship') {
+            Shipment::firstOrCreate(
+                ['order_id' => $order->id],
+                [
+                    'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
+                    'courier' => 'Ease Express',
+                    'estimated_delivery' => $order->pickup_date?->copy()->addDays(3)
+                        ?? now()->addDays(3)->toDateString(),
+                ]
+            );
+        }
 
         OrderStatusHistory::create([
             'order_id' => $order->id,

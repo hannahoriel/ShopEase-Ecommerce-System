@@ -29,7 +29,13 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('buyer_id', $request->user()->id)
-            ->with(['seller:id,store_name', 'items', 'complaints', 'latestCancellationRequest'])
+            ->with([
+                'seller:id,store_name',
+                'items',
+                'complaints',
+                'latestCancellationRequest',
+                'shipment.rider',
+            ])
             ->latest()
             ->paginate(50);
         $statusCounts = Order::query()
@@ -50,6 +56,16 @@ class OrderController extends Controller
                     && $order->latestCancellationRequest?->status !== 'pending',
                 'cancellation_request' => $order->latestCancellationRequest,
                 'created_at' => $order->created_at?->toISOString(),
+                'shipment' => $order->shipment ? [
+                    'tracking_number' => $order->shipment->tracking_number,
+                    'courier' => $order->shipment->courier,
+                    'estimated_delivery' => $order->shipment->estimated_delivery?->toDateString(),
+                    'current_location' => $order->shipment->current_location,
+                    'rider' => $order->shipment->rider ? [
+                        'name' => trim($order->shipment->rider->first_name.' '.$order->shipment->rider->last_name),
+                        'contact_no' => $order->shipment->rider->contact_no,
+                    ] : null,
+                ] : null,
                 'complaint' => $order->complaints->first() ? [
                     'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
                     'type' => $order->complaints->first()->type,
@@ -350,6 +366,7 @@ class OrderController extends Controller
             'pickup_date' => null,
             'pickup_time' => null,
         ]);
+        $order->shipment()->update(['rider_id' => null]);
 
         $reason = $cancellationRequest->buyer_reason === 'other'
             ? 'Other: '.$cancellationRequest->buyer_other_reason

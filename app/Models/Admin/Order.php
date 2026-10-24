@@ -2,6 +2,7 @@
 
 namespace App\Models\Admin;
 
+use App\Models\Rider\DeliveryProof;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -126,6 +127,11 @@ class Order extends Model
     public function shipment(): HasOne
     {
         return $this->hasOne(Shipment::class);
+    }
+
+    public function deliveryProofs(): HasMany
+    {
+        return $this->hasMany(DeliveryProof::class);
     }
 
     public function scopeCompleted($query)

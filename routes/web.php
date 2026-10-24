@@ -214,6 +214,10 @@ foreach ([
                 ])->get();
             }
 
+            if ($dashboard === 'rider') {
+                $viewData['apiToken'] = Auth::user()->createToken('rider-dashboard')->plainTextToken;
+            }
+
             return view("pages.$dashboard.dashboard", $viewData);
 
         }
@@ -222,6 +226,22 @@ foreach ([
         ->name("$dashboard.dashboard");
 
 }
+
+Route::get('/logistics/deliveries', function () {
+    abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
+
+    return view('pages.logistics.deliveries', [
+        'apiToken' => Auth::user()->createToken('logistics-deliveries')->plainTextToken,
+    ]);
+})->middleware('auth')->name('logistics.deliveries');
+
+Route::get('/logistics/rider-operations', function () {
+    abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
+
+    return view('pages.logistics.rider-operations', [
+        'apiToken' => Auth::user()->createToken('logistics-rider-operations')->plainTextToken,
+    ]);
+})->middleware('auth')->name('logistics.rider-operations');
 
 Route::get('/buyer/dashboard', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);

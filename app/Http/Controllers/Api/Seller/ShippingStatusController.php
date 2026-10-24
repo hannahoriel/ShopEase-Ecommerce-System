@@ -58,6 +58,11 @@ class ShippingStatusController extends Controller
     public function update(Request $request, Order $order): JsonResponse
     {
         $order = $this->ownedOrder($request->user(), $order);
+        abort_unless(
+            ! $order->shipment()->whereNotNull('rider_id')->exists(),
+            422,
+            'This delivery is assigned to a rider and can no longer be updated by the seller.'
+        );
         $validated = $request->validate([
             'status' => ['required', Rule::in(array_merge(...array_values(self::TRANSITIONS)))],
             'courier' => ['nullable', 'string', 'max:100'],

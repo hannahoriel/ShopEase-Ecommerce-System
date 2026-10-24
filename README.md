@@ -39,6 +39,41 @@ Admin data and actions are available under `/api/v1/admin`. Requests require Lar
 | Admin account | `GET` and `PUT /account`; `POST /account/notifications` and password-security actions under `/account/security` |
 | Admin account management | Full administrators can `GET /account/admins`, `POST /account/admins`, and `PATCH /account/admins/{id}` to manage enabled status, module access, and credentials. Restricted administrator permissions are enforced for admin routes; ID photos are served through an authenticated endpoint. |
 
+## Rider and logistics delivery API
+
+The Flutter rider app and the web logistics portal use the same Laravel database and Sanctum API. Run `php artisan migrate` after updating the backend to create rider assignment, delivery-proof, attendance, recipient, support-ticket, calculator-history, Verify Order archive, order-message, COD, remittance, earnings, and delivery-action records.
+
+| Role | Endpoint | Purpose |
+| --- | --- | --- |
+| Rider (public) | `POST /api/v1/rider/register` | Submit rider registration data and identity/vehicle documents; return a persistent application reference and review status. |
+| Public | `GET /api/v1/locations/regions`, region province/district/city routes, province/district city routes, and city barangay routes under `/api/v1/locations` | Proxy and cache PSGC registration-picker data through Laravel instead of calling PSGC directly from Flutter. |
+| Logistics | `GET /api/v1/logistics/branches`, `GET /riders` | List the authenticated company’s branches and eligible approved riders. |
+| Logistics | `PATCH /api/v1/logistics/riders/{rider}/branch` | Add an eligible rider to one of the company’s branches or remove them when they have no active deliveries. |
+| Logistics | `GET /api/v1/logistics/available-deliveries` | List orders awaiting pickup without exposing buyer delivery details before assignment. |
+| Logistics | `POST /api/v1/logistics/deliveries/{order}/assign` | Assign an order awaiting pickup to an approved rider in the company’s branch. |
+| Logistics | `GET /api/v1/logistics/deliveries` | Track the company’s assigned deliveries. |
+| Rider | `GET /api/v1/rider/deliveries`, `GET /deliveries/{order}` | Read deliveries assigned to the signed-in rider. |
+| Rider | `POST /api/v1/rider/deliveries/{order}/proof` | Submit required pickup or delivery proof; pickup and completion transitions are proof-gated. |
+| Rider | `PATCH /api/v1/rider/deliveries/{order}/status` | Advance only the supported no-proof transition (`in_transit` → `out_for_delivery`). |
+| Rider | `GET/PATCH /api/v1/rider/profile`, `GET/POST /api/v1/rider/attendance` | Read/update profile and clock in/out with a photo. |
+| Rider | `GET/POST /api/v1/rider/recipients`, `GET/POST /api/v1/rider/support-tickets` | Manage saved recipients and submit support tickets. |
+| Rider | `GET /api/v1/rider/finance`, `GET /api/v1/rider/earnings`, `POST /api/v1/rider/remittances` | View posted earnings and COD balances and submit remittances for review. |
+| Rider | `GET /api/v1/rider/star-courier?period=month&year=2026&month=10` | Return completed delivery counts and explicitly posted earnings for the selected month or year. Star points/tiers are not fabricated or calculated. |
+| Rider | `GET/POST/DELETE /api/v1/rider/calculations`, `GET /api/v1/rider/verify-orders`, and verify-order archive/restore/dismiss actions | Persist calculator history and rider-specific Verify Order archive state. |
+| Rider | `GET /api/v1/rider/pickup-tasks`, pickup proof routes, and `GET /api/v1/rider/pickup-delivery-records` | Read assigned pickup tasks, submit pickup proof, and view pickup/delivery records. |
+| Rider | `GET/POST /api/v1/rider/deliveries/{order}/messages` | Persist rider messages associated with an assigned order. |
+| Logistics | `GET /api/v1/logistics/rider-remittances`, `PATCH /rider-remittances/{id}/review` | Review pending rider remittances as verified or rejected. |
+| Logistics | `POST /api/v1/logistics/rider-earnings` | Post an explicit rider earnings ledger entry. |
+| Logistics | `GET /api/v1/logistics/rider-support-tickets`, `PATCH /rider-support-tickets/{id}/review` | View and respond to support tickets submitted by riders in the company’s network. |
+| Rider and Logistics | `GET/POST /api/v1/rider/support-tickets/{id}/messages`, `POST /api/v1/logistics/rider-support-tickets/{id}/messages` | Persist asynchronous rider support messages; Logistics replies are shared with the rider and trigger a notification. |
+| Logistics | `GET /api/v1/logistics/rider-delivery-actions`, `PATCH /rider-delivery-actions/{id}/review` | Review rider-submitted delivery issue, reschedule, and return requests. |
+
+Except for public rider registration and location lookup, endpoints require a Sanctum-authenticated user with the matching role. Rider status changes update the order, shipment timestamps/location, status history, and buyer notification in one transaction. COD is recorded only after a COD delivery is completed. Remittances remain pending until Logistics reviews them, and earnings appear only after an explicit ledger entry is posted. Buyer order data includes tracking details; sellers continue to see the same order status, while seller status changes are rejected after a rider has been assigned. Logistics staff can assign deliveries and review remittances at `/logistics/deliveries` and `/logistics/rider-operations`; riders can access the web delivery list at `/rider/dashboard`.
+
+Rider controllers are grouped under `app/Http/Controllers/Api/Rider` by the mobile app’s `Register`, `Homepage` (including `Attendance`, `Calculator`, `Contact`, `DeliveryTask`, `MoneyReport`, `Notifications`, `PickupTask`, `PickupDeliveryRecord`, `StarCourier`, and `VerifyOrder`), `Content`, and `User` sections. About, Knowledgebase, Star Courier Guidelines, and navigation configuration are provided by the rider content endpoint; Live Support is an asynchronous, persisted ticket conversation—not a real-time chat service. Camera, map-arrival, and confirmation screens are workflow steps whose backend actions are performed by their parent attendance or delivery flows.
+
+For local Flutter testing, pass the backend API URL with `--dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1` when using the Android emulator. For a physical device, use the development computer’s reachable LAN address instead and start Laravel with `php artisan serve --host=0.0.0.0`. The app keeps its production/emulator defaults when the override is omitted.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

@@ -90,6 +90,9 @@ class RegistrationService
         if ($role === User::ROLE_RIDER) {
             $rules['vehicle'] = ['required', 'string', 'max:255'];
             $rules['plate_number'] = ['required', 'string', 'max:50'];
+            $rules['courier_company'] = ['nullable', 'string', 'max:100'];
+            $rules['logistics_operation'] = ['nullable', 'string', 'max:100'];
+            $rules['municipal_hub'] = ['nullable', 'string', 'max:150'];
             $rules['upload_or_cr'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
         }
 
@@ -130,6 +133,9 @@ class RegistrationService
         if ($role === User::ROLE_RIDER) {
             $profile['vehicle'] = $validated['vehicle'];
             $profile['plate_number'] = $validated['plate_number'];
+            $profile['courier_company'] = $validated['courier_company'] ?? null;
+            $profile['logistics_operation'] = $validated['logistics_operation'] ?? null;
+            $profile['municipal_hub'] = $validated['municipal_hub'] ?? null;
         }
 
         $profile['upload_id'] = $this->storeRegistrationFile($request, 'upload_id');

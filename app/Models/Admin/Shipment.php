@@ -2,6 +2,7 @@
 
 namespace App\Models\Admin;
 
+use App\Models\Rider\Rider;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ class Shipment extends Model
 
     protected $fillable = [
         'order_id',
+        'rider_id',
         'tracking_number',
         'scan_token',
         'courier',
@@ -33,6 +35,11 @@ class Shipment extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function rider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class);
     }
 
     public function scans(): HasMany

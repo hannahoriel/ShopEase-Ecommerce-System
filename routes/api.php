@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\Admin\CommissionController;
 use App\Http\Controllers\Admin\AdminAccountController;
-use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\AdminAccountSecurityController;
+use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\CommissionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LogisticsManagementController;
 use App\Http\Controllers\Admin\PlatformSettingsController;
@@ -14,15 +14,70 @@ use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintControll
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ProfilePhotoController;
-use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\AccountController as BuyerAccountController;
 use App\Http\Controllers\Api\Buyer\AccountSecurityController as BuyerAccountSecurityController;
+use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
+use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
+use App\Http\Controllers\Api\Logistics\ListRiderRemittancesController;
+use App\Http\Controllers\Api\Logistics\ListRiderSupportTicketsController;
+use App\Http\Controllers\Api\Logistics\ListRiderDeliveryActionsController;
+use App\Http\Controllers\Api\Logistics\ReviewRiderRemittanceController;
+use App\Http\Controllers\Api\Logistics\ReviewRiderSupportTicketController;
+use App\Http\Controllers\Api\Logistics\ReviewRiderDeliveryActionController;
+use App\Http\Controllers\Api\Logistics\ShowRiderRemittanceReceiptController;
+use App\Http\Controllers\Api\Logistics\StoreRiderEarningController;
+use App\Http\Controllers\Api\ProfilePhotoController;
+use App\Http\Controllers\Api\OrderRiderMessagesController;
+use App\Http\Controllers\Api\Rider\Homepage\Attendance\ClockInController;
+use App\Http\Controllers\Api\Rider\Homepage\Attendance\ClockOutController;
+use App\Http\Controllers\Api\Rider\Homepage\Attendance\ListAttendanceController;
+use App\Http\Controllers\Api\Rider\Homepage\Calculator\ClearCalculationHistoryController;
+use App\Http\Controllers\Api\Rider\Homepage\Calculator\ListCalculationsController;
+use App\Http\Controllers\Api\Rider\Homepage\Calculator\StoreCalculationController;
+use App\Http\Controllers\Api\Rider\Homepage\Contact\ListOrderMessagesController;
+use App\Http\Controllers\Api\Rider\Homepage\Contact\StoreOrderMessageController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\CreateDeliveryActionController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\ListDeliveriesController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\ShowDeliveryController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\ShowDeliveryProofPhotoController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\SubmitDeliveryProofController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\UpdateDeliveryStatusController;
+use App\Http\Controllers\Api\Rider\Homepage\MoneyReport\ListEarningsController;
+use App\Http\Controllers\Api\Rider\Homepage\MoneyReport\ShowRiderFinanceController;
+use App\Http\Controllers\Api\Rider\Homepage\MoneyReport\StoreRemittanceController;
+use App\Http\Controllers\Api\Rider\Homepage\PickupDeliveryRecord\ListPickupDeliveryRecordsController;
+use App\Http\Controllers\Api\Rider\Homepage\PickupTask\ListPickupTasksController;
+use App\Http\Controllers\Api\Rider\Homepage\PickupTask\ShowPickupProofPhotoController;
+use App\Http\Controllers\Api\Rider\Homepage\PickupTask\SubmitPickupProofController;
+use App\Http\Controllers\Api\Rider\Homepage\Notifications\ListNotificationsController;
+use App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkAllNotificationsReadController;
+use App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkNotificationReadController;
+use App\Http\Controllers\Api\Rider\Homepage\ShowRiderDashboardController;
+use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\ArchiveVerifyOrderController;
+use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\DeleteArchivedVerifyOrderController;
+use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\ListVerifyOrdersController;
+use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\RestoreVerifyOrderController;
+use App\Http\Controllers\Api\Rider\Content\ShowRiderPageContentController;
+use App\Http\Controllers\Api\Rider\User\Profile\ShowRiderProfileController;
+use App\Http\Controllers\Api\Rider\User\Profile\UpdateRiderProfileController;
+use App\Http\Controllers\Api\Rider\User\Recipients\DeleteRecipientController;
+use App\Http\Controllers\Api\Rider\User\Recipients\ListRecipientsController;
+use App\Http\Controllers\Api\Rider\User\Recipients\StoreRecipientController;
+use App\Http\Controllers\Api\Rider\User\Recipients\UpdateRecipientController;
+use App\Http\Controllers\Api\Rider\User\Support\ArchiveSupportTicketController;
+use App\Http\Controllers\Api\Rider\User\Support\ListSupportTicketsController;
+use App\Http\Controllers\Api\Rider\User\Support\StoreSupportTicketController;
+use App\Http\Controllers\Api\Rider\User\Support\ListSupportTicketMessagesController;
+use App\Http\Controllers\Api\Rider\User\Support\StoreSupportTicketMessageController;
+use App\Http\Controllers\Api\Rider\Homepage\StarCourier\ShowStarCourierMetricsController;
+use App\Http\Controllers\Api\Logistics\StoreRiderSupportTicketMessageController;
+use App\Http\Controllers\Api\Rider\Register\StoreRiderRegistrationController;
+use App\Http\Controllers\Api\Rider\Register\ShowRiderRegistrationStatusController;
 use App\Http\Controllers\Api\Seller\CustomerFeedbackController;
 use App\Http\Controllers\Api\Seller\DashboardController as SellerDashboardController;
 use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryController;
@@ -38,9 +93,19 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/rider/register', StoreRiderRegistrationController::class)->name('rider.api.register');
+    Route::get('/rider/registration-status/{token}', ShowRiderRegistrationStatusController::class)
+        ->name('rider.api.registration-status');
     Route::get('/orders/verify/{orderNumber}', [BuyerOrderController::class, 'verify'])->name('buyer.api.orders.verify');
 
     Route::prefix('locations')->group(function () {
+        Route::get('/regions', [LocationController::class, 'regions']);
+        Route::get('/regions/{code}/provinces', [LocationController::class, 'regionProvinces'])->whereNumber('code');
+        Route::get('/regions/{code}/districts', [LocationController::class, 'regionDistricts'])->whereNumber('code');
+        Route::get('/regions/{code}/cities-municipalities', [LocationController::class, 'regionCities'])->whereNumber('code');
+        Route::get('/provinces/{code}/cities-municipalities', [LocationController::class, 'provinceCities'])->whereNumber('code');
+        Route::get('/districts/{code}/cities-municipalities', [LocationController::class, 'districtCities'])->whereNumber('code');
+        Route::get('/cities-municipalities/{code}/barangays', [LocationController::class, 'cityBarangays'])->whereNumber('code');
         Route::get('/provinces', [LocationController::class, 'provinces']);
         Route::get('/provinces/{code}/cities', [LocationController::class, 'municipalities']);
         Route::get('/cities/{code}/barangays', [LocationController::class, 'barangays']);
@@ -150,6 +215,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
             Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
+            Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('buyer.api.orders.rider-messages.index');
+            Route::post('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'store'])->name('buyer.api.orders.rider-messages.store');
 
             // Cart
             Route::get('/cart', [BuyerCartController::class, 'index'])->name('buyer.api.cart.index');
@@ -173,6 +240,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/order-status', [OrderStatusController::class, 'index']);
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
+            Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('seller.api.orders.rider-messages.index');
+            Route::post('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'store'])->name('seller.api.orders.rider-messages.store');
             Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
             Route::post('/orders/{order}/cancel-shipment', [OrderStatusController::class, 'cancelScheduledShipment']);
             Route::post('/orders/{order}/cancellation-requests/{cancellationRequest}/approve', [OrderStatusController::class, 'approveCancellationRequest']);
@@ -194,6 +263,69 @@ Route::prefix('v1')->group(function () {
             Route::patch('/inventory/products/{product}/archive', [SellerInventoryController::class, 'archive'])->name('seller.api.inventory.products.archive.alias');
             Route::patch('/inventory/products/{product}/unarchive', [SellerInventoryController::class, 'unarchive'])->name('seller.api.inventory.products.unarchive.alias');
             Route::delete('/inventory/products/{product}', [SellerInventoryController::class, 'destroy'])->name('seller.api.inventory.products.destroy.alias');
+        });
+
+        Route::middleware('role:logistics')->prefix('logistics')->group(function () {
+            Route::get('/branches', [LogisticsDeliveryController::class, 'branches'])->name('logistics.api.branches.index');
+            Route::get('/deliveries', [LogisticsDeliveryController::class, 'index'])->name('logistics.api.deliveries.index');
+            Route::get('/available-deliveries', [LogisticsDeliveryController::class, 'available'])->name('logistics.api.deliveries.available');
+            Route::get('/riders', [LogisticsDeliveryController::class, 'riders'])->name('logistics.api.riders.index');
+            Route::patch('/riders/{rider}/branch', [LogisticsDeliveryController::class, 'assignBranch'])->name('logistics.api.riders.branch');
+            Route::post('/deliveries/{order}/assign', [LogisticsDeliveryController::class, 'assign'])->name('logistics.api.deliveries.assign');
+            Route::get('/rider-remittances', ListRiderRemittancesController::class)->name('logistics.api.rider-remittances.index');
+            Route::patch('/rider-remittances/{remittance}/review', ReviewRiderRemittanceController::class)->name('logistics.api.rider-remittances.review');
+            Route::get('/rider-remittances/{remittance}/receipt', ShowRiderRemittanceReceiptController::class)->name('logistics.api.rider-remittances.receipt');
+            Route::post('/rider-earnings', StoreRiderEarningController::class)->name('logistics.api.rider-earnings.store');
+            Route::get('/rider-support-tickets', ListRiderSupportTicketsController::class)->name('logistics.api.rider-support-tickets.index');
+            Route::patch('/rider-support-tickets/{ticket}/review', ReviewRiderSupportTicketController::class)->name('logistics.api.rider-support-tickets.review');
+            Route::post('/rider-support-tickets/{ticket}/messages', StoreRiderSupportTicketMessageController::class)->name('logistics.api.rider-support-tickets.messages.store');
+            Route::get('/rider-delivery-actions', ListRiderDeliveryActionsController::class)->name('logistics.api.rider-delivery-actions.index');
+            Route::patch('/rider-delivery-actions/{action}/review', ReviewRiderDeliveryActionController::class)->name('logistics.api.rider-delivery-actions.review');
+        });
+
+        Route::middleware('role:rider')->prefix('rider')->group(function () {
+            Route::get('/dashboard', ShowRiderDashboardController::class)->name('rider.api.dashboard');
+            Route::get('/star-courier', ShowStarCourierMetricsController::class)->name('rider.api.star-courier');
+            Route::get('/content/{page}', ShowRiderPageContentController::class)->name('rider.api.content.show');
+            Route::get('/deliveries/{order}/messages', ListOrderMessagesController::class)->name('rider.api.deliveries.messages.index');
+            Route::post('/deliveries/{order}/messages', StoreOrderMessageController::class)->name('rider.api.deliveries.messages.store');
+            Route::get('/profile', ShowRiderProfileController::class)->name('rider.api.profile.show');
+            Route::patch('/profile', UpdateRiderProfileController::class)->name('rider.api.profile.update');
+            Route::get('/attendance', ListAttendanceController::class)->name('rider.api.attendance.index');
+            Route::post('/attendance/clock-in', ClockInController::class)->name('rider.api.attendance.clock-in');
+            Route::post('/attendance/clock-out', ClockOutController::class)->name('rider.api.attendance.clock-out');
+            Route::get('/notifications', ListNotificationsController::class)->name('rider.api.notifications.index');
+            Route::patch('/notifications/read-all', MarkAllNotificationsReadController::class)->name('rider.api.notifications.read-all');
+            Route::patch('/notifications/{notification}/read', MarkNotificationReadController::class)->name('rider.api.notifications.read');
+            Route::get('/recipients', ListRecipientsController::class)->name('rider.api.recipients.index');
+            Route::post('/recipients', StoreRecipientController::class)->name('rider.api.recipients.store');
+            Route::patch('/recipients/{recipient}', UpdateRecipientController::class)->name('rider.api.recipients.update');
+            Route::delete('/recipients/{recipient}', DeleteRecipientController::class)->name('rider.api.recipients.destroy');
+            Route::get('/support-tickets', ListSupportTicketsController::class)->name('rider.api.support-tickets.index');
+            Route::post('/support-tickets', StoreSupportTicketController::class)->name('rider.api.support-tickets.store');
+            Route::patch('/support-tickets/{ticket}/archive', ArchiveSupportTicketController::class)->name('rider.api.support-tickets.archive');
+            Route::get('/support-tickets/{ticket}/messages', ListSupportTicketMessagesController::class)->name('rider.api.support-tickets.messages.index');
+            Route::post('/support-tickets/{ticket}/messages', StoreSupportTicketMessageController::class)->name('rider.api.support-tickets.messages.store');
+            Route::get('/finance', ShowRiderFinanceController::class)->name('rider.api.finance');
+            Route::get('/earnings', ListEarningsController::class)->name('rider.api.earnings');
+            Route::post('/remittances', StoreRemittanceController::class)->name('rider.api.remittances.store');
+            Route::get('/calculations', ListCalculationsController::class)->name('rider.api.calculations.index');
+            Route::post('/calculations', StoreCalculationController::class)->name('rider.api.calculations.store');
+            Route::delete('/calculations', ClearCalculationHistoryController::class)->name('rider.api.calculations.clear');
+            Route::get('/verify-orders', ListVerifyOrdersController::class)->name('rider.api.verify-orders.index');
+            Route::patch('/verify-orders/{order}/archive', ArchiveVerifyOrderController::class)->name('rider.api.verify-orders.archive');
+            Route::delete('/verify-orders/{order}/archive', RestoreVerifyOrderController::class)->name('rider.api.verify-orders.restore');
+            Route::delete('/verify-orders/{order}', DeleteArchivedVerifyOrderController::class)->name('rider.api.verify-orders.dismiss');
+            Route::get('/pickup-tasks', ListPickupTasksController::class)->name('rider.api.pickup-tasks.index');
+            Route::post('/pickup-tasks/{order}/proof', SubmitPickupProofController::class)->name('rider.api.pickup-tasks.proof');
+            Route::get('/pickup-tasks/{order}/proofs/{proof}/photo', ShowPickupProofPhotoController::class)->name('rider.api.pickup-tasks.proofs.photo');
+            Route::get('/pickup-delivery-records', ListPickupDeliveryRecordsController::class)->name('rider.api.pickup-delivery-records.index');
+            Route::get('/deliveries', ListDeliveriesController::class)->name('rider.api.deliveries.index');
+            Route::get('/deliveries/{order}', ShowDeliveryController::class)->name('rider.api.deliveries.show');
+            Route::post('/deliveries/{order}/actions', CreateDeliveryActionController::class)->name('rider.api.deliveries.actions.store');
+            Route::patch('/deliveries/{order}/status', UpdateDeliveryStatusController::class)->name('rider.api.deliveries.status');
+            Route::post('/deliveries/{order}/proof', SubmitDeliveryProofController::class)->name('rider.api.deliveries.proof');
+            Route::get('/deliveries/{order}/proofs/{proof}/photo', ShowDeliveryProofPhotoController::class)->name('rider.api.deliveries.proofs.photo');
         });
 
     });

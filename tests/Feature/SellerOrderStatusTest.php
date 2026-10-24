@@ -70,6 +70,10 @@ class SellerOrderStatusTest extends TestCase
         $this->assertSame('to_ship', $scheduledOrder->status);
         $this->assertSame('2026-09-18', $scheduledOrder->pickup_date->toDateString());
         $this->assertSame('14:30', $scheduledOrder->pickup_time->format('H:i'));
+        $this->assertDatabaseHas('shipments', [
+            'order_id' => $order->id,
+            'courier' => 'Ease Express',
+        ]);
         $this->assertSame(1, OrderStatusHistory::where('order_id', $order->id)->count());
         $this->actingAs($sellerUser)
             ->getJson('/api/v1/seller/order-status')
