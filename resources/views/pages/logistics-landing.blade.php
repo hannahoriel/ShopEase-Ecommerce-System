@@ -23,6 +23,9 @@
   </div>
 </header>
 <main>
+@if (session('success'))
+<div role="status" style="max-width:1100px;margin:20px auto 0;padding:16px 20px;border:1px solid #b7dfc0;border-radius:12px;background:#effaf1;color:#205b2c;font-weight:600;">{{ session('success') }}</div>
+@endif
 <section class="hero" aria-labelledby="logisticsHeading" id="home">
 <div class="hero-bg-circle one"></div><div class="hero-bg-circle two"></div><div class="hero-bg-circle three"></div>
 <div class="hero-copy">
@@ -62,7 +65,7 @@
       <div class="logistics-reveal"><span class="logistics-eyebrow">How it works</span><h2 class="logistics-heading">A clear path to <span>partnership.</span></h2><p class="logistics-intro">Interested companies can learn about ShopEase and prepare for the partnership process. Registration and actual logistics operations will depend on the routes, requirements, and integrations implemented in the system.</p></div>
       <div class="logistics-steps logistics-reveal">
         <article class="logistics-step"><span class="logistics-step-num">01</span><div><h3>Explore the opportunity</h3><p>Review what ShopEase is building and consider how the marketplace may align with your company's services and delivery coverage.</p></div></article>
-        <article class="logistics-step"><span class="logistics-step-num">02</span><div><h3>Provide company information</h3><p>Once logistics registration is implemented, your company can submit its details and the supporting documents requested during application.</p></div></article>
+        <article class="logistics-step"><span class="logistics-step-num">02</span><div><h3>Provide company information</h3><p>Register your company and submit the requested details and supporting documents for review.</p></div></article>
         <article class="logistics-step"><span class="logistics-step-num">03</span><div><h3>Company review</h3><p>Submitted information is reviewed before a company can be approved as a logistics partner. Application does not guarantee approval.</p></div></article>
         <article class="logistics-step"><span class="logistics-step-num">04</span><div><h3>Plan the next steps</h3><p>If approved, the logistics company and ShopEase can proceed with the applicable onboarding and operational arrangements.</p></div></article>
       </div>

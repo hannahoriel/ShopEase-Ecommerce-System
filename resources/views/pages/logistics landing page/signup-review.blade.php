@@ -1,8 +1,8 @@
 @php
     $companyData = is_array($companyData ?? null) ? $companyData : session('logistics_registration.company', []);
     $savedDocuments = is_array($savedDocuments ?? null) ? $savedDocuments : session('logistics_registration.documents', []);
-    $requiredCompany = ['company_name','registered_business_name','company_type','company_email','company_phone','representative_name','representative_position','representative_email','representative_phone','region','province','city','barangay','postal_code'];
-    $requiredDocuments = ['business_registration','mayors_permit','bir_certificate'];
+    $requiredCompany = ['company_name','registered_business_name','company_type','company_email','company_phone','representative_name','representative_position','representative_email','representative_phone','representative_sex','representative_birthday','region','province','city','barangay','postal_code'];
+    $requiredDocuments = ['business_registration','mayors_permit','bir_certificate','representative_authorization'];
     $companyComplete = collect($requiredCompany)->every(fn($key) => filled($companyData[$key] ?? null));
     $documentsComplete = collect($requiredDocuments)->every(fn($key) => filled($savedDocuments[$key]['path'] ?? null));
 @endphp
@@ -16,7 +16,7 @@
 .stepper-wrapper{width:min(560px,95%);margin:18px auto;display:flex;align-items:flex-start;justify-content:center}.step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;text-decoration:none;color:inherit;cursor:pointer}.step:not(:last-child)::after{content:'';position:absolute;top:16px;left:50%;width:100%;height:1.5px;background:#9e9e9e;z-index:0}.step-number{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;border:1.5px solid #999;color:#888;background:var(--background);position:relative;z-index:1;transition:transform .2s,border-color .2s,color .2s}.step-label{margin-top:6px;font-size:14px;color:var(--muted);white-space:nowrap}.step.active .step-number{background:var(--maroon);border-color:var(--maroon);color:#fff;font-weight:600}.step.active .step-label{color:var(--maroon-dark);font-weight:500}.step:hover .step-number{transform:scale(1.06);border-color:var(--maroon);color:var(--maroon-dark)}.step:hover .step-label{color:var(--maroon-dark)}
 .registration-content{width:100%;padding:0 55px 40px}.registration-card{max-width:1580px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.04);padding:30px 36px 36px;position:relative}.review-title{margin:0 0 20px;font-size:20px;font-weight:600}.review-section{margin-bottom:28px;border:1px solid #E7E0DC;border-radius:10px;overflow:hidden;background:#fff}.review-section-header{padding:14px 18px;background:#FBF5F2;border-bottom:1px solid #E7E0DC;display:flex;align-items:center;justify-content:space-between;gap:10px}.review-section-title{margin:0;font-size:16px;font-weight:600;color:var(--maroon-dark)}.review-section-badge{font-size:11px;color:var(--success);background:#EEF7EF;padding:5px 10px;border-radius:20px}.review-section-badge.incomplete{background:#FFF1E9;color:#A44A19}.review-section-body{padding:20px}.information-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px 22px}.information-item{grid-column:span 4;min-width:0}.information-label{display:block;margin-bottom:5px;color:#999393;text-transform:uppercase;letter-spacing:.3px;font-size:11px;font-weight:500}.information-value{min-height:38px;padding:8px 11px;border:1px solid #E2DEDC;border-radius:7px;background:#FAFAFA;color:#333;font-size:13px;font-weight:500;word-break:break-word;display:flex;align-items:center}.information-value.empty{color:#aaa;font-weight:400;font-style:italic}
 .documents-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px}.document-label{font-size:15px;font-weight:500;line-height:1.5;margin-bottom:8px;min-height:46px}.document-label small{color:#999;font-size:11px}.document-preview{height:215px;width:100%;border:1.5px solid var(--border);border-radius:10px;background:white;display:flex;justify-content:center;align-items:center;overflow:hidden;cursor:pointer;text-decoration:none;color:inherit;transition:border-color .2s,box-shadow .2s,transform .2s}.document-preview[href]:hover{border-color:var(--maroon);box-shadow:0 6px 18px rgba(82,7,11,.08);transform:translateY(-2px)}.document-preview.missing{cursor:default}.document-image{width:100%;height:100%;object-fit:contain;padding:12px}.document-placeholder{text-align:center;color:#b6b6b6;padding:15px}.document-placeholder svg{display:block;margin:0 auto 12px}.document-placeholder p{font-size:13px;margin:0 0 6px}.document-placeholder small{font-size:11px}.pdf-preview-content{text-align:center;color:var(--maroon);font-size:13px}.pdf-symbol{display:block;margin:0 auto 12px;border:2px solid currentColor;border-radius:7px;padding:12px;font-weight:700;width:max-content}.document-file-name{margin-top:8px;color:var(--maroon);font-size:12px;overflow-wrap:anywhere}.document-note{margin:28px 0;color:#979797;font-size:13px;line-height:1.75}.notice{padding:12px 16px;border-radius:9px;background:#fff6f2;border:1px solid #edd7d0;color:#794235;margin:0 0 22px;font-size:13px;line-height:1.6}.form-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}.continue-button,.back-button{border:0;border-radius:24px;min-height:48px;padding:0 28px;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s,transform .1s,box-shadow .2s}.continue-button{background:var(--maroon);color:#fff}.continue-button:hover{background:#661515;box-shadow:0 5px 14px rgba(123,27,27,.15)}.back-button{display:inline-flex;align-items:center;text-decoration:none;color:var(--maroon);background:#fff;border:1px solid #e2ceca}.back-button:hover{background:#fff4f1}.continue-button:active,.back-button:active{transform:scale(.98)}
-.email-verification-modal,.document-modal{position:fixed;inset:0;z-index:10000;background:rgba(22,12,12,.55);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility .2s}.email-verification-modal.active,.document-modal.active{opacity:1;visibility:visible;pointer-events:auto}.email-verification-card{position:relative;width:min(100%,480px);border-radius:22px;padding:40px 32px 30px;text-align:center;background:#fff;box-shadow:0 20px 55px rgba(0,0,0,.2);transform:scale(.95);transition:transform .2s;max-height:92dvh;overflow:auto}.email-verification-modal.active .email-verification-card{transform:scale(1)}.email-verification-icon-wrapper{width:88px;height:88px;margin:0 auto 20px;border-radius:50%;background:#ffe1dc;display:flex;align-items:center;justify-content:center}.email-verification-icon{width:48px;height:48px;object-fit:contain}.email-verification-title{margin:0;font-size:24px;font-weight:700;color:#000}.email-verification-subtitle{margin:8px 0 28px;font-size:16px;line-height:1.4;color:#919191}.email-code-container{display:flex;justify-content:center;gap:10px;margin-bottom:25px}.email-code-input{width:52px;height:62px;border:1.5px solid #6d6d6d;border-radius:11px;background:#fff;text-align:center;font-size:23px;font-weight:600;color:#161616;outline:none;transition:border-color .2s,box-shadow .2s}.email-code-input:focus{border-color:#7B1B1B;box-shadow:0 0 0 3px rgba(123,27,27,.08)}.email-spam-message{padding:10px 12px;margin-bottom:22px;border-radius:11px;background:#ffe8e4;display:flex;align-items:center;gap:9px;text-align:left;color:#6e1717;font-size:13px}.email-divider{display:flex;align-items:center;gap:14px;margin:0 10px 20px}.email-divider-line{height:1px;flex:1;background:#bdbdbd}.email-divider-text{font-size:17px;color:#929292}.email-resend-button{border:0;background:transparent;margin-bottom:24px;font-size:15px;color:#a52a2a;cursor:pointer}.email-verify-button{width:100%;height:48px;border:0;border-radius:24px;background:#A52A2A;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s,transform .1s}.email-verify-button:hover{background:#8f211f}.email-close{position:absolute;top:10px;right:12px;border:0;background:transparent;font-size:25px;color:#777;cursor:pointer}.ui-only-message{font-size:12px;line-height:1.5;color:#8d5752;margin:11px 0 0}.document-modal{z-index:9999}.document-modal-card{width:min(100%,1050px);height:min(88vh,820px);border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column}.document-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #ece6e2}.document-modal-header button{background:#f7f2ef;border:0;border-radius:50%;width:36px;height:36px;cursor:pointer}.document-modal-body{flex:1;min-height:0;background:#f5f1ef;padding:12px;display:flex;align-items:center;justify-content:center}.document-modal-body img{max-width:100%;max-height:100%;object-fit:contain}.document-modal-body iframe{border:0;width:100%;height:100%}body.modal-open{overflow:hidden}
+.email-verification-modal,.registration-submitted-modal,.document-modal{position:fixed;inset:0;z-index:10000;background:rgba(22,12,12,.55);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility .2s}.email-verification-modal.active,.registration-submitted-modal.active,.document-modal.active{opacity:1;visibility:visible;pointer-events:auto}.email-verification-card,.registration-submitted-card{position:relative;width:min(100%,480px);border-radius:22px;padding:40px 32px 30px;text-align:center;background:#fff;box-shadow:0 20px 55px rgba(0,0,0,.2);transform:scale(.95);transition:transform .2s;max-height:92dvh;overflow:auto}.email-verification-modal.active .email-verification-card,.registration-submitted-modal.active .registration-submitted-card{transform:scale(1)}.email-verification-icon-wrapper,.registration-submitted-icon-wrapper{width:88px;height:88px;margin:0 auto 20px;border-radius:50%;background:#ffe1dc;display:flex;align-items:center;justify-content:center}.email-verification-icon{width:48px;height:48px;object-fit:contain}.email-verification-title,.registration-submitted-title{margin:0;font-size:24px;font-weight:700;color:#000}.email-verification-subtitle{margin:8px 0 28px;font-size:16px;line-height:1.4;color:#919191}.email-code-container{display:flex;justify-content:center;gap:10px;margin-bottom:25px}.email-code-input{width:52px;height:62px;border:1.5px solid #6d6d6d;border-radius:11px;background:#fff;text-align:center;font-size:23px;font-weight:600;color:#161616;outline:none;transition:border-color .2s,box-shadow .2s}.email-code-input:focus{border-color:#7B1B1B;box-shadow:0 0 0 3px rgba(123,27,27,.08)}.email-spam-message{padding:10px 12px;margin-bottom:22px;border-radius:11px;background:#ffe8e4;display:flex;align-items:center;gap:9px;text-align:left;color:#6e1717;font-size:13px}.email-resend-button{border:0;background:transparent;margin-bottom:24px;font-size:15px;color:#a52a2a;cursor:pointer}.email-verify-button,.registration-submitted-button{width:100%;min-height:48px;border:0;border-radius:24px;background:#A52A2A;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s,transform .1s}.email-verify-button:hover,.registration-submitted-button:hover{background:#8f211f}.email-close{position:absolute;top:10px;right:12px;border:0;background:transparent;font-size:25px;color:#777;cursor:pointer}.ui-only-message{font-size:12px;line-height:1.5;color:#8d5752;margin:11px 0 0}.registration-submitted-description{margin:10px 0 24px;color:#777;line-height:1.6}.registration-submitted-notice{display:flex;gap:12px;text-align:left;padding:16px;margin-bottom:24px;border-radius:12px;background:#fff6f2;border:1px solid #edd7d0}.registration-submitted-check{width:28px;height:28px;flex:none;border-radius:50%;background:#2e7d32;color:white;display:flex;align-items:center;justify-content:center}.registration-submitted-check svg{width:17px;height:17px}.registration-submitted-notice-title{margin:0 0 5px;font-size:15px;color:#52070b}.registration-submitted-notice-text{margin:0;font-size:13px;line-height:1.6;color:#705c59}.document-modal{z-index:9999}.document-modal-card{width:min(100%,1050px);height:min(88vh,820px);border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column}.document-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #ece6e2}.document-modal-header button{background:#f7f2ef;border:0;border-radius:50%;width:36px;height:36px;cursor:pointer}.document-modal-body{flex:1;min-height:0;background:#f5f1ef;padding:12px;display:flex;align-items:center;justify-content:center}.document-modal-body img{max-width:100%;max-height:100%;object-fit:contain}.document-modal-body iframe{border:0;width:100%;height:100%}body.modal-open{overflow:hidden}
 @media(max-width:1200px){.information-item{grid-column:span 6}.documents-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.registration-content{padding:0 30px 30px}}@media(max-width:760px){.registration-header{gap:18px;padding-top:24px}.header-logo-wrapper{width:105px;height:100px}.signup-logo{width:70px}.header-title{font-size:25px}.header-subtitle{font-size:16px}.stepper-wrapper{margin-top:24px}.step-label{font-size:12px;white-space:normal;text-align:center}.registration-content{padding:0 20px 30px}.registration-card{padding:24px 20px 30px}.information-item{grid-column:1/-1}.documents-grid{grid-template-columns:1fr}.document-label{min-height:auto}.email-verification-card{padding:32px 22px 25px}.email-code-container{gap:7px}.email-code-input{width:min(45px,14vw);height:55px;font-size:21px}.email-verification-title{font-size:21px}.email-verification-subtitle{font-size:14px}}@media(max-width:430px){.header-logo-wrapper{width:88px;height:83px}.signup-logo{width:54px}.header-title{font-size:21px}.header-subtitle{font-size:12px}.registration-content{padding:0 10px 24px}.registration-card{padding:20px 13px 24px}.form-actions{flex-wrap:wrap}.continue-button,.back-button{flex:1;padding:0 10px;font-size:14px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 </style><style data-logistics-shared-stepper>
 /* ShopEase Seller registration stepper: same neutral inactive circles and hover */
@@ -46,6 +46,7 @@ body.logistics-route-loading .registration-content{opacity:.48;pointer-events:no
   <a href="/logistics/register/review" class="step step-clickable active" aria-current="step"><span class="step-number">3</span><span class="step-label">Review Information</span></a>
 </nav>
 <main class="registration-content"><div class="registration-card"><h2 class="review-title">Review your information and documents</h2>
+@if($errors->any())<div class="notice" role="alert">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
 @if(!$companyComplete || !$documentsComplete)<div class="notice">Some information or required documents have not been saved yet. You may review this page anytime. Go back to Step 1 or Step 2 and press <strong>Continue</strong> to save them.</div>@endif
 <section class="review-section"><div class="review-section-header"><h3 class="review-section-title">Company Information</h3><span class="review-section-badge {{ (filled($companyData['company_name'] ?? null) && filled($companyData['registered_business_name'] ?? null) && filled($companyData['company_type'] ?? null) && filled($companyData['company_email'] ?? null) && filled($companyData['company_phone'] ?? null)) ? '': 'incomplete' }}">{{ (filled($companyData['company_name'] ?? null) && filled($companyData['registered_business_name'] ?? null) && filled($companyData['company_type'] ?? null) && filled($companyData['company_email'] ?? null) && filled($companyData['company_phone'] ?? null)) ? 'Completed' : 'Incomplete' }}</span></div><div class="review-section-body"><div class="information-grid"><div class="information-item"><span class="information-label">SEC Registration No.</span><div class="information-value"><span data-ui-preview='sec_registration_number'>{{ $companyData['sec_registration_number'] ?? 'Not provided' }}</span></div></div><div class="information-item"><span class="information-label">TIN</span><div class="information-value"><span data-ui-preview='tin'>{{ $companyData['tin'] ?? 'Not provided' }}</span></div></div><div class="information-item"><span class="information-label">Service Areas</span><div class="information-value"><span data-ui-preview='service_areas'>{{ implode(', ', (array)($companyData['service_areas'] ?? [])) ?: 'Not provided' }}</span></div></div>
 <div class="information-item"><span class="information-label">Company Name</span><div class="information-value {{ filled($companyData['company_name'] ?? null) || (($companyData['company_name'] ?? null) === 0) ? '' : 'empty' }}">{{ filled($companyData['company_name'] ?? null) || (($companyData['company_name'] ?? null) === 0) ? $companyData['company_name'] : 'Not provided' }}</div></div>
@@ -128,28 +129,128 @@ body.logistics-route-loading .registration-content{opacity:.48;pointer-events:no
     <p class="document-note"><strong>Note:</strong> Only documents you uploaded and saved on Step 2 appear here. Image files show the actual uploaded photo; PDF files are shown as PDF documents.</p>
   </div>
 </section>
-<div class="form-actions"><a href="/logistics/register/permits" class="back-button">Back</a><button id="openEmailVerification" type="button" class="continue-button">Continue</button></div>
+<div class="notice">After submission, your application will be reviewed by an administrator. You can log in to the logistics dashboard after your account is approved.</div>
+<div class="form-actions"><a href="/logistics/register/permits" class="back-button">Back</a><form id="logisticsRegistrationForm" method="POST" action="{{ route('logistics.register.complete') }}">@csrf<button id="startEmailVerification" type="button" class="continue-button">Verify Email &amp; Submit</button></form></div>
 </div></main></div>
 <div class="document-modal" id="documentModal" role="dialog" aria-modal="true" aria-labelledby="documentModalTitle" aria-hidden="true"><div class="document-modal-card"><div class="document-modal-header"><strong id="documentModalTitle">Document Preview</strong><button type="button" id="closeDocumentModal" aria-label="Close document preview">✕</button></div><div class="document-modal-body" id="documentModalBody"></div></div></div>
-<div class="email-verification-modal" id="emailVerificationModal" role="dialog" aria-modal="true" aria-labelledby="emailVerificationTitle" aria-hidden="true"><div class="email-verification-card"><button type="button" id="closeEmailModal" class="email-close" aria-label="Close verification">×</button><div class="email-verification-icon-wrapper"><img class="email-verification-icon" src="{{ asset('icons/login/email-verify.png') }}" onerror="this.style.display='none';this.parentElement.textContent='✉';this.parentElement.style.fontSize='38px';this.parentElement.style.color='#7B1B1B'" alt="Email verification"></div><h2 class="email-verification-title" id="emailVerificationTitle">Verify Your Email</h2><p class="email-verification-subtitle">UI preview: Enter a 6-digit code for<br><strong>{{ $companyData['company_email'] ?? 'your registered email address' }}</strong></p><div class="email-code-container" aria-label="Six-digit verification code">@for($i=0;$i<6;$i++)<input class="email-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="Code digit {{ $i + 1 }}">@endfor</div><div class="email-spam-message"><span aria-hidden="true">ⓘ</span><span>Can't find your verification code? Check your spam or junk folder.</span></div><div class="email-divider"><span class="email-divider-line"></span><span class="email-divider-text">or</span><span class="email-divider-line"></span></div><button type="button" class="email-resend-button" id="resendCode">↻ Resend Code</button><button type="button" class="email-verify-button" id="verifyCode">Verify Email</button><p class="ui-only-message" id="verificationNotice" role="status">UI preview only — no code has been sent and verification is not connected yet.</p></div></div>
+<div class="email-verification-modal" id="emailVerificationModal" role="dialog" aria-modal="true" aria-labelledby="emailVerificationTitle" aria-hidden="true"><div class="email-verification-card"><button type="button" id="closeEmailModal" class="email-close" aria-label="Close verification">×</button><div class="email-verification-icon-wrapper"><img class="email-verification-icon" src="{{ asset('icons/login/email-verify.png') }}" alt="Email verification"></div><h2 class="email-verification-title" id="emailVerificationTitle">Verify Your Email</h2><p class="email-verification-subtitle">Enter the 6-digit code sent to<br><strong>{{ $companyData['company_email'] ?? 'your registered email address' }}</strong></p><div class="email-code-container" aria-label="Six-digit verification code">@for($i=0;$i<6;$i++)<input class="email-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Code digit {{ $i + 1 }}">@endfor</div><div class="email-spam-message"><span aria-hidden="true">ⓘ</span><span>Can't find your code? Check your spam or junk folder.</span></div><button type="button" class="email-resend-button" id="resendCode">Send code</button><button type="button" class="email-verify-button" id="verifyCode">Verify Email &amp; Submit</button><p class="ui-only-message" id="verificationNotice" role="status" aria-live="polite"></p></div></div>
+<div class="registration-submitted-modal" id="registrationSubmittedModal" role="dialog" aria-modal="true" aria-labelledby="registrationSubmittedTitle" aria-hidden="true"><div class="registration-submitted-card"><div class="registration-submitted-icon-wrapper"><img class="email-verification-icon" src="{{ asset('icons/login/registration-submitted.png') }}" alt="Registration submitted"></div><h2 class="registration-submitted-title" id="registrationSubmittedTitle">Email Verified</h2><p class="registration-submitted-description">Your logistics company email has been verified.</p><div class="registration-submitted-notice"><div class="registration-submitted-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></div><div><h3 class="registration-submitted-notice-title">Waiting for Administrator’s Approval</h3><p class="registration-submitted-notice-text">Your registration will be sent for review. Please wait for the administrator’s approval. You will receive an email once your application has been reviewed.</p></div></div><button type="button" class="registration-submitted-button" id="registrationSubmittedOkayButton">Submit Registration</button></div></div>
 <script>
 (() => {
  const emailModal = document.getElementById('emailVerificationModal');
  const docModal = document.getElementById('documentModal');
- const updateBodyLock = () => document.body.classList.toggle('modal-open',emailModal.classList.contains('active')||docModal.classList.contains('active'));
+ const submittedModal = document.getElementById('registrationSubmittedModal');
+ const updateBodyLock = () => document.body.classList.toggle('modal-open',emailModal.classList.contains('active')||docModal.classList.contains('active')||submittedModal.classList.contains('active'));
  function openModal(el){el.classList.add('active');el.setAttribute('aria-hidden','false');updateBodyLock();}
  function closeModal(el){el.classList.remove('active');el.setAttribute('aria-hidden','true');updateBodyLock();}
- document.getElementById('openEmailVerification').addEventListener('click',()=>{openModal(emailModal);emailModal.querySelector('.email-code-input').focus();});
- document.getElementById('closeEmailModal').addEventListener('click',()=>closeModal(emailModal));
- emailModal.addEventListener('click',e=>{if(e.target===emailModal)closeModal(emailModal)});
- const boxes=[...emailModal.querySelectorAll('.email-code-input')];
- boxes.forEach((box,i)=>{
-  box.addEventListener('input',()=>{box.value=box.value.replace(/\D/g,'').slice(-1);if(box.value&&i<boxes.length-1)boxes[i+1].focus()});
-  box.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!box.value&&i>0)boxes[i-1].focus()});
-  box.addEventListener('paste',e=>{e.preventDefault();const digits=(e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);digits.split('').forEach((digit,j)=>{boxes[j].value=digit});boxes[Math.min(digits.length,5)].focus()});
+ const emailButton = document.getElementById('startEmailVerification');
+ const closeEmailButton = document.getElementById('closeEmailModal');
+ const resendButton = document.getElementById('resendCode');
+ const verifyButton = document.getElementById('verifyCode');
+ const submitRegistrationButton = document.getElementById('registrationSubmittedOkayButton');
+ const notice = document.getElementById('verificationNotice');
+ const codeInputs = [...emailModal.querySelectorAll('.email-code-input')];
+ const registrationForm = document.getElementById('logisticsRegistrationForm');
+ const sendCodeUrl = @json(route('logistics.register.send-code'));
+ const verifyCodeUrl = @json(route('logistics.register.verify-code'));
+ let cooldownTimer;
+ let requestInProgress = false;
+ function setCooldown(seconds) {
+  clearInterval(cooldownTimer);
+  let remaining = Math.max(0, Number(seconds) || 0);
+  resendButton.disabled = remaining > 0 || requestInProgress;
+  resendButton.textContent = remaining > 0 ? `Resend code in ${remaining}s` : 'Resend Code';
+  cooldownTimer = setInterval(() => {
+   remaining -= 1;
+   resendButton.disabled = remaining > 0 || requestInProgress;
+   resendButton.textContent = remaining > 0 ? `Resend code in ${remaining}s` : 'Resend Code';
+   if (remaining <= 0) clearInterval(cooldownTimer);
+  }, 1000);
+ }
+ async function postJson(url, payload = {}) {
+  const token = registrationForm.querySelector('input[name="_token"]').value;
+  const response = await fetch(url, {
+   method: 'POST',
+   credentials: 'same-origin',
+   headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'X-CSRF-TOKEN': token,
+    'X-Requested-With': 'XMLHttpRequest'
+   },
+   body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!response.ok) {
+   const error = new Error(result.message || 'The request could not be completed.');
+   error.retryAfter = result.retry_after;
+   throw error;
+  }
+  return result;
+ }
+ async function sendCode() {
+  if (requestInProgress || resendButton.disabled) return;
+  requestInProgress = true;
+  resendButton.disabled = true;
+  notice.textContent = 'Sending verification code…';
+  try {
+   const result = await postJson(sendCodeUrl);
+   notice.textContent = result.message;
+   setCooldown(result.retry_after);
+   codeInputs[0].focus();
+  } catch (error) {
+   notice.textContent = error.message || 'Unable to send the verification code. Please try again.';
+   if (error.retryAfter) setCooldown(error.retryAfter);
+   else resendButton.disabled = false;
+  } finally {
+   requestInProgress = false;
+   if (!resendButton.textContent.includes(' in ')) resendButton.disabled = false;
+  }
+ }
+ emailButton.addEventListener('click', () => {
+  openModal(emailModal);
+  sendCode();
  });
- document.getElementById('resendCode').addEventListener('click',()=>{document.getElementById('verificationNotice').textContent='UI only: No verification code was sent.';});
- document.getElementById('verifyCode').addEventListener('click',()=>{const code=boxes.map(x=>x.value).join('');document.getElementById('verificationNotice').textContent=/^\d{6}$/.test(code)?'OTP server endpoint is not configured yet. Connect Laravel verification before using this for registration.':'Enter exactly six numeric digits.';});
+ closeEmailButton.addEventListener('click', () => closeModal(emailModal));
+ emailModal.addEventListener('click', event => {
+  if (event.target === emailModal) closeModal(emailModal);
+ });
+ codeInputs.forEach((input, index) => {
+  input.addEventListener('input', () => {
+   input.value = input.value.replace(/\D/g, '').slice(-1);
+   if (input.value && index < codeInputs.length - 1) codeInputs[index + 1].focus();
+  });
+  input.addEventListener('keydown', event => {
+   if (event.key === 'Backspace' && !input.value && index > 0) codeInputs[index - 1].focus();
+  });
+  input.addEventListener('paste', event => {
+   event.preventDefault();
+   const digits = (event.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+   digits.split('').forEach((digit, digitIndex) => { codeInputs[digitIndex].value = digit; });
+   codeInputs[Math.min(digits.length, codeInputs.length - 1)].focus();
+  });
+ });
+ resendButton.addEventListener('click', sendCode);
+ verifyButton.addEventListener('click', async () => {
+  const code = codeInputs.map(input => input.value).join('');
+  if (!/^\d{6}$/.test(code)) {
+   notice.textContent = 'Enter the complete 6-digit verification code.';
+   return;
+  }
+  verifyButton.disabled = true;
+  notice.textContent = 'Verifying your email…';
+  try {
+   const result = await postJson(verifyCodeUrl, { code });
+   notice.textContent = result.message;
+   closeModal(emailModal);
+   openModal(submittedModal);
+  } catch (error) {
+   notice.textContent = error.message || 'Unable to verify the code. Please try again.';
+  } finally {
+   verifyButton.disabled = false;
+  }
+ });
+ submitRegistrationButton.addEventListener('click', () => registrationForm.submit());
  const docBody=document.getElementById('documentModalBody');
  document.querySelectorAll('[data-document-url]').forEach(anchor=>anchor.addEventListener('click',e=>{
   e.preventDefault();const url=anchor.dataset.documentUrl;const title=anchor.dataset.documentTitle;

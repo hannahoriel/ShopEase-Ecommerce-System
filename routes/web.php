@@ -2205,6 +2205,18 @@ Route::get('/logistics/landing', function () {
 
 use App\Http\Controllers\Logistics\LogisticsRegistrationController;
 
+Route::post('/logistics/login', [AuthController::class, 'loginLogistics'])
+    ->middleware('guest')
+    ->name('logistics.login.attempt');
+
+Route::post('/logistics/register/send-code', [LogisticsRegistrationController::class, 'sendVerificationCode'])
+    ->middleware(['guest', 'throttle:5,1'])
+    ->name('logistics.register.send-code');
+
+Route::post('/logistics/register/verify-code', [LogisticsRegistrationController::class, 'verifyEmailCode'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('logistics.register.verify-code');
+
 // STEP 1 — Company Details
 Route::get('/logistics/register/company',
     [LogisticsRegistrationController::class, 'companyPage']
@@ -2226,6 +2238,10 @@ Route::post('/logistics/register/permits',
 Route::get('/logistics/register/review',
     [LogisticsRegistrationController::class, 'reviewPage']
 )->name('logistics.register.review');
+
+Route::post('/logistics/register/complete',
+    [LogisticsRegistrationController::class, 'completeRegistration']
+)->name('logistics.register.complete');
 
 Route::get('/logistics/register/review/document/{type}',
     [LogisticsRegistrationController::class, 'reviewDocument']
