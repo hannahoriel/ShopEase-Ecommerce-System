@@ -31,6 +31,7 @@ class Logistics extends Model
         'business_name',
         'upload_id',
         'upload_business_permit',
+        'registration_details',
         'registration_status',
         'approved_at',
         'rejected_at',
@@ -39,6 +40,7 @@ class Logistics extends Model
     protected $casts = [
         'birthday' => 'date',
         'age' => 'integer',
+        'registration_details' => 'array',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];

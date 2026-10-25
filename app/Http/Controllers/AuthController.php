@@ -20,6 +20,16 @@ class AuthController extends Controller
      */
     public function login(Request $request): RedirectResponse
     {
+        return $this->authenticate($request);
+    }
+
+    public function loginLogistics(Request $request): RedirectResponse
+    {
+        return $this->authenticate($request, User::ROLE_LOGISTICS);
+    }
+
+    private function authenticate(Request $request, ?string $requiredRole = null): RedirectResponse
+    {
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
@@ -31,9 +41,18 @@ class AuthController extends Controller
             ]);
         }
 
-        $registrationStatus = Auth::user()->registration_status;
+        $user = Auth::user();
+        if ($requiredRole !== null && $user->role !== $requiredRole) {
+            Auth::logout();
 
-        if (Auth::user()->role !== User::ROLE_ADMIN
+            throw ValidationException::withMessages([
+                'email' => 'These credentials are not for a logistics account.',
+            ]);
+        }
+
+        $registrationStatus = $user->registration_status;
+
+        if ($user->role !== User::ROLE_ADMIN
             && in_array($registrationStatus, ['pending', 'rejected'], true)) {
             Auth::logout();
 
@@ -46,7 +65,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return match (Auth::user()->role) {
+        return match ($user->role) {
             User::ROLE_ADMIN => redirect()->route('admin.dashboard'),
             User::ROLE_BUYER => redirect()->route('buyer.dashboard'),
             User::ROLE_SELLER => redirect()->route('seller.dashboard'),

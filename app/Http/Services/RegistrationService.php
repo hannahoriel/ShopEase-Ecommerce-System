@@ -253,6 +253,54 @@ class RegistrationService
         });
     }
 
+    public function completeLogisticsRegistration(array $data): void
+    {
+        $data = $this->normalizeRegistrationData($data);
+        validator($data, array_merge([
+            'last_name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_initial' => ['nullable', 'string', 'max:10'],
+            'sex' => ['required', 'in:male,female,other'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'contact_no' => ['required', 'string', 'max:20'],
+            'province' => ['required', 'string', 'max:255'],
+            'municipality' => ['required', 'string', 'max:255'],
+            'barangay' => ['required', 'string', 'max:255'],
+            'street' => ['required', 'string', 'max:255'],
+            'house_number' => ['required', 'string', 'max:255'],
+            'zip_code' => ['required', 'string', 'max:10'],
+            'business_name' => ['required', 'string', 'max:255'],
+            'business_category' => ['required', 'string', 'max:255'],
+            'valid_id_path' => ['required', 'string', 'max:255'],
+            'business_permit_path' => ['required', 'string', 'max:255'],
+        ], $this->registrationValidationRules()))->validate();
+
+        DB::transaction(function () use ($data): void {
+            $user = $this->createRegisteredUser($data, User::ROLE_LOGISTICS);
+
+            Logistics::create([
+                'user_id' => $user->id,
+                'last_name' => $data['last_name'],
+                'first_name' => $data['first_name'],
+                'middle_initial' => $data['middle_initial'] ?? null,
+                'sex' => $data['sex'],
+                'contact_no' => $data['contact_no'],
+                'birthday' => $data['birthday'],
+                'age' => $this->calculateAge($data['birthday']),
+                'province' => $data['province'],
+                'municipality' => $data['municipality'],
+                'barangay' => $data['barangay'],
+                'street' => $data['street'],
+                'house_number' => $data['house_number'],
+                'business_name' => $data['business_name'],
+                'upload_id' => $data['valid_id_path'],
+                'upload_business_permit' => $data['business_permit_path'],
+                'registration_details' => $data['registration_details'] ?? [],
+                'registration_status' => 'pending',
+            ]);
+        });
+    }
+
     private function createRegisteredUser(array $data, string $role): User
     {
         $existingUser = User::where('email', $data['email'])->first();

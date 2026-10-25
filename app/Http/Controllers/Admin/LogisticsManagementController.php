@@ -155,6 +155,8 @@ class LogisticsManagementController extends Controller
     {
         $profile = $registration->user?->logisticsProfile;
         $businessPermit = $registration->business_permit_path ?: $profile?->upload_business_permit;
+        $documents = $profile?->registration_details['documents'] ?? [];
+        $businessRegistration = $documents['business_registration']['path'] ?? null;
 
         return [
             'id' => $registration->id,
@@ -171,7 +173,9 @@ class LogisticsManagementController extends Controller
             'logo' => $registration->user?->profile_photo_path
                 ? Storage::disk('public')->url($registration->user->profile_photo_path)
                 : '',
-            'dti_permit' => '',
+            'dti_permit' => $businessRegistration
+                ? Storage::disk('public')->url($businessRegistration)
+                : '',
             'business_permit' => $businessPermit
                 ? Storage::disk('public')->url($businessPermit)
                 : '',
@@ -181,6 +185,8 @@ class LogisticsManagementController extends Controller
     private function serializeCompany(Logistics $logistics): array
     {
         $branches = $logistics->branches;
+        $documents = $logistics->registration_details['documents'] ?? [];
+        $businessRegistration = $documents['business_registration']['path'] ?? null;
 
         return [
             'id' => $logistics->id,
@@ -192,7 +198,9 @@ class LogisticsManagementController extends Controller
             'company_email' => $logistics->user?->email ?: '—',
             'office_address' => $this->address($logistics),
             'description' => '',
-            'dti_permit' => '',
+            'dti_permit' => $businessRegistration
+                ? Storage::disk('public')->url($businessRegistration)
+                : '',
             'business_permit' => $logistics->upload_business_permit
                 ? Storage::disk('public')->url($logistics->upload_business_permit)
                 : '',
