@@ -12,6 +12,7 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
+use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,6 +68,7 @@ class OrderController extends Controller
                     ] : null,
                 ] : null,
                 'complaint' => $order->complaints->first() ? [
+                    'id' => $order->complaints->first()->id,
                     'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
                     'type' => $order->complaints->first()->type,
                     'status' => str_replace('_', '-', $order->complaints->first()->status),
@@ -236,7 +238,13 @@ class OrderController extends Controller
                         $this->inventory->reserve($orderItem);
                     }
 
-                    return $order->load(['seller:id,store_name', 'items']);
+                    $order->load(['seller:id,store_name', 'items']);
+
+                    // Notify the seller — fires after items are persisted so
+                    // the notification can include an accurate item count.
+                    $seller->user->notify(new NewOrderNotification($order));
+
+                    return $order;
                 })
                 ->values();
 

@@ -14,7 +14,11 @@ use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintControll
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MobilePasswordSecurityController;
+use App\Http\Controllers\Api\MobileRegistrationVerificationController;
 use App\Http\Controllers\Api\Buyer\AccountController as BuyerAccountController;
+use App\Http\Controllers\Api\Buyer\LikeController as BuyerLikeController;
+use App\Http\Controllers\Api\Buyer\ComplaintMessagesController as BuyerComplaintMessagesController;
 use App\Http\Controllers\Api\Buyer\AccountSecurityController as BuyerAccountSecurityController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
@@ -92,7 +96,16 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
 
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::prefix('auth/register/email/otp')->middleware('throttle:10,1')->group(function () {
+        Route::post('/send', [MobileRegistrationVerificationController::class, 'sendCode']);
+        Route::post('/verify', [MobileRegistrationVerificationController::class, 'verifyCode']);
+    });
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::prefix('auth/password/forgot')->middleware('throttle:5,1')->group(function () {
+        Route::post('/otp/send', [MobilePasswordSecurityController::class, 'sendForgotOtp']);
+        Route::post('/otp/verify', [MobilePasswordSecurityController::class, 'verifyForgotOtp']);
+        Route::post('/reset', [MobilePasswordSecurityController::class, 'resetForgottenPassword']);
+    });
     Route::post('/rider/register', StoreRiderRegistrationController::class)->name('rider.api.register');
     Route::get('/rider/registration-status/{token}', ShowRiderRegistrationStatusController::class)
         ->name('rider.api.registration-status');
@@ -121,6 +134,11 @@ Route::prefix('v1')->group(function () {
             'user' => $request->user(),
             'role' => $request->user()->role,
         ]));
+        Route::prefix('account/security/password')->middleware('throttle:10,1')->group(function () {
+            Route::post('/otp/send', [MobilePasswordSecurityController::class, 'sendChangeOtp']);
+            Route::post('/otp/verify', [MobilePasswordSecurityController::class, 'verifyChangeOtp']);
+            Route::post('/change', [MobilePasswordSecurityController::class, 'changePassword']);
+        });
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
             Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');
@@ -193,6 +211,10 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:buyer')->prefix('buyer')->group(function () {
+            Route::get('/account', [BuyerAccountController::class, 'show'])->name('buyer.api.account.show');
+            Route::get('/likes', [BuyerLikeController::class, 'index'])->name('buyer.api.likes.index');
+            Route::post('/likes', [BuyerLikeController::class, 'store'])->name('buyer.api.likes.store');
+            Route::delete('/likes/{product}', [BuyerLikeController::class, 'destroy'])->name('buyer.api.likes.destroy');
             Route::prefix('account/security')->name('buyer.api.account.security.')->middleware('throttle:10,1')->group(function () {
                 Route::post('/otp/send', [BuyerAccountSecurityController::class, 'sendOtp'])->name('otp.send');
                 Route::post('/otp/verify', [BuyerAccountSecurityController::class, 'verifyOtp'])->name('otp.verify');
@@ -215,6 +237,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
             Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
+            Route::get('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'index'])->name('buyer.api.complaints.messages.index');
+            Route::post('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'store'])->name('buyer.api.complaints.messages.store');
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('buyer.api.orders.rider-messages.index');
             Route::post('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'store'])->name('buyer.api.orders.rider-messages.store');
 

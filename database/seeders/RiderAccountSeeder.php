@@ -7,16 +7,12 @@ use App\Models\Rider\Rider;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use RuntimeException;
 
 class RiderAccountSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = env('RIDER_SEED_PASSWORD');
-        if (! is_string($password) || $password === '') {
-            throw new RuntimeException('Set RIDER_SEED_PASSWORD before running RiderAccountSeeder.');
-        }
+        $password = env('RIDER_SEED_PASSWORD', 'Rider@123');
 
         $user = User::updateOrCreate(
             ['email' => 'rider@gmail.com'],

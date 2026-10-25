@@ -47,7 +47,26 @@ class AuthController extends Controller
 
     public function register(Request $request): JsonResponse
     {
+        $role = $request->input('role', User::ROLE_BUYER);
+        $verification = null;
+        if (in_array($role, [User::ROLE_BUYER, User::ROLE_SELLER], true)) {
+            $verification = $request->validate([
+                'email' => ['required', 'email', 'max:255'],
+                'email_verification_token' => ['required', 'string'],
+            ]);
+            MobileRegistrationVerificationController::assertVerifiedEmail(
+                $verification['email'],
+                $role,
+                $verification['email_verification_token'],
+            );
+        }
         $this->registrationService->register($request);
+        if ($verification !== null) {
+            MobileRegistrationVerificationController::consumeVerifiedEmail(
+                $verification['email'],
+                $role,
+            );
+        }
 
         return response()->json([
             'message' => 'Your registration has been submitted and is awaiting administrator approval.',

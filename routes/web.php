@@ -2055,6 +2055,8 @@ Route::middleware(['auth'])
     ->group(function () {
 
         // ALL NOTIFICATIONS PAGE
+        // Returns JSON when the client sends Accept: application/json (Flutter mobile app).
+        // Returns the Blade view for normal web browser requests.
         Route::get('/', function (Request $request) {
 
             $user = $request->user();
@@ -2111,15 +2113,24 @@ Route::middleware(['auth'])
                 ->paginate(10)
                 ->withQueryString();
 
+            // JSON branch — used by the Flutter mobile app
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'notifications' => $notifications,
+                    'counts' => $notificationCounts,
+                ]);
+            }
+
             return view(
-    'pages.seller.notifications',
-    compact('notifications', 'notificationCounts')
-);
+                'pages.seller.notifications',
+                compact('notifications', 'notificationCounts')
+            );
 
         })->name('index');
 
 
         // MARK ONE NOTIFICATION AS READ
+        // Returns JSON when the client sends Accept: application/json (Flutter mobile app).
         Route::patch('/{notification}/read', function (
             Request $request,
             string $notification
@@ -2138,6 +2149,10 @@ Route::middleware(['auth'])
 
             $item->markAsRead();
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Notification marked as read.']);
+            }
+
             return redirect()
                 ->back()
                 ->with(
@@ -2149,6 +2164,7 @@ Route::middleware(['auth'])
 
 
         // MARK ALL NOTIFICATIONS AS READ
+        // Returns JSON when the client sends Accept: application/json (Flutter mobile app).
         Route::patch('/read-all', function (
             Request $request
         ) {
@@ -2164,6 +2180,10 @@ Route::middleware(['auth'])
                 ->update([
                     'read_at' => now()
                 ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'All notifications marked as read.']);
+            }
 
             return redirect()
                 ->back()
@@ -2249,6 +2269,12 @@ Route::get('/logistics/register/review/document/{type}',
 
 Route::view('/buyer/view-order', 'pages.buyer.view-order')
     ->name('buyer.view-order');
+
+Route::middleware(['auth', 'role:buyer'])->prefix('buyer/likes')->name('buyer.likes.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\Buyer\LikeController::class, 'index'])->name('index');
+    Route::post('/', [\App\Http\Controllers\Api\Buyer\LikeController::class, 'store'])->name('store');
+    Route::delete('/{product}', [\App\Http\Controllers\Api\Buyer\LikeController::class, 'destroy'])->name('destroy');
+});
 
 // Seller-only pages (the views must exist under resources/views/pages/seller/).
 Route::middleware(['auth', 'role:seller'])->group(function () {

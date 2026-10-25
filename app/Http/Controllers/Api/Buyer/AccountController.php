@@ -13,6 +13,42 @@ use Illuminate\Validation\Rule;
 
 class AccountController extends Controller
 {
+    public function show(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->role === User::ROLE_BUYER, 403);
+        $buyer = $user->buyerProfile;
+
+        return response()->json([
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'profile_photo_url' => $user->profile_photo_path
+                    ? Storage::disk('public')->url($user->profile_photo_path)
+                    : null,
+            ],
+            'profile' => [
+                'first_name' => $buyer?->first_name,
+                'last_name' => $buyer?->last_name,
+                'middle_name' => $buyer?->middle_initial,
+                'sex' => $buyer?->sex,
+                'contact_no' => $buyer?->contact_no,
+                'birthday' => $buyer?->birthday?->toDateString(),
+                'province' => $buyer?->province,
+                'municipality' => $buyer?->municipality,
+                'barangay' => $buyer?->barangay,
+                'zip_code' => $buyer?->zip_code,
+                'street' => $buyer?->street,
+                'house_number' => $buyer?->house_number,
+                'building' => $buyer?->building,
+                'subdivision' => $buyer?->subdivision,
+                'cover_photo_url' => $buyer?->cover_photo_path
+                    ? Storage::disk('public')->url($buyer->cover_photo_path)
+                    : null,
+            ],
+        ]);
+    }
+
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
