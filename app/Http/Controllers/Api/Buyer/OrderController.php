@@ -159,12 +159,37 @@ class OrderController extends Controller
             'delivery_phone' => ['required', 'string', 'max:30'],
             'delivery_address' => ['required', 'string', 'max:1000'],
             'payment_method' => ['required', 'in:Cash on Delivery'],
+            'cart_item_ids' => ['sometimes', 'array', 'min:1'],
+            'cart_item_ids.*' => ['integer', 'distinct'],
+            'checkout_items' => ['sometimes', 'array', 'min:1'],
+            'checkout_items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'checkout_items.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'checkout_items.*.variation' => ['nullable', 'string', 'max:100'],
+            'checkout_items.*.color' => ['nullable', 'string', 'max:100'],
+            'checkout_items.*.size' => ['nullable', 'string', 'max:100'],
         ]);
 
         $orders = DB::transaction(function () use ($request, $validated) {
-            $items = CartItem::query()
+            $checkoutCartItemIds = $validated['cart_item_ids'] ?? [];
+            foreach ($validated['checkout_items'] ?? [] as $checkoutItem) {
+                $cartItem = CartItem::create([
+                    'user_id' => $request->user()->id,
+                    'product_id' => $checkoutItem['product_id'],
+                    'quantity' => $checkoutItem['quantity'],
+                    'variation' => $checkoutItem['variation'] ?? null,
+                    'color' => $checkoutItem['color'] ?? null,
+                    'size' => $checkoutItem['size'] ?? null,
+                ]);
+                $checkoutCartItemIds[] = $cartItem->id;
+            }
+
+            $itemsQuery = CartItem::query()
                 ->where('user_id', $request->user()->id)
-                ->with(['product.seller'])
+                ->with(['product.seller']);
+            if ($checkoutCartItemIds !== []) {
+                $itemsQuery->whereIn('id', $checkoutCartItemIds);
+            }
+            $items = $itemsQuery
                 ->orderBy('product_id')
                 ->orderBy('id')
                 ->lockForUpdate()
@@ -248,7 +273,9 @@ class OrderController extends Controller
                 })
                 ->values();
 
-            CartItem::where('user_id', $request->user()->id)->delete();
+            CartItem::where('user_id', $request->user()->id)
+                ->whereIn('id', $items->pluck('id'))
+                ->delete();
 
             return $orders;
         });

@@ -172,6 +172,75 @@ class BuyerOrderPlacementTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
+    public function test_buyer_can_place_a_direct_buy_order_without_a_saved_cart_item(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        ProductOption::create([
+            'product_id' => $product->id,
+            'type' => 'color',
+            'name' => 'Black',
+            'stock' => 10,
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/orders', [
+                'delivery_name' => 'Buyer Example',
+                'delivery_phone' => '09171234567',
+                'delivery_address' => '1 Main Street, Manila',
+                'payment_method' => 'Cash on Delivery',
+                'checkout_items' => [[
+                    'product_id' => $product->id,
+                    'quantity' => 2,
+                    'color' => 'Black',
+                ]],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('orders.0.items.0.product_name', 'Wireless Earbuds');
+
+        $this->assertDatabaseHas('order_items', [
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'color' => 'Black',
+            'unit_price' => 1200,
+        ]);
+        $this->assertDatabaseCount('cart_items', 0);
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+    }
+
+    public function test_checkout_places_only_selected_cart_items_and_preserves_the_rest(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [, $selectedProduct] = $this->sellerWithProduct('First Store', 'Selected Item', 100);
+        [, $otherProduct] = $this->sellerWithProduct('Second Store', 'Other Item', 200);
+        $selectedItem = CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $selectedProduct->id,
+            'quantity' => 1,
+        ]);
+        $otherItem = CartItem::create([
+            'user_id' => $buyer->id,
+            'product_id' => $otherProduct->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($buyer)
+            ->postJson('/api/v1/buyer/orders', [
+                'delivery_name' => 'Buyer Example',
+                'delivery_phone' => '09171234567',
+                'delivery_address' => '1 Main Street, Manila',
+                'payment_method' => 'Cash on Delivery',
+                'cart_item_ids' => [$selectedItem->id],
+            ])
+            ->assertCreated()
+            ->assertJsonCount(1, 'orders');
+
+        $this->assertDatabaseMissing('cart_items', ['id' => $selectedItem->id]);
+        $this->assertDatabaseHas('cart_items', ['id' => $otherItem->id]);
+        $this->assertDatabaseHas('order_items', ['product_id' => $selectedProduct->id]);
+        $this->assertDatabaseMissing('order_items', ['product_id' => $otherProduct->id]);
+    }
+
     public function test_insufficient_stock_prevents_order_and_preserves_the_cart(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
