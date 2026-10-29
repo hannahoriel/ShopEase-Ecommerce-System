@@ -2305,4 +2305,51 @@ Route::get('/logistics/account', function () {
     return view('pages.logistics.account');
 })->name('logistics.account');
 
-// No POST route, database, controller, or migration is needed for this frontend preview.
+/*
+|--------------------------------------------------------------------------
+| SORTING CENTER PAGES — FRONTEND PREVIEW
+|--------------------------------------------------------------------------
+| Add your sorting-center authorization middleware before production use.
+| Currently restricted to authenticated users only, as in the prior route.
+*/
+Route::middleware(['auth'])
+    ->prefix('sorting-center')
+    ->name('sorting-center.')
+    ->group(function () {
+        Route::view('/dashboard', 'pages.logistics.sorting-center.dashboard')
+            ->name('dashboard');
+
+        Route::view('/courier-registrations', 'pages.logistics.sorting-center.courier-registrations')
+            ->name('courier-registrations');
+
+        Route::view('/delivery-hubs', 'pages.logistics.sorting-center.delivery-hubs')
+            ->name('delivery-hubs');
+
+        Route::view('/scanners', 'pages.logistics.sorting-center.scanners')
+            ->name('scanners');
+
+        Route::view('/parcel-tracking', 'pages.logistics.sorting-center.parcel-tracking')
+            ->name('parcel-tracking');
+
+        Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
+            ->name('parcel-disputes');
+
+        Route::view('/vehicles-drivers', 'pages.logistics.sorting-center.vehicles-drivers')
+            ->name('vehicles-drivers');
+
+        Route::view('/notifications', 'pages.logistics.sorting-center.notifications')
+            ->name('notifications');
+
+        Route::view('/network-earnings', 'pages.logistics.sorting-center.network-earnings')
+            ->name('network-earnings');
+
+        Route::view('/messages', 'pages.logistics.sorting-center.messages')
+            ->name('messages');
+
+        Route::view('/reports', 'pages.logistics.sorting-center.reports')
+            ->name('reports');
+
+        Route::view('/account', 'pages.logistics.sorting-center.account')
+            ->name('account');
+
+    });
