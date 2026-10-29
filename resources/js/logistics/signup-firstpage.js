@@ -207,3 +207,17 @@ if(sending){e.preventDefault();e.stopImmediatePropagation();return;}
 sending=true;setTimeout(()=>{if(document.visibilityState==='visible')sending=false},8000);
 },true);
 })();
+
+// The Laravel POST endpoint is the source of truth: only a successful Continue saves data.
+// No localStorage/sessionStorage copy of private information or passwords is created.
+(() => {
+  const form = document.getElementById('logisticsCompanyForm');
+  if (!form) return;
+  // Any unsaved modifications are discarded when using the stepper/back navigation.
+  window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+  // Re-enable Continue if server-side validation sends the user back.
+  window.addEventListener('pageshow', () => {
+    const button = document.getElementById('nextButton');
+    if (button) { button.disabled = false; button.textContent = 'Continue'; }
+  });
+})();

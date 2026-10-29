@@ -29,6 +29,53 @@ window.initLogisticsLogin = function(root) {
             input.focus();
         });
         toggle();
+        // Authenticate first. Only a confirmed successful logistics login starts the opening transition.
+        form.addEventListener('submit', async event => {
+            if (form.dataset.ready !== '1' || !form.reportValidity()) return;
+            event.preventDefault();
+            if (form.dataset.submitting === 'true') return;
+            form.dataset.submitting = 'true';
+            const submit = form.querySelector('[type="submit"]');
+            if (submit) { submit.disabled = true; submit.textContent = 'Logging in...'; }
+            if (feedback) { feedback.hidden = true; feedback.textContent = ''; }
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    redirect: 'follow',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!response.ok) {
+                    let message = 'Unable to log in. Please check your email and password.';
+                    try {
+                        const data = await response.json();
+                        message = Object.values(data.errors || {}).flat()[0] || data.message || message;
+                    } catch (_) {}
+                    throw new Error(message);
+                }
+                // Laravel's authenticated redirect has been followed by fetch. Verify the final route.
+                const destination = new URL(response.url, window.location.href);
+                if (destination.origin !== window.location.origin ||
+                    !/^\/logistics\/dashboard\/?$/.test(destination.pathname)) {
+                    window.location.assign(destination.href);
+                    return;
+                }
+                if (typeof window.startLogisticsDashboardTransition === 'function') {
+                    window.startLogisticsDashboardTransition(destination.href);
+                } else {
+                    window.location.assign(destination.href);
+                }
+            } catch (error) {
+                if (feedback) {
+                    feedback.textContent = error.message || 'Unable to log in. Please try again.';
+                    feedback.hidden = false;
+                }
+            } finally {
+                form.dataset.submitting = 'false';
+                if (submit) { submit.disabled = false; submit.textContent = 'Log In'; }
+            }
+        });
         form.addEventListener('submit', event => {
             if (form.dataset.ready !== '1') {
                 event.preventDefault();

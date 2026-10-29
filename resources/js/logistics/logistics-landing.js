@@ -167,3 +167,35 @@ document.addEventListener('DOMContentLoaded', () => {
     switching = false;
   });
 })();
+
+// Successful-login expansion: use the SAME overlay/card/iframe CSS as signup.
+// A rejected login never calls this function.
+(() => {
+  const layer = document.getElementById('logisticsDashboardTransition');
+  const preview = document.getElementById('logisticsDashboardPreview');
+  if (!layer || !preview) return;
+  let started = false;
+  window.startLogisticsDashboardTransition = (url) => {
+    if (started) return;
+    const destination = new URL(url, location.href);
+    if (destination.origin !== location.origin || !/^\/logistics\/dashboard\/?$/.test(destination.pathname)) return;
+    started = true;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let expanded = false;
+    const expand = () => {
+      if (expanded) return;
+      expanded = true;
+      layer.classList.add('is-active');
+      layer.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('logistics-modal-open');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        layer.classList.add('is-expanded');
+        setTimeout(() => location.assign(destination.href), reduced ? 30 : 430);
+      }));
+    };
+    preview.addEventListener('load', expand, {once:true});
+    preview.src = destination.href;
+    // If preview is blocked, still navigate; authentication has already succeeded.
+    setTimeout(() => { if (!expanded) location.assign(destination.href); }, 3000);
+  };
+})();

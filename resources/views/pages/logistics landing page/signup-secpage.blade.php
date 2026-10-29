@@ -17,7 +17,7 @@
   <a href="/logistics/register/permits" class="step step-clickable active" aria-current="step"><span class="step-number">2</span><span class="step-label">Permits &amp; Certificates</span></a>
   <a href="/logistics/register/review" class="step step-clickable " ><span class="step-number">3</span><span class="step-label">Review Information</span></a>
 </nav>
-<main class="registration-content"><form id="logisticsPermitsForm" novalidate method="POST" action="{{ route('logistics.register.permits.submit') }}" enctype="multipart/form-data">@csrf
+<main class="registration-content"><form id="logisticsPermitsForm" autocomplete="off" novalidate method="POST" action="{{ route('logistics.register.permits.submit') }}" enctype="multipart/form-data">@csrf
 <section class="registration-card"><h2 class="section-title">Permits &amp; Certificates</h2><p class="section-desc">Upload clear photos or PDF copies of your company's business documents. Your documents will be reviewed during partner verification.</p>
 @if(session('status'))<div class="notice success" role="status">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="notice error" role="alert">Please check the highlighted uploads. @foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
@@ -93,4 +93,10 @@
 <div class="form-actions"><a href="/logistics/register/company" class="action-button secondary">Back</a><p class="step-notice">Step 2 of 3 · Permits &amp; Certificates</p><button type="submit" id="savePermitsButton" class="action-button primary">Continue</button></div>
 </section></form></main></div>
 
+<script>
+// Refresh the server-confirmed version when browser Back/Forward restores a cached form.
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) window.location.reload();
+});
+</script>
 </body></html>

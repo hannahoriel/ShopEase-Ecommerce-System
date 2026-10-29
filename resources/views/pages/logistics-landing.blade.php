@@ -83,6 +83,12 @@
 </div>
 {{-- Expands just like the original ShopEase registration modal before full-screen navigation. --}}
 <div class="logistics-signup-transition" id="logisticsSignupTransition" aria-hidden="true"><div class="logistics-signup-transition-card"><iframe class="logistics-signup-transition-iframe" id="logisticsSignupPreview" title="Logistics Company Registration" src="about:blank" tabindex="-1" aria-hidden="true"></iframe></div></div>
+{{-- Successful logistics login expands the actual dashboard, matching ShopEase's auth-modal handoff. --}}
+<div class="logistics-signup-transition logistics-dashboard-transition" id="logisticsDashboardTransition" aria-hidden="true">
+  <div class="logistics-signup-transition-card">
+    <iframe class="logistics-signup-transition-iframe" id="logisticsDashboardPreview" title="Logistics Dashboard" src="about:blank" tabindex="-1" aria-hidden="true"></iframe>
+  </div>
+</div>
 {{-- Shared ShopEase footer: resources/views/components/landing page/footer.blade.php --}}
 @include('components.landing page.footer')
 </div>
