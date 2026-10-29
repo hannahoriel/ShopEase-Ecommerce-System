@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationCo
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
+use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\ListRiderRemittancesController;
 use App\Http\Controllers\Api\Logistics\ListRiderSupportTicketsController;
 use App\Http\Controllers\Api\Logistics\ListRiderDeliveryActionsController;
@@ -290,6 +291,18 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:logistics')->prefix('logistics')->group(function () {
+            Route::get('/network-hubs', [NetworkHubController::class, 'index'])->name('logistics.api.network-hubs.index');
+            Route::get('/network-hubs/archive', [NetworkHubController::class, 'archive'])->name('logistics.api.network-hubs.archive');
+            Route::post('/network-hubs', [NetworkHubController::class, 'store'])->name('logistics.api.network-hubs.store');
+            Route::put('/network-hubs/{center}', [NetworkHubController::class, 'update'])->name('logistics.api.network-hubs.update');
+            Route::post('/network-hubs/{center}/archive', [NetworkHubController::class, 'archiveCenter'])->name('logistics.api.network-hubs.archive-center');
+            Route::post('/network-hubs/{center}/restore', [NetworkHubController::class, 'restoreCenter'])->name('logistics.api.network-hubs.restore');
+            Route::get('/network-hubs/{center}/delivery-hubs', [NetworkHubController::class, 'hubs'])->name('logistics.api.network-hubs.delivery-hubs.index');
+            Route::get('/network-hubs/{center}/delivery-hubs/archive', [NetworkHubController::class, 'hubArchive'])->name('logistics.api.network-hubs.delivery-hubs.archive');
+            Route::post('/network-hubs/{center}/delivery-hubs', [NetworkHubController::class, 'storeHub'])->name('logistics.api.network-hubs.delivery-hubs.store');
+            Route::put('/delivery-hubs/{hub}', [NetworkHubController::class, 'updateHub'])->name('logistics.api.delivery-hubs.update');
+            Route::post('/delivery-hubs/{hub}/archive', [NetworkHubController::class, 'archiveHub'])->name('logistics.api.delivery-hubs.archive');
+            Route::post('/delivery-hubs/{hub}/restore', [NetworkHubController::class, 'restoreHub'])->name('logistics.api.delivery-hubs.restore');
             Route::get('/branches', [LogisticsDeliveryController::class, 'branches'])->name('logistics.api.branches.index');
             Route::get('/deliveries', [LogisticsDeliveryController::class, 'index'])->name('logistics.api.deliveries.index');
             Route::get('/available-deliveries', [LogisticsDeliveryController::class, 'available'])->name('logistics.api.deliveries.available');
