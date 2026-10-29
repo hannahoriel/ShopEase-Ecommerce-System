@@ -21,12 +21,21 @@ class OrderReturn extends Model
         'return_items',
         'requested_at',
         'returned_at',
+        'reviewed_by',
+        'reviewed_at',
+        'refund_amount',
+        'refunded_at',
+        'evidence',
     ];
 
     protected $casts = [
         'return_items' => 'array',
         'requested_at' => 'datetime',
         'returned_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'refunded_at' => 'datetime',
+        'refund_amount' => 'decimal:2',
+        'evidence' => 'array',
     ];
 
     public function order(): BelongsTo

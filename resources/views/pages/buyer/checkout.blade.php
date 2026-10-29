@@ -32,6 +32,7 @@
         {!! json_encode([
             'cartUrl' => '/api/v1/buyer/cart',
             'ordersUrl' => '/api/v1/buyer/orders',
+            'voucherPreviewUrl' => '/api/v1/buyer/vouchers/preview',
             'apiToken' => $apiToken ?? '',
         ]) !!}
     </script>
@@ -293,7 +294,7 @@
                                     </button>
 
                                     <strong class="shipping-fee">
-                                        ₱{{ number_format($group['shipping_fee'], 2) }}
+                                        ₱{{ number_format(50, 2) }}
                                     </strong>
                                 </div>
                             </div>
@@ -310,7 +311,7 @@
                                         collect($group['items'])->sum(
                                             fn ($item) =>
                                                 $item['price'] * $item['quantity']
-                                        ) + $group['shipping_fee'],
+                                        ) + 50,
                                         2
                                     ) }}
                                 </strong>
@@ -350,6 +351,15 @@
                     </div>
 
                     <div class="checkout-summary">
+                        <div class="checkout-voucher-entry" style="display:flex;gap:8px;margin-bottom:14px">
+                            <input id="checkoutVoucherCode" type="text" maxlength="20" placeholder="Enter shop voucher code" aria-label="Shop voucher code" style="flex:1;min-width:0;padding:10px;border:1px solid #ddd;border-radius:8px;text-transform:uppercase">
+                            <button id="checkoutApplyVoucher" type="button" class="text-action-button">Apply</button>
+                        </div>
+                        <p id="checkoutVoucherMessage" role="status" style="margin:0 0 10px;font-size:12px"></p>
+                        <div class="checkout-summary-row">
+                            <span>Voucher Discount</span>
+                            <strong><span id="checkoutVoucherDiscount">₱0.00</span></strong>
+                        </div>
                         <div class="checkout-summary-row">
                             <span>Merchandise Subtotal</span>
                             <strong>

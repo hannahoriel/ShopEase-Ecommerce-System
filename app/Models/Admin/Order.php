@@ -40,11 +40,16 @@ class Order extends Model
         'delivery_phone',
         'delivery_address',
         'payment_method',
+        'shipping_fee',
+        'voucher_discount',
+        'voucher_code',
     ];
 
     protected $casts = [
         'total' => 'decimal:2',
         'commission_amount' => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
+        'voucher_discount' => 'decimal:2',
         'pickup_date' => 'date',
         'pickup_time' => 'datetime:H:i',
     ];

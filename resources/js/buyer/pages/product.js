@@ -27,7 +27,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function money(v) {
-        return '₱' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        return '₱' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function salePriceMarkup(originalPrice, percentage) {
+        const pct = Number(percentage || 0), original = Number(originalPrice || 0);
+        const discounted = pct ? Math.round(original * (100 - pct)) / 100 : original;
+        return `<strong>${escapeHtml(money(discounted))}</strong>${pct ? `<del>${escapeHtml(money(original))}</del><span>-${pct}%</span>` : ''}`;
     }
 
     function compactCount(value) {
@@ -150,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (activeConnectedVariants.length) {
                 if (priceEl) {
-                    priceEl.innerHTML = `<strong>${escapeHtml(money(selectedVariant?.final_price ?? p.price))}</strong>`;
+                    priceEl.innerHTML = salePriceMarkup(selectedVariant?.final_price ?? p.price, p.sale_percentage);
                 }
                 const stock = Number(selectedVariant?.stock || 0);
                 if (stockLabel) stockLabel.textContent = `${stock} In Stock`;
@@ -211,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Price
         const priceEl = document.getElementById('pricePanel');
         if (priceEl) {
-            priceEl.innerHTML = `<strong>${escapeHtml(money(p.price))}</strong>`;
+            priceEl.innerHTML = salePriceMarkup(p.price, p.sale_percentage);
         }
 
         // Variations / colors / sizes
@@ -421,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <h3>${escapeHtml(p.name)}</h3>
                     <p class="product-rating"><span class="rating-star">★</span> <span class="sold-count">${escapeHtml(p.seller?.store_name || '')}</span></p>
                     <div class="product-bottom-row">
-                        <strong>${escapeHtml(money(p.price))}</strong>
+                        <span class="product-sale-price">${salePriceMarkup(p.price, p.sale_percentage)}</span>
                         <button type="button" class="product-cart-button" data-product-id="${escapeHtml(String(p.id))}" aria-label="View ${escapeHtml(p.name)}">
                             <img src="/icons/buyer/product-cart.png" alt="">
                         </button>

@@ -2282,11 +2282,13 @@ Route::middleware(['auth', 'role:buyer'])->prefix('buyer/likes')->name('buyer.li
 
 // Seller-only pages (the views must exist under resources/views/pages/seller/).
 Route::middleware(['auth', 'role:seller'])->group(function () {
-    Route::view('/seller/returns-refunds', 'pages.seller.returns-refunds')
+    Route::get('/seller/returns-refunds', [\App\Http\Controllers\Api\Seller\ReturnsRefundsController::class, 'page'])
         ->name('seller.returns.index');
 
-    Route::view('/seller/vouchers-promotions', 'pages.seller.vouchers-promotions')
-        ->name('seller.vouchers.index');
+    Route::get('/seller/vouchers-promotions', function () {
+        $apiToken = request()->user()->createToken('seller-vouchers')->plainTextToken;
+        return view('pages.seller.vouchers-promotions', compact('apiToken'));
+    })->name('seller.vouchers.index');
 });
 
 Route::get('/logistics/network-hubs', function () {
