@@ -20,7 +20,7 @@ class DeliveryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $logistics = $this->logisticsFor($request->user());
-        $branchIds = $logistics->branches()->pluck('id');
+        $branchIds = $logistics->branches()->whereNull('archived_at')->pluck('id');
         $orders = Order::query()
             ->whereHas('shipment.rider', fn ($query) => $query->whereIn('logistics_branch_id', $branchIds))
             ->whereIn('status', ['to_ship', 'in_transit', 'out_for_delivery', 'delivered'])
@@ -62,7 +62,7 @@ class DeliveryController extends Controller
     public function riders(Request $request): JsonResponse
     {
         $logistics = $this->logisticsFor($request->user());
-        $branchIds = $logistics->branches()->pluck('id');
+        $branchIds = $logistics->branches()->whereNull('archived_at')->pluck('id');
         $riders = Rider::query()
             ->where('registration_status', 'active')
             ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
@@ -91,6 +91,7 @@ class DeliveryController extends Controller
     {
         $branches = $this->logisticsFor($request->user())
             ->branches()
+            ->whereNull('archived_at')
             ->orderBy('name')
             ->get(['id', 'name', 'address']);
 
@@ -111,6 +112,7 @@ class DeliveryController extends Controller
             if ($branchId !== null) {
                 $branch = LogisticsBranch::query()
                     ->where('logistics_id', $logistics->id)
+                    ->whereNull('archived_at')
                     ->findOrFail($branchId);
             }
 

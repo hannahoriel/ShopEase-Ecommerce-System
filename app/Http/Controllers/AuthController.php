@@ -42,7 +42,10 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
-        if ($requiredRole !== null && $user->role !== $requiredRole) {
+        $roleIsAllowed = $requiredRole === User::ROLE_LOGISTICS
+            ? in_array($user->role, [User::ROLE_LOGISTICS, User::ROLE_SORTING_CENTER, User::ROLE_DELIVERY_HUB], true)
+            : ($requiredRole === null || $user->role === $requiredRole);
+        if (! $roleIsAllowed) {
             Auth::logout();
 
             throw ValidationException::withMessages([
@@ -70,6 +73,8 @@ class AuthController extends Controller
             User::ROLE_BUYER => redirect()->route('buyer.dashboard'),
             User::ROLE_SELLER => redirect()->route('seller.dashboard'),
             User::ROLE_LOGISTICS => redirect()->route('logistics.dashboard'),
+            User::ROLE_SORTING_CENTER => redirect()->route('sorting-center.dashboard'),
+            User::ROLE_DELIVERY_HUB => redirect()->route('delivery-hub.dashboard'),
             User::ROLE_RIDER => redirect()->route('rider.dashboard'),
             default => redirect()->route('dashboard'),
         };

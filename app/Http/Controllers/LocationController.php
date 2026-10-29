@@ -109,8 +109,10 @@ class LocationController extends Controller
 
         $municipalities = Cache::remember($cacheKey, config('locations.cache_ttl'), function () use ($code, $isRegion) {
             if ($isRegion) {
-                $url = config('locations.base_urls.psgc') . "/regions/{$code}/cities-municipalities/";
-                $data = $this->getJson($url) ?? [];
+                $data = $this->fetchPsgcCached(
+                    "regions:{$code}:cities",
+                    "/regions/{$code}/cities-municipalities"
+                );
             } else {
                 $data = $this->fetchWithFallback('municipalities', $code);
             }

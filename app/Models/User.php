@@ -21,6 +21,8 @@ class User extends Authenticatable
     const ROLE_RIDER = 'rider';
     const ROLE_ADMIN = 'admin';
     const ROLE_LOGISTICS = 'logistics';
+    const ROLE_SORTING_CENTER = 'sorting_center';
+    const ROLE_DELIVERY_HUB = 'delivery_hub';
 
     protected $fillable = [
         'name',

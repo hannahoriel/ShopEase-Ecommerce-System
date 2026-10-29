@@ -2289,9 +2289,13 @@ Route::middleware(['auth', 'role:seller'])->group(function () {
         ->name('seller.vouchers.index');
 });
 
-Route::view('/logistics/network-hubs', 'pages.logistics.network-hubs')
-    ->middleware(['auth', 'role:logistics'])
-    ->name('logistics.network-hubs');
+Route::get('/logistics/network-hubs', function () {
+    $user = Auth::user();
+
+    return view('pages.logistics.network-hubs', [
+        'networkHubsApiToken' => $user->createToken('logistics-network-hubs')->plainTextToken,
+    ]);
+})->middleware(['auth', 'role:logistics'])->name('logistics.network-hubs');
 
 // Insert next to the other Logistics routes in routes/web.php.
 Route::get('/logistics/parcel-tracking', function () {
@@ -2307,16 +2311,21 @@ Route::get('/logistics/account', function () {
 
 /*
 |--------------------------------------------------------------------------
-| SORTING CENTER PAGES — FRONTEND PREVIEW
+| SORTING CENTER PAGES
 |--------------------------------------------------------------------------
-| Add your sorting-center authorization middleware before production use.
-| Currently restricted to authenticated users only, as in the prior route.
+| Sorting center accounts are linked to their branch user record.
 */
-Route::middleware(['auth'])
+Route::middleware(['auth', 'role:sorting_center'])
     ->prefix('sorting-center')
     ->name('sorting-center.')
     ->group(function () {
-        Route::view('/dashboard', 'pages.logistics.sorting-center.dashboard')
+        Route::get('/dashboard', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            return view('pages.logistics.sorting-center.dashboard', ['center' => $center]);
+        })
             ->name('dashboard');
 
         Route::view('/courier-registrations', 'pages.logistics.sorting-center.courier-registrations')
@@ -2352,4 +2361,18 @@ Route::middleware(['auth'])
         Route::view('/account', 'pages.logistics.sorting-center.account')
             ->name('account');
 
+    });
+
+Route::middleware(['auth', 'role:delivery_hub'])
+    ->prefix('delivery-hub')
+    ->name('delivery-hub.')
+    ->group(function () {
+        Route::get('/dashboard', function () {
+            $hub = \App\Models\Logistics\LogisticsDeliveryHub::query()
+                ->with('logisticsBranch')
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            return view('pages.logistics.delivery-hub-dashboard', ['hub' => $hub]);
+        })->name('dashboard');
     });
