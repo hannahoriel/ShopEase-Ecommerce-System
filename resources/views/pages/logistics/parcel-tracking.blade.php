@@ -153,11 +153,15 @@ body.pt-modal-open{overflow:hidden}
 .pt-order-item-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
 .pt-order-item-field label{font-size:11px;color:#9d8d87;display:block;margin-bottom:6px}
 .pt-order-item-field strong{display:block;font-size:12px;color:#332a27;font-weight:600;overflow-wrap:anywhere}
-.pt-returns-table{min-width:850px;table-layout:fixed}
+.pt-returns-table{width:100%;min-width:720px;table-layout:fixed}
 .pt-returns-table th:nth-child(1),.pt-returns-table td:nth-child(1){width:20%}
-.pt-returns-table th:nth-child(2),.pt-returns-table td:nth-child(2){width:42%}
-.pt-returns-table th:nth-child(3),.pt-returns-table td:nth-child(3){width:18%}
-.pt-returns-table th:nth-child(4),.pt-returns-table td:nth-child(4){width:20%}
+.pt-returns-table th:nth-child(2),.pt-returns-table td:nth-child(2){width:34%}
+.pt-returns-table th:nth-child(3),.pt-returns-table td:nth-child(3){width:21%}
+.pt-returns-table th:nth-child(4),.pt-returns-table td:nth-child(4){width:25%}
+.pt-returns-table th,.pt-returns-table td{overflow-wrap:anywhere}
+.pt-returns-table th:nth-child(-n+2),.pt-returns-table td:nth-child(-n+2){padding-left:34px}
+.pt-returns-table .pt-customer{min-width:0}
+@media(max-width:900px){.pt-returns-table th:nth-child(-n+2),.pt-returns-table td:nth-child(-n+2){padding-left:22px}}
 
 
 .pt-location-bar{display:grid;grid-template-columns:repeat(2,minmax(220px,310px));gap:13px 15px;padding:0 22px 18px;align-items:start}
@@ -178,6 +182,83 @@ body.pt-modal-open{overflow:hidden}
 .pt-progress-line{flex:1;min-width:14px;max-width:65px;height:1px;margin-top:18px;background:#d2cdcb}
 .pt-progress-line.done{background:#7db473}
 @media(max-width:550px){.pt-progress-item{width:67px;flex-basis:67px}.pt-progress-item img{width:29px;height:29px}.pt-progress-item small{font-size:9px}.pt-progress-line{margin-top:15px;min-width:7px}}
+
+/* Returns table: tighter, balanced spacing with less unused whitespace. */
+.pt-returns-table{
+  min-width:680px;
+  table-layout:fixed;
+}
+.pt-returns-table th,
+.pt-returns-table td{
+  padding:13px 14px;
+  line-height:1.45;
+  vertical-align:middle;
+}
+.pt-returns-table th:nth-child(1),
+.pt-returns-table td:nth-child(1){width:19%}
+.pt-returns-table th:nth-child(2),
+.pt-returns-table td:nth-child(2){width:35%}
+.pt-returns-table th:nth-child(3),
+.pt-returns-table td:nth-child(3){width:20%}
+.pt-returns-table th:nth-child(4),
+.pt-returns-table td:nth-child(4){width:26%}
+.pt-returns-table td strong{line-height:1.45}
+.pt-returns-table td small{margin-top:3px;line-height:1.45;overflow-wrap:anywhere}
+.pt-returns-table .pt-customer{min-width:0}
+.pt-returns-table th:nth-child(-n+2),
+.pt-returns-table td:nth-child(-n+2){padding-left:64px}
+@media(max-width:900px){
+  .pt-returns-table th:nth-child(-n+2),
+  .pt-returns-table td:nth-child(-n+2){padding-left:32px}
+}
+#ptReturns .pt-subbar{padding:14px 18px;gap:12px}
+#ptReturns .pt-returns-note{margin:0 18px 12px;line-height:1.5}
+#ptReturns .pt-footer{padding:12px 18px}
+@media(max-width:700px){
+  .pt-returns-table th,.pt-returns-table td{padding:11px 12px}
+  #ptReturns .pt-subbar{padding:12px 14px}
+  #ptReturns .pt-returns-note{margin:0 14px 12px}
+}
+/* Tracking history card styled like the supplied reference. */
+.pt-history-card .pt-detail-title{background:#fff7f5}
+.pt-history{
+  list-style:none;
+  padding:0 0 0 1px;
+  margin:0;
+}
+.pt-history li{
+  padding:11px 0 11px 20px;
+  border-left:2px solid #eadbd6;
+  position:relative;
+  font-size:12px;
+  line-height:1.45;
+}
+.pt-history li:first-child{padding-top:7px}
+.pt-history li:last-child{padding-bottom:7px}
+.pt-history li:before{
+  content:'';
+  position:absolute;
+  left:-6px;
+  top:15px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#a9273b;
+}
+.pt-history li strong{
+  display:block;
+  color:#302523;
+  font-size:11px;
+  font-weight:700;
+}
+.pt-history small{
+  display:block;
+  margin-top:4px;
+  color:#9b8e89;
+  font-size:10px;
+  line-height:1.5;
+}
+
 </style></head>
 <body class="lg-body">
 @include('components.logistics.sidebar')
@@ -361,6 +442,18 @@ function openReturn(o){
   const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];
   const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];
   const shipmentStatus=o.shipping_status||o.return_shipping_status||'processing';
+  // Hardcoded UI demo timeline for return records without saved tracking events.
+  // Existing record history takes priority whenever it is available.
+  const existingReturnHistory=[o.tracking_history,o.trackingHistory,o.history,o.events,o.scans,o.status_history]
+    .find(candidate=>Array.isArray(candidate)&&candidate.length);
+  const returnHistoryRecord=existingReturnHistory?o:{
+    ...o,
+    history:[
+      {status:'Order Prepared',timestamp:'2026-10-23T09:20:00+08:00',location:'—'},
+      {status:'Picked Up',timestamp:'2026-10-24T10:00:00+08:00',location:'—'},
+      {status:'Arrived at Sorting Center',timestamp:'2026-10-25T14:30:00+08:00',location:'Laguna'}
+    ]
+  };
   $('ptReturnModalBody').innerHTML=
     card('Return Summary',`<div class="pt-fields">${field('Order ID',o.order_id||o.order_number)}${field('Status',returnStatusName(returnsStatus(o)))}${field('Return Type','Return')}${field('Date & Time',formatDate(o.returned_at||o.requested_at||o.date||o.created_at))}</div>`)+
     card('Tracking Progress',progress(shipmentStatus))+
@@ -369,7 +462,7 @@ function openReturn(o){
     card('Shipment Information',`<div class="pt-fields">${field('Tracking Number',o.tracking_number)}${field('Courier',o.courier)}${field('Shipping Status',returnStatusName(o.shipping_status||'—'))}${field('Return Destination',o.seller_name||o.store_name||o.merchant_name)}</div>`)+
     card('Items for Return',returnItemsMarkup(items,o))+
     card('Supporting Evidence',`<div class="pt-notes">${escape(o.evidence_description||'No supporting evidence supplied.')}</div>`)+
-    card('Tracking History',historyList(o));
+    card('Tracking History',historyList(returnHistoryRecord));
   openModal('ptReturnModal');
 }
 function openModal(id){lastFocus=document.activeElement;const modal=$(id);modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('pt-modal-open');modal.querySelector('.pt-x').focus()}
