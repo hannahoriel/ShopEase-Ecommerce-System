@@ -119,10 +119,9 @@ Route::post('/auth/logout', function (
 
     $request->session()->regenerateToken();
 
-    return redirect()->route('login');
+    return redirect()->route('landing.page');
 
-})->middleware('auth')
-    ->name('logout');
+})->name('logout');
 
 /*
 |--------------------------------------------------------------------------
@@ -230,10 +229,15 @@ foreach ([
 Route::get('/logistics/deliveries', function () {
     abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
 
-    return view('pages.logistics.deliveries', [
-        'apiToken' => Auth::user()->createToken('logistics-deliveries')->plainTextToken,
-    ]);
+    return view('pages.logistics.network-hubs');
 })->middleware('auth')->name('logistics.deliveries');
+
+// Logistics Messages (Admin, Sorting Centers, and Delivery Hubs).
+Route::get('/logistics/messages', function () {
+    abort_unless(Auth::user()?->role === User::ROLE_LOGISTICS, 403);
+
+    return view('pages.logistics.messages');
+})->middleware('auth')->name('logistics.messages');
 
 Route::get('/logistics/rider-operations', function () {
     abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
@@ -2284,3 +2288,21 @@ Route::middleware(['auth', 'role:seller'])->group(function () {
     Route::view('/seller/vouchers-promotions', 'pages.seller.vouchers-promotions')
         ->name('seller.vouchers.index');
 });
+
+Route::view('/logistics/network-hubs', 'pages.logistics.network-hubs')
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.network-hubs');
+
+// Insert next to the other Logistics routes in routes/web.php.
+Route::get('/logistics/parcel-tracking', function () {
+    abort_unless(Auth::user()?->role === User::ROLE_LOGISTICS, 403);
+    // Supply $logisticsParcels and $logisticsReturns from the logistics-scoped backend when ready.
+    return view('pages.logistics.parcel-tracking');
+})->middleware('auth')->name('logistics.parcel-tracking');
+
+// Add within your existing authenticated Logistics route group (preserve existing middleware/role protection):
+Route::get('/logistics/account', function () {
+    return view('pages.logistics.account');
+})->name('logistics.account');
+
+// No POST route, database, controller, or migration is needed for this frontend preview.

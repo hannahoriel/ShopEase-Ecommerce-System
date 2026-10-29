@@ -70,3 +70,11 @@
  });
  window.addEventListener('pagehide',()=>objectUrls.forEach(url=>URL.revokeObjectURL(url)));
 })();
+
+// Preserve only documents confirmed stored by the Laravel permits POST endpoint.
+// Browser file inputs are intentionally not persisted or reconstructed.
+window.addEventListener('pageshow', event => {
+  if (event.persisted) window.location.reload();
+  const button = document.getElementById('savePermitsButton');
+  if (button) { button.disabled = false; button.textContent = 'Continue'; }
+});

@@ -265,4 +265,10 @@ body.logistics-route-loading .registration-content{opacity:.48;pointer-events:no
 })();
 </script><script>
 (()=>{try{const data=JSON.parse(sessionStorage.getItem('shopease_logistics_ui_extras')||'{}');for(const [key,value] of Object.entries(data)){const el=document.querySelector('[data-ui-preview="'+key+'"]');if(el)el.textContent=Array.isArray(value)?value.join(', '):String(value||'Not provided');}}catch(_e){}})();
-</script></body></html>
+</script><script>
+// Refresh the server-confirmed version when browser Back/Forward restores a cached form.
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) window.location.reload();
+});
+</script>
+</body></html>

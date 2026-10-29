@@ -40,7 +40,7 @@
   <a href="/logistics/register/review" class="step step-clickable " ><span class="step-number">3</span><span class="step-label">Review Information</span></a>
 </nav>
   <main class="registration-content">
-    <form id="logisticsCompanyForm" method="POST" action="{{ route('logistics.register.company.submit') }}" novalidate>
+    <form id="logisticsCompanyForm" autocomplete="off" method="POST" action="{{ route('logistics.register.company.submit') }}" novalidate>
       @csrf
       <div class="registration-card">
         @if ($errors->any())
@@ -107,7 +107,7 @@
 </div><small class="client-error" data-error-for="password"></small></div>
 <div class="form-group logistics-password-field"><label class="form-label" for="password_confirmation">Confirm Password <span class="required">*</span></label><div class="password-input-wrapper"><input type="password" id="password_confirmation" name="password_confirmation" class="form-input" placeholder="Confirm your password" minlength="8" autocomplete="new-password" required><button type="button" class="password-eye-button" id="passwordConfirmationEyeButton" aria-label="Show password" aria-pressed="false"><img src="{{ asset('icons/login/hide-password.png') }}" alt="Password hidden" id="passwordConfirmationEyeIcon"></button></div><p class="password-match-error" id="passwordConfirmationError" role="alert">Passwords do not match.</p><small class="client-error" data-error-for="password_confirmation"></small></div>
         </div>
-        <div class="excel-terms"><label><input id="accept_terms" name="accept_terms" type="checkbox" value="1" required> I agree to the Terms and Conditions and Privacy Policy. <span class="required">*</span></label><small class="excel-error" id="termsError"></small></div><div class="form-actions">
+        <div class="excel-terms"><label><input id="accept_terms" name="accept_terms" type="checkbox" value="1" @checked(old('accept_terms', $companyData['accept_terms'] ?? false)) required> I agree to the Terms and Conditions and Privacy Policy. <span class="required">*</span></label><small class="excel-error" id="termsError"></small></div><div class="form-actions">
           <span class="step-notice">Step 1 of 3 · Company Details</span>
           <button type="submit" class="next-button" id="nextButton">Continue</button>
         </div>
@@ -121,5 +121,11 @@
 
 
 
+<script>
+// Refresh the server-confirmed version when browser Back/Forward restores a cached form.
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) window.location.reload();
+});
+</script>
 </body>
 </html>
