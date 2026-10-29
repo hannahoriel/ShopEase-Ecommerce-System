@@ -701,13 +701,13 @@
         }
 
 
-        
+
 .email-verification-card{transform:none!important;max-height:calc(100vh - 32px);overflow-y:auto}
 .email-verification-card .email-verification-subtitle strong{color:#6E1717;font-weight:600}
 .email-verification-card .sa-security-message{margin:8px 0;color:#a52a2a}
 @media(max-width:530px){.email-verification-card{padding:30px 18px 24px}.email-code-container{gap:6px}.email-code-input{width:39px;height:52px;font-size:19px}.email-verification-title{font-size:21px}.email-verification-subtitle{font-size:13px}}
 
-    
+
 /* Unified account toast — matches Admin Registrations decision flash */
 .account-decision-flash{position:fixed;right:24px;bottom:24px;z-index:100050;width:min(370px,calc(100vw - 32px));min-height:72px;display:flex;align-items:flex-start;gap:11px;padding:13px 14px;box-sizing:border-box;background:#fff;border:1px solid #E7E2DF;border-radius:14px;box-shadow:0 14px 34px rgba(42,20,15,.16);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(10px);transition:opacity .08s ease,transform .08s ease,visibility .08s ease;font-family:Poppins,sans-serif}
 .account-decision-flash.show{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
@@ -751,8 +751,8 @@
                 <h1 class="sa-page-title">Profile</h1>
                 <p class="sa-intro">Manage your seller account information and business details.</p>
 
-                
-                
+
+
                 <div class="sa-status" id="saDemoMessage" role="status" aria-live="polite"></div>
 
                 <form id="sellerAccountForm" method="POST" action="{{ route('seller.account.update') }}" enctype="multipart/form-data" >

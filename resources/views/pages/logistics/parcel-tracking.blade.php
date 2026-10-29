@@ -62,12 +62,116 @@ html,body.lg-body{overflow-x:hidden}
     .lg-facility-kpis .lg-kpi-icon{width:34px;height:34px;flex-shrink:0}
     @media(max-width:1350px){.lg-facility-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:650px){.lg-facility-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    
-/* Parcel Tracking: seller-inspired shipping table + returns/refunds table. */
-.pt-page{max-width:1500px;margin:0 auto}.pt-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}.pt-eyebrow{color:#985850;letter-spacing:1.3px;text-transform:uppercase;font-size:10px;font-weight:700}.pt-heading h1{font-size:25px;margin:6px 0;color:#261719}.pt-heading p{font-size:12px;color:#948883;margin:0}.pt-demo{border-radius:30px;background:#fff0de;color:#925b24;font-size:10px;font-weight:650;padding:7px 13px}.pt-panel{background:white;border-radius:15px;border:1px solid #f0e5e1;overflow:hidden;box-shadow:0 3px 16px #2c090908}.pt-top-tabs{display:flex;gap:27px;border-bottom:1px solid #eadfdd;padding:0 24px}.pt-tab{position:relative;background:none;border:0;color:#9a8a87;font-size:13px;font-weight:500;padding:20px 5px;cursor:pointer}.pt-tab.active{color:#7b1b1b;font-weight:700}.pt-tab.active:after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;background:#7b1b1b}.pt-tabpanel[hidden]{display:none}.pt-subbar{padding:17px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.pt-pills{display:flex;gap:6px;flex-wrap:wrap}.pt-pill{background:#faf5f3;border:1px solid #f1e7e3;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:500;color:#766a67;cursor:pointer}.pt-pill.active{background:#7b1b1b;color:#fff;border-color:#7b1b1b}.pt-search{border:1px solid #e7dbd7;border-radius:9px;display:flex;align-items:center;gap:10px;padding:0 13px;height:40px;min-width:245px;max-width:360px;flex:1;color:#9e918c}.pt-search input{border:0;outline:none;width:100%;font:inherit;font-size:11px;background:none}.pt-scroll{overflow:auto;scrollbar-width:thin}.pt-table{width:100%;border-collapse:collapse;text-align:left;min-width:850px}.pt-table th{background:#fff9f7;color:#847773;font-size:11px;font-weight:600;padding:15px 19px;white-space:nowrap;border-top:1px solid #f4ebe7;border-bottom:1px solid #f0e7e2}.pt-table td{font-size:12px;padding:20px 19px;border-bottom:1px solid #f3ece9;vertical-align:middle;color:#443835}.pt-table tbody tr{cursor:pointer;transition:background .15s}.pt-table tbody tr:hover,.pt-table tbody tr:focus-visible{background:#fff7f4;outline:0}.pt-table td strong{color:#392723;font-size:12px;font-weight:600}.pt-table td small{display:block;color:#9c918e;margin-top:5px;font-size:10px}.pt-order{color:#892333!important}.pt-money{color:#8b202f;font-weight:700}.pt-status{display:inline-flex;align-items:center;gap:6px;border-radius:30px;background:#fff0d9;color:#986323;padding:7px 12px;font-weight:600;font-size:10px;white-space:nowrap}.pt-status.delivered,.pt-status.refunded{background:#e6f6e9;color:#247647}.pt-status.in-transit,.pt-status.picked-up{background:#e9f0fe;color:#3469a4}.pt-status.out-for-delivery,.pt-status.return-in-transit{background:#fff0e3;color:#ab6732}.pt-status.pending,.pt-status.return-requested{background:#fff0dd;color:#996521}.pt-status.rejected{background:#fbe6e9;color:#a02e42}.pt-footer{padding:17px 21px;display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:11px;color:#8a7d78}.pt-pagination{display:flex;gap:8px}.pt-pagination button{border:1px solid #e7dbd6;background:#fff;color:#7b1b1b;padding:7px 12px;border-radius:7px;cursor:pointer}.pt-pagination button:disabled{color:#c0b8b5;cursor:not-allowed}.pt-empty{text-align:center!important;padding:45px!important;color:#9c928e!important}.pt-modal{position:fixed;inset:0;background:#220e13a8;z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}.pt-modal.open{opacity:1;visibility:visible}.pt-dialog{max-width:850px;width:100%;max-height:min(90vh,900px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 24px 70px #16080a55;overflow:hidden;transform:translateY(12px);transition:transform .2s}.pt-modal.open .pt-dialog{transform:translateY(0)}.pt-modal-head{padding:21px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid #eee3df}.pt-modal-head h2{margin:0;font-size:19px;color:#271b1a}.pt-x{border:0;background:#f8f0ee;color:#7b1b1b;border-radius:50%;font-size:23px;width:35px;height:35px;cursor:pointer}.pt-modal-content{padding:23px 28px;overflow:auto}.pt-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.pt-detail-card{border:1px solid #eee4df;border-radius:11px;overflow:hidden;margin-bottom:16px}.pt-detail-title{background:#fff7f5;padding:13px 16px;font-size:12px;color:#69232b;font-weight:700;border-bottom:1px solid #eee3dd}.pt-detail-body{padding:16px}.pt-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.pt-field label{font-size:10px;color:#978882;display:block;margin-bottom:5px}.pt-field strong{display:block;font-size:12px;font-weight:600;color:#332a27;overflow-wrap:anywhere}.pt-wide{grid-column:1/-1}.pt-progress{display:flex;align-items:flex-start;justify-content:space-between;position:relative;gap:8px;margin:19px 0}.pt-step{text-align:center;flex:1;position:relative;z-index:1;color:#a9a09d;font-size:10px}.pt-step i{width:27px;height:27px;display:grid;place-items:center;border:2px solid #e0d5d1;border-radius:50%;background:#fff;margin:0 auto 7px;font-size:12px;font-style:normal}.pt-step.done i{background:#7b1b1b;border-color:#7b1b1b;color:#fff}.pt-step.done{color:#7b1b1b;font-weight:600}.pt-history{list-style:none;padding:0;margin:0}.pt-history li{padding:11px 0 11px 22px;border-left:2px solid #e8dcd7;position:relative;font-size:12px}.pt-history li:before{content:'';position:absolute;left:-6px;top:16px;width:9px;height:9px;border-radius:50%;background:#9b2935}.pt-history small{display:block;margin-top:4px;color:#968984;font-size:10px}.pt-notes{border:1px solid #f2e0d9;background:#fff9f6;border-radius:9px;padding:14px;font-size:12px;color:#695d58;line-height:1.7}.pt-modal-actions{padding:15px 27px;border-top:1px solid #efe4df;display:flex;justify-content:flex-end}.pt-close{background:white;border:1px solid #a6a6a6;color:#777;border-radius:8px;padding:9px 21px;font-size:12px;cursor:pointer}.pt-close:hover{background:#faf8f7}body.pt-modal-open{overflow:hidden}.pt-placeholder{font-size:11px;color:#a1938f;padding:8px 0}.pt-section-heading{font-size:12px;color:#7b1b1b;margin:0 0 14px}.pt-desc{font-size:11px;color:#a39a96;margin:0 0 4px}.pt-count{font-size:10px;color:#ab9893}.pt-returns-note{margin:0 22px 16px;font-size:11px;color:#927e76}.pt-return-type{color:#7b1b1b;font-weight:600}.pt-table .pt-customer{min-width:170px}.pt-party-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.pt-info-pair{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px 14px;align-items:start}.pt-info-pair+.pt-info-pair{margin-top:10px;padding-top:10px;border-top:1px solid #f2e7e2}.pt-info-pair label{font-size:11px;color:#9d8d87}.pt-info-pair strong{font-size:12px;color:#332a27;font-weight:600;overflow-wrap:anywhere}.pt-item-stack{display:flex;flex-direction:column;gap:14px}.pt-order-item{border:1px solid #ead7d1;border-radius:14px;overflow:hidden;background:#fff}.pt-order-item-head{background:#f7efed;padding:14px 16px;border-bottom:1px solid #eadfdb}.pt-order-item-index{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#a2574c;font-weight:700;display:block;margin-bottom:8px}.pt-order-item-name{font-size:13px;font-weight:700;color:#2e2321}.pt-order-item-body{padding:16px}.pt-order-item-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}.pt-order-item-field label{font-size:11px;color:#9d8d87;display:block;margin-bottom:6px}.pt-order-item-field strong{display:block;font-size:12px;color:#332a27;font-weight:600;overflow-wrap:anywhere}.pt-location-bar{display:flex;align-items:center;gap:11px;padding:0 22px 16px;flex-wrap:wrap}.pt-location-bar label{font-size:11px;font-weight:600;color:#5e3e3b}.pt-location-bar select{min-width:225px;max-width:100%;height:39px;border:1px solid #e7dbd7;background:white;border-radius:9px;padding:0 11px;font-size:11px;color:#51413e;outline:0}.pt-location-bar select:focus{border-color:#7b1b1b;box-shadow:0 0 0 2px #7b1b1b13}.pt-location-help{font-size:10px;color:#9c918e}@media(max-width:900px){.pt-modal-grid,.pt-party-grid,.pt-order-item-fields{grid-template-columns:1fr}.pt-search{max-width:unset}}@media(max-width:640px){.pt-heading{align-items:flex-start;flex-direction:column}.pt-top-tabs{padding:0 14px}.pt-tab{font-size:12px}.pt-subbar{padding:14px}.pt-search{min-width:100%}.pt-dialog{max-height:94vh}.pt-modal{padding:9px}.pt-modal-content,.pt-modal-head{padding:16px}.pt-fields,.pt-info-pair{grid-template-columns:1fr}.pt-modal-actions{padding:12px 16px}.pt-progress{overflow-x:auto}.pt-step{min-width:76px}}
+
+/* Parcel Tracking: seller-inspired shipping table + returns table. */
+.pt-page{max-width:1500px;margin:0 auto}
+.pt-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}
+.pt-eyebrow{color:#985850;letter-spacing:1.3px;text-transform:uppercase;font-size:10px;font-weight:700}
+.pt-heading h1{font-size:25px;margin:6px 0;color:#261719}
+.pt-heading p{font-size:12px;color:#948883;margin:0}
+.pt-demo{border-radius:30px;background:#fff0de;color:#925b24;font-size:10px;font-weight:650;padding:7px 13px}
+.pt-panel{background:white;border-radius:15px;border:1px solid #f0e5e1;overflow:hidden;box-shadow:0 3px 16px #2c090908}
+.pt-top-tabs{display:flex;gap:27px;border-bottom:1px solid #eadfdd;padding:0 24px}
+.pt-tab{position:relative;background:none;border:0;color:#9a8a87;font-size:13px;font-weight:500;padding:20px 5px;cursor:pointer}
+.pt-tab.active{color:#7b1b1b;font-weight:700}
+.pt-tab.active:after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;background:#7b1b1b}
+.pt-tabpanel[hidden]{display:none}
+.pt-subbar{padding:17px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.pt-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pt-pill{background:#faf5f3;border:1px solid #f1e7e3;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:500;color:#766a67;cursor:pointer}
+.pt-pill.active{background:#7b1b1b;color:#fff;border-color:#7b1b1b}
+.pt-search{border:1px solid #e7dbd7;border-radius:9px;display:flex;align-items:center;gap:10px;padding:0 13px;height:40px;min-width:245px;max-width:360px;flex:1;color:#9e918c}
+.pt-search input{border:0;outline:none;width:100%;font:inherit;font-size:11px;background:none}
+.pt-scroll{overflow:auto;scrollbar-width:thin}
+.pt-table{width:100%;border-collapse:collapse;text-align:left;min-width:850px}
+.pt-table th{background:#fff9f7;color:#847773;font-size:11px;font-weight:600;padding:15px 19px;white-space:nowrap;border-top:1px solid #f4ebe7;border-bottom:1px solid #f0e7e2}
+.pt-table td{font-size:12px;padding:20px 19px;border-bottom:1px solid #f3ece9;vertical-align:middle;color:#443835}
+.pt-table tbody tr{cursor:pointer;transition:background .15s}
+.pt-table tbody tr:hover,.pt-table tbody tr:focus-visible{background:#fff7f4;outline:0}
+.pt-table td strong{color:#392723;font-size:12px;font-weight:600}
+.pt-table td small{display:block;color:#9c918e;margin-top:5px;font-size:10px}
+.pt-order{color:#892333!important}
+.pt-money{color:#8b202f;font-weight:700}
+.pt-status{display:inline-flex;align-items:center;gap:6px;border-radius:30px;background:#fff0d9;color:#986323;padding:7px 12px;font-weight:600;font-size:10px;white-space:nowrap}
+.pt-status.delivered,.pt-status.refunded{background:#e6f6e9;color:#247647}
+.pt-status.in-transit,.pt-status.picked-up{background:#e9f0fe;color:#3469a4}
+.pt-status.out-for-delivery,.pt-status.return-in-transit{background:#fff0e3;color:#ab6732}
+.pt-status.pending,.pt-status.return-requested{background:#fff0dd;color:#996521}
+.pt-status.rejected{background:#fbe6e9;color:#a02e42}
+.pt-footer{padding:17px 21px;display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:11px;color:#8a7d78}
+.pt-pagination{display:flex;gap:8px}
+.pt-pagination button{border:1px solid #e7dbd6;background:#fff;color:#7b1b1b;padding:7px 12px;border-radius:7px;cursor:pointer}
+.pt-pagination button:disabled{color:#c0b8b5;cursor:not-allowed}
+.pt-empty{text-align:center!important;padding:45px!important;color:#9c928e!important}
+.pt-modal{position:fixed;inset:0;background:#220e13a8;z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.pt-modal.open{opacity:1;visibility:visible}
+.pt-dialog{max-width:850px;width:100%;max-height:min(90vh,900px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 24px 70px #16080a55;overflow:hidden;transform:translateY(12px);transition:transform .2s}
+.pt-modal.open .pt-dialog{transform:translateY(0)}
+.pt-modal-head{padding:21px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid #eee3df}
+.pt-modal-head h2{margin:0;font-size:19px;color:#271b1a}
+.pt-x{border:0;background:#f8f0ee;color:#7b1b1b;border-radius:50%;font-size:23px;width:35px;height:35px;cursor:pointer}
+.pt-modal-content{padding:23px 28px;overflow:auto}
+.pt-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pt-detail-card{border:1px solid #eee4df;border-radius:11px;overflow:hidden;margin-bottom:16px}
+.pt-detail-title{background:#fff7f5;padding:13px 16px;font-size:12px;color:#69232b;font-weight:700;border-bottom:1px solid #eee3dd}
+.pt-detail-body{padding:16px}
+.pt-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.pt-field label{font-size:10px;color:#978882;display:block;margin-bottom:5px}
+.pt-field strong{display:block;font-size:12px;font-weight:600;color:#332a27;overflow-wrap:anywhere}
+.pt-wide{grid-column:1/-1}
+.pt-progress{display:flex;align-items:flex-start;justify-content:space-between;position:relative;gap:8px;margin:19px 0}
+.pt-step{text-align:center;flex:1;position:relative;z-index:1;color:#a9a09d;font-size:10px}
+.pt-step i{width:27px;height:27px;display:grid;place-items:center;border:2px solid #e0d5d1;border-radius:50%;background:#fff;margin:0 auto 7px;font-size:12px;font-style:normal}
+.pt-step.done i{background:#7b1b1b;border-color:#7b1b1b;color:#fff}
+.pt-step.done{color:#7b1b1b;font-weight:600}
+.pt-history{list-style:none;padding:0;margin:0}
+.pt-history li{padding:11px 0 11px 22px;border-left:2px solid #e8dcd7;position:relative;font-size:12px}
+.pt-history li:before{content:'';position:absolute;left:-6px;top:16px;width:9px;height:9px;border-radius:50%;background:#9b2935}
+.pt-history small{display:block;margin-top:4px;color:#968984;font-size:10px}
+.pt-notes{border:1px solid #f2e0d9;background:#fff9f6;border-radius:9px;padding:14px;font-size:12px;color:#695d58;line-height:1.7}
+.pt-modal-actions{padding:15px 27px;border-top:1px solid #efe4df;display:flex;justify-content:flex-end}
+.pt-close{background:white;border:1px solid #a6a6a6;color:#777;border-radius:8px;padding:9px 21px;font-size:12px;cursor:pointer}
+.pt-close:hover{background:#faf8f7}
+body.pt-modal-open{overflow:hidden}
+.pt-placeholder{font-size:11px;color:#a1938f;padding:8px 0}
+.pt-section-heading{font-size:12px;color:#7b1b1b;margin:0 0 14px}
+.pt-desc{font-size:11px;color:#a39a96;margin:0 0 4px}
+.pt-count{font-size:10px;color:#ab9893}
+.pt-returns-note{margin:0 22px 16px;font-size:11px;color:#927e76}
+.pt-table .pt-customer{min-width:170px}
+.pt-party-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pt-info-pair{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px 14px;align-items:start}
+.pt-info-pair+.pt-info-pair{margin-top:10px;padding-top:10px;border-top:1px solid #f2e7e2}
+.pt-info-pair label{font-size:11px;color:#9d8d87}
+.pt-info-pair strong{font-size:12px;color:#332a27;font-weight:600;overflow-wrap:anywhere}
+.pt-item-stack{display:flex;flex-direction:column;gap:14px}
+.pt-order-item{border:1px solid #ead7d1;border-radius:14px;overflow:hidden;background:#fff}
+.pt-order-item-head{background:#f7efed;padding:14px 16px;border-bottom:1px solid #eadfdb}
+.pt-order-item-index{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#a2574c;font-weight:700;display:block;margin-bottom:8px}
+.pt-order-item-name{font-size:13px;font-weight:700;color:#2e2321}
+.pt-order-item-body{padding:16px}
+.pt-order-item-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
+.pt-order-item-field label{font-size:11px;color:#9d8d87;display:block;margin-bottom:6px}
+.pt-order-item-field strong{display:block;font-size:12px;color:#332a27;font-weight:600;overflow-wrap:anywhere}
+.pt-returns-table{width:100%;min-width:720px;table-layout:fixed}
+.pt-returns-table th:nth-child(1),.pt-returns-table td:nth-child(1){width:20%}
+.pt-returns-table th:nth-child(2),.pt-returns-table td:nth-child(2){width:34%}
+.pt-returns-table th:nth-child(3),.pt-returns-table td:nth-child(3){width:21%}
+.pt-returns-table th:nth-child(4),.pt-returns-table td:nth-child(4){width:25%}
+.pt-returns-table th,.pt-returns-table td{overflow-wrap:anywhere}
+.pt-returns-table th:nth-child(-n+2),.pt-returns-table td:nth-child(-n+2){padding-left:34px}
+.pt-returns-table .pt-customer{min-width:0}
+@media(max-width:900px){.pt-returns-table th:nth-child(-n+2),.pt-returns-table td:nth-child(-n+2){padding-left:22px}}
 
 
-.pt-location-bar{display:flex;align-items:end;gap:14px;flex-wrap:wrap}.pt-location-control{display:flex;flex-direction:column;gap:7px;min-width:190px;flex:1;max-width:310px}.pt-location-control label{font-size:11px;font-weight:600;color:#765e5a}.pt-location-control select{width:100%;min-width:0}.pt-location-control select:disabled{background:#f5f1ef;color:#b7aaa6;cursor:not-allowed;opacity:.68}.pt-location-help{flex-basis:100%}@media(max-width:640px){.pt-location-control{max-width:none;min-width:100%}}
+.pt-location-bar{display:grid;grid-template-columns:repeat(2,minmax(220px,310px));gap:13px 15px;padding:0 22px 18px;align-items:start}
+.pt-location-control{display:flex;flex-direction:column;gap:6px;min-width:0;width:100%}
+.pt-location-control label{font-size:11px;font-weight:600;line-height:1.4;color:#765e5a}
+.pt-location-control select{width:100%;min-width:0;height:40px;padding:0 35px 0 12px;border:1px solid #e7dbd7;border-radius:9px;background:#fff;color:#51413e;font:500 11px Poppins,sans-serif;outline:0;transition:border-color .15s,box-shadow .15s}
+.pt-location-control select:focus{border-color:#7b1b1b;box-shadow:0 0 0 3px #7b1b1b16}
+.pt-location-control select:disabled{background:#f5f1ef;color:#a99d99;cursor:not-allowed;opacity:1}
+.pt-location-help{grid-column:1/-1;margin:0;padding:9px 12px;border:1px solid #f0e5e1;border-radius:8px;background:#fff9f7;color:#8d7974;font-size:10px;line-height:1.5}
+@media(max-width:640px){.pt-location-bar{grid-template-columns:minmax(0,1fr);gap:10px;padding:0 14px 15px}.pt-location-help{grid-column:auto}}
 .pt-address-heading{font-size:12px;font-weight:700;color:#8c2931;margin:18px 0 13px;padding-top:15px;border-top:1px solid #eee4df;display:flex;align-items:center;gap:6px}.pt-address-pin{display:inline-flex;align-items:center;color:#982d30}.pt-address-fields{display:flex;flex-direction:column;gap:11px}.pt-address-field{display:grid;grid-template-columns:minmax(90px,110px) minmax(0,1fr);gap:12px;align-items:start}.pt-address-field label{font-size:11px;color:#9b9694;margin:0;line-height:1.55}.pt-address-value{color:#302729;font-size:11px;font-weight:600;overflow-wrap:anywhere;line-height:1.55}@media(max-width:640px){.pt-address-field{grid-template-columns:95px minmax(0,1fr);gap:9px}}
 
 /* Seller Returns Shipping Status-style tracking progress inside the Parcels details modal. */
@@ -78,26 +182,103 @@ html,body.lg-body{overflow-x:hidden}
 .pt-progress-line{flex:1;min-width:14px;max-width:65px;height:1px;margin-top:18px;background:#d2cdcb}
 .pt-progress-line.done{background:#7db473}
 @media(max-width:550px){.pt-progress-item{width:67px;flex-basis:67px}.pt-progress-item img{width:29px;height:29px}.pt-progress-item small{font-size:9px}.pt-progress-line{margin-top:15px;min-width:7px}}
+
+/* Returns table: tighter, balanced spacing with less unused whitespace. */
+.pt-returns-table{
+  min-width:680px;
+  table-layout:fixed;
+}
+.pt-returns-table th,
+.pt-returns-table td{
+  padding:13px 14px;
+  line-height:1.45;
+  vertical-align:middle;
+}
+.pt-returns-table th:nth-child(1),
+.pt-returns-table td:nth-child(1){width:19%}
+.pt-returns-table th:nth-child(2),
+.pt-returns-table td:nth-child(2){width:35%}
+.pt-returns-table th:nth-child(3),
+.pt-returns-table td:nth-child(3){width:20%}
+.pt-returns-table th:nth-child(4),
+.pt-returns-table td:nth-child(4){width:26%}
+.pt-returns-table td strong{line-height:1.45}
+.pt-returns-table td small{margin-top:3px;line-height:1.45;overflow-wrap:anywhere}
+.pt-returns-table .pt-customer{min-width:0}
+.pt-returns-table th:nth-child(-n+2),
+.pt-returns-table td:nth-child(-n+2){padding-left:64px}
+@media(max-width:900px){
+  .pt-returns-table th:nth-child(-n+2),
+  .pt-returns-table td:nth-child(-n+2){padding-left:32px}
+}
+#ptReturns .pt-subbar{padding:14px 18px;gap:12px}
+#ptReturns .pt-returns-note{margin:0 18px 12px;line-height:1.5}
+#ptReturns .pt-footer{padding:12px 18px}
+@media(max-width:700px){
+  .pt-returns-table th,.pt-returns-table td{padding:11px 12px}
+  #ptReturns .pt-subbar{padding:12px 14px}
+  #ptReturns .pt-returns-note{margin:0 14px 12px}
+}
+/* Tracking history card styled like the supplied reference. */
+.pt-history-card .pt-detail-title{background:#fff7f5}
+.pt-history{
+  list-style:none;
+  padding:0 0 0 1px;
+  margin:0;
+}
+.pt-history li{
+  padding:11px 0 11px 20px;
+  border-left:2px solid #eadbd6;
+  position:relative;
+  font-size:12px;
+  line-height:1.45;
+}
+.pt-history li:first-child{padding-top:7px}
+.pt-history li:last-child{padding-bottom:7px}
+.pt-history li:before{
+  content:'';
+  position:absolute;
+  left:-6px;
+  top:15px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#a9273b;
+}
+.pt-history li strong{
+  display:block;
+  color:#302523;
+  font-size:11px;
+  font-weight:700;
+}
+.pt-history small{
+  display:block;
+  margin-top:4px;
+  color:#9b8e89;
+  font-size:10px;
+  line-height:1.5;
+}
+
 </style></head>
 <body class="lg-body">
 @include('components.logistics.sidebar')
 @include('components.logistics.navbar')
 <main class="lg-main" id="lgMain"><div class="pt-page">
-<header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Logistics Operations</span><h1>Parcel Tracking</h1><p>Monitor shipment movement and review return or refund requests across your delivery network.</p></div><span class="pt-demo" id="ptDemoBadge" hidden>Preview Data</span></header>
+<header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Logistics Operations</span><h1>Parcel Tracking</h1><p>Monitor shipment movement and review return requests across your delivery network.</p></div><span class="pt-demo" id="ptDemoBadge" hidden>Preview Data</span></header>
 <section class="pt-panel" aria-label="Parcel tracking records">
-<div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns &amp; Refunds</button></div>
+<div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns</button></div>
 <div id="ptParcels" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabParcels">
 <div class="pt-subbar"><div class="pt-pills" id="ptShipmentFilters" aria-label="Filter shipments"><button class="pt-pill active" data-filter="all">All</button><button class="pt-pill" data-filter="in-transit">In Transit</button><button class="pt-pill" data-filter="out-for-delivery">Out for Delivery</button><button class="pt-pill" data-filter="delivered">Delivered</button></div><label class="pt-search"><span aria-hidden="true">⌕</span><input id="ptSearchParcels" type="search" placeholder="Search order, tracking number, buyer…" aria-label="Search parcels"></label></div>
 <div class="pt-location-bar"><div class="pt-location-control"><label for="ptSortingFilter">Sorting Center</label><select id="ptSortingFilter" aria-label="Filter parcels by sorting center"><option value="all">All Sorting Centers</option></select></div><div class="pt-location-control"><label for="ptDeliveryFilter">Delivery Hub</label><select id="ptDeliveryFilter" aria-label="Filter parcels by delivery hub"><option value="all">All Delivery Hubs</option></select></div><span class="pt-location-help">Choose either a sorting center or delivery hub. Only one location filter can be active at a time.</span></div>
 <div class="pt-scroll"><table class="pt-table"><thead><tr><th>Order Information</th><th>Tracking Number</th><th>Shipping Status</th><th>Current Location</th><th>Estimated Delivery</th></tr></thead><tbody id="ptParcelsRows"></tbody></table></div><div class="pt-footer"><span id="ptParcelsCount"></span><div class="pt-pagination"><button id="ptParcelsPrev">Previous</button><button id="ptParcelsNext">Next</button></div></div>
 </div>
 <div id="ptReturns" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabReturns" hidden>
-<div class="pt-subbar"><div class="pt-pills" id="ptReturnFilters"><button class="pt-pill active" data-filter="all">All</button><button class="pt-pill" data-filter="pending">Pending</button><button class="pt-pill" data-filter="returned">Returned</button><button class="pt-pill" data-filter="refunded">Refunded</button></div><label class="pt-search"><span aria-hidden="true">⌕</span><input id="ptSearchReturns" type="search" placeholder="Search order, buyer, product…" aria-label="Search returns and refunds"></label></div>
-<p class="pt-returns-note">Return and refund requests are shown for tracking and review. Approval and refund processing remain under the authorized seller / admin workflow.</p>
-<div class="pt-scroll"><table class="pt-table"><thead><tr><th>Order ID</th><th>Buyer / Product</th><th>Refund Type</th><th>Amount</th><th>Status</th><th>Date &amp; Time</th></tr></thead><tbody id="ptReturnsRows"></tbody></table></div><div class="pt-footer"><span id="ptReturnsCount"></span><div class="pt-pagination"><button id="ptReturnsPrev">Previous</button><button id="ptReturnsNext">Next</button></div></div>
+<div class="pt-subbar"><div class="pt-pills" id="ptReturnFilters"><button class="pt-pill active" data-filter="all">All</button><button class="pt-pill" data-filter="pending">Pending</button><button class="pt-pill" data-filter="returned">Returned</button></div><label class="pt-search"><span aria-hidden="true">⌕</span><input id="ptSearchReturns" type="search" placeholder="Search order, buyer, product…" aria-label="Search returns"></label></div>
+<p class="pt-returns-note">Return requests are shown for tracking and review. Approval remains under the authorized seller / admin workflow.</p>
+<div class="pt-scroll"><table class="pt-table pt-returns-table"><thead><tr><th>Order ID</th><th>Buyer / Product</th><th>Status</th><th>Date &amp; Time</th></tr></thead><tbody id="ptReturnsRows"></tbody></table></div><div class="pt-footer"><span id="ptReturnsCount"></span><div class="pt-pagination"><button id="ptReturnsPrev">Previous</button><button id="ptReturnsNext">Next</button></div></div>
 </div></section></div></main>
 <div class="pt-modal" id="ptParcelModal" aria-hidden="true"><div class="pt-dialog" role="dialog" aria-modal="true" aria-labelledby="ptParcelModalTitle" tabindex="-1"><header class="pt-modal-head"><h2 id="ptParcelModalTitle">Order Details</h2><button type="button" class="pt-x" data-close="ptParcelModal" aria-label="Close">×</button></header><div class="pt-modal-content" id="ptParcelModalBody"></div><div class="pt-modal-actions"><button type="button" class="pt-close" data-close="ptParcelModal">Close</button></div></div></div>
-<div class="pt-modal" id="ptReturnModal" aria-hidden="true"><div class="pt-dialog" role="dialog" aria-modal="true" aria-labelledby="ptReturnModalTitle" tabindex="-1"><header class="pt-modal-head"><h2 id="ptReturnModalTitle">Return &amp; Refund Details</h2><button type="button" class="pt-x" data-close="ptReturnModal" aria-label="Close">×</button></header><div class="pt-modal-content" id="ptReturnModalBody"></div><div class="pt-modal-actions"><button type="button" class="pt-close" data-close="ptReturnModal">Close</button></div></div></div>
+<div class="pt-modal" id="ptReturnModal" aria-hidden="true"><div class="pt-dialog" role="dialog" aria-modal="true" aria-labelledby="ptReturnModalTitle" tabindex="-1"><header class="pt-modal-head"><h2 id="ptReturnModalTitle">Return Details</h2><button type="button" class="pt-x" data-close="ptReturnModal" aria-label="Close">×</button></header><div class="pt-modal-content" id="ptReturnModalBody"></div><div class="pt-modal-actions"><button type="button" class="pt-close" data-close="ptReturnModal">Close</button></div></div></div>
 <script id="ptParcelData" type="application/json">{!! json_encode($logisticsParcels ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 <script id="ptReturnData" type="application/json">{!! json_encode($logisticsReturns ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 <script>
@@ -109,6 +290,7 @@ const clean = v => String(v ?? '').toLowerCase().replace(/[_\s]+/g,'-').trim();
 const formatDate = v => {if(!v)return '—';const d=new Date(v);return isNaN(d)?escape(v):d.toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
 const money=v=>{const n=Number(String(v??'').replace(/[^\d.-]/g,''));return (v===null||v===undefined||v==='')?'—':Number.isFinite(n)?'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}):escape(v);};
 const statusName=v=>({ 'in-transit':'In Transit','out-for-delivery':'Out for Delivery','delivered':'Delivered','picked-up':'Picked Up','processing':'Processing','pending':'Pending','returned':'Returned','refunded':'Refunded','returned-refunded':'Returned & Refunded','return-requested':'Return Requested','return-in-transit':'Return In Transit','rejected':'Rejected'}[clean(v)]||String(v||'Pending').replace(/[-_]/g,' '));
+const returnStatusName=v=>['refunded','returned-refunded','return-completed'].includes(clean(v))?'Returned':statusName(v);
 const pill=v=>`<span class="pt-status ${escape(clean(v))}">${escape(statusName(v))}</span>`;
 const field=(title,value)=>`<div class="pt-field"><label>${escape(title)}</label><strong>${escape(value??'—')}</strong></div>`;
 const card=(title,body)=>`<section class="pt-detail-card"><div class="pt-detail-title">${escape(title)}</div><div class="pt-detail-body">${body}</div></section>`;
@@ -122,9 +304,8 @@ if(!parcels.length&&!returns.length){
     {order_id:'DEMO-SH-1003',buyer_address_details:{province:'Quezon',municipality:'Lucena City',barangay:'Ibabang Dupay',zip_code:'4301',street:'Quezon Avenue',house_no:'11',building:'Cruz Home',subdivision:'Pacific Homes'},seller_address_details:{province:'Quezon',municipality:'Lucena City',barangay:'Isabang',zip_code:'4301',street:'Dalahican Road',house_no:'76',building:'House & Home Shop',subdivision:'Eastview'},buyer_name:'Taylor Cruz',product_name:'Ceramic Mug Set',tracking_number:'DEMO-TRK-003',status:'delivered',current_location:'Delivered to recipient',ordered_at:'2026-10-20T12:00:00+08:00',estimated_delivery:'2026-10-27T17:00:00+08:00',seller_name:'House & Home',seller_address:'Lucena City, Quezon',total_amount:699}
   );
   returns.push(
-    {order_id:'DEMO-SH-0998',buyer_address_details:{province:'Laguna',municipality:'San Pablo City',barangay:'San Francisco',zip_code:'4000',street:'Mabini Street',house_no:'15',building:'Lee Residence',subdivision:'San Pablo Village'},seller_address_details:{province:'Laguna',municipality:'Calamba City',barangay:'Canlubang',zip_code:'4027',street:'Market Road',house_no:'2',building:'StreetFit Store',subdivision:'West Park'},buyer_name:'Morgan Lee',buyer_email:'morgan@example.com',buyer_phone:'0917 123 4561',delivery_address:'San Pablo City, Laguna',product_name:'Running Sneakers',type:'Return & Refund',amount:1799,status:'pending',date:'2026-10-26T09:30:00+08:00',reason:'Incorrect size',solution:'Awaiting return pickup',seller_name:'StreetFit',seller_email:'support@streetfit.com',seller_phone:'0917 987 6501',seller_address:'Calamba City, Laguna',courier:'ShopEase Logistics',shipping_status:'Return Requested',tracking_number:'DEMO-RET-001',return_items:[{product_name:'Running Sneakers',variation:'Standard',color:'White',size:'EU 40',quantity:1,product_price:1799}]},
-    {order_id:'DEMO-SH-0991',buyer_address_details:{province:'Laguna',municipality:'Santa Cruz',barangay:'Poblacion I',zip_code:'4009',street:'Burgos Street',house_no:'33',building:'Ramos Residence',subdivision:'Lakeside'},seller_address_details:{province:'Laguna',municipality:'Liliw',barangay:'Poblacion',zip_code:'4004',street:'Rizal Street',house_no:'14',building:'Mia Boutique Shop',subdivision:'Town Center'},buyer_name:'Casey Ramos',buyer_email:'alex@example.com',buyer_phone:'0917 123 4567',delivery_address:'Santa Cruz, Laguna',product_name:'Crossbody Bag',type:'Return & Refund',amount:799,status:'returned-refunded',refunded_at:'2026-10-25T16:40:00+08:00',solution:'Refund issued after returned package was received',seller_name:'Mia Boutique',seller_email:'miaboutique@example.com',seller_phone:'0917 654 3210',seller_address:'Liliw, Laguna',courier:'ShopEase Logistics',shipping_status:'Returned & Refunded',tracking_number:'DEMO-RET-002',return_items:[{product_name:'Classic Crossbody Bag',variation:'Adjustable Strap',color:'Coffee Brown',size:'Medium',quantity:1,product_price:799},{product_name:'Mini Card Holder',variation:'Leather Finish',color:'Mocha',size:'One Size',quantity:2,product_price:249}]},
-    {order_id:'DEMO-SH-0987',buyer_address_details:{province:'Laguna',municipality:'Pagsanjan',barangay:'Sampaloc',zip_code:'4008',street:'Luna Street',house_no:'8',building:'Reyes Home',subdivision:'Riverpark'},seller_address_details:{province:'Laguna',municipality:'Los Baños',barangay:'Batong Malake',zip_code:'4030',street:'Grove Street',house_no:'41',building:'Glow Lab Store',subdivision:'University Village'},buyer_name:'Sam Reyes',buyer_email:'sam@example.com',buyer_phone:'0917 123 1100',delivery_address:'Pagsanjan, Laguna',product_name:'Skincare Set',type:'Refund Only',amount:300,status:'refunded',refunded_at:'2026-10-24T11:15:00+08:00',reason:'One bottle leaked',solution:'Partial refund completed without return',seller_name:'Glow Lab',seller_email:'support@glowlab.com',seller_phone:'0917 712 0012',seller_address:'Los Baños, Laguna',courier:'ShopEase Logistics',shipping_status:'Delivered'}
+    {order_id:'DEMO-SH-0998',buyer_address_details:{province:'Laguna',municipality:'San Pablo City',barangay:'San Francisco',zip_code:'4000',street:'Mabini Street',house_no:'15',building:'Lee Residence',subdivision:'San Pablo Village'},seller_address_details:{province:'Laguna',municipality:'Calamba City',barangay:'Canlubang',zip_code:'4027',street:'Market Road',house_no:'2',building:'StreetFit Store',subdivision:'West Park'},buyer_name:'Morgan Lee',buyer_email:'morgan@example.com',buyer_phone:'0917 123 4561',delivery_address:'San Pablo City, Laguna',product_name:'Running Sneakers',type:'Return',amount:1799,status:'pending',date:'2026-10-26T09:30:00+08:00',reason:'Incorrect size',solution:'Awaiting return pickup',seller_name:'StreetFit',seller_email:'support@streetfit.com',seller_phone:'0917 987 6501',seller_address:'Calamba City, Laguna',courier:'ShopEase Logistics',shipping_status:'Return Requested',tracking_number:'DEMO-RET-001',return_items:[{product_name:'Running Sneakers',variation:'Standard',color:'White',size:'EU 40',quantity:1,product_price:1799}]},
+    {order_id:'DEMO-SH-0991',buyer_address_details:{province:'Laguna',municipality:'Santa Cruz',barangay:'Poblacion I',zip_code:'4009',street:'Burgos Street',house_no:'33',building:'Ramos Residence',subdivision:'Lakeside'},seller_address_details:{province:'Laguna',municipality:'Liliw',barangay:'Poblacion',zip_code:'4004',street:'Rizal Street',house_no:'14',building:'Mia Boutique Shop',subdivision:'Town Center'},buyer_name:'Casey Ramos',buyer_email:'alex@example.com',buyer_phone:'0917 123 4567',delivery_address:'Santa Cruz, Laguna',product_name:'Crossbody Bag',type:'Return',amount:799,status:'returned',date:'2026-10-25T16:40:00+08:00',solution:'Returned package received at seller warehouse.',seller_name:'Mia Boutique',seller_email:'miaboutique@example.com',seller_phone:'0917 654 3210',seller_address:'Liliw, Laguna',courier:'ShopEase Logistics',shipping_status:'Returned',tracking_number:'DEMO-RET-002',history:[{status:'Return Requested',timestamp:'2026-10-23T09:20:00+08:00'},{status:'Picked Up',timestamp:'2026-10-24T10:00:00+08:00'},{status:'Arrived at Sorting Center',location:'Laguna',timestamp:'2026-10-25T14:30:00+08:00'},{status:'Returned to Seller',location:'Liliw, Laguna',timestamp:'2026-10-25T16:40:00+08:00'}],return_items:[{product_name:'Classic Crossbody Bag',variation:'Adjustable Strap',color:'Coffee Brown',size:'Medium',quantity:1,product_price:799},{product_name:'Mini Card Holder',variation:'Leather Finish',color:'Mocha',size:'One Size',quantity:2,product_price:249}]}
   );
   $('ptDemoBadge').hidden=false;
 }
@@ -132,7 +313,8 @@ if(!parcels.length&&!returns.length){
 const states={parcels:{tab:'all',location:'all',locationType:null,search:'',page:1,data:parcels},returns:{tab:'all',search:'',page:1,data:returns}};
 const perPage=7;let active='parcels';let lastFocus=null;
 function parcelStatus(p){return clean(p.shipping_status||p.status||'processing')}
-function returnsStatus(r){return clean(r.status||r.refund_status||'pending')}
+function returnsStatus(r){return clean(r.status||r.return_status||'pending')}
+function isRefundOnly(r){return /refund[\s_-]*only|partial[\s_-]*refund/i.test(String(r.return_type||r.refund_type||r.type||''))}
 // Read the exact Network Hubs preview storage key; exclude inactive / archived locations.
 const hubStorageKey='shopease-logistics-network-hubs-ui-v1';
 const normalizeLocation=v=>String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');
@@ -170,13 +352,63 @@ $('ptSortingFilter')?.addEventListener('change',()=>changeHubFilter('sorting'));
 $('ptDeliveryFilter')?.addEventListener('change',()=>changeHubFilter('delivery'));
 window.addEventListener('storage',e=>{if(e.key===hubStorageKey){updateLocationOptions();render('parcels');}});
 window.addEventListener('pageshow',()=>{updateLocationOptions();render('parcels');});
-function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='parcels'&&s.location!=='all'&&normalizeLocation(o.current_location||o.location)!==s.location)return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','returned-refunded','return-completed'].includes(status))||(section==='returns'&&tab==='refunded'&&['refunded','returned-refunded'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
-function render(section){const filtered=filterRecords(section),state=states[section];const total=Math.max(1,Math.ceil(filtered.length/perPage));state.page=Math.min(state.page,total);const shown=filtered.slice((state.page-1)*perPage,state.page*perPage);if(section==='parcels'){$('ptParcelsRows').innerHTML=shown.map(o=>{const id=parcels.indexOf(o);return `<tr role="button" tabindex="0" data-id="${id}" aria-label="View parcel ${escape(o.order_number||o.order_id||o.tracking_number)}"><td><strong class="pt-order">${escape(o.order_number||o.order_id||o.id)}</strong><small>${escape(o.buyer_name||o.customer_name||'—')} · ${escape(o.product_name||o.items?.[0]?.name||'Parcel')}</small></td><td>${escape(o.tracking_number||o.tracking_no||'—')}</td><td>${pill(parcelStatus(o))}</td><td>${escape(o.current_location||o.location||'Not scanned yet')}</td><td>${formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta)}</td></tr>`}).join('')||'<tr><td class="pt-empty" colspan="5">No parcels found. Live parcel records will appear when the logistics data source is connected.</td></tr>'}else{$('ptReturnsRows').innerHTML=shown.map(o=>`<tr role="button" tabindex="0" data-id="${returns.indexOf(o)}" aria-label="View return ${escape(o.order_id||o.order_number)}"><td><strong class="pt-order">${escape(o.order_id||o.order_number)}</strong></td><td class="pt-customer"><strong>${escape(o.buyer_name||o.customer_name)}</strong><small>${escape(o.product_name||o.return_items?.[0]?.product_name||'—')}</small></td><td class="pt-return-type">${escape(o.refund_type||o.type||'Return & Refund')}</td><td><span class="pt-money">${money(o.amount??o.refund_amount)}</span></td><td>${pill(returnsStatus(o))}</td><td>${formatDate(o.refunded_at||o.date||o.created_at)}</td></tr>`).join('')||'<tr><td class="pt-empty" colspan="6">No returns or refunds found. Records will appear here when the logistics data source is connected.</td></tr>'}
-$(section==='parcels'?'ptParcelsCount':'ptReturnsCount').textContent=filtered.length?`Showing ${(state.page-1)*perPage+1}–${Math.min(filtered.length,state.page*perPage)} of ${filtered.length} records`:'0 records';$(section==='parcels'?'ptParcelsPrev':'ptReturnsPrev').disabled=state.page<=1;$(section==='parcels'?'ptParcelsNext':'ptReturnsNext').disabled=state.page>=total;}
+function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='parcels'&&s.location!=='all'&&normalizeLocation(o.current_location||o.location)!==s.location)return false;if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
+function render(section){
+  const filtered=filterRecords(section),state=states[section];
+  const total=Math.max(1,Math.ceil(filtered.length/perPage));
+  state.page=Math.min(state.page,total);
+  const shown=filtered.slice((state.page-1)*perPage,state.page*perPage);
+  if(section==='parcels'){
+    $('ptParcelsRows').innerHTML=shown.map(o=>{
+      const id=parcels.indexOf(o);
+      return `<tr role="button" tabindex="0" data-id="${id}" aria-label="View parcel ${escape(o.order_number||o.order_id||o.tracking_number)}"><td><strong class="pt-order">${escape(o.order_number||o.order_id||o.id)}</strong><small>${escape(o.buyer_name||o.customer_name||'—')} · ${escape(o.product_name||o.items?.[0]?.name||'Parcel')}</small></td><td>${escape(o.tracking_number||o.tracking_no||'—')}</td><td>${pill(parcelStatus(o))}</td><td>${escape(o.current_location||o.location||'Not scanned yet')}</td><td>${formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta)}</td></tr>`;
+    }).join('')||'<tr><td class="pt-empty" colspan="5">No parcels found. Live parcel records will appear when the logistics data source is connected.</td></tr>';
+  }else{
+    $('ptReturnsRows').innerHTML=shown.map(o=>`<tr role="button" tabindex="0" data-id="${returns.indexOf(o)}" aria-label="View return ${escape(o.order_id||o.order_number)}"><td><strong class="pt-order">${escape(o.order_id||o.order_number)}</strong></td><td class="pt-customer"><strong>${escape(o.buyer_name||o.customer_name)}</strong><small>${escape(o.product_name||o.return_items?.[0]?.product_name||'—')}</small></td><td>${pill(returnStatusName(returnsStatus(o)))}</td><td>${formatDate(o.returned_at||o.requested_at||o.date||o.created_at)}</td></tr>`).join('')||'<tr><td class="pt-empty" colspan="4">No return records found. Records will appear here when the logistics data source is connected.</td></tr>';
+  }
+  $(section==='parcels'?'ptParcelsCount':'ptReturnsCount').textContent=filtered.length?`Showing ${(state.page-1)*perPage+1}–${Math.min(filtered.length,state.page*perPage)} of ${filtered.length} records`:'0 records';
+  $(section==='parcels'?'ptParcelsPrev':'ptReturnsPrev').disabled=state.page<=1;
+  $(section==='parcels'?'ptParcelsNext':'ptReturnsNext').disabled=state.page>=total;
+}
 function switchTab(tab){active=tab;document.querySelectorAll('[data-main]').forEach(b=>{const selected=b.dataset.main===tab;b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));});$('ptParcels').hidden=tab!=='parcels';$('ptReturns').hidden=tab!=='returns';render(tab)}
 document.querySelectorAll('[data-main]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.main)));
 for(const section of ['parcels','returns']){const prefix=section==='parcels'?'ptParcels':'ptReturns',input=$(section==='parcels'?'ptSearchParcels':'ptSearchReturns'),filters=$(section==='parcels'?'ptShipmentFilters':'ptReturnFilters');input.addEventListener('input',()=>{states[section].search=input.value.toLowerCase().trim();states[section].page=1;render(section)});filters.addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;states[section].tab=b.dataset.filter;states[section].page=1;filters.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));render(section)});$(prefix+'Prev').addEventListener('click',()=>{states[section].page--;render(section)});$(prefix+'Next').addEventListener('click',()=>{states[section].page++;render(section)});const body=$(section==='parcels'?'ptParcelsRows':'ptReturnsRows');function activate(e){const tr=e.target.closest('tr[data-id]');if(!tr)return;if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;if(e.type==='keydown')e.preventDefault();section==='parcels'?openParcel(parcels[Number(tr.dataset.id)]):openReturn(returns[Number(tr.dataset.id)])}body.addEventListener('click',activate);body.addEventListener('keydown',activate)}
-function historyList(o){const h=o.tracking_history||o.history||o.events||[];return Array.isArray(h)&&h.length?`<ul class="pt-history">${h.map(ev=>`<li><strong>${escape(ev.status||ev.title||ev.description||'Tracking update')}</strong><small>${formatDate(ev.timestamp||ev.date||ev.created_at)} · ${escape(ev.location||'—')}</small></li>`).join('')}</ul>`:'<p class="pt-placeholder">No tracking events recorded yet.</p>'}
+function historyList(o){
+  const candidates=[o.tracking_history,o.trackingHistory,o.history,o.events,o.scans,o.status_history];
+  const history=candidates.find(candidate=>Array.isArray(candidate)&&candidate.length)||[];
+  const statusLabels={
+    new:'Order Placed',pending:'Order Placed',preparing:'Order Prepared',prepared:'Order Prepared',
+    to_ship:'Order Prepared',ready_to_ship:'Order Prepared',picked_up:'Picked Up',in_transit:'Picked Up',
+    sorting_center:'Arrived at Sorting Center',at_sorting_center:'Arrived at Sorting Center',
+    arrived_at_sorting_center:'Arrived at Sorting Center',
+    out_for_delivery:'Out for Delivery',delivered:'Delivered',refunded:'Returned',returned_refunded:'Returned'
+  };
+  const events=history.map((event,index)=>{
+    const rawStatus=event.status||event.title||event.to_status||event.new_status||event.description||'Tracking update';
+    const key=clean(rawStatus).replace(/-/g,'_');
+    const timestamp=event.timestamp||event.scanned_at||event.created_at||event.date||event.changed_at||event.updated_at;
+    const parsed=timestamp?Date.parse(timestamp):NaN;
+    return {
+      title:statusLabels[key]||rawStatus,
+      timestamp,
+      sortTime:Number.isNaN(parsed)?null:parsed,
+      location:event.location||event.current_location||'—',
+      index
+    };
+  });
+  if(o.prepared_at||o.preparing_at){
+    const preparedAt=o.prepared_at||o.preparing_at;
+    const preparedTime=Date.parse(preparedAt);
+    events.push({title:'Order Prepared',timestamp:preparedAt,sortTime:Number.isNaN(preparedTime)?null:preparedTime,location:'—',index:-1});
+  }
+  events.sort((a,b)=>{
+    if(a.sortTime!==null&&b.sortTime!==null)return a.sortTime-b.sortTime||a.index-b.index;
+    if(a.sortTime!==null)return -1;
+    if(b.sortTime!==null)return 1;
+    return a.index-b.index;
+  });
+  return events.length?`<ul class="pt-history">${events.map(ev=>`<li><strong>${escape(ev.title)}</strong><small>${formatDate(ev.timestamp)} · ${escape(ev.location)}</small></li>`).join('')}</ul>`:'<p class="pt-placeholder">No tracking events recorded yet.</p>';
+}
 function progress(s){
   // Match the four-stage icon tracker used by Seller Returns Shipping Status.
   const normalized=clean(s);
@@ -189,7 +421,7 @@ function progress(s){
     if(i===2)return pos>2?'delivered-check.png':pos===2?'out-for-delivery.png':'out-for-delivery-gray.png';
     return pos===3?'delivered-check.png':'delivered-gray.png';
   });
-  return `<div class="pt-shipping-progress" role="img" aria-label="Tracking progress: ${escape(statusName(s))}">${stages.map((label,i)=>`<div class="pt-progress-item"><img src="/icons/seller/shipping-status/${icons[i]}" alt=""><small>${label}</small></div>${i<stages.length-1?`<span class="pt-progress-line ${i<pos?'done':''}"></span>`:''}`).join('')}</div>`;
+  return `<div class="pt-shipping-progress" role="img" aria-label="Tracking progress: ${escape(returnStatusName(s))}">${stages.map((label,i)=>`<div class="pt-progress-item"><img src="/icons/seller/shipping-status/${icons[i]}" alt=""><small>${label}</small></div>${i<stages.length-1?`<span class="pt-progress-line ${i<pos?'done':''}"></span>`:''}`).join('')}</div>`;
 }
 function infoPair(label,value){return `<div class="pt-info-pair"><label>${escape(label)}</label><strong>${escape(value??'—')}</strong></div>`}
 function addressDetails(o,role){
@@ -201,10 +433,38 @@ function addressDetails(o,role){
   return `<div class="pt-address-heading"><span class="pt-address-pin" aria-hidden="true">📍</span>Address</div><div class="pt-address-fields">${fields.map(([label,value])=>`<div class="pt-address-field"><label>${escape(label)}</label><div class="pt-address-value">${escape(value)}</div></div>`).join('')}</div>`;
 }
 function partyCard(title,pairs,o,role){return card(title,`<div>${pairs.map(([label,value])=>infoPair(label,value)).join('')}</div>${addressDetails(o,role)}`)}
-function returnItemsMarkup(items,record,quantityLabel='Quantity to Return / Refund'){const list=(Array.isArray(items)&&items.length?items:[{product_name:record.product_name||'Product',variation:record.variation,color:record.color,size:record.size,quantity:record.quantity||1,product_price:record.product_price||record.price||record.amount||record.refund_amount}]);return `<div class="pt-item-stack">${list.map((x,index)=>`<article class="pt-order-item"><div class="pt-order-item-head"><span class="pt-order-item-index">Item ${index+1}</span><div class="pt-order-item-name">${escape(x.product_name||x.name||'Product')}</div></div><div class="pt-order-item-body"><div class="pt-order-item-fields"><div class="pt-order-item-field"><label>Variation</label><strong>${escape(x.variation||'—')}</strong></div><div class="pt-order-item-field"><label>Color</label><strong>${escape(x.color||'—')}</strong></div><div class="pt-order-item-field"><label>Size</label><strong>${escape(x.size||'—')}</strong></div><div class="pt-order-item-field"><label>${escape(quantityLabel)}</label><strong>${escape(x.quantity||1)}</strong></div><div class="pt-order-item-field"><label>Unit Price</label><strong>${money(x.product_price||x.price||x.unit_price||0)}</strong></div></div></div></article>`).join('')}</div>`}
+function returnItemsMarkup(items,record,quantityLabel='Quantity to Return'){const list=(Array.isArray(items)&&items.length?items:[{product_name:record.product_name||'Product',variation:record.variation,color:record.color,size:record.size,quantity:record.quantity||1,product_price:record.product_price||record.price}]);return `<div class="pt-item-stack">${list.map((x,index)=>`<article class="pt-order-item"><div class="pt-order-item-head"><span class="pt-order-item-index">Item ${index+1}</span><div class="pt-order-item-name">${escape(x.product_name||x.name||'Product')}</div></div><div class="pt-order-item-body"><div class="pt-order-item-fields"><div class="pt-order-item-field"><label>Variation</label><strong>${escape(x.variation||'—')}</strong></div><div class="pt-order-item-field"><label>Color</label><strong>${escape(x.color||'—')}</strong></div><div class="pt-order-item-field"><label>Size</label><strong>${escape(x.size||'—')}</strong></div><div class="pt-order-item-field"><label>${escape(quantityLabel)}</label><strong>${escape(x.quantity||1)}</strong></div><div class="pt-order-item-field"><label>Unit Price</label><strong>${money(x.product_price||x.price||x.unit_price||0)}</strong></div></div></div></article>`).join('')}</div>`}
 
 function openParcel(o){if(!o)return;const status=parcelStatus(o),items=Array.isArray(o.items)?o.items:[];const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];$('ptParcelModalBody').innerHTML=card('Order Information',`<div class="pt-fields">${field('Order Number',o.order_number||o.order_id||o.id)}${field('Ordered At',formatDate(o.ordered_at||o.created_at))}${field('Estimated Delivery',formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta))}${field('Tracking Number',o.tracking_number||o.tracking_no)}${field('Current Location',o.current_location||o.location||'Not scanned yet')}${field('Shipping Status',statusName(status))}</div>`)+card('Tracking Progress',progress(status))+`<div class="pt-party-grid">${partyCard('Buyer Information',buyerPairs,o,'buyer')}${partyCard('Seller Information',sellerPairs,o,'seller')}</div>`+card('Payment Information',`<div class="pt-fields">${field('Payment Method',o.payment_method)}${field('Order Total',money(o.total_amount??o.total))}</div>`)+card('Ordered Items',returnItemsMarkup(items,o,'Quantity Ordered'))+card('Tracking History',historyList(o))+card('Customer Notes',`<div class="pt-notes">${escape(o.notes||o.customer_notes||'No customer notes provided.')}</div>`);openModal('ptParcelModal')}
-function openReturn(o){if(!o)return;const items=Array.isArray(o.return_items)?o.return_items:(Array.isArray(o.items)?o.items:[]);const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];$('ptReturnModalBody').innerHTML=card('Refund Summary',`<div class="pt-fields">${field('Order ID',o.order_id||o.order_number)}${field('Status',statusName(returnsStatus(o)))}${field('Refund Type',o.refund_type||o.type||'Return & Refund')}${field('Date & Time',formatDate(o.refunded_at||o.date||o.created_at))}</div>`)+`<div class="pt-party-grid">${partyCard('Buyer Information',buyerPairs,o,'buyer')}${partyCard('Seller Information',sellerPairs,o,'seller')}</div>`+card('Refund Resolution',`<div class="pt-notes">${escape(o.solution||o.resolution||o.description||'No resolution information supplied.')}</div><div class="pt-fields" style="margin-top:15px">${field('Amount Refunded / Requested',money(o.amount??o.refund_amount))}${field('Approved At',formatDate(o.approved_at))}</div>`)+card('Shipment Information',`<div class="pt-fields">${field('Tracking Number',o.tracking_number)}${field('Courier',o.courier)}${field('Shipping Status',statusName(o.shipping_status||'—'))}${field('Return Destination',o.seller_name||o.store_name||o.merchant_name)}</div>`)+card('Ordered Items for Return / Refund',returnItemsMarkup(items,o))+`<div class="pt-modal-grid">${card('Return / Refund Reason',`<div class="pt-notes">${escape(o.reason||o.description||'No reason supplied.')}</div>`)}${card('Supporting Evidence & Confirmation',`<div class="pt-notes">${escape(o.evidence_description||o.confirmation||'No supporting information supplied.')}</div>`)}</div>`;openModal('ptReturnModal')}
+function openReturn(o){
+  if(!o)return;
+  const items=Array.isArray(o.return_items)?o.return_items:(Array.isArray(o.items)?o.items:[]);
+  const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];
+  const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];
+  const shipmentStatus=o.shipping_status||o.return_shipping_status||'processing';
+  // Hardcoded UI demo timeline for return records without saved tracking events.
+  // Existing record history takes priority whenever it is available.
+  const existingReturnHistory=[o.tracking_history,o.trackingHistory,o.history,o.events,o.scans,o.status_history]
+    .find(candidate=>Array.isArray(candidate)&&candidate.length);
+  const returnHistoryRecord=existingReturnHistory?o:{
+    ...o,
+    history:[
+      {status:'Order Prepared',timestamp:'2026-10-23T09:20:00+08:00',location:'—'},
+      {status:'Picked Up',timestamp:'2026-10-24T10:00:00+08:00',location:'—'},
+      {status:'Arrived at Sorting Center',timestamp:'2026-10-25T14:30:00+08:00',location:'Laguna'}
+    ]
+  };
+  $('ptReturnModalBody').innerHTML=
+    card('Return Summary',`<div class="pt-fields">${field('Order ID',o.order_id||o.order_number)}${field('Status',returnStatusName(returnsStatus(o)))}${field('Return Type','Return')}${field('Date & Time',formatDate(o.returned_at||o.requested_at||o.date||o.created_at))}</div>`)+
+    card('Tracking Progress',progress(shipmentStatus))+
+    `<div class="pt-party-grid">${partyCard('Buyer Information',buyerPairs,o,'buyer')}${partyCard('Seller Information',sellerPairs,o,'seller')}</div>`+
+    card('Return Details',`<div class="pt-notes">${escape(o.reason||o.description||'No return reason supplied.')}</div><div class="pt-fields" style="margin-top:15px">${field('Requested Solution',o.solution||o.resolution||'No return solution supplied.')}${field('Requested At',formatDate(o.requested_at||o.date||o.created_at))}</div>`)+
+    card('Shipment Information',`<div class="pt-fields">${field('Tracking Number',o.tracking_number)}${field('Courier',o.courier)}${field('Shipping Status',returnStatusName(o.shipping_status||'—'))}${field('Return Destination',o.seller_name||o.store_name||o.merchant_name)}</div>`)+
+    card('Items for Return',returnItemsMarkup(items,o))+
+    card('Supporting Evidence',`<div class="pt-notes">${escape(o.evidence_description||'No supporting evidence supplied.')}</div>`)+
+    card('Tracking History',historyList(returnHistoryRecord));
+  openModal('ptReturnModal');
+}
 function openModal(id){lastFocus=document.activeElement;const modal=$(id);modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('pt-modal-open');modal.querySelector('.pt-x').focus()}
 function closeModal(id){const modal=$(id);modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('pt-modal-open');lastFocus?.focus?.()}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));

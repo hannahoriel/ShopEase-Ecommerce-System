@@ -62,21 +62,6 @@
             ['key' => 'cancelled',          'label' => 'Cancelled'],
         ];
 
-        // UI demo only. These are not real transactions or database records.
-        $orders = [
-            ['order_id' => 'SH-2026-1001', 'shop' => 'Tech Haven', 'product' => 'Wireless Bluetooth Earbuds Pro', 'variant' => 'Black · Bluetooth 5.3', 'price' => 1299, 'quantity' => 1, 'total' => 1299, 'status' => 'processing', 'status_label' => 'Processing', 'art' => 'earbuds', 'estimated_delivery' => 'Oct 28–30, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1002', 'shop' => 'Mia Boutique', 'product' => 'Everyday Canvas Tote Bag', 'variant' => 'Beige · Medium', 'price' => 459, 'quantity' => 2, 'total' => 918, 'status' => 'to-ship', 'status_label' => 'To Ship', 'art' => 'bag', 'estimated_delivery' => 'Oct 27–29, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1003', 'shop' => 'Glow Essentials', 'product' => 'Hydrating Skincare Essentials Set', 'variant' => 'Sensitive Skin', 'price' => 899, 'quantity' => 1, 'total' => 899, 'status' => 'in-transit', 'status_label' => 'In Transit', 'art' => 'skincare', 'estimated_delivery' => 'Oct 25–27, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1004', 'shop' => 'Stride Studio', 'product' => 'Everyday Running Sneakers', 'variant' => 'White · Size 39', 'price' => 1799, 'quantity' => 1, 'total' => 1799, 'status' => 'out-for-delivery', 'status_label' => 'Out for Delivery', 'art' => 'shoes', 'estimated_delivery' => 'Oct 23, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1005', 'shop' => 'Watch Avenue', 'product' => 'Minimalist Smart Watch', 'variant' => 'Midnight Black', 'price' => 2199, 'quantity' => 1, 'total' => 2199, 'status' => 'delivered', 'status_label' => 'Delivered', 'art' => 'watch', 'estimated_delivery' => 'Delivered Oct 20, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1006', 'shop' => 'Home & Cozy', 'product' => 'Ceramic Coffee Mug Set', 'variant' => 'Cream · Set of 2', 'price' => 349, 'quantity' => 2, 'total' => 698, 'status' => 'completed', 'status_label' => 'Completed', 'art' => 'other', 'estimated_delivery' => 'Delivered Oct 17, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1007', 'shop' => 'Beauty Bloom', 'product' => 'Vitamin C Glow Serum', 'variant' => '30 ml', 'price' => 599, 'quantity' => 1, 'total' => 599, 'status' => 'completed', 'status_label' => 'Completed', 'art' => 'skincare', 'estimated_delivery' => 'Delivered Oct 15, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1008', 'shop' => 'Urban Finds', 'product' => 'Classic Crossbody Bag', 'variant' => 'Brown · Small', 'price' => 799, 'quantity' => 1, 'total' => 799, 'status' => 'return-refund', 'status_label' => 'Return Requested', 'art' => 'bag', 'estimated_delivery' => 'Return under review', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1009', 'shop' => 'Tech Haven', 'product' => 'Portable Wireless Speaker', 'variant' => 'Navy Blue', 'price' => 999, 'quantity' => 1, 'total' => 999, 'status' => 'return-refund', 'status_label' => 'Refund Requested', 'art' => 'other', 'estimated_delivery' => 'Refund under review', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1010', 'shop' => 'Stride Studio', 'product' => 'Classic Canvas Sneakers', 'variant' => 'Black · Size 40', 'price' => 1299, 'quantity' => 1, 'total' => 1299, 'status' => 'cancelled', 'status_label' => 'Cancelled', 'art' => 'shoes', 'estimated_delivery' => '—', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1011', 'shop' => 'Sound Source', 'product' => 'Noise-Cancelling Headphones', 'variant' => 'Silver', 'price' => 2499, 'quantity' => 1, 'total' => 2499, 'status' => 'processing', 'status_label' => 'Processing', 'art' => 'earbuds', 'estimated_delivery' => 'Oct 29–31, 2026', 'additional_products' => 0],
-            ['order_id' => 'SH-2026-1012', 'shop' => 'Green Living', 'product' => 'Indoor Plant Pot Set', 'variant' => 'White · Set of 3', 'price' => 549, 'quantity' => 1, 'total' => 549, 'status' => 'delivered', 'status_label' => 'Delivered', 'art' => 'other', 'estimated_delivery' => 'Delivered Oct 19, 2026', 'additional_products' => 0],
-        ];
     @endphp
 
     <main class="purchases-main">
@@ -269,10 +254,10 @@
                 {{-- SHOP-GROUPED PURCHASE LIST --}}
                 <div class="purchase-table-wrap">
                     <div id="purchaseRows" class="purchase-shop-list">
-                        @foreach ($orders as $order)
+                        @foreach ($orders ?? [] as $order)
                             <article
                                 class="purchase-shop-card"
-                                data-purchase-row data-demo-order
+                                data-purchase-row
                                 data-view-order-id="{{ $order['order_id'] }}"
                                 role="link" tabindex="0" aria-label="View order {{ $order['order_id'] }}"
                                 data-status="{{ $order['status'] }}"
@@ -313,7 +298,7 @@
                                             Order ID: {{ $order['order_id'] }}
                                         </strong>
                                         <span class="purchase-shop-placed-at">
-                                            Sample order · Oct 2026
+                                            Placed {{ $order['created_at'] ?? '' }}
                                         </span>
                                     </div>
                                 </div>
