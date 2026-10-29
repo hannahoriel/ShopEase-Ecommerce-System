@@ -112,6 +112,7 @@ export default defineConfig({
                 'resources/css/seller/messages.css',
                 'resources/css/seller/order-status.css',
                 'resources/css/seller/reports.css',
+                'resources/css/seller/seller-performance.css',
                 'resources/css/seller/shipping-status.css',
 
                 // JS
@@ -121,6 +122,7 @@ export default defineConfig({
                 'resources/js/seller/messages.js',
                 'resources/js/seller/order-status.js',
                 'resources/js/seller/reports.js',
+                'resources/js/seller/seller-performance.js',
                 'resources/js/seller/shipping-status.js',
             ],
 
