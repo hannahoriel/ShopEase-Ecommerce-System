@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 <span>${options ? `Variation: ${escapeCheckoutHtml(options)}` : 'Standard'}</span>
                                             </div>
                                         </div>
-                                        <div class="checkout-unit-price">${money(item.product.price)}</div>
+                                        <div class="checkout-unit-price"><strong>${money(item.product.price)}</strong>${item.product.sale_percentage ? `<del>${money(item.product.original_price)}</del><em>-${item.product.sale_percentage}%</em>` : ''}</div>
                                         <div class="checkout-quantity">${item.quantity}</div>
                                         <div class="checkout-item-subtotal">${money(item.product.price * item.quantity)}</div>
                                     </article>`;

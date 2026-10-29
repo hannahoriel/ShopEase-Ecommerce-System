@@ -95,6 +95,7 @@ use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesControll
 use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
 use App\Http\Controllers\Api\Seller\ReturnsRefundsController as SellerReturnsRefundsController;
+use App\Http\Controllers\Api\Seller\SalesController as SellerSalesController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
 use App\Http\Controllers\Api\Seller\VouchersController as SellerVouchersController;
 use App\Http\Controllers\LocationController;
@@ -265,6 +266,8 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
+            Route::get('/sales/products', [SellerSalesController::class, 'index'])->name('seller.api.sales.products.index');
+            Route::patch('/sales/products/{product}', [SellerSalesController::class, 'update'])->name('seller.api.sales.products.update');
             Route::get('/returns-refunds', [SellerReturnsRefundsController::class, 'index'])->name('seller.api.returns.index');
             Route::patch('/returns-refunds/{return}/decision', [SellerReturnsRefundsController::class, 'decide'])->name('seller.api.returns.decision');
             Route::post('/returns-refunds/{return}/refund', [SellerReturnsRefundsController::class, 'completeRefund'])->name('seller.api.returns.refund');

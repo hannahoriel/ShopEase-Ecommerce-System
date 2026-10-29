@@ -496,6 +496,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const productUrl = productBaseUrl + '?id=' + encodeURIComponent(product.id);
                 const imageUrl = product.image_url || product.photos?.[0] || '';
                 const hasImage = typeof imageUrl === 'string' && imageUrl.trim() !== '';
+                const originalPrice = Number(product.original_price ?? product.price ?? 0);
+                const salePercentage = Number(product.sale_percentage || 0);
+                const salePrice = salePercentage ? Math.round(originalPrice * (100 - salePercentage)) / 100 : originalPrice;
 
                 const imageHtml = hasImage
                     ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
@@ -504,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `
                     <a href="${escapeHtml(productUrl)}" class="product-card">
                         <div class="product-image-box">
-                            <button type="button" class="favorite-button" aria-label="Add to favorites" data-like-product="${escapeHtml(product.id)}" data-like-name="${escapeHtml(product.name)}" data-like-price="${escapeHtml(product.price)}" data-like-image="${escapeHtml(imageUrl)}" data-like-seller="${escapeHtml(product.seller?.store_name || 'ShopEase Seller')}" data-like-url="${escapeHtml(productUrl)}" aria-pressed="false">♡</button>
+                            <button type="button" class="favorite-button" aria-label="Add to favorites" data-like-product="${escapeHtml(product.id)}" data-like-name="${escapeHtml(product.name)}" data-like-price="${escapeHtml(salePrice)}" data-like-image="${escapeHtml(imageUrl)}" data-like-seller="${escapeHtml(product.seller?.store_name || 'ShopEase Seller')}" data-like-url="${escapeHtml(productUrl)}" aria-pressed="false">♡</button>
                             ${imageHtml}
                         </div>
                         <h3>${escapeHtml(product.name)}</h3>
@@ -513,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="sold-count">${escapeHtml(product.seller?.store_name || '')}</span>
                         </p>
                         <div class="product-bottom-row">
-                            <strong>${escapeHtml(formatPrice(product.price))}</strong>
+                            <span class="product-sale-price"><strong>${escapeHtml(formatPrice(salePrice))}</strong>${salePercentage ? `<del>${escapeHtml(formatPrice(originalPrice))}</del><em>-${salePercentage}%</em>` : ''}</span>
                             <button type="button" class="product-cart-button" aria-label="Add ${escapeHtml(product.name)} to cart" data-product-id="${escapeHtml(product.id)}">
                                 <img src="${escapeHtml(cartIconUrl)}" alt="" class="clean-icon" data-clean-bg="true">
                             </button>

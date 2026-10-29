@@ -4116,6 +4116,10 @@ document.addEventListener(
                     document.getElementById(
                         'productDetailsPriceDisplay'
                     );
+                const productDetailsOriginalPriceDisplay =
+                    document.getElementById('productDetailsOriginalPriceDisplay');
+                const productDetailsSaleBadge =
+                    document.getElementById('productDetailsSaleBadge');
 
                 const productDetailsPricingTypeView =
                     document.getElementById(
@@ -9231,12 +9235,7 @@ document.addEventListener(
                         }
 
                         if (productDetailsPriceDisplay) {
-                            productDetailsPriceDisplay.textContent =
-                                formatMoney(
-                                    currentProductPriceNumber(
-                                        createdProduct
-                                    )
-                                );
+                            renderProductDetailsSalePrice(createdProduct);
                         }
 
                         if (productDetailsPricingTypeView) {
@@ -10461,12 +10460,7 @@ document.addEventListener(
                             }
 
                             if (productDetailsPriceDisplay) {
-                                productDetailsPriceDisplay.textContent =
-                                    formatMoney(
-                                        currentProductPriceNumber(
-                                            createdProduct
-                                        )
-                                    );
+                                renderProductDetailsSalePrice(createdProduct);
                             }
 
                             if (productDetailsPricingTypeView) {
@@ -11394,6 +11388,8 @@ document.addEventListener(
                             product.base_price ??
                             product.price ??
                             0,
+                        sale_percentage: product.sale_percentage ?? product.salePercentage ?? null,
+                        sale_price: product.sale_price ?? null,
                         stock: product.stock ?? product.stock_quantity ?? 0,
                         variations: Array.isArray(product.variations) ? product.variations : [],
                         colors: Array.isArray(product.colors) ? product.colors : [],
@@ -11501,6 +11497,8 @@ document.addEventListener(
                                 // Orders update stock in the database; localStorage
                                 // must not replace the latest inventory values.
                                 stock: serverProduct.stock,
+                                sale_percentage: serverProduct.sale_percentage,
+                                sale_price: serverProduct.sale_price,
                                 variations: serverProduct.variations,
                                 colors: serverProduct.colors,
                                 sizes: serverProduct.sizes,
@@ -11640,6 +11638,36 @@ document.addEventListener(
                         )
                     );
 
+                }
+
+                function salePercentage(product) {
+                    return Math.max(0, Math.min(100, Number(product?.sale_percentage ?? product?.salePercentage ?? 0) || 0));
+                }
+
+                function renderProductDetailsSalePrice(product) {
+                    const original = currentProductPriceNumber(product);
+                    const percentage = salePercentage(product);
+                    const sale = percentage
+                        ? Number(product.sale_price ?? (original * (100 - percentage) / 100))
+                        : original;
+
+                    productDetailsPriceDisplay.textContent = formatMoney(sale);
+                    if (productDetailsOriginalPriceDisplay) {
+                        productDetailsOriginalPriceDisplay.textContent = formatMoney(original);
+                        productDetailsOriginalPriceDisplay.hidden = !percentage;
+                    }
+                    if (productDetailsSaleBadge) {
+                        productDetailsSaleBadge.textContent = `-${percentage}%`;
+                        productDetailsSaleBadge.hidden = !percentage;
+                    }
+                }
+
+                function inventoryPriceMarkup(product) {
+                    const original = currentProductPriceNumber(product);
+                    const percentage = salePercentage(product);
+                    if (!percentage) return escapeHtml(formatMoney(original));
+                    const sale = Number(product.sale_price ?? (original * (100 - percentage) / 100));
+                    return `<span class="product-sale-inventory-price"><strong>${escapeHtml(formatMoney(sale))}</strong><del>${escapeHtml(formatMoney(original))}</del><em>-${percentage}%</em></span>`;
                 }
 
 
@@ -11976,9 +12004,7 @@ document.addEventListener(
                             </span>
                         </div>
 
-                        <div class="product-number">
-                            ${escapeHtml(calculateCreatedProductPrice(product))}
-                        </div>
+                        <div class="product-number">${inventoryPriceMarkup(product)}</div>
 
                         <div class="product-number">
                             ${escapeHtml(product.stock ?? 0)}

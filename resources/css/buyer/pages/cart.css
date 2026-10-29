@@ -299,6 +299,8 @@
             font-weight: 700;
         }
 
+        .cart-sale-price{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}.cart-product-copy .cart-sale-price strong{color:#dc4943;font-size:12px}.cart-sale-price del{color:#a49a96;font-size:10px}.cart-sale-price em,.checkout-unit-price em{padding:2px 5px;border-radius:3px;background:#fff0ed;color:#d94d45;font-size:9px;font-style:normal;font-weight:650}
+
         .cart-item-quantity {
             display: flex;
             justify-content: center;

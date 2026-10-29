@@ -801,6 +801,8 @@ class InventoryController extends Controller
     protected function serializeProduct(Product $product): array
     {
         $data = $product->toArray();
+        $data['sale_percentage'] = $product->sale_percentage;
+        $data['sale_price'] = $product->sale_price;
 
         // Include both database field names and the camelCase keys read by Inventory JS.
         $actor = (bool) $product->archived_by_admin

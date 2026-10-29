@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <div class="cart-product-copy">
                                         <h3>${escapeHtml(item.product.name)}</h3>
                                         ${optionParts.length ? `<div class="cart-selected-variation"><p><span>${escapeHtml(optionParts.join(' · '))}</span></p></div>` : ''}
-                                        <strong>₱${Number(item.product.price).toLocaleString('en-PH', {minimumFractionDigits:2})}</strong>
+                                        <span class="cart-sale-price"><strong>₱${Number(item.product.price).toLocaleString('en-PH', {minimumFractionDigits:2})}</strong>${item.product.sale_percentage ? `<del>₱${Number(item.product.original_price).toLocaleString('en-PH', {minimumFractionDigits:2})}</del><em>-${item.product.sale_percentage}%</em>` : ''}</span>
                                     </div>
                                 </div>
                                 <div class="cart-item-quantity">

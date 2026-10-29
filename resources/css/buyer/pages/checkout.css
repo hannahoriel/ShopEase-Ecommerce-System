@@ -426,6 +426,8 @@
             font-weight: 500;
         }
 
+        .checkout-unit-price{display:flex;flex-direction:column;align-items:center;gap:3px}.checkout-unit-price strong{font-size:12px;color:#d94d45}.checkout-unit-price del{font-size:10px;color:#a49a96}.checkout-unit-price em{padding:2px 5px;border-radius:3px;background:#fff0ed;color:#d94d45;font-size:9px;font-style:normal;font-weight:650}
+
         .checkout-item-subtotal {
             color: #251E1C;
             font-weight: 700;

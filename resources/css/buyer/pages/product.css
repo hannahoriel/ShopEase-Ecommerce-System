@@ -1154,6 +1154,8 @@
             font-weight: 700;
         }
 
+        .product-sale-price{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}.product-sale-price del{color:#a49a96;font-size:11px;text-decoration:line-through!important;text-decoration-thickness:1px}.product-sale-price em{padding:2px 5px;border-radius:3px;background:#fff0ed;color:#dc5148;font-size:10px;font-style:normal;font-weight:650}
+
         .product-cart-button {
             width: 30px;
             height: auto;

@@ -238,7 +238,7 @@ class OrderController extends Controller
             $orders = $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
                 ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId): Order {
                     $seller = $sellerItems->first()->product->seller;
-                    $subtotal = $sellerItems->sum(fn (CartItem $item) => (float) $item->product->price * $item->quantity);
+                    $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->sale_price * $item->quantity);
                     $shippingFee = 50.00;
                     $voucherResult = null;
                     if (! empty($validated['voucher_code']) && (int) $sellerId === (int) $voucherSellerId) {
@@ -298,7 +298,7 @@ class OrderController extends Controller
                             'color' => $item->color,
                             'size' => $item->size,
                             'quantity' => $item->quantity,
-                            'unit_price' => $item->product->price,
+                            'unit_price' => $item->product->sale_price,
                         ]);
 
                         $this->inventory->reserve($orderItem);
