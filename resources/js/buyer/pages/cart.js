@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const shippingFee =
-                80;
+                50;
 
             const subtotalLabel =
                 document.getElementById('subtotalLabel');

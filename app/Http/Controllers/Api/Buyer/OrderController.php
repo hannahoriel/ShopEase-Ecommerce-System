@@ -14,6 +14,7 @@ use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
+use App\Services\SellerVoucherService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,9 @@ class OrderController extends Controller
                 'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
+                'shipping_fee' => (float) $order->shipping_fee,
+                'voucher_discount' => (float) $order->voucher_discount,
+                'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
                 'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
                     && $order->latestCancellationRequest?->status !== 'pending',
@@ -159,6 +163,8 @@ class OrderController extends Controller
             'delivery_phone' => ['required', 'string', 'max:30'],
             'delivery_address' => ['required', 'string', 'max:1000'],
             'payment_method' => ['required', 'in:Cash on Delivery'],
+            'voucher_code' => ['nullable', 'string', 'max:20'],
+            'voucher_seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
             'cart_item_ids' => ['sometimes', 'array', 'min:1'],
             'cart_item_ids.*' => ['integer', 'distinct'],
             'checkout_items' => ['sometimes', 'array', 'min:1'],
@@ -221,16 +227,34 @@ class OrderController extends Controller
                 }
             }
 
+            $voucherSellerId = null;
+            if (! empty($validated['voucher_code'])) {
+                $voucherQuery = \App\Models\Seller\SellerVoucher::where('code', strtoupper(trim($validated['voucher_code'])));
+                if (! empty($validated['voucher_seller_id'])) $voucherQuery->where('seller_id', $validated['voucher_seller_id']);
+                $voucherSellerId = $voucherQuery->value('seller_id');
+                if (! $voucherSellerId) throw ValidationException::withMessages(['voucher_code' => ['This voucher does not exist.']]);
+            }
+
             $orders = $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
-                ->map(function ($sellerItems) use ($validated, $request): Order {
+                ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId): Order {
                     $seller = $sellerItems->first()->product->seller;
-                    $total = $sellerItems->sum(fn (CartItem $item) => (float) $item->product->price * $item->quantity);
+                    $subtotal = $sellerItems->sum(fn (CartItem $item) => (float) $item->product->price * $item->quantity);
+                    $shippingFee = 50.00;
+                    $voucherResult = null;
+                    if (! empty($validated['voucher_code']) && (int) $sellerId === (int) $voucherSellerId) {
+                        $voucherResult = app(SellerVoucherService::class)->evaluate($validated['voucher_code'], $request->user(), (int) $sellerId, $sellerItems, true);
+                    }
+                    $voucherDiscount = $voucherResult['discount'] ?? 0;
+                    $total = max(0, $subtotal + $shippingFee - $voucherDiscount);
 
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
                         'order_number' => null,
                         'total' => $total,
+                        'shipping_fee' => $shippingFee,
+                        'voucher_discount' => $voucherDiscount,
+                        'voucher_code' => $voucherResult['voucher']->code ?? null,
                         'commission_amount' => round($total * (CommissionTransaction::DEFAULT_RATE / 100), 2),
                         'status' => 'pending',
                         'delivery_name' => $validated['delivery_name'],
@@ -241,6 +265,23 @@ class OrderController extends Controller
                     $order->forceFill([
                         'order_number' => $this->orderNumberFor($order),
                     ])->saveQuietly();
+                    if ($voucherResult) {
+                        $voucher = $voucherResult['voucher'];
+                        $claimed = \App\Models\Seller\SellerVoucher::query()
+                            ->whereKey($voucher->id)
+                            ->whereColumn('claimed', '<', 'quantity')
+                            ->increment('claimed');
+                        if (! $claimed) {
+                            throw ValidationException::withMessages([
+                                'voucher_code' => ['This voucher has reached its allocation limit.'],
+                            ]);
+                        }
+                        $voucher->redemptions()->create([
+                            'buyer_id' => $request->user()->id,
+                            'order_id' => $order->id,
+                            'discount_amount' => $voucherDiscount,
+                        ]);
+                    }
                     BuyerNotification::createForOrder(
                         $order,
                         'order',
@@ -288,6 +329,9 @@ class OrderController extends Controller
                 'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
+                'shipping_fee' => (float) $order->shipping_fee,
+                'voucher_discount' => (float) $order->voucher_discount,
+                'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
                 'created_at' => $order->created_at?->toISOString(),
                 'items' => $order->items->map(fn ($item): array => [

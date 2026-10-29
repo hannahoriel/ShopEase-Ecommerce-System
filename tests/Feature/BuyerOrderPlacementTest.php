@@ -116,16 +116,16 @@ class BuyerOrderPlacementTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'buyer_id' => $buyer->id,
             'seller_id' => $firstSeller->id,
-            'total' => 2400,
-            'commission_amount' => 240,
+            'total' => 2450,
+            'commission_amount' => 245,
             'delivery_address' => '1 Main Street, Manila',
         ]);
         $this->assertDatabaseHas('commission_transactions', [
             'order_id' => Order::where('order_number', $orderNumbers->first())->value('id'),
             'seller_id' => $firstSeller->id,
-            'order_amount' => 2400,
+            'order_amount' => 2450,
             'commission_rate' => 10,
-            'commission_amount' => 240,
+            'commission_amount' => 245,
             'status' => 'pending',
         ]);
         $this->assertDatabaseCount('commission_transactions', 2);

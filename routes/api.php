@@ -25,6 +25,8 @@ use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardControll
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\OrderReturnController as BuyerOrderReturnController;
+use App\Http\Controllers\Api\Buyer\VoucherController as BuyerVoucherController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\NetworkHubController;
@@ -92,7 +94,9 @@ use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryContro
 use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
 use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
+use App\Http\Controllers\Api\Seller\ReturnsRefundsController as SellerReturnsRefundsController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
+use App\Http\Controllers\Api\Seller\VouchersController as SellerVouchersController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -242,7 +246,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
             Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
+            Route::post('/vouchers/preview', [BuyerVoucherController::class, 'preview'])->name('buyer.api.vouchers.preview');
+            Route::get('/vouchers', [BuyerVoucherController::class, 'index'])->name('buyer.api.vouchers.index');
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
+            Route::get('/returns', [BuyerOrderReturnController::class, 'index'])->name('buyer.api.returns.index');
+            Route::post('/orders/{order}/returns', [BuyerOrderReturnController::class, 'store'])->name('buyer.api.orders.returns.store');
             Route::get('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'index'])->name('buyer.api.complaints.messages.index');
             Route::post('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'store'])->name('buyer.api.complaints.messages.store');
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('buyer.api.orders.rider-messages.index');
@@ -257,6 +265,12 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
+            Route::get('/returns-refunds', [SellerReturnsRefundsController::class, 'index'])->name('seller.api.returns.index');
+            Route::patch('/returns-refunds/{return}/decision', [SellerReturnsRefundsController::class, 'decide'])->name('seller.api.returns.decision');
+            Route::post('/returns-refunds/{return}/refund', [SellerReturnsRefundsController::class, 'completeRefund'])->name('seller.api.returns.refund');
+            Route::get('/vouchers', [SellerVouchersController::class, 'index'])->name('seller.api.vouchers.index');
+            Route::post('/vouchers', [SellerVouchersController::class, 'store'])->name('seller.api.vouchers.store');
+            Route::patch('/vouchers/{voucher}', [SellerVouchersController::class, 'update'])->name('seller.api.vouchers.update');
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
             Route::get('/messages', [SellerMessagesController::class, 'index'])->name('seller.api.messages.index');
             Route::get('/messages/contacts', [SellerMessagesController::class, 'contacts'])->name('seller.api.messages.contacts');

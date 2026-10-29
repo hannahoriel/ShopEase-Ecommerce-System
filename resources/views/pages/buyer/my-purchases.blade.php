@@ -673,7 +673,7 @@
                         <section class="bv-vouchers" aria-labelledby="bv-title">
                             <div class="bv-section-head"><div><h2 id="bv-title">Available vouchers</h2><p>Explore discounts for your next order. Tap a voucher to review all terms before checkout.</p></div><span class="bv-count" id="bvVoucherCount">0 vouchers</span></div>
                             <div class="bv-voucher-grid" id="bvVoucherGrid" aria-live="polite"></div>
-                            <div class="bv-voucher-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><strong>Preview vouchers:</strong> Sample offers for UI testing only. Voucher availability, discounts, redemption and COD eligibility are not connected to checkout yet.</p></div>
+                            <div class="bv-voucher-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><strong>Shop vouchers:</strong> Active seller vouchers appear here. Check each offer's terms, then use it at checkout.</p></div>
                         </section>
                     </div>
 
@@ -813,7 +813,7 @@
     </div>
 
 
-    {{-- Buyer Voucher details: UI-only sample offers; no backend redemption. --}}
+    {{-- Buyer voucher details and checkout action. --}}
     <div id="bvVoucherOverlay" class="bv-overlay" hidden aria-hidden="true">
         <section class="bv-dialog" role="dialog" aria-modal="true" aria-labelledby="bvModalTitle" aria-describedby="bvModalSubtitle" tabindex="-1">
             <div class="bv-dialog-head"><div class="bv-modal-kicker">VOUCHER DETAILS</div><button type="button" id="bvModalClose" class="bv-modal-close" aria-label="Close voucher details"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6 18 18M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
@@ -825,7 +825,7 @@
                 <div class="bv-modal-terms"><h3>Terms &amp; conditions</h3><ul id="bvModalTerms"></ul></div>
                 <div class="bv-cod-note"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7h11v10H3V7Zm11 3h4l3 3v4h-7v-7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="18" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/></svg><div><strong>Cash on Delivery (COD) only</strong><span>ShopEase currently accepts COD only. No card, e-wallet or bank payment is available.</span></div></div>
             </div>
-            <div class="bv-modal-footer"><button type="button" id="bvModalDone">Okay, Got it</button></div>
+            <div class="bv-modal-footer"><button type="button" id="bvModalApply">Use Voucher at Checkout</button><button type="button" id="bvModalDone">Close</button></div>
         </section>
     </div>
 

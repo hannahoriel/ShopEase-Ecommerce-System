@@ -127,16 +127,23 @@ class LogisticsParcelTrackingSeeder extends Seeder
         $returnedOrder = Order::query()->where('order_number', 'DEMO-TRACK-1003')->firstOrFail();
         $returned = OrderReturn::query()->updateOrCreate(
             ['tracking_number' => 'DEMO-RET-1003'],
-            ['order_id' => $returnedOrder->id, 'return_type' => 'return', 'status' => 'returned',
+            ['order_id' => $returnedOrder->id, 'return_type' => 'return', 'status' => 'refunded',
                 'shipping_status' => 'returned', 'reason' => 'Damaged packaging',
                 'solution' => 'Returned to seller warehouse', 'return_items' => [[
                     'product_name' => 'Wireless Headphones', 'quantity' => 1, 'product_price' => 1799,
-                ]], 'requested_at' => now()->subDays(3), 'returned_at' => now()->subDay(),
+                ]], 'refund_amount' => 1799, 'reviewed_by' => $sellerUser->id,
+                'reviewed_at' => now()->subDays(2), 'refunded_at' => now()->subHour(),
+                'requested_at' => now()->subDays(3), 'returned_at' => now()->subDay(),
                 'courier' => 'ShopEase Logistics'],
         );
         OrderReturnEvent::query()->updateOrCreate(
             ['order_return_id' => $returned->id, 'status' => 'returned'],
             ['location' => 'Calamba City Seller Warehouse', 'scanned_at' => now()->subDay()],
+        );
+
+        OrderReturnEvent::query()->updateOrCreate(
+            ['order_return_id' => $returned->id, 'status' => 'refunded'],
+            ['location' => 'Seller refund processing', 'scanned_at' => now()->subHour()],
         );
     }
 }
