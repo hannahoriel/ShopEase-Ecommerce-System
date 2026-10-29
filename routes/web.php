@@ -2345,8 +2345,41 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/vehicles-drivers', 'pages.logistics.sorting-center.vehicles-drivers')
             ->name('vehicles-drivers');
 
-        Route::view('/notifications', 'pages.logistics.sorting-center.notifications')
-            ->name('notifications');
+        // Sorting Center notifications: use only the authenticated center account.
+        // The Blade page applies its own search, date, read-state filters and pagination.
+        Route::get('/notifications', function () {
+            return view('pages.logistics.sorting-center.notifications');
+        })->name('notifications');
+
+        // Read actions must be registered before rendering the notification page:
+        // the Blade template uses both of these named routes.
+        Route::post('/notifications/read-all', function (Request $request) {
+            $user = $request->user();
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->firstOrFail();
+
+            $user->unreadNotifications()->update(['read_at' => now()]);
+
+            return redirect()->back()->with('success', 'All notifications marked as read.');
+        })->name('notifications.read-all');
+
+        Route::post('/notifications/{notification}/read', function (Request $request, string $notification) {
+            $user = $request->user();
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->firstOrFail();
+
+            // Scope the lookup to the logged-in user; no other account's notification is accessible.
+            $item = $user->notifications()->whereKey($notification)->firstOrFail();
+            if ($item->read_at === null) {
+                $item->markAsRead();
+            }
+
+            return redirect()->back()->with('success', 'Notification marked as read.');
+        })->name('notifications.read');
 
         Route::view('/network-earnings', 'pages.logistics.sorting-center.network-earnings')
             ->name('network-earnings');
