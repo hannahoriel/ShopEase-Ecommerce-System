@@ -8,6 +8,7 @@ use App\Models\Admin\Order;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Rider\Rider;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -175,8 +176,19 @@ class DeliveryController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($validated['rider_id']);
 
+            $deliveryHub = LogisticsDeliveryHub::query()
+                ->where('logistics_branch_id', $rider->logistics_branch_id)
+                ->whereNull('archived_at')
+                ->where(function ($query) use ($rider): void {
+                    $query->whereRaw('LOWER(hub_name) = ?', [mb_strtolower((string) $rider->municipal_hub)])
+                        ->orWhereRaw('LOWER(municipality) = ?', [mb_strtolower((string) $rider->municipal_hub)]);
+                })
+                ->first();
+
             $shipment->update([
                 'rider_id' => $rider->id,
+                'logistics_branch_id' => $rider->logistics_branch_id,
+                'logistics_delivery_hub_id' => $deliveryHub?->id,
                 'courier' => $logistics->business_name ?: $shipment->courier,
             ]);
         });

@@ -28,6 +28,9 @@ use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\NetworkHubController;
+use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
+use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
+use App\Http\Controllers\Api\Logistics\ParcelTrackingController;
 use App\Http\Controllers\Api\Logistics\ListRiderRemittancesController;
 use App\Http\Controllers\Api\Logistics\ListRiderSupportTicketsController;
 use App\Http\Controllers\Api\Logistics\ListRiderDeliveryActionsController;
@@ -142,6 +145,8 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/logistics/account-change-requests', [LogisticsAccountController::class, 'requests'])->name('admin.api.logistics-account.requests');
+            Route::patch('/logistics/account-change-requests/{changeRequest}', [LogisticsAccountController::class, 'review'])->name('admin.api.logistics-account.review');
             Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');
             Route::get('/messages', [AdminMessagesController::class, 'index'])->name('admin.api.messages.index');
             Route::get('/messages/contacts', [AdminMessagesController::class, 'contacts'])->name('admin.api.messages.contacts');
@@ -291,6 +296,15 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:logistics')->prefix('logistics')->group(function () {
+            Route::get('/account', [LogisticsAccountController::class, 'show'])->name('logistics.api.account.show');
+            Route::post('/account/profile-requests', [LogisticsAccountController::class, 'requestProfileChange'])->name('logistics.api.account.profile-requests.store');
+            Route::put('/account/preferences', [LogisticsAccountController::class, 'savePreferences'])->name('logistics.api.account.preferences.update');
+            Route::post('/account/cover-photo', [LogisticsAccountController::class, 'uploadCoverPhoto'])->name('logistics.api.account.cover-photo.store');
+            Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name('logistics.api.messages.index');
+            Route::post('/messages/thread', [LogisticsMessagesController::class, 'thread'])->name('logistics.api.messages.thread');
+            Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name('logistics.api.messages.attachments.show');
+            Route::post('/messages', [LogisticsMessagesController::class, 'send'])->name('logistics.api.messages.send');
+            Route::get('/parcel-tracking', [ParcelTrackingController::class, 'index'])->name('logistics.api.parcel-tracking.index');
             Route::get('/network-hubs', [NetworkHubController::class, 'index'])->name('logistics.api.network-hubs.index');
             Route::get('/network-hubs/archive', [NetworkHubController::class, 'archive'])->name('logistics.api.network-hubs.archive');
             Route::post('/network-hubs', [NetworkHubController::class, 'store'])->name('logistics.api.network-hubs.store');
@@ -319,6 +333,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/rider-delivery-actions', ListRiderDeliveryActionsController::class)->name('logistics.api.rider-delivery-actions.index');
             Route::patch('/rider-delivery-actions/{action}/review', ReviewRiderDeliveryActionController::class)->name('logistics.api.rider-delivery-actions.review');
         });
+
+        foreach (['sorting_center', 'delivery_hub'] as $facilityRole) {
+            Route::middleware("role:{$facilityRole}")->prefix($facilityRole)->group(function () use ($facilityRole) {
+                Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
+                Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name("{$facilityRole}.api.messages.attachments.show");
+                Route::get('/messages/{conversation}', [LogisticsMessagesController::class, 'show'])->name("{$facilityRole}.api.messages.show");
+                Route::post('/messages', [LogisticsMessagesController::class, 'send'])->name("{$facilityRole}.api.messages.send");
+            });
+        }
 
         Route::middleware('role:rider')->prefix('rider')->group(function () {
             Route::get('/dashboard', ShowRiderDashboardController::class)->name('rider.api.dashboard');

@@ -297,7 +297,7 @@ class NetworkHubController extends Controller
             'manager_name' => ['required', 'string', 'max:120'],
             'manager_email' => ['required', 'email', 'max:255'],
             'manager_phone' => ['required', 'regex:/^(09[0-9]{9}|\+639[0-9]{9})$/'],
-            'login_email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'login_email' => ['required', 'email', 'max:255'],
         ]);
     }
 
