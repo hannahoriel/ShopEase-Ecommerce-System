@@ -607,11 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     function renderOrders(orders) {
                         if (!purchaseRows) return;
                         if (!orders.length) {
-                            if (purchaseRows.querySelector('[data-demo-order]')) {
-                                rows = Array.from(purchaseRows.querySelectorAll('[data-purchase-row]'));
-                                applyPurchaseFilters();
-                                return;
-                            }
                             purchaseRows.innerHTML = '';
                             rows = [];
                             applyPurchaseFilters();
@@ -638,7 +633,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <article class="purchase-shop-card" data-purchase-row data-view-order-id="${escapeHtml(order.order_number)}" role="link" tabindex="0" aria-label="View order ${escapeHtml(order.order_number)}" data-status="${statusClass}" data-search="${escapeHtml(`${order.order_number} ${order.shop} ${order.items.map(item => item.product_name).join(' ')}`.toLowerCase())}">
                                     <div class="purchase-shop-header">
                                         <div class="purchase-shop-heading">
-                                            <span class="purchase-shop-icon" aria-hidden="true">▣</span>
+                                            <span class="purchase-shop-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none">
+                                                    <path d="M4 9h16l-1.2-5H5.2L4 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                                                    <path d="M6 9v10h12V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                                                    <path d="M9 19v-5h6v5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                                                </svg>
+                                            </span>
                                             <strong>${escapeHtml(order.shop)}</strong>
                                         </div>
                                         <div class="purchase-shop-order-meta">
@@ -661,7 +662,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                     <div class="purchase-row">
                                         <div class="purchase-product-cell">
-                                            <div class="purchase-product-image purchase-product-placeholder" aria-hidden="true">ShopEase</div>
+                                            <div class="purchase-product-image purchase-product-placeholder" aria-hidden="true">
+                                                <svg viewBox="0 0 120 100" fill="none">
+                                                    <rect width="120" height="100" rx="10" fill="#FFF2EE"/>
+                                                    <path d="m31 38 29-16 29 16v31L60 85 31 69V38Z" fill="#F8D9D2" stroke="#A76963" stroke-width="3" stroke-linejoin="round"/>
+                                                    <path d="m31 38 29 17 29-17M60 55v30M46 30l29 17" stroke="#A76963" stroke-width="3" stroke-linejoin="round"/>
+                                                </svg>
+                                            </div>
                                             <div class="purchase-product-copy">
                                                 <strong>${escapeHtml(firstItem.product_name || 'Order items')}</strong>
                                                 <small>${escapeHtml(variant || 'Standard')}</small>
@@ -696,8 +703,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     async function loadOrders() {
-                        if (!purchasesConfig.apiToken || !purchaseRows) return;
-                        if (emptyState && !purchaseRows.querySelector('[data-demo-order]')) {
+                        if (!purchaseRows) return;
+                        if (!purchasesConfig.apiToken) {
+                            if (emptyState) {
+                                emptyState.hidden = false;
+                                emptyState.querySelector('h3').textContent = 'Unable to load orders';
+                                emptyState.querySelector('p').textContent = 'Your account session is unavailable. Please refresh the page and try again.';
+                            }
+                            return;
+                        }
+                        if (emptyState) {
                             emptyState.hidden = false;
                             emptyState.querySelector('h3').textContent = 'Loading orders…';
                             emptyState.querySelector('p').textContent = '';
@@ -714,10 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             const payload = await response.json();
                             renderOrders(payload.data || []);
                         } catch (error) {
-                            if (purchaseRows.querySelector('[data-demo-order]')) {
-                                applyPurchaseFilters();
-                                return;
-                            }
                             if (emptyState) {
                                 emptyState.hidden = false;
                                 emptyState.querySelector('h3').textContent = 'Unable to load orders';
