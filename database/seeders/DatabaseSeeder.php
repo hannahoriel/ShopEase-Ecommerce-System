@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
         $this->call(SellerShippingStatusSeeder::class);
         $this->call(SellerReportsSeeder::class);
         $this->call(LogisticsManagementSeeder::class);
+        $this->call(LogisticsParcelTrackingSeeder::class);
         $this->call(AdminMessagesSeeder::class);
+        $this->call(LogisticsMessagesSeeder::class);
+        $this->call(LogisticsAccountSeeder::class);
     }
 }

@@ -6,8 +6,10 @@ use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Rider\Rider;
 use App\Models\User;
+use App\Mail\SortingCenterCredentials;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class LogisticsNetworkHubTest extends TestCase
@@ -78,7 +80,7 @@ class LogisticsNetworkHubTest extends TestCase
             ->assertJsonPath('data.0.id', $centerId);
     }
 
-    public function test_creating_a_sorting_center_does_not_email_preview_credentials_to_its_manager(): void
+    public function test_creating_a_sorting_center_emails_real_login_credentials_to_its_login_email(): void
     {
         Mail::fake();
         [$user] = $this->logisticsAccount('Credential Email Test Logistics');
@@ -97,7 +99,19 @@ class LogisticsNetworkHubTest extends TestCase
             ->assertJsonMissingPath('data.generated_password')
             ->assertJsonMissingPath('data.password');
 
-        Mail::assertNothingOutgoing();
+        $branchUser = User::query()->where('email', 'sorting.center.test@example.com')->firstOrFail();
+        $this->assertSame(User::ROLE_SORTING_CENTER, $branchUser->role);
+        Mail::assertSent(SortingCenterCredentials::class, function (SortingCenterCredentials $mail) use ($branchUser): bool {
+            $password = $mail->password;
+
+            return $mail->hasTo($branchUser->email)
+                && strlen($password) === 8
+                && preg_match('/[a-z]/', $password) === 1
+                && preg_match('/[A-Z]/', $password) === 1
+                && preg_match('/[0-9]/', $password) === 1
+                && preg_match('/[^A-Za-z0-9]/', $password) === 1
+                && Hash::check($password, $branchUser->password);
+        });
     }
 
     public function test_network_hubs_enforce_scoped_unique_provinces_and_login_emails(): void
@@ -107,7 +121,10 @@ class LogisticsNetworkHubTest extends TestCase
         $payload = $this->centerPayload();
 
         $this->actingAs($user)->postJson('/api/v1/logistics/network-hubs', $payload)->assertCreated();
-        $this->actingAs($otherUser)->postJson('/api/v1/logistics/network-hubs', $payload)->assertCreated();
+        $this->actingAs($otherUser)->postJson('/api/v1/logistics/network-hubs', [
+            ...$payload,
+            'login_email' => 'second-company-center@example.com',
+        ])->assertCreated();
         $this->actingAs($user)
             ->postJson('/api/v1/logistics/network-hubs', [
                 ...$payload,

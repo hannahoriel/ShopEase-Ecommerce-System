@@ -264,7 +264,7 @@ body.pt-modal-open{overflow:hidden}
 @include('components.logistics.sidebar')
 @include('components.logistics.navbar')
 <main class="lg-main" id="lgMain"><div class="pt-page">
-<header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Logistics Operations</span><h1>Parcel Tracking</h1><p>Monitor shipment movement and review return requests across your delivery network.</p></div><span class="pt-demo" id="ptDemoBadge" hidden>Preview Data</span></header>
+<header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Logistics Operations</span><h1>Parcel Tracking</h1><p>Monitor shipment movement and review return requests across your delivery network.</p></div></header>
 <section class="pt-panel" aria-label="Parcel tracking records">
 <div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns</button></div>
 <div id="ptParcels" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabParcels">
@@ -281,6 +281,7 @@ body.pt-modal-open{overflow:hidden}
 <div class="pt-modal" id="ptReturnModal" aria-hidden="true"><div class="pt-dialog" role="dialog" aria-modal="true" aria-labelledby="ptReturnModalTitle" tabindex="-1"><header class="pt-modal-head"><h2 id="ptReturnModalTitle">Return Details</h2><button type="button" class="pt-x" data-close="ptReturnModal" aria-label="Close">×</button></header><div class="pt-modal-content" id="ptReturnModalBody"></div><div class="pt-modal-actions"><button type="button" class="pt-close" data-close="ptReturnModal">Close</button></div></div></div>
 <script id="ptParcelData" type="application/json">{!! json_encode($logisticsParcels ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 <script id="ptReturnData" type="application/json">{!! json_encode($logisticsReturns ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+<script id="ptLocationData" type="application/json">{!! json_encode($logisticsLocations ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 'use strict';
@@ -295,37 +296,20 @@ const pill=v=>`<span class="pt-status ${escape(clean(v))}">${escape(statusName(v
 const field=(title,value)=>`<div class="pt-field"><label>${escape(title)}</label><strong>${escape(value??'—')}</strong></div>`;
 const card=(title,body)=>`<section class="pt-detail-card"><div class="pt-detail-title">${escape(title)}</div><div class="pt-detail-body">${body}</div></section>`;
 const rowsFrom=id=>{try{let data=JSON.parse($(id)?.textContent||'[]');if(data&& !Array.isArray(data) && Array.isArray(data.data))data=data.data;return Array.isArray(data)?data:[]}catch(e){return []}};
-const parcels=rowsFrom('ptParcelData');const returns=rowsFrom('ptReturnData');
-// Clearly labeled UI-only preview records; never saved to database.
-if(!parcels.length&&!returns.length){
-  parcels.push(
-    {order_id:'DEMO-SH-1001',buyer_address_details:{province:'Laguna',municipality:'Santa Cruz',barangay:'Poblacion II',zip_code:'4009',street:'Rizal Street',house_no:'24',building:'Rivera Residence',subdivision:'Greenfields'},seller_address_details:{province:'Laguna',municipality:'Calamba City',barangay:'Masico',zip_code:'4027',street:'San Lorenzo St.',house_no:'587',building:'Tech Haven Building',subdivision:'Northpoint'},buyer_name:'Alex Rivera',product_name:'Wireless Headphones',tracking_number:'DEMO-TRK-001',status:'in-transit',current_location:'Laguna Sorting Center',ordered_at:'2026-10-23T09:20:00+08:00',estimated_delivery:'2026-10-30T17:00:00+08:00',customer_phone:'0917 000 0001',delivery_address:'Santa Cruz, Laguna',buyer_email:'alex@example.com',seller_name:'Tech Haven',seller_email:'techhaven@example.com',seller_phone:'0917 654 3001',seller_address:'Calamba City, Laguna',items:[{product_name:'Wireless Headphones',variation:'Bluetooth 5.3',color:'Black',size:'Standard',quantity:1,price:1599},{product_name:'Carrying Pouch',variation:'Travel',color:'Grey',size:'Small',quantity:1,price:199}],payment_method:'COD',total_amount:1599,history:[{status:'Order Prepared',timestamp:'2026-10-23T09:20:00+08:00'},{status:'Picked Up',timestamp:'2026-10-24T10:00:00+08:00'},{status:'Arrived at Sorting Center',location:'Laguna',timestamp:'2026-10-25T14:30:00+08:00'}]},
-    {order_id:'DEMO-SH-1002',buyer_address_details:{province:'Laguna',municipality:'Santa Cruz',barangay:'Gatid',zip_code:'4009',street:'National Highway',house_no:'128',building:'Santos Residence',subdivision:'Villa Teresa'},seller_address_details:{province:'Laguna',municipality:'San Pablo City',barangay:'San Francisco',zip_code:'4000',street:'Mabini Street',house_no:'52',building:'Everyday Basics Store',subdivision:'Centro'},buyer_name:'Jamie Santos',product_name:'Cotton T-Shirt',tracking_number:'DEMO-TRK-002',status:'out-for-delivery',current_location:'Santa Cruz Delivery Hub',ordered_at:'2026-10-22T08:10:00+08:00',estimated_delivery:'2026-10-29T17:00:00+08:00',seller_name:'Everyday Basics',seller_address:'San Pablo City, Laguna',payment_method:'Online Payment',total_amount:450},
-    {order_id:'DEMO-SH-1003',buyer_address_details:{province:'Quezon',municipality:'Lucena City',barangay:'Ibabang Dupay',zip_code:'4301',street:'Quezon Avenue',house_no:'11',building:'Cruz Home',subdivision:'Pacific Homes'},seller_address_details:{province:'Quezon',municipality:'Lucena City',barangay:'Isabang',zip_code:'4301',street:'Dalahican Road',house_no:'76',building:'House & Home Shop',subdivision:'Eastview'},buyer_name:'Taylor Cruz',product_name:'Ceramic Mug Set',tracking_number:'DEMO-TRK-003',status:'delivered',current_location:'Delivered to recipient',ordered_at:'2026-10-20T12:00:00+08:00',estimated_delivery:'2026-10-27T17:00:00+08:00',seller_name:'House & Home',seller_address:'Lucena City, Quezon',total_amount:699}
-  );
-  returns.push(
-    {order_id:'DEMO-SH-0998',buyer_address_details:{province:'Laguna',municipality:'San Pablo City',barangay:'San Francisco',zip_code:'4000',street:'Mabini Street',house_no:'15',building:'Lee Residence',subdivision:'San Pablo Village'},seller_address_details:{province:'Laguna',municipality:'Calamba City',barangay:'Canlubang',zip_code:'4027',street:'Market Road',house_no:'2',building:'StreetFit Store',subdivision:'West Park'},buyer_name:'Morgan Lee',buyer_email:'morgan@example.com',buyer_phone:'0917 123 4561',delivery_address:'San Pablo City, Laguna',product_name:'Running Sneakers',type:'Return',amount:1799,status:'pending',date:'2026-10-26T09:30:00+08:00',reason:'Incorrect size',solution:'Awaiting return pickup',seller_name:'StreetFit',seller_email:'support@streetfit.com',seller_phone:'0917 987 6501',seller_address:'Calamba City, Laguna',courier:'ShopEase Logistics',shipping_status:'Return Requested',tracking_number:'DEMO-RET-001',return_items:[{product_name:'Running Sneakers',variation:'Standard',color:'White',size:'EU 40',quantity:1,product_price:1799}]},
-    {order_id:'DEMO-SH-0991',buyer_address_details:{province:'Laguna',municipality:'Santa Cruz',barangay:'Poblacion I',zip_code:'4009',street:'Burgos Street',house_no:'33',building:'Ramos Residence',subdivision:'Lakeside'},seller_address_details:{province:'Laguna',municipality:'Liliw',barangay:'Poblacion',zip_code:'4004',street:'Rizal Street',house_no:'14',building:'Mia Boutique Shop',subdivision:'Town Center'},buyer_name:'Casey Ramos',buyer_email:'alex@example.com',buyer_phone:'0917 123 4567',delivery_address:'Santa Cruz, Laguna',product_name:'Crossbody Bag',type:'Return',amount:799,status:'returned',date:'2026-10-25T16:40:00+08:00',solution:'Returned package received at seller warehouse.',seller_name:'Mia Boutique',seller_email:'miaboutique@example.com',seller_phone:'0917 654 3210',seller_address:'Liliw, Laguna',courier:'ShopEase Logistics',shipping_status:'Returned',tracking_number:'DEMO-RET-002',history:[{status:'Return Requested',timestamp:'2026-10-23T09:20:00+08:00'},{status:'Picked Up',timestamp:'2026-10-24T10:00:00+08:00'},{status:'Arrived at Sorting Center',location:'Laguna',timestamp:'2026-10-25T14:30:00+08:00'},{status:'Returned to Seller',location:'Liliw, Laguna',timestamp:'2026-10-25T16:40:00+08:00'}],return_items:[{product_name:'Classic Crossbody Bag',variation:'Adjustable Strap',color:'Coffee Brown',size:'Medium',quantity:1,product_price:799},{product_name:'Mini Card Holder',variation:'Leather Finish',color:'Mocha',size:'One Size',quantity:2,product_price:249}]}
-  );
-  $('ptDemoBadge').hidden=false;
-}
-
+const parcels=rowsFrom('ptParcelData');const returns=rowsFrom('ptReturnData');let trackingLocations={};try{trackingLocations=JSON.parse($('ptLocationData')?.textContent||'{}')}catch{}
 const states={parcels:{tab:'all',location:'all',locationType:null,search:'',page:1,data:parcels},returns:{tab:'all',search:'',page:1,data:returns}};
 const perPage=7;let active='parcels';let lastFocus=null;
 function parcelStatus(p){return clean(p.shipping_status||p.status||'processing')}
 function returnsStatus(r){return clean(r.status||r.return_status||'pending')}
 function isRefundOnly(r){return /refund[\s_-]*only|partial[\s_-]*refund/i.test(String(r.return_type||r.refund_type||r.type||''))}
-// Read the exact Network Hubs preview storage key; exclude inactive / archived locations.
-const hubStorageKey='shopease-logistics-network-hubs-ui-v1';
-const normalizeLocation=v=>String(v||'').trim().toLocaleLowerCase().replace(/\s+/g,' ');
-function networkLocations(){let centers=[];try{const saved=JSON.parse(localStorage.getItem(hubStorageKey)||'[]');if(Array.isArray(saved))centers=saved;}catch{}const opts=[];for(const center of centers){if(center.status==='inactive')continue;const centerName=center.branch_name||center.name;if(centerName)opts.push({name:String(centerName),kind:'Sorting Center'});for(const hub of (Array.isArray(center.hubs)?center.hubs:[])){if(hub.status==='inactive')continue;const hubName=hub.hub_name||hub.name;if(hubName)opts.push({name:String(hubName),kind:'Delivery Hub'});}}return opts;}
+function networkLocations(){return [...(trackingLocations.sorting_centers||[]).map(x=>({id:String(x.id),name:String(x.name),kind:'Sorting Center'})),...(trackingLocations.delivery_hubs||[]).map(x=>({id:String(x.id),name:String(x.name),kind:'Delivery Hub'}))]}
 function updateLocationOptions(){
   const sorting=$('ptSortingFilter'),delivery=$('ptDeliveryFilter');if(!sorting||!delivery)return;
   const locations=networkLocations();
   for(const [select,kind,allText] of [[sorting,'Sorting Center','All Sorting Centers'],[delivery,'Delivery Hub','All Delivery Hubs']]){
     const selected=select.value;
     const unique=new Map();
-    locations.filter(loc=>loc.kind===kind).forEach(loc=>unique.set(normalizeLocation(loc.name),loc.name));
+    locations.filter(loc=>loc.kind===kind).forEach(loc=>unique.set(String(loc.id),loc.name));
     // Only locations from Network Hubs are filter options; no arbitrary parcel locations.
     select.replaceChildren(new Option(allText,'all'));
     [...unique.entries()].sort((a,b)=>a[1].localeCompare(b[1])).forEach(([key,name])=>select.add(new Option(name,key)));
@@ -350,9 +334,9 @@ function changeHubFilter(type){
 }
 $('ptSortingFilter')?.addEventListener('change',()=>changeHubFilter('sorting'));
 $('ptDeliveryFilter')?.addEventListener('change',()=>changeHubFilter('delivery'));
-window.addEventListener('storage',e=>{if(e.key===hubStorageKey){updateLocationOptions();render('parcels');}});
+
 window.addEventListener('pageshow',()=>{updateLocationOptions();render('parcels');});
-function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='parcels'&&s.location!=='all'&&normalizeLocation(o.current_location||o.location)!==s.location)return false;if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
+function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='parcels'&&s.location!=='all'){const locationId=s.locationType==='sorting'?o.sorting_center_id:o.delivery_hub_id;if(String(locationId)!==String(s.location))return false;}if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
 function render(section){
   const filtered=filterRecords(section),state=states[section];
   const total=Math.max(1,Math.ceil(filtered.length/perPage));
@@ -362,9 +346,9 @@ function render(section){
     $('ptParcelsRows').innerHTML=shown.map(o=>{
       const id=parcels.indexOf(o);
       return `<tr role="button" tabindex="0" data-id="${id}" aria-label="View parcel ${escape(o.order_number||o.order_id||o.tracking_number)}"><td><strong class="pt-order">${escape(o.order_number||o.order_id||o.id)}</strong><small>${escape(o.buyer_name||o.customer_name||'—')} · ${escape(o.product_name||o.items?.[0]?.name||'Parcel')}</small></td><td>${escape(o.tracking_number||o.tracking_no||'—')}</td><td>${pill(parcelStatus(o))}</td><td>${escape(o.current_location||o.location||'Not scanned yet')}</td><td>${formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta)}</td></tr>`;
-    }).join('')||'<tr><td class="pt-empty" colspan="5">No parcels found. Live parcel records will appear when the logistics data source is connected.</td></tr>';
+    }).join('')||'<tr><td class="pt-empty" colspan="5">No parcel records match your search or filters.</td></tr>';
   }else{
-    $('ptReturnsRows').innerHTML=shown.map(o=>`<tr role="button" tabindex="0" data-id="${returns.indexOf(o)}" aria-label="View return ${escape(o.order_id||o.order_number)}"><td><strong class="pt-order">${escape(o.order_id||o.order_number)}</strong></td><td class="pt-customer"><strong>${escape(o.buyer_name||o.customer_name)}</strong><small>${escape(o.product_name||o.return_items?.[0]?.product_name||'—')}</small></td><td>${pill(returnStatusName(returnsStatus(o)))}</td><td>${formatDate(o.returned_at||o.requested_at||o.date||o.created_at)}</td></tr>`).join('')||'<tr><td class="pt-empty" colspan="4">No return records found. Records will appear here when the logistics data source is connected.</td></tr>';
+    $('ptReturnsRows').innerHTML=shown.map(o=>`<tr role="button" tabindex="0" data-id="${returns.indexOf(o)}" aria-label="View return ${escape(o.order_id||o.order_number)}"><td><strong class="pt-order">${escape(o.order_id||o.order_number)}</strong></td><td class="pt-customer"><strong>${escape(o.buyer_name||o.customer_name)}</strong><small>${escape(o.product_name||o.return_items?.[0]?.product_name||'—')}</small></td><td>${pill(returnStatusName(returnsStatus(o)))}</td><td>${formatDate(o.returned_at||o.requested_at||o.date||o.created_at)}</td></tr>`).join('')||'<tr><td class="pt-empty" colspan="4">No return records match your search or filters.</td></tr>';
   }
   $(section==='parcels'?'ptParcelsCount':'ptReturnsCount').textContent=filtered.length?`Showing ${(state.page-1)*perPage+1}–${Math.min(filtered.length,state.page*perPage)} of ${filtered.length} records`:'0 records';
   $(section==='parcels'?'ptParcelsPrev':'ptReturnsPrev').disabled=state.page<=1;
@@ -442,18 +426,7 @@ function openReturn(o){
   const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];
   const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];
   const shipmentStatus=o.shipping_status||o.return_shipping_status||'processing';
-  // Hardcoded UI demo timeline for return records without saved tracking events.
-  // Existing record history takes priority whenever it is available.
-  const existingReturnHistory=[o.tracking_history,o.trackingHistory,o.history,o.events,o.scans,o.status_history]
-    .find(candidate=>Array.isArray(candidate)&&candidate.length);
-  const returnHistoryRecord=existingReturnHistory?o:{
-    ...o,
-    history:[
-      {status:'Order Prepared',timestamp:'2026-10-23T09:20:00+08:00',location:'—'},
-      {status:'Picked Up',timestamp:'2026-10-24T10:00:00+08:00',location:'—'},
-      {status:'Arrived at Sorting Center',timestamp:'2026-10-25T14:30:00+08:00',location:'Laguna'}
-    ]
-  };
+  const returnHistoryRecord=o;
   $('ptReturnModalBody').innerHTML=
     card('Return Summary',`<div class="pt-fields">${field('Order ID',o.order_id||o.order_number)}${field('Status',returnStatusName(returnsStatus(o)))}${field('Return Type','Return')}${field('Date & Time',formatDate(o.returned_at||o.requested_at||o.date||o.created_at))}</div>`)+
     card('Tracking Progress',progress(shipmentStatus))+

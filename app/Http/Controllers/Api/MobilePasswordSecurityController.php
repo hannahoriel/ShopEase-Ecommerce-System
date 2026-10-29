@@ -19,6 +19,7 @@ class MobilePasswordSecurityController extends Controller
         User::ROLE_BUYER,
         User::ROLE_SELLER,
         User::ROLE_RIDER,
+        User::ROLE_LOGISTICS,
     ];
 
     private function user(Request $request): User
@@ -134,7 +135,7 @@ class MobilePasswordSecurityController extends Controller
             }
         } elseif (app()->environment('local')) {
             return response()->json([
-                'message' => 'No buyer, seller, or rider account uses that email address.',
+                'message' => 'No eligible ShopEase account uses that email address.',
             ], 404);
         }
 

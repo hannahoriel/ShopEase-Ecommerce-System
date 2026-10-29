@@ -2298,16 +2298,13 @@ Route::get('/logistics/network-hubs', function () {
 })->middleware(['auth', 'role:logistics'])->name('logistics.network-hubs');
 
 // Insert next to the other Logistics routes in routes/web.php.
-Route::get('/logistics/parcel-tracking', function () {
-    abort_unless(Auth::user()?->role === User::ROLE_LOGISTICS, 403);
-    // Supply $logisticsParcels and $logisticsReturns from the logistics-scoped backend when ready.
-    return view('pages.logistics.parcel-tracking');
-})->middleware('auth')->name('logistics.parcel-tracking');
+Route::get('/logistics/parcel-tracking', [\App\Http\Controllers\Api\Logistics\ParcelTrackingController::class, 'page'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.parcel-tracking');
 
-// Add within your existing authenticated Logistics route group (preserve existing middleware/role protection):
-Route::get('/logistics/account', function () {
-    return view('pages.logistics.account');
-})->name('logistics.account');
+Route::get('/logistics/account', [\App\Http\Controllers\Api\Logistics\AccountController::class, 'page'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.account');
 
 /*
 |--------------------------------------------------------------------------
