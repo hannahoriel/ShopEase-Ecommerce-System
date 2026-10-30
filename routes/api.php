@@ -118,6 +118,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/reset', [MobilePasswordSecurityController::class, 'resetForgottenPassword']);
     });
     Route::post('/rider/register', StoreRiderRegistrationController::class)->name('rider.api.register');
+    Route::get('/courier-registrations/centers', [CourierRegistrationController::class, 'centers'])
+        ->name('courier-registrations.centers');
     Route::post('/courier-registrations', [CourierRegistrationController::class, 'store'])
         ->middleware('throttle:10,1')->name('courier-registrations.store');
     Route::get('/rider/registration-status/{token}', ShowRiderRegistrationStatusController::class)

@@ -149,6 +149,14 @@ Route::get('/dashboard', function () {
             'logistics.dashboard'
         ),
 
+        User::ROLE_SORTING_CENTER => redirect()->route(
+            'sorting-center.dashboard'
+        ),
+
+        User::ROLE_DELIVERY_HUB => redirect()->route(
+            'delivery-hub.dashboard'
+        ),
+
         User::ROLE_RIDER => redirect()->route(
             'rider.dashboard'
         ),
@@ -2339,6 +2347,10 @@ Route::middleware(['auth', 'role:sorting_center'])
             $center = \App\Models\Logistics\LogisticsBranch::query()
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
+            // Older mobile builds saved pending couriers as Rider records only.
+            // Sync those records before rendering this web queue.
+            app(\App\Http\Controllers\Api\Logistics\CourierRegistrationController::class)
+                ->syncLegacyMobileApplications($center);
             $registrations = \App\Models\Logistics\CourierRegistration::query()
                 ->where('sorting_center_id', $center->id)
                 ->latest('created_at')
