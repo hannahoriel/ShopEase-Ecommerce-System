@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CourierRegistration extends Model
 {
     protected $fillable = [
-        'sorting_center_id', 'first_name', 'middle_name', 'last_name', 'sex', 'birthday',
+        'sorting_center_id', 'user_id', 'first_name', 'middle_name', 'last_name', 'sex', 'birthday',
         'email', 'phone', 'region', 'province', 'city', 'barangay', 'street', 'house_no',
         'postal_code', 'vehicle', 'plate_number', 'or_cr_path', 'drivers_license_path',
         'status', 'rejection_reason', 'reviewed_by', 'reviewed_at',
@@ -40,5 +40,10 @@ class CourierRegistration extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }
