@@ -1,10 +1,9 @@
-{{-- Delivery Hub Rider Registrations — frontend preview, scoped to authenticated hub. --}}
+{{-- Delivery Hub Rider Registrations, scoped to the authenticated hub. --}}
 @php
     $riderRegistrations = $riderRegistrations ?? null;
     $deliveryHub = $deliveryHub ?? $hub ?? null;
     $assignedDeliveryHubId = (string) ($deliveryHubId ?? data_get($deliveryHub, 'id') ?? 'account-'.(auth()->id() ?? 'preview'));
-    // The selected logistics partner / hub fields must be supplied by the registration API when integrated.
-    // Rider records must belong to this authenticated delivery hub.
+    // Rider records are supplied by the authenticated delivery hub registration API.
 @endphp
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Rider Registrations — ShopEase</title>
@@ -41,41 +40,10 @@
 document.addEventListener('DOMContentLoaded',()=>{
  'use strict';
  const $=id=>document.getElementById(id);
- const rawServer=@json($riderRegistrations);
- let records,selected=null,page=1,archiveStatus='approved';
- const serverRecords=Array.isArray(rawServer)?rawServer:(Array.isArray(rawServer?.data)?rawServer.data:null);
- const storageKey='shopease-delivery-hub-rider-registrations-preview-v2:'+String(@json(auth()->id()));
- const fromStorage=()=>{try{const x=JSON.parse(localStorage.getItem(storageKey)||'null');return Array.isArray(x)?x:null;}catch{return null;}};
- const allowed=r=>['motorcycle','tricycle'].includes(String(r.vehicle_type||r.vehicle||'').trim().toLowerCase());
- function persist(){if(!serverRecords)localStorage.setItem(storageKey,JSON.stringify(records));}
-
- records=(serverRecords||fromStorage()||[]).filter(allowed).map(r=>({...r,id:String(r.id),status:r.status||'pending'}));
- // UI preview seed: no actual rider account is created or approved on the server.
- if(!serverRecords&&!fromStorage()){
-   const today=new Date();const dateOffset=d=>new Date(today.getTime()-d*86400000).toISOString();
-   records=[
-     {id:'dh-preview-rider-001',last_name:'Santos',first_name:'Rico',middle_name:'D.',sex:'Male',birthday:'1998-06-14',age:28,email:'rico.santos@example.test',phone:'09170000001',region:'CALABARZON',province:'Laguna',city:'Pila',barangay:'Poblacion',street:'Rizal St.',house_no:'123',postal_code:'4010',vehicle_type:'Tricycle',plate_number:'TRI 203',created_at:dateOffset(1),status:'pending'},
-     {id:'dh-preview-rider-002',last_name:'Cruz',first_name:'Cathy',middle_name:'',sex:'Female',birthday:'2001-04-11',age:25,email:'cathy.cruz@example.test',phone:'09170000002',region:'CALABARZON',province:'Laguna',city:'Pila',barangay:'Pansol',street:'Maharlika St.',house_no:'18',postal_code:'4010',vehicle_type:'Motorcycle',plate_number:'MOT 702',created_at:dateOffset(2),status:'pending'},
-     {id:'dh-preview-rider-003',last_name:'Reyes',first_name:'Angela',middle_name:'M.',sex:'Female',birthday:'1999-09-10',age:27,email:'angela.reyes@example.test',phone:'09170000003',region:'CALABARZON',province:'Laguna',city:'Pila',barangay:'Poblacion',street:'Mabini St.',house_no:'45',postal_code:'4010',vehicle_type:'Motorcycle',plate_number:'MOT 701',created_at:dateOffset(3),reviewed_at:dateOffset(2),status:'approved'},
-     {id:'dh-preview-rider-004',last_name:'Mendoza',first_name:'Bryan',middle_name:'P.',sex:'Male',birthday:'1997-02-08',email:'bryan.mendoza@example.test',phone:'09170000004',region:'CALABARZON',province:'Laguna',city:'Pila',barangay:'Pansol',street:'Sampaguita St.',house_no:'27',postal_code:'4010',vehicle_type:'Tricycle',plate_number:'TRI 204',created_at:dateOffset(1),status:'pending'},
-     {id:'dh-preview-rider-005',last_name:'Bautista',first_name:'Jessa',middle_name:'L.',sex:'Female',birthday:'2000-11-21',email:'jessa.bautista@example.test',phone:'09170000005',region:'CALABARZON',province:'Laguna',city:'Pila',barangay:'Santa Clara Norte',street:'National Road',house_no:'62',postal_code:'4010',vehicle_type:'Motorcycle',plate_number:'MOT 703',created_at:dateOffset(4),status:'pending'},
-     {id:'dh-preview-rider-006',last_name:'Lim',first_name:'Darren',middle_name:'A.',sex:'Male',birthday:'1996-07-03',email:'darren.lim@example.test',phone:'09170000006',region:'CALABARZON',province:'Laguna',city:'Pila',barangay:'Santa Clara Norte',street:'Gumamela St.',house_no:'8',postal_code:'4010',vehicle_type:'Tricycle',plate_number:'TRI 205',created_at:dateOffset(5),reviewed_at:dateOffset(3),status:'approved'}
-   ];persist();
- }
- // Demo application choices are independent of the applicant's home address.
- // Match only seeded sample ids so existing browser preview decisions are retained.
- const demoChoices={
-  'dh-preview-rider-001':['ShopEase Logistics Partner (Demo)','Laguna','Pila','Pila Delivery Hub','Poblacion'],
-  'dh-preview-rider-002':['ShopEase Logistics Partner (Demo)','Laguna','Pila','Pila Delivery Hub','Pansol'],
-  'dh-preview-rider-003':['ShopEase Logistics Partner (Demo)','Laguna','Pila','Pila Delivery Hub','Poblacion'],
-  'dh-preview-rider-004':['ShopEase Logistics Partner (Demo)','Laguna','Pila','Pila Delivery Hub','Pansol'],
-  'dh-preview-rider-005':['ShopEase Logistics Partner (Demo)','Laguna','Pila','Pila Delivery Hub','Santa Clara Norte'],
-  'dh-preview-rider-006':['ShopEase Logistics Partner (Demo)','Laguna','Pila','Pila Delivery Hub','Santa Clara Norte']
- };
- for(const r of records){const choice=demoChoices[r.id];if(!choice)continue;
-  ['preferred_logistics_company','preferred_province','preferred_municipality','preferred_delivery_hub','preferred_barangay'].forEach((k,i)=>{if(!r[k])r[k]=choice[i]});
- }
- if(!serverRecords)persist();
+ const rawServer=@json($riderRegistrations ?? []);
+ let records=Array.isArray(rawServer)?rawServer:[],selected=null,page=1,archiveStatus='approved';
+ const listUrl=@json(route('delivery_hub.api.rider-registrations.index'));
+ const decisionUrl=@json(route('delivery_hub.api.rider-registrations.decide',['registration'=>'__ID__']));
  const api=async(url,options={})=>{const response=await fetch(url,{credentials:'same-origin',...options,headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Unable to complete the request.');return body};
  const esc=x=>String(x??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  const val=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!==null&&r[k]!=='')return r[k]}return '—'};
@@ -96,15 +64,20 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('crApprove').onclick=()=>{$('crApproveMessage').textContent=`Approve the registration of ${name(selected)}?`;modal('crApproveModal')};
  async function decide(action,reason=''){
   if(!selected||status(selected)!=='pending')return;
-     if(!allowed(selected)){flash('Only motorcycle and tricycle riders are eligible.',true,'Invalid Vehicle');return;}
-     if(action==='approved' && selected.preferred_province && selected.province && String(selected.preferred_province).trim().toLowerCase()!==String(selected.province).trim().toLowerCase()){flash('Preferred delivery hub province must match the applicant home province.',true,'Province Mismatch');return;}
-   selected.status=action;selected.reviewed_at=new Date().toISOString();selected.rejection_reason=action==='rejected'?reason:null;persist();closeAll();update();drawArchive();flash(`${name(selected)} registration ${action} in this browser preview.`,false,action==='approved'?'Registration Approved':'Registration Rejected');
+   try{
+    const url=decisionUrl.replace('__ID__',encodeURIComponent(selected.id));
+    const body=await api(url,{method:'PATCH',body:JSON.stringify({status:action,reason})});
+    const updated=body.data||{...selected,status:action,reviewed_at:new Date().toISOString(),rejection_reason:action==='rejected'?reason:null};
+    records=records.map(r=>String(r.id)===String(updated.id)?updated:r);selected=updated;closeAll();update();drawArchive();
+    flash(body.message||`${name(updated)} registration ${action}.`,false,action==='approved'?'Registration Approved':'Registration Rejected');
+   }catch(error){flash(error.message||'Unable to update this registration.',true,'Action Failed')}
  }
  $('crApproveConfirm').onclick=()=>decide('approved');$('crRejectConfirm').onclick=()=>{const reason=document.querySelector('input[name="crReason"]:checked')?.value;if(!reason){$('crReasonError').textContent='Please select a rejection reason.';return}const extra=$('crReasonDetails').value.trim();if(reason.startsWith('Other')&&!extra){$('crReasonError').textContent='Please specify the reason.';return}decide('rejected',reason+(extra?' — '+extra:''))};
  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);document.querySelectorAll('.cr-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAll()}));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
  function archive(kind){archiveStatus=kind;$('crArchiveTitle').textContent=kind==='approved'?'Approved Riders':'Rejected Riders';$('crArchiveSearch').value='';drawArchive();modal('crArchiveModal')}
  function drawArchive(){const q=$('crArchiveSearch').value.toLowerCase();const rows=records.filter(r=>status(r)===archiveStatus&&[name(r),r.email,r.phone,r.plate_number].join(' ').toLowerCase().includes(q));$('crArchiveRows').innerHTML=rows.map(r=>`<tr class="cr-row" data-id="${esc(r.id)}"><td><div class="cr-person"><span class="cr-avatar">${esc(initials(r))}</span><strong>${esc(name(r))}</strong></div></td><td>${esc(val(r,'vehicle_type','vehicle'))} · ${esc(r.plate_number)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td>${esc(fdate(r.reviewed_at))}</td></tr>`).join('')||'<tr><td class="cr-empty" colspan="5">No records found.</td></tr>'}
  document.querySelectorAll('[data-archive]').forEach(b=>b.onclick=()=>archive(b.dataset.archive));$('crArchiveSearch').oninput=drawArchive;$('crArchiveRows').onclick=e=>{const row=e.target.closest('[data-id]');if(row){$('crArchiveModal').hidden=true;details(row.dataset.id)}};
- ['crSearch','crStatus','crDate'].forEach(id=>$(id).addEventListener('input',()=>{page=1;update()}));$('crReload').onclick=()=>{$('crSearch').value='';$('crStatus').value='pending';$('crDate').value='';page=1;update()};$('crPrev').onclick=()=>{page=Math.max(1,page-1);update()};$('crNext').onclick=()=>{page++;update()};update();
+ async function reload(){try{const result=await api(listUrl);records=(Array.isArray(result.data)?result.data:[]).map(r=>({...r,id:String(r.id),status:r.status||'pending'}));update()}catch(error){records=[];update();flash(error.message||'Unable to load rider registrations.',true,'Unable to Load Riders')}}
+ ['crSearch','crStatus','crDate'].forEach(id=>$(id).addEventListener('input',()=>{page=1;update()}));$('crReload').onclick=()=>{$('crSearch').value='';$('crStatus').value='pending';$('crDate').value='';page=1;reload()};$('crPrev').onclick=()=>{page=Math.max(1,page-1);update()};$('crNext').onclick=()=>{page++;update()};reload();
 });
 </script></body></html>
