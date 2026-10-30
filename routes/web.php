@@ -490,7 +490,9 @@ Route::post(
             $request->except([
                 '_token',
                 'business_permit',
+                'business_permits',
             ]);
+        unset($stepTwoData['business_permits'], $stepTwoData['business_permit']);
 
         $categories =
             $request->input(
@@ -509,54 +511,56 @@ Route::post(
                 $stepTwoData
             );
 
-        if (
-            $request->hasFile(
-                'business_permit'
-            )
-        ) {
+        $uploadedPermits = $request->file('business_permits', []);
+        if (! is_array($uploadedPermits)) {
+            $uploadedPermits = [$uploadedPermits];
+        }
+        if ($request->hasFile('business_permit')) {
+            $uploadedPermits[] = $request->file('business_permit');
+        }
 
-            if (
-                ! empty(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                )
-            ) {
-
-                Storage::disk('public')->delete(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                );
-
+        $permitRecords = $sellerData['business_permits'] ?? [];
+        if (! is_array($permitRecords)) {
+            $permitRecords = [];
+        }
+        $permitRecords = array_values(array_filter(array_map(function ($record) {
+            if (is_string($record) && $record !== '') {
+                return ['path' => $record, 'original_name' => basename($record)];
             }
 
-            $file =
-                $request->file(
-                    'business_permit'
-                );
+            if (! is_array($record) || empty($record['path'])) {
+                return null;
+            }
 
-            $path =
-                $file->store(
-                    "seller-registration/{$draftId}",
-                    'public'
-                );
+            $record['original_name'] = $record['original_name'] ?? basename($record['path']);
 
-            $sellerData[
-                'business_permit_path'
-            ] =
-                $path;
+            return $record;
+        }, $permitRecords)));
+        if ($permitRecords === [] && ! empty($sellerData['business_permit_path'])) {
+            $permitRecords[] = [
+                'path' => $sellerData['business_permit_path'],
+                'original_name' => $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path']),
+            ];
+        }
 
-            $sellerData[
-                'business_permit_original_name'
-            ] =
-                $file->getClientOriginalName();
+        foreach ($uploadedPermits as $file) {
+            if (! $file instanceof \Illuminate\Http\UploadedFile || ! $file->isValid()) {
+                continue;
+            }
 
-            $sellerData[
-                'business_permit_mime'
-            ] =
-                $file->getMimeType();
+            $path = $file->store("seller-registration/{$draftId}", 'public');
+            $permitRecords[] = [
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType(),
+            ];
+        }
 
+        if ($permitRecords !== []) {
+            $sellerData['business_permits'] = array_values($permitRecords);
+            $sellerData['business_permit_path'] = $permitRecords[0]['path'];
+            $sellerData['business_permit_original_name'] = $permitRecords[0]['original_name'];
+            $sellerData['business_permit_mime'] = $permitRecords[0]['mime'] ?? null;
         }
 
         session([
@@ -598,7 +602,9 @@ Route::post(
             $request->except([
                 '_token',
                 'business_permit',
+                'business_permits',
             ]);
+        unset($stepTwoData['business_permits'], $stepTwoData['business_permit']);
 
         $categories =
             $request->input(
@@ -617,54 +623,56 @@ Route::post(
                 $stepTwoData
             );
 
-        if (
-            $request->hasFile(
-                'business_permit'
-            )
-        ) {
+        $uploadedPermits = $request->file('business_permits', []);
+        if (! is_array($uploadedPermits)) {
+            $uploadedPermits = [$uploadedPermits];
+        }
+        if ($request->hasFile('business_permit')) {
+            $uploadedPermits[] = $request->file('business_permit');
+        }
 
-            if (
-                ! empty(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                )
-            ) {
-
-                Storage::disk('public')->delete(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                );
-
+        $permitRecords = $sellerData['business_permits'] ?? [];
+        if (! is_array($permitRecords)) {
+            $permitRecords = [];
+        }
+        $permitRecords = array_values(array_filter(array_map(function ($record) {
+            if (is_string($record) && $record !== '') {
+                return ['path' => $record, 'original_name' => basename($record)];
             }
 
-            $file =
-                $request->file(
-                    'business_permit'
-                );
+            if (! is_array($record) || empty($record['path'])) {
+                return null;
+            }
 
-            $path =
-                $file->store(
-                    "seller-registration/{$draftId}",
-                    'public'
-                );
+            $record['original_name'] = $record['original_name'] ?? basename($record['path']);
 
-            $sellerData[
-                'business_permit_path'
-            ] =
-                $path;
+            return $record;
+        }, $permitRecords)));
+        if ($permitRecords === [] && ! empty($sellerData['business_permit_path'])) {
+            $permitRecords[] = [
+                'path' => $sellerData['business_permit_path'],
+                'original_name' => $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path']),
+            ];
+        }
 
-            $sellerData[
-                'business_permit_original_name'
-            ] =
-                $file->getClientOriginalName();
+        foreach ($uploadedPermits as $file) {
+            if (! $file instanceof \Illuminate\Http\UploadedFile || ! $file->isValid()) {
+                continue;
+            }
 
-            $sellerData[
-                'business_permit_mime'
-            ] =
-                $file->getMimeType();
+            $path = $file->store("seller-registration/{$draftId}", 'public');
+            $permitRecords[] = [
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType(),
+            ];
+        }
 
+        if ($permitRecords !== []) {
+            $sellerData['business_permits'] = array_values($permitRecords);
+            $sellerData['business_permit_path'] = $permitRecords[0]['path'];
+            $sellerData['business_permit_original_name'] = $permitRecords[0]['original_name'];
+            $sellerData['business_permit_mime'] = $permitRecords[0]['mime'] ?? null;
         }
 
         session([
@@ -1058,7 +1066,7 @@ Route::post(
         );
 
         return redirect()
-            ->route('login')
+            ->route('landing.page')
             ->with(
                 'success',
                 'Seller registration submitted successfully.'
