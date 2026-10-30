@@ -2403,16 +2403,45 @@ Route::middleware(['auth', 'role:sorting_center'])
 
     });
 
+/*
+|--------------------------------------------------------------------------
+| DELIVERY HUB PAGES
+|--------------------------------------------------------------------------
+| Every page is limited to the authenticated delivery hub account.
+| Pages live in resources/views/pages/logistics/delivery-hub/.
+| This is page routing only; data APIs and write permissions are separate.
+*/
 Route::middleware(['auth', 'role:delivery_hub'])
     ->prefix('delivery-hub')
     ->name('delivery-hub.')
     ->group(function () {
-        Route::get('/dashboard', function () {
-            $hub = \App\Models\Logistics\LogisticsDeliveryHub::query()
-                ->with('logisticsBranch')
-                ->where('user_id', Auth::id())
-                ->firstOrFail();
+        // Resolve the hub by its authenticated user; never accept another hub ID
+        // from the URL or request as the authorization context.
+        $hubPage = function (string $page) {
+            return function () use ($page) {
+                $hub = \App\Models\Logistics\LogisticsDeliveryHub::query()
+                    ->with('logisticsBranch')
+                    ->where('user_id', Auth::id())
+                    ->firstOrFail();
 
-            return view('pages.logistics.delivery-hub-dashboard', ['hub' => $hub]);
-        })->name('dashboard');
+                return view('pages.logistics.delivery-hub.' . $page, [
+                    'hub' => $hub,
+                    'deliveryHub' => $hub,
+                    'deliveryHubId' => $hub->id,
+                    'sortingCenterId' => data_get($hub, 'logistics_branch_id', data_get($hub, 'branch_id')),
+                ]);
+            };
+        };
+
+        Route::get('/dashboard', $hubPage('dashboard'))->name('dashboard');
+        Route::get('/rider-registrations', $hubPage('rider-registrations'))->name('rider-registrations');
+        Route::get('/scanners', $hubPage('scanners'))->name('scanners');
+        Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
+        Route::get('/parcel-disputes', $hubPage('parcel-disputes'))->name('parcel-disputes');
+        Route::get('/vehicle-drivers', $hubPage('vehicle-drivers'))->name('vehicle-drivers');
+        Route::get('/network-earnings', $hubPage('network-earnings'))->name('network-earnings');
+        Route::get('/messages', $hubPage('messages'))->name('messages');
+        Route::get('/notifications', $hubPage('notifications'))->name('notifications');
+        Route::get('/reports', $hubPage('reports'))->name('reports');
+        Route::get('/account', $hubPage('account'))->name('account');
     });
