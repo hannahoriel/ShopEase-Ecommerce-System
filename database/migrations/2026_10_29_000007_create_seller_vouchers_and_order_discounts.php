@@ -23,8 +23,8 @@ return new class extends Migration
             $table->unsignedInteger('quantity');
             $table->unsignedInteger('claimed')->default(0);
             $table->unsignedInteger('per_buyer')->default(1);
-            $table->timestamp('starts_at');
-            $table->timestamp('ends_at');
+            $table->dateTime('starts_at');
+            $table->dateTime('ends_at');
             $table->text('terms')->nullable();
             $table->boolean('enabled')->default(true);
             $table->timestamps();
