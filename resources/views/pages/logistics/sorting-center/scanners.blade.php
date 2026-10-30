@@ -208,6 +208,17 @@ body.pt-modal-open{overflow:hidden}
 .sc-batch-remaining{background:#fff1de;color:#873e20}
 .sc-batch-count{background:#ffffff2b;color:#fff;border:1px solid #ffffff55}
 @media(max-width:650px){.sc-batch-header{padding:14px 15px;gap:11px}.sc-batch-id{font-size:14px!important}.sc-batch-metrics{width:100%;justify-content:flex-end;margin-left:0;padding-top:8px;border-top:1px solid #ffffff38}}
+.pt-destination-banner{border:1px solid #dca0a2;background:#fff1ef;border-radius:12px;padding:14px 17px;margin-bottom:17px;color:#71212a;font-size:12px;line-height:1.7}
+.pt-destination-banner strong{display:block;font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.pt-detail-card.pt-destination-card{border:2px solid #ae3945;box-shadow:0 0 0 3px #ae394512}
+.pt-destination-card .pt-detail-title{background:#7b1b1b;color:#fff}
+.pt-destination-pill{display:inline-block;border-radius:100px;background:#ffe4c8;color:#762d20;padding:4px 9px;font-size:10px;font-weight:700;margin:0 0 9px}
+.sc-kind{display:inline-block;padding:4px 8px;border-radius:100px;font-size:10px;font-weight:700;background:#eaf2fb;color:#26577e}.sc-kind.return{background:#fff0df;color:#8c4b22}
+
+/* Shared shipping indicators and departure history */
+.sc-kind.return,.dh-return,.pt-destination-pill{display:inline-flex;align-items:center;border-radius:999px;background:#fff0e4!important;color:#9b4b16!important;border:1px solid #ffead5;padding:4px 10px;font-size:10px;font-weight:700;white-space:nowrap}
+.sc-kind.return{font-size:10px}.sc-depart-history{margin-top:18px}.sc-history-list{display:grid;gap:10px;padding:0 19px 19px}.sc-history-row{border:1px solid #eee1dc;border-radius:11px;padding:13px;display:grid;gap:5px}.sc-history-head{display:flex;justify-content:space-between;gap:9px;flex-wrap:wrap}.sc-history-meta{color:#8f7c77;font-size:11px}.sc-history-action{display:flex;gap:8px;justify-content:flex-end}.sc-dialog-wide{width:min(690px,100%);max-height:85vh;overflow:auto}.sc-history-parcels{font-size:11px;line-height:1.9;color:#574440;max-height:40vh;overflow:auto}
+.sc-assignee{display:flex;flex-direction:column;gap:3px}.sc-assignee-name{font-size:11px;font-weight:650;color:inherit}.sc-assignee-phone{display:block;font-size:10px;color:#9d8e87;font-weight:400}.sc-batch-meta .sc-assignee-phone{color:#f5d6d1}.sc-batch-meta .sc-assignee-name{color:#fff}.sc-batch-meta .sc-assignee{display:inline-flex;vertical-align:middle}.sc-vehicle-meta{white-space:normal}
 </style>
 
 </head>
@@ -226,7 +237,7 @@ body.pt-modal-open{overflow:hidden}
 
 <div class="sc-split"><section class="sc-panel"><div class="sc-panel-head"><div><h2>Receive Parcel Scanner</h2><p>Scan a tracking number from a confirmed incoming transfer manifest.</p></div><span class="sc-badge incoming">Receiving</span></div><div class="sc-panel-body"><form class="sc-scan-row" id="scReceiveForm"><input id="scReceiveCode" type="text" class="sc-input" maxlength="90" autocomplete="off" placeholder="Scan or enter tracking number" aria-label="Tracking number for receipt" required><button class="sc-btn primary" type="submit">Receive Scan</button><button class="sc-btn sc-camera-button" type="button" data-camera="receive" aria-label="Open camera to receive a parcel">▣ Open Camera</button></form><p class="sc-help">A successful scan checks the parcel against the incoming manifest, marks it received, and moves it to Received Parcels. Duplicate and unknown scans are rejected.</p></div></section><section class="sc-panel"><div class="sc-panel-head"><div><h2>Latest Receive Scan</h2><p>Verification result updates after each scan.</p></div></div><div class="sc-panel-body"><div id="scReceiveFeedback" class="sc-feedback" role="status" aria-live="polite"><div><strong>Ready to receive</strong><small>Scan a parcel to verify it against incoming transfers.</small></div></div></div></section></div>
 
-<section class="sc-panel sc-incoming-panel"><div class="sc-panel-head"><div><h2>Incoming Transfers</h2><p>Incoming parcels assigned to this center. Scan each parcel above to remove it from this list and place it in the separate Received Parcels tab.</p></div></div><div class="sc-toolbar"><input class="sc-input" type="search" id="scIncomingSearch" placeholder="Search tracking no., origin, destination…"><span class="sc-badge incoming" id="scIncomingLabel">0 parcels</span></div><div class="sc-table-wrap"><table class="sc-table"><thead><tr><th>Tracking Number</th><th>Origin Center</th><th>Final Destination</th><th>Truck / Transfer</th><th>Loaded At</th><th>Status</th></tr></thead><tbody id="scIncomingRows"></tbody></table></div><div class="sc-footer">Only transfers assigned to this signed-in sorting center appear here.</div></section>
+<section class="sc-panel sc-incoming-panel"><div class="sc-panel-head"><div><h2>Incoming Transfers</h2><p>Incoming parcels assigned to this center. Scan each parcel above to remove it from this list and place it in the separate Received Parcels tab.</p></div></div><div class="sc-toolbar"><input class="sc-input" type="search" id="scIncomingSearch" placeholder="Search batch, tracking, sorting center, destination, courier, truck…"><span class="sc-badge incoming" id="scIncomingLabel">0 parcels</span></div><div class="sc-table-wrap"><table class="sc-table"><thead><tr><th>Tracking Number / Type</th><th>Origin Sorting Center / Delivery Hub</th><th>Final Destination</th><th>Assigned Courier / Truck</th><th>Loaded At</th></tr></thead><tbody id="scIncomingRows"></tbody></table></div><div class="sc-footer">Only transfers assigned to this signed-in sorting center appear here.</div></section>
 
 
 
@@ -248,15 +259,17 @@ body.pt-modal-open{overflow:hidden}
 
 <div class="sc-split"><section class="sc-panel"><div class="sc-panel-head"><div><h2>Ready Parcels</h2><p>Already received and waiting for departure scanning.</p></div></div><div class="sc-toolbar"><input class="sc-input" id="scReadySearch" type="search" placeholder="Search ready parcels…"></div><div class="sc-table-wrap"><table class="sc-table"><thead><tr><th>Tracking No.</th><th>Destination Province</th><th>Municipality</th><th>Status</th></tr></thead><tbody id="scReadyRows"></tbody></table></div></section><section class="sc-panel"><div class="sc-panel-head"><div><h2>Recent Scanner Activity</h2><p>Local operations for the selected center.</p></div></div><div class="sc-activity" id="scActivity"></div></section></div>
 
-<section class="sc-panel"><div class="sc-panel-head"><div><h2>Grouped Parcels for Transportation</h2><p>Groups are created instantly by next stop as parcels are scanned. Press Loaded to dispatch a specific group.</p></div><div class="sc-legend"><span><i class="sc-dot"></i> Staged</span><span><i class="sc-dot green"></i> Loaded</span><span><i class="sc-dot blue"></i> Next stop confirmed</span></div></div><div class="sc-panel-body"><div class="sc-groups" id="scRouteGroups"></div></div></section>
+<section class="sc-panel"><div class="sc-panel-head"><div><h2>Grouped Parcels for Sorting Center / Delivery Hub Transfers</h2><p>Groups are created instantly by next stop as parcels are scanned. Press Loaded to dispatch a specific group.</p></div><div class="sc-legend"><span><i class="sc-dot"></i> Staged</span><span><i class="sc-dot green"></i> Loaded</span><span><i class="sc-dot blue"></i> Next stop confirmed</span></div></div><div class="sc-panel-body"><div class="sc-groups" id="scRouteGroups"></div></div></section>
 
+<section class="sc-panel sc-depart-history" id="scDepartHistoryPanel"><div class="sc-panel-head"><div><h2>Depart History</h2><p>Loaded outgoing batches remain here until every parcel is accounted for at the destination.</p></div><button type="button" class="sc-btn small" id="scHistoryOpen">View All Departures</button></div><div id="scHistoryPreview" class="sc-history-list"></div></section>
 </section>
 
 </div></main>
 
+<div class="sc-modal" id="scHistoryModal" hidden><section class="sc-dialog sc-dialog-wide" role="dialog" aria-modal="true"><div class="sc-camera-head"><h2>Departure History</h2><button class="sc-btn small" id="scHistoryClose" type="button">Close</button></div><div id="scHistoryDetails"></div></section></div>
 <div class="sc-toast" id="scToast" hidden role="status" aria-live="polite"></div>
 
-<div class="sc-modal" id="scLoadModal" hidden><section class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="scLoadTitle"><h2 id="scLoadTitle">Confirm Truck Loading</h2><p id="scLoadDescription"></p><label for="scTruckId" style="font-size:11px;font-weight:600">Truck / Vehicle Reference (optional preview)</label><input class="sc-input" id="scTruckId" placeholder="e.g. TRK-101" maxlength="50" style="width:100%;margin-top:7px"><p class="sc-demo-warning">Confirming Loaded creates incoming transfers for a sorting center destination, or a transfer manifest destined for a delivery hub. This is browser-only until backend integration.</p><div class="sc-dialog-actions"><button class="sc-btn" type="button" id="scLoadCancel">Cancel</button><button class="sc-btn primary" type="button" id="scLoadConfirm">Confirm Loaded</button></div></section></div>
+<div class="sc-modal" id="scLoadModal" hidden><section class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="scLoadTitle"><h2 id="scLoadTitle">Confirm Truck Loading</h2><p id="scLoadDescription"></p><label for="scCourierSelect" style="font-size:11px;font-weight:600;display:block;margin-bottom:7px">Assigned Courier / Driver *</label><select class="sc-select" id="scCourierSelect" required style="width:100%;margin-bottom:12px"><option value="">Select available courier</option></select><label for="scTruckId" style="font-size:11px;font-weight:600">Assigned Truck / Plate Number</label><input class="sc-input" id="scTruckId" placeholder="Automatically filled from courier" readonly style="width:100%;margin-top:7px;background:#fbf6f3"><p class="sc-help" id="scCourierAvailability">Only approved, unassigned couriers may be dispatched.</p><p class="sc-demo-warning">Confirming Loaded creates incoming transfers for a sorting center destination, or a transfer manifest destined for a delivery hub. This is browser-only until backend integration.</p><div class="sc-dialog-actions"><button class="sc-btn" type="button" id="scLoadCancel">Cancel</button><button class="sc-btn primary" type="button" id="scLoadConfirm">Confirm Loaded</button></div></section></div>
 
 <div class="sc-modal" id="scCameraModal" hidden><section class="sc-dialog sc-camera-dialog" role="dialog" aria-modal="true" aria-labelledby="scCameraTitle"><div class="sc-camera-head"><h2 id="scCameraTitle">Scan Parcel Barcode</h2><button type="button" class="sc-btn small" id="scCameraClose">Close</button></div><video id="scCameraVideo" autoplay muted playsinline aria-label="Live camera view"></video><div style="margin-top:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap"><label class="sc-btn small" for="scQrImageInput" style="cursor:pointer">Upload QR Image</label><input type="file" id="scQrImageInput" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0" aria-label="Upload QR image"></div><p id="scCameraMessage" class="sc-help" role="status">Allow camera access to scan a tracking barcode or QR code.</p><p class="sc-help">Uses native QR detection when available and a QR decoder fallback. You can also upload an image of the QR code or type the tracking number.</p></section></div>
 
@@ -316,6 +329,39 @@ function initCenter(){
 
 }
 
+
+// Courier directory mirrors the Sorting Center Vehicles & Drivers page's preview keys.
+// Live backend assignments must replace localStorage when the production API is ready.
+const courierScope=()=>String(configuredId||currentId||'SC-LAGUNA-DEMO');
+const courierKey=()=> 'shopease-sorting-center-courier-registrations-preview-v1:'+courierScope();
+const vehicleKey=()=> 'shopease-sc-registered-vehicles-preview-v1:'+courierScope();
+const courierArchiveKey=()=> 'shopease-sc-vehicles-drivers-archive-v1:'+courierScope();
+const fullCourierName=r=>[r.first_name,r.middle_name,r.last_name].filter(Boolean).join(' ')||r.full_name||r.name||'Courier';
+const demoCouriers=[{id:'demo-sc-courier-003',first_name:'Adrian',middle_name:'Paul',last_name:'Mendoza',plate_number:'GHI 9012',status:'approved'}];
+const demoTrucks=[{id:'sc-truck-demo-03',plate_number:'GHI 9012',name:'Fuso Canter',availability:'Available',driver_name:'Adrian Paul Mendoza'}];
+function courierDirectory(){
+ const saved=getLocal(courierKey());const archived=getLocal(courierArchiveKey())||[];
+ const excluded=new Set((Array.isArray(archived)?archived:[]).map(a=>String(a.key)));
+ const items=Array.isArray(saved)?saved:demoCouriers;
+ const trucks=getLocal(vehicleKey())||demoTrucks;
+ return items.filter(c=>norm(c.status)==='approved'&&!excluded.has('couriers:'+String(c.id)))
+   .map(c=>{const plate=String(c.plate_number||c.license_plate||'').trim();const v=(Array.isArray(trucks)?trucks:[]).find(t=>norm(t.plate_number)===norm(plate));
+     return {...c,displayName:fullCourierName(c),plate,vehicle:v?.name||c.vehicle||'Truck',vehicleAvailability:v?.availability||'Available',archivedVehicle:!!(v&&excluded.has('vehicles:'+String(v.id)))};
+   }).filter(c=>c.plate&&!c.archivedVehicle);
+}
+function activeDispatches(){return data.manifests.filter(m=>String(m.originCenterId)===String(currentId)&&m.status==='loaded'&&!m.arrivedAt&&!m.releasedAt);}
+function busyCourier(c){return activeDispatches().find(m=>(m.courierId&&String(m.courierId)===String(c.id))||(!m.courierId&&norm(m.courierName)===norm(c.displayName))||norm(m.truckId)===norm(c.plate));}
+function fillCourierPicker(){const all=courierDirectory();const available=all.filter(c=>!busyCourier(c)&&!['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability)));
+ $('scCourierSelect').innerHTML='<option value="">Select available courier</option>'+all.map(c=>{const busy=busyCourier(c),disabled=busy||['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability));return `<option value="${esc(c.id)}" ${disabled?'disabled':''}>${esc(c.displayName)} · ${esc(c.plate)}${disabled?' · Unavailable':''}</option>`}).join('');
+ $('scCourierAvailability').textContent=available.length?`${available.length} courier(s) available. Assigned truck / plate number is automatic.`:'No available approved couriers. Approve a courier with a plate number in Courier Registrations first.';
+ $('scLoadConfirm').disabled=!available.length;$('scTruckId').value='';return available.length;
+}
+function inboundAssignment(m,p){const courier=m?.courierName||m?.driverName||m?.assignedCourierName||p?.courierName||p?.driverName||p?.assignedCourierName||'Not recorded by sender';
+ const truck=m?.truckId||m?.plateNumber||m?.plate_number||p?.truckId||p?.plateNumber||p?.plate_number||'Not recorded by sender';const record=courierDirectory().find(c=>String(c.id)===String(m?.courierId||p?.courierId||'')||norm(c.displayName)===norm(courier));
+ const phone=m?.courierPhone||m?.driverPhone||m?.courier_phone||p?.courierPhone||p?.driverPhone||p?.courier_phone||record?.phone_number||record?.phone||record?.mobile_number||record?.contact_number||'';
+ const vehicle=m?.vehicleType||m?.vehicleName||m?.truckName||p?.vehicleType||p?.vehicleName||record?.vehicle||'Truck';
+ return {courier,truck,phone,vehicle};}
+
 const center=()=>options.find(c=>String(c.id)===String(currentId));
 
 const centerById=id=>options.find(c=>String(c.id)===String(id));
@@ -340,15 +386,15 @@ function hubOf(c,city){return (c?.hubs||[]).find(h=>norm(h.city||h.municipality)
 
 // Explicit routePlan holds known intermediate provincial legs. The system never guesses a highway or a destination.
 
-function nextStop(parcel){const c=center();if(!c)return {error:'No sorting center is assigned to this account.'};const prov=norm(parcel.destProvince),here=norm(c.province);if(!prov||!norm(parcel.destCity))return {error:'Parcel destination province/municipality is missing.'};
+function nextStop(parcel){const c=center();if(!c)return {error:'No sorting center is assigned to this account.'};const destKey=destinationRole(parcel).toLowerCase();const targetProvince=parcel[destKey+'_province']||parcel.destProvince,targetCity=parcel[destKey+'_city']||parcel.destCity;const prov=norm(targetProvince),here=norm(c.province);if(!prov||!norm(targetCity))return {error:'Parcel destination province/municipality is missing.'};
 
- if(prov===here){const hub=hubOf(c,parcel.destCity);return hub?{type:'hub',id:hub.id,name:hub.hub_name||hub.branch_name||hub.name||'Delivery Hub',centerId:c.id}:{error:'No matching active delivery hub for '+parcel.destCity+', '+parcel.destProvince+'.'};}
+ if(prov===here){const hub=hubOf(c,targetCity);return hub?{type:'hub',id:hub.id,name:hub.hub_name||hub.branch_name||hub.name||'Delivery Hub',centerId:c.id}:{error:'No matching active delivery hub for '+targetCity+', '+targetProvince+'.'};}
 
  const plan=Array.isArray(parcel.routePlan)?parcel.routePlan:[];let nxt=plan.find(id=>String(id)!==String(c.id)&&!(parcel.visitedCenters||[]).map(String).includes(String(id))&&centerById(id));
 
- if(!nxt){const dc=provinceCenter(parcel.destProvince);if(dc&&String(dc.id)!==String(c.id))nxt=dc.id;}
+ if(!nxt){const dc=provinceCenter(targetProvince);if(dc&&String(dc.id)!==String(c.id))nxt=dc.id;}
 
- if(!nxt)return {error:'No configured next sorting center for '+parcel.destProvince+'. Set an approved route before dispatch.'};
+ if(!nxt)return {error:'No configured next sorting center for '+targetProvince+'. Set an approved route before dispatch.'};
 
  const target=centerById(nxt);if(!target||norm(target.status)==='inactive')return {error:'Next sorting center is unavailable.'};return {type:'sorting',id:target.id,name:target.branch_name||target.name||target.province,centerId:target.id};}
 
@@ -386,7 +432,7 @@ function checkReceive(raw){const p=findParcel(raw);if(isReported(p)){feedback('s
 
   const m=data.manifests.find(m=>m.id===p.transferId);if(!m||m.status!=='loaded'){feedback('scReceiveFeedback','bad','Unconfirmed transfer','The parcel does not belong to a confirmed Loaded manifest.');return;}
 
-  p.status='received';p.currentCenterId=currentId;p.receivedAt=now();p.receivedManifestId=m.id;p.receivedFrom=m.originName;p.nextCenterId=null;p.transferId=null;p.nextStop=null;p.visitedCenters=[...new Set([...(p.visitedCenters||[]).map(String),String(currentId)])];event('Received',p,`Received from ${m.originName}`);save();feedback('scReceiveFeedback','good','Parcel received successfully',p.tracking+' was moved from Incoming Transfers to Received Parcels.','Received at '+(center()?.branch_name||'Sorting Center'));say('Parcel received: '+p.tracking);return;}
+  p.status='received';p.currentCenterId=currentId;p.receivedAt=now();p.receivedManifestId=m.id;p.receivedFrom=m.originName;if((m.parcelIds||[]).every(id=>{const item=data.parcels.find(x=>String(x.id)===String(id));return !item||item===p||item.receivedManifestId===m.id||isReported(item)})){m.arrivedAt=now();}p.nextCenterId=null;p.transferId=null;p.nextStop=null;p.visitedCenters=[...new Set([...(p.visitedCenters||[]).map(String),String(currentId)])];event('Received',p,`Received from ${m.originName}`);if((m.parcelIds||[]).every(id=>{const x=data.parcels.find(z=>String(z.id)===String(id));return x&&(x.status!=='incoming'||isReported(x));})){m.arrivedAt=now();m.status='arrived';}save();feedback('scReceiveFeedback','good','Parcel received successfully',p.tracking+' was moved from Incoming Transfers to Received Parcels.','Received at '+(center()?.branch_name||'Sorting Center'));say('Parcel received: '+p.tracking);return;}
 
  feedback('scReceiveFeedback','warn',p.status==='received'||p.status==='staged'?'Parcel already received':'Parcel is not in your incoming manifest',p.tracking+' cannot be received at this sorting center.');}
 
@@ -455,18 +501,18 @@ function seedScannerPreview(){
   if(alreadySeeded)return;
   const templates=[
     {n:'101',state:'incoming',city:'Santa Cruz',origin:'Batangas Sorting Center',name:'Laptop Stand'},
-    {n:'102',state:'incoming',city:'Santa Cruz',origin:'Quezon Sorting Center',name:'Wireless Mouse'},
+    {n:'102',state:'incoming',city:'Santa Cruz',origin:'Quezon Sorting Center',name:'Wireless Mouse',isReturn:true},
     {n:'103',state:'received',city:'Santa Cruz',origin:'Manila Sorting Center',name:'Headphones'},
     {n:'104',state:'ready',city:'Santa Cruz',origin:'Cavite Sorting Center',name:'Desk Lamp'},
     {n:'105',state:'staged',city:'Santa Cruz',origin:'Rizal Sorting Center',name:'Phone Case'},
-    {n:'106',state:'received',city:'Santa Cruz',origin:'Batangas Sorting Center',name:'Portable Fan'},
+    {n:'106',state:'received',city:'Santa Cruz',origin:'Batangas Sorting Center',name:'Portable Fan',isReturn:true},
   ];
   templates.forEach((x,i)=>{
     const tracking=demoPrefix+x.n;
     if(data.parcels.some(p=>norm(p.tracking)===norm(tracking)))return;
     const manifestId='SC-PREVIEW-MANIFEST-'+x.n+'-'+currentId;
     const when=new Date(Date.now()-(i+1)*3600000).toISOString();
-    const parcel={id:'preview-'+x.n+'-'+currentId,tracking,status:x.state,currentCenterId:currentId,
+    const parcel={id:'preview-'+x.n+'-'+currentId,tracking,status:x.state,isReturn:!!x.isReturn,currentCenterId:currentId,
       nextCenterId:x.state==='incoming'?currentId:null,transferId:x.state==='incoming'?manifestId:null,
       destProvince:province,destCity:x.city,loadedFromName:x.origin,receivedFrom:x.origin,loadedAt:when,receivedAt:x.state==='incoming'?null:when,
       ordered_at:when,estimated_delivery:new Date(Date.now()+86400000*(i+1)).toISOString(),order_number:'SE-PREVIEW-'+x.n,
@@ -531,6 +577,39 @@ function seedIndependentBatches(){
  if(changed)save();
  localStorage.setItem(flag,'1');
 }
+// Dedicated return example: inbound transfer to this sorting center, with the SELLER as final destination.
+// It is scoped to the signed-in center and never recreates a previously reported parcel.
+function seedReturnParcelExample(){
+ if(!currentId)return;
+ const tracking='SHP-SC-RETURN-301';
+ if(data.parcels.some(p=>norm(p.tracking)===norm(tracking)))return;
+ const id='preview-return-301-'+currentId;
+ const manifestId='SC-RETURN-301-'+currentId;
+ const when=new Date(Date.now()-45*60000).toISOString();
+ const source='Quezon Provincial Sorting Center';
+ const parcel={
+  id,tracking,order_number:'SE-RETURN-301',isReturn:true,kind:'return',parcelType:'Return Parcel',
+  status:'incoming',currentCenterId:'',nextCenterId:currentId,transferId:manifestId,
+  loadedFromName:source,receivedFrom:source,loadedAt:when,receivedAt:null,
+  destProvince:'Cebu',destCity:'Cebu City',
+  buyer_name:'Andrea Villanueva',buyer_email:'andrea@example.test',buyer_phone:'09171234567',
+  buyer_province:'Quezon',buyer_city:'Lucena City',buyer_barangay:'Ibabang Dupay',buyer_street:'Mabini Street',buyer_house_no:'14',buyer_postal_code:'4301',
+  seller_name:'Visayas Gadgets Store',seller_email:'visayas-seller@example.test',seller_phone:'09181234567',
+  seller_province:'Cebu',seller_city:'Cebu City',seller_barangay:'Lahug',seller_street:'Gorordo Avenue',seller_house_no:'82',seller_postal_code:'6000',
+  payment_method:'Original order paid',total_amount:1250,
+  notes:'Buyer return. Final destination is the seller address in Cebu City, not the buyer pickup address in Lucena.',
+  ordered_at:when,estimated_delivery:new Date(Date.now()+3*86400000).toISOString(),
+  items:[{product_name:'Bluetooth Headphones (Return)',variation:'Standard',color:'Black',size:'One Size',quantity:1,product_price:1250}],
+  history:[{status:'Return Requested',date:new Date(Date.now()-6*3600000).toISOString(),location:'Lucena City, Quezon'},
+   {status:'Collected from Buyer',date:new Date(Date.now()-4*3600000).toISOString(),location:'Ibabang Dupay, Lucena City'},
+   {status:'In Transit',date:when,location:source}]
+ };
+ data.parcels.push(parcel);
+ data.manifests.push({id:manifestId,originCenterId:'preview-quezon-source',originName:source,
+  nextStop:{type:'sorting',id:currentId,name:center()?.branch_name||configuredName||'Sorting Center'},
+  courierName:'Miguel Reyes (Demo)',truckId:'NAB 4821',plateNumber:'NAB 4821',createdAt:when,status:'loaded',parcelIds:[id]});
+ save();
+}
 // Demo issues are scoped by the current center; no backend submission occurs.
 let activeIssueTracking='';
 function issueStorageKey(){return 'shopease-sc-issues-preview-'+currentId;}
@@ -578,7 +657,12 @@ const modalField=(label,value)=>`<div class="pt-field"><label>${esc(label)}</lab
 
 const modalPair=(label,value)=>`<div class="pt-info-pair"><label>${esc(label)}</label><strong>${esc(value??'—')}</strong></div>`;
 
-function modalParty(role,p){let b=role==='Buyer'?'buyer':'seller';return modalCard(role+' Information',modalPair('Name',p[b+'_name'])+modalPair('Email',p[b+'_email'])+modalPair('Contact',p[b+'_phone'])+modalPair('Province',p[b+'_province'])+modalPair('Municipality',p[b+'_city'])+modalPair('Barangay',p[b+'_barangay'])+modalPair('Street',p[b+'_street'])+modalPair('House No.',p[b+'_house_no'])+modalPair('ZIP',p[b+'_postal_code']));}
+function destinationRole(p){return p.isReturn===true||p.kind==='return'||String(p.parcelType||p.parcel_type||p.order_type||'').toLowerCase().includes('return')?'Seller':'Buyer'}
+function destinationAddress(p){const b=destinationRole(p).toLowerCase();return [p[b+'_house_no'],p[b+'_street'],p[b+'_barangay'],p[b+'_city'],p[b+'_province'],p[b+'_postal_code']].filter(Boolean).join(', ')}
+const finalDestination=p=>{const prefix=destinationRole(p).toLowerCase();return [p[prefix+'_barangay'],p[prefix+'_city']||p.destCity,p[prefix+'_province']||p.destProvince].filter(Boolean).join(', ')};
+const kindBadge=p=>destinationRole(p)==='Seller'?'<span class="sc-kind return">Return Parcel</span>':'';
+function modalParty(role,p){let b=role==='Buyer'?'buyer':'seller';const isDest=destinationRole(p)===role;const title=role+' Information'+(isDest?' · DELIVERY DESTINATION':'');const body=(isDest?'<span class="pt-destination-pill">DESTINATION ADDRESS</span><p class="pt-desc">'+esc(p.isReturn?'Buyer return → Seller':'Normal parcel → Buyer')+'</p>':'')+modalPair('Name',p[b+'_name'])+modalPair('Email',p[b+'_email'])+modalPair('Contact',p[b+'_phone'])+modalPair('Province',p[b+'_province'])+modalPair('Municipality',p[b+'_city'])+modalPair('Barangay',p[b+'_barangay'])+modalPair('Street',p[b+'_street'])+modalPair('House No.',p[b+'_house_no'])+modalPair('ZIP',p[b+'_postal_code']);return `<section class="pt-detail-card ${isDest?'pt-destination-card':''}"><div class="pt-detail-title">${esc(title)}</div><div class="pt-detail-body">${body}</div></section>`;}
+
 
 let detailsPreviousFocus=null;
 
@@ -610,7 +694,7 @@ function showParcelDetails(raw){const p=findParcel(raw);if(!p)return;detailsPrev
 
  const hist=(p.history||[]).map(x=>`<li><strong>${esc(x.status)}</strong><small>${esc(x.date)} · ${esc(x.location)}</small></li>`).join('')+`<li><strong>${esc(processState)}</strong><small>${esc(fmt(p.receivedAt||p.loadedAt||now()))}</small></li>`;
 
- $('scParcelDetailsBody').innerHTML=modalCard('Order Information',`<div class="pt-fields">${modalField('Order Number',p.order_number)}${modalField('Ordered At',fmt(p.ordered_at))}${modalField('Estimated Delivery',fmt(p.estimated_delivery))}${modalField('Tracking Number',p.tracking)}${modalField('Current Location',p.status==='incoming'?'On the way to this sorting center':configuredName)}${modalField('Shipping Status',processState)}</div>`)+modalCard('Tracking Progress',dots)+`<div class="pt-party-grid">${modalParty('Buyer',p)}${modalParty('Seller',p)}</div>`+modalCard('Payment Information',`<div class="pt-fields">${modalField('Payment Method',p.payment_method)}${modalField('Order Total','₱ '+Number(p.total_amount||0).toFixed(2))}</div>`)+modalCard('Ordered Items',`<div class="pt-item-stack">${items||'<p>No items available.</p>'}</div>`)+modalCard('Tracking History',`<ul class="pt-history">${hist}</ul>`)+modalCard('Customer Notes',`<div class="pt-notes">${esc(p.notes)}</div>`)+modalCard('Reported Issues',issuesFor(p.tracking).map(r=>`<div class="sc-issue-record"><strong>${esc(r.type)} · ${esc(r.status)}</strong><br>${esc(r.description)}<br><small>${esc(fmt(r.at))}${r.evidenceName?' · Evidence: '+esc(r.evidenceName):''}</small></div>`).join('')||'<p class="pt-placeholder">No issues reported for this parcel.</p>')+modalCard('Parcel QR Code',`<div class="sc-qr-placeholder">QR code will be available once provided by the backend.</div>`);
+ $('scParcelDetailsBody').innerHTML=`<div class="pt-destination-banner">${esc(destinationRole(p)==='Seller'?'RETURN PARCEL · Destination: Seller':'Destination: Buyer')}<strong>${esc(destinationAddress(p))}</strong></div>`+modalCard('Order Information',`<div class="pt-fields">${modalField('Order Number',p.order_number)}${modalField('Ordered At',fmt(p.ordered_at))}${modalField('Estimated Delivery',fmt(p.estimated_delivery))}${modalField('Tracking Number',p.tracking)}${modalField('Parcel Type',destinationRole(p)==='Seller'?'Return Parcel':'Normal Parcel')}${modalField('Final Destination',destinationAddress(p))}${modalField('Current Location',p.status==='incoming'?'On the way to this sorting center':configuredName)}${modalField('Shipping Status',processState)}</div>`)+modalCard('Tracking Progress',dots)+`<div class="pt-party-grid">${modalParty('Buyer',p)}${modalParty('Seller',p)}</div>`+modalCard('Payment Information',`<div class="pt-fields">${modalField('Payment Method',p.payment_method)}${modalField('Order Total','₱ '+Number(p.total_amount||0).toFixed(2))}</div>`)+modalCard('Ordered Items',`<div class="pt-item-stack">${items||'<p>No items available.</p>'}</div>`)+modalCard('Tracking History',`<ul class="pt-history">${hist}</ul>`)+modalCard('Customer Notes',`<div class="pt-notes">${esc(p.notes)}</div>`)+modalCard('Reported Issues',issuesFor(p.tracking).map(r=>`<div class="sc-issue-record"><strong>${esc(r.type)} · ${esc(r.status)}</strong><br>${esc(r.description)}<br><small>${esc(fmt(r.at))}${r.evidenceName?' · Evidence: '+esc(r.evidenceName):''}</small></div>`).join('')||'<p class="pt-placeholder">No issues reported for this parcel.</p>')+modalCard('Parcel QR Code',`<div class="sc-qr-placeholder">QR code will be available once provided by the backend.</div>`);
 
  $('scParcelDetails').classList.add('open');$('scParcelDetails').setAttribute('aria-hidden','false');document.body.classList.add('pt-modal-open');$('scDetailsX').focus();
 
@@ -649,15 +733,15 @@ function render(){const inc=incoming(),rec=received(),rdy=ready(),grp=stagedGrou
   const received=(m?.parcelIds||[]).map(id=>data.parcels.find(x=>String(x.id)===String(id))).filter(p=>p&&(p.receivedManifestId===batchId||isReported(p))).length;
   const batchDisplay=batchId==='Ungrouped'?'Unassigned Transfer':batchId;
   const batchComplete=rows.length===0;
-  const header=`<tr class="sc-batch-row"><td colspan="6"><div class="sc-batch-header"><div class="sc-batch-identity"><span class="sc-batch-kicker">INCOMING TRANSFER BATCH</span><strong class="sc-batch-id">${esc(batchDisplay)}</strong><div class="sc-batch-meta"><span>Origin: <b>${esc(m?.originName||rows[0]?.loadedFromName||'Unknown origin')}</b></span><span>Truck: <b>${esc(m?.truckId||'No truck ID')}</b></span></div></div><div class="sc-batch-metrics"><span class="sc-batch-remaining">${rows.length} Awaiting Scan</span><span class="sc-batch-count">${received} / ${total} verified</span></div></div></td></tr>`;
-  return header+rows.map(p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(p.loadedFromName||'—')}</td><td>${esc(p.destCity)}, ${esc(p.destProvince)}</td><td>${esc(p.truckId||'—')}<small>${esc(p.transferId||'')}</small></td><td>${fmt(p.loadedAt)}</td><td><span class="sc-badge incoming">In transit</span></td></tr>`).join('');
- }).join('')||'<tr><td colspan="6" class="sc-empty">No incoming parcels found.</td></tr>';
+  const header=`<tr class="sc-batch-row"><td colspan="5"><div class="sc-batch-header"><div class="sc-batch-identity"><span class="sc-batch-kicker">INCOMING TRANSFER BATCH</span><strong class="sc-batch-id">${esc(batchDisplay)}</strong><div class="sc-batch-meta"><span>Origin: <b>${esc(m?.originName||rows[0]?.loadedFromName||'Unknown origin')}</b></span><span class="sc-vehicle-meta">Vehicle: <b>${esc(inboundAssignment(m,rows[0]).vehicle)} · ${esc(inboundAssignment(m,rows[0]).truck)}</b></span></div></div><div class="sc-batch-metrics"><span class="sc-batch-remaining">${rows.length} Awaiting Scan</span><span class="sc-batch-count">${received} / ${total} verified</span></div></div></td></tr>`;
+  return header+rows.map(p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong><small>${kindBadge(p)}</small></td><td>${esc(m?.originName||p.loadedFromName||'—')}</td><td>${esc(finalDestination(p))}</td><td><span class="sc-assignee"><strong>${esc(inboundAssignment(m,p).courier)}</strong><small class="sc-assignee-phone">${esc(inboundAssignment(m,p).phone||'Phone not recorded')}</small></span></td><td>${fmt(p.loadedAt)}</td></tr>`).join('');
+ }).join('')||'<tr><td colspan="5" class="sc-empty">No incoming parcels found.</td></tr>';
 
- f(rec,'scReceivedRows','scReceivedSearch',p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(p.destCity)}, ${esc(p.destProvince)}</td><td>${esc(p.receivedFrom||'—')}</td><td>${fmt(p.receivedAt)}</td><td><span class="sc-badge ${p.status==='staged'?'incoming':'received'}">${p.status==='staged'?'Staged for dispatch':'Ready for dispatch'}</span></td></tr>`,5);
+ f(rec,'scReceivedRows','scReceivedSearch',p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(finalDestination(p))}<small>${kindBadge(p)}</small></td><td>${esc(p.receivedFrom||'—')}</td><td>${fmt(p.receivedAt)}</td><td><span class="sc-badge ${p.status==='staged'?'incoming':'received'}">${p.status==='staged'?'Staged for dispatch':'Ready for dispatch'}</span></td></tr>`,5);
 
- f(rdy,'scReadyRows','scReadySearch',p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(p.destProvince)}</td><td>${esc(p.destCity)}</td><td><span class="sc-badge ${p.status==='staged'?'incoming':'received'}">${p.status==='staged'?'Staged':'Ready'}</span></td></tr>`,4);
+ f(rdy,'scReadyRows','scReadySearch',p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(destinationRole(p)==='Seller'?(p.seller_province||p.destProvince):(p.buyer_province||p.destProvince))}</td><td>${esc(finalDestination(p))}<small>${kindBadge(p)}</small></td><td><span class="sc-badge ${p.status==='staged'?'incoming':'received'}">${p.status==='staged'?'Staged':'Ready'}</span></td></tr>`,4);
 
- $('scRouteGroups').innerHTML=grp.map(g=>`<article class="sc-group"><div class="sc-group-top"><div><h3 class="sc-group-title">${esc(g.dest.name)}</h3><p class="sc-group-sub">Inbound batch: ${esc(g.batchId)} · ${g.dest.type==='sorting'?'Next sorting center':'Destination delivery hub'} · Ready for transport</p></div><div class="sc-group-actions"><span class="sc-group-count">${g.parcels.length} parcel${g.parcels.length===1?'':'s'}</span>${explainPending(g)?`<button class="sc-btn primary small" type="button" disabled title="${esc(explainPending(g))}">Awaiting scans</button>`:`<button class="sc-btn primary small" type="button" data-load="${esc(g.key)}">Loaded</button>`}</div></div><div class="sc-group-list">${g.parcels.map(p=>`<div class="sc-group-item"><strong>${esc(p.tracking)}</strong><small>${esc(p.destCity)}, ${esc(p.destProvince)}</small></div>`).join('')}</div></article>`).join('')||'<div class="sc-groups-empty">No parcel groups yet. Use Departure Scanner to form groups automatically.</div>';
+ drawDepartHistory();$('scRouteGroups').innerHTML=grp.map(g=>`<article class="sc-group"><div class="sc-group-top"><div><h3 class="sc-group-title">${esc(g.dest.name)}</h3><p class="sc-group-sub">Inbound batch: ${esc(g.batchId)} · ${g.dest.type==='sorting'?'Next sorting center':'Destination delivery hub'} · Ready for transport</p></div><div class="sc-group-actions"><span class="sc-group-count">${g.parcels.length} parcel${g.parcels.length===1?'':'s'}</span>${explainPending(g)?`<button class="sc-btn primary small" type="button" disabled title="${esc(explainPending(g))}">Awaiting scans</button>`:`<button class="sc-btn primary small" type="button" data-load="${esc(g.key)}">Loaded</button>`}</div></div><div class="sc-group-list">${g.parcels.map(p=>`<div class="sc-group-item"><strong>${esc(p.tracking)}</strong><small>${esc(finalDestination(p))} · ${destinationRole(p)==='Seller'?'<span class="sc-kind return">Return Parcel</span>':''}</small></div>`).join('')}</div></article>`).join('')||'<div class="sc-groups-empty">No parcel groups yet. Use Departure Scanner to form groups automatically.</div>';
 
  const ev=data.events.filter(e=>String(e.centerId)===String(currentId)).slice(0,6);$('scActivity').innerHTML=ev.map(e=>`<div class="sc-activity-row"><div><strong>${esc(e.action)} · ${esc(e.tracking)}</strong><small>${esc(e.desc)}</small></div><time>${fmt(e.at)}</time></div>`).join('')||'<div class="sc-activity-empty">No scanner activity yet.</div>';
 
@@ -671,13 +755,30 @@ $('scDepartForm').addEventListener('submit',e=>{e.preventDefault();const code=$(
 
 for(const field of ['scIncomingSearch','scReceivedSearch','scReadySearch'])$(field).addEventListener('input',render);
 
-$('scRouteGroups').addEventListener('click',e=>{const btn=e.target.closest('[data-load]');if(!btn)return;pendingGroup=stagedGroups().find(g=>g.key===btn.dataset.load)||null;if(!pendingGroup)return;const blockReason=explainPending(pendingGroup);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}$('scTruckId').value='';$('scLoadDescription').textContent=`Mark ${pendingGroup.parcels.length} parcel(s) as Loaded for ${pendingGroup.dest.name}? This confirms they were loaded onto the truck.`;$('scLoadModal').hidden=false;$('scTruckId').focus()});
+$('scRouteGroups').addEventListener('click',e=>{const btn=e.target.closest('[data-load]');if(!btn)return;pendingGroup=stagedGroups().find(g=>g.key===btn.dataset.load)||null;if(!pendingGroup)return;const blockReason=explainPending(pendingGroup);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}fillCourierPicker();$('scLoadDescription').textContent=`Mark ${pendingGroup.parcels.length} parcel(s) as Loaded for ${pendingGroup.dest.name}? Select an available courier to assign their truck.`;$('scLoadModal').hidden=false;$('scCourierSelect').focus()});
+
+$('scCourierSelect').addEventListener('change',()=>{const c=courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);$('scTruckId').value=c?.plate||'';$('scLoadConfirm').disabled=!c||!!busyCourier(c);$('scCourierAvailability').textContent=c?`${c.displayName} · ${c.vehicle} · Plate ${c.plate}`:'Select an available approved courier.'});
 
 const closeModal=()=>{$('scLoadModal').hidden=true;pendingGroup=null};$('scLoadCancel').addEventListener('click',closeModal);$('scLoadModal').addEventListener('click',e=>{if(e.target===$('scLoadModal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('scLoadModal').hidden)closeModal()});
 
-$('scLoadConfirm').addEventListener('click',()=>{if(!pendingGroup)return;const g=stagedGroups().find(x=>x.key===pendingGroup.key);if(!g)return closeModal();const blockReason=explainPending(g);if(blockReason){closeModal();say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}const c=center();const m={id:'TX-'+Date.now(),originCenterId:currentId,originName:c?.branch_name||'Sorting Center',nextStop:g.dest,truckId:$('scTruckId').value.trim()||'',createdAt:now(),status:'loaded',parcelIds:g.parcels.map(p=>p.id)};data.manifests.push(m);
+$('scLoadConfirm').addEventListener('click',()=>{if(!pendingGroup)return;const g=stagedGroups().find(x=>x.key===pendingGroup.key);if(!g)return closeModal();const blockReason=explainPending(g);if(blockReason){closeModal();say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}const selected=courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);if(!selected||busyCourier(selected)||['in service','unavailable','maintenance'].includes(norm(selected.vehicleAvailability))){say('Courier is unavailable or already assigned to another active batch.');fillCourierPicker();return;}const c=center();const m={id:'TX-'+Date.now(),originCenterId:currentId,originName:c?.branch_name||'Sorting Center',nextStop:g.dest,truckId:selected.plate,courierId:String(selected.id),courierName:selected.displayName,vehicleName:selected.vehicle,createdAt:now(),status:'loaded',parcelIds:g.parcels.map(p=>p.id)};data.manifests.push(m);
 
- for(const p of g.parcels){p.loadedAt=m.createdAt;p.loadedFromId=currentId;p.loadedFromName=m.originName;p.transferId=m.id;p.truckId=m.truckId;p.nextStop=null;p.status=g.dest.type==='sorting'?'incoming':'loaded';p.nextCenterId=g.dest.type==='sorting'?g.dest.id:null;p.deliveryHubId=g.dest.type==='hub'?g.dest.id:null;if(g.dest.type==='hub')p.loadedToHubName=g.dest.name;event('Loaded',p,`Sent to ${g.dest.name}`);}save();closeModal();feedback('scDepartFeedback','good','Truck loaded · transfer confirmed',g.parcels.length+' parcels dispatched. The transfer manifest is ready for the destination.',g.dest.name);say('Loaded '+g.parcels.length+' parcels for '+g.dest.name)});
+ for(const p of g.parcels){p.loadedAt=m.createdAt;p.loadedFromId=currentId;p.loadedFromName=m.originName;p.transferId=m.id;p.truckId=m.truckId;p.courierName=m.courierName;p.courierId=m.courierId;p.nextStop=null;p.status=g.dest.type==='sorting'?'incoming':'loaded';p.nextCenterId=g.dest.type==='sorting'?g.dest.id:null;p.deliveryHubId=g.dest.type==='hub'?g.dest.id:null;if(g.dest.type==='hub')p.loadedToHubName=g.dest.name;event('Loaded',p,`Sent to ${g.dest.name}`);}save();closeModal();feedback('scDepartFeedback','good','Truck loaded · transfer confirmed',g.parcels.length+' parcels dispatched. The transfer manifest is ready for the destination.',g.dest.name);say('Loaded '+g.parcels.length+' parcels for '+g.dest.name)});
+
+// Import dispatches from Delivery Hubs in the same browser preview storage.
+function importHubTransfers(){
+ const prefix='shopease-dh-scanner-preview-v1:';let changed=false;
+ for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(!key?.startsWith(prefix))continue;const hubData=getLocal(key);if(!hubData||!Array.isArray(hubData.manifests))continue;
+  for(const m of hubData.manifests){if(m.sourceType!=='transfer-to-sorting'||!['loaded','arrived'].includes(m.status))continue; if(m.destinationCenterId&&String(m.destinationCenterId)!==String(currentId))continue;
+   if(!m.destinationCenterId&&norm(m.destination)!==norm(center()?.branch_name||configuredName)&&norm(m.destination)!=='assigned provincial sorting center')continue;
+   const ref='DH:'+m.id;const ids=[];for(const pid of m.parcelIds||[]){const p=(hubData.parcels||[]).find(x=>String(x.id)===String(pid));if(!p)continue;let existing=findParcel(p.tracking);const id=existing?.id||'dh-import-'+p.id;ids.push(id);if(existing)continue;data.parcels.push({...p,id,status:'incoming',currentCenterId:null,nextCenterId:currentId,transferId:ref,loadedFromName:m.originName,receivedFrom:m.originName,courierName:m.courierName,truckId:m.truckId,history:[...(p.history||[])]});changed=true;}
+   if(ids.length&&!data.manifests.some(x=>String(x.id)===ref)){data.manifests.push({id:ref,originCenterId:'hub-'+key.slice(prefix.length),originName:m.originName,sourceType:'delivery-hub',nextStop:{type:'sorting',id:currentId},truckId:m.truckId,courierName:m.courierName,createdAt:m.createdAt,status:'loaded',parcelIds:ids});changed=true;}
+  }
+ }if(changed)save();}
+function departHistory(){return data.manifests.filter(m=>String(m.originCenterId)===String(currentId)&&m.parcelIds?.length&&['loaded','arrived'].includes(m.status)&&m.createdAt).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
+function drawDepartHistory(){const items=departHistory().filter(m=>!m.arrivedAt&&!m.releasedAt);const rows=items.map(m=>`<div class="sc-history-row"><div class="sc-history-head"><strong>${esc(m.id)}</strong><span class="sc-badge incoming">Awaiting Destination Receipt</span></div><div class="sc-history-meta">${esc(m.originName)} → ${esc(m.nextStop?.name||'Destination')} · ${fmt(m.createdAt)}</div><div class="sc-history-meta">Courier: ${esc(m.courierName||'—')} · Truck: ${esc(m.truckId||'—')} · ${m.parcelIds.length} parcel(s)</div><button type="button" class="sc-btn small" data-history-detail="${esc(m.id)}">View Batch</button></div>`).join('');$('scHistoryPreview').innerHTML=rows||'<p class="sc-help">No outstanding departures.</p>';$('scHistoryDetails').innerHTML=rows||'<p class="sc-help">No outstanding departures.</p>'; }
+$('scHistoryOpen').onclick=()=>{drawDepartHistory();$('scHistoryModal').hidden=false};$('scHistoryClose').onclick=()=>$('scHistoryModal').hidden=true;
+for(const id of ['scHistoryPreview','scHistoryDetails'])$(id).addEventListener('click',e=>{const btn=e.target.closest('[data-history-detail]');if(!btn)return;const m=data.manifests.find(x=>String(x.id)===btn.dataset.historyDetail);if(!m)return;$('scHistoryDetails').innerHTML=`<h3>${esc(m.id)}</h3><p class="sc-history-meta">${esc(m.originName)} → ${esc(m.nextStop?.name||'Destination')} · ${fmt(m.createdAt)}</p><p class="sc-history-meta">${esc(m.courierName||'—')} · ${esc(m.truckId||'—')}</p><div class="sc-history-parcels">${m.parcelIds.map(pid=>{const p=data.parcels.find(x=>String(x.id)===String(pid));return `<div>${esc(p?.tracking||pid)} ${p&&destinationRole(p)==='Seller'?'<span class="sc-kind return">Return Parcel</span>':''}</div>`}).join('')}</div>`;$('scHistoryModal').hidden=false;});
 
 // QR camera scanning: native BarcodeDetector first, jsQR fallback for browsers without it.
 
@@ -865,9 +966,9 @@ $('scCameraModal').addEventListener('click',e=>{if(e.target===$('scCameraModal')
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&cameraStream)stopCamera()});
 
-window.addEventListener('storage',e=>{if(e.key===storeKey){const r=getLocal(storeKey);if(r&&Array.isArray(r.parcels)){data=r;render()}}if(e.key===networkKey){initCenter();render()}});
+window.addEventListener('storage',e=>{if(e.key===storeKey){const r=getLocal(storeKey);if(r&&Array.isArray(r.parcels)){data=r;render()}}if(e.key===networkKey){initCenter();render()}if(e.key?.startsWith('shopease-dh-scanner-preview-v1:'))importHubTransfers()});
 
-initCenter();purgeLegacyDemoData();seedScannerPreview();seedIndependentBatches();render();tabs('receive');
+initCenter();purgeLegacyDemoData();seedScannerPreview();seedIndependentBatches();importHubTransfers();seedReturnParcelExample();render();tabs('receive');
 
 });
 
