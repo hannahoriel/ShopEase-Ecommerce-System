@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\Buyer\VoucherController as BuyerVoucherController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\CourierRegistrationController;
+use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
 use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
@@ -362,6 +363,13 @@ Route::prefix('v1')->group(function () {
                     Route::get('/courier-registrations', [CourierRegistrationController::class, 'index'])->name('sorting_center.api.courier-registrations.index');
                     Route::get('/courier-registrations/{registration}', [CourierRegistrationController::class, 'show'])->name('sorting_center.api.courier-registrations.show');
                     Route::patch('/courier-registrations/{registration}/decision', [CourierRegistrationController::class, 'decide'])->name('sorting_center.api.courier-registrations.decide');
+                    Route::get('/fleet/vehicles', [SortingCenterFleetController::class, 'indexVehicles'])->name('sorting_center.api.fleet.vehicles.index');
+                    Route::post('/fleet/vehicles', [SortingCenterFleetController::class, 'storeVehicle'])->name('sorting_center.api.fleet.vehicles.store');
+                    Route::patch('/fleet/vehicles/{vehicle}', [SortingCenterFleetController::class, 'updateVehicle'])->name('sorting_center.api.fleet.vehicles.update');
+                    Route::get('/fleet/approved-couriers', [SortingCenterFleetController::class, 'indexCouriers'])->name('sorting_center.api.fleet.couriers.index');
+                    Route::get('/fleet/archives', [SortingCenterFleetController::class, 'indexArchives'])->name('sorting_center.api.fleet.archives.index');
+                    Route::post('/fleet/{type}/{record}/archive', [SortingCenterFleetController::class, 'archive'])->name('sorting_center.api.fleet.archive');
+                    Route::post('/fleet/{type}/{record}/restore', [SortingCenterFleetController::class, 'restore'])->name('sorting_center.api.fleet.restore');
                 }
                 Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
                 Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name("{$facilityRole}.api.messages.attachments.show");

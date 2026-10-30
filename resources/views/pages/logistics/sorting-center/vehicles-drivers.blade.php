@@ -2,6 +2,7 @@
     $assignedSortingCenterId = $assignedSortingCenterId ?? ($center->id ?? data_get(auth()->user(), 'sorting_center_id'));
     $registeredVehicles = $registeredVehicles ?? null;
     $approvedCouriers = $approvedCouriers ?? null;
+    $fleetArchives = $fleetArchives ?? [];
 @endphp
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Vehicles & Drivers — ShopEase Sorting Center</title>
@@ -30,65 +31,34 @@
   <button id="vdVehiclesTab" class="vd-tab active" type="button" role="tab" data-tab="vehicles" aria-selected="true">Registered Vehicles / Trucks <small id="vdVehiclesCount">0</small></button>
   <button id="vdCouriersTab" class="vd-tab" type="button" role="tab" data-tab="couriers" aria-selected="false">Approved Couriers <small id="vdCouriersCount">0</small></button>
 </div>
-<p class="vd-note" id="vdPreviewNote">Frontend preview: sample vehicles are shown only when no vehicle data is supplied. Couriers follow this center's Courier Registrations approvals. Archiving and restoring are saved locally until the backend is connected.</p>
+<p class="vd-note" id="vdPreviewNote" hidden></p>
 <div class="vd-toolbar"><input id="vdSearch" type="search" placeholder="Search vehicles, plate number, courier..." aria-label="Search records"><button class="cr-btn" id="vdReset" type="button">Reset Filters</button><span class="vd-muted" id="vdResultCount">0 records</span></div>
 <section class="cr-panel vd-panel" id="vdVehiclesPanel" role="tabpanel" aria-labelledby="vdVehiclesTab"><div class="cr-scroll"><table class="cr-table vd-table"><thead><tr><th>Vehicle / Truck</th><th>Plate Number</th><th>Vehicle Type</th><th>Assigned Driver</th><th>Date Registered</th><th>Availability</th></tr></thead><tbody id="vdVehicleRows"></tbody></table></div></section>
 <section class="cr-panel vd-panel" id="vdCouriersPanel" role="tabpanel" aria-labelledby="vdCouriersTab" hidden><div class="cr-scroll"><table class="cr-table vd-table"><thead><tr><th>Approved Courier</th><th>Email</th><th>Contact Number</th><th>Vehicle / Plate</th><th>Approved At</th></tr></thead><tbody id="vdCourierRows"></tbody></table></div></section>
 <div class="cr-foot"><span id="vdPageInfo">0 records</span><div class="cr-pagebuttons"><button class="cr-btn sm" type="button" id="vdPrev">Previous</button><span id="vdPageNo" style="padding:7px">1</span><button class="cr-btn sm" type="button" id="vdNext">Next</button></div></div>
 </div></main>
 <button class="vd-trash" type="button" id="vdTrash" title="Archived items" aria-label="Open archived items"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg><span class="vd-trash-count" id="vdTrashCount" hidden>0</span></button>
-<div class="cr-modal" id="vdDetailModal" hidden><div class="cr-dialog" role="dialog" aria-modal="true" aria-labelledby="vdDetailTitle"><div class="cr-modal-head"><div><h2 id="vdDetailTitle">Details</h2><p id="vdDetailSubtitle">Registered fleet information</p></div><button class="cr-close" type="button" data-close aria-label="Close">×</button></div><div class="cr-modal-body" id="vdDetailBody"></div><div class="cr-modal-footer"><button type="button" class="cr-btn" data-close>Close</button><button type="button" class="cr-btn reject" id="vdDelete">Delete</button></div></div></div>
-<div class="cr-modal" id="vdDeleteModal" hidden><div class="cr-dialog small" role="dialog" aria-modal="true" aria-labelledby="vdDeleteTitle"><div class="cr-modal-head"><div><h2 id="vdDeleteTitle">Archive Record</h2><p>Choose a reason before moving this item to Trash.</p></div><button class="cr-close" type="button" data-close-reason aria-label="Close">×</button></div><div class="cr-modal-body"><strong class="vd-delete-title">Reason <span style="color:#b42323">*</span></strong><div class="vd-reasons" id="vdReasonOptions"></div><label class="vd-delete-title" for="vdOtherReason" style="margin-top:16px">Additional Details (optional)</label><textarea id="vdOtherReason" maxlength="500" placeholder="Explain the reason..." style="width:100%;min-height:86px;border:1px solid #dfd4cf;border-radius:9px;padding:11px;font-size:12px;resize:vertical"></textarea><p class="cr-error" id="vdReasonError" role="alert"></p><p class="vd-warning">This action archives the record in the browser preview. It does not delete the underlying registration or revoke a courier's real account.</p></div><div class="cr-modal-footer"><button class="cr-btn" type="button" data-close-reason>Cancel</button><button class="cr-btn reject" id="vdConfirmDelete" type="button">Confirm Delete</button></div></div></div>
+<div class="cr-modal" id="vdDetailModal" hidden><div class="cr-dialog" role="dialog" aria-modal="true" aria-labelledby="vdDetailTitle"><div class="cr-modal-head"><div><h2 id="vdDetailTitle">Details</h2><p id="vdDetailSubtitle">Registered fleet information</p></div><button class="cr-close" type="button" data-close aria-label="Close">×</button></div><div class="cr-modal-body" id="vdDetailBody"></div><div class="cr-modal-footer"><button type="button" class="cr-btn" data-close>Close</button><button type="button" class="cr-btn reject" id="vdDelete">Archive</button></div></div></div>
+<div class="cr-modal" id="vdDeleteModal" hidden><div class="cr-dialog small" role="dialog" aria-modal="true" aria-labelledby="vdDeleteTitle"><div class="cr-modal-head"><div><h2 id="vdDeleteTitle">Archive Record</h2><p>Choose a reason before moving this item to Trash.</p></div><button class="cr-close" type="button" data-close-reason aria-label="Close">×</button></div><div class="cr-modal-body"><strong class="vd-delete-title">Reason <span style="color:#b42323">*</span></strong><div class="vd-reasons" id="vdReasonOptions"></div><label class="vd-delete-title" for="vdOtherReason" style="margin-top:16px">Additional Details (optional)</label><textarea id="vdOtherReason" maxlength="500" placeholder="Explain the reason..." style="width:100%;min-height:86px;border:1px solid #dfd4cf;border-radius:9px;padding:11px;font-size:12px;resize:vertical"></textarea><p class="cr-error" id="vdReasonError" role="alert"></p><p class="vd-warning">The record will be archived for this sorting center and can be restored from Trash.</p></div><div class="cr-modal-footer"><button class="cr-btn" type="button" data-close-reason>Cancel</button><button class="cr-btn reject" id="vdConfirmDelete" type="button">Confirm Archive</button></div></div></div>
 <div class="cr-modal" id="vdArchiveModal" hidden><div class="cr-dialog archive" role="dialog" aria-modal="true" aria-labelledby="vdArchiveTitle"><div class="cr-modal-head"><div><h2 id="vdArchiveTitle">Archived Items</h2><p>Restore archived vehicles and approved courier records.</p></div><button class="cr-close" data-close type="button" aria-label="Close">×</button></div><div class="cr-modal-body"><input type="search" id="vdArchiveSearch" placeholder="Search archived items..." class="cr-btn" style="font-weight:400;text-align:left;max-width:370px;width:100%;margin-bottom:10px"><div class="vd-arch-list" id="vdArchiveList"></div></div><div class="cr-modal-footer"><button class="cr-btn maroon" data-close type="button">Close</button></div></div></div>
 <div class="cr-flash" id="vdFlash" role="status" aria-live="polite" hidden><span class="cr-flash-icon" id="vdFlashIcon"></span><div class="cr-flash-copy"><p class="cr-flash-title" id="vdFlashTitle"></p><p class="cr-flash-msg" id="vdFlashMsg"></p></div><button class="cr-flash-close" type="button" id="vdFlashClose" aria-label="Close notification">×</button></div>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
 'use strict';
 const $=id=>document.getElementById(id), esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const centerId=@json($assignedSortingCenterId);
-const serverVehicles=@json($registeredVehicles);const serverCouriers=@json($approvedCouriers);
-const scope=(centerId===null||String(centerId).trim()==='')?'SC-LAGUNA-DEMO':String(centerId);
-const courierKey='shopease-sorting-center-courier-registrations-preview-v1:'+scope;
-const archiveKey='shopease-sc-vehicles-drivers-archive-v1:'+scope;
-const vehicleKey='shopease-sc-registered-vehicles-preview-v1:'+scope;
-const read=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??f}catch{return f}};
+const serverVehicles=@json($registeredVehicles);const serverCouriers=@json($approvedCouriers);const serverArchives=@json($fleetArchives);
 const asArray=v=>Array.isArray(v)?v:(Array.isArray(v?.data)?v.data:null);
+const api=async(url,options={})=>{const response=await fetch(url,{credentials:'same-origin',...options,headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Unable to complete the request.');return body};
 const fullName=r=>[r.first_name,r.middle_name,r.last_name].filter(Boolean).join(' ')||r.full_name||r.name||'Unknown Courier';
 const initials=s=>String(s).split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const date=v=>{if(!v)return '—';let d=new Date(v);return isNaN(d.getTime())?String(v):new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(d)};
 const val=(r,...keys)=>{for(let k of keys){let v=r?.[k];if(v!==undefined&&v!==null&&v!=='')return v;}return '—'};
 const field=(label,v)=>`<div class="cr-field"><label>${esc(label)}</label><strong>${esc(v)}</strong></div>`;
 const section=(title,body)=>`<h3 class="cr-section">${esc(title)}</h3>${body}`;
-const mockVehicles=[
-{id:'sc-truck-demo-01',name:'Isuzu Forward 6-Wheeler',type:'Truck',plate_number:'ABC 1234',model:'FRR 90',make:'Isuzu',year:'2022',capacity:'5 tons',driver_name:'Adrian Paul Mendoza',registration_date:'2026-10-20T08:40:00+08:00',availability:'Available',color:'White',or_cr:'',notes:'Sorting center linehaul truck'},
-{id:'sc-truck-demo-02',name:'Hino 500 Series',type:'Truck',plate_number:'DEF 5678',model:'500 Series',make:'Hino',year:'2023',capacity:'8 tons',driver_name:'Joshua Miguel Santos',registration_date:'2026-10-22T10:10:00+08:00',availability:'In Service',color:'White',or_cr:'',notes:'Transfers to assigned delivery hubs'},
-{id:'sc-truck-demo-03',name:'Fuso Canter',type:'Truck',plate_number:'GHI 9012',model:'Canter',make:'Fuso',year:'2021',capacity:'4 tons',driver_name:'Unassigned',registration_date:'2026-10-23T14:20:00+08:00',availability:'Available',color:'Silver',or_cr:'',notes:'Backup fleet unit'}
-].map(r=>({...r,sorting_center_id:scope}));
-const courierDemos=[
-{id:'demo-sc-courier-001',first_name:'Mark',middle_name:'Angelo',last_name:'Reyes',sex:'Male',birthday:'1998-03-15',email:'mark.reyes@example.com',phone:'09170000001',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'Santa Cruz',barangay:'Poblacion I',street:'Rizal Street',house_no:'123',postal_code:'4009',vehicle:'Truck',plate_number:'ABC 1234',status:'pending',created_at:'2026-10-26T08:30:00+08:00'},
-{id:'demo-sc-courier-002',first_name:'Joshua',middle_name:'Miguel',last_name:'Santos',sex:'Male',birthday:'1996-07-24',email:'joshua.santos@example.com',phone:'09170000002',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'Pila',barangay:'Santa Clara Norte',street:'Mabini Street',house_no:'45',postal_code:'4010',vehicle:'Truck',plate_number:'DEF 5678',status:'pending',created_at:'2026-10-27T09:45:00+08:00'},
-{id:'demo-sc-courier-003',first_name:'Adrian',middle_name:'Paul',last_name:'Mendoza',sex:'Male',birthday:'1999-01-08',email:'adrian.mendoza@example.com',phone:'09170000003',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'Calamba',barangay:'Real',street:'National Highway',house_no:'88',postal_code:'4027',vehicle:'Truck',plate_number:'GHI 9012',status:'approved',created_at:'2026-10-23T13:15:00+08:00',reviewed_at:'2026-10-25T10:00:00+08:00'},
-{id:'demo-sc-courier-004',first_name:'Carlo',middle_name:'Vincent',last_name:'Cruz',sex:'Male',birthday:'1997-11-19',email:'carlo.cruz@example.com',phone:'09170000004',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'San Pablo',barangay:'San Francisco',street:'Bonifacio Street',house_no:'17',postal_code:'4000',vehicle:'Truck',plate_number:'JKL 3456',status:'rejected',created_at:'2026-10-21T14:00:00+08:00'}
-].map(r=>({...r,sorting_center_id:scope}));
-const serverVehicleRows=asArray(serverVehicles),serverCourierRows=asArray(serverCouriers);
-const isOwn=r=>String(r.sorting_center_id??r.selected_sorting_center_id??r.applied_sorting_center_id??'')===scope;
-function vehicles(){const base=serverVehicleRows===null?read(vehicleKey,mockVehicles):serverVehicleRows;return base.filter(isOwn).map(v=>({...v,id:String(v.id)}));}
-function couriers(){
-  // Read the Courier Registrations decisions fresh on every render.
-  // A controller-provided list can be combined with local demo approvals for UI testing.
-  const stored=read(courierKey,null);
-  const base=Array.isArray(serverCourierRows)?serverCourierRows:courierDemos;
-  const merged=new Map(base.filter(isOwn).map(c=>[String(c.id),{...c}]));
-  if(Array.isArray(stored)){
-    for(const saved of stored.filter(isOwn)){
-      const id=String(saved.id);
-      const original=merged.get(id)||{};
-      merged.set(id,{...original,...saved});
-    }
-  }
-  return [...merged.values()].filter(isOwn).filter(c=>String(c.status||'').trim().toLowerCase()==='approved').map(c=>({...c,id:String(c.id)}));
-}
-let archive=read(archiveKey,[]);if(!Array.isArray(archive))archive=[];
+const serverVehicleRows=asArray(serverVehicles)||[],serverCourierRows=asArray(serverCouriers)||[];
+function vehicles(){return serverVehicleRows.map(v=>({...v,id:String(v.id)}));}
+function couriers(){return serverCourierRows.filter(c=>String(c.status||'').toLowerCase()==='approved').map(c=>({...c,id:String(c.id)}));}
+let archive=(asArray(serverArchives)||[]).map(a=>({...a,id:String(a.id)}));
 let activeTab='vehicles',page=1,selected=null;
 const key=(type,id)=>type+':'+String(id);
 const isArchived=(type,id)=>archive.some(a=>a.key===key(type,id));
@@ -105,20 +75,15 @@ $('vdVehicleRows').addEventListener('click',e=>{const row=e.target.closest('tr[d
 for(let id of ['vdVehicleRows','vdCourierRows']){$(id).addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)){let tr=e.target.closest('tr[data-key]');if(tr){e.preventDefault();showDetails(id==='vdVehicleRows'?'vehicles':'couriers',tr.dataset.key)}}})}
 const reasons={couriers:['Inactive or no longer affiliated with this Sorting Center','Duplicate approved courier record','Invalid or expired driver documents','Violation of operating requirements','Requested removal by courier','Other (please specify)'],vehicles:['Vehicle retired or permanently out of service','Vehicle transferred to another facility','Registration / OR-CR expired','Duplicate vehicle record','Vehicle no longer assigned to this Sorting Center','Other (please specify)']};
 $('vdDelete').onclick=()=>{if(!selected)return;$('vdReasonOptions').innerHTML=reasons[selected.type].map(r=>`<label><input type="radio" name="vdReason" value="${esc(r)}"><span>${esc(r)}</span></label>`).join('');$('vdOtherReason').value='';$('vdReasonError').textContent='';setModal('vdDeleteModal',true)};
-function archiveSelected(){if(!selected)return;const reason=document.querySelector('input[name="vdReason"]:checked')?.value,notes=$('vdOtherReason').value.trim();if(!reason){$('vdReasonError').textContent='Please select a reason.';return}if(reason.startsWith('Other')&&!notes){$('vdReasonError').textContent='Please specify the reason.';return}const r=(selected.type==='vehicles'?vehicles():couriers()).find(x=>x.id===selected.id);if(!r)return;archive.push({key:key(selected.type,selected.id),type:selected.type,id:selected.id,reason:reason+(notes?' — '+notes:''),archived_at:new Date().toISOString(),snapshot:r});localStorage.setItem(archiveKey,JSON.stringify(archive));closeAll();draw();flash('Record Archived',(selected.type==='vehicles'?'Vehicle':'Courier')+' moved to Trash. You can restore it anytime.');selected=null}
+async function archiveSelected(){if(!selected)return;const reason=document.querySelector('input[name="vdReason"]:checked')?.value,notes=$('vdOtherReason').value.trim();if(!reason){$('vdReasonError').textContent='Please select a reason.';return}if(reason.startsWith('Other')&&!notes){$('vdReasonError').textContent='Please specify the reason.';return}try{const result=await api(`/api/v1/sorting_center/fleet/${selected.type}/${encodeURIComponent(selected.id)}/archive`,{method:'POST',body:JSON.stringify({reason:reason+(notes?' — '+notes:'')})});archive.push(result.data);closeAll();draw();flash('Record Archived',(selected.type==='vehicles'?'Vehicle':'Courier')+' moved to Trash. You can restore it anytime.');selected=null}catch(error){$('vdReasonError').textContent=error.message;flash('Archive Failed',error.message,true)}}
 $('vdConfirmDelete').onclick=archiveSelected;
 function drawArchive(){const q=$('vdArchiveSearch').value.toLowerCase().trim();const arr=archive.filter(a=>JSON.stringify(a).toLowerCase().includes(q));$('vdArchiveList').innerHTML=arr.map(a=>`<div class="vd-archive-row"><div><strong>${esc(a.type==='vehicles'?val(a.snapshot,'name','vehicle_name','plate_number'):fullName(a.snapshot))}</strong><small>${esc(a.type==='vehicles'?'Vehicle / Truck':'Approved Courier')} · Archived: ${esc(date(a.archived_at))}</small><small>Reason: ${esc(a.reason)}</small></div><button class="cr-btn approve sm" type="button" data-restore="${esc(a.key)}">Restore</button></div>`).join('')||'<div class="cr-empty" style="padding:40px">No archived items found.</div>'}
 $('vdTrash').onclick=()=>{$('vdArchiveSearch').value='';drawArchive();setModal('vdArchiveModal',true)};
 $('vdArchiveSearch').oninput=drawArchive;
-$('vdArchiveList').onclick=e=>{const button=e.target.closest('[data-restore]');if(!button)return;const a=archive.find(x=>x.key===button.dataset.restore);if(!a)return;archive=archive.filter(x=>x.key!==a.key);localStorage.setItem(archiveKey,JSON.stringify(archive));drawArchive();draw();flash('Record Restored','The item is available again in its original tab.');};
+$('vdArchiveList').onclick=async e=>{const button=e.target.closest('[data-restore]');if(!button)return;const a=archive.find(x=>x.key===button.dataset.restore);if(!a)return;try{await api(`/api/v1/sorting_center/fleet/${a.type}/${encodeURIComponent(a.id)}/restore`,{method:'POST',body:'{}'});archive=archive.filter(x=>x.key!==a.key);drawArchive();draw();flash('Record Restored','The item is available again in its original tab.')}catch(error){flash('Restore Failed',error.message,true)}};
 $('vdReset').onclick=()=>{$('vdSearch').value='';page=1;draw()};$('vdSearch').oninput=()=>{page=1;draw()};$('vdPrev').onclick=()=>{page--;draw()};$('vdNext').onclick=()=>{page++;draw()};
 document.querySelectorAll('.vd-tab').forEach(b=>b.addEventListener('click',()=>{activeTab=b.dataset.tab;page=1;document.querySelectorAll('.vd-tab').forEach(x=>{let on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-selected',String(on))});$('vdVehiclesPanel').hidden=activeTab!=='vehicles';$('vdCouriersPanel').hidden=activeTab!=='couriers';$('vdSearch').value='';draw()}));
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);document.querySelectorAll('[data-close-reason]').forEach(b=>b.onclick=()=>setModal('vdDeleteModal',false));document.querySelectorAll('.cr-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m){if(m.id==='vdDeleteModal')setModal('vdDeleteModal',false);else closeAll()}}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('vdDeleteModal').hidden)setModal('vdDeleteModal',false);else closeAll()}});$('vdFlashClose').onclick=()=>{$('vdFlash').hidden=true};
-window.addEventListener('storage',e=>{if([courierKey,vehicleKey,archiveKey].includes(e.key)){if(e.key===archiveKey)archive=read(archiveKey,[]);draw()}});
-window.addEventListener('pageshow',()=>draw());
-window.addEventListener('focus',()=>draw());
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)draw()});
-window.addEventListener('pageshow',draw);
 draw();
 });
 </script></body></html>
