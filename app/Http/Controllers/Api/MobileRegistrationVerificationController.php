@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\BuyerVerificationCode;
 use App\Mail\SellerVerificationCode;
+use App\Mail\RiderVerificationCode;
 use App\Models\Admin\Registration;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +27,7 @@ class MobileRegistrationVerificationController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', 'in:buyer,seller'],
+            'role' => ['required', 'in:buyer,seller,rider'],
         ]);
         $email = mb_strtolower(trim($data['email']));
         $role = $data['role'];
@@ -62,9 +63,11 @@ class MobileRegistrationVerificationController extends Controller
         Cache::forget("{$scope}:verified");
 
         try {
-            $mail = $role === 'buyer'
-                ? new BuyerVerificationCode($code)
-                : new SellerVerificationCode($code);
+            $mail = match ($role) {
+                'buyer' => new BuyerVerificationCode($code),
+                'seller' => new SellerVerificationCode($code),
+                default => new RiderVerificationCode($code),
+            };
             Mail::to($email)->send($mail);
         } catch (\Throwable $exception) {
             Cache::forget("{$scope}:otp");
@@ -83,7 +86,7 @@ class MobileRegistrationVerificationController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', 'in:buyer,seller'],
+            'role' => ['required', 'in:buyer,seller,rider'],
             'code' => ['required', 'digits:6'],
         ]);
         $scope = $this->scope($data['email'], $data['role']);

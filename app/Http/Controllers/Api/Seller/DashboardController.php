@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Announcement;
 use App\Models\Admin\Order;
+use App\Models\Admin\Registration;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
@@ -13,6 +14,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -54,6 +56,17 @@ class DashboardController extends Controller
                 'id' => $seller->id,
                 'store_name' => $seller->store_name ?: $seller->business_name ?: $user->name,
                 'registration_status' => $seller->registration_status,
+                'registered_categories' => $this->registeredCategories($seller),
+                'ship_from_address' => collect([
+                    $seller->house_number,
+                    $seller->building,
+                    $seller->subdivision,
+                    $seller->street,
+                    $seller->barangay,
+                    $seller->municipality,
+                    $seller->province,
+                    $seller->zip_code,
+                ])->filter(fn ($part) => filled($part))->implode(', '),
             ],
             'stats' => [
                 'total_sales' => $totalSales,
@@ -134,6 +147,39 @@ class DashboardController extends Controller
             'value' => number_format(abs($percent), 0).'%',
             'direction' => $percent >= 0 ? 'up' : 'down',
         ];
+    }
+
+    /** Categories selected during seller registration, used by the product form. */
+    private function registeredCategories(Seller $seller): array
+    {
+        $raw = $seller->line_of_business;
+
+        if (blank($raw) || $raw === []) {
+            $raw = Registration::query()
+                ->where('user_id', $seller->user_id)
+                ->latest('id')
+                ->value('business_category');
+        }
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = json_last_error() === JSON_ERROR_NONE && is_array($decoded)
+                ? $decoded
+                : explode(',', $raw);
+        }
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        return collect($raw)
+            ->flatten()
+            ->filter(fn ($value) => is_string($value) || is_numeric($value))
+            ->map(fn ($value) => Str::slug(str_replace('&', 'and', trim((string) $value))))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function ordersByStatusPeriod(int $sellerId, array $statusGroups): array

@@ -506,6 +506,11 @@ function initSellerCompliance(cfg) {
         const count = Number(
             seller.products_count || 0
         );
+        const productNames = Array.isArray(seller.products_preview)
+            ? seller.products_preview
+                  .map((product) => String(product?.name || '').trim())
+                  .filter(Boolean)
+            : [];
 
         const name =
             seller.store_name || 'Seller';
@@ -561,6 +566,12 @@ function initSellerCompliance(cfg) {
                         )}
                         Under Review
                     </span>
+
+                    ${productNames.length ? `
+                        <span class="seller-products-preview" title="${productNames.map(esc).join(', ')}">
+                            ${productNames.map(esc).join(' · ')}${count > productNames.length ? ' …' : ''}
+                        </span>
+                    ` : ''}
                 </div>
 
                 <div class="score-cell">
@@ -2431,7 +2442,10 @@ function initSellerCompliance(cfg) {
      * No extra request is required on initial page load.
      */
     applyPayload(
-        { data: [], summary: {} }
+        cfg.initial || { data: [], summary: {} }
     );
-    loadSellers();
+    // The Blade page is already authenticated and includes a server-rendered
+    // snapshot. Refresh quietly so a transient API auth failure does not blank
+    // the seller list or hide products from the admin.
+    loadSellers({ silent: true });
 }

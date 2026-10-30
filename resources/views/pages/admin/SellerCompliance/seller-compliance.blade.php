@@ -88,7 +88,9 @@
     ];
 
     $clientConfig = [
-        'apiUrl'     => url('/api/v1/admin/seller-compliance'),
+        // Relative URL keeps session cookies same-origin even when the site is
+        // opened through localhost, an IP address, or a configured host alias.
+        'apiUrl'     => '/api/v1/admin/seller-compliance',
         'perPage'    => $config['default_per_page'] ?? 10,
         'categories' => $config['categories'] ?? [],
         'statuses'   => array_intersect_key($config['statuses'] ?? [], array_flip(['compliant', 'warning', 'suspended'])),

@@ -180,6 +180,9 @@ class DemoMarketplaceSeeder extends Seeder
                 'category' => 'Bags',
                 'price' => 1250,
                 'stock' => 24,
+                'photos' => [
+                    'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85',
+                ],
             ],
             'earbuds' => [
                 'sku' => 'SE-DEMO-EARBUDS',
@@ -187,6 +190,9 @@ class DemoMarketplaceSeeder extends Seeder
                 'category' => 'Gadgets',
                 'price' => 1899,
                 'stock' => 12,
+                'photos' => [
+                    'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=900&q=85',
+                ],
             ],
             'bottle' => [
                 'sku' => 'SE-DEMO-BOTTLE',
@@ -194,6 +200,9 @@ class DemoMarketplaceSeeder extends Seeder
                 'category' => 'Home & Living',
                 'price' => 499,
                 'stock' => 3,
+                'photos' => [
+                    'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=85',
+                ],
             ],
             'archived' => [
                 'sku' => 'SE-DEMO-ARCHIVED',
@@ -201,6 +210,7 @@ class DemoMarketplaceSeeder extends Seeder
                 'category' => 'Accessories',
                 'price' => 299,
                 'stock' => 0,
+                'photos' => [],
             ],
         ];
 
@@ -215,7 +225,7 @@ class DemoMarketplaceSeeder extends Seeder
                     'price' => $fixture['price'],
                     'pricing_mode' => 'fixed',
                     'pricing_source' => 'base',
-                    'photos' => [],
+                    'photos' => $fixture['photos'],
                     'stock_quantity' => $fixture['stock'],
                     'status' => 'active',
                     'is_archived' => $key === 'archived',
