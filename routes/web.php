@@ -2335,8 +2335,20 @@ Route::middleware(['auth', 'role:sorting_center'])
         })
             ->name('dashboard');
 
-        Route::view('/courier-registrations', 'pages.logistics.sorting-center.courier-registrations')
-            ->name('courier-registrations');
+        Route::get('/courier-registrations', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+            $registrations = \App\Models\Logistics\CourierRegistration::query()
+                ->where('sorting_center_id', $center->id)
+                ->latest('created_at')
+                ->get();
+
+            return view('pages.logistics.sorting-center.courier-registrations', [
+                'courierRegistrations' => $registrations,
+                'assignedSortingCenterId' => $center->id,
+            ]);
+        })->name('courier-registrations');
 
         Route::view('/delivery-hubs', 'pages.logistics.sorting-center.delivery-hubs')
             ->name('delivery-hubs');
@@ -2350,8 +2362,33 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
             ->name('parcel-disputes');
 
-        Route::view('/vehicles-drivers', 'pages.logistics.sorting-center.vehicles-drivers')
-            ->name('vehicles-drivers');
+        Route::get('/vehicles-drivers', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+            $vehicles = \App\Models\Logistics\SortingCenterVehicle::query()
+                ->where('sorting_center_id', $center->id)->latest('created_at')->get();
+            $couriers = \App\Models\Logistics\CourierRegistration::query()
+                ->where('sorting_center_id', $center->id)->where('status', 'approved')->latest('reviewed_at')->get();
+            $archives = \App\Models\Logistics\SortingCenterFleetArchive::query()
+                ->where('sorting_center_id', $center->id)->latest('archived_at')->get()
+                ->map(fn ($archive) => [
+                    'id' => (string) $archive->record_id,
+                    'key' => $archive->record_type.':'.$archive->record_id,
+                    'type' => $archive->record_type,
+                    'id' => (string) $archive->record_id,
+                    'reason' => $archive->reason,
+                    'archived_at' => $archive->archived_at,
+                    'snapshot' => $archive->snapshot,
+                ]);
+
+            return view('pages.logistics.sorting-center.vehicles-drivers', [
+                'registeredVehicles' => $vehicles,
+                'approvedCouriers' => $couriers,
+                'fleetArchives' => $archives,
+                'assignedSortingCenterId' => $center->id,
+            ]);
+        })->name('vehicles-drivers');
 
         // Sorting Center notifications: use only the authenticated center account.
         // The Blade page applies its own search, date, read-state filters and pagination.
@@ -2403,16 +2440,45 @@ Route::middleware(['auth', 'role:sorting_center'])
 
     });
 
+/*
+|--------------------------------------------------------------------------
+| DELIVERY HUB PAGES
+|--------------------------------------------------------------------------
+| Every page is limited to the authenticated delivery hub account.
+| Pages live in resources/views/pages/logistics/delivery-hub/.
+| This is page routing only; data APIs and write permissions are separate.
+*/
 Route::middleware(['auth', 'role:delivery_hub'])
     ->prefix('delivery-hub')
     ->name('delivery-hub.')
     ->group(function () {
-        Route::get('/dashboard', function () {
-            $hub = \App\Models\Logistics\LogisticsDeliveryHub::query()
-                ->with('logisticsBranch')
-                ->where('user_id', Auth::id())
-                ->firstOrFail();
+        // Resolve the hub by its authenticated user; never accept another hub ID
+        // from the URL or request as the authorization context.
+        $hubPage = function (string $page) {
+            return function () use ($page) {
+                $hub = \App\Models\Logistics\LogisticsDeliveryHub::query()
+                    ->with('logisticsBranch')
+                    ->where('user_id', Auth::id())
+                    ->firstOrFail();
 
-            return view('pages.logistics.delivery-hub-dashboard', ['hub' => $hub]);
-        })->name('dashboard');
+                return view('pages.logistics.delivery-hub.' . $page, [
+                    'hub' => $hub,
+                    'deliveryHub' => $hub,
+                    'deliveryHubId' => $hub->id,
+                    'sortingCenterId' => data_get($hub, 'logistics_branch_id', data_get($hub, 'branch_id')),
+                ]);
+            };
+        };
+
+        Route::get('/dashboard', $hubPage('dashboard'))->name('dashboard');
+        Route::get('/rider-registrations', $hubPage('rider-registrations'))->name('rider-registrations');
+        Route::get('/scanners', $hubPage('scanners'))->name('scanners');
+        Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
+        Route::get('/parcel-disputes', $hubPage('parcel-disputes'))->name('parcel-disputes');
+        Route::get('/vehicle-drivers', $hubPage('vehicle-drivers'))->name('vehicle-drivers');
+        Route::get('/network-earnings', $hubPage('network-earnings'))->name('network-earnings');
+        Route::get('/messages', $hubPage('messages'))->name('messages');
+        Route::get('/notifications', $hubPage('notifications'))->name('notifications');
+        Route::get('/reports', $hubPage('reports'))->name('reports');
+        Route::get('/account', $hubPage('account'))->name('account');
     });
