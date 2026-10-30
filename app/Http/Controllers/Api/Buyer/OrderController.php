@@ -17,8 +17,9 @@ use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
 {
@@ -31,11 +32,13 @@ class OrderController extends Controller
         $orders = Order::query()
             ->where('buyer_id', $request->user()->id)
             ->with([
-                'seller:id,store_name',
-                'items',
+                'seller:id,store_name,province,municipality,barangay,street,house_number,building,subdivision',
+                'items.product',
                 'complaints',
                 'latestCancellationRequest',
-                'shipment.rider',
+                'statusHistory',
+                'shipment.scans',
+                'shipment.rider.logisticsBranch',
             ])
             ->latest()
             ->paginate(50);
@@ -51,6 +54,16 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
+                'pickup_address' => collect([
+                    $order->seller->house_number,
+                    $order->seller->street,
+                    $order->seller->building,
+                    $order->seller->subdivision,
+                    $order->seller->barangay,
+                    $order->seller->municipality,
+                    $order->seller->province,
+                ])->filter()->implode(', '),
+                'delivery_address' => $order->delivery_address,
                 'total' => (float) $order->total,
                 'status' => $order->status,
                 'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
@@ -62,11 +75,29 @@ class OrderController extends Controller
                     'courier' => $order->shipment->courier,
                     'estimated_delivery' => $order->shipment->estimated_delivery?->toDateString(),
                     'current_location' => $order->shipment->current_location,
+                    'current_latitude' => $order->shipment->current_latitude,
+                    'current_longitude' => $order->shipment->current_longitude,
+                    'location_updated_at' => $order->shipment->location_updated_at?->toISOString(),
+                    'logistics_stop' => $order->shipment->rider?->logisticsBranch?->address,
+                    'logistics_stop_name' => $order->shipment->rider?->logisticsBranch?->name,
                     'rider' => $order->shipment->rider ? [
                         'name' => trim($order->shipment->rider->first_name.' '.$order->shipment->rider->last_name),
                         'contact_no' => $order->shipment->rider->contact_no,
                     ] : null,
                 ] : null,
+                'tracking_events' => $order->statusHistory
+                    ->map(fn ($event): array => [
+                        'status' => $event->to_status,
+                        'description' => str_replace('_', ' ', ucfirst($event->to_status)),
+                        'created_at' => $event->created_at?->toISOString(),
+                    ])
+                    ->concat($order->shipment?->scans->map(fn ($scan): array => [
+                        'status' => $scan->status,
+                        'description' => $scan->status.' · '.$scan->location,
+                        'created_at' => $scan->scanned_at?->toISOString(),
+                    ]) ?? collect())
+                    ->sortByDesc('created_at')
+                    ->values(),
                 'complaint' => $order->complaints->first() ? [
                     'id' => $order->complaints->first()->id,
                     'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
@@ -74,7 +105,9 @@ class OrderController extends Controller
                     'status' => str_replace('_', '-', $order->complaints->first()->status),
                 ] : null,
                 'items' => $order->items->map(fn ($item): array => [
+                    'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
+                    'image_url' => $this->productImageUrl($item->product?->photos[0] ?? null),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'variation' => $item->variation,
@@ -196,9 +229,7 @@ class OrderController extends Controller
                 ->get();
 
             if ($items->isEmpty()) {
-                throw ValidationException::withMessages([
-                    'cart' => ['Your cart is empty. Add items before placing an order.'],
-                ]);
+                throw new HttpException(422, 'Your cart is empty. Add items before placing an order.');
             }
 
             foreach ($items as $item) {
@@ -215,9 +246,7 @@ class OrderController extends Controller
                     ! $product->seller ||
                     $product->seller->registration_status !== 'active'
                 ) {
-                    throw ValidationException::withMessages([
-                        'cart' => ['One or more cart items are no longer available. Refresh your cart and try again.'],
-                    ]);
+                    throw new HttpException(422, 'One or more cart items are no longer available. Refresh your cart and try again.');
                 }
             }
 
@@ -263,7 +292,7 @@ class OrderController extends Controller
                         $this->inventory->reserve($orderItem);
                     }
 
-                    $order->load(['seller:id,store_name', 'items']);
+                    $order->load(['seller:id,store_name', 'items.product']);
 
                     // Notify the seller — fires after items are persisted so
                     // the notification can include an accurate item count.
@@ -291,12 +320,34 @@ class OrderController extends Controller
                 'status' => $order->status,
                 'created_at' => $order->created_at?->toISOString(),
                 'items' => $order->items->map(fn ($item): array => [
+                    'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
+                    'image_url' => $this->productImageUrl($item->product?->photos[0] ?? null),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                 ])->all(),
             ])->all(),
         ], 201);
+    }
+
+    private function productImageUrl(?string $photo): ?string
+    {
+        if ($photo === null || trim($photo) === '') {
+            return null;
+        }
+
+        $photo = trim($photo);
+        if (
+            str_starts_with($photo, 'data:') ||
+            str_starts_with($photo, 'http://') ||
+            str_starts_with($photo, 'https://')
+        ) {
+            return $photo;
+        }
+
+        $path = ltrim(preg_replace('/^storage\//', '', $photo), '/');
+
+        return $path !== '' ? Storage::disk('public')->url($path) : null;
     }
 
     public function cancel(Request $request, Order $order): JsonResponse

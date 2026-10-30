@@ -77,7 +77,10 @@ class OrderStatusController extends Controller
     {
         $this->ownedOrder($request->user(), $order)->load([
             'buyer:id,name,email,contact_no',
+            'seller:id,store_name,province,municipality,barangay,street,house_number,building,subdivision',
             'items.product:id,name,photos',
+            'shipment.scans',
+            'shipment.rider.logisticsBranch',
             'statusHistory.changedBy:id,name,role',
             'latestCancellationRequest.buyer:id,name',
             'latestCancellationRequest.decidedBy:id,name',

@@ -23,6 +23,9 @@ class Shipment extends Model
         'picked_up_at',
         'delivered_at',
         'current_location',
+        'current_latitude',
+        'current_longitude',
+        'location_updated_at',
     ];
 
     protected $casts = [
@@ -30,6 +33,9 @@ class Shipment extends Model
         'shipping_fee' => 'decimal:2',
         'picked_up_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'current_latitude' => 'float',
+        'current_longitude' => 'float',
+        'location_updated_at' => 'datetime',
     ];
 
     public function order(): BelongsTo

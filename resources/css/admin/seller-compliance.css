@@ -90,6 +90,7 @@ body.sc-modal-open { overflow: hidden; }
 .seller-products { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
 .seller-products-total { font-weight: 500; }
 .seller-products-review { color: #C56A19; }
+.seller-products-preview { max-width: 260px; overflow: hidden; color: #77716E; text-overflow: ellipsis; }
 
 .score-cell { min-width: 125px; }
 .score-number { margin-bottom: 3px; }
