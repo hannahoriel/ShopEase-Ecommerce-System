@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Buyer;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
 use App\Models\Buyer\CartItem;
+use App\Models\Seller\Product;
 use App\Models\Seller\SellerVoucher;
 use App\Services\SellerVoucherService;
 use Illuminate\Http\JsonResponse;
@@ -57,8 +58,43 @@ class VoucherController extends Controller
 
     public function preview(Request $request, SellerVoucherService $vouchers): JsonResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:20']]);
-        $items = CartItem::where('user_id', $request->user()->id)->with('product')->get();
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:20'],
+            'cart_item_ids' => ['sometimes', 'array', 'min:1'],
+            'cart_item_ids.*' => ['integer', 'distinct'],
+            'checkout_items' => ['sometimes', 'array', 'min:1'],
+            'checkout_items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'checkout_items.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'checkout_items.*.variation' => ['nullable', 'string', 'max:100'],
+            'checkout_items.*.color' => ['nullable', 'string', 'max:100'],
+            'checkout_items.*.size' => ['nullable', 'string', 'max:100'],
+        ]);
+        $items = collect();
+        if (array_key_exists('cart_item_ids', $data)) {
+            $items = CartItem::query()->where('user_id', $request->user()->id)
+                ->whereIn('id', $data['cart_item_ids'])->with('product.seller')->get();
+            if ($items->count() !== count($data['cart_item_ids'])) {
+                abort(422, 'One or more selected cart items are unavailable. Refresh your cart.');
+            }
+        }
+        if (array_key_exists('checkout_items', $data)) {
+            foreach ($data['checkout_items'] as $row) {
+                $product = Product::query()->with('seller')->findOrFail($row['product_id']);
+                $item = new CartItem([
+                    'user_id' => $request->user()->id,
+                    'product_id' => $product->id,
+                    'quantity' => $row['quantity'],
+                    'variation' => $row['variation'] ?? null,
+                    'color' => $row['color'] ?? null,
+                    'size' => $row['size'] ?? null,
+                ]);
+                $item->setRelation('product', $product);
+                $items->push($item);
+            }
+        }
+        if (! array_key_exists('cart_item_ids', $data) && ! array_key_exists('checkout_items', $data)) {
+            $items = CartItem::where('user_id', $request->user()->id)->with('product.seller')->get();
+        }
         if ($items->isEmpty()) abort(422, 'Your cart is empty.');
         $sellerGroups = $items->groupBy(fn ($item) => $item->product?->seller_id);
         $code = strtoupper(trim($data['code']));
@@ -82,7 +118,7 @@ class VoucherController extends Controller
                 'seller_id' => (int) $voucher->seller_id,
                 'seller_name' => $sellerItems->first()->product->seller->store_name ?? 'Shop',
                 'discount' => $result['discount'],
-                'shipping_fee' => 50,
+                'shipping_fee' => 58,
             ],
             'message' => 'Voucher applied.',
         ]);

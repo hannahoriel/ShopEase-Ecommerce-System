@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Http\Services\RegistrationService;
+use App\Http\Services\DeliveryHubRiderRegistrationService;
 use App\Models\Admin\Registration;
 use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\LogisticsBranch;
@@ -36,9 +37,17 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->role !== User::ROLE_ADMIN && $user->registration_status === 'rejected') {
+            throw ValidationException::withMessages([
+                'email' => 'Your registration was not approved. Contact the delivery hub if you need help.',
+            ]);
+        }
+
         if ($user->role !== User::ROLE_ADMIN && $user->registration_status === 'pending') {
             throw ValidationException::withMessages([
-                'email' => 'Your registration is still pending administrator approval.',
+                'email' => $user->role === User::ROLE_RIDER
+                    ? 'Your rider registration is still pending delivery hub approval.'
+                    : 'Your registration is still pending administrator approval.',
             ]);
         }
 
@@ -53,12 +62,13 @@ class AuthController extends Controller
         ]);
     }
 
-    public function register(Request $request): JsonResponse
+    public function register(Request $request, DeliveryHubRiderRegistrationService $hubRegistrations): JsonResponse
     {
         $role = $request->input('role', User::ROLE_BUYER);
         $isCourier = $role === User::ROLE_RIDER
             && $request->input('registration_type') === 'courier';
         $center = null;
+        $deliveryHub = null;
         if ($isCourier) {
             $centerData = $request->validate([
                 'sorting_center_id' => ['required', 'integer', 'exists:logistics_branches,id'],
@@ -77,6 +87,9 @@ class AuthController extends Controller
                 ]);
             }
         }
+        if ($role === User::ROLE_RIDER && ! $isCourier) {
+            $deliveryHub = $hubRegistrations->resolveHub($request);
+        }
         $verification = null;
         if (in_array($role, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_RIDER], true)) {
             $verification = $request->validate([
@@ -89,7 +102,7 @@ class AuthController extends Controller
                 $verification['email_verification_token'],
             );
         }
-        [$user, $application, $statusToken] = DB::transaction(function () use ($request, $role, $isCourier, $center): array {
+        [$user, $application, $statusToken] = DB::transaction(function () use ($request, $role, $isCourier, $center, $deliveryHub, $hubRegistrations): array {
             $user = $this->registrationService->register($request);
 
             if ($isCourier) {
@@ -116,6 +129,10 @@ class AuthController extends Controller
                     'drivers_license_path' => $rider->upload_id_license,
                     'status' => 'pending',
                 ]);
+            }
+
+            if ($deliveryHub) {
+                $hubRegistrations->submit($user, $deliveryHub);
             }
 
             $application = Registration::query()

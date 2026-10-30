@@ -31,6 +31,8 @@ use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\CourierRegistrationController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
+use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController;
 use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
 use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
@@ -118,6 +120,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/reset', [MobilePasswordSecurityController::class, 'resetForgottenPassword']);
     });
     Route::post('/rider/register', StoreRiderRegistrationController::class)->name('rider.api.register');
+    Route::get('/delivery-hubs/available', [DeliveryHubRiderRegistrationController::class, 'available'])
+        ->name('delivery-hubs.available-for-rider-registration');
     Route::get('/courier-registrations/centers', [CourierRegistrationController::class, 'centers'])
         ->name('courier-registrations.centers');
     Route::post('/courier-registrations', [CourierRegistrationController::class, 'store'])
@@ -362,6 +366,8 @@ Route::prefix('v1')->group(function () {
         foreach (['sorting_center', 'delivery_hub'] as $facilityRole) {
             Route::middleware("role:{$facilityRole}")->prefix($facilityRole)->group(function () use ($facilityRole) {
                 if ($facilityRole === 'sorting_center') {
+                    Route::get('/delivery-hubs', [SortingCenterDeliveryHubController::class, 'index'])->name('sorting_center.api.delivery-hubs.index');
+                    Route::get('/delivery-hubs/{hub}', [SortingCenterDeliveryHubController::class, 'show'])->name('sorting_center.api.delivery-hubs.show');
                     Route::get('/courier-registrations', [CourierRegistrationController::class, 'index'])->name('sorting_center.api.courier-registrations.index');
                     Route::get('/courier-registrations/{registration}', [CourierRegistrationController::class, 'show'])->name('sorting_center.api.courier-registrations.show');
                     Route::patch('/courier-registrations/{registration}/decision', [CourierRegistrationController::class, 'decide'])->name('sorting_center.api.courier-registrations.decide');
@@ -372,6 +378,10 @@ Route::prefix('v1')->group(function () {
                     Route::get('/fleet/archives', [SortingCenterFleetController::class, 'indexArchives'])->name('sorting_center.api.fleet.archives.index');
                     Route::post('/fleet/{type}/{record}/archive', [SortingCenterFleetController::class, 'archive'])->name('sorting_center.api.fleet.archive');
                     Route::post('/fleet/{type}/{record}/restore', [SortingCenterFleetController::class, 'restore'])->name('sorting_center.api.fleet.restore');
+                } elseif ($facilityRole === 'delivery_hub') {
+                    Route::get('/rider-registrations', [DeliveryHubRiderRegistrationController::class, 'index'])->name('delivery_hub.api.rider-registrations.index');
+                    Route::get('/rider-registrations/{registration}', [DeliveryHubRiderRegistrationController::class, 'show'])->name('delivery_hub.api.rider-registrations.show');
+                    Route::patch('/rider-registrations/{registration}/decision', [DeliveryHubRiderRegistrationController::class, 'decide'])->name('delivery_hub.api.rider-registrations.decide');
                 }
                 Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
                 Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name("{$facilityRole}.api.messages.attachments.show");
