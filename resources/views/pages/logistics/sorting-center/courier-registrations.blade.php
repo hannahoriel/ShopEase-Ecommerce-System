@@ -40,28 +40,10 @@ document.addEventListener('DOMContentLoaded',()=>{
  'use strict';
  const $=id=>document.getElementById(id);
  const rawServer=@json($courierRegistrations);
- const backendCenterId=@json($assignedSortingCenterId);
- // Demo fallback only when no center has been assigned yet. Never use for real cross-center authorization.
- const assignedCenterId=(backendCenterId===null||String(backendCenterId).trim()==='')?'SC-LAGUNA-DEMO':backendCenterId;
- const matchesAssignedCenter=r=>assignedCenterId!==null&&assignedCenterId!==undefined&&String(assignedCenterId).trim()!==''&&String(r.sorting_center_id??r.selected_sorting_center_id??r.applied_sorting_center_id??'')===String(assignedCenterId);
- const storeKey='shopease-sorting-center-courier-registrations-preview-v1';
- // Only applications explicitly assigned to this logged-in center are shown.
- // Demo applicants are fictional and supplied only when the controller does not supply registration data.
- // Without a trusted center ID, show no registrations instead of another center's data.
  let records,selected=null,page=1,archiveStatus='approved';
  const serverRecords=Array.isArray(rawServer)?rawServer:(Array.isArray(rawServer?.data)?rawServer.data:null);
- const demoApplicants=[
-  {id:'demo-sc-courier-001',first_name:'Mark',middle_name:'Angelo',last_name:'Reyes',sex:'Male',birthday:'1998-03-15',email:'mark.reyes@example.com',phone:'09170000001',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'Santa Cruz',barangay:'Poblacion I',street:'Rizal Street',house_no:'123',postal_code:'4009',vehicle:'Truck',plate_number:'ABC 1234',status:'pending',created_at:'2026-10-26T08:30:00+08:00'},
-  {id:'demo-sc-courier-002',first_name:'Joshua',middle_name:'Miguel',last_name:'Santos',sex:'Male',birthday:'1996-07-24',email:'joshua.santos@example.com',phone:'09170000002',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'Pila',barangay:'Santa Clara Norte',street:'Mabini Street',house_no:'45',postal_code:'4010',vehicle:'Truck',plate_number:'DEF 5678',status:'pending',created_at:'2026-10-27T09:45:00+08:00'},
-  {id:'demo-sc-courier-003',first_name:'Adrian',middle_name:'Paul',last_name:'Mendoza',sex:'Male',birthday:'1999-01-08',email:'adrian.mendoza@example.com',phone:'09170000003',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'Calamba',barangay:'Real',street:'National Highway',house_no:'88',postal_code:'4027',vehicle:'Truck',plate_number:'GHI 9012',status:'approved',created_at:'2026-10-23T13:15:00+08:00',reviewed_at:'2026-10-25T10:00:00+08:00'},
-  {id:'demo-sc-courier-004',first_name:'Carlo',middle_name:'Vincent',last_name:'Cruz',sex:'Male',birthday:'1997-11-19',email:'carlo.cruz@example.com',phone:'09170000004',region:'CALABARZON (Region IV-A)',province:'Laguna',city:'San Pablo',barangay:'San Francisco',street:'Bonifacio Street',house_no:'17',postal_code:'4000',vehicle:'Truck',plate_number:'JKL 3456',status:'rejected',created_at:'2026-10-21T14:00:00+08:00',reviewed_at:'2026-10-22T16:30:00+08:00',rejection_reason:'Unclear or unreadable uploaded documents'}
- ].map(r=>({...r,sorting_center_id:assignedCenterId}));
- const useDemo=serverRecords===null;
- const rawRecords=useDemo?demoApplicants:serverRecords;
- records=rawRecords.filter(matchesAssignedCenter).map(r=>({...r,id:String(r.id),status:r.status||'pending'}));
- // For frontend preview, decisions are scoped to the center and never fabricate applications.
- try {const saved=JSON.parse(localStorage.getItem(storeKey+':'+String(assignedCenterId))||'[]');if(Array.isArray(saved)){const byId=new Map(saved.map(r=>[String(r.id),r]));records=records.map(r=>{const prior=byId.get(r.id);return prior&&matchesAssignedCenter(prior)?{...r,status:prior.status,reviewed_at:prior.reviewed_at,rejection_reason:prior.rejection_reason}:r})}}catch{}
- const persist=()=>{try{localStorage.setItem(storeKey+':'+String(assignedCenterId),JSON.stringify(records))}catch{}};
+ records=(serverRecords||[]).map(r=>({...r,id:String(r.id),status:r.status||'pending'}));
+ const api=async(url,options={})=>{const response=await fetch(url,{credentials:'same-origin',...options,headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Unable to complete the request.');return body};
  const esc=x=>String(x??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  const val=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!==null&&r[k]!=='')return r[k]}return '—'};
  const name=r=>[r.first_name,r.middle_name,r.last_name].filter(Boolean).join(' ')||(val(r,'full_name')!=='—'?String(r.full_name):'Unknown Applicant');
@@ -79,16 +61,11 @@ document.addEventListener('DOMContentLoaded',()=>{
  const reasons=['Incomplete or missing OR/CR document.','Invalid or unreadable driver’s license.','Personal information could not be verified.','Plate number or vehicle documents do not match.','Duplicate courier registration.','Does not meet courier eligibility requirements.','Other (please specify)'];$('crReasonList').innerHTML=reasons.map((r,i)=>`<label class="cr-reason-option"><input type="radio" name="crReason" value="${esc(r)}"><span>${esc(r)}</span></label>`).join('');
  $('crReject').onclick=()=>{$('crReasonDetails').value='';document.querySelectorAll('input[name="crReason"]').forEach(e=>e.checked=false);$('crReasonError').textContent='';modal('crRejectModal')};
  $('crApprove').onclick=()=>{$('crApproveMessage').textContent=`Approve the registration of ${name(selected)}?`;modal('crApproveModal')};
- function decide(action,reason=''){
+ async function decide(action,reason=''){
   if(!selected||status(selected)!=='pending')return;
-  selected.status=action;
-  selected.reviewed_at=new Date().toISOString();
-  selected.rejection_reason=reason;
-  // The Vehicles & Drivers Approved Couriers tab reads this exact center-scoped storage key.
-  persist();
-  closeAll();update();
-  flash(action==='approved'?`${name(selected)} is now listed under Vehicles & Drivers > Approved Couriers (UI preview).`:`${name(selected)} marked rejected in frontend preview. Backend not updated.`,false,action==='approved'?'Registration Approved':'Registration Rejected');
-}
+  try{const result=await api(`/api/v1/sorting_center/courier-registrations/${encodeURIComponent(selected.id)}/decision`,{method:'PATCH',body:JSON.stringify({status:action,...(action==='rejected'?{reason}:{})})});Object.assign(selected,result.data);closeAll();update();drawArchive();flash(`${name(selected)} registration ${action}.`,false,action==='approved'?'Registration Approved':'Registration Rejected');}
+  catch(error){flash(error.message,true,'Unable to save decision');}
+ }
  $('crApproveConfirm').onclick=()=>decide('approved');$('crRejectConfirm').onclick=()=>{const reason=document.querySelector('input[name="crReason"]:checked')?.value;if(!reason){$('crReasonError').textContent='Please select a rejection reason.';return}const extra=$('crReasonDetails').value.trim();if(reason.startsWith('Other')&&!extra){$('crReasonError').textContent='Please specify the reason.';return}decide('rejected',reason+(extra?' — '+extra:''))};
  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);document.querySelectorAll('.cr-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAll()}));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
  function archive(kind){archiveStatus=kind;$('crArchiveTitle').textContent=kind==='approved'?'Approved Couriers':'Rejected Couriers';$('crArchiveSearch').value='';drawArchive();modal('crArchiveModal')}

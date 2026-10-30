@@ -29,9 +29,6 @@ return new class extends Migration
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Shop Ease',
-                'first_name' => 'Shop',
-                'last_name' => 'Ease',
-                'contact_no' => '0912345678',
                 'role' => 'admin',
                 'password' => $password,
                 'updated_at' => $now,

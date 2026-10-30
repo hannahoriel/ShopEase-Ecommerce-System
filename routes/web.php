@@ -2335,8 +2335,20 @@ Route::middleware(['auth', 'role:sorting_center'])
         })
             ->name('dashboard');
 
-        Route::view('/courier-registrations', 'pages.logistics.sorting-center.courier-registrations')
-            ->name('courier-registrations');
+        Route::get('/courier-registrations', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+            $registrations = \App\Models\Logistics\CourierRegistration::query()
+                ->where('sorting_center_id', $center->id)
+                ->latest('created_at')
+                ->get();
+
+            return view('pages.logistics.sorting-center.courier-registrations', [
+                'courierRegistrations' => $registrations,
+                'assignedSortingCenterId' => $center->id,
+            ]);
+        })->name('courier-registrations');
 
         Route::view('/delivery-hubs', 'pages.logistics.sorting-center.delivery-hubs')
             ->name('delivery-hubs');
@@ -2350,8 +2362,33 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
             ->name('parcel-disputes');
 
-        Route::view('/vehicles-drivers', 'pages.logistics.sorting-center.vehicles-drivers')
-            ->name('vehicles-drivers');
+        Route::get('/vehicles-drivers', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+            $vehicles = \App\Models\Logistics\SortingCenterVehicle::query()
+                ->where('sorting_center_id', $center->id)->latest('created_at')->get();
+            $couriers = \App\Models\Logistics\CourierRegistration::query()
+                ->where('sorting_center_id', $center->id)->where('status', 'approved')->latest('reviewed_at')->get();
+            $archives = \App\Models\Logistics\SortingCenterFleetArchive::query()
+                ->where('sorting_center_id', $center->id)->latest('archived_at')->get()
+                ->map(fn ($archive) => [
+                    'id' => (string) $archive->record_id,
+                    'key' => $archive->record_type.':'.$archive->record_id,
+                    'type' => $archive->record_type,
+                    'id' => (string) $archive->record_id,
+                    'reason' => $archive->reason,
+                    'archived_at' => $archive->archived_at,
+                    'snapshot' => $archive->snapshot,
+                ]);
+
+            return view('pages.logistics.sorting-center.vehicles-drivers', [
+                'registeredVehicles' => $vehicles,
+                'approvedCouriers' => $couriers,
+                'fleetArchives' => $archives,
+                'assignedSortingCenterId' => $center->id,
+            ]);
+        })->name('vehicles-drivers');
 
         // Sorting Center notifications: use only the authenticated center account.
         // The Blade page applies its own search, date, read-state filters and pagination.
