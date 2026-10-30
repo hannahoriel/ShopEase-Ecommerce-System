@@ -41,6 +41,9 @@ class AuthController extends Controller
             'message' => 'Login successful.',
             'user' => $user,
             'role' => $user->role,
+            'rider_type' => $user->role === User::ROLE_RIDER
+                ? ($user->riderProfile?->registration_type ?: 'rider')
+                : null,
             'token' => $user->createToken('api-token')->plainTextToken,
         ]);
     }
@@ -49,7 +52,7 @@ class AuthController extends Controller
     {
         $role = $request->input('role', User::ROLE_BUYER);
         $verification = null;
-        if (in_array($role, [User::ROLE_BUYER, User::ROLE_SELLER], true)) {
+        if (in_array($role, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_RIDER], true)) {
             $verification = $request->validate([
                 'email' => ['required', 'email', 'max:255'],
                 'email_verification_token' => ['required', 'string'],

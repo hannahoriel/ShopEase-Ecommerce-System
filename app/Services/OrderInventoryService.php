@@ -7,7 +7,7 @@ use App\Models\Admin\OrderItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductOption;
 use App\Models\Seller\ProductVariantCombination;
-use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderInventoryService
 {
@@ -64,9 +64,7 @@ class OrderInventoryService
                     continue;
                 }
 
-                throw ValidationException::withMessages([
-                    'cart' => ["The selected {$field} for {$product->name} is no longer available."],
-                ]);
+                throw new HttpException(422, "The selected {$field} for {$product->name} is no longer available.");
             }
 
             $selectedOptions[$group['plural']] = $option;
@@ -87,30 +85,22 @@ class OrderInventoryService
             );
 
             if (! $matchedCombination && $direction < 0) {
-                throw ValidationException::withMessages([
-                    'cart' => ["The selected combination for {$product->name} is no longer available."],
-                ]);
+                throw new HttpException(422, "The selected combination for {$product->name} is no longer available.");
             }
 
             if ($matchedCombination && $direction < 0 && (! $matchedCombination->available || $matchedCombination->stock < $quantity)) {
-                throw ValidationException::withMessages([
-                    'cart' => ["There is not enough stock for the selected combination of {$product->name}."],
-                ]);
+                throw new HttpException(422, "There is not enough stock for the selected combination of {$product->name}.");
             }
         }
 
         if ($combinations->isEmpty()) {
             if ($direction < 0 && $product->stock_quantity < $quantity) {
-                throw ValidationException::withMessages([
-                    'cart' => ["There is not enough stock for {$product->name}. Refresh your cart and try again."],
-                ]);
+                throw new HttpException(422, "There is not enough stock for {$product->name}. Refresh your cart and try again.");
             }
 
             foreach ($selectedOptions as $option) {
                 if ($direction < 0 && $option->stock < $quantity) {
-                    throw ValidationException::withMessages([
-                        'cart' => ["There is not enough stock for {$product->name} ({$option->name})."],
-                    ]);
+                    throw new HttpException(422, "There is not enough stock for {$product->name} ({$option->name}).");
                 }
             }
         }

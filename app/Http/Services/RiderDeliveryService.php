@@ -77,6 +77,9 @@ class RiderDeliveryService
                 'courier' => $order->shipment->courier,
                 'estimated_delivery' => $order->shipment->estimated_delivery?->toDateString(),
                 'current_location' => $order->shipment->current_location,
+                'current_latitude' => $order->shipment->current_latitude,
+                'current_longitude' => $order->shipment->current_longitude,
+                'location_updated_at' => $order->shipment->location_updated_at?->toISOString(),
                 'picked_up_at' => $order->shipment->picked_up_at?->toISOString(),
                 'delivered_at' => $order->shipment->delivered_at?->toISOString(),
                 'rider' => [

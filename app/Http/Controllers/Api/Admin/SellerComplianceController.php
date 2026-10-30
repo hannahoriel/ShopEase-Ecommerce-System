@@ -383,6 +383,17 @@ class SellerComplianceController extends Controller
                     'products_count' =>
                         $seller->products->count(),
 
+                    'products_preview' =>
+                        $seller->products
+                            ->sortByDesc('created_at')
+                            ->take(3)
+                            ->map(fn (Product $product): array => [
+                                'id' => $product->id,
+                                'name' => $product->name,
+                                'status' => $product->status,
+                            ])
+                            ->values(),
+
                     'products_under_review' =>
                         $reviewProducts->count(),
 
