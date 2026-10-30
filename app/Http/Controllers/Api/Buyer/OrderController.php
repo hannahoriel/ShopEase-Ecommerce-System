@@ -24,6 +24,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
 {
+    private const SHIPPING_FEE_PER_STORE = 58.00;
+
     public function __construct(
         private readonly OrderInventoryService $inventory
     ) {}
@@ -268,7 +270,7 @@ class OrderController extends Controller
                 ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId): Order {
                     $seller = $sellerItems->first()->product->seller;
                     $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->sale_price * $item->quantity);
-                    $shippingFee = 50.00;
+                    $shippingFee = self::SHIPPING_FEE_PER_STORE;
                     $voucherResult = null;
                     if (! empty($validated['voucher_code']) && (int) $sellerId === (int) $voucherSellerId) {
                         $voucherResult = app(SellerVoucherService::class)->evaluate($validated['voucher_code'], $request->user(), (int) $sellerId, $sellerItems, true);
