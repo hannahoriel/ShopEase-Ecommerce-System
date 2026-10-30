@@ -276,6 +276,14 @@ Route::prefix('v1')->group(function () {
             Route::post('/messages/conversations/{conversation}/messages', [SellerMessagesController::class, 'send'])->name('seller.api.messages.send');
             Route::get('/messages/conversations/{conversation}/messages/{message}/attachment', [SellerMessagesController::class, 'attachment'])->name('seller.api.messages.attachment');
             Route::get('/reports', [SellerReportsController::class, 'data'])->name('seller.api.reports');
+            Route::get('/sales/products', [SellerSalesController::class, 'index'])->name('seller.api.sales.products.index');
+            Route::patch('/sales/products/{product}', [SellerSalesController::class, 'update'])->name('seller.api.sales.products.update');
+            Route::get('/returns-refunds', [SellerReturnsRefundsController::class, 'index'])->name('seller.api.returns.index');
+            Route::patch('/returns-refunds/{return}/decision', [SellerReturnsRefundsController::class, 'decide'])->name('seller.api.returns.decision');
+            Route::post('/returns-refunds/{return}/refund', [SellerReturnsRefundsController::class, 'completeRefund'])->name('seller.api.returns.refund');
+            Route::get('/vouchers', [SellerVouchersController::class, 'index'])->name('seller.api.vouchers.index');
+            Route::post('/vouchers', [SellerVouchersController::class, 'store'])->name('seller.api.vouchers.store');
+            Route::patch('/vouchers/{voucher}', [SellerVouchersController::class, 'update'])->name('seller.api.vouchers.update');
             Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
             Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
             Route::get('/order-status', [OrderStatusController::class, 'index']);

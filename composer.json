@@ -45,6 +45,7 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "serve": "php -d post_max_size=40M -d upload_max_filesize=10M artisan serve",
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
