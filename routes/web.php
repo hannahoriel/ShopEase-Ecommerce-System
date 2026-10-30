@@ -2335,8 +2335,20 @@ Route::middleware(['auth', 'role:sorting_center'])
         })
             ->name('dashboard');
 
-        Route::view('/courier-registrations', 'pages.logistics.sorting-center.courier-registrations')
-            ->name('courier-registrations');
+        Route::get('/courier-registrations', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+            $registrations = \App\Models\Logistics\CourierRegistration::query()
+                ->where('sorting_center_id', $center->id)
+                ->latest('created_at')
+                ->get();
+
+            return view('pages.logistics.sorting-center.courier-registrations', [
+                'courierRegistrations' => $registrations,
+                'assignedSortingCenterId' => $center->id,
+            ]);
+        })->name('courier-registrations');
 
         Route::view('/delivery-hubs', 'pages.logistics.sorting-center.delivery-hubs')
             ->name('delivery-hubs');
