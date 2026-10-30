@@ -212,6 +212,7 @@
 
 
 <div class="hb-modal" id="hbHubArchiveModal" hidden><section class="hb-dialog" role="dialog" aria-modal="true" aria-labelledby="hbHubArchiveTitle"><div class="hb-dialog-head"><div><h2 id="hbHubArchiveTitle">Archived Delivery Hubs</h2><p>Restore delivery hubs previously removed from this sorting center.</p></div><button type="button" class="hb-close" id="hbHubArchiveClose" aria-label="Close archive">×</button></div><div class="hb-archive-list" id="hbHubArchiveList"></div></section></div>
+<div class="hb-modal" id="hbHubDeleteReasonModal" hidden><section class="hb-dialog" role="dialog" aria-modal="true" aria-labelledby="hbHubDeleteReasonTitle" style="max-width:520px"><div class="hb-dialog-head"><div><h2 id="hbHubDeleteReasonTitle">Archive Delivery Hub</h2><p id="hbHubDeleteReasonSubtitle">Choose a reason before archiving this hub.</p></div><button type="button" class="hb-close" id="hbHubDeleteReasonX" aria-label="Close">×</button></div><div style="padding:22px 26px 12px"><label for="hbHubDeleteReason" style="font-size:12px;font-weight:600;display:block;margin-bottom:9px">Reason <span style="color:#bd232b">*</span></label><select id="hbHubDeleteReason" style="display:block;width:100%;height:42px;padding:0 12px;border:1px solid #d9cfcb;border-radius:9px;background:#fff;font:12px Poppins,sans-serif"><option value="">Select reason</option><option>Delivery hub no longer operational</option><option>Duplicate delivery hub record</option><option>Operations transferred to another facility</option><option>Incorrect hub registration details</option><option>Temporary suspension of hub operations</option><option value="Other">Other</option></select><label for="hbHubDeleteDetails" style="font-size:12px;display:block;margin-top:15px">Additional Details <span style="color:#999">(optional, required for Other)</span></label><textarea id="hbHubDeleteDetails" maxlength="500" rows="3" placeholder="Explain the reason…" style="width:100%;box-sizing:border-box;margin-top:7px;border:1px solid #d9cfcb;border-radius:9px;padding:11px;font:12px Poppins,sans-serif;resize:vertical"></textarea><div id="hbHubDeleteError" role="alert" style="min-height:20px;padding-top:6px;color:#bd232b;font-size:11px"></div></div><div class="hb-detail-actions" style="justify-content:flex-end;margin-top:0;padding:16px 26px"><button type="button" class="hb-action" id="hbHubDeleteCancel">Cancel</button><button type="button" class="hb-action danger" id="hbHubDeleteConfirm">Archive Hub</button></div></section></div>
 <!-- Archive is a reversible soft-delete; keeps hubs and center data together. -->
 <button type="button" class="hb-archive-fab" id="hbArchiveOpen" title="Archived sorting centers" aria-label="Open sorting center archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 5l1 15h10l1-15M9 5V3h6v2M10 10v6M14 10v6"/></svg><span class="hb-archive-count" id="hbArchiveCount" hidden>0</span></button>
 <div class="hb-modal" id="hbArchiveModal" hidden><section class="hb-dialog" role="dialog" aria-modal="true" aria-labelledby="hbArchiveTitle"><div class="hb-dialog-head"><div><h2 id="hbArchiveTitle">Archived Sorting Centers</h2><p>Deleted sorting centers are kept here until restored, including their delivery hubs.</p></div><button type="button" class="hb-close" id="hbArchiveClose" aria-label="Close archive">×</button></div><div class="hb-archive-list" id="hbArchiveList"></div></section></div>
@@ -249,6 +250,17 @@ function flash(text,type='success',title=''){
 const networkConfig=JSON.parse($('networkHubsConfig').textContent);
 const networkApi=async(path,options={})=>{
  const response=await fetch(`${networkConfig.apiUrl}${path}`,{
+  ...options,credentials:'same-origin',
+  headers:{Accept:'application/json',Authorization:`Bearer ${networkConfig.apiToken}`,'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',...(options.headers||{})}
+ });
+ const result=await response.json();
+ if(!response.ok){const validation=Object.values(result.errors||{}).flat()[0];throw Error(validation||result.message||`Request failed (${response.status}).`)}
+ return result;
+};
+// Delivery-hub update/archive/restore endpoints are siblings of /network-hubs, not children.
+const networkApiHub=async(path,options={})=>{
+ const base=networkConfig.apiUrl.replace(/\/network-hubs\/?$/, '');
+ const response=await fetch(`${base}${path}`,{
   ...options,credentials:'same-origin',
   headers:{Accept:'application/json',Authorization:`Bearer ${networkConfig.apiToken}`,'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',...(options.headers||{})}
  });
@@ -470,8 +482,30 @@ function renderHubArchive(){updateHubArchiveCount();const items=scopedHubArchive
 async function openHubArchive(){try{const result=await networkApi('/'+encodeURIComponent(selectedCenterId)+'/delivery-hubs/archive');hubArchive=result.data||[];if(selectedCenter())selectedCenter().archived_hubs_count=hubArchive.length;renderHubArchive();$('hbHubArchiveModal').hidden=false;detailsModal.hidden=true;document.body.classList.add('lg-modal-open')}catch(error){flash(error.message,'error')}}
 function closeHubArchive(){$('hbHubArchiveModal').hidden=true;detailsModal.hidden=false;showDetailTab('hubs')}
 $('hbHubArchiveOpen').addEventListener('click',openHubArchive);$('hbHubArchiveClose').addEventListener('click',closeHubArchive);$('hbHubArchiveModal').addEventListener('click',e=>{if(e.target===$('hbHubArchiveModal'))closeHubArchive()});
-$('hbHubArchiveList').addEventListener('click',async e=>{const b=e.target.closest('[data-hub-restore]');if(!b)return;b.disabled=true;try{await networkApi('/delivery-hubs/'+encodeURIComponent(b.dataset.hubRestore)+'/restore',{method:'POST'});await loadCenters();const result=await networkApi('/'+encodeURIComponent(selectedCenterId)+'/delivery-hubs/archive');hubArchive=result.data||[];if(selectedCenter())selectedCenter().archived_hubs_count=hubArchive.length;renderHubArchive();renderHubRows();flash('Delivery hub restored successfully.')}catch(error){flash(error.message,'error')}finally{b.disabled=false}});
-$('hbArchiveHub').addEventListener('click',async()=>{const c=selectedCenter(),h=(c?.hubs||[]).find(h=>String(h.id)===String(selectedHubId));if(!h)return;if(!confirm('Move '+h.hub_name+' to Archive? You can restore it later.'))return;try{await networkApi('/delivery-hubs/'+encodeURIComponent(h.id)+'/archive',{method:'POST'});await loadCenters();updateHubArchiveCount();closeHubDetails();renderHubRows();flash('Delivery hub moved to Archive.','info')}catch(error){flash(error.message,'error')}});
+$('hbHubArchiveList').addEventListener('click',async e=>{const b=e.target.closest('[data-hub-restore]');if(!b)return;b.disabled=true;try{await networkApiHub('/delivery-hubs/'+encodeURIComponent(b.dataset.hubRestore)+'/restore',{method:'POST'});await loadCenters();const result=await networkApi('/'+encodeURIComponent(selectedCenterId)+'/delivery-hubs/archive');hubArchive=result.data||[];if(selectedCenter())selectedCenter().archived_hubs_count=hubArchive.length;renderHubArchive();renderHubRows();flash('Delivery hub restored successfully.')}catch(error){flash(error.message,'error')}finally{b.disabled=false}});
+$('hbArchiveHub').addEventListener('click',()=>{
+ const c=selectedCenter(),h=(c?.hubs||[]).find(h=>String(h.id)===String(selectedHubId));if(!h)return;
+ $('hbHubDeleteReasonSubtitle').textContent=`Select why ${h.hub_name} should be archived. You can restore it later.`;
+ $('hbHubDeleteReason').value='';$('hbHubDeleteDetails').value='';$('hbHubDeleteError').textContent='';
+ $('hbHubDeleteReasonModal').hidden=false;
+});
+const closeHubDeleteReason=()=>{$('hbHubDeleteReasonModal').hidden=true};
+$('hbHubDeleteReasonX').addEventListener('click',closeHubDeleteReason);
+$('hbHubDeleteCancel').addEventListener('click',closeHubDeleteReason);
+$('hbHubDeleteReasonModal').addEventListener('click',e=>{if(e.target===$('hbHubDeleteReasonModal'))closeHubDeleteReason()});
+$('hbHubDeleteConfirm').addEventListener('click',async()=>{
+ const reason=$('hbHubDeleteReason').value,details=$('hbHubDeleteDetails').value.trim();
+ const error=$('hbHubDeleteError');error.textContent='';
+ if(!reason){error.textContent='Please select a reason.';return}
+ if(reason==='Other'&&!details){error.textContent='Please provide additional details for Other.';return}
+ const c=selectedCenter(),h=(c?.hubs||[]).find(h=>String(h.id)===String(selectedHubId));if(!h){error.textContent='Delivery hub is no longer available.';return}
+ const button=$('hbHubDeleteConfirm');button.disabled=true;
+ try{
+  await networkApiHub('/delivery-hubs/'+encodeURIComponent(h.id)+'/archive',{method:'POST',body:JSON.stringify({reason,reason_details:details})});
+  closeHubDeleteReason();await loadCenters();updateHubArchiveCount();closeHubDetails();renderHubRows();flash('Delivery hub moved to Archive.','info');
+ }catch(err){error.textContent=err.message||'Unable to archive delivery hub.';flash(err.message||'Unable to archive delivery hub.','error')}
+ finally{button.disabled=false}
+});
 updateArchiveCount();draw();loadCenters().catch(error=>{const row=$('hbRows');row.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:35px;color:#b42323">${esc(error.message)}</td></tr>`;flash(error.message,'error')});
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!hubModal.hidden)closeHubModal();else if(!detailsModal.hidden)closeDetails()}});
