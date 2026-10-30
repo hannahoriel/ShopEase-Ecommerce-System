@@ -2355,11 +2355,11 @@
                                 id="contact_no"
                                 name="contact_no"
                                 class="contact-input"
-                                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
-                                maxlength="13"
-                                pattern="(09[0-9]{9}|\+639[0-9]{9})"
+                                placeholder="09XXXXXXXXX"
+                                maxlength="11"
+                                pattern="09[0-9]{9}"
                                 inputmode="tel"
-                                title="Enter 09XXXXXXXXX or +639XXXXXXXXX."
+                                title="Enter an 11-digit mobile number starting with 09."
                                 autocomplete="tel"
                                 value="{{ old('contact_no', $sellerData['contact_no'] ?? '') }}"
                                 required
@@ -3638,7 +3638,7 @@ document.addEventListener(
                         )
                         .slice(
                             0,
-                            10
+                            11
                         );
 
             }
@@ -5422,7 +5422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     last_name: v => nameCheck(v),
     middle_name: v => v.trim() ? nameCheck(v) : '',
     email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.',
-    contact_no: v => /^(?:09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter 09XXXXXXXXX or +639XXXXXXXXX.',
+    contact_no: v => /^09\d{9}$/.test(v.trim()) ? '' : 'Enter an 11-digit mobile number starting with 09.',
     zip_code: v => /^\d{4}$/.test(v.trim()) ? '' : 'Postal code must contain exactly 4 digits.',
     password: v => v.length < 8 ? 'Password must be at least 8 characters.' :
       !/[A-Z]/.test(v) ? 'Include at least one uppercase letter.' :

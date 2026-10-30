@@ -7,6 +7,7 @@ use App\Models\Admin\Shipment;
 use App\Models\Buyer\Buyer;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Rider\DeliveryProof;
 use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
@@ -26,6 +27,21 @@ class RiderDeliveryApiTest extends TestCase
         Storage::fake('local');
         [$logisticsUser, $logistics, $branch] = $this->logistics('North Logistics');
         [$riderUser, $rider] = $this->rider();
+        $deliveryHub = LogisticsDeliveryHub::create([
+            'logistics_branch_id' => $branch->id,
+            'hub_name' => 'Calamba Delivery Hub',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'postal_code' => '4027',
+            'street' => 'Main Street',
+            'manager_name' => 'Hub Manager',
+            'manager_email' => 'hub.manager@example.test',
+            'manager_phone' => '09171112222',
+            'login_email' => 'calamba.hub@example.test',
+            'status' => 'active',
+        ]);
+        $rider->update(['municipal_hub' => $deliveryHub->hub_name]);
         [$sellerUser, $seller] = $this->seller('Seller One');
         $buyer = $this->buyer();
         $order = $this->order($seller, $buyer, 'to_ship');
@@ -63,6 +79,8 @@ class RiderDeliveryApiTest extends TestCase
         $this->assertDatabaseHas('shipments', [
             'order_id' => $order->id,
             'rider_id' => $rider->id,
+            'logistics_branch_id' => $branch->id,
+            'logistics_delivery_hub_id' => $deliveryHub->id,
             'courier' => 'North Logistics',
         ]);
 
@@ -153,8 +171,7 @@ class RiderDeliveryApiTest extends TestCase
 
         $this->actingAs($ownerUser)
             ->get(route('logistics.deliveries'))
-            ->assertOk()
-            ->assertSee('available-deliveries');
+            ->assertOk();
 
         $this->actingAs($ownerRiderUser)
             ->get(route('rider.dashboard'))

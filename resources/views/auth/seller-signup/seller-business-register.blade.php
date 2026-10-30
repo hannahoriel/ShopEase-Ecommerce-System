@@ -2184,7 +2184,8 @@ document.addEventListener(
         const permitInput = document.getElementById('business_permit');
         const permitPlaceholder = document.getElementById('permitPlaceholder');
         const sellerTypeInput = document.getElementById('seller_type');
-        const categorySelect = document.getElementById('shop_category');
+        const hasSelectedShopCategory = () =>
+            Boolean(form?.querySelector('input[name="categories[]"]:checked'));
         const docGroups = {
             dti: document.getElementById('dtiUploadGroup'),
             sec: document.getElementById('secUploadGroup'),
@@ -2304,10 +2305,10 @@ document.addEventListener(
                 function (event) {
 
 
-                    if (!categorySelect || !categorySelect.value) {
+                    if (!hasSelectedShopCategory()) {
                         event.preventDefault();
                         alert('Please select one shop category.');
-                        categorySelect?.focus();
+                        form?.querySelector('input[name="categories[]"]')?.focus();
                         return;
                     }
 
@@ -2341,15 +2342,6 @@ document.addEventListener(
                         tin?.focus();
                         return;
                     }
-                    if (!categorySelect?.value) {
-                        event.preventDefault();
-                        alert('Please select one shop category.');
-                        categorySelect?.focus();
-                        return;
-                    }
-
-
-
                     /* ---------------------------------------------
                        PREVENT DOUBLE SUBMISSION
                     ---------------------------------------------- */
@@ -2388,7 +2380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     last_name: v => nameCheck(v),
     middle_name: v => v.trim() ? nameCheck(v) : '',
     email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.',
-    contact_no: v => /^(?:09\d{9}|\+639\d{9})$/.test(v.trim()) ? '' : 'Enter 09XXXXXXXXX or +639XXXXXXXXX.',
+    contact_no: v => /^09\d{9}$/.test(v.trim()) ? '' : 'Enter an 11-digit mobile number starting with 09.',
     zip_code: v => /^\d{4}$/.test(v.trim()) ? '' : 'Postal code must contain exactly 4 digits.',
     password: v => v.length < 8 ? 'Password must be at least 8 characters.' :
       !/[A-Z]/.test(v) ? 'Include at least one uppercase letter.' :

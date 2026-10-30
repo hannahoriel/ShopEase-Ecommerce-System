@@ -607,11 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     function renderOrders(orders) {
                         if (!purchaseRows) return;
                         if (!orders.length) {
-                            if (purchaseRows.querySelector('[data-demo-order]')) {
-                                rows = Array.from(purchaseRows.querySelectorAll('[data-purchase-row]'));
-                                applyPurchaseFilters();
-                                return;
-                            }
                             purchaseRows.innerHTML = '';
                             rows = [];
                             applyPurchaseFilters();
@@ -638,7 +633,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <article class="purchase-shop-card" data-purchase-row data-view-order-id="${escapeHtml(order.order_number)}" role="link" tabindex="0" aria-label="View order ${escapeHtml(order.order_number)}" data-status="${statusClass}" data-search="${escapeHtml(`${order.order_number} ${order.shop} ${order.items.map(item => item.product_name).join(' ')}`.toLowerCase())}">
                                     <div class="purchase-shop-header">
                                         <div class="purchase-shop-heading">
-                                            <span class="purchase-shop-icon" aria-hidden="true">▣</span>
+                                            <span class="purchase-shop-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none">
+                                                    <path d="M4 9h16l-1.2-5H5.2L4 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                                                    <path d="M6 9v10h12V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                                                    <path d="M9 19v-5h6v5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                                                </svg>
+                                            </span>
                                             <strong>${escapeHtml(order.shop)}</strong>
                                         </div>
                                         <div class="purchase-shop-order-meta">
@@ -661,7 +662,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                     <div class="purchase-row">
                                         <div class="purchase-product-cell">
-                                            <div class="purchase-product-image purchase-product-placeholder" aria-hidden="true">ShopEase</div>
+                                            <div class="purchase-product-image purchase-product-placeholder" aria-hidden="true">
+                                                <svg viewBox="0 0 120 100" fill="none">
+                                                    <rect width="120" height="100" rx="10" fill="#FFF2EE"/>
+                                                    <path d="m31 38 29-16 29 16v31L60 85 31 69V38Z" fill="#F8D9D2" stroke="#A76963" stroke-width="3" stroke-linejoin="round"/>
+                                                    <path d="m31 38 29 17 29-17M60 55v30M46 30l29 17" stroke="#A76963" stroke-width="3" stroke-linejoin="round"/>
+                                                </svg>
+                                            </div>
                                             <div class="purchase-product-copy">
                                                 <strong>${escapeHtml(firstItem.product_name || 'Order items')}</strong>
                                                 <small>${escapeHtml(variant || 'Standard')}</small>
@@ -696,8 +703,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     async function loadOrders() {
-                        if (!purchasesConfig.apiToken || !purchaseRows) return;
-                        if (emptyState && !purchaseRows.querySelector('[data-demo-order]')) {
+                        if (!purchaseRows) return;
+                        if (!purchasesConfig.apiToken) {
+                            if (emptyState) {
+                                emptyState.hidden = false;
+                                emptyState.querySelector('h3').textContent = 'Unable to load orders';
+                                emptyState.querySelector('p').textContent = 'Your account session is unavailable. Please refresh the page and try again.';
+                            }
+                            return;
+                        }
+                        if (emptyState) {
                             emptyState.hidden = false;
                             emptyState.querySelector('h3').textContent = 'Loading orders…';
                             emptyState.querySelector('p').textContent = '';
@@ -714,10 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             const payload = await response.json();
                             renderOrders(payload.data || []);
                         } catch (error) {
-                            if (purchaseRows.querySelector('[data-demo-order]')) {
-                                applyPurchaseFilters();
-                                return;
-                            }
                             if (emptyState) {
                                 emptyState.hidden = false;
                                 emptyState.querySelector('h3').textContent = 'Unable to load orders';
@@ -1215,45 +1226,46 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-/* Buyer Vouchers & Promotions: sample UI catalog (no redemption backend). */
+/* Buyer vouchers are loaded from the seller voucher API. */
 document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('bvVoucherGrid');
     const overlay = document.getElementById('bvVoucherOverlay');
     if (!grid || !overlay) return;
-    const offers = [
-        { id:'WELCOME150', category:'order', tag:'Welcome Reward', discount:'₱150', headline:'₱150 OFF', title:'First Order Savings', purpose:'Save on your first eligible purchase.', expiry:'2026-11-30T23:59:59', starts:'2026-10-01', minSpend:'₱1,000', maxDiscount:'₱150', eligible:'First-time buyers · eligible products', limit:'1 use per buyer', shop:'Participating ShopEase stores', stacking:'Cannot combine with other vouchers', terms:['Valid only on a buyer’s first successfully placed order.','Minimum eligible item subtotal of ₱1,000, excluding delivery charges.','Cannot be exchanged for cash or applied after checkout.'] },
-        { id:'FREESHIP80', category:'shipping', tag:'Shipping Discount', discount:'₱80', headline:'Up to ₱80 OFF', title:'Delivery Fee Saver', purpose:'Reduce delivery fees on eligible COD orders.', expiry:'2026-11-15T23:59:59', starts:'2026-10-20', minSpend:'₱499', maxDiscount:'₱80 shipping discount', eligible:'Orders with available shipping', limit:'2 uses per buyer', shop:'Participating delivery locations', stacking:'Cannot stack with another shipping voucher', terms:['Applies to delivery fee only, up to ₱80.','Any delivery fee above ₱80 is paid by the buyer through COD.','Delivery coverage and order eligibility depend on checkout availability.'] },
-        { id:'PAYDAY20', category:'order', tag:'Payday Deal', discount:'20%', headline:'20% OFF', title:'Payday Checkout Treat', purpose:'Discount on eligible cart subtotals.', expiry:'2026-10-31T23:59:59', starts:'2026-10-23', minSpend:'₱1,500', maxDiscount:'₱250', eligible:'Selected products and stores', limit:'1 use per buyer', shop:'Participating ShopEase stores', stacking:'One order discount voucher per checkout', terms:['20% is applied to eligible item subtotal only.','Maximum total discount is ₱250 even if 20% exceeds the cap.','Offer is subject to remaining redemption allocation.'] },
-        { id:'BEAUTY100', category:'store', tag:'Category Offer', discount:'₱100', headline:'₱100 OFF', title:'Beauty Essentials Deal', purpose:'Special discount for Health & Beauty purchases.', expiry:'2026-12-15T23:59:59', starts:'2026-10-15', minSpend:'₱799', maxDiscount:'₱100', eligible:'Health & Beauty category only', limit:'1 use per buyer', shop:'Participating Beauty stores', stacking:'Not stackable with category/order vouchers', terms:['Only eligible Health & Beauty items count toward minimum spend.','Other categories in the cart do not increase the qualifying subtotal.','Cancellation or return eligibility follows ShopEase order policies.'] },
-        { id:'WEEKEND10', category:'order', tag:'Weekend Special', discount:'10%', headline:'10% OFF', title:'Weekend Cart Promo', purpose:'Take a little extra off your weekend haul.', expiry:'2026-11-08T23:59:59', starts:'2026-10-23', minSpend:'₱599', maxDiscount:'₱120', eligible:'Participating products', limit:'1 use per buyer', shop:'Participating ShopEase stores', stacking:'Cannot combine with other order vouchers', terms:['Valid only when the code is active at checkout.','10% off eligible subtotal, capped at ₱120.','All voucher use is subject to store and product restrictions.'] },
-        { id:'HOME200', category:'store', tag:'Home & Living', discount:'₱200', headline:'₱200 OFF', title:'Home Refresh Reward', purpose:'Save on Home & Garden essentials.', expiry:'2026-12-31T23:59:59', starts:'2026-10-15', minSpend:'₱2,000', maxDiscount:'₱200', eligible:'Home & Garden category only', limit:'1 use per buyer', shop:'Participating Home & Garden stores', stacking:'Not stackable with category/order vouchers', terms:['Eligible Home & Garden items must total ₱2,000 or more.','Voucher cannot be converted to cash or used toward COD delivery charges.','Returns or order changes may affect eligibility.'] },
-    ];
+    let offers = [];
     const esc = v => String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const formatPeso = value => `\u20B1${Number(value||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
     const formatDate = value => new Date(value).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+    const count=document.getElementById('bvVoucherCount');
     const clockIcon='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
     const ticketIcon='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z" stroke="currentColor" stroke-width="1.7"/><path d="M12 6v12" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2 3"/></svg>';
-    grid.innerHTML=offers.map(v=>`<button type="button" class="bv-voucher-card" data-voucher-id="${esc(v.id)}" data-category="${esc(v.category)}" aria-label="View details for ${esc(v.title)}"><span class="bv-voucher-left">${ticketIcon}<strong class="bv-discount">${esc(v.discount)}</strong><span class="bv-off-label">OFF</span></span><span class="bv-voucher-right"><span class="bv-voucher-tag">${esc(v.tag)}</span><strong class="bv-voucher-title">${esc(v.title)}</strong><span class="bv-voucher-purpose">${esc(v.purpose)}</span><span class="bv-voucher-expiry">${clockIcon} Expires ${esc(formatDate(v.expiry))}</span><span class="bv-voucher-bottom"><span>COD only · Min. ${esc(v.minSpend)}</span><span>View details →</span></span></span></button>`).join('');
-    const count = document.getElementById('bvVoucherCount');
-    if(count) count.textContent=`${offers.length} vouchers`;
+    const renderOffers=()=>{grid.innerHTML=offers.map(v=>`<button type="button" class="bv-voucher-card" data-voucher-id="${esc(v.id)}" data-category="shop" aria-label="View details for ${esc(v.title)}"><span class="bv-voucher-left">${ticketIcon}<strong class="bv-discount">${esc(v.discount)}</strong><span class="bv-off-label">OFF</span></span><span class="bv-voucher-right"><span class="bv-voucher-tag">Shop voucher</span><strong class="bv-voucher-title">${esc(v.title)}</strong><span class="bv-voucher-purpose">${esc(v.purpose)}</span><span class="bv-voucher-expiry">${clockIcon} Expires ${esc(formatDate(v.expiry))}</span><span class="bv-voucher-bottom"><span>COD \u00b7 Min. ${esc(v.minSpend)}</span><span>View details \u2192</span></span></span></button>`).join('');if(count)count.textContent=`${offers.length} vouchers`;if(!offers.length)grid.innerHTML='<p class="bv-empty-state">No active shop vouchers are available right now.</p>'};
     const modalText=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
     const detailList = document.getElementById('bvModalDetails');
     const termList = document.getElementById('bvModalTerms');
     let previousFocus=null;
+    let selectedOffer=null;
     const close=()=>{overlay.hidden=true;overlay.setAttribute('aria-hidden','true');document.body.classList.remove('bv-modal-open');previousFocus?.focus?.()};
     const open = offer => {
+        selectedOffer=offer;
         previousFocus=document.activeElement;
-        modalText('bvModalTitle',offer.title);modalText('bvModalValue',offer.headline);modalText('bvModalSubtitle',offer.purpose);modalText('bvModalDescription',`Use code ${offer.id} on a qualifying order. This is a sample voucher for interface testing only.`);
-        const details=[['Voucher code',offer.id],['Discount value',offer.headline],['Minimum spend',offer.minSpend],['Maximum discount',offer.maxDiscount],['Valid from',formatDate(offer.starts)],['Expiry',`${formatDate(offer.expiry)} · 11:59 PM (PH time)`],['Eligible items / buyers',offer.eligible],['Participating stores',offer.shop],['Redemption limit',offer.limit],['Payment method','Cash on Delivery (COD)'],['Voucher stacking',offer.stacking],['Current status','Available · Demo only']];
+        modalText('bvModalTitle',offer.title);modalText('bvModalValue',offer.headline);modalText('bvModalSubtitle',offer.purpose);modalText('bvModalDescription',`Use code ${offer.id} at checkout on qualifying items from ${offer.shop}.`);
+        const details=[['Voucher code',offer.id],['Discount value',offer.headline],['Minimum spend',offer.minSpend],['Maximum discount',offer.maxDiscount],['Valid from',formatDate(offer.starts)],['Expiry',`${formatDate(offer.expiry)} · 11:59 PM (PH time)`],['Eligible items / buyers',offer.eligible],['Participating stores',offer.shop],['Redemption limit',offer.limit],['Payment method','Cash on Delivery (COD)'],['Voucher stacking',offer.stacking],['Current status','Available for eligible orders']];
         detailList.replaceChildren(...details.map(([name,value])=>{const box=document.createElement('div');box.className='bv-detail';const label=document.createElement('span');label.textContent=name;const strong=document.createElement('strong');strong.textContent=value;box.append(label,strong);return box}));
-        const terms=[...offer.terms,'Voucher must be selected before the COD order is placed.','Voucher has no cash value and cannot be transferred or redeemed after placing an order.','Promotions may have usage quotas and may be cancelled or changed by ShopEase; no actual demo voucher is redeemable.'];
+        const terms=[...offer.terms,'Voucher must be selected before the COD order is placed.','Voucher has no cash value and cannot be transferred or redeemed after placing an order.'];
         termList.replaceChildren(...terms.map(t=>{const li=document.createElement('li');li.textContent=t;return li}));
         overlay.hidden=false;overlay.setAttribute('aria-hidden','false');document.querySelector('.bv-dialog')?.focus();
     };
     grid.addEventListener('click',e=>{const card=e.target.closest('[data-voucher-id]');if(!card)return;const offer=offers.find(x=>x.id===card.dataset.voucherId);if(offer)open(offer)});
+    document.getElementById('bvModalApply')?.addEventListener('click',()=>{if(selectedOffer)window.location.assign(`/buyer/checkout?voucher=${encodeURIComponent(selectedOffer.id)}`)});
     document.getElementById('bvModalClose')?.addEventListener('click',close);
     document.getElementById('bvModalDone')?.addEventListener('click',close);
     overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
     document.addEventListener('keydown',e=>{if(!overlay.hidden && e.key==='Escape'){e.stopPropagation();close()}});
+    const config=JSON.parse(document.getElementById('buyerPurchasesConfig')?.textContent||'{}');
+    fetch('/api/v1/buyer/vouchers',{credentials:'same-origin',headers:{Accept:'application/json',...(config.apiToken?{Authorization:`Bearer ${config.apiToken}`}:{})}})
+        .then(async response=>{const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.message||'Could not load vouchers.');return payload})
+        .then(payload=>{offers=(payload.data||[]).map(v=>{const discount=v.discount_type==='percent'?`${v.discount_value}%`:formatPeso(v.discount_value);return{id:v.id,title:v.title,purpose:`Save on eligible products at ${v.seller_name}.`,discount,headline:`${discount} OFF`,expiry:v.ends_at,starts:v.starts_at,minSpend:formatPeso(v.minimum_spend),maxDiscount:formatPeso(v.maximum_discount),eligible:`${v.eligible_items} \u00b7 ${v.eligible_buyers}`,limit:`${Math.max(0,v.quantity-v.claimed)} left \u00b7 ${v.per_buyer} use(s) per buyer`,shop:v.seller_name,stacking:v.stacking,terms:[v.terms||'Valid on eligible items from this shop.','Discount applies to eligible item subtotal only.']}});renderOffers()})
+        .catch(()=>{offers=[];renderOffers()});
 });
 
 

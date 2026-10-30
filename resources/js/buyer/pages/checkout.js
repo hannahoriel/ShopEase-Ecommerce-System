@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkoutMessage = document.getElementById('checkoutMessage');
             const placeOrderButton = document.getElementById('placeOrderButton');
             let cartItems = [];
+            let appliedVoucherCode = '';
+            let appliedVoucherDiscount = 0;
+            let appliedVoucherSellerId = null;
 
             const escapeCheckoutHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -94,28 +97,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 <span>${options ? `Variation: ${escapeCheckoutHtml(options)}` : 'Standard'}</span>
                                             </div>
                                         </div>
-                                        <div class="checkout-unit-price">${money(item.product.price)}</div>
+                                        <div class="checkout-unit-price"><strong>${money(item.product.price)}</strong>${item.product.sale_percentage ? `<del>${money(item.product.original_price)}</del><em>-${item.product.sale_percentage}%</em>` : ''}</div>
                                         <div class="checkout-quantity">${item.quantity}</div>
                                         <div class="checkout-item-subtotal">${money(item.product.price * item.quantity)}</div>
                                     </article>`;
                             }).join('')}
                             <div class="shop-checkout-options">
                                 <div class="shipping-option">
-                                    <div><strong>Shipping Option</strong><span>Shipping fee will be confirmed by the seller.</span><small>Standard Local</small></div>
-                                    <strong class="shipping-fee">${money(0)}</strong>
+                                    <div><strong>Shipping Option</strong><span>Standard shipping</span><small>Standard Local</small></div>
+                                    <strong class="shipping-fee">${money(50)}</strong>
                                 </div>
                             </div>
                             <div class="shop-total-row">
                                 <span>Order Total (${quantity} ${quantity === 1 ? 'item' : 'items'}):</span>
-                                <strong>${money(subtotal)}</strong>
+                                <strong>${money(subtotal + 50)}</strong>
                             </div>
                         </section>`;
                 }).join('');
 
                 const merchandiseTotal = items.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0);
+                const shippingTotal = groups.size * 50;
                 document.getElementById('checkoutMerchandiseSubtotal').textContent = money(merchandiseTotal);
-                document.getElementById('checkoutShippingSubtotal').textContent = money(0);
-                document.getElementById('checkoutTotalPayment').textContent = money(merchandiseTotal);
+                document.getElementById('checkoutShippingSubtotal').textContent = money(shippingTotal);
+                document.getElementById('checkoutVoucherDiscount').textContent = `−${money(appliedVoucherDiscount)}`;
+                document.getElementById('checkoutTotalPayment').textContent = money(Math.max(0, merchandiseTotal + shippingTotal - appliedVoucherDiscount));
                 placeOrderButton.disabled = false;
             }
 
@@ -187,6 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             delivery_phone: address.phone,
                             delivery_address: address.address,
                             payment_method: paymentMethodLabel?.textContent || 'Cash on Delivery',
+                            voucher_code: appliedVoucherCode || null,
+                            voucher_seller_id: appliedVoucherSellerId,
                         }),
                     });
                     renderPlacedOrders(response.orders || []);
@@ -200,7 +207,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            loadCheckoutCart();
+            document.getElementById('checkoutApplyVoucher')?.addEventListener('click', async () => {
+                const input = document.getElementById('checkoutVoucherCode');
+                const message = document.getElementById('checkoutVoucherMessage');
+                const code = input?.value.trim().toUpperCase();
+                appliedVoucherCode = '';
+                appliedVoucherDiscount = 0;
+                appliedVoucherSellerId = null;
+                if (!code) {
+                    if (message) message.textContent = 'Enter a voucher code first.';
+                    renderCheckoutCart(cartItems);
+                    return;
+                }
+                try {
+                    const result = await checkoutApiFetch(checkoutConfig.api.voucherPreviewUrl || '/api/v1/buyer/vouchers/preview', {
+                        method: 'POST', body: JSON.stringify({ code }),
+                    });
+                    appliedVoucherCode = result.data.code;
+                    appliedVoucherDiscount = Number(result.data.discount || 0);
+                    appliedVoucherSellerId = Number(result.data.seller_id);
+                    if (message) message.textContent = `${result.data.code} applied to ${result.data.seller_name}.`;
+                } catch (error) {
+                    if (message) message.textContent = error.message;
+                }
+                renderCheckoutCart(cartItems);
+            });
+
+            document.getElementById('checkoutVoucherCode')?.addEventListener('input', () => {
+                appliedVoucherCode = '';
+                appliedVoucherDiscount = 0;
+                appliedVoucherSellerId = null;
+                const message = document.getElementById('checkoutVoucherMessage');
+                if (message) message.textContent = '';
+                renderCheckoutCart(cartItems);
+            });
+
+            const requestedVoucher = new URLSearchParams(window.location.search).get('voucher');
+            loadCheckoutCart().then(() => {
+                if (!requestedVoucher || !cartItems.length) return;
+                const voucherInput = document.getElementById('checkoutVoucherCode');
+                if (!voucherInput) return;
+                voucherInput.value = requestedVoucher;
+                document.getElementById('checkoutApplyVoucher')?.click();
+            });
 
             const pageContent =
                 document.getElementById('checkoutPageContent');

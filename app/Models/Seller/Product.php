@@ -18,6 +18,7 @@ class Product extends Model
         'category',
         'sku',
         'price',
+        'sale_percentage',
         'pricing_mode',
         'pricing_source',
         'photos',
@@ -32,6 +33,7 @@ class Product extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'sale_percentage' => 'integer',
         'stock_quantity' => 'integer',
         'is_archived' => 'boolean',
         'archived_by_admin' => 'boolean',
@@ -49,6 +51,14 @@ class Product extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Seller::class);
+    }
+
+    public function getSalePriceAttribute(): float
+    {
+        $price = (float) $this->price;
+        $percentage = (int) $this->sale_percentage;
+
+        return $percentage > 0 ? round($price * (100 - $percentage) / 100, 2) : $price;
     }
 
     public function options(): HasMany

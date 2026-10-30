@@ -3172,8 +3172,9 @@ body.sp-modal-open {
 .bv-cod-note{margin-top:15px;background:#fff4f1;border:1px solid #f6ded8;border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px}
 .bv-cod-note svg{width:22px;height:22px;flex-shrink:0;color:#8b2936}.bv-cod-note strong{display:block;color:#642430;font-size:11px}.bv-cod-note span{display:block;color:#897174;font-size:10px;line-height:1.55;margin-top:3px}
 .bv-modal-footer{position:sticky;bottom:0;padding:12px 20px 17px;background:#fff;border-top:1px solid #f3e9e5}
-#bvModalDone{width:100%;height:42px;background:#8e241f;color:#fff;border:none;border-radius:999px;font-size:12px;font-weight:750;cursor:pointer}
-#bvModalDone:hover{background:#741b19}
+#bvModalApply{width:100%;height:42px;background:#8e241f;color:#fff;border:none;border-radius:999px;font-size:12px;font-weight:750;cursor:pointer;margin-bottom:8px}
+#bvModalApply:hover{background:#741b19}
+#bvModalDone{width:100%;height:36px;background:#fff;color:#70303c;border:1px solid #eadbd7;border-radius:999px;font-size:11px;font-weight:650;cursor:pointer}
 @media(max-width:1050px){.bv-voucher-grid{grid-template-columns:1fr}}
 @media(max-width:550px){.bv-voucher-card{grid-template-columns:108px minmax(0,1fr)}.bv-voucher-left{min-height:166px}.bv-discount{font-size:20px}.bv-voucher-right{padding:12px}.bv-section-head{align-items:flex-start}.bv-modal-details{grid-template-columns:1fr}.bv-modal-hero strong{font-size:24px}}
 

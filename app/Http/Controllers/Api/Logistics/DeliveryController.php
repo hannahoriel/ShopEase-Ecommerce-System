@@ -8,6 +8,7 @@ use App\Models\Admin\Order;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Rider\Rider;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,7 @@ class DeliveryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $logistics = $this->logisticsFor($request->user());
-        $branchIds = $logistics->branches()->pluck('id');
+        $branchIds = $logistics->branches()->whereNull('archived_at')->pluck('id');
         $orders = Order::query()
             ->whereHas('shipment.rider', fn ($query) => $query->whereIn('logistics_branch_id', $branchIds))
             ->whereIn('status', ['to_ship', 'in_transit', 'out_for_delivery', 'delivered'])
@@ -62,7 +63,7 @@ class DeliveryController extends Controller
     public function riders(Request $request): JsonResponse
     {
         $logistics = $this->logisticsFor($request->user());
-        $branchIds = $logistics->branches()->pluck('id');
+        $branchIds = $logistics->branches()->whereNull('archived_at')->pluck('id');
         $riders = Rider::query()
             ->where('registration_status', 'active')
             ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
@@ -91,6 +92,7 @@ class DeliveryController extends Controller
     {
         $branches = $this->logisticsFor($request->user())
             ->branches()
+            ->whereNull('archived_at')
             ->orderBy('name')
             ->get(['id', 'name', 'address']);
 
@@ -111,6 +113,7 @@ class DeliveryController extends Controller
             if ($branchId !== null) {
                 $branch = LogisticsBranch::query()
                     ->where('logistics_id', $logistics->id)
+                    ->whereNull('archived_at')
                     ->findOrFail($branchId);
             }
 
@@ -173,8 +176,19 @@ class DeliveryController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($validated['rider_id']);
 
+            $deliveryHub = LogisticsDeliveryHub::query()
+                ->where('logistics_branch_id', $rider->logistics_branch_id)
+                ->whereNull('archived_at')
+                ->where(function ($query) use ($rider): void {
+                    $query->whereRaw('LOWER(hub_name) = ?', [mb_strtolower((string) $rider->municipal_hub)])
+                        ->orWhereRaw('LOWER(municipality) = ?', [mb_strtolower((string) $rider->municipal_hub)]);
+                })
+                ->first();
+
             $shipment->update([
                 'rider_id' => $rider->id,
+                'logistics_branch_id' => $rider->logistics_branch_id,
+                'logistics_delivery_hub_id' => $deliveryHub?->id,
                 'courier' => $logistics->business_name ?: $shipment->courier,
             ]);
         });

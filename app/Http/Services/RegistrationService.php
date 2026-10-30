@@ -64,7 +64,9 @@ class RegistrationService
                 'required', 'string', 'email', 'max:255',
                 Rule::unique('users')->ignore($rejectedUser?->id),
             ],
-            'contact_no' => ['required', 'string', 'max:20'],
+            'contact_no' => $role === User::ROLE_SELLER
+                ? ['required', 'regex:/^09[0-9]{9}$/']
+                : ['required', 'string', 'max:20'],
             'birthday' => $this->birthdayValidationRules(),
             'province' => ['required', 'string', 'max:255'],
             'municipality' => ['required', 'string', 'max:255'],

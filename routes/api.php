@@ -25,8 +25,14 @@ use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardControll
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\OrderReturnController as BuyerOrderReturnController;
+use App\Http\Controllers\Api\Buyer\VoucherController as BuyerVoucherController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
+use App\Http\Controllers\Api\Logistics\NetworkHubController;
+use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
+use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
+use App\Http\Controllers\Api\Logistics\ParcelTrackingController;
 use App\Http\Controllers\Api\Logistics\ListRiderRemittancesController;
 use App\Http\Controllers\Api\Logistics\ListRiderSupportTicketsController;
 use App\Http\Controllers\Api\Logistics\ListRiderDeliveryActionsController;
@@ -88,7 +94,10 @@ use App\Http\Controllers\Api\Seller\InventoryController as SellerInventoryContro
 use App\Http\Controllers\Api\Seller\MessagesController as SellerMessagesController;
 use App\Http\Controllers\Api\Seller\OrderStatusController;
 use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController;
+use App\Http\Controllers\Api\Seller\ReturnsRefundsController as SellerReturnsRefundsController;
+use App\Http\Controllers\Api\Seller\SalesController as SellerSalesController;
 use App\Http\Controllers\Api\Seller\ShippingStatusController;
+use App\Http\Controllers\Api\Seller\VouchersController as SellerVouchersController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -141,6 +150,8 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/logistics/account-change-requests', [LogisticsAccountController::class, 'requests'])->name('admin.api.logistics-account.requests');
+            Route::patch('/logistics/account-change-requests/{changeRequest}', [LogisticsAccountController::class, 'review'])->name('admin.api.logistics-account.review');
             Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');
             Route::get('/messages', [AdminMessagesController::class, 'index'])->name('admin.api.messages.index');
             Route::get('/messages/contacts', [AdminMessagesController::class, 'contacts'])->name('admin.api.messages.contacts');
@@ -236,7 +247,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
             Route::post('/orders', [BuyerOrderController::class, 'store'])->name('buyer.api.orders.store');
+            Route::post('/vouchers/preview', [BuyerVoucherController::class, 'preview'])->name('buyer.api.vouchers.preview');
+            Route::get('/vouchers', [BuyerVoucherController::class, 'index'])->name('buyer.api.vouchers.index');
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
+            Route::get('/returns', [BuyerOrderReturnController::class, 'index'])->name('buyer.api.returns.index');
+            Route::post('/orders/{order}/returns', [BuyerOrderReturnController::class, 'store'])->name('buyer.api.orders.returns.store');
             Route::get('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'index'])->name('buyer.api.complaints.messages.index');
             Route::post('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'store'])->name('buyer.api.complaints.messages.store');
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('buyer.api.orders.rider-messages.index');
@@ -292,6 +307,27 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:logistics')->prefix('logistics')->group(function () {
+            Route::get('/account', [LogisticsAccountController::class, 'show'])->name('logistics.api.account.show');
+            Route::post('/account/profile-requests', [LogisticsAccountController::class, 'requestProfileChange'])->name('logistics.api.account.profile-requests.store');
+            Route::put('/account/preferences', [LogisticsAccountController::class, 'savePreferences'])->name('logistics.api.account.preferences.update');
+            Route::post('/account/cover-photo', [LogisticsAccountController::class, 'uploadCoverPhoto'])->name('logistics.api.account.cover-photo.store');
+            Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name('logistics.api.messages.index');
+            Route::post('/messages/thread', [LogisticsMessagesController::class, 'thread'])->name('logistics.api.messages.thread');
+            Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name('logistics.api.messages.attachments.show');
+            Route::post('/messages', [LogisticsMessagesController::class, 'send'])->name('logistics.api.messages.send');
+            Route::get('/parcel-tracking', [ParcelTrackingController::class, 'index'])->name('logistics.api.parcel-tracking.index');
+            Route::get('/network-hubs', [NetworkHubController::class, 'index'])->name('logistics.api.network-hubs.index');
+            Route::get('/network-hubs/archive', [NetworkHubController::class, 'archive'])->name('logistics.api.network-hubs.archive');
+            Route::post('/network-hubs', [NetworkHubController::class, 'store'])->name('logistics.api.network-hubs.store');
+            Route::put('/network-hubs/{center}', [NetworkHubController::class, 'update'])->name('logistics.api.network-hubs.update');
+            Route::post('/network-hubs/{center}/archive', [NetworkHubController::class, 'archiveCenter'])->name('logistics.api.network-hubs.archive-center');
+            Route::post('/network-hubs/{center}/restore', [NetworkHubController::class, 'restoreCenter'])->name('logistics.api.network-hubs.restore');
+            Route::get('/network-hubs/{center}/delivery-hubs', [NetworkHubController::class, 'hubs'])->name('logistics.api.network-hubs.delivery-hubs.index');
+            Route::get('/network-hubs/{center}/delivery-hubs/archive', [NetworkHubController::class, 'hubArchive'])->name('logistics.api.network-hubs.delivery-hubs.archive');
+            Route::post('/network-hubs/{center}/delivery-hubs', [NetworkHubController::class, 'storeHub'])->name('logistics.api.network-hubs.delivery-hubs.store');
+            Route::put('/delivery-hubs/{hub}', [NetworkHubController::class, 'updateHub'])->name('logistics.api.delivery-hubs.update');
+            Route::post('/delivery-hubs/{hub}/archive', [NetworkHubController::class, 'archiveHub'])->name('logistics.api.delivery-hubs.archive');
+            Route::post('/delivery-hubs/{hub}/restore', [NetworkHubController::class, 'restoreHub'])->name('logistics.api.delivery-hubs.restore');
             Route::get('/branches', [LogisticsDeliveryController::class, 'branches'])->name('logistics.api.branches.index');
             Route::get('/deliveries', [LogisticsDeliveryController::class, 'index'])->name('logistics.api.deliveries.index');
             Route::get('/available-deliveries', [LogisticsDeliveryController::class, 'available'])->name('logistics.api.deliveries.available');
@@ -308,6 +344,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/rider-delivery-actions', ListRiderDeliveryActionsController::class)->name('logistics.api.rider-delivery-actions.index');
             Route::patch('/rider-delivery-actions/{action}/review', ReviewRiderDeliveryActionController::class)->name('logistics.api.rider-delivery-actions.review');
         });
+
+        foreach (['sorting_center', 'delivery_hub'] as $facilityRole) {
+            Route::middleware("role:{$facilityRole}")->prefix($facilityRole)->group(function () use ($facilityRole) {
+                Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
+                Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name("{$facilityRole}.api.messages.attachments.show");
+                Route::get('/messages/{conversation}', [LogisticsMessagesController::class, 'show'])->name("{$facilityRole}.api.messages.show");
+                Route::post('/messages', [LogisticsMessagesController::class, 'send'])->name("{$facilityRole}.api.messages.send");
+            });
+        }
 
         Route::middleware('role:rider')->prefix('rider')->group(function () {
             Route::post('/location', \App\Http\Controllers\Api\Rider\UpdateRiderLocationController::class)->name('rider.api.location.update');

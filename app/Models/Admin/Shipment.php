@@ -3,6 +3,8 @@
 namespace App\Models\Admin;
 
 use App\Models\Rider\Rider;
+use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,8 @@ class Shipment extends Model
     protected $fillable = [
         'order_id',
         'rider_id',
+        'logistics_branch_id',
+        'logistics_delivery_hub_id',
         'tracking_number',
         'scan_token',
         'courier',
@@ -46,6 +50,16 @@ class Shipment extends Model
     public function rider(): BelongsTo
     {
         return $this->belongsTo(Rider::class);
+    }
+
+    public function logisticsBranch(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsBranch::class);
+    }
+
+    public function deliveryHub(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsDeliveryHub::class, 'logistics_delivery_hub_id');
     }
 
     public function scans(): HasMany

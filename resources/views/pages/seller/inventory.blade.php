@@ -2176,6 +2176,8 @@
 
                         <div class="product-details-inspo-price">
                             <strong id="productDetailsPriceDisplay" class="product-details-view-value">₱0.00</strong>
+                            <del id="productDetailsOriginalPriceDisplay" class="product-details-sale-original" hidden></del>
+                            <em id="productDetailsSaleBadge" class="product-details-sale-badge" hidden></em>
                             <div class="product-details-edit-price product-details-edit-control">
                                 <span>₱</span>
                                 <input

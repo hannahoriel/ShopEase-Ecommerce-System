@@ -490,7 +490,9 @@ Route::post(
             $request->except([
                 '_token',
                 'business_permit',
+                'business_permits',
             ]);
+        unset($stepTwoData['business_permits'], $stepTwoData['business_permit']);
 
         $categories =
             $request->input(
@@ -509,54 +511,56 @@ Route::post(
                 $stepTwoData
             );
 
-        if (
-            $request->hasFile(
-                'business_permit'
-            )
-        ) {
+        $uploadedPermits = $request->file('business_permits', []);
+        if (! is_array($uploadedPermits)) {
+            $uploadedPermits = [$uploadedPermits];
+        }
+        if ($request->hasFile('business_permit')) {
+            $uploadedPermits[] = $request->file('business_permit');
+        }
 
-            if (
-                ! empty(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                )
-            ) {
-
-                Storage::disk('public')->delete(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                );
-
+        $permitRecords = $sellerData['business_permits'] ?? [];
+        if (! is_array($permitRecords)) {
+            $permitRecords = [];
+        }
+        $permitRecords = array_values(array_filter(array_map(function ($record) {
+            if (is_string($record) && $record !== '') {
+                return ['path' => $record, 'original_name' => basename($record)];
             }
 
-            $file =
-                $request->file(
-                    'business_permit'
-                );
+            if (! is_array($record) || empty($record['path'])) {
+                return null;
+            }
 
-            $path =
-                $file->store(
-                    "seller-registration/{$draftId}",
-                    'public'
-                );
+            $record['original_name'] = $record['original_name'] ?? basename($record['path']);
 
-            $sellerData[
-                'business_permit_path'
-            ] =
-                $path;
+            return $record;
+        }, $permitRecords)));
+        if ($permitRecords === [] && ! empty($sellerData['business_permit_path'])) {
+            $permitRecords[] = [
+                'path' => $sellerData['business_permit_path'],
+                'original_name' => $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path']),
+            ];
+        }
 
-            $sellerData[
-                'business_permit_original_name'
-            ] =
-                $file->getClientOriginalName();
+        foreach ($uploadedPermits as $file) {
+            if (! $file instanceof \Illuminate\Http\UploadedFile || ! $file->isValid()) {
+                continue;
+            }
 
-            $sellerData[
-                'business_permit_mime'
-            ] =
-                $file->getMimeType();
+            $path = $file->store("seller-registration/{$draftId}", 'public');
+            $permitRecords[] = [
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType(),
+            ];
+        }
 
+        if ($permitRecords !== []) {
+            $sellerData['business_permits'] = array_values($permitRecords);
+            $sellerData['business_permit_path'] = $permitRecords[0]['path'];
+            $sellerData['business_permit_original_name'] = $permitRecords[0]['original_name'];
+            $sellerData['business_permit_mime'] = $permitRecords[0]['mime'] ?? null;
         }
 
         session([
@@ -598,7 +602,9 @@ Route::post(
             $request->except([
                 '_token',
                 'business_permit',
+                'business_permits',
             ]);
+        unset($stepTwoData['business_permits'], $stepTwoData['business_permit']);
 
         $categories =
             $request->input(
@@ -617,54 +623,56 @@ Route::post(
                 $stepTwoData
             );
 
-        if (
-            $request->hasFile(
-                'business_permit'
-            )
-        ) {
+        $uploadedPermits = $request->file('business_permits', []);
+        if (! is_array($uploadedPermits)) {
+            $uploadedPermits = [$uploadedPermits];
+        }
+        if ($request->hasFile('business_permit')) {
+            $uploadedPermits[] = $request->file('business_permit');
+        }
 
-            if (
-                ! empty(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                )
-            ) {
-
-                Storage::disk('public')->delete(
-                    $sellerData[
-                        'business_permit_path'
-                    ]
-                );
-
+        $permitRecords = $sellerData['business_permits'] ?? [];
+        if (! is_array($permitRecords)) {
+            $permitRecords = [];
+        }
+        $permitRecords = array_values(array_filter(array_map(function ($record) {
+            if (is_string($record) && $record !== '') {
+                return ['path' => $record, 'original_name' => basename($record)];
             }
 
-            $file =
-                $request->file(
-                    'business_permit'
-                );
+            if (! is_array($record) || empty($record['path'])) {
+                return null;
+            }
 
-            $path =
-                $file->store(
-                    "seller-registration/{$draftId}",
-                    'public'
-                );
+            $record['original_name'] = $record['original_name'] ?? basename($record['path']);
 
-            $sellerData[
-                'business_permit_path'
-            ] =
-                $path;
+            return $record;
+        }, $permitRecords)));
+        if ($permitRecords === [] && ! empty($sellerData['business_permit_path'])) {
+            $permitRecords[] = [
+                'path' => $sellerData['business_permit_path'],
+                'original_name' => $sellerData['business_permit_original_name'] ?? basename($sellerData['business_permit_path']),
+            ];
+        }
 
-            $sellerData[
-                'business_permit_original_name'
-            ] =
-                $file->getClientOriginalName();
+        foreach ($uploadedPermits as $file) {
+            if (! $file instanceof \Illuminate\Http\UploadedFile || ! $file->isValid()) {
+                continue;
+            }
 
-            $sellerData[
-                'business_permit_mime'
-            ] =
-                $file->getMimeType();
+            $path = $file->store("seller-registration/{$draftId}", 'public');
+            $permitRecords[] = [
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType(),
+            ];
+        }
 
+        if ($permitRecords !== []) {
+            $sellerData['business_permits'] = array_values($permitRecords);
+            $sellerData['business_permit_path'] = $permitRecords[0]['path'];
+            $sellerData['business_permit_original_name'] = $permitRecords[0]['original_name'];
+            $sellerData['business_permit_mime'] = $permitRecords[0]['mime'] ?? null;
         }
 
         session([
@@ -1058,7 +1066,7 @@ Route::post(
         );
 
         return redirect()
-            ->route('login')
+            ->route('landing.page')
             ->with(
                 'success',
                 'Seller registration submitted successfully.'
@@ -2282,27 +2290,129 @@ Route::middleware(['auth', 'role:buyer'])->prefix('buyer/likes')->name('buyer.li
 
 // Seller-only pages (the views must exist under resources/views/pages/seller/).
 Route::middleware(['auth', 'role:seller'])->group(function () {
-    Route::view('/seller/returns-refunds', 'pages.seller.returns-refunds')
+    Route::get('/seller/returns-refunds', [\App\Http\Controllers\Api\Seller\ReturnsRefundsController::class, 'page'])
         ->name('seller.returns.index');
 
-    Route::view('/seller/vouchers-promotions', 'pages.seller.vouchers-promotions')
-        ->name('seller.vouchers.index');
+    Route::get('/seller/vouchers-promotions', function () {
+        $apiToken = request()->user()->createToken('seller-vouchers')->plainTextToken;
+        return view('pages.seller.vouchers-promotions', compact('apiToken'));
+    })->name('seller.vouchers.index');
 });
 
-Route::view('/logistics/network-hubs', 'pages.logistics.network-hubs')
-    ->middleware(['auth', 'role:logistics'])
-    ->name('logistics.network-hubs');
+Route::get('/logistics/network-hubs', function () {
+    $user = Auth::user();
+
+    return view('pages.logistics.network-hubs', [
+        'networkHubsApiToken' => $user->createToken('logistics-network-hubs')->plainTextToken,
+    ]);
+})->middleware(['auth', 'role:logistics'])->name('logistics.network-hubs');
 
 // Insert next to the other Logistics routes in routes/web.php.
-Route::get('/logistics/parcel-tracking', function () {
-    abort_unless(Auth::user()?->role === User::ROLE_LOGISTICS, 403);
-    // Supply $logisticsParcels and $logisticsReturns from the logistics-scoped backend when ready.
-    return view('pages.logistics.parcel-tracking');
-})->middleware('auth')->name('logistics.parcel-tracking');
+Route::get('/logistics/parcel-tracking', [\App\Http\Controllers\Api\Logistics\ParcelTrackingController::class, 'page'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.parcel-tracking');
 
-// Add within your existing authenticated Logistics route group (preserve existing middleware/role protection):
-Route::get('/logistics/account', function () {
-    return view('pages.logistics.account');
-})->name('logistics.account');
+Route::get('/logistics/account', [\App\Http\Controllers\Api\Logistics\AccountController::class, 'page'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.account');
 
-// No POST route, database, controller, or migration is needed for this frontend preview.
+/*
+|--------------------------------------------------------------------------
+| SORTING CENTER PAGES
+|--------------------------------------------------------------------------
+| Sorting center accounts are linked to their branch user record.
+*/
+Route::middleware(['auth', 'role:sorting_center'])
+    ->prefix('sorting-center')
+    ->name('sorting-center.')
+    ->group(function () {
+        Route::get('/dashboard', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            return view('pages.logistics.sorting-center.dashboard', ['center' => $center]);
+        })
+            ->name('dashboard');
+
+        Route::view('/courier-registrations', 'pages.logistics.sorting-center.courier-registrations')
+            ->name('courier-registrations');
+
+        Route::view('/delivery-hubs', 'pages.logistics.sorting-center.delivery-hubs')
+            ->name('delivery-hubs');
+
+        Route::view('/scanners', 'pages.logistics.sorting-center.scanners')
+            ->name('scanners');
+
+        Route::view('/parcel-tracking', 'pages.logistics.sorting-center.parcel-tracking')
+            ->name('parcel-tracking');
+
+        Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
+            ->name('parcel-disputes');
+
+        Route::view('/vehicles-drivers', 'pages.logistics.sorting-center.vehicles-drivers')
+            ->name('vehicles-drivers');
+
+        // Sorting Center notifications: use only the authenticated center account.
+        // The Blade page applies its own search, date, read-state filters and pagination.
+        Route::get('/notifications', function () {
+            return view('pages.logistics.sorting-center.notifications');
+        })->name('notifications');
+
+        // Read actions must be registered before rendering the notification page:
+        // the Blade template uses both of these named routes.
+        Route::post('/notifications/read-all', function (Request $request) {
+            $user = $request->user();
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->firstOrFail();
+
+            $user->unreadNotifications()->update(['read_at' => now()]);
+
+            return redirect()->back()->with('success', 'All notifications marked as read.');
+        })->name('notifications.read-all');
+
+        Route::post('/notifications/{notification}/read', function (Request $request, string $notification) {
+            $user = $request->user();
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->firstOrFail();
+
+            // Scope the lookup to the logged-in user; no other account's notification is accessible.
+            $item = $user->notifications()->whereKey($notification)->firstOrFail();
+            if ($item->read_at === null) {
+                $item->markAsRead();
+            }
+
+            return redirect()->back()->with('success', 'Notification marked as read.');
+        })->name('notifications.read');
+
+        Route::view('/network-earnings', 'pages.logistics.sorting-center.network-earnings')
+            ->name('network-earnings');
+
+        Route::view('/messages', 'pages.logistics.sorting-center.messages')
+            ->name('messages');
+
+        Route::view('/reports', 'pages.logistics.sorting-center.reports')
+            ->name('reports');
+
+        Route::view('/account', 'pages.logistics.sorting-center.account')
+            ->name('account');
+
+    });
+
+Route::middleware(['auth', 'role:delivery_hub'])
+    ->prefix('delivery-hub')
+    ->name('delivery-hub.')
+    ->group(function () {
+        Route::get('/dashboard', function () {
+            $hub = \App\Models\Logistics\LogisticsDeliveryHub::query()
+                ->with('logisticsBranch')
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            return view('pages.logistics.delivery-hub-dashboard', ['hub' => $hub]);
+        })->name('dashboard');
+    });
