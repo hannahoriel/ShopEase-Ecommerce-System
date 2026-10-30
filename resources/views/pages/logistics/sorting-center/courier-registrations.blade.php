@@ -79,7 +79,16 @@ document.addEventListener('DOMContentLoaded',()=>{
  const reasons=['Incomplete or missing OR/CR document.','Invalid or unreadable driver’s license.','Personal information could not be verified.','Plate number or vehicle documents do not match.','Duplicate courier registration.','Does not meet courier eligibility requirements.','Other (please specify)'];$('crReasonList').innerHTML=reasons.map((r,i)=>`<label class="cr-reason-option"><input type="radio" name="crReason" value="${esc(r)}"><span>${esc(r)}</span></label>`).join('');
  $('crReject').onclick=()=>{$('crReasonDetails').value='';document.querySelectorAll('input[name="crReason"]').forEach(e=>e.checked=false);$('crReasonError').textContent='';modal('crRejectModal')};
  $('crApprove').onclick=()=>{$('crApproveMessage').textContent=`Approve the registration of ${name(selected)}?`;modal('crApproveModal')};
- function decide(action,reason=''){if(!selected||status(selected)!=='pending')return;selected.status=action;selected.reviewed_at=new Date().toISOString();selected.rejection_reason=reason;persist();closeAll();update();flash(`${name(selected)} marked ${action} in frontend preview. Backend not updated.`,false,action==='approved'?'Registration Approved':'Registration Rejected')}
+ function decide(action,reason=''){
+  if(!selected||status(selected)!=='pending')return;
+  selected.status=action;
+  selected.reviewed_at=new Date().toISOString();
+  selected.rejection_reason=reason;
+  // The Vehicles & Drivers Approved Couriers tab reads this exact center-scoped storage key.
+  persist();
+  closeAll();update();
+  flash(action==='approved'?`${name(selected)} is now listed under Vehicles & Drivers > Approved Couriers (UI preview).`:`${name(selected)} marked rejected in frontend preview. Backend not updated.`,false,action==='approved'?'Registration Approved':'Registration Rejected');
+}
  $('crApproveConfirm').onclick=()=>decide('approved');$('crRejectConfirm').onclick=()=>{const reason=document.querySelector('input[name="crReason"]:checked')?.value;if(!reason){$('crReasonError').textContent='Please select a rejection reason.';return}const extra=$('crReasonDetails').value.trim();if(reason.startsWith('Other')&&!extra){$('crReasonError').textContent='Please specify the reason.';return}decide('rejected',reason+(extra?' — '+extra:''))};
  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);document.querySelectorAll('.cr-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAll()}));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
  function archive(kind){archiveStatus=kind;$('crArchiveTitle').textContent=kind==='approved'?'Approved Couriers':'Rejected Couriers';$('crArchiveSearch').value='';drawArchive();modal('crArchiveModal')}
