@@ -30,6 +30,8 @@ use App\Http\Controllers\Api\Buyer\VoucherController as BuyerVoucherController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\CourierRegistrationController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubScannerController;
+use App\Http\Controllers\Api\Logistics\ParcelRouteScanController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
 use App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController;
@@ -365,6 +367,14 @@ Route::prefix('v1')->group(function () {
 
         foreach (['sorting_center', 'delivery_hub'] as $facilityRole) {
             Route::middleware("role:{$facilityRole}")->prefix($facilityRole)->group(function () use ($facilityRole) {
+                Route::post('/scanner/parcel-scan', [ParcelRouteScanController::class, 'scan'])
+                    ->name("{$facilityRole}.api.scanner.parcel-scan");
+                Route::get('/scanner/queue', [ParcelRouteScanController::class, 'queue'])
+                    ->name("{$facilityRole}.api.scanner.queue");
+                if ($facilityRole === 'delivery_hub') {
+                    Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
+                    Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
+                }
                 if ($facilityRole === 'sorting_center') {
                     Route::get('/delivery-hubs', [SortingCenterDeliveryHubController::class, 'index'])->name('sorting_center.api.delivery-hubs.index');
                     Route::get('/delivery-hubs/{hub}', [SortingCenterDeliveryHubController::class, 'show'])->name('sorting_center.api.delivery-hubs.show');
@@ -426,6 +436,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('/verify-orders/{order}', DeleteArchivedVerifyOrderController::class)->name('rider.api.verify-orders.dismiss');
             Route::get('/pickup-tasks', ListPickupTasksController::class)->name('rider.api.pickup-tasks.index');
             Route::post('/pickup-tasks/{order}/proof', SubmitPickupProofController::class)->name('rider.api.pickup-tasks.proof');
+            Route::post('/pickup-tasks/{order}/hub-dropoff', \App\Http\Controllers\Api\Rider\Homepage\PickupTask\ConfirmPickupHubDropoffController::class)->name('rider.api.pickup-tasks.hub-dropoff');
             Route::get('/pickup-tasks/{order}/proofs/{proof}/photo', ShowPickupProofPhotoController::class)->name('rider.api.pickup-tasks.proofs.photo');
             Route::get('/pickup-delivery-records', ListPickupDeliveryRecordsController::class)->name('rider.api.pickup-delivery-records.index');
             Route::get('/deliveries', ListDeliveriesController::class)->name('rider.api.deliveries.index');

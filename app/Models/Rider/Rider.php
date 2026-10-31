@@ -33,6 +33,7 @@ class Rider extends Model
         'registration_type',
         'assignment_region',
         'assignment_province',
+        'assignment_barangay',
         'plate_number',
         'courier_company',
         'logistics_operation',

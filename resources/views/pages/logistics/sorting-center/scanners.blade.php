@@ -299,6 +299,9 @@ const norm=s=>String(s??'').trim().toLocaleLowerCase();const fmt=d=>d?new Intl.D
 
 const getLocal=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}};
 
+const scanBackend=async(tracking,action,extra={})=>{const response=await fetch('/api/v1/sorting_center/scanner/parcel-scan',{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:JSON.stringify({tracking,action,...extra})});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Parcel scan could not be saved.');return body};
+const fetchQueue=async()=>{const response=await fetch('/api/v1/sorting_center/scanner/queue',{credentials:'same-origin',headers:{Accept:'application/json'}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Could not load incoming transfers.');return body};
+
 const now=()=>new Date().toISOString();const uid=()=>('id-'+Date.now()+'-'+Math.random().toString(36).slice(2,8));
 
 let data=getLocal(storeKey);if(!data||!Array.isArray(data.parcels)||!Array.isArray(data.manifests)){data={parcels:[],manifests:[],events:[]}};
@@ -340,20 +343,17 @@ const fullCourierName=r=>[r.first_name,r.middle_name,r.last_name].filter(Boolean
 const demoCouriers=[{id:'demo-sc-courier-003',first_name:'Adrian',middle_name:'Paul',last_name:'Mendoza',plate_number:'GHI 9012',status:'approved'}];
 const demoTrucks=[{id:'sc-truck-demo-03',plate_number:'GHI 9012',name:'Fuso Canter',availability:'Available',driver_name:'Adrian Paul Mendoza'}];
 function courierDirectory(){
- const saved=getLocal(courierKey());const archived=getLocal(courierArchiveKey())||[];
- const excluded=new Set((Array.isArray(archived)?archived:[]).map(a=>String(a.key)));
- const items=Array.isArray(saved)?saved:demoCouriers;
- const trucks=getLocal(vehicleKey())||demoTrucks;
- return items.filter(c=>norm(c.status)==='approved'&&!excluded.has('couriers:'+String(c.id)))
-   .map(c=>{const plate=String(c.plate_number||c.license_plate||'').trim();const v=(Array.isArray(trucks)?trucks:[]).find(t=>norm(t.plate_number)===norm(plate));
-     return {...c,displayName:fullCourierName(c),plate,vehicle:v?.name||c.vehicle||'Truck',vehicleAvailability:v?.availability||'Available',archivedVehicle:!!(v&&excluded.has('vehicles:'+String(v.id)))};
-   }).filter(c=>c.plate&&!c.archivedVehicle);
+ const items=Array.isArray(data.couriers)?data.couriers:[];
+ const trucks=Array.isArray(data.vehicles)?data.vehicles:[];
+ return items.map(c=>{const plate=String(c.plate_number||'').trim();const v=trucks.find(t=>norm(t.plate_number)===norm(plate));
+     return {...c,displayName:fullCourierName(c),plate,vehicleId:v?.id||null,vehicle:v?.name||c.vehicle||'Truck',vehicleAvailability:v?.availability||'Available'};
+   }).filter(c=>c.plate);
 }
-function activeDispatches(){return data.manifests.filter(m=>String(m.originCenterId)===String(currentId)&&m.status==='loaded'&&!m.arrivedAt&&!m.releasedAt);}
+function activeDispatches(){return data.activeDispatches||[];}
 function busyCourier(c){return activeDispatches().find(m=>(m.courierId&&String(m.courierId)===String(c.id))||(!m.courierId&&norm(m.courierName)===norm(c.displayName))||norm(m.truckId)===norm(c.plate));}
-function fillCourierPicker(){const all=courierDirectory();const available=all.filter(c=>!busyCourier(c)&&!['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability)));
+function fillCourierPicker(returnTrip=null){const all=returnTrip?[{id:returnTrip.courier_registration_id,displayName:returnTrip.courier_name,plate:returnTrip.vehicle_reference,vehicleId:returnTrip.vehicle_id,vehicle:'Returning truck',vehicleAvailability:'Available'}]:courierDirectory();const available=all.filter(c=>returnTrip||(!busyCourier(c)&&!['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability))));
  $('scCourierSelect').innerHTML='<option value="">Select available courier</option>'+all.map(c=>{const busy=busyCourier(c),disabled=busy||['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability));return `<option value="${esc(c.id)}" ${disabled?'disabled':''}>${esc(c.displayName)} · ${esc(c.plate)}${disabled?' · Unavailable':''}</option>`}).join('');
- $('scCourierAvailability').textContent=available.length?`${available.length} courier(s) available. Assigned truck / plate number is automatic.`:'No available approved couriers. Approve a courier with a plate number in Courier Registrations first.';
+ $('scCourierAvailability').textContent=returnTrip?'Round trip required: this inbound truck and courier must carry return cargo to '+returnTrip.origin_name+'.':available.length?`${available.length} courier(s) available. Assigned truck / plate number is automatic.`:'No available approved couriers. Approve a courier with a plate number in Courier Registrations first.';
  $('scLoadConfirm').disabled=!available.length;$('scTruckId').value='';return available.length;
 }
 function inboundAssignment(m,p){const courier=m?.courierName||m?.driverName||m?.assignedCourierName||p?.courierName||p?.driverName||p?.assignedCourierName||'Not recorded by sender';
@@ -367,6 +367,7 @@ const center=()=>options.find(c=>String(c.id)===String(currentId));
 const centerById=id=>options.find(c=>String(c.id)===String(id));
 
 const save=()=>{localStorage.setItem(storeKey,JSON.stringify(data));render()};
+async function refreshQueue(){try{const queue=await fetchQueue();data.parcels=queue.parcels||[];data.manifests=queue.manifests||[];data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}render()}catch(error){say(error.message)}}
 
 const status=p=>p.status||'ready';
 
@@ -426,13 +427,14 @@ function explainPending(group){const pending=pendingBatchParcels(group);return p
 
 function tabs(t){tab=t;for(const [key,view,btnId] of [['receive','scReceiveView','scReceiveTab'],['tables','scTablesView','scTablesTab'],['depart','scDepartView','scDepartTab']]){const on=t===key;$(view).hidden=!on;const btn=$(btnId);btn.classList.toggle('active',on);btn.setAttribute('aria-selected',String(on));}if(t==='receive'||t==='depart')$(t==='receive'?'scReceiveCode':'scDepartCode').focus()}
 
-function checkReceive(raw){const p=findParcel(raw);if(isReported(p)){feedback('scReceiveFeedback','warn','Parcel already reported','This parcel is now managed in Parcel Disputes.');return;}if(!p){feedback('scReceiveFeedback','bad','Tracking number not found','No matching transfer manifest or parcel record.');return;}
+async function checkReceive(raw){const p=findParcel(raw);if(isReported(p)){feedback('scReceiveFeedback','warn','Parcel already reported','This parcel is now managed in Parcel Disputes.');return;}if(!p){feedback('scReceiveFeedback','bad','Tracking number not found','No matching transfer manifest or parcel record.');return;}
 
  if(p.status==='incoming'&&String(p.nextCenterId)===String(currentId)){
 
   const m=data.manifests.find(m=>m.id===p.transferId);if(!m||m.status!=='loaded'){feedback('scReceiveFeedback','bad','Unconfirmed transfer','The parcel does not belong to a confirmed Loaded manifest.');return;}
 
-  p.status='received';p.currentCenterId=currentId;p.receivedAt=now();p.receivedManifestId=m.id;p.receivedFrom=m.originName;if((m.parcelIds||[]).every(id=>{const item=data.parcels.find(x=>String(x.id)===String(id));return !item||item===p||item.receivedManifestId===m.id||isReported(item)})){m.arrivedAt=now();}p.nextCenterId=null;p.transferId=null;p.nextStop=null;p.visitedCenters=[...new Set([...(p.visitedCenters||[]).map(String),String(currentId)])];event('Received',p,`Received from ${m.originName}`);if((m.parcelIds||[]).every(id=>{const x=data.parcels.find(z=>String(z.id)===String(id));return x&&(x.status!=='incoming'||isReported(x));})){m.arrivedAt=now();m.status='arrived';}save();feedback('scReceiveFeedback','good','Parcel received successfully',p.tracking+' was moved from Incoming Transfers to Received Parcels.','Received at '+(center()?.branch_name||'Sorting Center'));say('Parcel received: '+p.tracking);return;}
+  try{await scanBackend(raw,'receive')}catch(error){feedback('scReceiveFeedback','bad','Receive scan failed',error.message);return;}
+  p.status='received';p.currentCenterId=currentId;p.receivedAt=now();p.receivedManifestId=m.id;p.receivedFrom=m.originName;if((m.parcelIds||[]).every(id=>{const item=data.parcels.find(x=>String(x.id)===String(id));return !item||item===p||item.receivedManifestId===m.id||isReported(item)})){m.arrivedAt=now();}p.nextCenterId=null;p.transferId=null;p.nextStop=null;p.visitedCenters=[...new Set([...(p.visitedCenters||[]).map(String),String(currentId)])];event('Received',p,`Received from ${m.originName}`);if((m.parcelIds||[]).every(id=>{const x=data.parcels.find(z=>String(z.id)===String(id));return x&&(x.status!=='incoming'||isReported(x));})){m.arrivedAt=now();m.status='arrived';}save();await refreshQueue();feedback('scReceiveFeedback','good','Parcel received successfully',p.tracking+' was moved from Incoming Transfers to Received Parcels.','Received at '+(center()?.branch_name||'Sorting Center'));say('Parcel received: '+p.tracking);return;}
 
  feedback('scReceiveFeedback','warn',p.status==='received'||p.status==='staged'?'Parcel already received':'Parcel is not in your incoming manifest',p.tracking+' cannot be received at this sorting center.');}
 
@@ -755,13 +757,13 @@ $('scDepartForm').addEventListener('submit',e=>{e.preventDefault();const code=$(
 
 for(const field of ['scIncomingSearch','scReceivedSearch','scReadySearch'])$(field).addEventListener('input',render);
 
-$('scRouteGroups').addEventListener('click',e=>{const btn=e.target.closest('[data-load]');if(!btn)return;pendingGroup=stagedGroups().find(g=>g.key===btn.dataset.load)||null;if(!pendingGroup)return;const blockReason=explainPending(pendingGroup);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}fillCourierPicker();$('scLoadDescription').textContent=`Mark ${pendingGroup.parcels.length} parcel(s) as Loaded for ${pendingGroup.dest.name}? Select an available courier to assign their truck.`;$('scLoadModal').hidden=false;$('scCourierSelect').focus()});
+$('scRouteGroups').addEventListener('click',e=>{const btn=e.target.closest('[data-load]');if(!btn)return;pendingGroup=stagedGroups().find(g=>g.key===btn.dataset.load)||null;if(!pendingGroup)return;const blockReason=explainPending(pendingGroup);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}pendingGroup.batchKey='sc-'+currentId+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);pendingGroup.returnTrip=(pendingGroup.dest.type==='sorting'?(data.returnTrucks||[]).find(t=>t.origin_type==='sorting_center'&&String(t.origin_id)===String(pendingGroup.dest.id)):null)||null;fillCourierPicker(pendingGroup.returnTrip);$('scCourierSelect').disabled=!!pendingGroup.returnTrip;if(pendingGroup.returnTrip){$('scCourierSelect').value=String(pendingGroup.returnTrip.courier_registration_id);$('scTruckId').value=pendingGroup.returnTrip.vehicle_reference;$('scLoadConfirm').disabled=false;}$('scLoadDescription').textContent=pendingGroup.returnTrip?`Round trip required: the arriving truck from ${pendingGroup.returnTrip.origin_name} must return with this cargo.`:`Mark ${pendingGroup.parcels.length} parcel(s) as Loaded for ${pendingGroup.dest.name}? Select an available courier to assign their truck.`;$('scLoadModal').hidden=false;$('scCourierSelect').focus()});
 
 $('scCourierSelect').addEventListener('change',()=>{const c=courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);$('scTruckId').value=c?.plate||'';$('scLoadConfirm').disabled=!c||!!busyCourier(c);$('scCourierAvailability').textContent=c?`${c.displayName} · ${c.vehicle} · Plate ${c.plate}`:'Select an available approved courier.'});
 
 const closeModal=()=>{$('scLoadModal').hidden=true;pendingGroup=null};$('scLoadCancel').addEventListener('click',closeModal);$('scLoadModal').addEventListener('click',e=>{if(e.target===$('scLoadModal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('scLoadModal').hidden)closeModal()});
 
-$('scLoadConfirm').addEventListener('click',()=>{if(!pendingGroup)return;const g=stagedGroups().find(x=>x.key===pendingGroup.key);if(!g)return closeModal();const blockReason=explainPending(g);if(blockReason){closeModal();say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}const selected=courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);if(!selected||busyCourier(selected)||['in service','unavailable','maintenance'].includes(norm(selected.vehicleAvailability))){say('Courier is unavailable or already assigned to another active batch.');fillCourierPicker();return;}const c=center();const m={id:'TX-'+Date.now(),originCenterId:currentId,originName:c?.branch_name||'Sorting Center',nextStop:g.dest,truckId:selected.plate,courierId:String(selected.id),courierName:selected.displayName,vehicleName:selected.vehicle,createdAt:now(),status:'loaded',parcelIds:g.parcels.map(p=>p.id)};data.manifests.push(m);
+$('scLoadConfirm').addEventListener('click',async()=>{if(!pendingGroup)return;const g=stagedGroups().find(x=>x.key===pendingGroup.key);if(!g)return closeModal();const blockReason=explainPending(g);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}const trip=pendingGroup.returnTrip;const selected=trip?{id:trip.courier_registration_id,displayName:trip.courier_name,plate:trip.vehicle_reference,vehicleId:trip.vehicle_id,vehicle:'Returning truck'}:courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);if(!selected||(!trip&&(busyCourier(selected)||['in service','unavailable','maintenance'].includes(norm(selected.vehicleAvailability))))){say('Courier is unavailable or already assigned to another active batch.');fillCourierPicker();return;}const transfer={batch_key:pendingGroup.batchKey,courier_registration_id:selected.id,vehicle_id:selected.vehicleId,vehicle_reference:selected.plate,courier_name:selected.displayName,returning_manifest_id:trip?.id||null};try{for(const p of g.parcels)await scanBackend(p.tracking,'depart',transfer)}catch(error){say(error.message);feedback('scDepartFeedback','bad','Dispatch failed',error.message);return;}const c=center();const m={id:pendingGroup.batchKey,originCenterId:currentId,originName:c?.branch_name||'Sorting Center',nextStop:g.dest,truckId:selected.plate,courierId:String(selected.id),courierName:selected.displayName,vehicleName:selected.vehicle,createdAt:now(),status:'loaded',parcelIds:g.parcels.map(p=>p.id)};data.manifests.push(m);
 
  for(const p of g.parcels){p.loadedAt=m.createdAt;p.loadedFromId=currentId;p.loadedFromName=m.originName;p.transferId=m.id;p.truckId=m.truckId;p.courierName=m.courierName;p.courierId=m.courierId;p.nextStop=null;p.status=g.dest.type==='sorting'?'incoming':'loaded';p.nextCenterId=g.dest.type==='sorting'?g.dest.id:null;p.deliveryHubId=g.dest.type==='hub'?g.dest.id:null;if(g.dest.type==='hub')p.loadedToHubName=g.dest.name;event('Loaded',p,`Sent to ${g.dest.name}`);}save();closeModal();feedback('scDepartFeedback','good','Truck loaded · transfer confirmed',g.parcels.length+' parcels dispatched. The transfer manifest is ready for the destination.',g.dest.name);say('Loaded '+g.parcels.length+' parcels for '+g.dest.name)});
 
@@ -966,9 +968,9 @@ $('scCameraModal').addEventListener('click',e=>{if(e.target===$('scCameraModal')
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&cameraStream)stopCamera()});
 
-window.addEventListener('storage',e=>{if(e.key===storeKey){const r=getLocal(storeKey);if(r&&Array.isArray(r.parcels)){data=r;render()}}if(e.key===networkKey){initCenter();render()}if(e.key?.startsWith('shopease-dh-scanner-preview-v1:'))importHubTransfers()});
-
-initCenter();purgeLegacyDemoData();seedScannerPreview();seedIndependentBatches();importHubTransfers();seedReturnParcelExample();render();tabs('receive');
+window.addEventListener('storage',e=>{if(e.key===networkKey){initCenter();render()}});
+window.addEventListener('focus',refreshQueue);window.setInterval(refreshQueue,30000);
+initCenter();refreshQueue().then(()=>{render();tabs('receive')});
 
 });
 

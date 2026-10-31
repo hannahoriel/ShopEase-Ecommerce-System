@@ -9,6 +9,8 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Seller\Seller;
+use App\Models\Rider\Rider;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\User;
 use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +44,8 @@ class OrderStatusController extends Controller
         $query = Order::query()
             ->where('seller_id', $seller->id)
             ->with([
-                'buyer:id,name,email,contact_no',
+                'buyer:id,name,email',
+                'buyer.buyerProfile:id,user_id,contact_no',
                 'items.product:id,name,photos',
                 'latestCancellationRequest.buyer:id,name',
                 'latestCancellationRequest.decidedBy:id,name',
@@ -76,7 +79,8 @@ class OrderStatusController extends Controller
     public function show(Request $request, Order $order): JsonResponse
     {
         $this->ownedOrder($request->user(), $order)->load([
-            'buyer:id,name,email,contact_no',
+            'buyer:id,name,email',
+            'buyer.buyerProfile:id,user_id,contact_no',
             'seller:id,store_name,province,municipality,barangay,street,house_number,building,subdivision',
             'items.product:id,name,photos',
             'shipment.scans',
@@ -303,7 +307,8 @@ class OrderStatusController extends Controller
         }
 
         $order->load([
-            'buyer:id,name,email,contact_no',
+            'buyer:id,name,email',
+            'buyer.buyerProfile:id,user_id,contact_no',
             'seller:id,store_name,province,municipality,barangay,street,house_number',
             'items.product:id,name,photos',
         ]);
@@ -358,7 +363,7 @@ class OrderStatusController extends Controller
         }
 
         if ($newStatus === 'to_ship') {
-            Shipment::firstOrCreate(
+            $shipment = Shipment::firstOrCreate(
                 ['order_id' => $order->id],
                 [
                     'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
@@ -367,6 +372,42 @@ class OrderStatusController extends Controller
                         ?? now()->addDays(3)->toDateString(),
                 ]
             );
+
+            // A scheduled pickup is routed to an active pickup rider covering
+            // the seller's exact barangay/municipality and province.
+            if ($shipment->rider_id === null) {
+                $seller = $order->seller()->first();
+                if ($seller && $seller->province && $seller->municipality && $seller->barangay) {
+                    $rider = Rider::query()
+                        ->where('registration_status', 'active')
+                        ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
+                        ->whereRaw('LOWER(COALESCE(assignment_province, province)) = ?', [mb_strtolower(trim($seller->province))])
+                        ->whereRaw('LOWER(COALESCE(assignment_barangay, barangay)) = ?', [mb_strtolower(trim($seller->barangay))])
+                        ->whereHas('logisticsBranch.deliveryHubs', fn ($query) => $query
+                            ->whereNull('archived_at')
+                            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($seller->municipality))])
+                            ->where(function ($hubQuery): void {
+                                $hubQuery->whereColumn('hub_name', 'riders.municipal_hub')
+                                    ->orWhereColumn('municipality', 'riders.municipal_hub');
+                            }))
+                        ->whereRaw("LOWER(REPLACE(REPLACE(logistics_operation, ' ', ''), '-', '')) LIKE ?", ['%pickup%'])
+                        ->orderBy('id')
+                        ->first();
+
+                    if ($rider) {
+                        $hub = LogisticsDeliveryHub::query()
+                            ->where('logistics_branch_id', $rider->logistics_branch_id)
+                            ->whereNull('archived_at')
+                            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($seller->municipality))])
+                            ->first();
+                        $shipment->update([
+                            'rider_id' => $rider->id,
+                            'logistics_branch_id' => $rider->logistics_branch_id,
+                            'logistics_delivery_hub_id' => $hub?->id,
+                        ]);
+                    }
+                }
+            }
         }
 
         OrderStatusHistory::create([

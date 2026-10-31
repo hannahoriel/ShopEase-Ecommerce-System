@@ -435,9 +435,9 @@
                                 data-order-id="{{ $order->id }}"
                                 data-order-number="{{ $order->order_number ?: 'ORD-' . $order->id }}"
                                 data-status="{{ $shippingStatus }}"
-                                data-search="{{ strtolower(($order->order_number ?: 'ORD-' . $order->id) . ' ' . ($order->buyer?->name ?? '') . ' ' . ($order->buyer?->contact_no ?? '') . ' ' . $trackingNumber) }}"
+                                data-search="{{ strtolower(($order->order_number ?: 'ORD-' . $order->id) . ' ' . ($order->buyer?->name ?? '') . ' ' . ($order->buyer?->buyerProfile?->contact_no ?? '') . ' ' . $trackingNumber) }}"
                                 data-customer="{{ $order->delivery_name ?: ($order->buyer?->name ?? 'Customer') }}"
-                                data-phone="{{ $order->delivery_phone ?: ($order->buyer?->contact_no ?? '') }}"
+                                data-phone="{{ $order->delivery_phone ?: ($order->buyer?->buyerProfile?->contact_no ?? '') }}"
                                 data-order-date="{{ $createdAt?->format('F j, Y') }}"
                                 data-order-time="{{ $createdAt?->format('g:i A') }}"
                                 data-estimated="{{ $shipment?->estimated_delivery?->format('F j, Y') ?? '' }}"
@@ -458,7 +458,7 @@
                                     <div class="order-details">
                                         <h3>#{{ $order->order_number ?: 'ORD-' . $order->id }}</h3>
                                         <p class="customer-name">{{ $order->delivery_name ?: ($order->buyer?->name ?? 'Customer') }}</p>
-                                        <p class="customer-phone">{{ $order->delivery_phone ?: ($order->buyer?->contact_no ?? '—') }}</p>
+                                        <p class="customer-phone">{{ $order->delivery_phone ?: ($order->buyer?->buyerProfile?->contact_no ?? '—') }}</p>
                                         <div class="order-date-row">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                 <rect x="4" y="3" width="16" height="18" rx="2" />

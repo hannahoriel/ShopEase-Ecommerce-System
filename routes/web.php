@@ -2473,11 +2473,38 @@ Route::middleware(['auth', 'role:delivery_hub'])
                     ->where('user_id', Auth::id())
                     ->firstOrFail();
 
+                $scannerRiders = $page === 'scanners'
+                    ? \App\Models\Rider\Rider::query()
+                        ->with('user:id,name')
+                        ->where('registration_status', 'active')
+                        ->where('logistics_branch_id', $hub->logistics_branch_id)
+                        ->where(function ($query) use ($hub): void {
+                            $query->whereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($hub->hub_name)])
+                                ->orWhereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($hub->municipality)]);
+                        })
+                        ->get()
+                        ->filter(fn ($rider) => str_contains(mb_strtolower((string) $rider->logistics_operation), 'pickup')
+                            || str_contains(mb_strtolower((string) $rider->logistics_operation), 'delivery'))
+                        ->map(fn ($rider) => [
+                            'id' => (string) $rider->id,
+                            'name' => trim($rider->first_name.' '.$rider->last_name) ?: $rider->user?->name,
+                            'barangay' => $rider->barangay,
+                            'role' => mb_strtolower((string) $rider->logistics_operation),
+                            'vehicle' => trim((string) $rider->vehicle).' · '.trim((string) $rider->plate_number),
+                            'phone' => $rider->contact_no,
+                        ])->values()
+                    : collect();
+
                 return view('pages.logistics.delivery-hub.' . $page, [
                     'hub' => $hub,
                     'deliveryHub' => $hub,
                     'deliveryHubId' => $hub->id,
                     'sortingCenterId' => data_get($hub, 'logistics_branch_id', data_get($hub, 'branch_id')),
+                    'scannerState' => $page === 'scanners'
+                        ? (\App\Models\Logistics\DeliveryHubScannerState::query()
+                            ->where('logistics_delivery_hub_id', $hub->id)->first()?->state)
+                        : null,
+                    'scannerRiders' => $scannerRiders,
                 ]);
             };
         };

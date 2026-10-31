@@ -95,6 +95,7 @@ class RegistrationService
             $rules['registration_type'] = ['nullable', 'in:rider,courier'];
             $rules['assignment_region'] = ['nullable', 'string', 'max:255'];
             $rules['assignment_province'] = ['nullable', 'string', 'max:255'];
+            $rules['assignment_barangay'] = ['nullable', 'string', 'max:255'];
             $rules['plate_number'] = ['required', 'string', 'max:50'];
             $rules['courier_company'] = ['nullable', 'string', 'max:100'];
             $rules['logistics_operation'] = ['nullable', 'string', 'max:100'];
@@ -141,6 +142,7 @@ class RegistrationService
             $profile['registration_type'] = $validated['registration_type'] ?? 'rider';
             $profile['assignment_region'] = $validated['assignment_region'] ?? null;
             $profile['assignment_province'] = $validated['assignment_province'] ?? null;
+            $profile['assignment_barangay'] = $validated['assignment_barangay'] ?? null;
             $profile['plate_number'] = $validated['plate_number'];
             $profile['courier_company'] = $validated['courier_company'] ?? null;
             $profile['logistics_operation'] = $validated['logistics_operation'] ?? null;

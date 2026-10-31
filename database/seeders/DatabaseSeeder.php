@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminMessagesSeeder::class);
         $this->call(LogisticsMessagesSeeder::class);
         $this->call(LogisticsAccountSeeder::class);
+        $this->call(DeliveryHubScannerSeeder::class);
         $this->call(SellerVoucherSeeder::class);
     }
 }

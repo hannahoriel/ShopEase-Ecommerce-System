@@ -5,9 +5,11 @@ namespace App\Models\Admin;
 use App\Models\Rider\Rider;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
+use App\Models\Logistics\LogisticsTransferManifest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Shipment extends Model
@@ -65,5 +67,11 @@ class Shipment extends Model
     public function scans(): HasMany
     {
         return $this->hasMany(ShipmentScan::class)->latest('scanned_at');
+    }
+
+    public function transferManifests(): BelongsToMany
+    {
+        return $this->belongsToMany(LogisticsTransferManifest::class, 'logistics_transfer_manifest_shipments', 'shipment_id', 'transfer_manifest_id')
+            ->withPivot(['received_at'])->withTimestamps();
     }
 }
