@@ -20,6 +20,9 @@ class ListPickupTasksController extends Controller
         AssignScheduledPickups $assignPickups
     ): JsonResponse {
         $rider = $operations->rider($request->user());
+        if (! $operations->supportsOperation($rider, 'pickup')) {
+            return response()->json(['task_type' => 'pickup', 'task_label' => 'For Pickup', 'data' => []]);
+        }
         $assignPickups->forRider($rider);
         $hubs = LogisticsDeliveryHub::query()
             ->where('logistics_branch_id', $rider->logistics_branch_id)

@@ -18,6 +18,9 @@ class ListVerifyOrdersController extends Controller
         RiderDeliveryService $deliveries
     ): JsonResponse {
         $rider = $operations->rider($request->user());
+        if (! $operations->supportsOperation($rider, 'pickup')) {
+            return response()->json(['data' => []]);
+        }
         $archives = OrderArchive::query()->where('rider_id', $rider->id);
         $archivedOrderIds = (clone $archives)->whereNotNull('archived_at')->select('order_id');
         $dismissedOrderIds = (clone $archives)->whereNotNull('dismissed_at')->select('order_id');

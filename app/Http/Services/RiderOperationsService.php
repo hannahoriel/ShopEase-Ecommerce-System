@@ -8,6 +8,22 @@ use Illuminate\Support\Facades\Storage;
 
 class RiderOperationsService
 {
+    public function operationType(Rider $rider): string
+    {
+        $operation = mb_strtolower(preg_replace('/[^a-z]/i', '', (string) $rider->logistics_operation));
+
+        if (str_contains($operation, 'both') || (str_contains($operation, 'pickup') && str_contains($operation, 'delivery'))) {
+            return 'both';
+        }
+
+        return str_contains($operation, 'pickup') ? 'pickup' : 'delivery';
+    }
+
+    public function supportsOperation(Rider $rider, string $operation): bool
+    {
+        return in_array($this->operationType($rider), ['both', $operation], true);
+    }
+
     public function rider(User $user): Rider
     {
         return Rider::query()

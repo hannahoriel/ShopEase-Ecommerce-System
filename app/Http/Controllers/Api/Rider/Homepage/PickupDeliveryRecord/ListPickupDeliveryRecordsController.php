@@ -21,6 +21,9 @@ class ListPickupDeliveryRecordsController extends Controller
             'type' => ['required', Rule::in(['pickup', 'delivery'])],
         ]);
         $rider = $operations->rider($request->user());
+        if (! $operations->supportsOperation($rider, $validated['type'])) {
+            return response()->json(['data' => []]);
+        }
         $statuses = $validated['type'] === 'pickup'
             ? ['in_transit', 'out_for_delivery', 'delivered']
             : ['delivered'];
