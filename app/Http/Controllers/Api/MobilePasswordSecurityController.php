@@ -19,6 +19,7 @@ class MobilePasswordSecurityController extends Controller
         User::ROLE_BUYER,
         User::ROLE_SELLER,
         User::ROLE_RIDER,
+        User::ROLE_COURIER,
         User::ROLE_LOGISTICS,
     ];
 

@@ -73,7 +73,13 @@ class ConfirmPickupHubDropoffController extends Controller
                 409,
                 'A conflicting delivery hub manifest already exists for this parcel.'
             );
-            $manifest->shipments()->syncWithoutDetaching([$shipment->id]);
+            $manifest->shipments()->syncWithoutDetaching([
+                $shipment->id => [
+                    'load_status' => 'loaded',
+                    'loaded_at' => $manifest->loaded_at ?? now(),
+                    'loaded_by' => $rider->user_id,
+                ],
+            ]);
 
             return $hub;
         });

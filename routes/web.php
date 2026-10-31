@@ -161,6 +161,10 @@ Route::get('/dashboard', function () {
             'rider.dashboard'
         ),
 
+        User::ROLE_COURIER => redirect()->route(
+            'courier.dashboard'
+        ),
+
         default => abort(
             403,
             'Your account does not have a valid role.'
@@ -198,6 +202,7 @@ Route::get('/admin/dashboard', function () {
 foreach ([
     'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
+    'courier' => User::ROLE_COURIER,
 ] as $dashboard => $role) {
 
     Route::get(
@@ -223,6 +228,10 @@ foreach ([
 
             if ($dashboard === 'rider') {
                 $viewData['apiToken'] = Auth::user()->createToken('rider-dashboard')->plainTextToken;
+            }
+
+            if ($dashboard === 'courier') {
+                $viewData['apiToken'] = Auth::user()->createToken('courier-dashboard')->plainTextToken;
             }
 
             return view("pages.$dashboard.dashboard", $viewData);

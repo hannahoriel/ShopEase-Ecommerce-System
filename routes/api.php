@@ -448,7 +448,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/deliveries/{order}/proofs/{proof}/photo', ShowDeliveryProofPhotoController::class)->name('rider.api.deliveries.proofs.photo');
         });
 
-        Route::middleware('role:rider')->prefix('courier')->group(function () {
+        Route::middleware('role:rider,courier')->prefix('courier')->group(function () {
             Route::get('/dashboard', [CourierTransportController::class, 'dashboard'])->name('courier.api.dashboard');
             Route::get('/trips', [CourierTransportController::class, 'trips'])->name('courier.api.trips.index');
             Route::get('/manifests', [CourierTransportController::class, 'manifests'])->name('courier.api.manifests.index');

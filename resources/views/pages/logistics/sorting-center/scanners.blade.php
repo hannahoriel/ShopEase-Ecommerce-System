@@ -22,9 +22,9 @@
 
 <title>Scanners — ShopEase Sorting Center</title>
 
-<link rel="preconnect" href="https\://fonts.googleapis.com"><link rel="preconnect" href="https\://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link href="https\://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 
@@ -367,13 +367,13 @@ const center=()=>options.find(c=>String(c.id)===String(currentId));
 const centerById=id=>options.find(c=>String(c.id)===String(id));
 
 const save=()=>{localStorage.setItem(storeKey,JSON.stringify(data));render()};
-async function refreshQueue(){try{const queue=await fetchQueue();data.parcels=queue.parcels||[];data.manifests=queue.manifests||[];data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}render()}catch(error){say(error.message)}}
+async function refreshQueue(){try{const queue=await fetchQueue();data.parcels=queue.parcels||[];data.manifests=queue.manifests||[];data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}if(queue.facility_type==='sorting_center'&&queue.facility_id){currentId=String(queue.facility_id)}render()}catch(error){say(error.message)}}
 
 const status=p=>p.status||'ready';
 
 const list=()=>data.parcels.filter(p=>String(p.currentCenterId||'')===String(currentId) && !isReported(p));
 
-const findParcel=id=>data.parcels.find(p=>norm(p.tracking)===norm(id));
+const findParcel=id=>{const raw=String(id??'').trim();let decoded=raw;try{const url=new URL(raw,window.location.origin);decoded=decodeURIComponent(url.pathname.split('/').filter(Boolean).pop()||raw)}catch{}const needle=norm(decoded);return data.parcels.find(p=>[p.tracking,p.order_number,p.scan_token].some(value=>norm(value)===needle))};
 
 function say(message){$('scToast').textContent=message;$('scToast').hidden=false;clearTimeout(say.timer);say.timer=setTimeout(()=>$('scToast').hidden=true,3500)}
 
@@ -427,7 +427,7 @@ function explainPending(group){const pending=pendingBatchParcels(group);return p
 
 function tabs(t){tab=t;for(const [key,view,btnId] of [['receive','scReceiveView','scReceiveTab'],['tables','scTablesView','scTablesTab'],['depart','scDepartView','scDepartTab']]){const on=t===key;$(view).hidden=!on;const btn=$(btnId);btn.classList.toggle('active',on);btn.setAttribute('aria-selected',String(on));}if(t==='receive'||t==='depart')$(t==='receive'?'scReceiveCode':'scDepartCode').focus()}
 
-async function checkReceive(raw){const p=findParcel(raw);if(isReported(p)){feedback('scReceiveFeedback','warn','Parcel already reported','This parcel is now managed in Parcel Disputes.');return;}if(!p){feedback('scReceiveFeedback','bad','Tracking number not found','No matching transfer manifest or parcel record.');return;}
+async function checkReceive(raw){const p=findParcel(raw);if(isReported(p)){feedback('scReceiveFeedback','warn','Parcel already reported','This parcel is now managed in Parcel Disputes.');return;}if(!p){try{const result=await scanBackend(raw,'receive');await refreshQueue();feedback('scReceiveFeedback','good','Parcel received successfully',result.message||'The parcel was verified against the active incoming transfer.','Received at '+(center()?.branch_name||'Sorting Center'));say('Parcel received.');}catch(error){feedback('scReceiveFeedback','bad','Receive scan failed',error.message||'The tracking code could not be verified.');}return;}
 
  if(p.status==='incoming'&&String(p.nextCenterId)===String(currentId)){
 

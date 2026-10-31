@@ -63,6 +63,7 @@
 <body
     class="checkout-page"
     data-my-purchases-url="{{ route('buyer.my-purchases') }}"
+    data-buyer-id="{{ $buyer->id }}"
     data-registration-address-name="{{ $registrationAddress['name'] }}"
     data-registration-address-phone="{{ $registrationAddress['phone'] }}"
     data-registration-address-text="{{ $registrationAddress['address'] }}"

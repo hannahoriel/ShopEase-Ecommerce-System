@@ -96,10 +96,23 @@ class ParcelRouteScanController extends Controller
             if ($input['action'] === 'receive' && $shipment->order->status === 'in_transit') {
                 $inbound = LogisticsTransferManifest::query()
                     ->where('destination_type', $facility)->where('destination_id', $facilityId)
-                    ->where('status', 'loaded')->whereHas('shipments', fn ($query) => $query
-                        ->whereKey($shipment->id)
-                        ->where('logistics_transfer_manifest_shipments.load_status', 'loaded')
-                        ->whereNull('logistics_transfer_manifest_shipments.received_at'))
+                    ->where('status', 'loaded')
+                    ->where(function ($manifestQuery) use ($shipment): void {
+                        $manifestQuery->whereHas('shipments', fn ($query) => $query
+                            ->whereKey($shipment->id)
+                            ->where('logistics_transfer_manifest_shipments.load_status', 'loaded')
+                            ->whereNull('logistics_transfer_manifest_shipments.received_at'))
+                            // Earlier rider drop-offs created a loaded manifest but
+                            // left the parcel pivot at its default pending state.
+                            ->orWhere(function ($legacyPickup) use ($shipment): void {
+                                $legacyPickup->where('origin_type', 'seller_collection')
+                                    ->where('batch_key', 'pickup-dropoff-'.$shipment->id)
+                                    ->whereHas('shipments', fn ($query) => $query
+                                        ->whereKey($shipment->id)
+                                        ->where('logistics_transfer_manifest_shipments.load_status', 'pending')
+                                        ->whereNull('logistics_transfer_manifest_shipments.received_at'));
+                            });
+                    })
                     ->lockForUpdate()->first();
                 abort_unless($inbound, 409, 'This parcel is not part of an active incoming manifest for this facility.');
                 abort_unless(
@@ -108,6 +121,8 @@ class ParcelRouteScanController extends Controller
                     'The courier must confirm arrival before receiving scans begin.',
                 );
                 $inbound->shipments()->updateExistingPivot($shipment->id, [
+                    'load_status' => 'loaded',
+                    'loaded_at' => $inbound->loaded_at ?? now(),
                     'received_at' => now(),
                     'received_by' => $request->user()->id,
                 ]);
@@ -313,6 +328,13 @@ class ParcelRouteScanController extends Controller
                 $members[] = $parcelId;
                 $parcelStatus = $shipment->order?->status === 'out_for_delivery' ? 'out-for-delivery' : ($received ? 'received' : 'incoming');
                 $payload = $this->parcelPayload($shipment, $parcelId, $parcelStatus, $facility === 'sorting_center' ? $id : null, $transfer->id);
+                // The UI uses nextCenterId to decide which parcels belong in
+                // Incoming Transfers. Keep an unreceived parcel in transit to
+                // this center, then move it to currentCenterId after a scan.
+                if ($facility === 'sorting_center') {
+                    $payload['currentCenterId'] = $received ? $id : null;
+                    $payload['nextCenterId'] = $received ? null : $id;
+                }
                 $payload['routeStatus'] = $received ? 'received' : 'in_transit';
                 if ($transfer->origin_type === 'seller_collection') {
                     $payload['kind'] = 'pickup';
@@ -475,7 +497,7 @@ class ParcelRouteScanController extends Controller
         $seller = $order?->seller;
         $buyer = $order?->buyer?->buyerProfile;
         return [
-            'id' => $id, 'shipment_id' => $shipment->id, 'order_id' => $order?->id,
+            'id' => $id, 'shipment_id' => $shipment->id, 'order_id' => $order?->id, 'scan_token' => $shipment->scan_token,
             'tracking' => $shipment->tracking_number, 'order_number' => $order?->order_number,
             'status' => $status, 'kind' => str_starts_with((string) $transferId, 'collection-') ? 'pickup' : 'sorting', 'transferId' => (string) $transferId,
             'pickupDate' => $order?->pickup_date?->toDateString(),

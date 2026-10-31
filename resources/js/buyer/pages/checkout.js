@@ -809,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('checkoutSuccessOkay');
 
             const addressStorageKey =
-                'shopease_checkout_address';
+                `shopease_checkout_address:${encodeURIComponent(document.body.dataset.buyerId || 'guest')}`;
 
             const registrationAddress = {
                 name: checkoutConfig.registrationAddress.name,

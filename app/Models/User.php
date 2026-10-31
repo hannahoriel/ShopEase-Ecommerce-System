@@ -19,6 +19,7 @@ class User extends Authenticatable
     const ROLE_BUYER = 'buyer';
     const ROLE_SELLER = 'seller';
     const ROLE_RIDER = 'rider';
+    const ROLE_COURIER = 'courier';
     const ROLE_ADMIN = 'admin';
     const ROLE_LOGISTICS = 'logistics';
     const ROLE_SORTING_CENTER = 'sorting_center';

@@ -180,6 +180,12 @@
         </div>
 
 
+        <label for="rememberLogin" style="display:flex;align-items:center;gap:8px;margin:0 0 18px;font-size:13px;color:#665b57;cursor:pointer;">
+            <input type="checkbox" id="rememberLogin" name="remember" value="1" @checked(old('remember', true))>
+            Keep me logged in until I log out
+        </label>
+
+
         {{-- =====================================================
              LOGIN BUTTON
         ====================================================== --}}
