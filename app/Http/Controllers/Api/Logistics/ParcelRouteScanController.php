@@ -8,6 +8,7 @@ use App\Models\Admin\Shipment;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsTransferManifest;
+use App\Models\Logistics\LogisticsTransferManifestEvent;
 use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Logistics\SortingCenterVehicle;
@@ -34,6 +35,7 @@ class ParcelRouteScanController extends Controller
             'courier_name' => ['nullable', 'string', 'max:150'],
             'vehicle_reference' => ['nullable', 'string', 'max:80'],
             'returning_manifest_id' => ['nullable', 'integer'],
+            'scheduled_at' => ['nullable', 'date'],
         ]);
 
         $shipment = DB::transaction(function () use ($request, $facility, $input): Shipment {
@@ -70,13 +72,12 @@ class ParcelRouteScanController extends Controller
                     && $this->same($hub->province, $sellerProvince)
                     && $this->same($hub->municipality, $sellerCity)
                     && (int) $shipment->logistics_delivery_hub_id === (int) $hub->id;
-                if ($input['action'] === 'receive' && ($order->status === 'to_ship' || $pickupDropoffAtThisHub)) {
+                if ($input['action'] === 'receive' && $pickupDropoffAtThisHub) {
                     $awaitingDropoffScan = LogisticsTransferManifest::query()
                         ->where('destination_type', 'delivery_hub')
                         ->where('destination_id', $hub->id)
                         ->where('origin_type', 'seller_collection')
                         ->where('status', 'loaded')
-                        ->where('batch_key', 'pickup-dropoff-'.$shipment->id)
                         ->whereHas('shipments', fn ($query) => $query
                             ->whereKey($shipment->id)
                             ->whereNull('logistics_transfer_manifest_shipments.received_at'))
@@ -92,28 +93,42 @@ class ParcelRouteScanController extends Controller
             }
 
             $facilityId = $facility === 'delivery_hub' ? $hub->id : $center->id;
-            if ($input['action'] === 'receive') {
+            if ($input['action'] === 'receive' && $shipment->order->status === 'in_transit') {
                 $inbound = LogisticsTransferManifest::query()
                     ->where('destination_type', $facility)->where('destination_id', $facilityId)
-                    ->where('status', 'loaded')->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id))
+                    ->where('status', 'loaded')->whereHas('shipments', fn ($query) => $query
+                        ->whereKey($shipment->id)
+                        ->where('logistics_transfer_manifest_shipments.load_status', 'loaded')
+                        ->whereNull('logistics_transfer_manifest_shipments.received_at'))
                     ->lockForUpdate()->first();
-                if ($inbound) {
-                    $inbound->shipments()->updateExistingPivot($shipment->id, ['received_at' => now()]);
-                    if (! $inbound->shipments()->wherePivotNull('received_at')->exists()) {
-                        $inbound->update(['status' => 'arrived', 'arrived_at' => now()]);
-                    }
-                }
-            if ($facility === 'delivery_hub' && $order->status === 'to_ship' && ! $inbound) {
-                    $collection = LogisticsTransferManifest::query()->firstOrCreate(
-                        ['batch_key' => 'seller-collection-'.$shipment->id],
-                        [
-                            'origin_type' => 'seller_collection', 'origin_id' => $hub->id,
-                            'destination_type' => 'delivery_hub', 'destination_id' => $hub->id,
-                            'courier_name' => $shipment->rider?->first_name.' '.$shipment->rider?->last_name,
-                            'status' => 'arrived', 'loaded_at' => now(), 'arrived_at' => now(),
-                        ],
-                    );
-                    $collection->shipments()->syncWithoutDetaching([$shipment->id => ['received_at' => now()]]);
+                abort_unless($inbound, 409, 'This parcel is not part of an active incoming manifest for this facility.');
+                abort_unless(
+                    ! $inbound->courier_registration_id || $inbound->arrival_confirmed_at,
+                    409,
+                    'The courier must confirm arrival before receiving scans begin.',
+                );
+                $inbound->shipments()->updateExistingPivot($shipment->id, [
+                    'received_at' => now(),
+                    'received_by' => $request->user()->id,
+                ]);
+                LogisticsTransferManifestEvent::query()->create([
+                    'transfer_manifest_id' => $inbound->id,
+                    'shipment_id' => $shipment->id,
+                    'actor_user_id' => $request->user()->id,
+                    'event_type' => 'parcel_received',
+                    'occurred_at' => now(),
+                ]);
+                if (! $inbound->shipments()
+                    ->wherePivot('load_status', 'loaded')
+                    ->wherePivotNull('received_at')
+                    ->exists()) {
+                    $inbound->update(['status' => 'arrived', 'arrived_at' => now()]);
+                    LogisticsTransferManifestEvent::query()->create([
+                        'transfer_manifest_id' => $inbound->id,
+                        'actor_user_id' => $request->user()->id,
+                        'event_type' => 'receiving_reconciled',
+                        'occurred_at' => now(),
+                    ]);
                 }
             } elseif ($shipment->order->status === 'in_transit') {
                 $destinationType = $shipment->logistics_delivery_hub_id ? 'delivery_hub' : 'sorting_center';
@@ -121,6 +136,7 @@ class ParcelRouteScanController extends Controller
                 abort_unless($destinationId, 422, 'The next destination facility could not be resolved.');
                 $batchKey = $input['batch_key'] ?: 'scan-'.$shipment->id.'-'.now()->format('YmdHisv');
                 $trip = null;
+                $requiresCourierDeparture = $facility === 'sorting_center';
                 if (! empty($input['returning_manifest_id'])) {
                     $trip = LogisticsTransferManifest::query()->lockForUpdate()->findOrFail($input['returning_manifest_id']);
                     abort_unless($trip->status === 'arrived' && $trip->destination_type === $facility && (int) $trip->destination_id === (int) $facilityId, 422, 'The selected inbound truck has not arrived at this facility.');
@@ -145,9 +161,41 @@ class ParcelRouteScanController extends Controller
                         $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $centerId)->find($vehicleId);
                         abort_unless($courier && $vehicle && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number), 422, 'Select an approved courier and the vehicle registered to that courier.');
                         abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
-                        abort_if(LogisticsTransferManifest::query()->where('status', 'loaded')->where(function ($query) use ($courierId, $vehicleId): void {
-                            $query->where('courier_registration_id', $courierId)->orWhere('vehicle_id', $vehicleId);
-                        })->exists(), 409, 'This courier or vehicle is already on an active trip.');
+                        abort_if(LogisticsTransferManifest::query()
+                            ->whereIn('status', ['preparing', 'loaded'])
+                            ->where(function ($query) use ($batchKey): void {
+                                $query->whereNull('batch_key')->orWhere('batch_key', '!=', $batchKey);
+                            })
+                            ->where(function ($query) use ($courierId, $vehicleId): void {
+                                $query->where('courier_registration_id', $courierId)
+                                    ->orWhere('vehicle_id', $vehicleId);
+                            })
+                            ->exists(), 409, 'This courier or vehicle is already on another active trip.');
+                    } elseif ($facility === 'delivery_hub' && $destinationType === 'sorting_center' && $courierId !== null) {
+                        $courier = CourierRegistration::query()
+                            ->where('sorting_center_id', $destinationId)
+                            ->where('status', 'approved')
+                            ->find($courierId);
+                        $vehicle = SortingCenterVehicle::query()
+                            ->where('sorting_center_id', $destinationId)
+                            ->find($vehicleId);
+                        abort_unless(
+                            $courier && $vehicle
+                            && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number),
+                            422,
+                            'Select an approved Sorting Center courier and their registered vehicle.',
+                        );
+                        abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
+                        abort_if(LogisticsTransferManifest::query()
+                            ->whereIn('status', ['preparing', 'loaded'])
+                            ->where(function ($query) use ($batchKey): void {
+                                $query->whereNull('batch_key')->orWhere('batch_key', '!=', $batchKey);
+                            })
+                            ->where(function ($query) use ($courierId, $vehicleId): void {
+                                $query->where('courier_registration_id', $courierId)
+                                    ->orWhere('vehicle_id', $vehicleId);
+                            })
+                            ->exists(), 409, 'This courier or vehicle is already on another active trip.');
                     }
                 }
                 $outbound = LogisticsTransferManifest::query()->firstOrCreate(
@@ -160,7 +208,10 @@ class ParcelRouteScanController extends Controller
                         'courier_name' => $trip?->courier_name ?? $input['courier_name'] ?? null,
                         'vehicle_reference' => $trip?->vehicle_reference ?? $input['vehicle_reference'] ?? null,
                         'returning_manifest_id' => $trip?->id,
-                        'status' => 'loaded', 'loaded_at' => now(),
+                        'status' => $requiresCourierDeparture ? 'preparing' : 'loaded',
+                        'loaded_at' => $requiresCourierDeparture ? null : now(),
+                        'departed_at' => $requiresCourierDeparture ? null : now(),
+                        'scheduled_at' => $input['scheduled_at'] ?? null,
                     ],
                 );
                 abort_unless(
@@ -172,14 +223,48 @@ class ParcelRouteScanController extends Controller
                     409,
                     'This batch is already assigned to another route.',
                 );
-                $outbound->shipments()->syncWithoutDetaching([$shipment->id]);
+                abort_if(
+                    LogisticsTransferManifest::query()
+                        ->whereIn('status', ['preparing', 'loaded'])
+                        ->whereKeyNot($outbound->id)
+                        ->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id))
+                        ->exists(),
+                    409,
+                    'This parcel is already assigned to another active transport manifest.',
+                );
+                $outbound->shipments()->syncWithoutDetaching([
+                    $shipment->id => [
+                        'load_status' => 'loaded',
+                        'loaded_at' => now(),
+                        'loaded_by' => $request->user()->id,
+                    ],
+                ]);
+                if (! $requiresCourierDeparture && $outbound->wasRecentlyCreated) {
+                    LogisticsTransferManifestEvent::query()->create([
+                        'transfer_manifest_id' => $outbound->id,
+                        'actor_user_id' => $request->user()->id,
+                        'event_type' => 'departure_confirmed',
+                        'occurred_at' => now(),
+                    ]);
+                }
+                LogisticsTransferManifestEvent::query()->create([
+                    'transfer_manifest_id' => $outbound->id,
+                    'shipment_id' => $shipment->id,
+                    'actor_user_id' => $request->user()->id,
+                    'event_type' => 'parcel_loaded',
+                    'occurred_at' => now(),
+                ]);
             }
 
             $shipment->current_location = $location;
             $shipment->location_updated_at = now();
             $shipment->save();
 
-            $label = $input['action'] === 'receive' ? 'Received at '.($facility === 'delivery_hub' ? 'Delivery Hub' : 'Sorting Center') : ($order->status === 'out_for_delivery' ? 'Out for Delivery' : 'Departed');
+            $label = $input['action'] === 'receive'
+                ? 'Received at '.($facility === 'delivery_hub' ? 'Delivery Hub' : 'Sorting Center')
+                : ($order->status === 'out_for_delivery'
+                    ? 'Out for Delivery'
+                    : 'In Transit to '.($shipment->logistics_delivery_hub_id ? 'Delivery Hub' : 'Sorting Center'));
             $shipment->scans()->create(['status' => $label, 'location' => $location, 'scanned_at' => now()]);
 
             return $shipment->fresh(['order', 'scans']);
@@ -228,6 +313,7 @@ class ParcelRouteScanController extends Controller
                 $members[] = $parcelId;
                 $parcelStatus = $shipment->order?->status === 'out_for_delivery' ? 'out-for-delivery' : ($received ? 'received' : 'incoming');
                 $payload = $this->parcelPayload($shipment, $parcelId, $parcelStatus, $facility === 'sorting_center' ? $id : null, $transfer->id);
+                $payload['routeStatus'] = $received ? 'received' : 'in_transit';
                 if ($transfer->origin_type === 'seller_collection') {
                     $payload['kind'] = 'pickup';
                     if (str_starts_with($transfer->batch_key, 'pickup-dropoff-')) {
@@ -248,6 +334,7 @@ class ParcelRouteScanController extends Controller
                     'courierRegistrationId' => $transfer->courier_registration_id,
                     'vehicleId' => $transfer->vehicle_id,
                     'status' => $transfer->status,
+                    'routeStatus' => $transfer->status === 'loaded' ? 'in_transit' : 'received',
                     'arrivedAt' => $transfer->arrived_at?->toISOString(),
                     'originCenterId' => $transfer->origin_type === 'sorting_center' ? $transfer->origin_id : null,
                     'originType' => $transfer->origin_type,
@@ -258,23 +345,102 @@ class ParcelRouteScanController extends Controller
             }
         }
 
+        if ($facility === 'delivery_hub') {
+            $pickupShipments = Shipment::query()
+                ->with(['order.seller.user', 'order.buyer.buyerProfile', 'order.items.product'])
+                ->whereNull('logistics_delivery_hub_id')
+                ->whereHas('order', fn ($query) => $query
+                    ->where('status', 'to_ship')
+                    ->whereHas('seller', fn ($seller) => $seller
+                        ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
+                        ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])))
+                ->whereDoesntHave('scans', fn ($query) => $query
+                    ->where('status', 'Received at Delivery Hub')
+                    ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province))
+                ->oldest('id')
+                ->get();
+
+            foreach ($pickupShipments as $shipment) {
+                $parcels[] = $this->parcelPayload(
+                    $shipment,
+                    'shipment-'.$shipment->id,
+                    'incoming',
+                    null,
+                    'collection-'.$shipment->id,
+                );
+            }
+        }
+
         $couriers = $vehicles = [];
-        $activeDispatches = LogisticsTransferManifest::query()->where('origin_type', $facility)->where('origin_id', $id)->where('status', 'loaded')->get(['courier_registration_id', 'vehicle_id', 'courier_name', 'vehicle_reference']);
+        $activeDispatches = LogisticsTransferManifest::query()->where('origin_type', $facility)->where('origin_id', $id)->whereIn('status', ['preparing', 'loaded'])->get(['courier_registration_id', 'vehicle_id', 'courier_name', 'vehicle_reference']);
         if ($facility === 'sorting_center') {
             $archivedCourierIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $id)->where('record_type', 'couriers')->pluck('record_id');
             $archivedVehicleIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $id)->where('record_type', 'vehicles')->pluck('record_id');
             $couriers = CourierRegistration::query()->where('sorting_center_id', $id)->where('status', 'approved')->whereNotIn('id', $archivedCourierIds)->get(['id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])->values();
             $vehicles = SortingCenterVehicle::query()->where('sorting_center_id', $id)->whereNotIn('id', $archivedVehicleIds)->get(['id', 'name', 'type', 'plate_number', 'availability'])->values();
+        } elseif ($facility === 'delivery_hub') {
+            $sortingCenterId = (int) $node->logistics_branch_id;
+            $busyCourierIds = LogisticsTransferManifest::query()
+                ->whereNotNull('courier_registration_id')
+                ->whereIn('status', ['preparing', 'loaded', 'arrived'])
+                ->where(fn ($query) => $query->whereIn('status', ['preparing', 'loaded'])->orWhereNull('arrived_at'))
+                ->pluck('courier_registration_id');
+            $couriers = CourierRegistration::query()
+                ->where('sorting_center_id', $sortingCenterId)
+                ->where('status', 'approved')
+                ->whereNotIn('id', $busyCourierIds)
+                ->get(['id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])
+                ->map(function (CourierRegistration $courier) use ($sortingCenterId): ?array {
+                    $vehicle = SortingCenterVehicle::query()
+                        ->where('sorting_center_id', $sortingCenterId)
+                        ->whereRaw('LOWER(plate_number) = ?', [mb_strtolower(trim((string) $courier->plate_number))])
+                        ->whereRaw('LOWER(availability) = ?', ['available'])
+                        ->first(['id', 'name', 'type', 'plate_number']);
+                    if (! $vehicle) return null;
+
+                    return [
+                        'id' => $courier->id,
+                        'courier_registration_id' => $courier->id,
+                        'name' => trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name]))),
+                        'phone' => $courier->phone,
+                        'vehicle' => $courier->vehicle,
+                        'plate_number' => $courier->plate_number,
+                        'vehicle_id' => $vehicle->id,
+                        'vehicle_reference' => $vehicle->plate_number,
+                    ];
+                })->filter()->values();
         }
 
         $assignedReturnIds = LogisticsTransferManifest::query()
             ->whereNotNull('returning_manifest_id')->pluck('returning_manifest_id')->all();
+
+        $outgoingTransfers = LogisticsTransferManifest::query()
+            ->where('origin_type', $facility)
+            ->where('origin_id', $id)
+            ->where('destination_type', 'sorting_center')
+            ->whereIn('status', ['loaded', 'arrived'])
+            ->with('shipments')
+            ->latest('loaded_at')
+            ->get()
+            ->map(fn (LogisticsTransferManifest $transfer): array => [
+                'id' => (string) ($transfer->batch_key ?: $transfer->id),
+                'sourceType' => 'transfer-to-sorting',
+                'originName' => $this->facilityName($facility, $id),
+                'destination' => $this->facilityName('sorting_center', (int) $transfer->destination_id),
+                'courierName' => $transfer->courier_name,
+                'truckId' => $transfer->vehicle_reference,
+                'createdAt' => $transfer->loaded_at?->toISOString(),
+                'status' => $transfer->status,
+                'arrivedAt' => $transfer->arrived_at?->toISOString(),
+                'parcelIds' => $transfer->shipments->map(fn (Shipment $shipment): string => 'shipment-'.$shipment->id)->values(),
+            ])->values();
 
         return response()->json([
             'facility_type' => $facility,
             'facility_id' => $id,
             'parcels' => $parcels,
             'manifests' => $manifests,
+            'departures' => $outgoingTransfers,
             'return_trucks' => $transfers->where('status', 'arrived')->filter(fn ($transfer) =>
                 $transfer->origin_type === 'sorting_center'
                 && $transfer->destination_type === 'sorting_center'
@@ -343,7 +509,13 @@ class ParcelRouteScanController extends Controller
     {
         if ($action === 'receive' && $shipment->order->status === 'to_ship') {
             abort_unless($this->same($hub->province, $sellerProvince) && $this->same($hub->municipality, $sellerCity), 422, 'Seller pickup parcels must first arrive at the delivery hub for the seller municipality.');
-            abort_if($shipment->scans()->latest('scanned_at')->value('status') === 'Received at Delivery Hub', 409, 'This parcel has already been received at the seller hub.');
+            $latestScan = $shipment->scans()->orderByDesc('scanned_at')->orderByDesc('id')->first();
+            abort_if(
+                $latestScan?->status === 'Received at Delivery Hub'
+                    && $latestScan->location === $hub->hub_name.' · '.$hub->municipality.', '.$hub->province,
+                409,
+                'This parcel has already been received at the seller hub.',
+            );
             abort_unless($shipment->logistics_delivery_hub_id === null || $shipment->logistics_delivery_hub_id === $hub->id, 409, 'Parcel is assigned to a different delivery hub.');
             $pickupRider = $this->riderFor($hub, (string) $sellerBarangay, 'pickup', $shipment->rider_id);
             abort_unless($pickupRider, 422, 'No active pickup rider is assigned to the seller barangay.');
@@ -376,7 +548,8 @@ class ParcelRouteScanController extends Controller
             );
 
             if ($shipment->order->status === 'to_ship' || $pickupCollection) {
-                $branch = $this->activeBranch($sellerProvince);
+                $networkId = LogisticsBranch::query()->whereKey($hub->logistics_branch_id)->value('logistics_id');
+                $branch = $this->activeBranch($sellerProvince, $networkId);
                 abort_unless($branch, 422, 'No active sorting center is configured for the seller province.');
                 $shipment->update(['logistics_branch_id' => $branch->id, 'logistics_delivery_hub_id' => null]);
                 if ($shipment->order->status === 'to_ship') {
@@ -414,7 +587,13 @@ class ParcelRouteScanController extends Controller
 
         if ($action === 'receive') {
             abort_unless($shipment->logistics_branch_id === $center->id && $shipment->logistics_delivery_hub_id === null, 409, 'Parcel is not in this sorting center’s incoming transfers.');
-            abort_if($shipment->scans()->latest('scanned_at')->value('status') === 'Received at Sorting Center', 409, 'This parcel has already been received at this sorting center.');
+            $latestScan = $shipment->scans()->orderByDesc('scanned_at')->orderByDesc('id')->first();
+            abort_if(
+                $latestScan?->status === 'Received at Sorting Center'
+                    && $latestScan->location === $center->name.' · '.$center->province,
+                409,
+                'This parcel has already been received at this sorting center.',
+            );
             return;
         }
 
@@ -422,22 +601,26 @@ class ParcelRouteScanController extends Controller
         abort_unless($shipment->scans()->latest('scanned_at')->value('status') === 'Received at Sorting Center', 409, 'Receive-scan this parcel before dispatch.');
         abort_unless($buyerProvince !== '' && $buyerCity !== '', 422, 'Buyer province and municipality are required to route this parcel.');
         if ($this->same($center->province, $buyerProvince)) {
-            $hub = LogisticsDeliveryHub::query()->where('logistics_branch_id', $center->id)->whereNull('archived_at')
+            $hub = LogisticsDeliveryHub::query()->where('status', 'active')->whereNull('archived_at')
+                ->whereHas('logisticsBranch', fn ($query) => $query
+                    ->where('logistics_id', $center->logistics_id)
+                    ->where('status', 'active')->whereNull('archived_at'))
                 ->whereRaw('LOWER(municipality) = ?', [mb_strtolower($buyerCity)])->first();
             abort_unless($hub, 422, 'No active delivery hub is configured for the buyer municipality.');
             $shipment->update(['logistics_delivery_hub_id' => $hub->id]);
             return;
         }
 
-        $next = $this->activeBranch($buyerProvince);
+        $next = $this->activeBranch($buyerProvince, $center->logistics_id);
         abort_unless($next, 422, 'No active sorting center is configured for the buyer province.');
         abort_unless($next->id !== $center->id, 422, 'The buyer province sorting-center route is not configured.');
         $shipment->update(['logistics_branch_id' => $next->id]);
     }
 
-    private function activeBranch(string $province): ?LogisticsBranch
+    private function activeBranch(string $province, ?int $logisticsId = null): ?LogisticsBranch
     {
         return LogisticsBranch::query()->whereNull('archived_at')->where('status', 'active')
+            ->when($logisticsId !== null, fn ($query) => $query->where('logistics_id', $logisticsId))
             ->whereRaw('LOWER(province) = ?', [mb_strtolower($province)])->orderBy('id')->first();
     }
 

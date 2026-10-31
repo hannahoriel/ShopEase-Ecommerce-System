@@ -74,6 +74,7 @@ use App\Http\Controllers\Api\Rider\Homepage\Notifications\ListNotificationsContr
 use App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkNotificationReadController;
 use App\Http\Controllers\Api\Rider\Homepage\ShowRiderDashboardController;
+use App\Http\Controllers\Api\Rider\CourierTransportController;
 use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\ArchiveVerifyOrderController;
 use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\DeleteArchivedVerifyOrderController;
 use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\ListVerifyOrdersController;
@@ -445,6 +446,25 @@ Route::prefix('v1')->group(function () {
             Route::patch('/deliveries/{order}/status', UpdateDeliveryStatusController::class)->name('rider.api.deliveries.status');
             Route::post('/deliveries/{order}/proof', SubmitDeliveryProofController::class)->name('rider.api.deliveries.proof');
             Route::get('/deliveries/{order}/proofs/{proof}/photo', ShowDeliveryProofPhotoController::class)->name('rider.api.deliveries.proofs.photo');
+        });
+
+        Route::middleware('role:rider')->prefix('courier')->group(function () {
+            Route::get('/dashboard', [CourierTransportController::class, 'dashboard'])->name('courier.api.dashboard');
+            Route::get('/trips', [CourierTransportController::class, 'trips'])->name('courier.api.trips.index');
+            Route::get('/manifests', [CourierTransportController::class, 'manifests'])->name('courier.api.manifests.index');
+            Route::get('/manifests/{manifestId}', [CourierTransportController::class, 'showManifest'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.show');
+            Route::post('/manifests/{manifestId}/load-scan', [CourierTransportController::class, 'loadParcel'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.load-scan');
+            Route::post('/manifests/{manifestId}/parcels/{shipmentId}/reconcile', [CourierTransportController::class, 'reconcileParcel'])
+                ->whereNumber('manifestId')->whereNumber('shipmentId')->name('courier.api.manifests.parcels.reconcile');
+            Route::post('/manifests/{manifestId}/departure', [CourierTransportController::class, 'confirmDeparture'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.departure');
+            Route::post('/manifests/{manifestId}/arrival', [CourierTransportController::class, 'confirmArrival'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.arrival');
+            Route::get('/return-pickup', [CourierTransportController::class, 'returnPickup'])->name('courier.api.return-pickup.index');
+            Route::post('/return-pickup/manifests', [CourierTransportController::class, 'prepareReturnManifest'])
+                ->name('courier.api.return-pickup.manifests.store');
         });
 
     });
