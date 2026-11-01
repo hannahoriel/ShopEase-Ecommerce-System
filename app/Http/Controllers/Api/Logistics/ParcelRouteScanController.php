@@ -311,8 +311,13 @@ class ParcelRouteScanController extends Controller
         $id = $node->id;
         $transfers = LogisticsTransferManifest::query()
             ->where('destination_type', $facility)->where('destination_id', $id)
-            ->whereIn('status', ['loaded', 'arrived'])
-            ->with(['shipments.order.seller.user', 'shipments.order.buyer.buyerProfile', 'shipments.order.items.product', 'returnTrip'])
+            ->where(function ($query): void {
+                $query->whereIn('status', ['loaded', 'arrived'])
+                    ->orWhere(fn ($pickup) => $pickup
+                        ->where('origin_type', 'seller_collection')
+                        ->where('status', 'preparing'));
+            })
+            ->with(['shipments.order.seller.user', 'shipments.order.buyer.buyerProfile', 'shipments.order.items.product', 'shipments.rider.user', 'returnTrip'])
             ->latest('loaded_at')->get();
 
         $parcels = [];
@@ -339,10 +344,29 @@ class ParcelRouteScanController extends Controller
                 $payload['routeStatus'] = $received ? 'received' : 'in_transit';
                 if ($transfer->origin_type === 'seller_collection') {
                     $payload['kind'] = 'pickup';
-                    if (str_starts_with($transfer->batch_key, 'pickup-dropoff-')) {
-                        $payload['dropoffConfirmed'] = true;
-                        $payload['scheduledDate'] = now('Asia/Manila')->toDateString();
+                    $payload['pickupCollected'] = true;
+                    $payload['dropoffConfirmed'] = $transfer->status !== 'preparing';
+                    $payload['scheduledDate'] = $shipment->order?->pickup_date?->toDateString()
+                        ?? now('Asia/Manila')->toDateString();
+                    $pickupBarangay = trim((string) ($shipment->order?->seller?->barangay
+                        ?: $shipment->rider?->assignment_barangay
+                        ?: $shipment->rider?->barangay)) ?: 'Seller barangay unavailable';
+                    $payload['barangay'] = $pickupBarangay;
+                    $sellerAddress = collect([
+                        $pickupBarangay,
+                        $shipment->order?->seller?->municipality,
+                        $shipment->order?->seller?->province,
+                    ])->filter()->implode(', ');
+                    $payload['loadedFromName'] = trim('Seller: '.($payload['seller_name'] ?: 'Seller').($sellerAddress !== '' ? ' · '.$sellerAddress : ''));
+                    $manifestRider = trim((string) $transfer->courier_name);
+                    if (in_array(mb_strtolower($manifestRider), ['', 'unassigned', 'not recorded'], true)) {
+                        $manifestRider = '';
                     }
+                    $payload['courierName'] = $payload['rider_name'] ?: $manifestRider ?: 'Pickup rider unavailable';
+                    $payload['pickupRider'] = $payload['courierName'];
+                    $payload['courierPhone'] = $payload['rider_phone'];
+                    $payload['riderVehicle'] = $payload['rider_vehicle'];
+                    $payload['truckId'] = $transfer->vehicle_reference ?: $payload['rider_plate_number'];
                 }
                 $parcels[] = $payload;
             }
@@ -350,14 +374,31 @@ class ParcelRouteScanController extends Controller
                 $manifests[] = [
                     'id' => (string) $transfer->id,
                     'sourceType' => $transfer->origin_type === 'sorting_center' ? 'sorting' : 'collection',
-                    'originName' => $this->facilityName($transfer->origin_type, $transfer->origin_id),
+                    'originName' => $transfer->origin_type === 'seller_collection'
+                        ? (collect([
+                            $transfer->shipments->first()?->order?->seller?->store_name
+                                ?: trim(($transfer->shipments->first()?->order?->seller?->first_name ?? '').' '.($transfer->shipments->first()?->order?->seller?->last_name ?? '')),
+                            $transfer->shipments->first()?->order?->seller?->barangay,
+                            $transfer->shipments->first()?->order?->seller?->municipality,
+                        ])->filter()->implode(' · ') ?: 'Seller pickup')
+                        : $this->facilityName($transfer->origin_type, $transfer->origin_id),
+                    'barangay' => $transfer->origin_type === 'seller_collection'
+                        ? ($transfer->shipments->first()?->order?->seller?->barangay
+                            ?: $transfer->shipments->first()?->rider?->assignment_barangay
+                            ?: $transfer->shipments->first()?->rider?->barangay
+                            ?: 'Seller barangay unavailable')
+                        : null,
                     'destination' => $this->facilityName($facility, $id),
-                    'courierName' => $transfer->courier_name,
-                    'truckId' => $transfer->vehicle_reference,
+                    'courierName' => $transfer->courier_name ?: trim(($transfer->shipments->first()?->rider?->first_name ?? '').' '.($transfer->shipments->first()?->rider?->last_name ?? '')),
+                    'pickupRider' => trim(($transfer->shipments->first()?->rider?->first_name ?? '').' '.($transfer->shipments->first()?->rider?->last_name ?? '')),
+                    'courierPhone' => $transfer->shipments->first()?->rider?->contact_no,
+                    'riderPhone' => $transfer->shipments->first()?->rider?->contact_no,
+                    'vehicleType' => $transfer->shipments->first()?->rider?->vehicle,
+                    'truckId' => $transfer->vehicle_reference ?: $transfer->shipments->first()?->rider?->plate_number,
                     'courierRegistrationId' => $transfer->courier_registration_id,
                     'vehicleId' => $transfer->vehicle_id,
                     'status' => $transfer->status,
-                    'routeStatus' => $transfer->status === 'loaded' ? 'in_transit' : 'received',
+                    'routeStatus' => $transfer->status === 'arrived' ? 'received' : 'in_transit',
                     'arrivedAt' => $transfer->arrived_at?->toISOString(),
                     'originCenterId' => $transfer->origin_type === 'sorting_center' ? $transfer->origin_id : null,
                     'originType' => $transfer->origin_type,
@@ -371,12 +412,28 @@ class ParcelRouteScanController extends Controller
         if ($facility === 'delivery_hub') {
             $pickupShipments = Shipment::query()
                 ->with(['order.seller.user', 'order.buyer.buyerProfile', 'order.items.product'])
-                ->whereNull('logistics_delivery_hub_id')
-                ->whereHas('order', fn ($query) => $query
-                    ->where('status', 'to_ship')
-                    ->whereHas('seller', fn ($seller) => $seller
-                        ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
-                        ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])))
+                ->where(function ($query) use ($node): void {
+                    // Scheduled pickups are shown before collection. Once the
+                    // rider submits pickup proof, the shipment is already
+                    // routed to this hub and must remain visible even if a
+                    // manifest write was missed or an older app version sent
+                    // the proof through the legacy endpoint.
+                    $query->where(function ($scheduled) use ($node): void {
+                        $scheduled->whereNull('logistics_delivery_hub_id')
+                            ->whereHas('order', fn ($order) => $order
+                                ->where('status', 'to_ship')
+                                ->whereHas('seller', fn ($seller) => $seller
+                                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
+                                    ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])));
+                    })->orWhere(function ($collected) use ($node): void {
+                        $collected->where('logistics_delivery_hub_id', $node->id)
+                            ->whereHas('order', fn ($order) => $order->where('status', 'in_transit'))
+                            ->whereDoesntHave('transferManifests', fn ($manifest) => $manifest
+                                ->where('origin_type', 'seller_collection')
+                                ->where('destination_type', 'delivery_hub')
+                                ->where('destination_id', $node->id));
+                    });
+                })
                 ->whereDoesntHave('scans', fn ($query) => $query
                     ->where('status', 'Received at Delivery Hub')
                     ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province))
@@ -384,13 +441,31 @@ class ParcelRouteScanController extends Controller
                 ->get();
 
             foreach ($pickupShipments as $shipment) {
-                $parcels[] = $this->parcelPayload(
+                $payload = $this->parcelPayload(
                     $shipment,
                     'shipment-'.$shipment->id,
                     'incoming',
                     null,
                     'collection-'.$shipment->id,
                 );
+                $pickupBarangay = trim((string) ($shipment->order?->seller?->barangay
+                    ?: $shipment->rider?->assignment_barangay
+                    ?: $shipment->rider?->barangay)) ?: 'Seller barangay unavailable';
+                $payload['kind'] = 'pickup';
+                $payload['barangay'] = $pickupBarangay;
+                $payload['loadedFromName'] = trim('Seller: '.($payload['seller_name'] ?: 'Seller').' · '.implode(', ', array_filter([
+                    $pickupBarangay,
+                    $shipment->order?->seller?->municipality,
+                    $shipment->order?->seller?->province,
+                ])));
+                $payload['pickupCollected'] = $shipment->order?->status === 'in_transit';
+                $payload['dropoffConfirmed'] = false;
+                $payload['courierName'] = $payload['rider_name'] ?: 'Pickup rider unavailable';
+                $payload['pickupRider'] = $payload['courierName'];
+                $payload['courierPhone'] = $payload['rider_phone'];
+                $payload['riderVehicle'] = $payload['rider_vehicle'];
+                $payload['truckId'] = $payload['rider_plate_number'];
+                $parcels[] = $payload;
             }
         }
 
@@ -504,28 +579,57 @@ class ParcelRouteScanController extends Controller
 
     private function parcelPayload(Shipment $shipment, string $id, string $status, ?int $centerId, int|string $transferId): array
     {
+        $shipment->loadMissing('rider.user');
         $order = $shipment->order;
         $seller = $order?->seller;
         $buyer = $order?->buyer?->buyerProfile;
+        $recipientName = trim((string) $order?->delivery_name);
+        $profileBuyerName = trim(implode(' ', array_filter([$buyer?->first_name, $buyer?->last_name])));
+        $accountBuyerName = trim((string) $order?->buyer?->name);
+        $recipientName = $profileBuyerName ?: $accountBuyerName ?: $recipientName;
+        $rider = $shipment->rider;
         return [
             'id' => $id, 'shipment_id' => $shipment->id, 'order_id' => $order?->id, 'scan_token' => $shipment->scan_token,
             'tracking' => $shipment->tracking_number, 'order_number' => $order?->order_number,
             'status' => $status, 'kind' => str_starts_with((string) $transferId, 'collection-') ? 'pickup' : 'sorting', 'transferId' => (string) $transferId,
-            'pickupDate' => $order?->pickup_date?->toDateString(),
             'currentCenterId' => $centerId, 'nextCenterId' => null,
-            'buyer_name' => $order?->delivery_name ?: trim(($buyer?->first_name ?? '').' '.($buyer?->last_name ?? '')),
+            'buyer_name' => $recipientName,
             'buyer_email' => $order?->buyer?->email, 'buyer_phone' => $order?->delivery_phone ?: $buyer?->contact_no,
             'buyer_province' => $buyer?->province, 'buyer_city' => $buyer?->municipality,
             'buyer_barangay' => $buyer?->barangay, 'buyer_street' => $buyer?->street,
             'buyer_house_no' => $buyer?->house_number, 'buyer_postal_code' => $buyer?->zip_code,
+            'delivery_address' => $order?->delivery_address,
             'seller_name' => $seller?->store_name ?: trim(($seller?->first_name ?? '').' '.($seller?->last_name ?? '')),
             'seller_email' => $seller?->user?->email, 'seller_phone' => $seller?->contact_no,
             'seller_province' => $seller?->province, 'seller_city' => $seller?->municipality,
             'seller_barangay' => $seller?->barangay, 'seller_street' => $seller?->street,
             'seller_house_no' => $seller?->house_number, 'seller_postal_code' => $seller?->zip_code,
             'destProvince' => $buyer?->province, 'destCity' => $buyer?->municipality, 'destBarangay' => $buyer?->barangay,
+            'barangay' => $buyer?->barangay ?: $seller?->barangay ?: 'Barangay not provided',
+            'loadedFromName' => $seller?->store_name ?: trim(($seller?->first_name ?? '').' '.($seller?->last_name ?? '')),
+            'pickupDate' => $order?->pickup_date?->toDateString(),
+            'ordered_at' => $order?->created_at?->toISOString(),
+            'estimated_delivery' => $shipment->estimated_delivery?->toDateString()
+                ?? $order?->pickup_date?->copy()->addDays(3)->toDateString()
+                ?? $order?->created_at?->copy()->addDays(3)->toDateString(),
+            'rider_name' => trim(implode(' ', array_filter([$rider?->first_name, $rider?->last_name]))) ?: $rider?->user?->name,
+            'rider_phone' => $rider?->contact_no,
+            'rider_vehicle' => collect([$rider?->vehicle, $rider?->plate_number])->filter()->implode(' · '),
+            'rider_plate_number' => $rider?->plate_number,
+            'courierName' => trim(implode(' ', array_filter([$rider?->first_name, $rider?->last_name]))) ?: $rider?->user?->name,
+            'courierPhone' => $rider?->contact_no,
+            'scan_url' => $shipment->scan_token
+                ? route('parcel.scan.show', ['token' => $shipment->scan_token])
+                : url('/api/v1/orders/verify/'.rawurlencode((string) $order?->order_number)),
             'total_amount' => (float) ($order?->total ?? 0), 'payment_method' => $order?->payment_method,
-            'items' => $order?->items?->map(fn ($item) => ['name' => $item->product?->name ?? $item->product_name ?? 'Item', 'quantity' => $item->quantity, 'price' => $item->price])->values() ?? [],
+            'items' => $order?->items?->map(fn ($item) => [
+                'product_name' => $item->product?->name ?: $item->product_name,
+                'variation' => $item->variation,
+                'color' => $item->color,
+                'size' => $item->size,
+                'quantity' => $item->quantity,
+                'product_price' => (float) $item->unit_price,
+            ])->values() ?? [],
             'history' => $shipment->scans()->oldest('scanned_at')->get()->map(fn ($scan) => ['status' => $scan->status, 'date' => $scan->scanned_at?->toISOString(), 'location' => $scan->location])->values(),
         ];
     }

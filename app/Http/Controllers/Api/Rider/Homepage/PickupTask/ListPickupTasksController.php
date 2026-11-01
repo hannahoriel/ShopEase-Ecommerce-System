@@ -34,7 +34,11 @@ class ListPickupTasksController extends Controller
             ->whereHas('shipment', fn ($query) => $query->where('rider_id', $rider->id))
             ->whereDoesntHave('shipment.transferManifests', fn ($query) => $query
                 ->where('origin_type', 'seller_collection')
-                ->where('batch_key', 'like', 'pickup-dropoff-%'))
+                ->where('batch_key', 'like', 'pickup-dropoff-%')
+                // Keep the pickup task visible after seller collection so the
+                // rider can still open the hub drop-off screen. The handoff
+                // is complete only after its manifest leaves preparing.
+                ->whereIn('status', ['loaded', 'arrived']))
             ->whereIn('status', ['to_ship', 'in_transit'])
             ->with($deliveries->deliveryRelations())
             ->latest('updated_at')
