@@ -12,6 +12,7 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
+use App\Models\Seller\ProductReview;
 use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
@@ -50,9 +51,13 @@ class OrderController extends Controller
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status');
+        $reviewedProductIds = ProductReview::query()
+            ->where('buyer_id', $request->user()->id)
+            ->pluck('product_id')->map(fn ($id): string => (string) $id)->all();
 
         return response()->json([
-            'data' => $orders->getCollection()->map(fn (Order $order): array => [
+            'data' => $orders->getCollection()->map(function (Order $order) use ($reviewedProductIds): array {
+                return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
                 'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
@@ -67,11 +72,17 @@ class OrderController extends Controller
                     $order->seller->province,
                 ])->filter()->implode(', '),
                 'delivery_address' => $order->delivery_address,
+                'delivery_name' => $order->delivery_name,
+                'delivery_phone' => $order->delivery_phone,
+                'payment_method' => $order->payment_method,
                 'total' => (float) $order->total,
                 'shipping_fee' => (float) $order->shipping_fee,
                 'voucher_discount' => (float) $order->voucher_discount,
                 'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
+                'buyer_received_at' => $order->buyer_received_at?->toISOString(),
+                'buyer_received_automatically' => $order->buyer_received_automatically,
+                'can_confirm_received' => $order->status === 'delivered',
                 'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
                     && $order->latestCancellationRequest?->status !== 'pending',
                 'cancellation_request' => $order->latestCancellationRequest,
@@ -95,10 +106,12 @@ class OrderController extends Controller
                     ->map(fn ($event): array => [
                         'status' => $event->to_status,
                         'description' => str_replace('_', ' ', ucfirst($event->to_status)),
+                        'location' => null,
                         'created_at' => $event->created_at?->toISOString(),
                     ])
                     ->concat($order->shipment?->scans->map(fn ($scan): array => [
                         'status' => $scan->status,
+                        'location' => $scan->location,
                         'description' => $scan->status.' · '.$scan->location,
                         'created_at' => $scan->scanned_at?->toISOString(),
                     ]) ?? collect())
@@ -119,10 +132,60 @@ class OrderController extends Controller
                     'variation' => $item->variation,
                     'color' => $item->color,
                     'size' => $item->size,
+                    'can_review' => $order->status === 'completed'
+                        && $item->product_id !== null
+                        && ! in_array((string) $item->product_id, $reviewedProductIds, true),
                 ])->all(),
-            ])->values(),
+                ];
+            })->values(),
             'total' => $orders->total(),
             'status_counts' => $statusCounts,
+        ]);
+    }
+
+    public function confirmReceived(Request $request, Order $order): JsonResponse
+    {
+        abort_unless((int) $order->buyer_id === (int) $request->user()->id, 404);
+
+        $received = DB::transaction(function () use ($request, $order): Order {
+            $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            abort_unless((int) $lockedOrder->buyer_id === (int) $request->user()->id, 404);
+            abort_unless($lockedOrder->status === 'delivered', 422, 'Only delivered orders can be confirmed as received.');
+
+            $shipment = $lockedOrder->shipment()->first();
+            $deliveredAt = $shipment?->delivered_at ?: OrderStatusHistory::query()
+                ->where('order_id', $lockedOrder->id)
+                ->where('to_status', 'delivered')
+                ->latest('created_at')
+                ->value('created_at');
+            abort_unless($deliveredAt, 422, 'The delivery timestamp is not available for this order yet.');
+
+            $lockedOrder->update([
+                'status' => 'completed',
+                'buyer_received_at' => now(),
+                'buyer_received_automatically' => false,
+            ]);
+            OrderStatusHistory::query()->create([
+                'order_id' => $lockedOrder->id,
+                'from_status' => 'delivered',
+                'to_status' => 'completed',
+                'changed_by' => $request->user()->id,
+                'notes' => 'Buyer confirmed receipt of the order.',
+            ]);
+            BuyerNotification::createForOrderStatus($lockedOrder, 'completed');
+
+            return $lockedOrder->fresh();
+        });
+
+        return response()->json([
+            'message' => 'Order marked as received. Thank you for confirming!',
+            'order' => [
+                'id' => $received->id,
+                'order_number' => $received->order_number,
+                'status' => $received->status,
+                'buyer_received_at' => $received->buyer_received_at?->toISOString(),
+                'buyer_received_automatically' => $received->buyer_received_automatically,
+            ],
         ]);
     }
 

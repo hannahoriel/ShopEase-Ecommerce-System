@@ -537,14 +537,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!list || !empty) return;
 
         list.innerHTML = reviews.map((review) => {
+            const buyerInitials = String(review.buyer_name || 'ShopEase customer')
+                .trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'SC';
             const stars = '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating));
             const date = review.created_at
                 ? new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(review.created_at))
                 : '';
             return `
                 <article class="review-item">
-                    <div class="review-avatar" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"></circle><path d="M4 21v-2a8 8 0 0 1 16 0v2z"></path></svg>
+                    <div class="review-avatar" aria-hidden="${review.buyer_photo_url ? 'false' : 'true'}">
+                        ${review.buyer_photo_url
+                            ? `<img src="${escapeHtml(review.buyer_photo_url)}" alt="${escapeHtml(review.buyer_name)}" loading="lazy">`
+                            : `<span class="review-avatar-fallback">${escapeHtml(buyerInitials)}</span>`}
                     </div>
                     <div class="review-content">
                         <strong>${escapeHtml(review.buyer_name)}</strong>

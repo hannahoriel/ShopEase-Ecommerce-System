@@ -1391,3 +1391,21 @@
             font-size: 12px;
             line-height: 1.65;
         }
+/* Buyer review photos replace the default avatar silhouette when available. */
+.review-item .review-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+}
+.review-item .review-avatar-fallback {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    background: #F0E9F5;
+    color: #67417C;
+    font-size: 12px;
+    font-weight: 700;
+}

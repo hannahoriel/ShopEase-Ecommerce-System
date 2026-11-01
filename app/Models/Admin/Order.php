@@ -34,6 +34,8 @@ class Order extends Model
         'total',
         'commission_amount',
         'status',
+        'buyer_received_at',
+        'buyer_received_automatically',
         'pickup_date',
         'pickup_time',
         'delivery_name',
@@ -52,6 +54,8 @@ class Order extends Model
         'voucher_discount' => 'decimal:2',
         'pickup_date' => 'date',
         'pickup_time' => 'datetime:H:i',
+        'buyer_received_at' => 'datetime',
+        'buyer_received_automatically' => 'boolean',
     ];
 
     protected $appends = [

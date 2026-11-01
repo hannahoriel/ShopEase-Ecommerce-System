@@ -2,10 +2,14 @@
 
 use App\Mail\AccountStatusChanged;
 use App\Models\Admin\Announcement;
+use App\Models\Admin\Order;
+use App\Models\Admin\OrderStatusHistory;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Admin\PlatformPolicy;
 use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schedule;
 
@@ -59,3 +63,59 @@ Artisan::command('platform-settings:publish-scheduled', function () {
 })->purpose('Publish platform announcements and policies when their schedule is due');
 
 Schedule::command('platform-settings:publish-scheduled')->everyMinute();
+
+Artisan::command('orders:auto-confirm-delivered', function () {
+    $cutoff = now()->subDays(7);
+    $confirmed = 0;
+
+    Order::query()->where('status', 'delivered')
+        ->where(function ($query) use ($cutoff): void {
+            $query->whereHas('shipment', fn ($shipment) => $shipment
+                ->whereNotNull('delivered_at')->where('delivered_at', '<=', $cutoff))
+                ->orWhereHas('statusHistory', fn ($history) => $history
+                    ->where('to_status', 'delivered')->where('created_at', '<=', $cutoff));
+        })
+        ->with(['shipment', 'statusHistory'])
+        ->chunkById(100, function ($orders) use ($cutoff, &$confirmed): void {
+            foreach ($orders as $order) {
+                $deliveryEvent = $order->statusHistory->firstWhere('to_status', 'delivered');
+                $deliveredAt = $order->shipment?->delivered_at ?: $deliveryEvent?->created_at;
+                if (! $deliveredAt || $deliveredAt->isAfter($cutoff)) {
+                    continue;
+                }
+
+                DB::transaction(function () use ($order, &$confirmed): void {
+                    $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->first();
+                    if (! $lockedOrder || $lockedOrder->status !== 'delivered') {
+                        return;
+                    }
+                    $lockedOrder->load(['shipment', 'statusHistory']);
+                    $deliveryEvent = $lockedOrder->statusHistory->firstWhere('to_status', 'delivered');
+                    $deliveredAt = $lockedOrder->shipment?->delivered_at ?: $deliveryEvent?->created_at;
+                    if (! $deliveredAt || $deliveredAt->copy()->addDays(7)->isFuture()) {
+                        return;
+                    }
+
+                    $receivedAt = $deliveredAt->copy()->addDays(7);
+                    $lockedOrder->update([
+                        'status' => 'completed',
+                        'buyer_received_at' => $receivedAt,
+                        'buyer_received_automatically' => true,
+                    ]);
+                    OrderStatusHistory::query()->create([
+                        'order_id' => $lockedOrder->id,
+                        'from_status' => 'delivered',
+                        'to_status' => 'completed',
+                        'changed_by' => null,
+                        'notes' => 'Automatically marked received seven days after delivery because the buyer did not confirm.',
+                    ]);
+                    BuyerNotification::createForOrderStatus($lockedOrder, 'completed');
+                    $confirmed++;
+                });
+            }
+        });
+
+    $this->info("Automatically confirmed {$confirmed} delivered order(s).");
+})->purpose('Mark delivered orders as received after seven days without buyer confirmation');
+
+Schedule::command('orders:auto-confirm-delivered')->everyMinute()->withoutOverlapping();

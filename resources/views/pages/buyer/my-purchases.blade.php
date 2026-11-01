@@ -701,6 +701,30 @@
     </main>
 
     {{-- Profile change approval notice — UI-only; no request is sent to admin. --}}
+    <div id="buyerOrderDetailsModal" class="buyer-order-details-overlay" aria-hidden="true" hidden>
+        <section class="buyer-order-details-dialog" role="dialog" aria-modal="true" aria-labelledby="buyerOrderDetailsTitle" tabindex="-1">
+            <header class="buyer-order-details-header"><div><span>ORDER DETAILS</span><h2 id="buyerOrderDetailsTitle">Order</h2></div><button type="button" id="buyerOrderDetailsClose" aria-label="Close order details">&times;</button></header>
+            <div id="buyerOrderDetailsBody" class="buyer-order-details-body"></div>
+            <footer class="buyer-order-details-footer"><button type="button" class="buyer-order-footer-confirm" data-confirm-order-id hidden>Confirm Order Received</button><button type="button" data-close-buyer-order-details>Close</button></footer>
+        </section>
+    </div>
+
+    <div id="buyerSellerRatingModal" class="buyer-seller-rating-overlay" aria-hidden="true" hidden>
+        <section class="buyer-seller-rating-dialog" role="dialog" aria-modal="true" aria-labelledby="buyerSellerRatingTitle" tabindex="-1">
+            <header class="buyer-seller-rating-dialog-header">
+                <div><span class="buyer-order-section-kicker">SELLER FEEDBACK</span><h2 id="buyerSellerRatingTitle">Rate your seller</h2><p>Share your experience with <strong data-rating-modal-shop>the seller</strong>.</p></div>
+                <button type="button" id="buyerSellerRatingClose" aria-label="Close rating form">&times;</button>
+            </header>
+            <form id="buyerSellerRatingForm" class="buyer-seller-rating-form">
+                <label>Product<select name="product_id" required></select></label>
+                <fieldset class="buyer-seller-rating-stars"><legend>Your rating</legend><div class="buyer-seller-stars" role="radiogroup" aria-label="Seller rating">@for($rating=1;$rating<=5;$rating++)<button type="button" class="is-selected" data-seller-rating="{{ $rating }}" aria-label="{{ $rating }} star{{ $rating===1?'':'s' }}" aria-checked="{{ $rating===5?'true':'false' }}" role="radio">★</button>@endfor<input type="hidden" name="rating" value="5"></div></fieldset>
+                <label class="buyer-seller-review-field">Your review<textarea name="body" minlength="2" maxlength="2000" required placeholder="What did you think of your purchase and the seller?"></textarea></label>
+                <p class="buyer-order-rating-feedback" role="status" hidden></p>
+                <button class="buyer-order-action-confirm" type="submit">Submit rating</button>
+            </form>
+        </section>
+    </div>
+
     <div id="bpProfileToast" class="bp-toast" role="status" aria-live="polite" hidden></div>
 
     <div id="buyerComplaintModal" class="fixed inset-0 z-[220] hidden items-center justify-center bg-black/40 px-4 py-6" aria-hidden="true">

@@ -254,6 +254,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
             Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
+            Route::patch('/orders/{order}/confirm-received', [BuyerOrderController::class, 'confirmReceived'])->name('buyer.api.orders.confirm-received');
             Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');

@@ -117,7 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return `
             <div class="feedback-row" data-rating="${review.rating}" data-search="${escapeHtml(`${review.customer} ${review.product} ${review.title} ${review.body}`.toLowerCase())}">
                 <div class="order-cell">
-                    <div class="truck-box"><img src="/icons/seller/shipping-status/delivered.png" alt="Customer review"></div>
+                    <div class="truck-box feedback-product-photo">${review.product_image_url
+                        ? `<img src="${escapeHtml(review.product_image_url)}" alt="${escapeHtml(review.product || 'Reviewed product')}" loading="lazy">`
+                        : `<span aria-label="${escapeHtml(review.product || 'Product')} photo unavailable">${escapeHtml(String(review.product || 'P').trim().charAt(0).toUpperCase() || 'P')}</span>`}</div>
                     <div>
                         <p class="order-id">${escapeHtml(review.product || 'Product')}</p>
                         <div class="order-date">Product feedback</div>
@@ -135,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>
                     <p class="feedback-text-title">${escapeHtml(review.title)}</p>
                     <div class="feedback-text-body">${escapeHtml(review.body)}</div>
-                    <div class="feedback-photo"></div>
                 </div>
                 <div class="feedback-date"><div>${escapeHtml(date)}</div></div>
             </div>`;
@@ -253,9 +254,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderModalReview(review) {
         const date = formatDate(review.created_at);
+        const customerInitials = String(review.customer || 'ShopEase customer')
+            .trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'SC';
         return `
             <article class="review-card">
-                <div class="review-avatar" aria-hidden="true">👤</div>
+                <div class="review-avatar" aria-hidden="${review.customer_photo_url ? 'false' : 'true'}">${review.customer_photo_url
+                    ? `<img src="${escapeHtml(review.customer_photo_url)}" alt="${escapeHtml(review.customer)}" loading="lazy">`
+                    : `<span class="review-avatar-fallback">${escapeHtml(customerInitials)}</span>`}</div>
                 <div>
                     <h4 class="review-name">${escapeHtml(review.customer)}</h4>
                     <div class="review-meta">

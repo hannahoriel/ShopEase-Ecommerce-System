@@ -9,6 +9,7 @@ use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerFeedbackController extends Controller
 {
@@ -20,7 +21,7 @@ class CustomerFeedbackController extends Controller
         ]);
         $query = ProductReview::query()
             ->where('seller_id', $seller->id)
-            ->with(['product:id,name,photos', 'buyer:id,name'])
+            ->with(['product:id,name,photos', 'buyer:id,name,profile_photo_path'])
             ->latest();
 
         if ($request->filled('rating') && $request->input('rating') !== 'all') {
@@ -74,7 +75,7 @@ class CustomerFeedbackController extends Controller
 
         $reviews = ProductReview::query()
             ->where('product_id', $product->id)
-            ->with('buyer:id,name')
+            ->with('buyer:id,name,profile_photo_path')
             ->latest()
             ->paginate(10);
         $averageRating = (float) ProductReview::where('product_id', $product->id)->avg('rating');
@@ -114,12 +115,16 @@ class CustomerFeedbackController extends Controller
             'id' => $review->id,
             'order_id' => null,
             'customer' => $review->buyer?->name ?? 'ShopEase customer',
+            'customer_photo_url' => $review->buyer?->profile_photo_path
+                ? Storage::disk('public')->url($review->buyer->profile_photo_path)
+                : null,
             'phone' => $review->buyer?->buyerProfile?->contact_no ?? '',
             'rating' => $review->rating,
             'title' => $review->title ?: 'Customer feedback',
             'body' => $review->body,
             'product' => $review->product?->name,
             'product_id' => $review->product_id,
+            'product_image_url' => $review->product ? $this->productImage($review->product) : null,
             'created_at' => $review->created_at?->toISOString(),
         ];
     }

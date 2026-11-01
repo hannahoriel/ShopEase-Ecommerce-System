@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductReview;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProductReviewController extends Controller
@@ -22,7 +24,7 @@ class ProductReviewController extends Controller
         $reviews = ProductReview::query()
             ->where('product_id', $product->id)
             ->when(isset($validated['rating']), fn ($query) => $query->where('rating', $validated['rating']))
-            ->with('buyer:id,name')
+            ->with('buyer:id,name,profile_photo_path')
             ->latest()
             ->paginate(10);
 
@@ -50,6 +52,17 @@ class ProductReviewController extends Controller
         ]);
 
         $buyerId = $request->user()->id;
+        $hasCompletedPurchase = Order::query()
+            ->where('buyer_id', $buyerId)
+            ->where('status', 'completed')
+            ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
+            ->exists();
+        if (! $hasCompletedPurchase) {
+            throw ValidationException::withMessages([
+                'review' => ['Confirm receipt of a completed purchase before rating this seller.'],
+            ]);
+        }
+
         if (ProductReview::where('product_id', $product->id)->where('buyer_id', $buyerId)->exists()) {
             throw ValidationException::withMessages([
                 'review' => ['You have already reviewed this product.'],
@@ -62,7 +75,7 @@ class ProductReviewController extends Controller
             'seller_id' => $product->seller_id,
             'buyer_id' => $buyerId,
         ]);
-        $review->load('buyer:id,name');
+        $review->load('buyer:id,name,profile_photo_path');
 
         return response()->json([
             'message' => 'Your review has been submitted.',
@@ -101,6 +114,9 @@ class ProductReviewController extends Controller
             'title' => $review->title,
             'body' => $review->body,
             'buyer_name' => $review->buyer?->name ?? 'ShopEase customer',
+            'buyer_photo_url' => $review->buyer?->profile_photo_path
+                ? Storage::disk('public')->url($review->buyer->profile_photo_path)
+                : null,
             'created_at' => $review->created_at?->toISOString(),
         ];
     }
