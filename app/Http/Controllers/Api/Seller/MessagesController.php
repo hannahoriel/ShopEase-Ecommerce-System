@@ -53,15 +53,17 @@ class MessagesController extends Controller
             });
         }
 
-        $conversations = $query
+        $conversationRows = $query
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->get()
-            ->map(fn (SellerConversation $conversation): array => $this->serializeConversation(
-                $conversation,
-                $request->user(),
-            ))
-            ->values();
+            ->get();
+        $conversations = $validated['type'] === SellerConversation::TYPE_BUYER
+            ? $conversationRows->groupBy('buyer_id')->map(function ($threads) use ($request): array {
+                $latest = $threads->first();
+                $latest->setAttribute('unread_count', (int) $threads->sum(fn (SellerConversation $thread) => $thread->unread_count));
+                return $this->serializeConversation($latest, $request->user());
+            })->values()
+            : $conversationRows->map(fn (SellerConversation $conversation): array => $this->serializeConversation($conversation, $request->user()))->values();
 
         $typeCounts = SellerConversation::query()
             ->where('seller_id', $seller->id)
@@ -70,6 +72,8 @@ class MessagesController extends Controller
             ->pluck('total', 'type')
             ->map(fn ($total): int => (int) $total)
             ->all();
+        $typeCounts[SellerConversation::TYPE_BUYER] = SellerConversation::query()
+            ->where('seller_id', $seller->id)->where('type', SellerConversation::TYPE_BUYER)->distinct('buyer_id')->count('buyer_id');
 
         $unreadCounts = SellerMessage::query()
             ->join('seller_conversations', 'seller_conversations.id', '=', 'seller_messages.conversation_id')
@@ -141,13 +145,23 @@ class MessagesController extends Controller
             $orderId = null;
         }
 
-        $conversation = SellerConversation::firstOrCreate(
-            [
+        if ($orderId === null) {
+            $conversation = SellerConversation::query()
+                ->where('seller_id', $seller->id)
+                ->where('buyer_id', $buyerId)
+                ->where('type', SellerConversation::TYPE_BUYER)
+                ->orderByDesc('updated_at')->orderByDesc('id')->first();
+        }
+        $conversation ??= SellerConversation::firstOrCreate(
+            $orderId === null
+                ? ['seed_key' => "direct-account-buyer-{$buyerId}-seller-{$seller->id}"]
+                : [
                 'seller_id' => $seller->id,
                 'type' => SellerConversation::TYPE_BUYER,
                 'buyer_id' => $buyerId,
                 'order_id' => $orderId,
-            ],
+                ],
+            ['seller_id' => $seller->id, 'type' => SellerConversation::TYPE_BUYER, 'buyer_id' => $buyerId, 'order_id' => $orderId],
         );
 
         return response()->json([

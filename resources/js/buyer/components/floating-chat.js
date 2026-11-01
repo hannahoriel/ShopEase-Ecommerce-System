@@ -56,6 +56,7 @@
                 document.getElementById(
                     'buyerFloatingChatActiveName'
                 );
+            const activeAvatar = document.getElementById('buyerFloatingChatActiveAvatar');
 
             const composer =
                 document.getElementById(
@@ -162,6 +163,7 @@
                 expand();
                 showStatus('');
                 if (activeName) activeName.textContent = 'ShopEase Admin';
+                activeAvatar?.replaceChildren(makeSellerAvatar('ShopEase Admin', null, 'buyer-floating-chat-active-avatar-image'));
                 if (activeConversation) activeConversation.hidden = false;
                 if (emptyState) emptyState.hidden = true;
                 showComplaintContext(demoChats[id]);
@@ -196,6 +198,23 @@
                 if (!status) return;
                 status.textContent = message;
                 status.hidden = !message;
+            };
+
+            const avatarInitials = name => String(name || 'Shop').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('') || 'S';
+            const makeSellerAvatar = (name, imageUrl, className) => {
+                const avatar = document.createElement('span');
+                avatar.className = className;
+                if (imageUrl) {
+                    const image = document.createElement('img');
+                    image.src = imageUrl;
+                    image.alt = '';
+                    image.onerror = () => { avatar.replaceChildren(); avatar.textContent = avatarInitials(name); avatar.classList.add('is-generated'); };
+                    avatar.append(image);
+                } else {
+                    avatar.textContent = avatarInitials(name);
+                    avatar.classList.add('is-generated');
+                }
+                return avatar;
             };
 
             const expand = () => {
@@ -261,12 +280,9 @@
                     }
                     button.dataset.conversationId = conversation.id;
                     button.dataset.chatName = conversation.title;
-                    if (conversation.demo) {
-                        const avatar = document.createElement('span');
-                        avatar.className = 'buyer-floating-chat-admin-avatar';
-                        avatar.textContent = 'SA';
-                        button.append(avatar);
-                    }
+                    button.append(conversation.demo
+                        ? makeSellerAvatar('ShopEase Admin', null, 'buyer-floating-chat-admin-avatar')
+                        : makeSellerAvatar(conversation.title, conversation.seller_avatar_url, 'buyer-floating-chat-avatar'));
                     const copy = document.createElement('span');
                     copy.className = 'buyer-floating-chat-conversation-copy';
                     const title = document.createElement('strong');
@@ -354,6 +370,7 @@
                     const conversation = payload.data;
                     activeConversationId = conversation.id;
                     if (activeName) activeName.textContent = conversation.title;
+                    activeAvatar?.replaceChildren(makeSellerAvatar(conversation.title, conversation.seller_avatar_url, 'buyer-floating-chat-active-avatar-image'));
                     showComplaintContext(null);
                     if (activeConversation) activeConversation.hidden = false;
                     if (emptyState) emptyState.hidden = true;

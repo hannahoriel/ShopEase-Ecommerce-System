@@ -13,6 +13,7 @@ use App\Services\SellerMessageAutoReply;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class MessagesController extends Controller
@@ -22,14 +23,20 @@ class MessagesController extends Controller
         $conversations = SellerConversation::query()
             ->where('buyer_id', $request->user()->id)
             ->where('type', SellerConversation::TYPE_BUYER)
-            ->with(['seller', 'order.items.product', 'product', 'messages.sender'])
+            ->with(['seller.user:id,name,profile_photo_path', 'order.items.product', 'product', 'messages.sender'])
             ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->get();
+        $conversations = $conversations->groupBy('seller_id')->map(function ($threads): array {
+            $latest = $threads->first();
+            $data = $this->serializeConversation($latest);
+            $data['unread'] = (int) $threads->sum(fn (SellerConversation $thread) => $thread->messages
+                ->where('sender_id', '!=', $thread->buyer_id)->whereNull('read_at')->count());
+            return $data;
+        })->values();
 
         return response()->json([
-            'data' => $conversations
-                ->map(fn (SellerConversation $conversation): array => $this->serializeConversation($conversation))
-                ->values(),
+            'data' => $conversations,
         ]);
     }
 
@@ -53,13 +60,17 @@ class MessagesController extends Controller
                 ->whereKey($validated['seller_id'])
                 ->where('registration_status', 'active')
                 ->firstOrFail();
-            $conversation = SellerConversation::firstOrCreate([
-                'seller_id' => $seller->id,
-                'type' => SellerConversation::TYPE_BUYER,
-                'buyer_id' => $request->user()->id,
-                'order_id' => null,
-                'product_id' => null,
-            ]);
+            $conversation = SellerConversation::query()
+                ->where('seller_id', $seller->id)
+                ->where('buyer_id', $request->user()->id)
+                ->where('type', SellerConversation::TYPE_BUYER)
+                ->orderByDesc('updated_at')->orderByDesc('id')->first();
+            if (! $conversation) {
+                $conversation = SellerConversation::firstOrCreate(
+                    ['seed_key' => "direct-account-buyer-{$request->user()->id}-seller-{$seller->id}"],
+                    ['seller_id' => $seller->id, 'type' => SellerConversation::TYPE_BUYER, 'buyer_id' => $request->user()->id],
+                );
+            }
         } elseif (! empty($validated['product_id'])) {
             $product = Product::query()
                 ->whereKey($validated['product_id'])
@@ -91,7 +102,7 @@ class MessagesController extends Controller
             ]);
         }
 
-        $conversation->load(['seller', 'order.items.product', 'product', 'messages.sender']);
+        $conversation->load(['seller.user:id,name,profile_photo_path', 'order.items.product', 'product', 'messages.sender']);
 
         return response()->json([
             'data' => $this->serializeConversation($conversation, true),
@@ -107,7 +118,7 @@ class MessagesController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
-        $conversation->load(['seller', 'order.items.product', 'product', 'messages.sender']);
+        $conversation->load(['seller.user:id,name,profile_photo_path', 'order.items.product', 'product', 'messages.sender']);
 
         return response()->json([
             'data' => $this->serializeConversation($conversation, true),
@@ -173,7 +184,10 @@ class MessagesController extends Controller
         $data = [
             'id' => $conversation->id,
             'seller_id' => $conversation->seller_id,
-            'title' => $conversation->seller?->store_name ?? 'Seller',
+            'title' => $conversation->seller?->store_name ?: ($conversation->seller?->business_name ?: ($conversation->seller?->user?->name ?? 'Seller')),
+            'seller_avatar_url' => $conversation->seller?->user?->profile_photo_path
+                ? Storage::disk('public')->url($conversation->seller->user->profile_photo_path)
+                : null,
             'product_id' => $product?->id,
             'product_name' => $product?->name,
             'preview' => $latestMessage?->body ?? 'Start a conversation with this seller.',
