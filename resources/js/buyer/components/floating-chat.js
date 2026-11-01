@@ -442,7 +442,9 @@
                         method: 'POST',
                         body: JSON.stringify(contextType === 'order'
                             ? { order_id: Number(contextId) }
-                            : { product_id: Number(contextId) }),
+                            : contextType === 'seller'
+                                ? { seller_id: Number(contextId) }
+                                : { product_id: Number(contextId) }),
                     });
                     await loadConversations();
                     await openConversation(payload.data.id);

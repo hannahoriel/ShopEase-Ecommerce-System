@@ -1529,6 +1529,39 @@ document.addEventListener('click', (event) => {
     if (!card || event.target.closest('a, button, input, select, textarea, label, [role="button"], [data-no-order-navigation]')) return;
     openPurchaseDetails(window.__buyerPurchaseOrders?.get(String(card.dataset.viewOrderId)));
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const list = document.getElementById('buyerFollowingList');
+    if (!list) return;
+    const count = document.getElementById('buyerFollowingCount');
+    const config = window.__buyerPurchasesConfig || {};
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    (async () => {
+        try {
+            const headers = {Accept:'application/json'};
+            if (config.apiToken) headers.Authorization = `Bearer ${config.apiToken}`;
+            const response = await fetch('/api/v1/buyer/following', {headers, credentials:'same-origin'});
+            if (!response.ok) throw new Error('Could not load followed shops.');
+            const payload = await response.json();
+            const shops = Array.isArray(payload.data) ? payload.data : [];
+            count.textContent = `${shops.length} ${shops.length === 1 ? 'shop' : 'shops'}`;
+            if (!shops.length) {
+                list.innerHTML = '<p class="buyer-following-state">You are not following any shops yet. Follow a shop to see it here.</p>';
+                return;
+            }
+            list.innerHTML = shops.map(shop => `<article class="buyer-following-shop"><a class="buyer-following-shop-link" href="/buyer/shop?seller=${encodeURIComponent(shop.id)}" aria-label="View ${escapeHtml(shop.name || 'shop')}"><div class="buyer-following-avatar">${shop.avatar_url ? `<img src="${escapeHtml(shop.avatar_url)}" alt="">` : `<span>${escapeHtml((shop.name || 'S').slice(0,1).toUpperCase())}</span>`}</div><div class="buyer-following-info"><h3>${escapeHtml(shop.name || 'Shop')}</h3><p>${escapeHtml(shop.location || 'Location not provided')}</p><small>${Number(shop.product_count || 0)} products · ${Number(shop.followers || 0)} followers${Number(shop.rating_count || 0) ? ` · ★ ${Number(shop.rating_average).toFixed(1)} (${Number(shop.rating_count)} ratings)` : ''}</small></div></a><div class="buyer-following-actions"><a class="buyer-following-visit" href="/buyer/shop?seller=${encodeURIComponent(shop.id)}">View shop</a><button type="button" class="buyer-following-message" data-message-shop-id="${escapeHtml(shop.id)}">Message</button></div></article>`).join('');
+        } catch (error) {
+            count.textContent = 'Unavailable';
+            list.innerHTML = `<p class="buyer-following-state">${escapeHtml(error.message || 'Could not load followed shops.')}</p>`;
+        }
+    })();
+    list.addEventListener('click', event => {
+        const button = event.target.closest('[data-message-shop-id]');
+        if (!button) return;
+        if (typeof window.openBuyerSellerChat === 'function') window.openBuyerSellerChat(button.dataset.messageShopId, 'seller');
+        else window.location.assign(`/buyer/messages?seller=${encodeURIComponent(button.dataset.messageShopId)}`);
+    });
+});
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     const card = event.target.closest('#purchaseRows [data-view-order-id]');

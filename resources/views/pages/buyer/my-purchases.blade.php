@@ -74,7 +74,7 @@
 
                     $activeSidePanel = in_array(
                         $requestedSidePanel,
-                        ['purchases', 'likes', 'notifications', 'account', 'complaints', 'vouchers', 'privacy-security', 'notification-settings', 'platform-policies'],
+                        ['purchases', 'likes', 'following', 'notifications', 'account', 'complaints', 'vouchers', 'privacy-security', 'notification-settings', 'platform-policies'],
                         true
                     )
                         ? $requestedSidePanel
@@ -151,6 +151,8 @@
                             <span class="buyer-account-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 0 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z"/></svg></span>
                             <span>My Likes</span><span id="buyerLikesSidebarCount" class="buyer-likes-sidebar-count" aria-label="Liked products count" hidden></span>
                         </button>
+
+                        <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'following' ? 'is-active' : '' }}" data-side-panel="following"><span class="buyer-account-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6m-3-3h6"/></svg></span><span>Following</span></button>
 
                         <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'notifications' ? 'is-active' : '' }}" data-side-panel="notifications">
                             <span class="buyer-account-nav-icon">
@@ -667,6 +669,11 @@
               </div>
             </section>
 </div>
+                    </div>
+
+                    <div class="buyer-side-panel {{ $activeSidePanel === 'following' ? 'is-active' : '' }}" data-panel-content="following" {{ $activeSidePanel !== 'following' ? 'hidden' : '' }}">
+                        <section class="purchases-page-heading"><h1>Following</h1><nav class="purchases-breadcrumbs" aria-label="Breadcrumb"><a href="{{ url('/buyer/dashboard') }}">Home</a><span aria-hidden="true">›</span><span aria-current="page">Following</span></nav></section>
+                        <section class="buyer-following-card"><header><div><h2>Shops you follow</h2><p>Keep up with new products and updates from your favorite shops.</p></div><span id="buyerFollowingCount">Loading…</span></header><div id="buyerFollowingList" class="buyer-following-list" aria-live="polite"><p class="buyer-following-state">Loading followed shops…</p></div></section>
                     </div>
 
                     <div class="buyer-side-panel {{ $activeSidePanel === 'vouchers' ? 'is-active' : '' }}" data-panel-content="vouchers" {{ $activeSidePanel !== 'vouchers' ? 'hidden' : '' }}">

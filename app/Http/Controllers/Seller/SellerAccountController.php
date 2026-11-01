@@ -76,6 +76,7 @@ class SellerAccountController extends Controller
             'notificationPreferences' => app(SellerNotificationPreferences::class)->forUser($request->user()),
             'coverUrl' => $this->publicImageUrl($seller, 'cover_photo_path'),
             'avatarUrl' => $this->publicImageUrl($seller, 'profile_photo_path'),
+            'apiToken' => $request->user()->createToken('seller-account-followers')->plainTextToken,
         ]);
     }
 

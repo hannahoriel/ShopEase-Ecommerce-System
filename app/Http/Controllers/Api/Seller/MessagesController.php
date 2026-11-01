@@ -120,21 +120,33 @@ class MessagesController extends Controller
     public function storeConversation(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'order_id' => ['nullable', 'integer', 'exists:orders,id'],
+            'buyer_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
+        if (empty($validated['order_id']) === empty($validated['buyer_id'])) {
+            throw ValidationException::withMessages(['buyer_id' => 'Choose a buyer or one of their orders to start a conversation.']);
+        }
         $seller = $this->sellerFor($request->user());
-        $order = Order::query()
-            ->where('seller_id', $seller->id)
-            ->whereKey($validated['order_id'])
-            ->whereHas('buyer', fn ($buyer) => $buyer->where('role', User::ROLE_BUYER))
-            ->firstOrFail();
+        if (! empty($validated['order_id'])) {
+            $order = Order::query()
+                ->where('seller_id', $seller->id)
+                ->whereKey($validated['order_id'])
+                ->whereHas('buyer', fn ($buyer) => $buyer->where('role', User::ROLE_BUYER))
+                ->firstOrFail();
+            $buyerId = $order->buyer_id;
+            $orderId = $order->id;
+        } else {
+            $buyer = User::query()->whereKey($validated['buyer_id'])->where('role', User::ROLE_BUYER)->firstOrFail();
+            $buyerId = $buyer->id;
+            $orderId = null;
+        }
 
         $conversation = SellerConversation::firstOrCreate(
             [
                 'seller_id' => $seller->id,
                 'type' => SellerConversation::TYPE_BUYER,
-                'buyer_id' => $order->buyer_id,
-                'order_id' => $order->id,
+                'buyer_id' => $buyerId,
+                'order_id' => $orderId,
             ],
         );
 

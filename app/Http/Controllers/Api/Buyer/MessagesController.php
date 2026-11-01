@@ -7,6 +7,7 @@ use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\SellerConversation;
 use App\Models\Seller\SellerMessage;
+use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\SellerMessageAutoReply;
 use Illuminate\Http\JsonResponse;
@@ -37,15 +38,29 @@ class MessagesController extends Controller
         $validated = $request->validate([
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'order_id' => ['nullable', 'integer', 'exists:orders,id'],
+            'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
         ]);
 
-        if (empty($validated['product_id']) === empty($validated['order_id'])) {
+        $contexts = collect(['product_id', 'order_id', 'seller_id'])->filter(fn ($key) => ! empty($validated[$key]))->count();
+        if ($contexts !== 1) {
             throw ValidationException::withMessages([
-                'product_id' => 'Choose one product or one of your orders to start a conversation.',
+                'product_id' => 'Choose one shop, product, or one of your orders to start a conversation.',
             ]);
         }
 
-        if (! empty($validated['product_id'])) {
+        if (! empty($validated['seller_id'])) {
+            $seller = Seller::query()
+                ->whereKey($validated['seller_id'])
+                ->where('registration_status', 'active')
+                ->firstOrFail();
+            $conversation = SellerConversation::firstOrCreate([
+                'seller_id' => $seller->id,
+                'type' => SellerConversation::TYPE_BUYER,
+                'buyer_id' => $request->user()->id,
+                'order_id' => null,
+                'product_id' => null,
+            ]);
+        } elseif (! empty($validated['product_id'])) {
             $product = Product::query()
                 ->whereKey($validated['product_id'])
                 ->where('status', 'active')

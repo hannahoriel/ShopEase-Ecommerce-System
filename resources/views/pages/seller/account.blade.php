@@ -732,7 +732,7 @@
     @include('components.seller.sidebar')
     @include('components.seller.navbar')
 
-    <main id="sellerAccountPage" class="seller-account-page">
+    <main id="sellerAccountPage" class="seller-account-page" data-api-token="{{ $apiToken }}">
         <div class="sa-layout">
             <aside class="sa-navigation" aria-label="Account settings navigation">
                 <div class="sa-nav-heading">
@@ -741,6 +741,7 @@
                 </div>
                 <nav class="sa-nav-list">
                     <a class="sa-nav-link active" href="#profile" data-settings-tab="profile" aria-current="page">Profile</a>
+                    <a class="sa-nav-link" href="#followers" data-settings-tab="followers">Followers</a>
                     <a class="sa-nav-link" href="#privacy" data-settings-tab="privacy">Privacy Settings</a>
                     <a class="sa-nav-link" href="#notifications" data-settings-tab="notifications">Notification Settings</a>
                     <a class="sa-nav-link" href="#policies" data-settings-tab="policies">Platform Policies</a>
@@ -884,6 +885,12 @@
                     </div>
                     <div class="sa-actions"><button type="submit" id="saSaveChanges" class="sa-action primary" disabled aria-disabled="true">Save Changes</button></div>
                 </form>
+            </div>
+
+            <div class="sa-workspace sa-tab-panel" id="followers" data-panel="followers" hidden>
+                <h1 class="sa-page-title">Followers</h1>
+                <p class="sa-intro">People who follow your shop will appear here.</p>
+                <section class="sa-followers-card"><header><div><h2>Your shop followers</h2><p>Buyer accounts following {{ $seller->store_name ?: $seller->business_name ?: 'your shop' }}.</p></div><span id="saFollowersCount">Loading…</span></header><div id="saFollowersList" class="sa-followers-list" aria-live="polite"><p class="sa-followers-state">Loading followers…</p></div></section>
             </div>
 
             {{-- PRIVACY SETTINGS --}}
@@ -1038,14 +1045,14 @@
           <p class="sa-security-message" id="saResetError" role="alert" hidden></p><button class="sa-settings-primary sa-otp-verify" type="submit">Reset Password</button></form>
       </section>
     </div>
-<style>.sa-floating-flash{position:fixed;z-index:99999;top:90px;right:24px;max-width:390px;padding:14px 18px;border-radius:10px;font:500 12px Poppins,sans-serif;box-shadow:0 8px 25px #0002;display:none}.sa-floating-flash.success{display:block;color:#246238;background:#eef9f0;border:1px solid #b9dec2}.sa-floating-flash.error{display:block;color:#9a2f26;background:#fff2ec;border:1px solid #f0c8b8}</style>
+<style>.sa-floating-flash{position:fixed;z-index:99999;top:90px;right:24px;max-width:390px;padding:14px 18px;border-radius:10px;font:500 12px Poppins,sans-serif;box-shadow:0 8px 25px #0002;display:none}.sa-floating-flash.success{display:block;color:#246238;background:#eef9f0;border:1px solid #b9dec2}.sa-floating-flash.error{display:block;color:#9a2f26;background:#fff2ec;border:1px solid #f0c8b8}.sa-followers-card{overflow:hidden;border:1px solid #eee2de;border-radius:14px;background:#fff}.sa-followers-card>header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 22px;border-bottom:1px solid #f0e7e4;background:#fff9f7}.sa-followers-card>header h2{margin:0;color:#34201e;font-size:16px}.sa-followers-card>header p{margin:5px 0 0;color:#8e7b76;font-size:11px}.sa-followers-card>header>span{padding:7px 11px;border-radius:30px;background:#fff0ec;color:#8a2020;font-size:11px;font-weight:700}.sa-followers-list{display:grid}.sa-follower-row{display:flex;align-items:center;gap:13px;padding:15px 20px;border-bottom:1px solid #f2ebe8}.sa-follower-row:last-child{border-bottom:0}.sa-follower-avatar{flex-basis:46px;width:46px;height:46px}.sa-follower-info{display:grid;gap:4px;flex:1}.sa-follower-info strong{color:#33211f;font-size:12px}.sa-follower-info span,.sa-follower-row time{color:#8b7c78;font-size:10px}.sa-follower-profile-open{display:flex;align-items:center;gap:13px;min-width:220px;padding:0;border:0;background:transparent;text-align:left;cursor:pointer}.sa-follower-profile-open:hover strong{color:#971e2c;text-decoration:underline}.sa-follower-actions{display:flex;align-items:center;gap:12px;margin-left:auto}.sa-follower-message{padding:8px 13px;border:1px solid #e7d0cc;border-radius:8px;background:#fff;color:#812022;font-size:10px;font-weight:700;cursor:pointer}.sa-follower-message:hover{background:#fff3f0}.sa-followers-state{padding:32px 18px;color:#8b7c78;text-align:center;font-size:12px}.sa-follower-profile-overlay{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:20px;background:#1f1010a6}.sa-follower-profile-overlay[hidden]{display:none}.sa-follower-profile-card{position:relative;width:min(420px,100%);padding:30px;border:1px solid #f0e2de;border-radius:18px;background:#fff;text-align:center;box-shadow:0 24px 70px #1d101044}.sa-follower-profile-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border:1px solid #eee0dc;border-radius:50%;background:#fff;color:#6f2424;font-size:20px;cursor:pointer}.sa-follower-profile-photo{width:94px;height:94px;margin:2px auto 15px;border:3px solid #fff0ed;border-radius:50%;object-fit:cover}.sa-follower-profile-fallback{display:grid;place-items:center;width:94px;height:94px;margin:2px auto 15px;border-radius:50%;background:#fff0ed;color:#86201f;font-size:28px;font-weight:700}.sa-follower-profile-card h2{margin:0;color:#30201e;font-size:18px}.sa-follower-profile-card p{margin:6px 0 20px;color:#8b7c78;font-size:12px}.sa-follower-profile-card [data-message-buyer]{padding:10px 22px;border:0;border-radius:9px;background:#7e1b1d;color:#fff;font-size:12px;font-weight:700;cursor:pointer}@media(max-width:620px){.sa-follower-row{flex-wrap:wrap;padding:14px}.sa-follower-profile-open{min-width:0;flex:1}.sa-follower-actions{width:100%;justify-content:flex-end}.sa-follower-row time{margin-left:auto}}</style>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         // Account tabs, no navigation away or profile data loss.
         const tabLinks=[...document.querySelectorAll('[data-settings-tab]')];
         const tabPanels=[...document.querySelectorAll('[data-panel]')];
         function activateAccountTab(tab){
-          const valid=['profile','privacy','notifications','policies'].includes(tab)?tab:'profile';
+          const valid=['profile','followers','privacy','notifications','policies'].includes(tab)?tab:'profile';
           tabPanels.forEach(panel=>panel.hidden=panel.dataset.panel!==valid);
           tabLinks.forEach(link=>{const active=link.dataset.settingsTab===valid;link.classList.toggle('active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
           history.replaceState(null,'','#'+valid);
@@ -1053,6 +1060,16 @@
         tabLinks.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();activateAccountTab(a.dataset.settingsTab);}));
         activateAccountTab(location.hash.slice(1)||'profile');
         window.addEventListener('hashchange',()=>activateAccountTab(location.hash.slice(1)));
+
+        const followerList=document.getElementById('saFollowersList');
+        if(followerList){
+          const followerCount=document.getElementById('saFollowersCount');
+          const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+          fetch('/api/v1/seller/account/followers',{headers:{Accept:'application/json',Authorization:`Bearer ${document.getElementById('sellerAccountPage')?.dataset.apiToken||''}`},credentials:'same-origin'})
+            .then(response=>{if(!response.ok)throw new Error('Could not load followers.');return response.json();})
+            .then(payload=>{const buyers=Array.isArray(payload.data)?payload.data:[];followerCount.textContent=`${buyers.length} ${buyers.length===1?'follower':'followers'}`;if(!buyers.length){followerList.innerHTML='<p class="sa-followers-state">Your shop does not have any followers yet.</p>';return;}followerList.innerHTML=buyers.map(buyer=>`<article class="sa-follower-row"><button type="button" class="sa-follower-profile-open" data-view-follower-profile="${buyer.id}" data-name="${escapeHtml(buyer.name||'Buyer')}" data-avatar="${escapeHtml(buyer.avatar_url||'')}"><span class="sa-follower-avatar">${buyer.avatar_url?`<img src="${escapeHtml(buyer.avatar_url)}" alt="">`:`<span>${escapeHtml((buyer.name||'B').slice(0,1).toUpperCase())}</span>`}</span><span class="sa-follower-info"><strong>${escapeHtml(buyer.name||'Buyer')}</strong><span>View buyer profile</span></span></button><div class="sa-follower-actions"><time>${buyer.followed_at?new Date(buyer.followed_at).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):''}</time><button type="button" class="sa-follower-message" data-message-buyer-id="${buyer.id}">Message</button></div></article>`).join('');})
+            .catch(error=>{followerCount.textContent='Unavailable';followerList.innerHTML=`<p class="sa-followers-state">${escapeHtml(error.message)}</p>`;});
+        }
 
         const root = document.getElementById('sellerAccountPage');
         const sidebar = document.getElementById('sellerSidebar');
@@ -1403,5 +1420,21 @@
 })();
 </script>
 
+<div id="saFollowerProfileModal" class="sa-follower-profile-overlay" hidden><section class="sa-follower-profile-card" role="dialog" aria-modal="true" aria-labelledby="saFollowerProfileName"><button type="button" class="sa-follower-profile-close" data-close-follower-profile aria-label="Close profile">&times;</button><div id="saFollowerProfilePhoto" class="sa-follower-profile-fallback">B</div><h2 id="saFollowerProfileName">Buyer</h2><p>ShopEase buyer</p><button type="button" data-message-buyer>Message buyer</button></section></div>
+<style>.sa-follower-profile-photo img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}</style>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const root=document.getElementById('sellerAccountPage'),modal=document.getElementById('saFollowerProfileModal'),photo=document.getElementById('saFollowerProfilePhoto'),name=document.getElementById('saFollowerProfileName');let selectedBuyerId=null;
+ const close=()=>{modal.hidden=true;selectedBuyerId=null;};
+ document.addEventListener('click',async event=>{
+  const profile=event.target.closest('[data-view-follower-profile]');
+  if(profile){selectedBuyerId=profile.dataset.viewFollowerProfile;name.textContent=profile.dataset.name||'Buyer';photo.replaceChildren();if(profile.dataset.avatar){photo.className='sa-follower-profile-photo';const img=document.createElement('img');img.src=profile.dataset.avatar;img.alt='';photo.append(img);}else{photo.className='sa-follower-profile-fallback';photo.textContent=(name.textContent||'B').slice(0,1).toUpperCase();}modal.hidden=false;return;}
+  if(event.target.closest('[data-close-follower-profile]')||event.target===modal){close();return;}
+  const message=event.target.closest('[data-message-buyer-id]');if(message)selectedBuyerId=message.dataset.messageBuyerId;
+  if(event.target.closest('[data-message-buyer]')||message){if(!selectedBuyerId)return;const button=event.target.closest('button');if(button)button.disabled=true;try{const response=await fetch('/api/v1/seller/messages/conversations',{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','Authorization':`Bearer ${root.dataset.apiToken||''}`},body:JSON.stringify({buyer_id:Number(selectedBuyerId)})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.message||'Could not start a conversation.');window.location.assign(`/seller/messages?conversation=${encodeURIComponent(payload.data.id)}`);}catch(error){window.alert(error.message);}finally{if(button)button.disabled=false;}}
+ });
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.hidden)close();});
+});
+</script>
 </body>
 </html>

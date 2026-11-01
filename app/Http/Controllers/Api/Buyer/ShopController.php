@@ -12,6 +12,34 @@ use Illuminate\Support\Facades\Storage;
 
 class ShopController extends Controller
 {
+    public function following(Request $request): JsonResponse
+    {
+        $rows = DB::table('buyer_shop_follows as follows')
+            ->join('sellers', 'sellers.id', '=', 'follows.seller_id')
+            ->leftJoin('users', 'users.id', '=', 'sellers.user_id')
+            ->where('follows.buyer_id', $request->user()->id)
+            ->where('sellers.registration_status', 'active')
+            ->orderByDesc('follows.created_at')
+            ->select(['sellers.id', 'sellers.store_name', 'sellers.business_name', 'sellers.province', 'sellers.municipality', 'sellers.user_id', 'users.name as owner_name', 'users.profile_photo_path', 'follows.created_at as followed_at'])
+            ->get()
+            ->map(function ($shop): array {
+                return [
+                    'id' => (int) $shop->id,
+                    'name' => $shop->store_name ?: $shop->business_name ?: $shop->owner_name,
+                    'owner_name' => $shop->owner_name,
+                    'avatar_url' => $shop->profile_photo_path ? Storage::disk('public')->url($shop->profile_photo_path) : null,
+                    'location' => collect([$shop->municipality, $shop->province])->filter()->implode(', '),
+                    'product_count' => DB::table('products')->where('seller_id', $shop->id)->where('status', 'active')->where('is_archived', false)->count(),
+                    'rating_average' => round((float) DB::table('product_reviews')->where('seller_id', $shop->id)->avg('rating'), 1),
+                    'rating_count' => DB::table('product_reviews')->where('seller_id', $shop->id)->count(),
+                    'followers' => DB::table('buyer_shop_follows')->where('seller_id', $shop->id)->count(),
+                    'followed_at' => $shop->followed_at,
+                ];
+            })->values();
+
+        return response()->json(['data' => $rows, 'total' => $rows->count()]);
+    }
+
     public function show(Request $request, Seller $seller): JsonResponse
     {
         abort_unless($seller->registration_status === 'active', 404);

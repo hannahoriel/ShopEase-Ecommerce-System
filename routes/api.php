@@ -261,6 +261,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
             Route::get('/shops/{seller}', [BuyerShopController::class, 'show'])->name('buyer.api.shops.show');
+            Route::get('/following', [BuyerShopController::class, 'following'])->name('buyer.api.following');
             Route::post('/shops/{seller}/follow', [BuyerShopController::class, 'follow'])->name('buyer.api.shops.follow');
             Route::delete('/shops/{seller}/follow', [BuyerShopController::class, 'unfollow'])->name('buyer.api.shops.unfollow');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
@@ -288,6 +289,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'show']);
+            Route::get('/account/followers', [\App\Http\Controllers\Api\Seller\AccountController::class, 'followers']);
             Route::put('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'update']);
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
             Route::get('/messages', [SellerMessagesController::class, 'index'])->name('seller.api.messages.index');
