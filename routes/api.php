@@ -377,6 +377,8 @@ Route::prefix('v1')->group(function () {
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
                 }
                 if ($facilityRole === 'sorting_center') {
+                    Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'index'])
+                        ->name('sorting_center.api.parcel-tracking.index');
                     Route::get('/delivery-hubs', [SortingCenterDeliveryHubController::class, 'index'])->name('sorting_center.api.delivery-hubs.index');
                     Route::get('/delivery-hubs/{hub}', [SortingCenterDeliveryHubController::class, 'show'])->name('sorting_center.api.delivery-hubs.show');
                     Route::get('/courier-registrations', [CourierRegistrationController::class, 'index'])->name('sorting_center.api.courier-registrations.index');

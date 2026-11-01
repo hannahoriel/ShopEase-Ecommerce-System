@@ -2377,7 +2377,7 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/scanners', 'pages.logistics.sorting-center.scanners')
             ->name('scanners');
 
-        Route::view('/parcel-tracking', 'pages.logistics.sorting-center.parcel-tracking')
+        Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'page'])
             ->name('parcel-tracking');
 
         Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
