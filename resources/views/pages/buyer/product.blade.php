@@ -134,7 +134,7 @@
                                 <svg viewBox="0 0 24 24" fill="none"><path d="M5 5h14v10H9l-4 4Z" stroke="currentColor" stroke-width="1.7"/></svg>
                                 Chat Now
                             </button>
-                            <button type="button" class="view-shop-button">
+                            <button type="button" class="view-shop-button" id="viewShopButton" disabled>
                                 <svg viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1-5H5L4 9ZM5 9v10h14V9" stroke="currentColor" stroke-width="1.7"/></svg>
                                 View Shop
                             </button>

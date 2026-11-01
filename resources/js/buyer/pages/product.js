@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let galleryPhotos = [];
     let activeGalleryIndex = 0;
     let currentProduct = null;
+    let currentSellerId = null;
     let selectedProductOptions = {};
     let connectedProductVariants = [];
 
@@ -302,6 +303,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const sellerResponseTime = document.getElementById('sellerResponseTime');
         const sellerFollowers = document.getElementById('sellerFollowers');
         const seller = p.seller || {};
+        currentSellerId = seller.id || null;
+        const viewShopButton = document.getElementById('viewShopButton');
+        if (viewShopButton) {
+            viewShopButton.disabled = !currentSellerId;
+            viewShopButton.onclick = () => {
+                if (currentSellerId) window.location.assign(`/buyer/shop?seller=${encodeURIComponent(currentSellerId)}`);
+            };
+        }
         const joinedYears = Number(seller.joined_years || 0);
         const joinedMonths = Number(seller.joined_months || 0);
         if (sellerName) sellerName.textContent = p.seller?.store_name || '—';

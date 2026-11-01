@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Buyer\AccountController as BuyerAccountController;
 use App\Http\Controllers\Api\Buyer\LikeController as BuyerLikeController;
 use App\Http\Controllers\Api\Buyer\ComplaintMessagesController as BuyerComplaintMessagesController;
 use App\Http\Controllers\Api\Buyer\ComplaintController as BuyerComplaintController;
+use App\Http\Controllers\Api\Buyer\ShopController as BuyerShopController;
 use App\Http\Controllers\Api\Buyer\AccountSecurityController as BuyerAccountSecurityController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
@@ -259,6 +260,9 @@ Route::prefix('v1')->group(function () {
             Route::patch('/orders/{order}/confirm-received', [BuyerOrderController::class, 'confirmReceived'])->name('buyer.api.orders.confirm-received');
             Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
+            Route::get('/shops/{seller}', [BuyerShopController::class, 'show'])->name('buyer.api.shops.show');
+            Route::post('/shops/{seller}/follow', [BuyerShopController::class, 'follow'])->name('buyer.api.shops.follow');
+            Route::delete('/shops/{seller}/follow', [BuyerShopController::class, 'unfollow'])->name('buyer.api.shops.unfollow');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
             Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');

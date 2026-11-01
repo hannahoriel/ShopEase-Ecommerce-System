@@ -2001,6 +2001,13 @@ Route::get('/buyer/product', function () {
     return view('pages.buyer.product', ['apiToken' => $apiToken]);
 })->middleware('auth')->name('buyer.product');
 
+Route::get('/buyer/shop', function () {
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $apiToken = Auth::user()->createToken('buyer-shop')->plainTextToken;
+
+    return view('pages.buyer.shop', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.shop');
+
 Route::get('/buyer/my-purchases', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
     $user = Auth::user();
