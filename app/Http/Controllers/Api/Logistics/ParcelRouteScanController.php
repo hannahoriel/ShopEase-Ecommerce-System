@@ -66,6 +66,15 @@ class ParcelRouteScanController extends Controller
             $sellerCity = trim((string) $seller?->municipality);
             $buyerProvince = trim((string) $buyer?->province);
             $buyerCity = trim((string) $buyer?->municipality);
+            $stagedOutbound = $input['action'] === 'depart' && $facility === 'sorting_center' && ! empty($input['batch_key'])
+                ? LogisticsTransferManifest::query()
+                    ->where('batch_key', $input['batch_key'])
+                    ->where('origin_type', 'sorting_center')
+                    ->where('origin_id', LogisticsBranch::query()->where('user_id', $request->user()->id)->value('id'))
+                    ->where('status', 'preparing')
+                    ->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id))
+                    ->first()
+                : null;
 
             if ($facility === 'delivery_hub') {
                 $hub = LogisticsDeliveryHub::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail();
@@ -89,7 +98,9 @@ class ParcelRouteScanController extends Controller
                 $location = $hub->hub_name.' · '.$hub->municipality.', '.$hub->province;
             } else {
                 $center = LogisticsBranch::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail();
-                $this->scanAtCenter($shipment, $center, $input['action'], $buyerProvince, $buyerCity);
+                if (! $stagedOutbound) {
+                    $this->scanAtCenter($shipment, $center, $input['action'], $buyerProvince, $buyerCity);
+                }
                 $location = $center->name.' · '.$center->province;
             }
 
@@ -171,7 +182,8 @@ class ParcelRouteScanController extends Controller
                     }
                     $courierId = $input['courier_registration_id'] ?? null;
                     $vehicleId = $input['vehicle_id'] ?? null;
-                    if ($facility === 'sorting_center') {
+                    if ($facility === 'sorting_center' && ($courierId !== null || $vehicleId !== null)) {
+                        abort_unless($courierId !== null && $vehicleId !== null, 422, 'Select both an approved courier and their registered vehicle.');
                         $centerId = $facilityId;
                         $courier = CourierRegistration::query()->where('sorting_center_id', $centerId)->where('status', 'approved')->find($courierId);
                         $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $centerId)->find($vehicleId);
@@ -239,6 +251,16 @@ class ParcelRouteScanController extends Controller
                     409,
                     'This batch is already assigned to another route.',
                 );
+                if ($requiresCourierDeparture && ! empty($input['courier_registration_id'])) {
+                    $outbound->update([
+                        'courier_registration_id' => $input['courier_registration_id'],
+                        'vehicle_id' => $input['vehicle_id'],
+                        'courier_name' => $input['courier_name'],
+                        'vehicle_reference' => $input['vehicle_reference'],
+                        'status' => 'preparing',
+                        'loaded_at' => now(),
+                    ]);
+                }
                 abort_if(
                     LogisticsTransferManifest::query()
                         ->whereIn('status', ['preparing', 'loaded'])
@@ -250,9 +272,9 @@ class ParcelRouteScanController extends Controller
                 );
                 $outbound->shipments()->syncWithoutDetaching([
                     $shipment->id => [
-                        'load_status' => 'loaded',
-                        'loaded_at' => now(),
-                        'loaded_by' => $request->user()->id,
+                        'load_status' => $requiresCourierDeparture && empty($input['courier_registration_id']) ? 'pending' : 'loaded',
+                        'loaded_at' => $requiresCourierDeparture && empty($input['courier_registration_id']) ? null : now(),
+                        'loaded_by' => $requiresCourierDeparture && empty($input['courier_registration_id']) ? null : $request->user()->id,
                     ],
                 ]);
                 if (! $requiresCourierDeparture && $outbound->wasRecentlyCreated) {
@@ -267,7 +289,9 @@ class ParcelRouteScanController extends Controller
                     'transfer_manifest_id' => $outbound->id,
                     'shipment_id' => $shipment->id,
                     'actor_user_id' => $request->user()->id,
-                    'event_type' => 'parcel_loaded',
+                    'event_type' => $requiresCourierDeparture && empty($input['courier_registration_id'])
+                        ? 'departure_staged'
+                        : 'parcel_loaded',
                     'occurred_at' => now(),
                 ]);
             }
@@ -317,7 +341,7 @@ class ParcelRouteScanController extends Controller
                         ->where('origin_type', 'seller_collection')
                         ->where('status', 'preparing'));
             })
-            ->with(['shipments.order.seller.user', 'shipments.order.buyer.buyerProfile', 'shipments.order.items.product', 'shipments.rider.user', 'returnTrip'])
+            ->with(['shipments.order.seller.user', 'shipments.order.buyer.buyerProfile', 'shipments.order.items.product', 'shipments.rider.user', 'returnTrip', 'courierRegistration'])
             ->latest('loaded_at')->get();
 
         $parcels = [];
@@ -325,6 +349,8 @@ class ParcelRouteScanController extends Controller
         foreach ($transfers as $transfer) {
             $members = [];
             foreach ($transfer->shipments as $shipment) {
+                // Facility ownership is updated when the courier confirms
+                // departure, so the destination only lists dispatched parcels.
                 $isAtFacility = $facility === 'delivery_hub'
                     ? (int) $shipment->logistics_delivery_hub_id === (int) $id
                     : (int) $shipment->logistics_branch_id === (int) $id && $shipment->logistics_delivery_hub_id === null;
@@ -334,6 +360,23 @@ class ParcelRouteScanController extends Controller
                 $members[] = $parcelId;
                 $parcelStatus = $shipment->order?->status === 'out_for_delivery' ? 'out-for-delivery' : ($received ? 'received' : 'incoming');
                 $payload = $this->parcelPayload($shipment, $parcelId, $parcelStatus, $facility === 'sorting_center' ? $id : null, $transfer->id);
+                $payload['receivedAt'] = $shipment->pivot->received_at
+                    ? \Illuminate\Support\Carbon::parse($shipment->pivot->received_at)->toISOString()
+                    : null;
+                $payload['receivedFrom'] = $transfer->origin_type === 'seller_collection'
+                    ? (collect([
+                        $shipment->order?->seller?->store_name
+                            ?: trim(($shipment->order?->seller?->first_name ?? '').' '.($shipment->order?->seller?->last_name ?? '')),
+                        $shipment->order?->seller?->barangay,
+                        $shipment->order?->seller?->municipality,
+                    ])->filter()->implode(' · ') ?: 'Seller pickup')
+                    : $this->facilityName($transfer->origin_type, (int) $transfer->origin_id);
+                if ($transfer->origin_type !== 'seller_collection') {
+                    // This incoming row represents the immediately previous
+                    // facility in the route, not the seller's original address.
+                    $payload['kind'] = 'sorting';
+                    $payload['loadedFromName'] = $payload['receivedFrom'];
+                }
                 // The UI uses nextCenterId to decide which parcels belong in
                 // Incoming Transfers. Keep an unreceived parcel in transit to
                 // this center, then move it to currentCenterId after a scan.
@@ -342,6 +385,7 @@ class ParcelRouteScanController extends Controller
                     $payload['nextCenterId'] = $received ? null : $id;
                 }
                 $payload['routeStatus'] = $received ? 'received' : 'in_transit';
+                $payload['inTransitSince'] = ($transfer->departed_at ?? $transfer->loaded_at ?? $transfer->created_at)?->toISOString();
                 if ($transfer->origin_type === 'seller_collection') {
                     $payload['kind'] = 'pickup';
                     $payload['pickupCollected'] = true;
@@ -382,6 +426,14 @@ class ParcelRouteScanController extends Controller
                             $transfer->shipments->first()?->order?->seller?->municipality,
                         ])->filter()->implode(' · ') ?: 'Seller pickup')
                         : $this->facilityName($transfer->origin_type, $transfer->origin_id),
+                    'receivedFrom' => $transfer->origin_type === 'seller_collection'
+                        ? (collect([
+                            $transfer->shipments->first()?->order?->seller?->store_name
+                                ?: trim(($transfer->shipments->first()?->order?->seller?->first_name ?? '').' '.($transfer->shipments->first()?->order?->seller?->last_name ?? '')),
+                            $transfer->shipments->first()?->order?->seller?->barangay,
+                            $transfer->shipments->first()?->order?->seller?->municipality,
+                        ])->filter()->implode(' · ') ?: 'Seller pickup')
+                        : $this->facilityName($transfer->origin_type, $transfer->origin_id),
                     'barangay' => $transfer->origin_type === 'seller_collection'
                         ? ($transfer->shipments->first()?->order?->seller?->barangay
                             ?: $transfer->shipments->first()?->rider?->assignment_barangay
@@ -389,9 +441,17 @@ class ParcelRouteScanController extends Controller
                             ?: 'Seller barangay unavailable')
                         : null,
                     'destination' => $this->facilityName($facility, $id),
-                    'courierName' => $transfer->courier_name ?: trim(($transfer->shipments->first()?->rider?->first_name ?? '').' '.($transfer->shipments->first()?->rider?->last_name ?? '')),
+                    'courierName' => $transfer->origin_type === 'sorting_center'
+                        ? (trim(implode(' ', array_filter([
+                            $transfer->courierRegistration?->first_name,
+                            $transfer->courierRegistration?->middle_name,
+                            $transfer->courierRegistration?->last_name,
+                        ]))) ?: $transfer->courier_name)
+                        : ($transfer->courier_name ?: trim(($transfer->shipments->first()?->rider?->first_name ?? '').' '.($transfer->shipments->first()?->rider?->last_name ?? ''))),
                     'pickupRider' => trim(($transfer->shipments->first()?->rider?->first_name ?? '').' '.($transfer->shipments->first()?->rider?->last_name ?? '')),
-                    'courierPhone' => $transfer->shipments->first()?->rider?->contact_no,
+                    'courierPhone' => $transfer->origin_type === 'sorting_center'
+                        ? ($transfer->courierRegistration?->phone ?: $transfer->courierRegistration?->user?->phone)
+                        : $transfer->shipments->first()?->rider?->contact_no,
                     'riderPhone' => $transfer->shipments->first()?->rider?->contact_no,
                     'vehicleType' => $transfer->shipments->first()?->rider?->vehicle,
                     'truckId' => $transfer->vehicle_reference ?: $transfer->shipments->first()?->rider?->plate_number,
@@ -399,6 +459,7 @@ class ParcelRouteScanController extends Controller
                     'vehicleId' => $transfer->vehicle_id,
                     'status' => $transfer->status,
                     'routeStatus' => $transfer->status === 'arrived' ? 'received' : 'in_transit',
+                    'inTransitSince' => ($transfer->departed_at ?? $transfer->loaded_at ?? $transfer->created_at)?->toISOString(),
                     'arrivedAt' => $transfer->arrived_at?->toISOString(),
                     'originCenterId' => $transfer->origin_type === 'sorting_center' ? $transfer->origin_id : null,
                     'originType' => $transfer->origin_type,
@@ -474,7 +535,7 @@ class ParcelRouteScanController extends Controller
         if ($facility === 'sorting_center') {
             $archivedCourierIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $id)->where('record_type', 'couriers')->pluck('record_id');
             $archivedVehicleIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $id)->where('record_type', 'vehicles')->pluck('record_id');
-            $couriers = CourierRegistration::query()->where('sorting_center_id', $id)->where('status', 'approved')->whereNotIn('id', $archivedCourierIds)->get(['id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])->values();
+            $couriers = CourierRegistration::query()->with('user:id,email')->where('sorting_center_id', $id)->where('status', 'approved')->whereNotIn('id', $archivedCourierIds)->get(['id', 'user_id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])->values();
             $vehicles = SortingCenterVehicle::query()->where('sorting_center_id', $id)->whereNotIn('id', $archivedVehicleIds)->get(['id', 'name', 'type', 'plate_number', 'availability'])->values();
         } elseif ($facility === 'delivery_hub') {
             $sortingCenterId = (int) $node->logistics_branch_id;
@@ -487,7 +548,8 @@ class ParcelRouteScanController extends Controller
                 ->where('sorting_center_id', $sortingCenterId)
                 ->where('status', 'approved')
                 ->whereNotIn('id', $busyCourierIds)
-                ->get(['id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])
+                ->with('user:id,email')
+                ->get(['id', 'user_id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])
                 ->map(function (CourierRegistration $courier) use ($sortingCenterId): ?array {
                     $vehicle = SortingCenterVehicle::query()
                         ->where('sorting_center_id', $sortingCenterId)
@@ -500,6 +562,7 @@ class ParcelRouteScanController extends Controller
                         'id' => $courier->id,
                         'courier_registration_id' => $courier->id,
                         'name' => trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name]))),
+                        'email' => $courier->user?->email,
                         'phone' => $courier->phone,
                         'vehicle' => $courier->vehicle,
                         'plate_number' => $courier->plate_number,
@@ -515,23 +578,155 @@ class ParcelRouteScanController extends Controller
         $outgoingTransfers = LogisticsTransferManifest::query()
             ->where('origin_type', $facility)
             ->where('origin_id', $id)
-            ->where('destination_type', 'sorting_center')
-            ->whereIn('status', ['loaded', 'arrived'])
+            ->whereIn('destination_type', ['sorting_center', 'delivery_hub'])
+            // Keep loaded parcels in departure history, including a manifest
+            // awaiting the courier's departure confirmation. Remove each
+            // parcel only after the destination receive scan reconciles it.
+            ->whereIn('status', ['preparing', 'loaded'])
+            ->whereHas('shipments', fn ($query) => $query
+                ->where('logistics_transfer_manifest_shipments.load_status', 'loaded')
+                ->whereNull('logistics_transfer_manifest_shipments.received_at'))
             ->with('shipments')
-            ->latest('loaded_at')
+            ->latest('departed_at')
             ->get()
-            ->map(fn (LogisticsTransferManifest $transfer): array => [
-                'id' => (string) ($transfer->batch_key ?: $transfer->id),
-                'sourceType' => 'transfer-to-sorting',
-                'originName' => $this->facilityName($facility, $id),
-                'destination' => $this->facilityName('sorting_center', (int) $transfer->destination_id),
-                'courierName' => $transfer->courier_name,
-                'truckId' => $transfer->vehicle_reference,
-                'createdAt' => $transfer->loaded_at?->toISOString(),
-                'status' => $transfer->status,
-                'arrivedAt' => $transfer->arrived_at?->toISOString(),
-                'parcelIds' => $transfer->shipments->map(fn (Shipment $shipment): string => 'shipment-'.$shipment->id)->values(),
-            ])->values();
+            ->map(function (LogisticsTransferManifest $transfer) use ($facility, $id): array {
+                $destinationName = $this->facilityName($transfer->destination_type, (int) $transfer->destination_id);
+                $originName = $this->facilityName($facility, $id);
+
+                return [
+                    'id' => (string) ($transfer->batch_key ?: $transfer->id),
+                    'manifestId' => (string) $transfer->id,
+                    'sourceType' => 'transfer-to-sorting',
+                    'originCenterId' => (string) $id,
+                    'originName' => $originName,
+                    'destination' => $destinationName,
+                    'destinationType' => $transfer->destination_type,
+                    'destinationId' => (string) $transfer->destination_id,
+                    'nextStop' => [
+                        'type' => $transfer->destination_type === 'delivery_hub' ? 'hub' : 'sorting',
+                        'id' => (string) $transfer->destination_id,
+                        'name' => $destinationName,
+                    ],
+                    'courierName' => $transfer->courier_name,
+                    'truckId' => $transfer->vehicle_reference,
+                    'createdAt' => ($transfer->departed_at ?? $transfer->loaded_at)?->toISOString(),
+                    'status' => $transfer->status,
+                    'arrivedAt' => $transfer->arrived_at?->toISOString(),
+                    'parcelIds' => $transfer->shipments
+                        ->filter(fn (Shipment $shipment): bool => $shipment->pivot->load_status === 'loaded' && $shipment->pivot->received_at === null)
+                        ->map(fn (Shipment $shipment): string => 'shipment-'.$shipment->id)->values(),
+                    'trackingNumbers' => $transfer->shipments
+                        ->filter(fn (Shipment $shipment): bool => $shipment->pivot->load_status === 'loaded' && $shipment->pivot->received_at === null)
+                        ->map(fn (Shipment $shipment): string => (string) $shipment->tracking_number)->values(),
+                ];
+            })->values();
+
+        // Last-mile deliveries do not use a facility-to-facility manifest.
+        // Keep them in the hub's departure history from the persisted shipment
+        // assignment until the buyer confirms delivery.
+        $lastMileDepartures = $facility === 'delivery_hub'
+            ? Shipment::query()
+                ->with(['order.buyer.buyerProfile', 'rider'])
+                ->where('logistics_delivery_hub_id', $id)
+                ->whereHas('order', fn ($query) => $query->where('status', 'out_for_delivery'))
+                ->whereHas('scans', fn ($query) => $query
+                    ->where('status', 'Out for Delivery')
+                    ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province))
+                ->get()
+                ->map(function (Shipment $shipment) use ($node, $id): array {
+                    $order = $shipment->order;
+                    $buyer = $order?->buyer?->buyerProfile;
+                    $recipient = trim((string) $order?->delivery_name)
+                        ?: trim(implode(' ', array_filter([$buyer?->first_name, $buyer?->last_name])))
+                        ?: 'Buyer';
+                    $rider = $shipment->rider;
+                    $departureScan = $shipment->scans()
+                        ->where('status', 'Out for Delivery')
+                        ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province)
+                        ->latest('scanned_at')->first();
+
+                    return [
+                        'id' => 'last-mile-'.$shipment->id,
+                        'manifestId' => null,
+                        'sourceType' => 'out-for-delivery',
+                        'originCenterId' => (string) $id,
+                        'originName' => $node->hub_name,
+                        'destination' => $recipient.' · '.($order?->delivery_address ?: 'Buyer address unavailable'),
+                        'destinationType' => 'buyer',
+                        'destinationId' => (string) $order?->id,
+                        'courierName' => trim(implode(' ', array_filter([$rider?->first_name, $rider?->last_name]))) ?: $rider?->user?->name,
+                        'truckId' => collect([$rider?->vehicle, $rider?->plate_number])->filter()->implode(' · '),
+                        'createdAt' => $departureScan?->scanned_at?->toISOString() ?? $shipment->location_updated_at?->toISOString(),
+                        'status' => 'out_for_delivery',
+                        'arrivedAt' => null,
+                        'parcelIds' => ['shipment-'.$shipment->id],
+                        'trackingNumbers' => [(string) $shipment->tracking_number],
+                    ];
+                })->values()
+            : collect();
+        $outgoingTransfers = $outgoingTransfers->concat($lastMileDepartures)->values();
+        $deliveredTrackingNumbers = $facility === 'delivery_hub'
+            ? Shipment::query()
+                ->where('logistics_delivery_hub_id', $id)
+                ->whereHas('order', fn ($query) => $query->where('status', 'delivered'))
+                ->whereHas('scans', fn ($query) => $query
+                    ->where('status', 'Out for Delivery')
+                    ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province))
+                ->pluck('tracking_number')->values()
+            : collect();
+
+        $stagedDepartures = $facility === 'sorting_center'
+            ? LogisticsTransferManifest::query()
+                ->where('origin_type', 'sorting_center')
+                ->where('origin_id', $id)
+                ->where('status', 'preparing')
+                ->whereHas('shipments', fn ($query) => $query->whereIn('logistics_transfer_manifest_shipments.load_status', ['pending', 'loaded']))
+                ->with(['shipments.order.seller.user', 'shipments.order.buyer.buyerProfile', 'shipments.order.items.product'])
+                ->latest('created_at')->get()
+                ->map(function (LogisticsTransferManifest $transfer) use ($id): array {
+                    $destination = $this->facilityName($transfer->destination_type, (int) $transfer->destination_id);
+                    $nextStop = [
+                        'type' => $transfer->destination_type === 'delivery_hub' ? 'hub' : 'sorting',
+                        'id' => (string) $transfer->destination_id,
+                        'name' => $destination,
+                        'centerId' => (string) ($transfer->destination_type === 'sorting_center' ? $transfer->destination_id : $id),
+                    ];
+
+                    return [
+                        'id' => (string) ($transfer->batch_key ?: $transfer->id),
+                        'originName' => $this->facilityName('sorting_center', $id),
+                        'destination' => $destination,
+                        'courierName' => $transfer->courier_name,
+                        'truckId' => $transfer->vehicle_reference,
+                        'createdAt' => $transfer->created_at?->toISOString(),
+                        'status' => $transfer->courier_registration_id ? 'loaded' : 'preparing',
+                        'parcelIds' => $transfer->shipments->map(fn (Shipment $shipment): string => 'shipment-'.$shipment->id)->values(),
+                        'parcels' => $transfer->shipments->map(function (Shipment $shipment) use ($id, $transfer, $nextStop): array {
+                            $inboundId = $shipment->transferManifests()
+                                ->where('destination_type', 'sorting_center')
+                                ->where('destination_id', $id)
+                                ->wherePivotNotNull('received_at')
+                                ->latest('logistics_transfer_manifests.id')
+                                ->value('logistics_transfer_manifests.id');
+                            $payload = $this->parcelPayload($shipment, 'shipment-'.$shipment->id, $transfer->courier_registration_id ? 'loaded' : 'staged', $id, $transfer->id);
+                            $payload['currentCenterId'] = (string) $id;
+                            $payload['nextCenterId'] = $transfer->destination_type === 'sorting_center' && ! $transfer->courier_registration_id
+                                ? (string) $transfer->destination_id
+                                : null;
+                            $payload['nextStop'] = $transfer->courier_registration_id ? null : $nextStop;
+                            $payload['receivedManifestId'] = $inboundId ? (string) $inboundId : null;
+                            $payload['departureBatchKey'] = $transfer->batch_key;
+                            $payload['loadedFromId'] = (string) $id;
+                            $payload['loadedFromName'] = $this->facilityName('sorting_center', $id);
+                            $payload['loadedAt'] = $transfer->loaded_at?->toISOString();
+                            $payload['courierName'] = $transfer->courier_name;
+                            $payload['truckId'] = $transfer->vehicle_reference;
+
+                            return $payload;
+                        })->values(),
+                    ];
+                })->values()
+            : collect();
 
         return response()->json([
             'facility_type' => $facility,
@@ -539,6 +734,8 @@ class ParcelRouteScanController extends Controller
             'parcels' => $parcels,
             'manifests' => $manifests,
             'departures' => $outgoingTransfers,
+            'delivered_tracking_numbers' => $deliveredTrackingNumbers,
+            'staged_departures' => $stagedDepartures,
             'return_trucks' => $transfers->where('status', 'arrived')->filter(fn ($transfer) =>
                 $transfer->origin_type === 'sorting_center'
                 && $transfer->destination_type === 'sorting_center'

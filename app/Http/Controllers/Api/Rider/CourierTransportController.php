@@ -413,9 +413,17 @@ class CourierTransportController extends Controller
                 $query->where('courier_registration_id', $courier->id)
                     ->orWhere(function (Builder $legacy) use ($courier, $nameVariants, $plate): void {
                         $legacy->whereNull('courier_registration_id')
-                            ->where('origin_type', 'delivery_hub')
-                            ->where('destination_type', 'sorting_center')
-                            ->where('destination_id', $courier->sorting_center_id)
+                            ->where(function (Builder $route) use ($courier): void {
+                                $route->where(function (Builder $hubTransfer) use ($courier): void {
+                                    $hubTransfer->where('origin_type', 'delivery_hub')
+                                        ->where('destination_type', 'sorting_center')
+                                        ->where('destination_id', $courier->sorting_center_id);
+                                })->orWhere(function (Builder $sortingTransfer) use ($courier): void {
+                                    $sortingTransfer->where('origin_type', 'sorting_center')
+                                        ->where('origin_id', $courier->sorting_center_id)
+                                        ->whereIn('destination_type', ['sorting_center', 'delivery_hub']);
+                                });
+                            })
                             ->whereIn(DB::raw('LOWER(TRIM(courier_name))'), array_map('mb_strtolower', $nameVariants));
                         if ($plate !== '') {
                             $legacy->whereRaw('LOWER(vehicle_reference) LIKE ?', ['%'.$plate.'%']);

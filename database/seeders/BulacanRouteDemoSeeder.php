@@ -50,8 +50,8 @@ class BulacanRouteDemoSeeder extends Seeder
             'hub.bulacan.route@shopease.test', $password,
         );
         $lagunaHub = $this->hub(
-            $lagunaCenter, 'Calamba Delivery Hub', 'Laguna', 'Calamba City', 'Bucal', '4027',
-            'hub.laguna.bulacan-route@shopease.test', $password,
+            $lagunaCenter, 'Calamba Delivery Hub', 'Laguna', 'Calamba City', 'Real', '4027',
+            'hub.calamba.route@shopease.test', $password,
         );
 
         // Configure actual directed legs. The parcel must pass Manila before

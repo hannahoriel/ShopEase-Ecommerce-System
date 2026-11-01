@@ -43,6 +43,11 @@ class LogisticsTransferManifest extends Model
         return $this->belongsTo(self::class, 'returning_manifest_id');
     }
 
+    public function courierRegistration(): BelongsTo
+    {
+        return $this->belongsTo(CourierRegistration::class, 'courier_registration_id');
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(LogisticsTransferManifestEvent::class, 'transfer_manifest_id')
