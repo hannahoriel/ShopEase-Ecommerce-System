@@ -51,12 +51,24 @@ class AuthController extends Controller
             ]);
         }
 
+        // The mobile client recognizes delivery accounts under the "rider"
+        // role and distinguishes linehaul couriers with rider_type.
+        $mobileRole = $user->role === User::ROLE_COURIER
+            ? User::ROLE_RIDER
+            : $user->role;
+        $mobileUser = $user->toArray();
+        $mobileUser['role'] = $mobileRole;
+        $riderProfile = $user->riderProfile;
+
         return response()->json([
             'message' => 'Login successful.',
-            'user' => $user,
-            'role' => $user->role,
-            'rider_type' => $user->role === User::ROLE_RIDER
-                ? ($user->riderProfile?->registration_type ?: 'rider')
+            'user' => $mobileUser,
+            'role' => $mobileRole,
+            'rider_type' => in_array($user->role, [User::ROLE_RIDER, User::ROLE_COURIER], true)
+                ? ($user->role === User::ROLE_COURIER ? 'courier' : ($riderProfile?->registration_type ?: 'rider'))
+                : null,
+            'rider_operation' => $user->role === User::ROLE_RIDER && $riderProfile
+                ? app(\App\Http\Services\RiderOperationsService::class)->operationType($riderProfile)
                 : null,
             'token' => $user->createToken('api-token')->plainTextToken,
         ]);

@@ -13,7 +13,8 @@ class OrderStatusController extends ApiOrderStatusController
         $seller = $this->sellerFor($request->user());
         $orders = Order::where('seller_id', $seller->id)
             ->with([
-                'buyer:id,name,email,contact_no',
+                'buyer:id,name,email',
+                'buyer.buyerProfile:id,user_id,contact_no',
                 'items.product:id,name,photos',
                 'latestCancellationRequest',
                 'statusHistory.changedBy:id,role',

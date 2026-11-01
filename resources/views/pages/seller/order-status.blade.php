@@ -176,7 +176,7 @@
                             };
                             $orderNumber = $order->order_number ?: 'ORD-' . $order->id;
                             $customer = $order->delivery_name ?: ($order->buyer?->name ?? 'Customer');
-                            $phone = $order->delivery_phone ?: ($order->buyer?->contact_no ?? '');
+                            $phone = $order->delivery_phone ?: ($order->buyer?->buyerProfile?->contact_no ?? '');
                             $searchText = $orderNumber . ' ' . $customer . ' ' . $phone . ' ' . $order->items->pluck('product_name')->implode(' ');
                         @endphp
                         <article class="order-row grid grid-cols-[1.55fr_1.55fr_2.05fr_1.05fr_1.05fr] items-center min-h-[99px] px-[20px] border-b border-[#DDD9D7] transition-all duration-200 ease-out hover:bg-[#FFFBF9]"

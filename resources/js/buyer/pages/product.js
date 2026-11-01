@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let galleryPhotos = [];
     let activeGalleryIndex = 0;
     let currentProduct = null;
+    let currentSellerId = null;
     let selectedProductOptions = {};
     let connectedProductVariants = [];
 
@@ -135,7 +136,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             selectedProductOptions = Object.fromEntries(variantGroups
                 .filter(group => group.options.length)
-                .map(group => [group.field, String(group.options[0].name)]));
+                .map(group => {
+                    const available = group.options.find(option => Number(option.stock) > 0);
+                    return [group.field, String((available || group.options[0]).name)];
+                }));
         }
 
         const updateSelectedVariant = () => {
@@ -154,19 +158,30 @@ document.addEventListener('DOMContentLoaded', function () {
             const addToCart = document.getElementById('addToCartButton');
             const buyNow = document.getElementById('buyNowButton');
 
-            if (activeConnectedVariants.length) {
-                if (priceEl) {
-                    priceEl.innerHTML = salePriceMarkup(selectedVariant?.final_price ?? p.price, p.sale_percentage);
-                }
-                const stock = Number(selectedVariant?.stock || 0);
-                if (stockLabel) stockLabel.textContent = `${stock} In Stock`;
-                if (qtyInput) {
-                    qtyInput.max = String(Math.max(1, stock));
-                    qtyInput.value = String(Math.min(Number(qtyInput.value || 1), Math.max(1, stock)));
-                }
-                if (addToCart) addToCart.disabled = !selectedVariant;
-                if (buyNow) buyNow.disabled = !selectedVariant;
+            const selectedOptions = variantGroups
+                .map(group => group.options.find(option => String(option.name) === selectedProductOptions[group.field]))
+                .filter(Boolean);
+            const optionStocks = selectedOptions
+                .filter(option => option.stock !== null && option.stock !== undefined && Number.isFinite(Number(option.stock)))
+                .map(option => Number(option.stock));
+            const availableStock = activeConnectedVariants.length
+                ? Number(selectedVariant?.stock || 0)
+                : optionStocks.length
+                    ? Math.min(Number(p.stock ?? Infinity), ...optionStocks)
+                    : Number(p.stock || 0);
+            if (priceEl) {
+                priceEl.innerHTML = salePriceMarkup(selectedVariant?.final_price ?? p.price, p.sale_percentage);
             }
+            if (stockLabel) stockLabel.textContent = `${Math.max(0, availableStock)} In Stock`;
+            if (qtyInput) {
+                qtyInput.max = String(Math.max(0, availableStock));
+                qtyInput.disabled = availableStock <= 0;
+                qtyInput.value = availableStock > 0
+                    ? String(Math.min(Number(qtyInput.value || 1), availableStock))
+                    : '0';
+            }
+            if (addToCart) addToCart.disabled = availableStock <= 0;
+            if (buyNow) buyNow.disabled = availableStock <= 0;
 
             const wrap = document.getElementById('variationsWrap');
             if (!wrap) return;
@@ -174,14 +189,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 const field = button.dataset.optionType;
                 const value = button.dataset.optionValue;
                 const choices = { ...selectedProductOptions, [field]: value };
-                const hasAvailableVariant = !activeConnectedVariants.length || activeConnectedVariants.some(variant =>
+                const option = variantGroups.find(group => group.field === field)?.options.find(item => String(item.name) === value);
+                const hasAvailableVariant = activeConnectedVariants.length ? activeConnectedVariants.some(variant =>
                     variant.available &&
                     Number(variant.stock) > 0 &&
                     variantGroups.every(group => {
                         const selected = choices[group.field];
                         return !selected || String(variant.choices[group.key] ?? '') === selected;
                     })
-                );
+                ) : Math.min(Number(option?.stock ?? p.stock ?? 0), Number(p.stock ?? Infinity)) > 0;
                 button.disabled = !hasAvailableVariant;
                 button.classList.toggle('selected', selectedProductOptions[field] === value);
             });
@@ -209,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <span class="meta-divider"></span>
                 <span id="productMetaReviewCount">0 reviews</span>
                 <span class="meta-divider"></span>
-                <span>0 Sold</span>
+                <span>${compactCount(p.sold_count || 0)} Sold</span>
                 <span class="meta-divider"></span>
                 <button type="button" class="report-button">Report</button>`;
         }
@@ -270,13 +286,7 @@ document.addEventListener('DOMContentLoaded', function () {
             variationsWrap.replaceChildren();
         }
 
-        // Stock
-        const stockLabel = document.getElementById('stockLabel');
-        const qtyInput   = document.getElementById('productQuantity');
-        if (!activeConnectedVariants.length) {
-            if (stockLabel) stockLabel.textContent = `${p.stock ?? 0} In Stock`;
-            if (qtyInput) qtyInput.max = String(p.stock ?? 99);
-        }
+        // Stock is rendered from the selected variation (or selected combination).
 
         // Add to Cart button product id
         const atcBtn = document.getElementById('addToCartButton');
@@ -286,17 +296,27 @@ document.addEventListener('DOMContentLoaded', function () {
         const sellerName  = document.getElementById('sellerName');
         const sellerLogo  = document.getElementById('sellerLogo');
         const sellerRatings = document.getElementById('sellerRatings');
+        const sellerRatingCount = document.getElementById('sellerRatingCount');
         const sellerResponseRate = document.getElementById('sellerResponseRate');
         const sellerJoined = document.getElementById('sellerJoined');
         const sellerProducts = document.getElementById('sellerProducts');
         const sellerResponseTime = document.getElementById('sellerResponseTime');
         const sellerFollowers = document.getElementById('sellerFollowers');
         const seller = p.seller || {};
+        currentSellerId = seller.id || null;
+        const viewShopButton = document.getElementById('viewShopButton');
+        if (viewShopButton) {
+            viewShopButton.disabled = !currentSellerId;
+            viewShopButton.onclick = () => {
+                if (currentSellerId) window.location.assign(`/buyer/shop?seller=${encodeURIComponent(currentSellerId)}`);
+            };
+        }
         const joinedYears = Number(seller.joined_years || 0);
         const joinedMonths = Number(seller.joined_months || 0);
         if (sellerName) sellerName.textContent = p.seller?.store_name || '—';
         if (sellerLogo) sellerLogo.innerHTML   = escapeHtml((p.seller?.store_name || 'S').slice(0, 2).toUpperCase()) + '<small>STORE</small>';
-        if (sellerRatings) sellerRatings.textContent = Number(seller.ratings || 0) === 0 ? '0%' : compactCount(seller.ratings);
+        if (sellerRatings) sellerRatings.textContent = `${Number(seller.ratings || 0).toFixed(1)} / 5`;
+        if (sellerRatingCount) sellerRatingCount.textContent = `${compactCount(seller.rating_count || 0)} customer ratings`;
         if (sellerResponseRate) sellerResponseRate.textContent = seller.response_rate || '—';
         if (sellerJoined) {
             sellerJoined.textContent = joinedYears > 0
@@ -485,9 +505,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const quantityInput = document.getElementById('productQuantity');
 
     document.getElementById('quantityMinus')?.addEventListener('click', () => {
+        if (quantityInput?.disabled) return;
         quantityInput.value = Math.max(1, Number(quantityInput.value || 1) - 1);
     });
     document.getElementById('quantityPlus')?.addEventListener('click', () => {
+        if (quantityInput?.disabled) return;
         quantityInput.value = Math.min(Number(quantityInput.max || 99), Number(quantityInput.value || 1) + 1);
     });
 
@@ -537,14 +559,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!list || !empty) return;
 
         list.innerHTML = reviews.map((review) => {
+            const buyerInitials = String(review.buyer_name || 'ShopEase customer')
+                .trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'SC';
             const stars = '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating));
             const date = review.created_at
                 ? new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(review.created_at))
                 : '';
             return `
                 <article class="review-item">
-                    <div class="review-avatar" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"></circle><path d="M4 21v-2a8 8 0 0 1 16 0v2z"></path></svg>
+                    <div class="review-avatar" aria-hidden="${review.buyer_photo_url ? 'false' : 'true'}">
+                        ${review.buyer_photo_url
+                            ? `<img src="${escapeHtml(review.buyer_photo_url)}" alt="${escapeHtml(review.buyer_name)}" loading="lazy">`
+                            : `<span class="review-avatar-fallback">${escapeHtml(buyerInitials)}</span>`}
                     </div>
                     <div class="review-content">
                         <strong>${escapeHtml(review.buyer_name)}</strong>
@@ -552,6 +578,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <small>${escapeHtml(date)}</small>
                         ${review.title ? `<p><strong>${escapeHtml(review.title)}</strong></p>` : ''}
                         <p>${escapeHtml(review.body)}</p>
+                        ${review.photo_url ? `<a class="review-photo-link" href="${escapeHtml(review.photo_url)}" target="_blank" rel="noopener"><img class="review-photo" src="${escapeHtml(review.photo_url)}" alt="Photo attached to review" loading="lazy"></a>` : ''}
                     </div>
                 </article>`;
         }).join('');
@@ -592,6 +619,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const payload = await response.json();
             updateReviewSummary(payload.summary);
             renderProductReviews(payload.data || []);
+            const viewMore = document.getElementById('viewAllProductReviews');
+            if (viewMore) viewMore.hidden = Number(payload.total || 0) <= 3;
         } catch (error) {
             if (empty) {
                 empty.textContent = error.message;
@@ -608,47 +637,42 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    document.getElementById('productReviewForm')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const submitButton = document.getElementById('submitProductReview');
-        const message = document.getElementById('productReviewMessage');
-        const formData = new FormData(form);
-        const payload = {
-            rating: Number(formData.get('rating')),
-            title: String(formData.get('title') || '').trim() || null,
-            body: String(formData.get('body') || '').trim(),
-        };
-        if (!productId || !apiToken) {
-            if (message) message.textContent = 'Sign in as a buyer to leave a review.';
-            return;
-        }
-
-        if (submitButton) submitButton.disabled = true;
-        if (message) message.textContent = 'Submitting your review…';
+    const productReviewsModal = document.getElementById('productReviewsModal');
+    function renderProductReviewCard(review) {
+        const buyerInitials = String(review.buyer_name || 'ShopEase customer').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('') || 'SC';
+        const stars = '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating));
+        const date = review.created_at ? new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(review.created_at)) : '';
+        return `<article class="review-item"><div class="review-avatar">${review.buyer_photo_url ? `<img src="${escapeHtml(review.buyer_photo_url)}" alt="${escapeHtml(review.buyer_name)}" loading="lazy">` : `<span class="review-avatar-fallback">${escapeHtml(buyerInitials)}</span>`}</div><div class="review-content"><strong>${escapeHtml(review.buyer_name)}</strong><div class="review-stars">${stars}</div><small>${escapeHtml(date)}</small>${review.title ? `<p><strong>${escapeHtml(review.title)}</strong></p>` : ''}<p>${escapeHtml(review.body)}</p>${review.photo_url ? `<a class="review-photo-link" href="${escapeHtml(review.photo_url)}" target="_blank" rel="noopener"><img class="review-photo" src="${escapeHtml(review.photo_url)}" alt="Photo attached to review" loading="lazy"></a>` : ''}</div></article>`;
+    }
+    function closeProductReviewsModal() {
+        if (!productReviewsModal) return;
+        productReviewsModal.hidden = true;
+        productReviewsModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('product-reviews-open');
+    }
+    document.getElementById('viewAllProductReviews')?.addEventListener('click', async () => {
+        if (!productId || !productReviewsModal) return;
+        const list = document.getElementById('allProductReviewsList');
+        const title = document.getElementById('productReviewsModalTitle');
+        if (title) title.textContent = activeReviewRating === 'all' ? 'All customer ratings' : `${activeReviewRating}-star customer ratings`;
+        if (list) list.textContent = 'Loading reviews…';
+        productReviewsModal.hidden = false;
+        productReviewsModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('product-reviews-open');
         try {
-            const response = await apiFetch(`${config.reviewsUrl || '/api/v1/buyer/products'}/${productId}/reviews`, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                const validationMessage = Object.values(result.errors || {}).flat()[0];
-                throw new Error(validationMessage || result.message || 'Unable to submit your review.');
-            }
-            form.reset();
-            activeReviewRating = 'all';
-            document.querySelectorAll('.rating-filter').forEach((item) => item.classList.toggle('active', item.dataset.ratingFilter === 'all'));
-            if (message) message.textContent = 'Thank you. Your review has been saved.';
-            updateReviewSummary(result.summary);
-            await loadProductReviews();
+            const params = new URLSearchParams({ all: '1' });
+            if (activeReviewRating !== 'all') params.set('rating', activeReviewRating);
+            const response = await apiFetch(`${config.reviewsUrl || '/api/v1/buyer/products'}/${productId}/reviews?${params}`);
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || 'Unable to load reviews.');
+            if (list) list.innerHTML = payload.data?.length ? payload.data.map(renderProductReviewCard).join('') : '<p class="ratings-filter-empty">No reviews yet.</p>';
         } catch (error) {
-            if (message) message.textContent = error.message;
-        } finally {
-            if (submitButton) submitButton.disabled = false;
+            if (list) list.textContent = error.message;
         }
     });
-
+    document.getElementById('closeProductReviewsModal')?.addEventListener('click', closeProductReviewsModal);
+    productReviewsModal?.addEventListener('click', event => { if (event.target === productReviewsModal) closeProductReviewsModal(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && productReviewsModal && !productReviewsModal.hidden) closeProductReviewsModal(); });
     /* ── Boot ───────────────────────────────────────────────── */
     loadProduct();
     loadProductReviews();

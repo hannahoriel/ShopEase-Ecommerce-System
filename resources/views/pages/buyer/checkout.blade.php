@@ -33,6 +33,7 @@
             'cartUrl' => '/api/v1/buyer/cart',
             'ordersUrl' => '/api/v1/buyer/orders',
             'voucherPreviewUrl' => '/api/v1/buyer/vouchers/preview',
+            'shippingOptionsUrl' => '/api/v1/buyer/shipping-options',
             'apiToken' => $apiToken ?? '',
         ]) !!}
     </script>
@@ -63,9 +64,12 @@
 <body
     class="checkout-page"
     data-my-purchases-url="{{ route('buyer.my-purchases') }}"
+    data-buyer-id="{{ $buyer->id }}"
     data-registration-address-name="{{ $registrationAddress['name'] }}"
     data-registration-address-phone="{{ $registrationAddress['phone'] }}"
     data-registration-address-text="{{ $registrationAddress['address'] }}"
+    data-registration-address-province="{{ $buyerProfile?->province ?? '' }}"
+    data-registration-address-municipality="{{ $buyerProfile?->municipality ?? '' }}"
 >
 
 

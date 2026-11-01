@@ -39,6 +39,7 @@ class CartController extends Controller
             ->where('status', 'active')
             ->where('is_archived', false)
             ->whereHas('seller', fn ($q) => $q->where('registration_status', 'active'))
+            ->with(['options', 'connectedVariants'])
             ->firstOrFail();
 
         $qty = (int) ($validated['quantity'] ?? 1);
@@ -51,9 +52,12 @@ class CartController extends Controller
             ->first();
 
         if ($item) {
-            $item->quantity = min(99, $item->quantity + $qty);
+            $nextQuantity = min(99, $item->quantity + $qty);
+            $this->ensureSelectedStock($product, $validated, $nextQuantity);
+            $item->quantity = $nextQuantity;
             $item->save();
         } else {
+            $this->ensureSelectedStock($product, $validated, $qty);
             $item = CartItem::create([
                 'user_id'    => $request->user()->id,
                 'product_id' => $product->id,
@@ -77,6 +81,13 @@ class CartController extends Controller
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1', 'max:99'],
         ]);
+
+        $item->load(['product.options', 'product.connectedVariants']);
+        $this->ensureSelectedStock($item->product, [
+            'variation' => $item->variation,
+            'color' => $item->color,
+            'size' => $item->size,
+        ], (int) $validated['quantity']);
 
         $item->update(['quantity' => $validated['quantity']]);
 
@@ -134,6 +145,58 @@ class CartController extends Controller
                 ],
             ],
         ];
+    }
+
+    private function ensureSelectedStock(Product $product, array $selection, int $quantity): void
+    {
+        $combinations = $product->connectedVariants;
+        if ($combinations->isNotEmpty()) {
+            $matching = $combinations->first(function ($variant) use ($selection) {
+                $choices = $variant->choices ?? [];
+                foreach (['variation', 'color', 'size'] as $field) {
+                    $key = match ($field) {
+                        'variation' => 'variations',
+                        'color' => 'colors',
+                        default => 'sizes',
+                    };
+                    $choice = $choices[$key] ?? $choices[$field] ?? null;
+                    if ($choice !== null && ($selection[$field] ?? null) === null) {
+                        return false;
+                    }
+                    if (($selection[$field] ?? null) !== null && (string) $choice !== (string) $selection[$field]) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            $stock = $matching && $matching->available ? (int) $matching->stock : 0;
+        } else {
+            $selectedStocks = [];
+            foreach ([
+                'variation' => 'variation',
+                'color' => 'color',
+                'size' => 'size',
+            ] as $field => $type) {
+                if (($selection[$field] ?? null) === null) {
+                    if ($product->options->contains('type', $type)) $selectedStocks[] = 0;
+                    continue;
+                }
+                $option = $product->options->first(fn ($option) => $option->type === $type && $option->name === $selection[$field]);
+                if ($option) {
+                    $selectedStocks[] = (int) $option->stock;
+                } elseif ($product->options->contains('type', $type)) {
+                    $selectedStocks[] = 0;
+                }
+            }
+            $stock = $selectedStocks ? min((int) $product->stock_quantity, ...$selectedStocks) : (int) $product->stock_quantity;
+        }
+
+        if ($quantity > $stock) {
+            abort(422, $stock > 0
+                ? "Only {$stock} unit(s) are available for the selected option."
+                : 'The selected option is out of stock.');
+        }
     }
 
     private function resolvePhotos(array $photos): array

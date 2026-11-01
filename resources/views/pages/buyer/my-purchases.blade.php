@@ -37,6 +37,7 @@
         {!! json_encode([
             'ordersUrl' => '/api/v1/buyer/orders',
             'complaintsUrl' => '/api/v1/buyer/orders',
+            'buyerComplaintsUrl' => '/api/v1/buyer/complaints',
             'notificationsUrl' => '/api/v1/buyer/notifications',
             'adminMessagesUrl' => \Illuminate\Support\Facades\Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages'),
             'apiToken' => $apiToken ?? '',
@@ -73,7 +74,7 @@
 
                     $activeSidePanel = in_array(
                         $requestedSidePanel,
-                        ['purchases', 'likes', 'notifications', 'account', 'complaints', 'vouchers', 'privacy-security', 'notification-settings', 'platform-policies'],
+                        ['purchases', 'likes', 'following', 'notifications', 'account', 'complaints', 'vouchers', 'privacy-security', 'notification-settings', 'platform-policies'],
                         true
                     )
                         ? $requestedSidePanel
@@ -150,6 +151,8 @@
                             <span class="buyer-account-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 0 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z"/></svg></span>
                             <span>My Likes</span><span id="buyerLikesSidebarCount" class="buyer-likes-sidebar-count" aria-label="Liked products count" hidden></span>
                         </button>
+
+                        <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'following' ? 'is-active' : '' }}" data-side-panel="following"><span class="buyer-account-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6m-3-3h6"/></svg></span><span>Following</span></button>
 
                         <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'notifications' ? 'is-active' : '' }}" data-side-panel="notifications">
                             <span class="buyer-account-nav-icon">
@@ -431,7 +434,6 @@
                                 <h3>No liked products yet</h3><p>Tap the heart on products you like to save them here.</p>
                                 <a href="{{ url('/buyer/dashboard') }}">Explore products →</a>
                             </div>
-                            <p class="buyer-likes-footnote">Preview: liked products are saved only in this browser. Connect a buyer favorites API to sync across devices.</p>
                         </section>
                     </div>
 
@@ -668,6 +670,11 @@
 </div>
                     </div>
 
+                    <div class="buyer-side-panel {{ $activeSidePanel === 'following' ? 'is-active' : '' }}" data-panel-content="following" {{ $activeSidePanel !== 'following' ? 'hidden' : '' }}">
+                        <section class="purchases-page-heading"><h1>Following</h1><nav class="purchases-breadcrumbs" aria-label="Breadcrumb"><a href="{{ url('/buyer/dashboard') }}">Home</a><span aria-hidden="true">›</span><span aria-current="page">Following</span></nav></section>
+                        <section class="buyer-following-card"><header><div><h2>Shops you follow</h2><p>Keep up with new products and updates from your favorite shops.</p></div><span id="buyerFollowingCount">Loading…</span></header><div id="buyerFollowingList" class="buyer-following-list" aria-live="polite"><p class="buyer-following-state">Loading followed shops…</p></div></section>
+                    </div>
+
                     <div class="buyer-side-panel {{ $activeSidePanel === 'vouchers' ? 'is-active' : '' }}" data-panel-content="vouchers" {{ $activeSidePanel !== 'vouchers' ? 'hidden' : '' }}">
                         <section class="purchases-page-heading"><h1>Vouchers & Promotions</h1><nav class="purchases-breadcrumbs" aria-label="Breadcrumb"><a href="{{ url('/buyer/dashboard') }}">Home</a><span aria-hidden="true">›</span><span aria-current="page">Vouchers & Promotions</span></nav></section>
                         <section class="bv-vouchers" aria-labelledby="bv-title">
@@ -701,6 +708,32 @@
     </main>
 
     {{-- Profile change approval notice — UI-only; no request is sent to admin. --}}
+    <div id="buyerOrderDetailsModal" class="buyer-order-details-overlay" aria-hidden="true" hidden>
+        <section class="buyer-order-details-dialog" role="dialog" aria-modal="true" aria-labelledby="buyerOrderDetailsTitle" tabindex="-1">
+            <header class="buyer-order-details-header"><div><span>ORDER DETAILS</span><h2 id="buyerOrderDetailsTitle">Order</h2></div><button type="button" id="buyerOrderDetailsClose" aria-label="Close order details">&times;</button></header>
+            <div id="buyerOrderDetailsBody" class="buyer-order-details-body"></div>
+            <footer class="buyer-order-details-footer"><button type="button" class="buyer-order-footer-confirm" data-confirm-order-id hidden>Confirm Order Received</button><button type="button" data-close-buyer-order-details>Close</button></footer>
+        </section>
+    </div>
+
+    <div id="buyerSellerRatingModal" class="buyer-seller-rating-overlay" aria-hidden="true" hidden>
+        <section class="buyer-seller-rating-dialog" role="dialog" aria-modal="true" aria-labelledby="buyerSellerRatingTitle" tabindex="-1">
+            <header class="buyer-seller-rating-dialog-header">
+                <div><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h2 id="buyerSellerRatingTitle">Rate a product</h2><p>Share your experience with <strong data-rating-modal-shop>the seller</strong>.</p></div>
+                <button type="button" id="buyerSellerRatingClose" aria-label="Close rating form">&times;</button>
+            </header>
+            <form id="buyerSellerRatingForm" class="buyer-seller-rating-form">
+                <label>Product<select name="product_id" required></select></label>
+                <fieldset class="buyer-seller-rating-stars"><legend>Your rating</legend><div class="buyer-seller-stars" role="radiogroup" aria-label="Seller rating">@for($rating=1;$rating<=5;$rating++)<button type="button" class="is-selected" data-seller-rating="{{ $rating }}" aria-label="{{ $rating }} star{{ $rating===1?'':'s' }}" aria-checked="{{ $rating===5?'true':'false' }}" role="radio">★</button>@endfor<input type="hidden" name="rating" value="5"></div></fieldset>
+                <label class="buyer-seller-review-field">Your review<textarea name="body" minlength="2" maxlength="2000" required placeholder="What did you think of your purchase and the seller?"></textarea></label>
+                <label class="buyer-seller-review-field">Attach a photo<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
+                <label class="buyer-seller-anonymous"><input type="checkbox" name="is_anonymous" value="1"><span>Post my name anonymously</span></label>
+                <p class="buyer-order-rating-feedback" role="status" hidden></p>
+                <button class="buyer-order-action-confirm" type="submit">Submit rating</button>
+            </form>
+        </section>
+    </div>
+
     <div id="bpProfileToast" class="bp-toast" role="status" aria-live="polite" hidden></div>
 
     <div id="buyerComplaintModal" class="fixed inset-0 z-[220] hidden items-center justify-center bg-black/40 px-4 py-6" aria-hidden="true">
@@ -730,6 +763,10 @@
                 <label class="block text-sm font-medium text-gray-700" for="buyerComplaintDescription">
                     Tell us what happened
                     <textarea id="buyerComplaintDescription" name="description" rows="5" minlength="10" maxlength="2000" required class="mt-1 block w-full resize-y rounded-lg border border-gray-300 px-3 py-2" placeholder="Describe the issue with your order (10-2000 characters)."></textarea>
+                </label>
+                <label class="block text-sm font-medium text-gray-700" for="buyerComplaintEvidence">
+                    Photos (optional, up to 5)
+                    <input id="buyerComplaintEvidence" name="evidence[]" type="file" accept="image/jpeg,image/png,image/webp" multiple class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
                 </label>
                 <p id="buyerComplaintError" class="text-sm text-red-600" role="alert" hidden></p>
                 <div class="flex justify-end gap-3">

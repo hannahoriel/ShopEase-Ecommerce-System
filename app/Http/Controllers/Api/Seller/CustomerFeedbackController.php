@@ -9,6 +9,7 @@ use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerFeedbackController extends Controller
 {
@@ -20,7 +21,7 @@ class CustomerFeedbackController extends Controller
         ]);
         $query = ProductReview::query()
             ->where('seller_id', $seller->id)
-            ->with(['product:id,name,photos', 'buyer:id,name'])
+            ->with(['product:id,name,photos', 'buyer:id,name,profile_photo_path'])
             ->latest();
 
         if ($request->filled('rating') && $request->input('rating') !== 'all') {
@@ -74,7 +75,7 @@ class CustomerFeedbackController extends Controller
 
         $reviews = ProductReview::query()
             ->where('product_id', $product->id)
-            ->with('buyer:id,name')
+            ->with('buyer:id,name,profile_photo_path')
             ->latest()
             ->paginate(10);
         $averageRating = (float) ProductReview::where('product_id', $product->id)->avg('rating');
@@ -113,13 +114,19 @@ class CustomerFeedbackController extends Controller
         return [
             'id' => $review->id,
             'order_id' => null,
-            'customer' => $review->buyer?->name ?? 'ShopEase customer',
-            'phone' => $review->buyer?->buyerProfile?->contact_no ?? '',
+            'customer' => $review->is_anonymous ? $this->maskName($review->buyer?->name ?? 'ShopEase customer') : ($review->buyer?->name ?? 'ShopEase customer'),
+            'is_anonymous' => (bool) $review->is_anonymous,
+            'customer_photo_url' => $review->buyer?->profile_photo_path
+                ? Storage::disk('public')->url($review->buyer->profile_photo_path)
+                : null,
+            'phone' => $review->is_anonymous ? '' : ($review->buyer?->buyerProfile?->contact_no ?? ''),
             'rating' => $review->rating,
             'title' => $review->title ?: 'Customer feedback',
             'body' => $review->body,
+            'review_photo_url' => $review->photo_path ? Storage::disk('public')->url($review->photo_path) : null,
             'product' => $review->product?->name,
             'product_id' => $review->product_id,
+            'product_image_url' => $review->product ? $this->productImage($review->product) : null,
             'created_at' => $review->created_at?->toISOString(),
         ];
     }
@@ -136,5 +143,17 @@ class CustomerFeedbackController extends Controller
         }
 
         return \Illuminate\Support\Facades\Storage::disk('public')->url(ltrim(preg_replace('/^storage\//', '', $photo), '/'));
+    }
+
+    private function maskName(string $name): string
+    {
+        $parts = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (! $parts) return 'Anonymous buyer';
+        if (count($parts) === 1) return mb_substr($parts[0], 0, 1).str_repeat('*', max(1, mb_strlen($parts[0]) - 1));
+
+        $first = $parts[0];
+        $last = $parts[array_key_last($parts)];
+        return mb_substr($first, 0, 1).str_repeat('*', max(1, mb_strlen($first) - 1))
+            .' '.mb_substr($last, 0, 1).str_repeat('*', max(1, mb_strlen($last) - 1));
     }
 }

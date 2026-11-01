@@ -290,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // TEST-ONLY Seller Messages thread; not saved to DB and never sent via the API.
     const requested = new URLSearchParams(window.location.search);
     const requestedComplaint = requested.get('complaint');
+    let requestedConversation = requested.get('conversation');
     const demoEnabled = requested.get('demo') === '1' && requestedComplaint === 'TEST-CMP-001';
     const DEMO_THREAD = {
         id: 'demo-seller-complaint-001', type: 'complaints', title: 'TEST-CMP-001',
@@ -332,6 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ensureDemoThread();
             setCounts(payload);
             renderThreads();
+            if (requestedConversation && activeTab === 'buyers') {
+                const requestedThread = conversations.buyers.find(item => String(item.id) === String(requestedConversation));
+                requestedConversation = null;
+                if (requestedThread) {
+                    await openConversation(requestedThread.id);
+                    return;
+                }
+            }
             if (requestedComplaint && activeTab === 'complaints') {
                 await selectRequestedComplaint();
                 return;

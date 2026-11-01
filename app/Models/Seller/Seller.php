@@ -62,6 +62,11 @@ class Seller extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('registration_status', 'active');

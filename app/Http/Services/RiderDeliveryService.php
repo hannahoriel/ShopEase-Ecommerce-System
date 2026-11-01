@@ -39,6 +39,11 @@ class RiderDeliveryService
     public function serializeDelivery(Order $order): array
     {
         $rider = $order->shipment?->rider;
+        $pickupHandoff = $order->shipment?->transferManifests()
+            ->where('origin_type', 'seller_collection')
+            ->where('destination_type', 'delivery_hub')
+            ->where('batch_key', 'pickup-dropoff-'.$order->shipment?->id)
+            ->first();
 
         return [
             'id' => $order->id,
@@ -51,6 +56,13 @@ class RiderDeliveryService
             'payment_method' => $order->payment_method,
             'pickup_date' => $order->pickup_date?->toDateString(),
             'pickup_time' => $order->pickup_time?->format('H:i'),
+            'pickup_hub_dropoff' => $pickupHandoff ? [
+                'confirmed' => in_array($pickupHandoff->status, ['loaded', 'arrived'], true),
+                'status' => $pickupHandoff->status,
+                'confirmed_at' => $pickupHandoff->loaded_at?->toISOString(),
+                'delivery_hub_id' => $pickupHandoff->destination_id,
+                'delivery_hub_name' => $order->shipment?->deliveryHub?->hub_name,
+            ] : null,
             'seller' => [
                 'store_name' => $order->seller?->store_name,
                 'contact_no' => $order->seller?->contact_no,

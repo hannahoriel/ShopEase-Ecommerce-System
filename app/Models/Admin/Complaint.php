@@ -19,6 +19,11 @@ class Complaint extends Model
         'type',
         'description',
         'status',
+        'evidence',
+    ];
+
+    protected $casts = [
+        'evidence' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -32,6 +37,11 @@ class Complaint extends Model
     }
 
     public function updates(): HasMany
+    {
+        return $this->hasMany(ComplaintUpdate::class)->latest();
+    }
+
+    public function statusHistory(): HasMany
     {
         return $this->hasMany(ComplaintUpdate::class)->latest();
     }

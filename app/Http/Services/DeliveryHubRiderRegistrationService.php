@@ -17,15 +17,23 @@ class DeliveryHubRiderRegistrationService
             'delivery_hub_id' => ['nullable', 'integer'],
         ]);
         $province = trim((string) ($request->input('assignment_province') ?: $request->input('province')));
+        $municipality = trim((string) $request->input('municipality'));
         $query = LogisticsDeliveryHub::query()
             ->where('status', 'active')
             ->whereNull('archived_at')
             ->whereRaw('LOWER(province) = ?', [mb_strtolower($province)])
+            ->when($municipality !== '', fn ($hub) => $hub
+                ->whereRaw('LOWER(municipality) = ?', [mb_strtolower($municipality)]))
             ->whereHas('logisticsBranch', fn ($branch) => $branch
                 ->where('status', 'active')->whereNull('archived_at')
                 ->whereHas('user', fn ($user) => $user
                     ->where('role', User::ROLE_SORTING_CENTER)
-                    ->where('registration_status', 'active')))
+                    ->where('registration_status', 'active'))
+                ->whereHas('logistics', fn ($company) => $company
+                    ->where('registration_status', 'active')
+                    ->whereHas('user', fn ($user) => $user
+                        ->where('role', User::ROLE_LOGISTICS)
+                        ->where('registration_status', 'active'))))
             ->whereHas('user', fn ($user) => $user
                 ->where('role', User::ROLE_DELIVERY_HUB)
                 ->where('registration_status', 'active'));
@@ -34,7 +42,7 @@ class DeliveryHubRiderRegistrationService
             $hub = (clone $query)->whereKey($data['delivery_hub_id'])->first();
             if (! $hub) {
                 throw ValidationException::withMessages([
-                    'delivery_hub_id' => 'Choose an active delivery hub in your province.',
+                    'delivery_hub_id' => 'Choose an active delivery hub in your municipality and province.',
                 ]);
             }
 
@@ -104,6 +112,8 @@ class DeliveryHubRiderRegistrationService
             'city' => $rider?->municipality,
             'preferred_municipality' => $hub?->municipality,
             'barangay' => $rider?->barangay,
+            'assignment_barangay' => $rider?->assignment_barangay ?: $rider?->barangay,
+            'logistics_operation' => $rider?->logistics_operation,
             'street' => $rider?->street,
             'house_no' => $rider?->house_number,
             'postal_code' => $hub?->postal_code,

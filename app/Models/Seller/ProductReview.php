@@ -18,10 +18,13 @@ class ProductReview extends Model
         'rating',
         'title',
         'body',
+        'photo_path',
+        'is_anonymous',
     ];
 
     protected $casts = [
         'rating' => 'integer',
+        'is_anonymous' => 'boolean',
     ];
 
     public function product(): BelongsTo

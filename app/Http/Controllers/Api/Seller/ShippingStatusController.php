@@ -48,7 +48,8 @@ class ShippingStatusController extends Controller
         abort_unless(array_key_exists($order->status, self::TRANSITIONS), 404);
 
         return response()->json($order->load([
-            'buyer:id,name,email,contact_no',
+            'buyer:id,name,email',
+            'buyer.buyerProfile:id,user_id,contact_no',
             'items.product:id,name,photos',
             'shipment.scans',
             'statusHistory.changedBy:id,name',
@@ -90,14 +91,14 @@ class ShippingStatusController extends Controller
                 ['order_id' => $lockedOrder->id],
                 [
                     'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
-                    'courier' => $validated['courier'] ?? 'Ease Express',
+                    'courier' => $lockedOrder->logisticsCompany?->business_name ?: ($validated['courier'] ?? 'Ease Express'),
                     'estimated_delivery' => $validated['estimated_delivery'] ?? now()->addDays(3)->toDateString(),
                     'shipping_fee' => $validated['shipping_fee'] ?? 0,
                 ]
             );
 
             $shipment->fill(array_filter([
-                'courier' => $validated['courier'] ?? null,
+                'courier' => $lockedOrder->logisticsCompany?->business_name ?: ($validated['courier'] ?? null),
                 'estimated_delivery' => $validated['estimated_delivery'] ?? null,
                 'shipping_fee' => $validated['shipping_fee'] ?? null,
             ], fn ($value) => $value !== null));
@@ -132,7 +133,8 @@ class ShippingStatusController extends Controller
         return Order::query()
             ->where('seller_id', $sellerId)
             ->with([
-                'buyer:id,name,email,contact_no',
+                'buyer:id,name,email',
+                'buyer.buyerProfile:id,user_id,contact_no',
                 'items.product:id,name,photos',
                 'shipment',
                 'statusHistory',

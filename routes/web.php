@@ -161,6 +161,10 @@ Route::get('/dashboard', function () {
             'rider.dashboard'
         ),
 
+        User::ROLE_COURIER => redirect()->route(
+            'courier.dashboard'
+        ),
+
         default => abort(
             403,
             'Your account does not have a valid role.'
@@ -198,6 +202,7 @@ Route::get('/admin/dashboard', function () {
 foreach ([
     'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
+    'courier' => User::ROLE_COURIER,
 ] as $dashboard => $role) {
 
     Route::get(
@@ -223,6 +228,10 @@ foreach ([
 
             if ($dashboard === 'rider') {
                 $viewData['apiToken'] = Auth::user()->createToken('rider-dashboard')->plainTextToken;
+            }
+
+            if ($dashboard === 'courier') {
+                $viewData['apiToken'] = Auth::user()->createToken('courier-dashboard')->plainTextToken;
             }
 
             return view("pages.$dashboard.dashboard", $viewData);
@@ -1992,6 +2001,13 @@ Route::get('/buyer/product', function () {
     return view('pages.buyer.product', ['apiToken' => $apiToken]);
 })->middleware('auth')->name('buyer.product');
 
+Route::get('/buyer/shop', function () {
+    abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
+    $apiToken = Auth::user()->createToken('buyer-shop')->plainTextToken;
+
+    return view('pages.buyer.shop', ['apiToken' => $apiToken]);
+})->middleware('auth')->name('buyer.shop');
+
 Route::get('/buyer/my-purchases', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
     $user = Auth::user();
@@ -2368,7 +2384,7 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/scanners', 'pages.logistics.sorting-center.scanners')
             ->name('scanners');
 
-        Route::view('/parcel-tracking', 'pages.logistics.sorting-center.parcel-tracking')
+        Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'page'])
             ->name('parcel-tracking');
 
         Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
@@ -2473,11 +2489,38 @@ Route::middleware(['auth', 'role:delivery_hub'])
                     ->where('user_id', Auth::id())
                     ->firstOrFail();
 
+                $scannerRiders = $page === 'scanners'
+                    ? \App\Models\Rider\Rider::query()
+                        ->with('user:id,name')
+                        ->where('registration_status', 'active')
+                        ->where('logistics_branch_id', $hub->logistics_branch_id)
+                        ->where(function ($query) use ($hub): void {
+                            $query->whereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($hub->hub_name)])
+                                ->orWhereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($hub->municipality)]);
+                        })
+                        ->get()
+                        ->filter(fn ($rider) => str_contains(mb_strtolower((string) $rider->logistics_operation), 'pickup')
+                            || str_contains(mb_strtolower((string) $rider->logistics_operation), 'delivery'))
+                        ->map(fn ($rider) => [
+                            'id' => (string) $rider->id,
+                            'name' => trim($rider->first_name.' '.$rider->last_name) ?: $rider->user?->name,
+                            'barangay' => $rider->barangay,
+                            'role' => mb_strtolower((string) $rider->logistics_operation),
+                            'vehicle' => trim((string) $rider->vehicle).' · '.trim((string) $rider->plate_number),
+                            'phone' => $rider->contact_no,
+                        ])->values()
+                    : collect();
+
                 return view('pages.logistics.delivery-hub.' . $page, [
                     'hub' => $hub,
                     'deliveryHub' => $hub,
                     'deliveryHubId' => $hub->id,
                     'sortingCenterId' => data_get($hub, 'logistics_branch_id', data_get($hub, 'branch_id')),
+                    'scannerState' => $page === 'scanners'
+                        ? (\App\Models\Logistics\DeliveryHubScannerState::query()
+                            ->where('logistics_delivery_hub_id', $hub->id)->first()?->state)
+                        : null,
+                    'scannerRiders' => $scannerRiders,
                 ]);
             };
         };

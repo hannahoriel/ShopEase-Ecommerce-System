@@ -20,16 +20,26 @@ class DeliveryHubRiderRegistrationController extends Controller
 {
     public function available(Request $request): JsonResponse
     {
-        $data = $request->validate(['province' => ['required', 'string', 'max:120']]);
+        $data = $request->validate([
+            'province' => ['required', 'string', 'max:120'],
+            'municipality' => ['nullable', 'string', 'max:120'],
+        ]);
         $province = mb_strtolower(trim($data['province']));
         $hubs = LogisticsDeliveryHub::query()
             ->where('status', 'active')->whereNull('archived_at')
             ->whereRaw('LOWER(province) = ?', [$province])
+            ->when(! empty($data['municipality']), fn (Builder $query) => $query
+                ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($data['municipality']))]))
             ->whereHas('logisticsBranch', fn (Builder $branch) => $branch
                 ->where('status', 'active')->whereNull('archived_at')
                 ->whereHas('user', fn (Builder $user) => $user
                     ->where('role', User::ROLE_SORTING_CENTER)
-                    ->where('registration_status', 'active')))
+                    ->where('registration_status', 'active'))
+                ->whereHas('logistics', fn (Builder $company) => $company
+                    ->where('registration_status', 'active')
+                    ->whereHas('user', fn (Builder $user) => $user
+                        ->where('role', User::ROLE_LOGISTICS)
+                        ->where('registration_status', 'active'))))
             ->whereHas('user', fn (Builder $user) => $user
                 ->where('role', User::ROLE_DELIVERY_HUB)
                 ->where('registration_status', 'active'))

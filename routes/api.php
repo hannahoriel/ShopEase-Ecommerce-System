@@ -19,6 +19,8 @@ use App\Http\Controllers\Api\MobileRegistrationVerificationController;
 use App\Http\Controllers\Api\Buyer\AccountController as BuyerAccountController;
 use App\Http\Controllers\Api\Buyer\LikeController as BuyerLikeController;
 use App\Http\Controllers\Api\Buyer\ComplaintMessagesController as BuyerComplaintMessagesController;
+use App\Http\Controllers\Api\Buyer\ComplaintController as BuyerComplaintController;
+use App\Http\Controllers\Api\Buyer\ShopController as BuyerShopController;
 use App\Http\Controllers\Api\Buyer\AccountSecurityController as BuyerAccountSecurityController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
@@ -30,6 +32,8 @@ use App\Http\Controllers\Api\Buyer\VoucherController as BuyerVoucherController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\CourierRegistrationController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubScannerController;
+use App\Http\Controllers\Api\Logistics\ParcelRouteScanController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
 use App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController;
@@ -72,6 +76,7 @@ use App\Http\Controllers\Api\Rider\Homepage\Notifications\ListNotificationsContr
 use App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkNotificationReadController;
 use App\Http\Controllers\Api\Rider\Homepage\ShowRiderDashboardController;
+use App\Http\Controllers\Api\Rider\CourierTransportController;
 use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\ArchiveVerifyOrderController;
 use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\DeleteArchivedVerifyOrderController;
 use App\Http\Controllers\Api\Rider\Homepage\VerifyOrder\ListVerifyOrdersController;
@@ -251,8 +256,14 @@ Route::prefix('v1')->group(function () {
             Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
             Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
+            Route::get('/shipping-options', [BuyerOrderController::class, 'shippingOptions'])->name('buyer.api.shipping-options');
+            Route::patch('/orders/{order}/confirm-received', [BuyerOrderController::class, 'confirmReceived'])->name('buyer.api.orders.confirm-received');
             Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
+            Route::get('/shops/{seller}', [BuyerShopController::class, 'show'])->name('buyer.api.shops.show');
+            Route::get('/following', [BuyerShopController::class, 'following'])->name('buyer.api.following');
+            Route::post('/shops/{seller}/follow', [BuyerShopController::class, 'follow'])->name('buyer.api.shops.follow');
+            Route::delete('/shops/{seller}/follow', [BuyerShopController::class, 'unfollow'])->name('buyer.api.shops.unfollow');
             Route::get('/products/{product}', [BuyerDashboardController::class, 'show'])->name('buyer.api.products.show');
             Route::get('/products/{product}/reviews', [ProductReviewController::class, 'index'])->name('buyer.api.products.reviews.index');
             Route::post('/products/{product}/reviews', [ProductReviewController::class, 'store'])->name('buyer.api.products.reviews.store');
@@ -260,6 +271,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/vouchers/preview', [BuyerVoucherController::class, 'preview'])->name('buyer.api.vouchers.preview');
             Route::get('/vouchers', [BuyerVoucherController::class, 'index'])->name('buyer.api.vouchers.index');
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
+            Route::get('/complaints', [BuyerComplaintController::class, 'index'])->name('buyer.api.complaints.index');
             Route::get('/returns', [BuyerOrderReturnController::class, 'index'])->name('buyer.api.returns.index');
             Route::post('/orders/{order}/returns', [BuyerOrderReturnController::class, 'store'])->name('buyer.api.orders.returns.store');
             Route::get('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'index'])->name('buyer.api.complaints.messages.index');
@@ -277,6 +289,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
             Route::get('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'show']);
+            Route::get('/account/followers', [\App\Http\Controllers\Api\Seller\AccountController::class, 'followers']);
             Route::put('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'update']);
             Route::get('/dashboard', [SellerDashboardController::class, 'apiIndex']);
             Route::get('/messages', [SellerMessagesController::class, 'index'])->name('seller.api.messages.index');
@@ -365,7 +378,17 @@ Route::prefix('v1')->group(function () {
 
         foreach (['sorting_center', 'delivery_hub'] as $facilityRole) {
             Route::middleware("role:{$facilityRole}")->prefix($facilityRole)->group(function () use ($facilityRole) {
+                Route::post('/scanner/parcel-scan', [ParcelRouteScanController::class, 'scan'])
+                    ->name("{$facilityRole}.api.scanner.parcel-scan");
+                Route::get('/scanner/queue', [ParcelRouteScanController::class, 'queue'])
+                    ->name("{$facilityRole}.api.scanner.queue");
+                if ($facilityRole === 'delivery_hub') {
+                    Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
+                    Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
+                }
                 if ($facilityRole === 'sorting_center') {
+                    Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'index'])
+                        ->name('sorting_center.api.parcel-tracking.index');
                     Route::get('/delivery-hubs', [SortingCenterDeliveryHubController::class, 'index'])->name('sorting_center.api.delivery-hubs.index');
                     Route::get('/delivery-hubs/{hub}', [SortingCenterDeliveryHubController::class, 'show'])->name('sorting_center.api.delivery-hubs.show');
                     Route::get('/courier-registrations', [CourierRegistrationController::class, 'index'])->name('sorting_center.api.courier-registrations.index');
@@ -426,6 +449,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('/verify-orders/{order}', DeleteArchivedVerifyOrderController::class)->name('rider.api.verify-orders.dismiss');
             Route::get('/pickup-tasks', ListPickupTasksController::class)->name('rider.api.pickup-tasks.index');
             Route::post('/pickup-tasks/{order}/proof', SubmitPickupProofController::class)->name('rider.api.pickup-tasks.proof');
+            Route::post('/pickup-tasks/{order}/hub-dropoff', \App\Http\Controllers\Api\Rider\Homepage\PickupTask\ConfirmPickupHubDropoffController::class)->name('rider.api.pickup-tasks.hub-dropoff');
             Route::get('/pickup-tasks/{order}/proofs/{proof}/photo', ShowPickupProofPhotoController::class)->name('rider.api.pickup-tasks.proofs.photo');
             Route::get('/pickup-delivery-records', ListPickupDeliveryRecordsController::class)->name('rider.api.pickup-delivery-records.index');
             Route::get('/deliveries', ListDeliveriesController::class)->name('rider.api.deliveries.index');
@@ -434,6 +458,25 @@ Route::prefix('v1')->group(function () {
             Route::patch('/deliveries/{order}/status', UpdateDeliveryStatusController::class)->name('rider.api.deliveries.status');
             Route::post('/deliveries/{order}/proof', SubmitDeliveryProofController::class)->name('rider.api.deliveries.proof');
             Route::get('/deliveries/{order}/proofs/{proof}/photo', ShowDeliveryProofPhotoController::class)->name('rider.api.deliveries.proofs.photo');
+        });
+
+        Route::middleware('role:rider,courier')->prefix('courier')->group(function () {
+            Route::get('/dashboard', [CourierTransportController::class, 'dashboard'])->name('courier.api.dashboard');
+            Route::get('/trips', [CourierTransportController::class, 'trips'])->name('courier.api.trips.index');
+            Route::get('/manifests', [CourierTransportController::class, 'manifests'])->name('courier.api.manifests.index');
+            Route::get('/manifests/{manifestId}', [CourierTransportController::class, 'showManifest'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.show');
+            Route::post('/manifests/{manifestId}/load-scan', [CourierTransportController::class, 'loadParcel'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.load-scan');
+            Route::post('/manifests/{manifestId}/parcels/{shipmentId}/reconcile', [CourierTransportController::class, 'reconcileParcel'])
+                ->whereNumber('manifestId')->whereNumber('shipmentId')->name('courier.api.manifests.parcels.reconcile');
+            Route::post('/manifests/{manifestId}/departure', [CourierTransportController::class, 'confirmDeparture'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.departure');
+            Route::post('/manifests/{manifestId}/arrival', [CourierTransportController::class, 'confirmArrival'])
+                ->whereNumber('manifestId')->name('courier.api.manifests.arrival');
+            Route::get('/return-pickup', [CourierTransportController::class, 'returnPickup'])->name('courier.api.return-pickup.index');
+            Route::post('/return-pickup/manifests', [CourierTransportController::class, 'prepareReturnManifest'])
+                ->name('courier.api.return-pickup.manifests.store');
         });
 
     });
