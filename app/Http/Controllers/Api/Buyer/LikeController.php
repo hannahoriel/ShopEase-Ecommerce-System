@@ -12,7 +12,7 @@ class LikeController extends Controller
     public function index(Request $request): JsonResponse
     {
         $likes = $request->user()->buyerLikes()
-            ->with('product.seller')
+            ->with(['product.seller.user', 'product.reviews'])
             ->latest('buyer_likes.created_at')
             ->get()
             ->map(fn ($like): array => $this->productPayload($like->product))
@@ -31,6 +31,7 @@ class LikeController extends Controller
             ->where('status', 'active')
             ->where('is_archived', false)
             ->firstOrFail();
+        $product->load(['seller.user', 'reviews']);
 
         $request->user()->buyerLikes()->firstOrCreate([
             'product_id' => $product->id,
@@ -38,7 +39,7 @@ class LikeController extends Controller
 
         return response()->json([
             'message' => 'Product added to your likes.',
-            'data' => $this->productPayload($product->load('seller')),
+            'data' => $this->productPayload($product),
         ], 201);
     }
 
@@ -54,17 +55,27 @@ class LikeController extends Controller
         if (! $product) return [];
 
         $photos = $product->photos ?? [];
-        $image = is_array($photos) ? ($photos[0] ?? null) : null;
-        if ($image && ! str_starts_with($image, 'http')) {
-            $image = \Illuminate\Support\Facades\Storage::disk('public')->url($image);
+        $image = is_array($photos)
+            ? collect($photos)->first(fn ($photo) => is_string($photo) && trim($photo) !== null && trim($photo) !== '')
+            : null;
+        if (is_string($image)) {
+            $image = trim($image);
+            if ($image !== '' && ! preg_match('/^(https?:\/\/|data:)/i', $image)) {
+                $image = preg_replace('/^(?:storage\/|public\/)+/i', '', ltrim($image, '/\\'));
+                $image = \Illuminate\Support\Facades\Storage::disk('public')->url($image);
+            }
         }
+        $reviews = $product->relationLoaded('reviews') ? $product->reviews : collect();
+        $ratingCount = $reviews->count();
 
         return [
             'id' => $product->id,
             'name' => $product->name,
             'price' => (float) $product->price,
             'image' => $image,
-            'seller' => $product->seller?->store_name ?? 'ShopEase Seller',
+            'seller' => $product->seller?->store_name ?: ($product->seller?->business_name ?: ($product->seller?->user?->name ?? 'ShopEase Seller')),
+            'rating' => $ratingCount ? round((float) $reviews->avg('rating'), 1) : 0.0,
+            'rating_count' => $ratingCount,
             'url' => '/buyer/product?id='.$product->id,
         ];
     }

@@ -273,7 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 likesGrid.hidden = liked.length === 0;
                 likesGrid.innerHTML = liked.map(product => {
                     const url = product.url || ('/buyer/product?id=' + encodeURIComponent(product.id));
-                    const image = product.image && /^(https?:\/\/|\/)(?!\/)/i.test(product.image)
+                    const ratingCount = Number(product.rating_count || 0);
+                    const rating = ratingCount ? `<span class="buyer-like-rating-star" aria-hidden="true">★</span><strong>${Number(product.rating || 0).toFixed(1)}</strong><span>(${ratingCount} ${ratingCount === 1 ? 'rating' : 'ratings'})</span>` : '<span class="buyer-like-rating-star" aria-hidden="true">☆</span><span>No ratings yet</span>';
+                    const image = product.image
                         ? `<img src="${likesEscape(product.image)}" alt="${likesEscape(product.name)}" loading="lazy">`
                         : '<span class="buyer-likes-image-fallback" aria-hidden="true">♡</span>';
                     return `<article class="buyer-like-card">
@@ -281,10 +283,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="buyer-like-remove" type="button" data-unlike-product="${likesEscape(product.id)}" aria-label="Remove ${likesEscape(product.name)} from likes" title="Unlike product">♥</button></div>
                         <div class="buyer-like-content"><span class="buyer-like-store">${likesEscape(product.seller || 'ShopEase Seller')}</span>
                             <a class="buyer-like-name" href="${likesEscape(url)}">${likesEscape(product.name)}</a>
+                            <div class="buyer-like-rating" aria-label="${ratingCount ? `${Number(product.rating || 0).toFixed(1)} out of 5 from ${ratingCount} ratings` : 'No ratings yet'}">${rating}</div>
                             <strong class="buyer-like-price">${likesMoney(product.price)}</strong>
                             <a class="buyer-like-view" href="${likesEscape(url)}">View Product <span aria-hidden="true">→</span></a>
                         </div></article>`;
                 }).join('');
+                likesGrid.querySelectorAll('.buyer-like-photo img').forEach(image => image.addEventListener('error', () => {
+                    const fallback = document.createElement('span');
+                    fallback.className = 'buyer-likes-image-fallback';
+                    fallback.setAttribute('aria-hidden', 'true');
+                    fallback.textContent = '♡';
+                    image.replaceWith(fallback);
+                }, {once:true}));
             }
             likesGrid?.addEventListener('click', event => {
                 const unlike = event.target.closest('[data-unlike-product]');

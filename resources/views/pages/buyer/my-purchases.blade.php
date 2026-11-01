@@ -434,7 +434,6 @@
                                 <h3>No liked products yet</h3><p>Tap the heart on products you like to save them here.</p>
                                 <a href="{{ url('/buyer/dashboard') }}">Explore products →</a>
                             </div>
-                            <p class="buyer-likes-footnote">Preview: liked products are saved only in this browser. Connect a buyer favorites API to sync across devices.</p>
                         </section>
                     </div>
 

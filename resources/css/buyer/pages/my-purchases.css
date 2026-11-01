@@ -3666,6 +3666,7 @@ body.sp-modal-open {
 .buyer-like-store{font-size:10px;color:#968782}
 .buyer-like-name{font-size:13px;line-height:1.45;color:#38282B;text-decoration:none;font-weight:700;min-height:38px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .buyer-like-name:hover{color:#832632}
+.buyer-like-rating{display:flex;align-items:center;gap:5px;min-height:18px;color:#8e817b;font-size:10px}.buyer-like-rating-star{color:#f0a629;font-size:15px;line-height:1}.buyer-like-rating strong{color:#463533;font-size:11px}
 .buyer-like-price{font-size:15px;color:#7A2029;font-weight:700}
 .buyer-like-view{margin-top:4px;text-decoration:none;font-size:11px;font-weight:700;color:#8F2936}
 .buyer-like-view:hover{text-decoration:underline}
