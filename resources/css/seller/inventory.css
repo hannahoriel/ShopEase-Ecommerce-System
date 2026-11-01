@@ -10969,6 +10969,23 @@
     white-space: nowrap !important;
 }
 
+#productDetailsBuyerOptions button.product-details-choice-view {
+    cursor: pointer !important;
+}
+
+#productDetailsBuyerOptions .product-details-choice-view.is-selected {
+    border-color: #8D1D25 !important;
+    background: #FFF3F0 !important;
+    color: #8D1D25 !important;
+}
+
+#productDetailsBuyerOptions .product-details-selected-option-stock {
+    grid-column: 2;
+    color: #756762;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
 /* Keep the grouped-variant cards below with a little separation. */
 #productDetailsBuyerOptions .product-details-variant-card-list {
     margin-top: 18px !important;

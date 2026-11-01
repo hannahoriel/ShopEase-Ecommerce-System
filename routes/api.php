@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\MobileRegistrationVerificationController;
 use App\Http\Controllers\Api\Buyer\AccountController as BuyerAccountController;
 use App\Http\Controllers\Api\Buyer\LikeController as BuyerLikeController;
 use App\Http\Controllers\Api\Buyer\ComplaintMessagesController as BuyerComplaintMessagesController;
+use App\Http\Controllers\Api\Buyer\ComplaintController as BuyerComplaintController;
 use App\Http\Controllers\Api\Buyer\AccountSecurityController as BuyerAccountSecurityController;
 use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
@@ -254,6 +255,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
             Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
+            Route::get('/shipping-options', [BuyerOrderController::class, 'shippingOptions'])->name('buyer.api.shipping-options');
             Route::patch('/orders/{order}/confirm-received', [BuyerOrderController::class, 'confirmReceived'])->name('buyer.api.orders.confirm-received');
             Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
@@ -264,6 +266,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/vouchers/preview', [BuyerVoucherController::class, 'preview'])->name('buyer.api.vouchers.preview');
             Route::get('/vouchers', [BuyerVoucherController::class, 'index'])->name('buyer.api.vouchers.index');
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
+            Route::get('/complaints', [BuyerComplaintController::class, 'index'])->name('buyer.api.complaints.index');
             Route::get('/returns', [BuyerOrderReturnController::class, 'index'])->name('buyer.api.returns.index');
             Route::post('/orders/{order}/returns', [BuyerOrderReturnController::class, 'store'])->name('buyer.api.orders.returns.store');
             Route::get('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'index'])->name('buyer.api.complaints.messages.index');

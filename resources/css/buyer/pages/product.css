@@ -997,6 +997,8 @@
             border-radius: 50%;
         }
 
+        .review-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
         .review-avatar svg {
             width: 100%;
             height: 100%;
@@ -1031,6 +1033,19 @@
             font-size: 10px;
             line-height: 1.55;
         }
+
+        .review-photo-link { display: inline-block; margin-top: 9px; }
+        .review-photo { display: block; width: 112px; height: 112px; border: 1px solid #eee0dc; border-radius: 9px; object-fit: cover; }
+        .view-all-product-reviews { display: block; margin: 12px auto 18px; padding: 9px 18px; border: 1px solid #ead5d0; border-radius: 999px; background: #fff; color: #81202a; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .view-all-product-reviews[hidden], .product-reviews-modal[hidden] { display: none !important; }
+        .product-reviews-modal { position: fixed; inset: 0; z-index: 300; display: flex; justify-content: center; align-items: center; padding: 22px; background: rgba(28, 16, 16, .55); }
+        .product-reviews-dialog { width: min(760px, 100%); max-height: min(82vh, 820px); overflow: hidden; display: flex; flex-direction: column; border-radius: 16px; background: #fff; box-shadow: 0 20px 70px rgba(0,0,0,.24); }
+        .product-reviews-dialog > header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; border-bottom: 1px solid #f0e4e0; }
+        .product-reviews-dialog > header span { color: #a24c4f; font-size: 9px; font-weight: 700; letter-spacing: .12em; }
+        .product-reviews-dialog > header h2 { margin: 3px 0 0; color: #332927; font-size: 18px; }
+        .product-reviews-dialog > header button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #fbefed; color: #85232b; font-size: 23px; cursor: pointer; }
+        .product-reviews-modal-list { overflow: auto; padding: 4px 18px 18px; }
+        body.product-reviews-open { overflow: hidden; }
 
         .review-media {
             margin-top: 12px;

@@ -3242,3 +3242,6 @@ body.seller-sidebar-collapsed #feedbackPage {
     grid-column: 1 / -1 !important;
     text-align: center !important;
 }
+
+.feedback-review-photo-link { display: inline-flex; margin-top: 8px; }
+.feedback-review-photo-link img { width: 66px; height: 66px; border: 1px solid #eadeda; border-radius: 7px; object-fit: cover; }

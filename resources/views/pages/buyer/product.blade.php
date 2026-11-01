@@ -142,7 +142,7 @@
                     </div>
                 </div>
                 <div class="seller-stats">
-                    <div><span>Ratings</span><strong id="sellerRatings">0%</strong></div>
+                    <div><span>Ratings</span><strong id="sellerRatings">0.0 / 5</strong><small id="sellerRatingCount"></small></div>
                     <div><span>Response Rate</span><strong id="sellerResponseRate">—</strong></div>
                     <div><span>Joined</span><strong id="sellerJoined">—</strong></div>
                     <div><span>Products</span><strong id="sellerProducts">0</strong></div>
@@ -181,26 +181,9 @@
                         <button type="button" class="rating-filter" data-rating-filter="1">1 Star</button>
                     </div>
                 </div>
-                <form id="productReviewForm" class="product-review-form">
-                    <h3>Share your feedback</h3>
-                    <label for="reviewRating">Your rating</label>
-                    <select id="reviewRating" name="rating" required>
-                        <option value="">Choose a rating</option>
-                        <option value="5">5 stars - Excellent</option>
-                        <option value="4">4 stars - Good</option>
-                        <option value="3">3 stars - Average</option>
-                        <option value="2">2 stars - Poor</option>
-                        <option value="1">1 star - Very poor</option>
-                    </select>
-                    <label for="reviewTitle">Title (optional)</label>
-                    <input id="reviewTitle" name="title" type="text" maxlength="120" placeholder="Summarize your experience">
-                    <label for="reviewBody">Your review</label>
-                    <textarea id="reviewBody" name="body" rows="3" maxlength="2000" minlength="2" required placeholder="What did you think of this product?"></textarea>
-                    <button type="submit" id="submitProductReview">Submit review</button>
-                    <p id="productReviewMessage" role="status" aria-live="polite"></p>
-                </form>
                 <div class="review-list">
                     <div id="ratingsReviewList"></div>
+                    <button type="button" id="viewAllProductReviews" class="view-all-product-reviews" hidden>View more reviews</button>
                     <div id="ratingsFilterEmpty" class="ratings-filter-empty">Loading reviews…</div>
                 </div>
             </section>
@@ -215,6 +198,13 @@
 
         </div>
     </main>
+
+    <div id="productReviewsModal" class="product-reviews-modal" aria-hidden="true" hidden>
+        <section class="product-reviews-dialog" role="dialog" aria-modal="true" aria-labelledby="productReviewsModalTitle" tabindex="-1">
+            <header><div><span>PRODUCT REVIEWS</span><h2 id="productReviewsModalTitle">Customer ratings</h2></div><button type="button" id="closeProductReviewsModal" aria-label="Close reviews">&times;</button></header>
+            <div id="allProductReviewsList" class="product-reviews-modal-list"></div>
+        </section>
+    </div>
 
     @include('components.buyer.footer')
     @include('components.buyer.floating-chat')

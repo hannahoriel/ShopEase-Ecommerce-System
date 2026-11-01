@@ -3796,3 +3796,6 @@ body.buyer-seller-rating-open{overflow:hidden}
 .buyer-order-timeline li:nth-child(n+4){display:none}
 .buyer-order-tracking-card.is-expanded .buyer-order-timeline li:nth-child(n+4){display:block}
 .buyer-order-tracking-card.is-expanded .buyer-order-timeline:before{bottom:14px}
+.buyer-seller-rating-dialog .buyer-seller-anonymous{display:flex;grid-column:1/-1;align-items:center;gap:8px;color:#655652;font-size:11px}
+.buyer-seller-rating-dialog .buyer-seller-anonymous input{width:15px;height:15px;accent-color:#7b1b1b}
+.buyer-seller-rating-dialog input[type=file]{padding:8px;border:1px solid #e7d9d5;border-radius:8px;background:#fff;font-size:11px}

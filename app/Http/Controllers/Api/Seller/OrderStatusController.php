@@ -297,13 +297,16 @@ class OrderStatusController extends Controller
             [
                 'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
                 'scan_token' => Str::random(64),
-                'courier' => 'Ease Express',
+                'courier' => $order->logisticsCompany?->business_name ?: 'Ease Express',
                 'estimated_delivery' => $order->pickup_date?->copy()->addDays(3) ?? now()->addDays(3)->toDateString(),
             ]
         );
 
         if (! $shipment->scan_token) {
             $shipment->update(['scan_token' => Str::random(64)]);
+        }
+        if ($order->logisticsCompany?->business_name) {
+            $shipment->update(['courier' => $order->logisticsCompany->business_name]);
         }
 
         $order->load([
@@ -367,11 +370,15 @@ class OrderStatusController extends Controller
                 ['order_id' => $order->id],
                 [
                     'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
-                    'courier' => 'Ease Express',
+                    'courier' => $order->logisticsCompany?->business_name ?: 'Ease Express',
                     'estimated_delivery' => $order->pickup_date?->copy()->addDays(3)
                         ?? now()->addDays(3)->toDateString(),
                 ]
             );
+            if ($order->logisticsCompany?->business_name) {
+                $shipment->courier = $order->logisticsCompany->business_name;
+                $shipment->save();
+            }
 
             // A scheduled pickup is routed to an active pickup rider covering
             // the seller's exact barangay/municipality and province.

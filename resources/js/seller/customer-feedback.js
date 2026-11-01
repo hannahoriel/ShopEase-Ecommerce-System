@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div>
                     <p class="customer-name">${escapeHtml(review.customer)}</p>
-                    <div class="customer-phone">${escapeHtml(review.phone || '')}</div>
+                    <div class="customer-phone">${escapeHtml(review.is_anonymous ? 'Anonymous review' : (review.phone || ''))}</div>
                 </div>
                 <div class="rating-cell">
                     <div class="stars">${renderStars(review.rating)}</div>
@@ -137,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>
                     <p class="feedback-text-title">${escapeHtml(review.title)}</p>
                     <div class="feedback-text-body">${escapeHtml(review.body)}</div>
+                    ${review.review_photo_url ? `<a class="feedback-review-photo-link" href="${escapeHtml(review.review_photo_url)}" target="_blank" rel="noopener"><img src="${escapeHtml(review.review_photo_url)}" alt="Photo attached to customer review" loading="lazy"></a>` : ''}
                 </div>
                 <div class="feedback-date"><div>${escapeHtml(date)}</div></div>
             </div>`;
@@ -269,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     ${review.title ? `<strong>${escapeHtml(review.title)}</strong>` : ''}
                     <p class="review-text">${escapeHtml(review.body)}</p>
+                    ${review.review_photo_url ? `<a class="feedback-review-photo-link" href="${escapeHtml(review.review_photo_url)}" target="_blank" rel="noopener"><img src="${escapeHtml(review.review_photo_url)}" alt="Photo attached to customer review" loading="lazy"></a>` : ''}
                 </div>
             </article>`;
     }

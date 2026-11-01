@@ -37,6 +37,7 @@
         {!! json_encode([
             'ordersUrl' => '/api/v1/buyer/orders',
             'complaintsUrl' => '/api/v1/buyer/orders',
+            'buyerComplaintsUrl' => '/api/v1/buyer/complaints',
             'notificationsUrl' => '/api/v1/buyer/notifications',
             'adminMessagesUrl' => \Illuminate\Support\Facades\Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages'),
             'apiToken' => $apiToken ?? '',
@@ -712,13 +713,15 @@
     <div id="buyerSellerRatingModal" class="buyer-seller-rating-overlay" aria-hidden="true" hidden>
         <section class="buyer-seller-rating-dialog" role="dialog" aria-modal="true" aria-labelledby="buyerSellerRatingTitle" tabindex="-1">
             <header class="buyer-seller-rating-dialog-header">
-                <div><span class="buyer-order-section-kicker">SELLER FEEDBACK</span><h2 id="buyerSellerRatingTitle">Rate your seller</h2><p>Share your experience with <strong data-rating-modal-shop>the seller</strong>.</p></div>
+                <div><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h2 id="buyerSellerRatingTitle">Rate a product</h2><p>Share your experience with <strong data-rating-modal-shop>the seller</strong>.</p></div>
                 <button type="button" id="buyerSellerRatingClose" aria-label="Close rating form">&times;</button>
             </header>
             <form id="buyerSellerRatingForm" class="buyer-seller-rating-form">
                 <label>Product<select name="product_id" required></select></label>
                 <fieldset class="buyer-seller-rating-stars"><legend>Your rating</legend><div class="buyer-seller-stars" role="radiogroup" aria-label="Seller rating">@for($rating=1;$rating<=5;$rating++)<button type="button" class="is-selected" data-seller-rating="{{ $rating }}" aria-label="{{ $rating }} star{{ $rating===1?'':'s' }}" aria-checked="{{ $rating===5?'true':'false' }}" role="radio">★</button>@endfor<input type="hidden" name="rating" value="5"></div></fieldset>
                 <label class="buyer-seller-review-field">Your review<textarea name="body" minlength="2" maxlength="2000" required placeholder="What did you think of your purchase and the seller?"></textarea></label>
+                <label class="buyer-seller-review-field">Attach a photo<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
+                <label class="buyer-seller-anonymous"><input type="checkbox" name="is_anonymous" value="1"><span>Post my name anonymously</span></label>
                 <p class="buyer-order-rating-feedback" role="status" hidden></p>
                 <button class="buyer-order-action-confirm" type="submit">Submit rating</button>
             </form>
@@ -754,6 +757,10 @@
                 <label class="block text-sm font-medium text-gray-700" for="buyerComplaintDescription">
                     Tell us what happened
                     <textarea id="buyerComplaintDescription" name="description" rows="5" minlength="10" maxlength="2000" required class="mt-1 block w-full resize-y rounded-lg border border-gray-300 px-3 py-2" placeholder="Describe the issue with your order (10-2000 characters)."></textarea>
+                </label>
+                <label class="block text-sm font-medium text-gray-700" for="buyerComplaintEvidence">
+                    Photos (optional, up to 5)
+                    <input id="buyerComplaintEvidence" name="evidence[]" type="file" accept="image/jpeg,image/png,image/webp" multiple class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
                 </label>
                 <p id="buyerComplaintError" class="text-sm text-red-600" role="alert" hidden></p>
                 <div class="flex justify-end gap-3">

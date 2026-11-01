@@ -91,14 +91,14 @@ class ShippingStatusController extends Controller
                 ['order_id' => $lockedOrder->id],
                 [
                     'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
-                    'courier' => $validated['courier'] ?? 'Ease Express',
+                    'courier' => $lockedOrder->logisticsCompany?->business_name ?: ($validated['courier'] ?? 'Ease Express'),
                     'estimated_delivery' => $validated['estimated_delivery'] ?? now()->addDays(3)->toDateString(),
                     'shipping_fee' => $validated['shipping_fee'] ?? 0,
                 ]
             );
 
             $shipment->fill(array_filter([
-                'courier' => $validated['courier'] ?? null,
+                'courier' => $lockedOrder->logisticsCompany?->business_name ?: ($validated['courier'] ?? null),
                 'estimated_delivery' => $validated['estimated_delivery'] ?? null,
                 'shipping_fee' => $validated['shipping_fee'] ?? null,
             ], fn ($value) => $value !== null));

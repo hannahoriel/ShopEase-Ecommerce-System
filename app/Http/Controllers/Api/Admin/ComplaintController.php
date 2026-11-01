@@ -138,6 +138,9 @@ class ComplaintController extends Controller
             'time' => $complaint->created_at?->format('g:i A') ?? '',
             'lastUpdated' => $complaint->updated_at?->format('M d, Y g:i A') ?? '',
             'description' => $complaint->description ?: $complaint->subject,
+            'evidence' => collect($complaint->evidence ?? [])
+                ->map(fn (string $path): string => \Illuminate\Support\Facades\Storage::disk('public')->url($path))
+                ->values(),
             'orderId' => $order?->order_number ?: ($order ? 'ORD-'.$order->id : '—'),
             'orderDate' => $order?->created_at?->format('M d, Y g:i A') ?? '—',
             'paymentMethod' => $order?->payment_method ?? '—',

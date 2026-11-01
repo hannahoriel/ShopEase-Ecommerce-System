@@ -13,6 +13,10 @@ use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductReview;
+use App\Models\Logistics\Logistics;
+use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
+use Illuminate\Support\Collection;
 use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
@@ -43,6 +47,7 @@ class OrderController extends Controller
                 'statusHistory',
                 'shipment.scans',
                 'shipment.rider.logisticsBranch',
+                'logisticsCompany',
             ])
             ->latest()
             ->paginate(50);
@@ -87,17 +92,19 @@ class OrderController extends Controller
                     && $order->latestCancellationRequest?->status !== 'pending',
                 'cancellation_request' => $order->latestCancellationRequest,
                 'created_at' => $order->created_at?->toISOString(),
-                'shipment' => $order->shipment ? [
-                    'tracking_number' => $order->shipment->tracking_number,
-                    'courier' => $order->shipment->courier,
-                    'estimated_delivery' => $order->shipment->estimated_delivery?->toDateString(),
-                    'current_location' => $order->shipment->current_location,
-                    'current_latitude' => $order->shipment->current_latitude,
-                    'current_longitude' => $order->shipment->current_longitude,
-                    'location_updated_at' => $order->shipment->location_updated_at?->toISOString(),
-                    'logistics_stop' => $order->shipment->rider?->logisticsBranch?->address,
-                    'logistics_stop_name' => $order->shipment->rider?->logisticsBranch?->name,
-                    'rider' => $order->shipment->rider ? [
+                'shipment' => ($order->shipment || $order->logisticsCompany) ? [
+                    'tracking_number' => $order->shipment?->tracking_number,
+                    'courier' => $order->logisticsCompany?->business_name ?: $order->shipment?->courier,
+                    'estimated_delivery' => $order->shipment?->estimated_delivery?->toDateString(),
+                    'current_location' => in_array($order->status, ['delivered', 'completed'], true)
+                        ? 'Delivered'
+                        : $order->shipment?->current_location,
+                    'current_latitude' => $order->shipment?->current_latitude,
+                    'current_longitude' => $order->shipment?->current_longitude,
+                    'location_updated_at' => $order->shipment?->location_updated_at?->toISOString(),
+                    'logistics_stop' => $order->shipment?->rider?->logisticsBranch?->address,
+                    'logistics_stop_name' => $order->shipment?->rider?->logisticsBranch?->name,
+                    'rider' => $order->shipment?->rider ? [
                         'name' => trim($order->shipment->rider->first_name.' '.$order->shipment->rider->last_name),
                         'contact_no' => $order->shipment->rider->contact_no,
                     ] : null,
@@ -204,15 +211,22 @@ class OrderController extends Controller
                 'Other',
             ])],
             'description' => ['required', 'string', 'min:10', 'max:2000'],
+            'evidence' => ['sometimes', 'array', 'max:5'],
+            'evidence.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        $complaint = DB::transaction(function () use ($request, $order, $validated): Complaint {
+        $evidencePaths = collect($request->file('evidence', []))
+            ->map(fn ($file): string => $file->store('buyer-complaints', 'public'))
+            ->all();
+
+        $complaint = DB::transaction(function () use ($request, $order, $validated, $evidencePaths): Complaint {
             $complaint = Complaint::create([
                 'user_id' => $request->user()->id,
                 'order_id' => $order->id,
                 'subject' => $validated['type'],
                 'type' => $validated['type'],
                 'description' => $validated['description'],
+                'evidence' => $evidencePaths,
                 'status' => 'open',
             ]);
 
@@ -238,6 +252,48 @@ class OrderController extends Controller
         ], 201);
     }
 
+    public function shippingOptions(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'province' => ['required', 'string', 'max:150'],
+            'municipality' => ['required', 'string', 'max:150'],
+        ]);
+        $cartItems = CartItem::query()
+            ->where('user_id', $request->user()->id)
+            ->with('product.seller')
+            ->get();
+
+        $providers = $this->approvedLogisticsProviders();
+        $data = $cartItems
+            ->filter(fn (CartItem $item) => $item->product?->seller)
+            ->groupBy(fn (CartItem $item) => $item->product->seller_id)
+            ->map(function ($items, $sellerId) use ($providers, $validated): array {
+                $seller = $items->first()->product->seller;
+                $options = $providers
+                    ->filter(fn (Logistics $provider) => $this->coversLocations(
+                        $provider,
+                        [
+                            ['province' => $validated['province'], 'municipality' => $validated['municipality']],
+                            ['province' => $seller->province, 'municipality' => $seller->municipality],
+                        ]
+                    ))
+                    ->map(fn (Logistics $provider): array => [
+                        'id' => $provider->id,
+                        'name' => $provider->business_name ?: 'Logistics company',
+                    ])
+                    ->values();
+
+                return [
+                    'seller_id' => (int) $sellerId,
+                    'seller_name' => $seller->store_name,
+                    'options' => $options,
+                ];
+            })
+            ->values();
+
+        return response()->json(['data' => $data]);
+    }
+
     public function verify(string $orderNumber): JsonResponse
     {
         $order = Order::query()
@@ -260,7 +316,12 @@ class OrderController extends Controller
             'delivery_name' => ['required', 'string', 'max:255'],
             'delivery_phone' => ['required', 'string', 'max:30'],
             'delivery_address' => ['required', 'string', 'max:1000'],
+            'delivery_province' => ['required', 'string', 'max:150'],
+            'delivery_municipality' => ['required', 'string', 'max:150'],
             'payment_method' => ['required', 'in:Cash on Delivery'],
+            'logistics_selections' => ['required', 'array', 'min:1'],
+            'logistics_selections.*.seller_id' => ['required', 'integer', 'distinct', 'exists:sellers,id'],
+            'logistics_selections.*.logistics_id' => ['required', 'integer', 'exists:logistics,id'],
             'voucher_code' => ['nullable', 'string', 'max:20'],
             'voucher_seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
             'cart_item_ids' => ['sometimes', 'array', 'min:1'],
@@ -329,9 +390,26 @@ class OrderController extends Controller
                 if (! $voucherSellerId) throw ValidationException::withMessages(['voucher_code' => ['This voucher does not exist.']]);
             }
 
+            $approvedProviders = $this->approvedLogisticsProviders();
             $orders = $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
-                ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId): Order {
+                ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId, $approvedProviders): Order {
                     $seller = $sellerItems->first()->product->seller;
+                    $providerSelection = collect($validated['logistics_selections'])
+                        ->first(fn (array $selection) => (int) $selection['seller_id'] === (int) $sellerId);
+                    $logistics = $providerSelection
+                        ? $approvedProviders->first(fn (Logistics $provider) =>
+                            (int) $provider->id === (int) $providerSelection['logistics_id']
+                            && $this->coversLocations($provider, [
+                                ['province' => $validated['delivery_province'], 'municipality' => $validated['delivery_municipality']],
+                                ['province' => $seller->province, 'municipality' => $seller->municipality],
+                            ])
+                        )
+                        : null;
+                    if (! $logistics) {
+                        throw ValidationException::withMessages([
+                            'logistics_selections' => ['Choose an approved logistics company with an active hub or sorting center at both delivery locations.'],
+                        ]);
+                    }
                     $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->sale_price * $item->quantity);
                     $shippingFee = self::SHIPPING_FEE_PER_STORE;
                     $voucherResult = null;
@@ -344,6 +422,7 @@ class OrderController extends Controller
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
+                        'logistics_id' => $logistics->id,
                         'order_number' => null,
                         'total' => $total,
                         'shipping_fee' => $shippingFee,
@@ -424,6 +503,7 @@ class OrderController extends Controller
                 'shop' => $order->seller->store_name,
                 'total' => (float) $order->total,
                 'shipping_fee' => (float) $order->shipping_fee,
+                'logistics_company' => $order->logisticsCompany?->business_name,
                 'voucher_discount' => (float) $order->voucher_discount,
                 'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
@@ -457,6 +537,49 @@ class OrderController extends Controller
         $path = ltrim(preg_replace('/^storage\//', '', $photo), '/');
 
         return $path !== '' ? Storage::disk('public')->url($path) : null;
+    }
+
+    private function approvedLogisticsProviders(): Collection
+    {
+        return Logistics::query()
+            ->where('registration_status', 'active')
+            ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
+            ->with(['branches' => function ($query): void {
+                $query->where('status', 'active')->whereNull('archived_at')
+                    ->with(['deliveryHubs' => fn ($hubs) => $hubs->where('status', 'active')->whereNull('archived_at')]);
+            }])
+            ->orderBy('business_name')
+            ->get();
+    }
+
+    private function coversLocations(Logistics $provider, array $locations): bool
+    {
+        foreach ($locations as $location) {
+            if (blank($location['province'] ?? null) || blank($location['municipality'] ?? null)) return false;
+
+            $covered = $provider->branches->contains(function (LogisticsBranch $branch) use ($location): bool {
+                if ($this->sameLocation($branch->province, $branch->municipality, $location)) return true;
+
+                return $branch->deliveryHubs->contains(fn (LogisticsDeliveryHub $hub) =>
+                    $this->sameLocation($hub->province, $hub->municipality, $location)
+                );
+            });
+
+            if (! $covered) return false;
+        }
+
+        return true;
+    }
+
+    private function sameLocation(?string $province, ?string $municipality, array $location): bool
+    {
+        return $this->normalizeLocation($province) === $this->normalizeLocation($location['province'] ?? null)
+            && $this->normalizeLocation($municipality) === $this->normalizeLocation($location['municipality'] ?? null);
+    }
+
+    private function normalizeLocation(?string $value): string
+    {
+        return mb_strtolower(preg_replace('/[^\pL\pN]+/u', '', trim((string) $value)) ?? '');
     }
 
     public function cancel(Request $request, Order $order): JsonResponse

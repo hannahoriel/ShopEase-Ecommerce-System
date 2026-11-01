@@ -8,7 +8,9 @@ const checkoutConfig = {
     registrationAddress: {
         name: document.body?.dataset?.registrationAddressName || 'Buyer',
         phone: document.body?.dataset?.registrationAddressPhone || '',
-        address: document.body?.dataset?.registrationAddressText || ''
+        address: document.body?.dataset?.registrationAddressText || '',
+        province: document.body?.dataset?.registrationAddressProvince || '',
+        municipality: document.body?.dataset?.registrationAddressMunicipality || ''
     },
     locationsUrl: '/api/v1/locations',
     myPurchasesUrl: document.body?.dataset?.myPurchasesUrl || ''
@@ -44,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let appliedVoucherCode = '';
             let appliedVoucherDiscount = 0;
             let appliedVoucherSellerId = null;
+            let shippingOptionsBySeller = {};
+            let selectedLogisticsBySeller = {};
+            let shippingOptionsLoaded = false;
 
             const escapeCheckoutHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -67,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 items.forEach(item => {
                     const sellerId = item.product.seller.id;
                     if (!groups.has(sellerId)) {
-                        groups.set(sellerId, { shop: item.product.seller.store_name || 'Shop', items: [] });
+                        groups.set(sellerId, { id: sellerId, shop: item.product.seller.store_name || 'Shop', items: [] });
                     }
                     groups.get(sellerId).items.push(item);
                 });
@@ -104,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }).join('')}
                             <div class="shop-checkout-options">
                                 <div class="shipping-option">
-                                    <div><strong>Shipping Option</strong><span>Standard shipping</span><small>Standard Local</small></div>
+                                    <div class="checkout-shipping-choice"><strong>Logistics Company</strong><span>${shippingOptionsLoaded ? 'Choose a company covering both locations' : 'Checking available companies…'}</span><select class="checkout-logistics-select" data-logistics-seller="${escapeCheckoutHtml(group.id)}" aria-label="Logistics company for ${escapeCheckoutHtml(group.shop)}" ${!shippingOptionsLoaded || !(shippingOptionsBySeller[group.id] || []).length ? 'disabled' : ''}><option value="">${shippingOptionsLoaded ? ((shippingOptionsBySeller[group.id] || []).length ? 'Select logistics company' : 'No service in both locations') : 'Loading...'}</option>${(shippingOptionsBySeller[group.id] || []).map(option => `<option value="${escapeCheckoutHtml(option.id)}" ${String(selectedLogisticsBySeller[group.id] || '') === String(option.id) ? 'selected' : ''}>${escapeCheckoutHtml(option.name)}</option>`).join('')}</select>${shippingOptionsLoaded && !(shippingOptionsBySeller[group.id] || []).length ? '<small class="checkout-no-logistics">No approved logistics company has a hub or sorting center at both the delivery and seller locations.</small>' : ''}</div>
                                     <strong class="shipping-fee">${money(50)}</strong>
                                 </div>
                             </div>
@@ -121,8 +126,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('checkoutShippingSubtotal').textContent = money(shippingTotal);
                 document.getElementById('checkoutVoucherDiscount').textContent = `−${money(appliedVoucherDiscount)}`;
                 document.getElementById('checkoutTotalPayment').textContent = money(Math.max(0, merchandiseTotal + shippingTotal - appliedVoucherDiscount));
-                placeOrderButton.disabled = false;
+                updatePlaceOrderState(groups);
             }
+
+            function updatePlaceOrderState(groups = null) {
+                if (!placeOrderButton) return;
+                if (!cartItems.length) {
+                    placeOrderButton.disabled = true;
+                    return;
+                }
+                const sellerIds = groups
+                    ? [...groups.keys()]
+                    : [...new Set(cartItems.map(item => String(item.product.seller.id)))];
+                placeOrderButton.disabled = !shippingOptionsLoaded || sellerIds.some(sellerId => {
+                    const options = shippingOptionsBySeller[sellerId] || [];
+                    return !options.length || !options.some(option => String(option.id) === String(selectedLogisticsBySeller[sellerId] || ''));
+                });
+            }
+
+            async function refreshShippingOptions(address = getSavedAddress() || registrationAddress) {
+                shippingOptionsLoaded = false;
+                shippingOptionsBySeller = {};
+                selectedLogisticsBySeller = {};
+                renderCheckoutCart(cartItems);
+                if (!cartItems.length || !address?.province || !address?.municipality) {
+                    shippingOptionsLoaded = true;
+                    renderCheckoutCart(cartItems);
+                    if (checkoutMessage) checkoutMessage.textContent = 'Add a delivery address with province and municipality to check shipping availability.';
+                    return;
+                }
+                try {
+                    const url = new URL(checkoutConfig.api.shippingOptionsUrl || '/api/v1/buyer/shipping-options', window.location.origin);
+                    url.searchParams.set('province', address.province);
+                    url.searchParams.set('municipality', address.municipality);
+                    const payload = await checkoutApiFetch(url.toString());
+                    shippingOptionsBySeller = Object.fromEntries((payload.data || []).map(group => [String(group.seller_id), group.options || []]));
+                } catch (error) {
+                    if (checkoutMessage) checkoutMessage.textContent = error.message;
+                } finally {
+                    shippingOptionsLoaded = true;
+                    renderCheckoutCart(cartItems);
+                }
+            }
+
+            checkoutGroupsElement?.addEventListener('change', event => {
+                const select = event.target.closest('[data-logistics-seller]');
+                if (!select) return;
+                selectedLogisticsBySeller[String(select.dataset.logisticsSeller)] = select.value;
+                updatePlaceOrderState();
+            });
 
             async function loadCheckoutCart() {
                 if (!checkoutConfig.api.apiToken) {
@@ -157,9 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     shop.textContent = order.shop;
                     const total = document.createElement('span');
                     total.textContent = `Total: ${money(order.total)}`;
+                    const logistics = document.createElement('span');
+                    logistics.textContent = `Logistics: ${order.logistics_company || 'Selected logistics provider'}`;
                     const note = document.createElement('small');
                     note.textContent = 'Scan this QR to verify your order number.';
-                    copy.append(heading, shop, total, note);
+                    copy.append(heading, shop, logistics, total, note);
                     card.append(canvas, copy);
                     results.append(card);
                     QRCode.toCanvas(canvas, order.qr_payload, {
@@ -176,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             async function placeBuyerOrder() {
                 if (!cartItems.length || placeOrderButton.disabled) return;
-                const address = getSavedAddress() || registrationAddress;
+                const address = { ...registrationAddress, ...(getSavedAddress() || {}) };
                 if (!address?.name || !address?.phone || !address?.address) {
                     if (checkoutMessage) checkoutMessage.textContent = 'Please choose a complete delivery address before placing your order.';
                     return;
@@ -191,6 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             delivery_name: address.name,
                             delivery_phone: address.phone,
                             delivery_address: address.address,
+                            delivery_province: address.province,
+                            delivery_municipality: address.municipality,
+                            logistics_selections: [...new Set(cartItems.map(item => String(item.product.seller.id)))].map(sellerId => ({
+                                seller_id: Number(sellerId),
+                                logistics_id: Number(selectedLogisticsBySeller[sellerId]),
+                            })),
                             payment_method: paymentMethodLabel?.textContent || 'Cash on Delivery',
                             voucher_code: appliedVoucherCode || null,
                             voucher_seller_id: appliedVoucherSellerId,
@@ -244,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const requestedVoucher = new URLSearchParams(window.location.search).get('voucher');
             loadCheckoutCart().then(() => {
+                refreshShippingOptions({ ...registrationAddress, ...(getSavedAddress() || {}) });
                 if (!requestedVoucher || !cartItems.length) return;
                 const voucherInput = document.getElementById('checkoutVoucherCode');
                 if (!voucherInput) return;
@@ -814,7 +875,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const registrationAddress = {
                 name: checkoutConfig.registrationAddress.name,
                 phone: checkoutConfig.registrationAddress.phone,
-                address: checkoutConfig.registrationAddress.address
+                address: checkoutConfig.registrationAddress.address,
+                province: checkoutConfig.registrationAddress.province,
+                municipality: checkoutConfig.registrationAddress.municipality
             };
 
             const setPageBlurred = (blurred) => {
@@ -898,6 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderAddress(address);
                 hideAllAddressModals();
                 setPageBlurred(false);
+                refreshShippingOptions({ ...registrationAddress, ...address });
             };
 
             const getSavedAddress = () => {

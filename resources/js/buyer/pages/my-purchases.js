@@ -214,14 +214,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             method: 'POST',
                             headers: {
                                 Accept: 'application/json',
-                                'Content-Type': 'application/json',
                                 Authorization: `Bearer ${purchasesConfig.apiToken || ''}`,
                             },
                             credentials: 'same-origin',
-                            body: JSON.stringify({
-                                type: document.getElementById('buyerComplaintType').value,
-                                description: document.getElementById('buyerComplaintDescription').value,
-                            }),
+                            body: (() => {
+                                const formData = new FormData();
+                                formData.append('type', document.getElementById('buyerComplaintType').value);
+                                formData.append('description', document.getElementById('buyerComplaintDescription').value);
+                                Array.from(document.getElementById('buyerComplaintEvidence')?.files || []).forEach(file => formData.append('evidence[]', file));
+                                return formData;
+                            })(),
                         }
                     );
                     const payload = await response.json();
@@ -244,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     window.alert(`${payload.message} Reference: ${payload.data.reference}`);
                     closeComplaintModal();
+                    document.dispatchEvent(new CustomEvent('buyer:complaint-submitted', { detail: payload.data }));
                 } catch (error) {
                     complaintError.textContent = error.message;
                     complaintError.hidden = false;
@@ -1084,35 +1087,19 @@ document.addEventListener('DOMContentLoaded', () => {
     },true);
     hydrate(originalNames);
 });
-/* Buyer Complaints — temporary local demo, no backend writes. */
+/* Buyer complaints — load real records from the complaints API. */
 document.addEventListener('DOMContentLoaded', () => {
     const root = document.querySelector('.buyer-complaints-clone');
     if (!root) return;
     const get = id => document.getElementById(id);
+    const config = JSON.parse(document.getElementById('buyerPurchasesConfig')?.textContent || '{}');
     const safe = v => String(v ?? '—').replace(/[&<>"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
     const norm = x => String(x || '').toLowerCase().replaceAll('_','-');
     const title = x => ({open:'Open','in-progress':'In progress',resolved:'Resolved'})[norm(x)] || 'Open';
     const timeText = x => x ? new Date(x).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
     const dateText = x => x ? new Date(x).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
     const setText = (id,v) => {if(get(id)) get(id).textContent=v??'—';};
-    const mockImage = (label,accent) => 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="500" height="370" viewBox="0 0 500 370"><rect width="500" height="370" fill="#f5f0eb"/><rect x="48" y="34" width="404" height="302" rx="18" fill="#fff" stroke="#dccdc8" stroke-width="4"/><rect x="93" y="75" width="314" height="158" rx="12" fill="${accent}" opacity=".18"/><path d="M133 193l70-69 46 43 43-31 77 63" fill="none" stroke="${accent}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><circle cx="167" cy="115" r="16" fill="${accent}" opacity=".6"/><text x="250" y="270" fill="#643d40" font-family="Arial" font-size="21" font-weight="bold" text-anchor="middle">SAMPLE EVIDENCE</text><text x="250" y="299" fill="#8a7775" font-family="Arial" font-size="17" text-anchor="middle">${label}</text></svg>`);
-    const categories=['Wrong Item','Damaged Item','Missing Item','Late Delivery','Defective Product','Incorrect Quantity'];
-    const shops=['The Shop PH','Urban Finds Store','Home Haven PH','Trendline Market','Gadget Corner'];
-    const statuses=['open','in-progress','resolved','open','resolved','in-progress','open','resolved','in-progress','open','resolved','open'];
-    const cases=Array.from({length:12},(_,i)=>{
-        const id=`CMP-DEMO-${String(i+1).padStart(3,'0')}`;
-        const type=categories[i%categories.length];
-        const shop=shops[i%shops.length];
-        const when=new Date(2026,9,20-Math.floor(i*1.35),10+i%7,i*3%60).toISOString();
-        return {id,order_id:`ORD-DEMO-${String(1801+i)}`,type,status:statuses[i],filed_at:when,updated_at:when,
-          party1:'Sample Buyer',role1:'Buyer',party1Email:'demo.buyer@example.test',party2:shop,role2:'Seller',party2Email:'seller@example.test',
-          description:({ 'Wrong Item':'The delivered item does not match the product variant selected during checkout.', 'Damaged Item':'The package arrived with visible damage and the product has scratches.', 'Missing Item':'One item listed in the paid order was not included in the parcel.', 'Late Delivery':'The order arrived significantly later than the estimated delivery date.', 'Defective Product':'The product does not function as described despite following setup instructions.', 'Incorrect Quantity':'The delivered quantity does not match the quantity on the receipt.'})[type],
-          orderDate:when,paymentMethod:i%2?'GCash':'Cash on Delivery',paymentStatus:'Paid',shippingMethod:'Standard Delivery',orderStatus:statuses[i]==='resolved'?'Delivered':'Under review',orderTotal:`₱${(699+i*125).toLocaleString('en-PH')}.00`,
-          productName:['Wireless Earbuds','Canvas Tote Bag','Ceramic Mug Set','Fitness Watch','Desk Lamp','Skin Care Set'][i%6],productVariant:'Standard / Assorted',productPrice:`₱${499+i*125}.00`,productQuantity:1,productCategory:'ShopEase Products',shopName:shop,
-          productImage:mockImage('Product preview','#ad6267'),evidence:[mockImage(type,'#9e5860'),mockImage('Package photo','#6b859d')],
-          updates:[{status:'open',actor:'ShopEase Support',timestamp:when},...(statuses[i]!=='open'?[{status:statuses[i],actor:'ShopEase Admin',timestamp:new Date(new Date(when).getTime()+86400000).toISOString()}]:[])]
-        };
-    });
+    let cases=[];
     const state={status:'all',search:'',date:'',page:1,size:7,selected:null};
     const filtered=()=>cases.filter(c=>(state.status==='all'||c.status===state.status)&&(!state.date||c.filed_at.slice(0,10)===state.date)&&(!state.search||[c.id,c.order_id,c.type,c.party1,c.party2,c.description].join(' ').toLowerCase().includes(state.search)));
     const parties=c=>[{name:c.party1,role:'Buyer',email:c.party1Email},{name:c.party2,role:'Seller',email:c.party2Email}];
@@ -1134,10 +1121,10 @@ document.addEventListener('DOMContentLoaded', () => {
         get('complaints-page-numbers').innerHTML=Array.from({length:pageCount},(_,i)=>i+1).filter(n=>pageCount<=7||n===1||n===pageCount||Math.abs(n-state.page)<=1).map((n,i,arr)=>`${i&&n-arr[i-1]>1?'<span>…</span>':''}<button type="button" class="complaints-page-button ${n===state.page?'active':''}" data-page="${n}">${n}</button>`).join('');
         if(state.selected)preview(state.selected);
     }
-    function evidenceMarkup(c,compact=false){return c.evidence.slice(0,compact?4:30).map((url,i)=>`<button type="button" class="sp-evidence-thumb" data-evidence-index="${i}" aria-label="View sample evidence ${i+1}"><img src="${safe(url)}" alt="Sample evidence ${i+1}" loading="lazy"></button>`).join('');}
-    const selectCase=id=>{state.selected=cases.find(c=>c.id===id)||null;render();};
+    function evidenceMarkup(c,compact=false){return (c.evidence||[]).slice(0,compact?4:30).map((url,i)=>`<button type="button" class="sp-evidence-thumb" data-evidence-index="${i}" aria-label="View attached evidence ${i+1}"><img src="${safe(url)}" alt="Buyer attached evidence ${i+1}" loading="lazy"></button>`).join('')||'<p>No supporting photos attached.</p>';}
+    const selectCase=id=>{state.selected=cases.find(c=>String(c.id)===String(id))||null;render();};
     const showLinkedComplaint = id => {
-        const target = cases.find(c => String(c.id).toLowerCase() === String(id || '').toLowerCase());
+        const target = cases.find(c => String(c.id).toLowerCase() === String(id || '').toLowerCase() || String(c.databaseId) === String(id || ''));
         if (!target) return;
         // Open My Purchases > Complaints (not the full details modal).
         const side = document.querySelector('[data-side-panel="complaints"]');
@@ -1184,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const status=get('modal-complaint-status');status.className='complaints-modal-status '+c.status;status.textContent=title(c.status);
         get('modal-parties-list').innerHTML=parties(c).map(p=>`<div class="complaints-modal-party-row"><span class="complaints-modal-party-avatar">${p.role==='Buyer'?userIcon:shopIcon}</span><span class="complaints-modal-party-copy"><strong>${safe(p.name)}</strong><span>${safe(p.email)}</span></span><span class="complaints-modal-party-role">${p.role==='Buyer'?userIcon:shopIcon}${p.role}</span></div>`).join('');
         get('modal-order-information').innerHTML=rows([['Order ID',c.order_id],['Order Date',timeText(c.orderDate)],['Payment Method',c.paymentMethod],['Payment Status',c.paymentStatus],['Shipping Method',c.shippingMethod],['Order Status',c.orderStatus],['Order Total',c.orderTotal]]);
-        get('modal-product-info').innerHTML=`<div class="complaints-modal-item-main"><img class="complaints-modal-product-image" src="${safe(c.productImage)}" alt="Demo ordered product"><div><div class="complaints-modal-product-name">${safe(c.productName)}</div><div class="complaints-modal-product-variant">${safe(c.productVariant)}</div><div class="complaints-modal-product-price"><strong>${safe(c.productPrice)}</strong><span>Qty: ${c.productQuantity}</span></div></div></div><div class="complaints-modal-item-extra"><div><span class="complaints-modal-item-extra-label">Category</span><span class="complaints-modal-category-pill">${safe(c.productCategory)}</span></div><div class="complaints-modal-shop-line">Shop: <strong>${safe(c.shopName)}</strong></div></div>`;
+        get('modal-product-info').innerHTML=`<div class="complaints-modal-item-main">${c.productImage?`<img class="complaints-modal-product-image" src="${safe(c.productImage)}" alt="${safe(c.productName)}">`:'<div class="complaints-modal-product-image"></div>'}<div><div class="complaints-modal-product-name">${safe(c.productName)}</div><div class="complaints-modal-product-variant">${safe(c.productVariant)}</div><div class="complaints-modal-product-price"><strong>${safe(c.productPrice)}</strong><span>Qty: ${safe(c.productQuantity)}</span></div></div></div><div class="complaints-modal-item-extra"><div><span class="complaints-modal-item-extra-label">Category</span><span class="complaints-modal-category-pill">${safe(c.productCategory)}</span></div><div class="complaints-modal-shop-line">Shop: <strong>${safe(c.shopName)}</strong></div></div>`;
         get('modal-evidence-list').innerHTML=evidenceMarkup(c);
         get('complaints-modal-notes-list').innerHTML=c.updates.slice().reverse().map(update=>`<div class="complaints-modal-note"><span class="complaints-modal-note-avatar">${safe(update.actor[0])}</span><div class="complaints-modal-note-copy"><strong>${safe(update.actor)}</strong><span>${update.status==='open'?'Complaint opened.':`Complaint status changed to ${title(update.status)}.`}</span></div><span class="complaints-modal-note-time">${timeText(update.timestamp)}</span></div>`).join('');
         modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.classList.add('sp-modal-open');modal.querySelector('.complaints-modal-dialog').focus();
@@ -1212,7 +1199,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
         }
     });
-    render();
+    async function loadComplaints(){
+        const empty=get('complaints-empty'); empty.textContent='Loading complaints?'; empty.style.display='block';
+        try{
+            const headers={Accept:'application/json'};
+            if(config.apiToken)headers.Authorization='Bearer '+config.apiToken;
+            const response=await fetch(config.buyerComplaintsUrl||'/api/v1/buyer/complaints',{credentials:'same-origin',headers});
+            const payload=await response.json().catch(()=>({}));
+            if(!response.ok)throw new Error(payload.message||'Could not load your complaints.');
+            cases=payload.data||[];
+            if(state.selected)state.selected=cases.find(c=>c.id===state.selected.id)||null;
+            render();
+            if(!cases.length)empty.textContent='You have not submitted any complaints yet.';
+            const linkedId=new URLSearchParams(window.location.search).get('complaint');
+            if(linkedId)showLinkedComplaint(linkedId);
+        }catch(error){empty.textContent=error.message;empty.style.display='block';}
+    }
+    document.addEventListener('buyer:complaint-submitted',loadComplaints);
+    loadComplaints();
 });
 
 
@@ -1451,7 +1455,7 @@ function openPurchaseDetails(order){
       <section class="buyer-order-detail-summary"><div><span>ORDER NUMBER</span><strong>${safeText(order.order_number)}</strong></div><span class="buyer-order-detail-status">${safeText(normalizedStatus)}</span><div><span>SHOP</span><strong>${safeText(order.shop||'—')}</strong></div><div><span>PLACED</span><strong>${purchaseDate(order.created_at)}</strong></div></section>
       <section class="buyer-order-seller-help"><div class="buyer-order-seller-help-copy"><strong>Need help with this order?</strong><span>Contact the shop or report an issue.</span></div><div class="buyer-order-seller-help-actions"><button type="button" class="buyer-order-action-primary" data-buyer-chat-order="${safeText(order.id)}">Contact Seller</button><button type="button" class="buyer-order-action-secondary" data-buyer-complaint-order="${safeText(order.id)}" data-order-number="${safeText(order.order_number)}">Report a Problem</button></div></section>
       <p id="buyerOrderActionFeedback" class="buyer-order-action-feedback" role="status" hidden></p>
-      ${isCompleted?`<section class="buyer-order-rating-card ${reviewableItems.length?'is-actionable':'is-reviewed'}"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">SELLER FEEDBACK</span><h3>${reviewableItems.length?'How was your experience?':'Thanks for sharing your feedback'}</h3><p>${reviewableItems.length?`Your order is complete. Rate ${safeText(order.shop||'the seller')} and help other buyers shop with confidence.`:'You have already rated the eligible product(s) in this order.'}</p></div>${reviewableItems.length?`<button type="button" class="buyer-order-action-rating" id="buyerOrderOpenRating" data-order-number="${safeText(order.order_number)}">Rate Seller</button>`:''}</section>`:`<section class="buyer-order-rating-card is-locked"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">SELLER FEEDBACK</span><h3>Rate the seller after receiving your order</h3><p>Once you confirm receipt, or the order is automatically completed after 7 days, the rating form will be available here.</p></div><span class="buyer-order-rating-lock">Available after receipt</span></section>`}
+      ${isCompleted?`<section class="buyer-order-rating-card ${reviewableItems.length?'is-actionable':'is-reviewed'}"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h3>${reviewableItems.length?'How was your experience?':'Thanks for sharing your feedback'}</h3><p>${reviewableItems.length?`Your order is complete. Rate a product from ${safeText(order.shop||'the seller')} and help other buyers shop with confidence.`:'You have already rated the eligible product(s) in this order.'}</p></div>${reviewableItems.length?`<button type="button" class="buyer-order-action-rating" id="buyerOrderOpenRating" data-order-number="${safeText(order.order_number)}">Rate Product</button>`:''}</section>`:`<section class="buyer-order-rating-card is-locked"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h3>Rate a product after receiving your order</h3><p>Once you confirm receipt, or the order is automatically completed after 7 days, the rating form will be available here.</p></div><span class="buyer-order-rating-lock">Available after receipt</span></section>`}
       <div class="buyer-order-detail-grid">
         <section class="buyer-order-detail-card"><h3>Delivery details</h3><dl><dt>Recipient</dt><dd>${safeText(order.delivery_name||'—')}</dd><dt>Contact</dt><dd>${safeText(order.delivery_phone||'—')}</dd><dt>Address</dt><dd>${safeText(order.delivery_address||'—')}</dd><dt>Estimated delivery</dt><dd>${purchaseDate(tracking.estimated_delivery)}</dd><dt>Current location</dt><dd>${safeText(tracking.current_location||'Not available yet')}</dd><dt>Tracking number</dt><dd>${safeText(tracking.tracking_number||'Not assigned yet')}</dd><dt>Courier</dt><dd>${safeText(tracking.courier||'Not assigned yet')}</dd></dl></section>
         <section class="buyer-order-detail-card"><h3>Payment summary</h3><dl><dt>Payment method</dt><dd>${safeText(order.payment_method||'—')}</dd><dt>Shipping fee</dt><dd>${purchaseMoney(order.shipping_fee)}</dd>${Number(order.voucher_discount)>0?`<dt>Voucher${order.voucher_code?` (${safeText(order.voucher_code)})`:''}</dt><dd>−${purchaseMoney(order.voucher_discount)}</dd>`:''}<dt class="buyer-order-total-label">Order total</dt><dd class="buyer-order-total-value">${purchaseMoney(order.total)}</dd></dl></section>
@@ -1478,6 +1482,8 @@ function openSellerRatingModal(order){
     sellerRatingForm.querySelector('[name="rating"]').value='5';
     sellerRatingForm.querySelectorAll('[data-seller-rating]').forEach(button=>{button.classList.add('is-selected');button.setAttribute('aria-checked',String(button.dataset.sellerRating==='5'));});
     sellerRatingForm.querySelector('[name="body"]').value='';
+    sellerRatingForm.querySelector('[name="photo"]').value='';
+    sellerRatingForm.querySelector('[name="is_anonymous"]').checked=false;
     const feedback=sellerRatingForm.querySelector('.buyer-order-rating-feedback');if(feedback){feedback.hidden=true;feedback.textContent='';}
     const title=sellerRatingModal.querySelector('[data-rating-modal-shop]');if(title)title.textContent=order.shop||'the seller';
     sellerRatingModal.hidden=false;sellerRatingModal.setAttribute('aria-hidden','false');document.body.classList.add('buyer-seller-rating-open');sellerRatingForm.querySelector('[name="product_id"]')?.focus();
@@ -1512,9 +1518,9 @@ document.addEventListener('submit',event=>{
     event.preventDefault();
     const submit=form.querySelector('[type="submit"]');const feedback=form.querySelector('.buyer-order-rating-feedback');
     const config=window.__buyerPurchasesConfig||{};const productId=form.querySelector('[name="product_id"]').value;
-    const body=Object.fromEntries(new FormData(form).entries());
+    const body=new FormData(form);
     submit.disabled=true;feedback.hidden=true;
-    fetch(`/api/v1/buyer/products/${encodeURIComponent(productId)}/reviews`,{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',Authorization:`Bearer ${config.apiToken||''}`,'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},credentials:'same-origin',body:JSON.stringify(body)})
+    fetch(`/api/v1/buyer/products/${encodeURIComponent(productId)}/reviews`,{method:'POST',headers:{Accept:'application/json',Authorization:`Bearer ${config.apiToken||''}`,'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},credentials:'same-origin',body})
       .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message||Object.values(result.errors||{}).flat()[0]||'Could not submit your rating.');const orderNumber=form.dataset.orderNumber;closeSellerRatingModal();if(window.__refreshBuyerPurchases)await window.__refreshBuyerPurchases();const updated=window.__buyerPurchaseOrders?.get(String(orderNumber));if(updated)openPurchaseDetails(updated);})
       .catch(error=>{feedback.hidden=false;feedback.textContent=error.message;submit.disabled=false;});
 });

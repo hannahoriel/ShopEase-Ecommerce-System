@@ -4,6 +4,7 @@ namespace App\Models\Admin;
 
 use App\Models\Rider\DeliveryProof;
 use App\Models\Seller\Seller;
+use App\Models\Logistics\Logistics;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +31,7 @@ class Order extends Model
     protected $fillable = [
         'buyer_id',
         'seller_id',
+        'logistics_id',
         'order_number',
         'total',
         'commission_amount',
@@ -101,6 +103,11 @@ class Order extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Seller::class);
+    }
+
+    public function logisticsCompany(): BelongsTo
+    {
+        return $this->belongsTo(Logistics::class, 'logistics_id');
     }
 
     public function statusHistory(): HasMany
