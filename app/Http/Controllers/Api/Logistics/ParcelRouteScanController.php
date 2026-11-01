@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsBranchRoute;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsTransferManifest;
 use App\Models\Logistics\LogisticsTransferManifestEvent;
@@ -485,6 +486,16 @@ class ParcelRouteScanController extends Controller
                         'hubs' => $branch->deliveryHubs->map(fn ($hub) => ['id' => (string) $hub->id, 'hub_name' => $hub->hub_name, 'municipality' => $hub->municipality, 'city' => $hub->municipality, 'status' => $hub->status])->values(),
                     ])->values()
                 : [],
+            'center_routes' => $facility === 'sorting_center'
+                ? LogisticsBranchRoute::query()->where('status', 'active')
+                    ->whereHas('origin', fn ($query) => $query->where('logistics_id', $node->logistics_id)->where('status', 'active')->whereNull('archived_at'))
+                    ->whereHas('next', fn ($query) => $query->where('logistics_id', $node->logistics_id)->where('status', 'active')->whereNull('archived_at'))
+                    ->get(['origin_branch_id', 'next_branch_id'])
+                    ->map(fn (LogisticsBranchRoute $route): array => [
+                        'origin_branch_id' => (string) $route->origin_branch_id,
+                        'next_branch_id' => (string) $route->next_branch_id,
+                    ])->values()
+                : [],
             'couriers' => $couriers,
             'vehicles' => $vehicles,
             'active_dispatches' => $activeDispatches,
@@ -570,8 +581,10 @@ class ParcelRouteScanController extends Controller
             );
 
             if ($shipment->order->status === 'to_ship' || $pickupCollection) {
-                $networkId = LogisticsBranch::query()->whereKey($hub->logistics_branch_id)->value('logistics_id');
-                $branch = $this->activeBranch($sellerProvince, $networkId);
+                $branch = LogisticsBranch::query()->whereKey($hub->logistics_branch_id)
+                    ->where('status', 'active')->whereNull('archived_at')
+                    ->whereRaw('LOWER(province) = ?', [mb_strtolower($sellerProvince)])
+                    ->first();
                 abort_unless($branch, 422, 'No active sorting center is configured for the seller province.');
                 $shipment->update(['logistics_branch_id' => $branch->id, 'logistics_delivery_hub_id' => null]);
                 if ($shipment->order->status === 'to_ship') {
@@ -624,6 +637,7 @@ class ParcelRouteScanController extends Controller
         abort_unless($buyerProvince !== '' && $buyerCity !== '', 422, 'Buyer province and municipality are required to route this parcel.');
         if ($this->same($center->province, $buyerProvince)) {
             $hub = LogisticsDeliveryHub::query()->where('status', 'active')->whereNull('archived_at')
+                ->where('logistics_branch_id', $center->id)
                 ->whereHas('logisticsBranch', fn ($query) => $query
                     ->where('logistics_id', $center->logistics_id)
                     ->where('status', 'active')->whereNull('archived_at'))
@@ -633,10 +647,68 @@ class ParcelRouteScanController extends Controller
             return;
         }
 
-        $next = $this->activeBranch($buyerProvince, $center->logistics_id);
-        abort_unless($next, 422, 'No active sorting center is configured for the buyer province.');
+        $next = $this->nextBranchToward($center, $buyerProvince);
+        abort_unless(
+            $next,
+            422,
+            'No active sorting center is configured for the buyer province.'
+        );
         abort_unless($next->id !== $center->id, 422, 'The buyer province sorting-center route is not configured.');
         $shipment->update(['logistics_branch_id' => $next->id]);
+    }
+
+    private function nextBranchToward(LogisticsBranch $origin, string $destinationProvince): ?LogisticsBranch
+    {
+        $destination = $this->activeBranch($destinationProvince, $origin->logistics_id);
+        if (! $destination || $destination->id === $origin->id) {
+            return $destination;
+        }
+
+        $routes = LogisticsBranchRoute::query()
+            ->where('status', 'active')
+            ->whereHas('origin', fn ($query) => $query->where('logistics_id', $origin->logistics_id)
+                ->where('status', 'active')->whereNull('archived_at'))
+            ->whereHas('next', fn ($query) => $query->where('logistics_id', $origin->logistics_id)
+                ->where('status', 'active')->whereNull('archived_at'))
+            ->get(['origin_branch_id', 'next_branch_id']);
+
+        if ($routes->isEmpty()) {
+            return $destination;
+        }
+
+        $graph = [];
+        foreach ($routes as $route) {
+            $graph[(int) $route->origin_branch_id][] = (int) $route->next_branch_id;
+        }
+
+        $originId = (int) $origin->id;
+        $destinationId = (int) $destination->id;
+        $queue = [$originId];
+        $visited = [$originId => true];
+        $firstHop = [];
+
+        while ($queue !== []) {
+            $currentId = array_shift($queue);
+            foreach ($graph[$currentId] ?? [] as $nextId) {
+                if (isset($visited[$nextId])) {
+                    continue;
+                }
+
+                $visited[$nextId] = true;
+                $firstHop[$nextId] = $currentId === $originId ? $nextId : $firstHop[$currentId];
+                if ($nextId === $destinationId) {
+                    return LogisticsBranch::query()->whereKey($firstHop[$nextId])
+                        ->where('logistics_id', $origin->logistics_id)
+                        ->where('status', 'active')->whereNull('archived_at')->first();
+                }
+
+                $queue[] = $nextId;
+            }
+        }
+
+        // If there is no complete active route, send this transfer directly
+        // to the buyer's provincial sorting center as a single fallback hop.
+        return $destination;
     }
 
     private function activeBranch(string $province, ?int $logisticsId = null): ?LogisticsBranch

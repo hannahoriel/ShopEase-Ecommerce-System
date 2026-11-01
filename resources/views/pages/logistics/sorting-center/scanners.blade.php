@@ -255,7 +255,7 @@ body.pt-modal-open{overflow:hidden}
 
 <div class="sc-stats"><div class="sc-stat"><span>Available for Departure</span><strong id="scReadyCount">0</strong></div><div class="sc-stat"><span>Scanned for Dispatch</span><strong id="scStagedCount">0</strong></div><div class="sc-stat"><span>Route Groups</span><strong id="scRouteGroupsCount">0</strong></div><div class="sc-stat"><span>Loaded Parcels</span><strong id="scLoadedCount">0</strong></div></div>
 
-<div class="sc-split"><section class="sc-panel"><div class="sc-panel-head"><div><h2>Departure Parcel Scanner</h2><p>Automatically assign each scanned parcel to its next sorting center or delivery hub.</p></div><span class="sc-badge">Dispatch</span></div><div class="sc-panel-body"><form class="sc-scan-row" id="scDepartForm"><input id="scDepartCode" type="text" class="sc-input" autocomplete="off" maxlength="90" placeholder="Scan or enter tracking number" required aria-label="Tracking number for departure"><button class="sc-btn primary" type="submit">Departure Scan</button><button class="sc-btn sc-camera-button" type="button" data-camera="depart" aria-label="Open camera for departure scan">▣ Open Camera</button></form><p class="sc-help">Parcels from other provinces go to the next configured sorting center in their route. Parcels already in the destination province go to the matching municipality's delivery hub. No known route? The parcel stays unassigned, not loaded.</p></div></section><section class="sc-panel"><div class="sc-panel-head"><div><h2>Last Scanned Parcel</h2><p>Shows the destination of the latest scan only; replaced on the next scan.</p></div></div><div class="sc-panel-body"><div class="sc-feedback" id="scDepartFeedback" role="status" aria-live="polite"><div><strong>Waiting for scan</strong><small>The next center or delivery hub will appear here.</small></div></div></div></section></div>
+<div class="sc-split"><section class="sc-panel"><div class="sc-panel-head"><div><h2>Departure Parcel Scanner</h2><p>Automatically assign each scanned parcel to its next sorting center or delivery hub.</p></div><span class="sc-badge">Dispatch</span></div><div class="sc-panel-body"><form class="sc-scan-row" id="scDepartForm"><input id="scDepartCode" type="text" class="sc-input" autocomplete="off" maxlength="90" placeholder="Scan or enter tracking number" required aria-label="Tracking number for departure"><button class="sc-btn primary" type="submit">Departure Scan</button><button class="sc-btn sc-camera-button" type="button" data-camera="depart" aria-label="Open camera for departure scan">▣ Open Camera</button></form><p class="sc-help">Cross-province parcels follow the configured sorting-center route. If no complete route is active, they go directly to the buyer's provincial sorting center. Parcels in the destination province go to the matching municipality's delivery hub.</p></div></section><section class="sc-panel"><div class="sc-panel-head"><div><h2>Last Scanned Parcel</h2><p>Shows the destination of the latest scan only; replaced on the next scan.</p></div></div><div class="sc-panel-body"><div class="sc-feedback" id="scDepartFeedback" role="status" aria-live="polite"><div><strong>Waiting for scan</strong><small>The next center or delivery hub will appear here.</small></div></div></div></section></div>
 
 <div class="sc-split"><section class="sc-panel"><div class="sc-panel-head"><div><h2>Ready Parcels</h2><p>Already received and waiting for departure scanning.</p></div></div><div class="sc-toolbar"><input class="sc-input" id="scReadySearch" type="search" placeholder="Search ready parcels…"></div><div class="sc-table-wrap"><table class="sc-table"><thead><tr><th>Tracking No.</th><th>Destination Province</th><th>Municipality</th><th>Status</th></tr></thead><tbody id="scReadyRows"></tbody></table></div></section><section class="sc-panel"><div class="sc-panel-head"><div><h2>Recent Scanner Activity</h2><p>Local operations for the selected center.</p></div></div><div class="sc-activity" id="scActivity"></div></section></div>
 
@@ -304,7 +304,7 @@ const fetchQueue=async()=>{const response=await fetch('/api/v1/sorting_center/sc
 
 const now=()=>new Date().toISOString();const uid=()=>('id-'+Date.now()+'-'+Math.random().toString(36).slice(2,8));
 
-let data=getLocal(storeKey);if(!data||!Array.isArray(data.parcels)||!Array.isArray(data.manifests)){data={parcels:[],manifests:[],events:[]}};
+let data=getLocal(storeKey);if(!data||!Array.isArray(data.parcels)||!Array.isArray(data.manifests)){data={parcels:[],manifests:[],events:[]}};data.centerRoutes=Array.isArray(data.centerRoutes)?data.centerRoutes:[];
 
 const centers=()=>{const x=getLocal(networkKey);return Array.isArray(x)?x:[]};
 
@@ -367,7 +367,7 @@ const center=()=>options.find(c=>String(c.id)===String(currentId));
 const centerById=id=>options.find(c=>String(c.id)===String(id));
 
 const save=()=>{localStorage.setItem(storeKey,JSON.stringify(data));render()};
-async function refreshQueue(){try{const queue=await fetchQueue();data.parcels=queue.parcels||[];data.manifests=queue.manifests||[];data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}if(queue.facility_type==='sorting_center'&&queue.facility_id){currentId=String(queue.facility_id)}render()}catch(error){say(error.message)}}
+async function refreshQueue(){try{const queue=await fetchQueue();data.parcels=queue.parcels||[];data.manifests=queue.manifests||[];data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];data.centerRoutes=queue.center_routes||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}if(queue.facility_type==='sorting_center'&&queue.facility_id){currentId=String(queue.facility_id)}render()}catch(error){say(error.message)}}
 
 const status=p=>p.status||'ready';
 
@@ -383,19 +383,19 @@ function event(action,parcel,desc){data.events.unshift({id:uid(),at:now(),center
 
 function provinceCenter(province){return options.find(c=>norm(c.province)===norm(province)&&norm(c.status)!=='inactive');}
 
+function routeNextCenter(originId,destinationProvince){const target=provinceCenter(destinationProvince);if(!target)return null;const routes=Array.isArray(data.centerRoutes)?data.centerRoutes:[];if(!routes.length)return String(target.id);const graph=new Map();for(const route of routes){const from=String(route.origin_branch_id),to=String(route.next_branch_id);graph.set(from,[...(graph.get(from)||[]),to]);}const origin=String(originId),destination=String(target.id),queue=[origin],visited=new Set([origin]),firstHop=new Map();while(queue.length){const current=queue.shift();for(const next of graph.get(current)||[]){if(visited.has(next))continue;visited.add(next);firstHop.set(next,current===origin?next:firstHop.get(current));if(next===destination)return firstHop.get(next);queue.push(next);}}return String(target.id);}
+
 function hubOf(c,city){return (c?.hubs||[]).find(h=>norm(h.city||h.municipality)===norm(city)&&norm(h.status)!=='inactive');}
 
-// Explicit routePlan holds known intermediate provincial legs. The system never guesses a highway or a destination.
+// Follow the configured route graph, with a direct destination-center fallback.
 
 function nextStop(parcel){const c=center();if(!c)return {error:'No sorting center is assigned to this account.'};const destKey=destinationRole(parcel).toLowerCase();const targetProvince=parcel[destKey+'_province']||parcel.destProvince,targetCity=parcel[destKey+'_city']||parcel.destCity;const prov=norm(targetProvince),here=norm(c.province);if(!prov||!norm(targetCity))return {error:'Parcel destination province/municipality is missing.'};
 
  if(prov===here){const hub=hubOf(c,targetCity);return hub?{type:'hub',id:hub.id,name:hub.hub_name||hub.branch_name||hub.name||'Delivery Hub',centerId:c.id}:{error:'No matching active delivery hub for '+targetCity+', '+targetProvince+'.'};}
 
- const plan=Array.isArray(parcel.routePlan)?parcel.routePlan:[];let nxt=plan.find(id=>String(id)!==String(c.id)&&!(parcel.visitedCenters||[]).map(String).includes(String(id))&&centerById(id));
+ const nxt=routeNextCenter(c.id,targetProvince);
 
- if(!nxt){const dc=provinceCenter(targetProvince);if(dc&&String(dc.id)!==String(c.id))nxt=dc.id;}
-
- if(!nxt)return {error:'No configured next sorting center for '+targetProvince+'. Set an approved route before dispatch.'};
+ if(!nxt)return {error:'No active sorting center is configured for '+targetProvince+'.'};
 
  const target=centerById(nxt);if(!target||norm(target.status)==='inactive')return {error:'Next sorting center is unavailable.'};return {type:'sorting',id:target.id,name:target.branch_name||target.name||target.province,centerId:target.id};}
 
