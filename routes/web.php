@@ -113,13 +113,22 @@ Route::post('/auth/logout', function (
     Request $request
 ) {
 
+    // Capture the account's role before clearing the session.
+    $isLogisticsAccount = in_array(Auth::user()?->role, [
+        User::ROLE_LOGISTICS,
+        User::ROLE_SORTING_CENTER,
+        User::ROLE_DELIVERY_HUB,
+    ], true);
+
     Auth::logout();
 
     $request->session()->invalidate();
 
     $request->session()->regenerateToken();
 
-    return redirect()->route('landing.page');
+    return $isLogisticsAccount
+        ? redirect()->route('logistics.landing.info')
+        : redirect()->route('landing.page');
 
 })->name('logout');
 
