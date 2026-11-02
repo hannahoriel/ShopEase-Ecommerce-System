@@ -171,7 +171,7 @@ class LogisticsManagementController extends Controller
             'registered_display' => $registration->created_at?->format('M d, Y g:i A'),
             'office_address' => $this->address($profile, $registration),
             'description' => '',
-            ...((array) ($profile?->registration_details['company'] ?? $profile?->registration_details ?? [])),
+            ...((array) ($profile?->registration_details['company'] ?? [])),
             'documents' => $this->documentUrls($documents),
             'logo' => $registration->user?->profile_photo_path
                 ? Storage::disk('public')->url($registration->user->profile_photo_path)
@@ -201,7 +201,7 @@ class LogisticsManagementController extends Controller
             'registered_date' => $logistics->created_at?->format('M d, Y'),
             'contact_person' => data_get($logistics->registration_details, 'company.representative_name') ?: data_get($logistics->registration_details,'representative_name') ?: $logistics->user?->name,
             'contact_phone' => data_get($logistics->registration_details, 'company.representative_phone') ?: data_get($logistics->registration_details,'representative_phone') ?: $logistics->contact_no,
-            ...((array) ($logistics->registration_details['company'] ?? $logistics->registration_details ?? [])),
+            ...((array) ($logistics->registration_details['company'] ?? [])),
             'documents' => $this->documentUrls($documents),
             'riders' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->riders->count()),
             'active_deliveries' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->active_deliveries_count),
