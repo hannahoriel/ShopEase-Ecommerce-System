@@ -2572,3 +2572,5 @@ Route::middleware(['auth', 'role:delivery_hub'])
         Route::get('/reports', $hubPage('reports'))->name('reports');
         Route::get('/account', $hubPage('account'))->name('account');
     });
+// Separate administrator account management from personal Account Settings.
+Route::get('/admin/admin-management', function () { $response = app(\App\Http\Controllers\Admin\AdminAccountController::class)->index(request()); return view('pages.admin.admin-management', $response->getData()); })->middleware(['auth','role:admin'])->name('admin.management');
