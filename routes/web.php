@@ -2543,6 +2543,32 @@ Route::middleware(['auth', 'role:delivery_hub'])
         Route::get('/network-earnings', $hubPage('network-earnings'))->name('network-earnings');
         Route::get('/messages', $hubPage('messages'))->name('messages');
         Route::get('/notifications', $hubPage('notifications'))->name('notifications');
+
+        // Delivery Hub notifications: only the authenticated hub can change its inbox.
+        Route::post('/notifications/read-all', function (Request $request) {
+            $user = $request->user();
+            \App\Models\Logistics\LogisticsDeliveryHub::query()
+                ->where('user_id', $user->id)
+                ->firstOrFail();
+
+            $user->unreadNotifications()->update(['read_at' => now()]);
+
+            return redirect()->back()->with('success', 'All notifications marked as read.');
+        })->name('notifications.read-all');
+
+        Route::post('/notifications/{notification}/read', function (Request $request, string $notification) {
+            $user = $request->user();
+            \App\Models\Logistics\LogisticsDeliveryHub::query()
+                ->where('user_id', $user->id)
+                ->firstOrFail();
+
+            $item = $user->notifications()->whereKey($notification)->firstOrFail();
+            if ($item->read_at === null) {
+                $item->markAsRead();
+            }
+
+            return redirect()->back()->with('success', 'Notification marked as read.');
+        })->name('notifications.read');
         Route::get('/reports', $hubPage('reports'))->name('reports');
         Route::get('/account', $hubPage('account'))->name('account');
     });
