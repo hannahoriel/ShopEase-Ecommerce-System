@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class MobileRegistrationVerificationController extends Controller
 {
+    private const CODE_TTL_MINUTES = 15;
+
     private function scope(string $email, string $role): string
     {
         return 'mobile-registration:'.$role.':'.hash('sha256', mb_strtolower(trim($email)));
@@ -59,7 +61,7 @@ class MobileRegistrationVerificationController extends Controller
         Cache::put("{$scope}:otp", [
             'hash' => Hash::make($code),
             'attempts' => 0,
-        ], now()->addMinutes(10));
+        ], now()->addMinutes(self::CODE_TTL_MINUTES));
         Cache::forget("{$scope}:verified");
 
         try {
@@ -93,15 +95,21 @@ class MobileRegistrationVerificationController extends Controller
         $otpKey = "{$scope}:otp";
         $record = Cache::get($otpKey);
 
-        if (! is_array($record) || ($record['attempts'] ?? 0) >= 5) {
+        if (! is_array($record)) {
             return response()->json([
-                'message' => 'Code expired or too many attempts. Request a new one.',
+                'message' => 'Verification code expired. Request a new code.',
+            ], 422);
+        }
+
+        if (($record['attempts'] ?? 0) >= 5) {
+            return response()->json([
+                'message' => 'Too many incorrect attempts. Request a new code.',
             ], 422);
         }
 
         if (! Hash::check($data['code'], $record['hash'] ?? '')) {
             $record['attempts'] = ($record['attempts'] ?? 0) + 1;
-            Cache::put($otpKey, $record, now()->addMinutes(10));
+            Cache::put($otpKey, $record, now()->addMinutes(self::CODE_TTL_MINUTES));
 
             return response()->json(['message' => 'Invalid verification code.'], 422);
         }

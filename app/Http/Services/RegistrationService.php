@@ -100,6 +100,9 @@ class RegistrationService
             $rules['logistics_operation'] = ['nullable', 'string', 'max:100'];
             $rules['municipal_hub'] = ['nullable', 'string', 'max:150'];
             $rules['upload_or_cr'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
+            if ($request->input('registration_type') === 'courier') {
+                $rules['sorting_center_id'] = ['required', 'integer', 'exists:logistics_branches,id'];
+            }
         }
 
         $validated = $request->validate($rules);
@@ -139,6 +142,9 @@ class RegistrationService
         if ($role === User::ROLE_RIDER) {
             $profile['vehicle'] = $validated['vehicle'];
             $profile['registration_type'] = $validated['registration_type'] ?? 'rider';
+            if ($profile['registration_type'] === 'courier') {
+                $profile['logistics_branch_id'] = (int) $validated['sorting_center_id'];
+            }
             $profile['assignment_region'] = $validated['assignment_region'] ?? null;
             $profile['assignment_province'] = $validated['assignment_province'] ?? null;
             $profile['plate_number'] = $validated['plate_number'];

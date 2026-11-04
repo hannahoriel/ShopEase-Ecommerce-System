@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Services\RegistrationService;
 use App\Http\Services\DeliveryHubRiderRegistrationService;
 use App\Models\Admin\Registration;
+use App\Models\Logistics\CourierRegistration;
+use App\Models\Logistics\LogisticsBranch;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,11 +29,68 @@ class StoreRiderRegistrationController extends Controller
             ]);
         }
         $isCourier = $request->input('registration_type') === 'courier';
+        $sortingCenter = null;
+        if ($isCourier) {
+            $centerId = $request->input('sorting_center_id');
+            $sortingCenter = is_numeric($centerId)
+                ? LogisticsBranch::query()
+                    ->whereKey((int) $centerId)
+                    ->where('status', 'active')
+                    ->whereNull('archived_at')
+                    ->whereHas('user', fn ($query) => $query
+                        ->where('role', User::ROLE_SORTING_CENTER)
+                        ->where('registration_status', 'active'))
+                    ->first()
+                : null;
+
+            if (! $sortingCenter) {
+                throw ValidationException::withMessages([
+                    'sorting_center_id' => 'Choose an active sorting center for this courier registration.',
+                ]);
+            }
+        }
         $hub = $isCourier ? null : $hubRegistrations->resolveHub($request);
-        [$user, $application, $statusToken] = DB::transaction(function () use ($request, $registration, $hubRegistrations, $hub): array {
+        [$user, $application, $statusToken] = DB::transaction(function () use ($request, $registration, $hubRegistrations, $hub, $isCourier, $sortingCenter): array {
             $user = $registration->register($request);
             if ($hub) {
                 $hubRegistrations->submit($user, $hub);
+            }
+            if ($isCourier && $sortingCenter) {
+                $rider = $user->riderProfile()->firstOrFail();
+                $courierData = [
+                    'sorting_center_id' => $sortingCenter->id,
+                    'user_id' => $user->id,
+                    'first_name' => $rider->first_name,
+                    'middle_name' => $rider->middle_initial,
+                    'last_name' => $rider->last_name,
+                    'sex' => $rider->sex,
+                    'birthday' => $rider->birthday,
+                    'email' => $user->email,
+                    'phone' => $rider->contact_no,
+                    'region' => $rider->assignment_region,
+                    'province' => $rider->assignment_province,
+                    'city' => $rider->municipality,
+                    'barangay' => $rider->barangay,
+                    'street' => $rider->street,
+                    'house_no' => $rider->house_number,
+                    'vehicle' => $rider->vehicle,
+                    'plate_number' => $rider->plate_number,
+                    'or_cr_path' => $rider->upload_or_cr,
+                    'drivers_license_path' => $rider->upload_id_license,
+                    'status' => 'pending',
+                    'rejection_reason' => null,
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                ];
+                $courierApplication = CourierRegistration::query()
+                    ->where('user_id', $user->id)
+                    ->latest('id')
+                    ->first();
+                if ($courierApplication) {
+                    $courierApplication->update($courierData);
+                } else {
+                    CourierRegistration::query()->create($courierData);
+                }
             }
             $application = Registration::query()
                 ->where('user_id', $user->id)
@@ -45,7 +104,9 @@ class StoreRiderRegistrationController extends Controller
         });
 
         return response()->json([
-            'message' => 'Rider registration submitted and is awaiting delivery hub approval.',
+            'message' => $isCourier
+                ? 'Courier registration submitted and is awaiting sorting center approval.'
+                : 'Rider registration submitted and is awaiting delivery hub approval.',
             'status' => 'pending',
             'application_id' => 'RC-'.str_pad((string) $application->id, 6, '0', STR_PAD_LEFT),
             'status_token' => $statusToken,
