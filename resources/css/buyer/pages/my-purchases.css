@@ -3666,6 +3666,7 @@ body.sp-modal-open {
 .buyer-like-store{font-size:10px;color:#968782}
 .buyer-like-name{font-size:13px;line-height:1.45;color:#38282B;text-decoration:none;font-weight:700;min-height:38px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .buyer-like-name:hover{color:#832632}
+.buyer-like-rating{display:flex;align-items:center;gap:5px;min-height:18px;color:#8e817b;font-size:10px}.buyer-like-rating-star{color:#f0a629;font-size:15px;line-height:1}.buyer-like-rating strong{color:#463533;font-size:11px}
 .buyer-like-price{font-size:15px;color:#7A2029;font-weight:700}
 .buyer-like-view{margin-top:4px;text-decoration:none;font-size:11px;font-weight:700;color:#8F2936}
 .buyer-like-view:hover{text-decoration:underline}
@@ -3682,3 +3683,126 @@ body.sp-modal-open {
 .buyer-purchases-page #purchaseRows [data-view-order-id]{cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
 .buyer-purchases-page #purchaseRows [data-view-order-id]:hover{border-color:#DFBAB5;box-shadow:0 5px 16px rgba(91,31,32,.09)}
 .buyer-purchases-page #purchaseRows [data-view-order-id]:focus-visible{outline:2px solid #9B4855;outline-offset:3px}
+
+/* Real order product photos and in-page order details. */
+.buyer-purchases-page .purchase-product-image.has-product-photo{overflow:hidden;background:#fff8f6}
+.buyer-purchases-page .purchase-product-image.has-product-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.buyer-purchases-page .purchase-product-initial{display:grid;width:100%;height:100%;place-items:center;background:linear-gradient(145deg,#fff1ec,#f6d9d3);color:#8f343b;font-size:28px;font-weight:700}
+.buyer-order-details-overlay{position:fixed;inset:0;z-index:260;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(31,12,15,.58);backdrop-filter:blur(3px)}
+.buyer-order-details-overlay[hidden]{display:none}
+.buyer-order-details-dialog{width:min(900px,100%);max-height:min(90vh,900px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #f0e3df;border-radius:20px;background:#fff;box-shadow:0 24px 80px rgba(36,10,12,.28);outline:none}
+.buyer-order-details-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 25px;border-bottom:1px solid #f0e7e3;background:#fffdfc}
+.buyer-order-details-header span{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#a65456}
+.buyer-order-details-header h2{margin:4px 0 0;font-size:20px;color:#321e1d}
+.buyer-order-details-header button{width:38px;height:38px;border:0;border-radius:50%;background:#fff1ee;color:#811e25;font-size:25px;line-height:1}
+.buyer-order-details-body{overflow:auto;padding:22px 25px;color:#392d2a}
+.buyer-order-detail-summary{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:15px 17px;margin-bottom:16px;border:1px solid #f0e4e0;border-radius:12px;background:#fff9f7}
+.buyer-order-detail-summary>div{display:grid;gap:4px}.buyer-order-detail-summary>div span,.buyer-order-detail-card dt{font-size:10px;color:#948783}.buyer-order-detail-summary>div strong{font-size:12px}.buyer-order-detail-status{margin-left:auto;padding:7px 12px;border-radius:20px;background:#fcebe7;color:#8b2a31;font-size:11px;font-weight:700;text-transform:capitalize}
+.buyer-order-detail-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-bottom:14px}
+.buyer-order-detail-card{min-width:0;border:1px solid #eee3df;border-radius:13px;background:#fff;overflow:hidden}
+.buyer-order-detail-card h3,.buyer-order-detail-qr h3{margin:0;padding:13px 16px;border-bottom:1px solid #f0e7e3;background:#fff9f7;color:#762a30;font-size:12px;font-weight:750}
+.buyer-order-detail-card dl{display:grid;grid-template-columns:minmax(105px,.7fr) minmax(0,1.3fr);gap:11px 15px;margin:0;padding:16px}
+.buyer-order-detail-card dt,.buyer-order-detail-card dd{margin:0;overflow-wrap:anywhere;line-height:1.5}.buyer-order-detail-card dd{font-size:11px;font-weight:600}.buyer-order-detail-card .buyer-order-total-label,.buyer-order-detail-card .buyer-order-total-value{padding-top:10px;border-top:1px solid #f0e7e3}.buyer-order-detail-card .buyer-order-total-value{font-size:14px;color:#84242e}
+.buyer-order-detail-items{padding:4px 16px}.buyer-order-detail-items article{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid #f3edeb}.buyer-order-detail-items article:last-child{border-bottom:0}.buyer-order-detail-image{width:58px;height:58px;flex:0 0 58px;display:grid;place-items:center;overflow:hidden;border:1px solid #f0e6e2;border-radius:9px;background:#fff8f6;color:#a3948e;font-size:9px}.buyer-order-detail-image img{width:100%;height:100%;object-fit:cover}.buyer-order-detail-item-copy{display:grid;gap:4px;min-width:0;flex:1}.buyer-order-detail-item-copy strong,.buyer-order-detail-items article>strong{font-size:11px}.buyer-order-detail-item-copy span,.buyer-order-detail-item-copy small{font-size:10px;color:#8e817d}.buyer-order-detail-items>p{font-size:11px;color:#8e817d}
+.buyer-order-detail-bottom{display:grid;grid-template-columns:1fr 220px;gap:14px;margin-top:14px}.buyer-order-timeline{list-style:none;margin:0;padding:8px 16px}.buyer-order-timeline li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #f2eae7;font-size:10px}.buyer-order-timeline li:last-child{border-bottom:0}.buyer-order-timeline li span,.buyer-order-detail-muted{color:#948783}.buyer-order-detail-muted{padding:4px 16px;font-size:11px}.buyer-order-detail-qr{display:flex;flex-direction:column;align-items:center;overflow:hidden;border:1px solid #eee3df;border-radius:13px;background:#fff}.buyer-order-detail-qr h3{width:100%;text-align:center}.buyer-order-detail-qr canvas{width:160px;height:160px;margin:14px auto 4px}.buyer-order-detail-qr p{max-width:180px;margin:3px 12px 15px;text-align:center;color:#8e817d;font-size:10px;line-height:1.5}.buyer-order-details-footer{display:flex;justify-content:flex-end;padding:13px 24px;border-top:1px solid #f0e7e3;background:#fffdfc}.buyer-order-details-footer button{padding:9px 20px;border:1px solid #d9c8c4;border-radius:9px;background:#fff;color:#69272c;font-size:12px;font-weight:600}
+body.buyer-order-details-open{overflow:hidden}
+@media(max-width:680px){.buyer-order-details-overlay{padding:10px}.buyer-order-details-dialog{max-height:94vh;border-radius:15px}.buyer-order-details-header,.buyer-order-details-body{padding:16px}.buyer-order-detail-grid,.buyer-order-detail-bottom{grid-template-columns:1fr}.buyer-order-detail-qr{padding-bottom:3px}.buyer-order-details-header h2{font-size:17px}}
+
+.buyer-order-action-bar{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 16px}.buyer-order-action-bar button,.buyer-seller-rating-form button[type=submit]{min-height:38px;padding:9px 14px;border:1px solid #ead8d3;border-radius:9px;background:#fff;color:#70252c;font-size:11px;font-weight:700}.buyer-order-action-bar .buyer-order-action-primary,.buyer-order-action-bar .buyer-order-action-confirm,.buyer-seller-rating-form button[type=submit]{border-color:#7b1b1b;background:#7b1b1b;color:#fff}.buyer-order-action-bar .buyer-order-action-confirm{background:#25734c;border-color:#25734c}.buyer-order-action-feedback{margin:-5px 0 15px;padding:10px 12px;border-radius:8px;background:#fff4ee;color:#8e3036;font-size:11px}.buyer-order-action-feedback[hidden],.buyer-seller-rating-form[hidden]{display:none}
+.buyer-seller-rating-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;margin:-3px 0 16px;border:1px solid #f0dfda;border-radius:12px;background:#fffaf8}.buyer-seller-rating-form>div:first-child{grid-column:1/-1}.buyer-seller-rating-form h3{margin:0;color:#74272e;font-size:13px}.buyer-seller-rating-form p{margin:4px 0 0;color:#968681;font-size:10px}.buyer-seller-rating-form label{display:grid;gap:6px;color:#796b66;font-size:10px;font-weight:600}.buyer-seller-rating-form select,.buyer-seller-rating-form textarea{width:100%;border:1px solid #e7d9d5;border-radius:8px;background:#fff;padding:9px 10px;color:#392d2a;font:inherit;font-size:11px}.buyer-seller-rating-form textarea{min-height:66px;resize:vertical}.buyer-seller-stars{display:flex;align-items:center;gap:3px}.buyer-seller-stars button{padding:0!important;border:0!important;background:transparent!important;color:#d7cfca;font-size:25px!important;line-height:1}.buyer-seller-stars button.is-selected{color:#e3a52b}.buyer-order-rating-feedback{grid-column:1/-1;color:#33714e!important}.buyer-order-rating-feedback[hidden]{display:none}
+.buyer-order-tracking-card h3{padding:14px 18px;background:#fff7f5;color:#842d36;font-size:13px}.buyer-order-timeline{position:relative;list-style:none;margin:0;padding:7px 18px 8px 34px}.buyer-order-timeline:before{position:absolute;top:0;bottom:8px;left:20px;width:1px;background:#e8d4d2;content:""}.buyer-order-timeline li{position:relative;display:block;padding:12px 0;border:0;font-size:11px}.buyer-order-timeline li:before{position:absolute;top:17px;left:-18px;width:9px;height:9px;border-radius:50%;background:#a52b3c;content:""}.buyer-order-timeline li strong{display:block;color:#342a28;font-size:11px;font-weight:750}.buyer-order-timeline li span{display:block;margin-top:4px;color:#9b8e89;font-size:10px;line-height:1.5}
+@media(max-width:680px){.buyer-seller-rating-form{grid-template-columns:1fr}.buyer-seller-rating-form>div:first-child{grid-column:auto}}
+.buyer-order-detail-bottom{grid-template-columns:minmax(0,1fr)}.buyer-order-detail-qr{width:230px;justify-self:end}
+
+/* Cleaner hierarchy for the purchase details dialog and a visible seller rating entry point. */
+.buyer-order-details-dialog{width:min(980px,100%);max-height:min(92vh,940px);border-radius:18px}
+.buyer-order-details-header{padding:20px 28px;background:linear-gradient(110deg,#fff8f5,#fff)}
+.buyer-order-details-body{display:flex;flex-direction:column;gap:16px;padding:22px 28px;background:#fffdfc}
+.buyer-order-detail-summary{gap:18px 28px;margin:0;padding:17px 20px;background:#fff;border-color:#f0e4df}
+.buyer-order-detail-summary>div:first-child{min-width:190px}
+.buyer-order-detail-status{background:#fcebe7}
+.buyer-order-action-bar{margin:0;padding:0 0 2px}
+.buyer-order-action-bar button,.buyer-seller-rating-form button[type=submit]{min-height:40px;padding:10px 16px;border-radius:10px;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+.buyer-order-action-bar button:hover,.buyer-seller-rating-form button[type=submit]:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(91,31,32,.12)}
+.buyer-order-rating-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid #f0dfca;border-radius:13px;background:linear-gradient(105deg,#fff8e9,#fffdf8)}
+.buyer-order-rating-card.is-locked{border-color:#eee5e1;background:#faf8f7}
+.buyer-order-rating-icon{display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:#fff0cb;color:#dc9c20;font-size:22px}
+.buyer-order-rating-card.is-locked .buyer-order-rating-icon{background:#f0ece9;color:#a69a94}
+.buyer-order-rating-copy{min-width:0;flex:1}
+.buyer-order-section-kicker{display:block;margin-bottom:3px;color:#a05b43;font-size:9px;font-weight:800;letter-spacing:1.2px}
+.buyer-order-rating-copy h3{margin:0;color:#3b2b27;font-size:13px}
+.buyer-order-rating-copy p{margin:4px 0 0;color:#8c7d77;font-size:10px;line-height:1.5}
+.buyer-order-rating-lock{padding:7px 10px;border:1px solid #e9e0dc;border-radius:20px;background:#fff;color:#887c76;font-size:9px;font-weight:700;white-space:nowrap}
+.buyer-order-action-bar .buyer-order-action-rating{border-color:#dfa933;background:#e9ad30;color:#452c10}
+.buyer-seller-rating-form{gap:14px;margin:0;padding:19px;border-color:#f0dfca;background:#fffaf1}
+.buyer-seller-rating-form .buyer-seller-rating-heading{grid-column:1/-1}
+.buyer-seller-rating-heading h3{margin:0;color:#3b2b27;font-size:15px}
+.buyer-seller-rating-heading p{margin:4px 0 0;color:#8c7d77;font-size:11px}
+.buyer-seller-rating-form label{gap:7px;font-size:11px}
+.buyer-seller-rating-form select,.buyer-seller-rating-form textarea{padding:11px 12px;border-radius:9px;font-size:12px}
+.buyer-seller-rating-form .buyer-seller-review-field{grid-column:1/-1}
+.buyer-seller-rating-form textarea{min-height:88px}
+.buyer-seller-stars{gap:6px}
+.buyer-seller-stars button{font-size:30px!important}
+.buyer-order-detail-grid{grid-template-columns:1.1fr .9fr;gap:16px;margin:0}
+.buyer-order-detail-card{border-radius:14px;box-shadow:0 2px 8px rgba(63,33,29,.025)}
+.buyer-order-detail-card h3,.buyer-order-detail-qr h3{padding:14px 17px;font-size:12px}
+.buyer-order-detail-card dl{gap:12px 17px;padding:17px}
+.buyer-order-items-card{width:100%}
+.buyer-order-detail-items article{padding:14px 0}
+.buyer-order-detail-bottom{gap:16px;margin:0}
+.buyer-order-tracking-card{background:#fff}
+.buyer-order-timeline{padding-top:12px;padding-bottom:14px}
+.buyer-order-timeline li{padding:13px 0}
+.buyer-order-detail-qr{align-self:start;margin-top:0}
+.buyer-order-details-footer{padding:13px 28px}
+.buyer-order-seller-help{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 16px;border:1px solid #f0e5e1;border-radius:12px;background:#fff}
+.buyer-order-seller-help-copy{display:grid;gap:3px;min-width:0}
+.buyer-order-seller-help-copy strong{color:#44332f;font-size:11px}
+.buyer-order-seller-help-copy span{color:#9b8d87;font-size:10px}
+.buyer-order-seller-help-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.buyer-order-seller-help-actions button{min-height:34px;padding:7px 12px;border:1px solid #ead8d3;border-radius:8px;background:#fff;color:#70252c;font-size:10px;font-weight:700;cursor:pointer}
+.buyer-order-seller-help-actions .buyer-order-action-primary{border-color:#7b1b1b;background:#7b1b1b;color:#fff}
+.buyer-order-details-footer{align-items:center;gap:10px}
+.buyer-order-details-footer [data-close-buyer-order-details]{margin-left:auto}
+.buyer-order-details-footer .buyer-order-footer-confirm{border-color:#25734c;background:#25734c;color:#fff}
+.buyer-order-details-footer .buyer-order-footer-confirm:hover{background:#1e633f}
+.buyer-order-details-footer .buyer-order-footer-confirm[hidden]{display:none}
+@media(max-width:560px){.buyer-order-seller-help{align-items:flex-start;flex-direction:column}.buyer-order-seller-help-actions{width:100%}.buyer-order-seller-help-actions button{flex:1}.buyer-order-details-footer{padding:12px 14px}.buyer-order-details-footer .buyer-order-footer-confirm{margin-right:auto}}
+.buyer-seller-rating-overlay{position:fixed;inset:0;z-index:290;display:grid;place-items:center;padding:20px;background:rgba(32,15,16,.58);backdrop-filter:blur(3px)}
+.buyer-seller-rating-overlay[hidden]{display:none}
+.buyer-seller-rating-dialog{width:min(560px,100%);max-height:min(88vh,760px);overflow:auto;border:1px solid #f0dfca;border-radius:18px;background:#fff;box-shadow:0 24px 80px rgba(36,10,12,.28);outline:none}
+.buyer-seller-rating-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 18px;border-bottom:1px solid #f3e8e2;background:linear-gradient(110deg,#fff8f0,#fff)}
+.buyer-seller-rating-dialog-header h2{margin:4px 0;color:#382a27;font-size:19px}
+.buyer-seller-rating-dialog-header p{margin:0;color:#8c7d77;font-size:11px}.buyer-seller-rating-dialog-header p strong{color:#55413b}
+.buyer-seller-rating-dialog-header>button{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border:0;border-radius:50%;background:#fff0ec;color:#85252e;font-size:25px;line-height:1;cursor:pointer}
+.buyer-seller-rating-dialog .buyer-seller-rating-form{grid-template-columns:1fr auto;gap:16px;padding:22px 24px 24px;margin:0;border:0;border-radius:0;background:#fff}
+.buyer-seller-rating-dialog .buyer-seller-rating-form>label:first-child{grid-column:1/-1}
+.buyer-seller-rating-stars{min-width:0;margin:0;padding:0;border:0}
+.buyer-seller-rating-stars legend{margin-bottom:6px;color:#796b66;font-size:11px;font-weight:600}
+.buyer-seller-rating-dialog .buyer-seller-stars{gap:5px}
+.buyer-seller-rating-dialog .buyer-seller-review-field{grid-column:1/-1}
+.buyer-seller-rating-dialog .buyer-seller-rating-form button[type=submit]{grid-column:1/-1;min-height:44px;font-size:12px}
+.buyer-seller-rating-dialog .buyer-order-rating-feedback{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:8px;background:#fff2ee;color:#8e3036!important;font-size:11px}
+.buyer-seller-rating-dialog .buyer-order-rating-feedback[hidden]{display:none}
+body.buyer-seller-rating-open{overflow:hidden}
+@media(max-width:560px){.buyer-seller-rating-overlay{padding:12px}.buyer-seller-rating-dialog{border-radius:15px}.buyer-seller-rating-dialog-header{padding:18px}.buyer-seller-rating-dialog .buyer-seller-rating-form{grid-template-columns:1fr;padding:18px}.buyer-seller-rating-dialog .buyer-seller-rating-form>label:first-child,.buyer-seller-rating-dialog .buyer-seller-review-field{grid-column:auto}}
+@media(max-width:680px){.buyer-order-details-body{gap:12px;padding:14px}.buyer-order-details-header{padding:16px}.buyer-order-detail-grid{grid-template-columns:1fr}.buyer-order-rating-card{align-items:flex-start;flex-wrap:wrap}.buyer-order-rating-icon{width:36px;height:36px;flex-basis:36px}.buyer-order-rating-card .buyer-order-action-rating,.buyer-order-rating-lock{margin-left:50px}.buyer-seller-rating-form .buyer-seller-rating-heading,.buyer-seller-rating-form .buyer-seller-review-field{grid-column:auto}.buyer-order-detail-qr{width:100%;justify-self:stretch}}
+.buyer-order-tracking-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-right:14px;border-bottom:1px solid #f0e7e3;background:#fff7f5}
+.buyer-order-tracking-heading h3{padding:14px 18px;border:0;background:transparent}
+.buyer-order-history-toggle{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:86px;min-height:30px;padding:5px 9px;border:1px solid #efd8d3;border-radius:8px;background:#fff;color:#8a2b35;font:inherit;font-size:10px;font-weight:700;cursor:pointer}
+.buyer-order-history-toggle:hover{background:#fff0ec}
+.buyer-order-history-toggle[aria-expanded="true"]{width:30px;min-width:30px;padding:0;border-color:#eadeda;border-radius:50%;color:#7e6b68}
+.buyer-order-history-close{font-size:20px;line-height:1}
+.buyer-order-timeline li:nth-child(n+4){display:none}
+.buyer-order-tracking-card.is-expanded .buyer-order-timeline li:nth-child(n+4){display:block}
+.buyer-order-tracking-card.is-expanded .buyer-order-timeline:before{bottom:14px}
+.buyer-seller-rating-dialog .buyer-seller-anonymous{display:flex;grid-column:1/-1;align-items:center;gap:8px;color:#655652;font-size:11px}
+.buyer-seller-rating-dialog .buyer-seller-anonymous input{width:15px;height:15px;accent-color:#7b1b1b}
+.buyer-seller-rating-dialog input[type=file]{padding:8px;border:1px solid #e7d9d5;border-radius:8px;background:#fff;font-size:11px}
+.buyer-following-card{overflow:hidden;border:1px solid #efe2de;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(74,28,20,.04)}
+.buyer-following-card>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 24px;border-bottom:1px solid #f1e8e5;background:linear-gradient(110deg,#fff9f7,#fff)}
+.buyer-following-card>header h2{margin:0;color:#321d1b;font-size:18px;font-weight:700}.buyer-following-card>header p{margin:5px 0 0;color:#917e79;font-size:12px}.buyer-following-card>header>span{padding:7px 11px;border-radius:99px;background:#fff0ec;color:#8a2020;font-size:11px;font-weight:700;white-space:nowrap}
+.buyer-following-list{display:grid;gap:0}.buyer-following-shop{display:flex;align-items:center;gap:14px;padding:17px 22px;border-bottom:1px solid #f2ebe8}.buyer-following-shop:last-child{border-bottom:0}.buyer-following-avatar,.sa-follower-avatar{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;overflow:hidden;border:1px solid #f0dfda;border-radius:50%;background:#fff3ef;color:#86201f;font-weight:700}.buyer-following-avatar img,.sa-follower-avatar img{width:100%;height:100%;object-fit:cover}.buyer-following-info{min-width:0;flex:1}.buyer-following-info h3{margin:0;color:#35201e;font-size:14px;font-weight:700}.buyer-following-info p{margin:3px 0;color:#8d7c77;font-size:11px}.buyer-following-info small{color:#8d7c77;font-size:10px}.buyer-following-visit{padding:9px 15px;border:1px solid #e8cfca;border-radius:9px;color:#802020;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}.buyer-following-visit:hover{background:#fff4f0}.buyer-following-state{margin:0;padding:34px 20px;color:#8b7b77;text-align:center;font-size:12px}
+.buyer-following-shop-link{display:flex;align-items:center;gap:14px;min-width:0;flex:1;color:inherit;text-decoration:none}.buyer-following-shop-link:hover .buyer-following-info h3{color:#8a2020;text-decoration:underline}.buyer-following-actions{display:flex;align-items:center;gap:8px}.buyer-following-message{padding:9px 15px;border:0;border-radius:9px;background:#7f1c1c;color:#fff;font-size:11px;font-weight:700;cursor:pointer}.buyer-following-message:hover{background:#641313}
+@media(max-width:560px){.buyer-following-card>header{align-items:flex-start;padding:17px}.buyer-following-shop{gap:10px;padding:14px}.buyer-following-avatar{flex-basis:44px;width:44px;height:44px}.buyer-following-visit{padding:8px 10px}}

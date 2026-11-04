@@ -18,9 +18,12 @@ class DatabaseSeeder extends Seeder
         // These are the only intentionally seeded operational accounts.
         $this->call(RiderAccountSeeder::class);
         $this->call(CourierAccountSeeder::class);
+        $this->call(EcommerceRouteDemoSeeder::class);
+        $this->call(BulacanRouteDemoSeeder::class);
         $this->call(AdminMessagesSeeder::class);
         $this->call(LogisticsMessagesSeeder::class);
         $this->call(LogisticsAccountSeeder::class);
+        $this->call(DeliveryHubScannerSeeder::class);
         $this->call(SellerVoucherSeeder::class);
     }
 }

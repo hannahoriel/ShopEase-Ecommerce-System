@@ -34,8 +34,9 @@ class DeliveryController extends Controller
 
     public function available(Request $request): JsonResponse
     {
-        $this->logisticsFor($request->user());
+        $logistics = $this->logisticsFor($request->user());
         $orders = Order::query()
+            ->where('logistics_id', $logistics->id)
             ->where('status', 'to_ship')
             ->whereHas('shipment', fn ($query) => $query->whereNull('rider_id'))
             ->with(['seller:id,store_name', 'shipment:id,order_id,tracking_number,courier'])
@@ -154,6 +155,7 @@ class DeliveryController extends Controller
 
         DB::transaction(function () use ($logistics, $order, $validated): void {
             $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            abort_unless((int) $lockedOrder->logistics_id === (int) $logistics->id, 404);
             abort_unless($lockedOrder->status === 'to_ship', 422, 'Only orders awaiting pickup can be assigned.');
 
             $shipment = Shipment::query()

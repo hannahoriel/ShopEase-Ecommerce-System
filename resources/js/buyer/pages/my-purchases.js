@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 document.addEventListener('DOMContentLoaded', () => {
             const configElement = document.getElementById('buyerPurchasesConfig');
             const purchasesConfig = configElement ? JSON.parse(configElement.textContent) : {};
+            window.__buyerPurchasesConfig = purchasesConfig;
             const complaintModal = document.getElementById('buyerComplaintModal');
             const complaintForm = document.getElementById('buyerComplaintForm');
             const complaintError = document.getElementById('buyerComplaintError');
@@ -27,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('click', event => {
                 const reportButton = event.target.closest('[data-buyer-complaint-order]');
                 if (reportButton) {
+                    document.getElementById('buyerOrderDetailsModal')?.setAttribute('hidden', '');
+                    document.getElementById('buyerOrderDetailsModal')?.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('buyer-order-details-open');
                     complaintOrderId.value = reportButton.dataset.buyerComplaintOrder;
                     complaintOrderLabel.textContent = `Order ${reportButton.dataset.orderNumber || ''}`;
                     complaintError.hidden = true;
@@ -210,14 +214,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             method: 'POST',
                             headers: {
                                 Accept: 'application/json',
-                                'Content-Type': 'application/json',
                                 Authorization: `Bearer ${purchasesConfig.apiToken || ''}`,
                             },
                             credentials: 'same-origin',
-                            body: JSON.stringify({
-                                type: document.getElementById('buyerComplaintType').value,
-                                description: document.getElementById('buyerComplaintDescription').value,
-                            }),
+                            body: (() => {
+                                const formData = new FormData();
+                                formData.append('type', document.getElementById('buyerComplaintType').value);
+                                formData.append('description', document.getElementById('buyerComplaintDescription').value);
+                                Array.from(document.getElementById('buyerComplaintEvidence')?.files || []).forEach(file => formData.append('evidence[]', file));
+                                return formData;
+                            })(),
                         }
                     );
                     const payload = await response.json();
@@ -240,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     window.alert(`${payload.message} Reference: ${payload.data.reference}`);
                     closeComplaintModal();
+                    document.dispatchEvent(new CustomEvent('buyer:complaint-submitted', { detail: payload.data }));
                 } catch (error) {
                     complaintError.textContent = error.message;
                     complaintError.hidden = false;
@@ -266,7 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 likesGrid.hidden = liked.length === 0;
                 likesGrid.innerHTML = liked.map(product => {
                     const url = product.url || ('/buyer/product?id=' + encodeURIComponent(product.id));
-                    const image = product.image && /^(https?:\/\/|\/)(?!\/)/i.test(product.image)
+                    const ratingCount = Number(product.rating_count || 0);
+                    const rating = ratingCount ? `<span class="buyer-like-rating-star" aria-hidden="true">★</span><strong>${Number(product.rating || 0).toFixed(1)}</strong><span>(${ratingCount} ${ratingCount === 1 ? 'rating' : 'ratings'})</span>` : '<span class="buyer-like-rating-star" aria-hidden="true">☆</span><span>No ratings yet</span>';
+                    const image = product.image
                         ? `<img src="${likesEscape(product.image)}" alt="${likesEscape(product.name)}" loading="lazy">`
                         : '<span class="buyer-likes-image-fallback" aria-hidden="true">♡</span>';
                     return `<article class="buyer-like-card">
@@ -274,10 +283,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="buyer-like-remove" type="button" data-unlike-product="${likesEscape(product.id)}" aria-label="Remove ${likesEscape(product.name)} from likes" title="Unlike product">♥</button></div>
                         <div class="buyer-like-content"><span class="buyer-like-store">${likesEscape(product.seller || 'ShopEase Seller')}</span>
                             <a class="buyer-like-name" href="${likesEscape(url)}">${likesEscape(product.name)}</a>
+                            <div class="buyer-like-rating" aria-label="${ratingCount ? `${Number(product.rating || 0).toFixed(1)} out of 5 from ${ratingCount} ratings` : 'No ratings yet'}">${rating}</div>
                             <strong class="buyer-like-price">${likesMoney(product.price)}</strong>
                             <a class="buyer-like-view" href="${likesEscape(url)}">View Product <span aria-hidden="true">→</span></a>
                         </div></article>`;
                 }).join('');
+                likesGrid.querySelectorAll('.buyer-like-photo img').forEach(image => image.addEventListener('error', () => {
+                    const fallback = document.createElement('span');
+                    fallback.className = 'buyer-likes-image-fallback';
+                    fallback.setAttribute('aria-hidden', 'true');
+                    fallback.textContent = '♡';
+                    image.replaceWith(fallback);
+                }, {once:true}));
             }
             likesGrid?.addEventListener('click', event => {
                 const unlike = event.target.closest('[data-unlike-product]');
@@ -606,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     function renderOrders(orders) {
                         if (!purchaseRows) return;
+                        window.__buyerPurchaseOrders = new Map(orders.map(order => [String(order.order_number), order]));
                         if (!orders.length) {
                             purchaseRows.innerHTML = '';
                             rows = [];
@@ -662,12 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                     <div class="purchase-row">
                                         <div class="purchase-product-cell">
-                                            <div class="purchase-product-image purchase-product-placeholder" aria-hidden="true">
-                                                <svg viewBox="0 0 120 100" fill="none">
-                                                    <rect width="120" height="100" rx="10" fill="#FFF2EE"/>
-                                                    <path d="m31 38 29-16 29 16v31L60 85 31 69V38Z" fill="#F8D9D2" stroke="#A76963" stroke-width="3" stroke-linejoin="round"/>
-                                                    <path d="m31 38 29 17 29-17M60 55v30M46 30l29 17" stroke="#A76963" stroke-width="3" stroke-linejoin="round"/>
-                                                </svg>
+                                            <div class="purchase-product-image ${firstItem.image_url ? 'has-product-photo' : 'purchase-product-placeholder'}">
+                                                ${firstItem.image_url
+                                                    ? `<img src="${escapeHtml(firstItem.image_url)}" alt="${escapeHtml(firstItem.product_name || 'Ordered product')}" loading="lazy">`
+                                                    : `<span class="purchase-product-initial" aria-hidden="true">${escapeHtml((firstItem.product_name || '—').slice(0, 1).toUpperCase())}</span>`}
                                             </div>
                                             <div class="purchase-product-copy">
                                                 <strong>${escapeHtml(firstItem.product_name || 'Order items')}</strong>
@@ -681,24 +697,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="purchase-estimated-delivery">${deliveryDetails}</div>
                                         <div class="purchase-status-cell"><span class="purchase-status purchase-status--${statusClass}">${escapeHtml(statusLabel)}</span></div>
                                     </div>
-                                    <div class="purchase-order-qr">
-                                        <canvas width="124" height="124" aria-label="QR code for order ${escapeHtml(order.order_number)}"></canvas>
-                                        <span>Scan to verify order <strong>${escapeHtml(order.order_number)}</strong></span>
-                                    </div>
                                 </article>`;
                         }).join('');
                         rows = Array.from(purchaseRows.querySelectorAll('[data-purchase-row]'));
-                        rows.forEach((row, index) => {
-                            const canvas = row.querySelector('canvas');
-                            QRCode.toCanvas(canvas, orders[index].qr_payload, {
-                                width: 124,
-                                margin: 1,
-                                errorCorrectionLevel: 'M',
-                            }).catch(error => {
-                                const note = row.querySelector('.purchase-order-qr span');
-                                if (note) note.textContent = `QR could not be generated: ${error.message}`;
-                            });
-                        });
                         applyPurchaseFilters();
                     }
 
@@ -736,6 +737,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     }
+
+                    window.__refreshBuyerPurchases = loadOrders;
 
                     function money(value) {
                         return `₱${Number(value || 0).toLocaleString('en-PH', {
@@ -1094,35 +1097,19 @@ document.addEventListener('DOMContentLoaded', () => {
     },true);
     hydrate(originalNames);
 });
-/* Buyer Complaints — temporary local demo, no backend writes. */
+/* Buyer complaints — load real records from the complaints API. */
 document.addEventListener('DOMContentLoaded', () => {
     const root = document.querySelector('.buyer-complaints-clone');
     if (!root) return;
     const get = id => document.getElementById(id);
+    const config = JSON.parse(document.getElementById('buyerPurchasesConfig')?.textContent || '{}');
     const safe = v => String(v ?? '—').replace(/[&<>"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
     const norm = x => String(x || '').toLowerCase().replaceAll('_','-');
     const title = x => ({open:'Open','in-progress':'In progress',resolved:'Resolved'})[norm(x)] || 'Open';
     const timeText = x => x ? new Date(x).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
     const dateText = x => x ? new Date(x).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
     const setText = (id,v) => {if(get(id)) get(id).textContent=v??'—';};
-    const mockImage = (label,accent) => 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="500" height="370" viewBox="0 0 500 370"><rect width="500" height="370" fill="#f5f0eb"/><rect x="48" y="34" width="404" height="302" rx="18" fill="#fff" stroke="#dccdc8" stroke-width="4"/><rect x="93" y="75" width="314" height="158" rx="12" fill="${accent}" opacity=".18"/><path d="M133 193l70-69 46 43 43-31 77 63" fill="none" stroke="${accent}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><circle cx="167" cy="115" r="16" fill="${accent}" opacity=".6"/><text x="250" y="270" fill="#643d40" font-family="Arial" font-size="21" font-weight="bold" text-anchor="middle">SAMPLE EVIDENCE</text><text x="250" y="299" fill="#8a7775" font-family="Arial" font-size="17" text-anchor="middle">${label}</text></svg>`);
-    const categories=['Wrong Item','Damaged Item','Missing Item','Late Delivery','Defective Product','Incorrect Quantity'];
-    const shops=['The Shop PH','Urban Finds Store','Home Haven PH','Trendline Market','Gadget Corner'];
-    const statuses=['open','in-progress','resolved','open','resolved','in-progress','open','resolved','in-progress','open','resolved','open'];
-    const cases=Array.from({length:12},(_,i)=>{
-        const id=`CMP-DEMO-${String(i+1).padStart(3,'0')}`;
-        const type=categories[i%categories.length];
-        const shop=shops[i%shops.length];
-        const when=new Date(2026,9,20-Math.floor(i*1.35),10+i%7,i*3%60).toISOString();
-        return {id,order_id:`ORD-DEMO-${String(1801+i)}`,type,status:statuses[i],filed_at:when,updated_at:when,
-          party1:'Sample Buyer',role1:'Buyer',party1Email:'demo.buyer@example.test',party2:shop,role2:'Seller',party2Email:'seller@example.test',
-          description:({ 'Wrong Item':'The delivered item does not match the product variant selected during checkout.', 'Damaged Item':'The package arrived with visible damage and the product has scratches.', 'Missing Item':'One item listed in the paid order was not included in the parcel.', 'Late Delivery':'The order arrived significantly later than the estimated delivery date.', 'Defective Product':'The product does not function as described despite following setup instructions.', 'Incorrect Quantity':'The delivered quantity does not match the quantity on the receipt.'})[type],
-          orderDate:when,paymentMethod:i%2?'GCash':'Cash on Delivery',paymentStatus:'Paid',shippingMethod:'Standard Delivery',orderStatus:statuses[i]==='resolved'?'Delivered':'Under review',orderTotal:`₱${(699+i*125).toLocaleString('en-PH')}.00`,
-          productName:['Wireless Earbuds','Canvas Tote Bag','Ceramic Mug Set','Fitness Watch','Desk Lamp','Skin Care Set'][i%6],productVariant:'Standard / Assorted',productPrice:`₱${499+i*125}.00`,productQuantity:1,productCategory:'ShopEase Products',shopName:shop,
-          productImage:mockImage('Product preview','#ad6267'),evidence:[mockImage(type,'#9e5860'),mockImage('Package photo','#6b859d')],
-          updates:[{status:'open',actor:'ShopEase Support',timestamp:when},...(statuses[i]!=='open'?[{status:statuses[i],actor:'ShopEase Admin',timestamp:new Date(new Date(when).getTime()+86400000).toISOString()}]:[])]
-        };
-    });
+    let cases=[];
     const state={status:'all',search:'',date:'',page:1,size:7,selected:null};
     const filtered=()=>cases.filter(c=>(state.status==='all'||c.status===state.status)&&(!state.date||c.filed_at.slice(0,10)===state.date)&&(!state.search||[c.id,c.order_id,c.type,c.party1,c.party2,c.description].join(' ').toLowerCase().includes(state.search)));
     const parties=c=>[{name:c.party1,role:'Buyer',email:c.party1Email},{name:c.party2,role:'Seller',email:c.party2Email}];
@@ -1144,10 +1131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         get('complaints-page-numbers').innerHTML=Array.from({length:pageCount},(_,i)=>i+1).filter(n=>pageCount<=7||n===1||n===pageCount||Math.abs(n-state.page)<=1).map((n,i,arr)=>`${i&&n-arr[i-1]>1?'<span>…</span>':''}<button type="button" class="complaints-page-button ${n===state.page?'active':''}" data-page="${n}">${n}</button>`).join('');
         if(state.selected)preview(state.selected);
     }
-    function evidenceMarkup(c,compact=false){return c.evidence.slice(0,compact?4:30).map((url,i)=>`<button type="button" class="sp-evidence-thumb" data-evidence-index="${i}" aria-label="View sample evidence ${i+1}"><img src="${safe(url)}" alt="Sample evidence ${i+1}" loading="lazy"></button>`).join('');}
-    const selectCase=id=>{state.selected=cases.find(c=>c.id===id)||null;render();};
+    function evidenceMarkup(c,compact=false){return (c.evidence||[]).slice(0,compact?4:30).map((url,i)=>`<button type="button" class="sp-evidence-thumb" data-evidence-index="${i}" aria-label="View attached evidence ${i+1}"><img src="${safe(url)}" alt="Buyer attached evidence ${i+1}" loading="lazy"></button>`).join('')||'<p>No supporting photos attached.</p>';}
+    const selectCase=id=>{state.selected=cases.find(c=>String(c.id)===String(id))||null;render();};
     const showLinkedComplaint = id => {
-        const target = cases.find(c => String(c.id).toLowerCase() === String(id || '').toLowerCase());
+        const target = cases.find(c => String(c.id).toLowerCase() === String(id || '').toLowerCase() || String(c.databaseId) === String(id || ''));
         if (!target) return;
         // Open My Purchases > Complaints (not the full details modal).
         const side = document.querySelector('[data-side-panel="complaints"]');
@@ -1194,7 +1181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const status=get('modal-complaint-status');status.className='complaints-modal-status '+c.status;status.textContent=title(c.status);
         get('modal-parties-list').innerHTML=parties(c).map(p=>`<div class="complaints-modal-party-row"><span class="complaints-modal-party-avatar">${p.role==='Buyer'?userIcon:shopIcon}</span><span class="complaints-modal-party-copy"><strong>${safe(p.name)}</strong><span>${safe(p.email)}</span></span><span class="complaints-modal-party-role">${p.role==='Buyer'?userIcon:shopIcon}${p.role}</span></div>`).join('');
         get('modal-order-information').innerHTML=rows([['Order ID',c.order_id],['Order Date',timeText(c.orderDate)],['Payment Method',c.paymentMethod],['Payment Status',c.paymentStatus],['Shipping Method',c.shippingMethod],['Order Status',c.orderStatus],['Order Total',c.orderTotal]]);
-        get('modal-product-info').innerHTML=`<div class="complaints-modal-item-main"><img class="complaints-modal-product-image" src="${safe(c.productImage)}" alt="Demo ordered product"><div><div class="complaints-modal-product-name">${safe(c.productName)}</div><div class="complaints-modal-product-variant">${safe(c.productVariant)}</div><div class="complaints-modal-product-price"><strong>${safe(c.productPrice)}</strong><span>Qty: ${c.productQuantity}</span></div></div></div><div class="complaints-modal-item-extra"><div><span class="complaints-modal-item-extra-label">Category</span><span class="complaints-modal-category-pill">${safe(c.productCategory)}</span></div><div class="complaints-modal-shop-line">Shop: <strong>${safe(c.shopName)}</strong></div></div>`;
+        get('modal-product-info').innerHTML=`<div class="complaints-modal-item-main">${c.productImage?`<img class="complaints-modal-product-image" src="${safe(c.productImage)}" alt="${safe(c.productName)}">`:'<div class="complaints-modal-product-image"></div>'}<div><div class="complaints-modal-product-name">${safe(c.productName)}</div><div class="complaints-modal-product-variant">${safe(c.productVariant)}</div><div class="complaints-modal-product-price"><strong>${safe(c.productPrice)}</strong><span>Qty: ${safe(c.productQuantity)}</span></div></div></div><div class="complaints-modal-item-extra"><div><span class="complaints-modal-item-extra-label">Category</span><span class="complaints-modal-category-pill">${safe(c.productCategory)}</span></div><div class="complaints-modal-shop-line">Shop: <strong>${safe(c.shopName)}</strong></div></div>`;
         get('modal-evidence-list').innerHTML=evidenceMarkup(c);
         get('complaints-modal-notes-list').innerHTML=c.updates.slice().reverse().map(update=>`<div class="complaints-modal-note"><span class="complaints-modal-note-avatar">${safe(update.actor[0])}</span><div class="complaints-modal-note-copy"><strong>${safe(update.actor)}</strong><span>${update.status==='open'?'Complaint opened.':`Complaint status changed to ${title(update.status)}.`}</span></div><span class="complaints-modal-note-time">${timeText(update.timestamp)}</span></div>`).join('');
         modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.classList.add('sp-modal-open');modal.querySelector('.complaints-modal-dialog').focus();
@@ -1222,7 +1209,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
         }
     });
-    render();
+    async function loadComplaints(){
+        const empty=get('complaints-empty'); empty.textContent='Loading complaints?'; empty.style.display='block';
+        try{
+            const headers={Accept:'application/json'};
+            if(config.apiToken)headers.Authorization='Bearer '+config.apiToken;
+            const response=await fetch(config.buyerComplaintsUrl||'/api/v1/buyer/complaints',{credentials:'same-origin',headers});
+            const payload=await response.json().catch(()=>({}));
+            if(!response.ok)throw new Error(payload.message||'Could not load your complaints.');
+            cases=payload.data||[];
+            if(state.selected)state.selected=cases.find(c=>c.id===state.selected.id)||null;
+            render();
+            if(!cases.length)empty.textContent='You have not submitted any complaints yet.';
+            const linkedId=new URLSearchParams(window.location.search).get('complaint');
+            if(linkedId)showLinkedComplaint(linkedId);
+        }catch(error){empty.textContent=error.message;empty.style.display='block';}
+    }
+    document.addEventListener('buyer:complaint-submitted',loadComplaints);
+    loadComplaints();
 });
 
 
@@ -1441,18 +1445,137 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-/* Open the matching order detail page from either Blade demo cards or API-rendered cards.
-   Controls inside a card retain their own behavior. */
+/* Order cards open a details dialog backed by the authenticated purchases API response. */
+const purchaseDetailsModal = document.getElementById('buyerOrderDetailsModal');
+const purchaseDetailsBody = document.getElementById('buyerOrderDetailsBody');
+const purchaseDetailsDialog = purchaseDetailsModal?.querySelector('.buyer-order-details-dialog');
+const safeText = value => String(value ?? '—').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+const purchaseMoney = value => `₱${Number(value || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+const purchaseDate = value => value ? safeText(new Intl.DateTimeFormat('en-PH', {dateStyle:'medium', timeStyle:'short'}).format(new Date(value))) : '—';
+function closePurchaseDetails(){if(!purchaseDetailsModal)return;purchaseDetailsModal.hidden=true;purchaseDetailsModal.setAttribute('aria-hidden','true');document.body.classList.remove('buyer-order-details-open');}
+function openPurchaseDetails(order){
+    if(!order||!purchaseDetailsModal||!purchaseDetailsBody)return;
+    const items=Array.isArray(order.items)?order.items:[];
+    const normalizedStatus=String(order.status||'processing').toLowerCase().replace(/[_-]/g,' ');
+    const isCompleted=normalizedStatus==='completed';
+    const reviewableItems=items.filter(item=>item.can_review&&item.product_id);
+    const tracking=order.shipment||{};
+    const events=Array.isArray(order.tracking_events)?order.tracking_events:[];
+    purchaseDetailsBody.innerHTML=`
+      <section class="buyer-order-detail-summary"><div><span>ORDER NUMBER</span><strong>${safeText(order.order_number)}</strong></div><span class="buyer-order-detail-status">${safeText(normalizedStatus)}</span><div><span>SHOP</span><strong>${safeText(order.shop||'—')}</strong></div><div><span>PLACED</span><strong>${purchaseDate(order.created_at)}</strong></div></section>
+      <section class="buyer-order-seller-help"><div class="buyer-order-seller-help-copy"><strong>Need help with this order?</strong><span>Contact the shop or report an issue.</span></div><div class="buyer-order-seller-help-actions"><button type="button" class="buyer-order-action-primary" data-buyer-chat-order="${safeText(order.id)}">Contact Seller</button><button type="button" class="buyer-order-action-secondary" data-buyer-complaint-order="${safeText(order.id)}" data-order-number="${safeText(order.order_number)}">Report a Problem</button></div></section>
+      <p id="buyerOrderActionFeedback" class="buyer-order-action-feedback" role="status" hidden></p>
+      ${isCompleted?`<section class="buyer-order-rating-card ${reviewableItems.length?'is-actionable':'is-reviewed'}"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h3>${reviewableItems.length?'How was your experience?':'Thanks for sharing your feedback'}</h3><p>${reviewableItems.length?`Your order is complete. Rate a product from ${safeText(order.shop||'the seller')} and help other buyers shop with confidence.`:'You have already rated the eligible product(s) in this order.'}</p></div>${reviewableItems.length?`<button type="button" class="buyer-order-action-rating" id="buyerOrderOpenRating" data-order-number="${safeText(order.order_number)}">Rate Product</button>`:''}</section>`:`<section class="buyer-order-rating-card is-locked"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h3>Rate a product after receiving your order</h3><p>Once you confirm receipt, or the order is automatically completed after 7 days, the rating form will be available here.</p></div><span class="buyer-order-rating-lock">Available after receipt</span></section>`}
+      <div class="buyer-order-detail-grid">
+        <section class="buyer-order-detail-card"><h3>Delivery details</h3><dl><dt>Recipient</dt><dd>${safeText(order.delivery_name||'—')}</dd><dt>Contact</dt><dd>${safeText(order.delivery_phone||'—')}</dd><dt>Address</dt><dd>${safeText(order.delivery_address||'—')}</dd><dt>Estimated delivery</dt><dd>${purchaseDate(tracking.estimated_delivery)}</dd><dt>Current location</dt><dd>${safeText(tracking.current_location||'Not available yet')}</dd><dt>Tracking number</dt><dd>${safeText(tracking.tracking_number||'Not assigned yet')}</dd><dt>Courier</dt><dd>${safeText(tracking.courier||'Not assigned yet')}</dd></dl></section>
+        <section class="buyer-order-detail-card"><h3>Payment summary</h3><dl><dt>Payment method</dt><dd>${safeText(order.payment_method||'—')}</dd><dt>Shipping fee</dt><dd>${purchaseMoney(order.shipping_fee)}</dd>${Number(order.voucher_discount)>0?`<dt>Voucher${order.voucher_code?` (${safeText(order.voucher_code)})`:''}</dt><dd>−${purchaseMoney(order.voucher_discount)}</dd>`:''}<dt class="buyer-order-total-label">Order total</dt><dd class="buyer-order-total-value">${purchaseMoney(order.total)}</dd></dl></section>
+      </div>
+      <section class="buyer-order-detail-card buyer-order-items-card"><h3>Items in this order</h3><div class="buyer-order-detail-items">${items.map(item=>`<article><div class="buyer-order-detail-image">${item.image_url?`<img src="${safeText(item.image_url)}" alt="${safeText(item.product_name)}">`:'<span aria-hidden="true">Product</span>'}</div><div class="buyer-order-detail-item-copy"><strong>${safeText(item.product_name||'Product')}</strong><span>${safeText([item.variation,item.color,item.size].filter(Boolean).join(' · ')||'No variant selected')}</span><small>Qty ${safeText(item.quantity||0)} × ${purchaseMoney(item.unit_price)}</small></div><strong>${purchaseMoney(Number(item.quantity||0)*Number(item.unit_price||0))}</strong></article>`).join('')||'<p>No item details are available for this order.</p>'}</div></section>
+      <div class="buyer-order-detail-bottom"><section class="buyer-order-detail-card buyer-order-tracking-card"><div class="buyer-order-tracking-heading"><h3>Tracking History</h3>${events.length>3?`<button type="button" class="buyer-order-history-toggle" aria-expanded="false" aria-label="Show full tracking history">Show more <span>(${events.length-3})</span></button>`:''}</div>${events.length?`<ol class="buyer-order-timeline">${events.map(event=>{const description=String(event.description||event.status||'Order update');const location=String(event.location||'');const title=location&&description.endsWith(location)?description.slice(0,-location.length).replace(/[\s·Â]+$/,''):description;return `<li><strong>${safeText(title)}</strong><span>${purchaseDate(event.created_at)}${location?` · ${safeText(location)}`:''}</span></li>`}).join('')}</ol>`:'<p class="buyer-order-detail-muted">No tracking updates have been recorded yet.</p>'}</section><section class="buyer-order-detail-qr"><h3>Order verification</h3><canvas id="buyerOrderDetailsQr" width="160" height="160" aria-label="Order verification QR code"></canvas><p>Show this QR code when your order needs to be verified.</p></section></div>`;
+    document.getElementById('buyerOrderDetailsTitle').textContent=`Order ${order.order_number||''}`;
+    const footerConfirm=purchaseDetailsModal.querySelector('.buyer-order-footer-confirm');
+    if(footerConfirm){footerConfirm.hidden=!order.can_confirm_received;footerConfirm.dataset.confirmOrderId=order.can_confirm_received?String(order.id):'';footerConfirm.textContent='Confirm Order Received';footerConfirm.disabled=false;}
+    purchaseDetailsModal.hidden=false;purchaseDetailsModal.setAttribute('aria-hidden','false');document.body.classList.add('buyer-order-details-open');purchaseDetailsDialog?.focus();
+    const canvas=document.getElementById('buyerOrderDetailsQr');
+    if(canvas&&order.qr_payload)QRCode.toCanvas(canvas,order.qr_payload,{width:160,margin:1,errorCorrectionLevel:'M'}).catch(()=>{});
+}
+const sellerRatingModal=document.getElementById('buyerSellerRatingModal');
+const sellerRatingForm=document.getElementById('buyerSellerRatingForm');
+function closeSellerRatingModal(){if(!sellerRatingModal)return;sellerRatingModal.hidden=true;sellerRatingModal.setAttribute('aria-hidden','true');document.body.classList.remove('buyer-seller-rating-open');}
+function openSellerRatingModal(order){
+    if(!order||!sellerRatingModal||!sellerRatingForm)return;
+    const eligible=(order.items||[]).filter(item=>item.can_review&&item.product_id);
+    if(!eligible.length)return;
+    sellerRatingForm.dataset.orderId=String(order.id);
+    sellerRatingForm.dataset.orderNumber=String(order.order_number||'');
+    sellerRatingForm.querySelector('[name="product_id"]').innerHTML=eligible.map(item=>`<option value="${safeText(item.product_id)}">${safeText(item.product_name)}</option>`).join('');
+    sellerRatingForm.querySelector('[name="rating"]').value='5';
+    sellerRatingForm.querySelectorAll('[data-seller-rating]').forEach(button=>{button.classList.add('is-selected');button.setAttribute('aria-checked',String(button.dataset.sellerRating==='5'));});
+    sellerRatingForm.querySelector('[name="body"]').value='';
+    sellerRatingForm.querySelector('[name="photo"]').value='';
+    sellerRatingForm.querySelector('[name="is_anonymous"]').checked=false;
+    const feedback=sellerRatingForm.querySelector('.buyer-order-rating-feedback');if(feedback){feedback.hidden=true;feedback.textContent='';}
+    const title=sellerRatingModal.querySelector('[data-rating-modal-shop]');if(title)title.textContent=order.shop||'the seller';
+    sellerRatingModal.hidden=false;sellerRatingModal.setAttribute('aria-hidden','false');document.body.classList.add('buyer-seller-rating-open');sellerRatingForm.querySelector('[name="product_id"]')?.focus();
+}
+document.getElementById('buyerOrderDetailsClose')?.addEventListener('click',closePurchaseDetails);
+document.querySelectorAll('[data-close-buyer-order-details]').forEach(button=>button.addEventListener('click',closePurchaseDetails));
+purchaseDetailsModal?.addEventListener('click',event=>{if(event.target===purchaseDetailsModal)closePurchaseDetails();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&purchaseDetailsModal&&!purchaseDetailsModal.hidden)closePurchaseDetails();});
+document.getElementById('buyerSellerRatingClose')?.addEventListener('click',closeSellerRatingModal);
+sellerRatingModal?.addEventListener('click',event=>{if(event.target===sellerRatingModal)closeSellerRatingModal();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&sellerRatingModal&&!sellerRatingModal.hidden)closeSellerRatingModal();});
+document.addEventListener('click',event=>{
+    const contact=event.target.closest('#buyerOrderDetailsModal [data-buyer-chat-order]');
+    if(contact)closePurchaseDetails();
+    const rateButton=event.target.closest('#buyerOrderOpenRating');
+    if(rateButton){openSellerRatingModal(window.__buyerPurchaseOrders?.get(String(rateButton.dataset.orderNumber||'')));}
+    const historyToggle=event.target.closest('.buyer-order-history-toggle');
+    if(historyToggle){const card=historyToggle.closest('.buyer-order-tracking-card');const expanded=card.classList.toggle('is-expanded');historyToggle.setAttribute('aria-expanded',String(expanded));historyToggle.setAttribute('aria-label',expanded?'Show only the three most recent tracking events':'Show full tracking history');historyToggle.innerHTML=expanded?'<span class="buyer-order-history-close" aria-hidden="true">×</span>':`Show more <span>(${Math.max(0,card.querySelectorAll('.buyer-order-timeline li').length-3)})</span>`;}
+    const star=event.target.closest('#buyerSellerRatingForm [data-seller-rating]');
+    if(star){const form=star.closest('form');const value=Number(star.dataset.sellerRating);form.querySelector('[name="rating"]').value=String(value);form.querySelectorAll('[data-seller-rating]').forEach(button=>{const selected=Number(button.dataset.sellerRating)===value;button.classList.toggle('is-selected',Number(button.dataset.sellerRating)<=value);button.setAttribute('aria-checked',String(selected));});}
+    const confirmButton=event.target.closest('[data-confirm-order-id]');
+    if(!confirmButton)return;
+    confirmButton.disabled=true;confirmButton.textContent='Confirming…';
+    const config=window.__buyerPurchasesConfig||{};
+    fetch(`${config.ordersUrl||'/api/v1/buyer/orders'}/${encodeURIComponent(confirmButton.dataset.confirmOrderId)}/confirm-received`,{method:'PATCH',headers:{Accept:'application/json',Authorization:`Bearer ${config.apiToken||''}`,'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},credentials:'same-origin'})
+      .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message||'Could not confirm this order.');if(window.__refreshBuyerPurchases)await window.__refreshBuyerPurchases();const updated=window.__buyerPurchaseOrders?.get(String(result.order?.order_number));if(updated)openPurchaseDetails(updated);})
+      .catch(error=>{const feedback=document.getElementById('buyerOrderActionFeedback');if(feedback){feedback.hidden=false;feedback.textContent=error.message;}confirmButton.disabled=false;confirmButton.textContent='Confirm Order Received';});
+});
+document.addEventListener('submit',event=>{
+    const form=event.target.closest('#buyerSellerRatingForm');
+    if(!form)return;
+    event.preventDefault();
+    const submit=form.querySelector('[type="submit"]');const feedback=form.querySelector('.buyer-order-rating-feedback');
+    const config=window.__buyerPurchasesConfig||{};const productId=form.querySelector('[name="product_id"]').value;
+    const body=new FormData(form);
+    submit.disabled=true;feedback.hidden=true;
+    fetch(`/api/v1/buyer/products/${encodeURIComponent(productId)}/reviews`,{method:'POST',headers:{Accept:'application/json',Authorization:`Bearer ${config.apiToken||''}`,'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},credentials:'same-origin',body})
+      .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message||Object.values(result.errors||{}).flat()[0]||'Could not submit your rating.');const orderNumber=form.dataset.orderNumber;closeSellerRatingModal();if(window.__refreshBuyerPurchases)await window.__refreshBuyerPurchases();const updated=window.__buyerPurchaseOrders?.get(String(orderNumber));if(updated)openPurchaseDetails(updated);})
+      .catch(error=>{feedback.hidden=false;feedback.textContent=error.message;submit.disabled=false;});
+});
 document.addEventListener('click', (event) => {
     const card = event.target.closest('#purchaseRows [data-view-order-id]');
     if (!card || event.target.closest('a, button, input, select, textarea, label, [role="button"], [data-no-order-navigation]')) return;
-    const orderId = card.dataset.viewOrderId;
-    if (orderId) window.location.assign(`/buyer/view-order?order=${encodeURIComponent(orderId)}`);
+    openPurchaseDetails(window.__buyerPurchaseOrders?.get(String(card.dataset.viewOrderId)));
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const list = document.getElementById('buyerFollowingList');
+    if (!list) return;
+    const count = document.getElementById('buyerFollowingCount');
+    const config = window.__buyerPurchasesConfig || {};
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    (async () => {
+        try {
+            const headers = {Accept:'application/json'};
+            if (config.apiToken) headers.Authorization = `Bearer ${config.apiToken}`;
+            const response = await fetch('/api/v1/buyer/following', {headers, credentials:'same-origin'});
+            if (!response.ok) throw new Error('Could not load followed shops.');
+            const payload = await response.json();
+            const shops = Array.isArray(payload.data) ? payload.data : [];
+            count.textContent = `${shops.length} ${shops.length === 1 ? 'shop' : 'shops'}`;
+            if (!shops.length) {
+                list.innerHTML = '<p class="buyer-following-state">You are not following any shops yet. Follow a shop to see it here.</p>';
+                return;
+            }
+            list.innerHTML = shops.map(shop => `<article class="buyer-following-shop"><a class="buyer-following-shop-link" href="/buyer/shop?seller=${encodeURIComponent(shop.id)}" aria-label="View ${escapeHtml(shop.name || 'shop')}"><div class="buyer-following-avatar">${shop.avatar_url ? `<img src="${escapeHtml(shop.avatar_url)}" alt="">` : `<span>${escapeHtml((shop.name || 'S').slice(0,1).toUpperCase())}</span>`}</div><div class="buyer-following-info"><h3>${escapeHtml(shop.name || 'Shop')}</h3><p>${escapeHtml(shop.location || 'Location not provided')}</p><small>${Number(shop.product_count || 0)} products · ${Number(shop.followers || 0)} followers${Number(shop.rating_count || 0) ? ` · ★ ${Number(shop.rating_average).toFixed(1)} (${Number(shop.rating_count)} ratings)` : ''}</small></div></a><div class="buyer-following-actions"><a class="buyer-following-visit" href="/buyer/shop?seller=${encodeURIComponent(shop.id)}">View shop</a><button type="button" class="buyer-following-message" data-message-shop-id="${escapeHtml(shop.id)}">Message</button></div></article>`).join('');
+        } catch (error) {
+            count.textContent = 'Unavailable';
+            list.innerHTML = `<p class="buyer-following-state">${escapeHtml(error.message || 'Could not load followed shops.')}</p>`;
+        }
+    })();
+    list.addEventListener('click', event => {
+        const button = event.target.closest('[data-message-shop-id]');
+        if (!button) return;
+        if (typeof window.openBuyerSellerChat === 'function') window.openBuyerSellerChat(button.dataset.messageShopId, 'seller');
+        else window.location.assign(`/buyer/messages?seller=${encodeURIComponent(button.dataset.messageShopId)}`);
+    });
 });
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     const card = event.target.closest('#purchaseRows [data-view-order-id]');
     if (!card || event.target !== card) return;
     event.preventDefault();
-    window.location.assign(`/buyer/view-order?order=${encodeURIComponent(card.dataset.viewOrderId)}`);
+    openPurchaseDetails(window.__buyerPurchaseOrders?.get(String(card.dataset.viewOrderId)));
 });

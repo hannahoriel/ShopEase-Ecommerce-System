@@ -6190,7 +6190,9 @@ document.addEventListener(
                     if (productDetailsVariationCount) {
                         productDetailsVariationCount.textContent =
                             String(
-                                connectedVariants.length
+                                Array.isArray(product?.variations)
+                                    ? product.variations.length
+                                    : connectedVariants.length
                             );
                     }
 
@@ -6214,8 +6216,14 @@ document.addEventListener(
                     variationStats.className =
                         'product-details-variation-stats';
 
-                    const outOfStockCount =
-                        connectedVariants.filter(
+                    const optionOutOfStockCount = activeGroups.reduce(
+                        function (count, group) {
+                            return count + (product[group.key] || []).filter(option => Number(option?.stock || 0) <= 0).length;
+                        },
+                        0
+                    );
+                    const outOfStockCount = connectedVariants.length
+                        ? connectedVariants.filter(
                             function (variant) {
                                 return (
                                     Number(
@@ -6224,7 +6232,8 @@ document.addEventListener(
                                     ) <= 0
                                 );
                             }
-                        ).length;
+                        ).length
+                        : optionOutOfStockCount;
 
                     [
                         {
@@ -6330,16 +6339,26 @@ document.addEventListener(
                             choices.className =
                                 'product-details-choice-pills';
 
+                            let selectedOptionStock = null;
+                            const updateSelectedOptionStock = (item, selectedDisplay) => {
+                                if (group.key !== 'variations' || !selectedOptionStock) return;
+                                selectedOptionStock.textContent = `${item?.name || 'Variation'} — ${Number(item?.stock || 0).toLocaleString('en-PH')} in stock`;
+                                choices.querySelectorAll('.product-details-choice-view').forEach(choice => choice.classList.toggle('is-selected', choice === selectedDisplay));
+                            };
+
                             product[group.key].forEach(
                                 function (
                                     item,
                                     index
                                 ) {
 
-                                    const display =
-                                        document.createElement(
-                                            'span'
-                                        );
+                                    const display = document.createElement(group.key === 'variations' ? 'button' : 'span');
+
+                                    if (group.key === 'variations') {
+                                        display.type = 'button';
+                                        display.setAttribute('aria-label', `${item?.name || 'Variation'}, ${Number(item?.stock || 0)} in stock`);
+                                        display.addEventListener('click', () => updateSelectedOptionStock(item, display));
+                                    }
 
                                     display.className =
                                         'product-details-choice-view product-details-view-value';
@@ -6390,6 +6409,11 @@ document.addEventListener(
                                         input
                                     );
 
+                                    if (group.key === 'variations' && index === 0) {
+                                        selectedOptionStock = document.createElement('div');
+                                        selectedOptionStock.className = 'product-details-selected-option-stock';
+                                    }
+
                                 }
                             );
 
@@ -6397,6 +6421,12 @@ document.addEventListener(
                                 label,
                                 choices
                             );
+
+                            if (selectedOptionStock) {
+                                line.appendChild(selectedOptionStock);
+                                const firstDisplay = choices.querySelector('.product-details-choice-view');
+                                updateSelectedOptionStock(product[group.key][0], firstDisplay);
+                            }
 
                             productDetailsBuyerOptions.appendChild(
                                 line

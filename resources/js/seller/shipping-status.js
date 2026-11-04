@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             modalOrderId.textContent = `#${order.order_number || `ORD-${order.id}`}`;
             modalCustomer.textContent = order.delivery_name || order.buyer?.name || 'Customer';
-            modalPhone.textContent = order.delivery_phone || order.buyer?.contact_no || '—';
+            modalPhone.textContent = order.delivery_phone || order.buyer?.contact_no || order.buyer?.buyer_profile?.contact_no || '—';
             document.getElementById('shippingModalAddress').textContent = order.delivery_address || '—';
             document.getElementById('shippingModalPaymentMethod').textContent = order.payment_method || 'COD';
             document.getElementById('shippingModalPaymentDescription').textContent =

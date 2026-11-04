@@ -13,6 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+    // Laravel's default auth redirect points to /auth/login.  Keep the
+    // Logistics, Sorting Center and Delivery Hub entry flow on its own landing.
+    $middleware->redirectGuestsTo(function (Request $request): string {
+        if ($request->is('logistics', 'logistics/*', 'sorting-center', 'sorting-center/*', 'delivery-hub', 'delivery-hub/*')) {
+            return route('logistics.landing.info');
+        }
+
+        return route('login');
+    });
     $middleware->statefulApi();
     $middleware->web(append: [
         \App\Http\Middleware\AdminModuleAccess::class,

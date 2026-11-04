@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Admin\Registration;
+use App\Models\Logistics\Logistics;
+use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -142,8 +145,39 @@ class AuthRegistrationTest extends TestCase
 
     public function test_rider_mobile_registration_endpoint_accepts_only_rider_role(): void
     {
+        $companyUser = User::query()->create([
+            'name' => 'Approved Logistics', 'email' => 'mobile-test-logistics@example.test', 'password' => 'password',
+            'role' => User::ROLE_LOGISTICS, 'registration_status' => 'active',
+        ]);
+        $company = Logistics::query()->create([
+            'user_id' => $companyUser->id, 'first_name' => 'Approved', 'last_name' => 'Logistics', 'sex' => 'other',
+            'contact_no' => '09170000001', 'birthday' => '1990-01-01', 'age' => 36, 'province' => 'Laguna',
+            'municipality' => 'Calamba', 'barangay' => 'Real', 'street' => 'Main Street', 'house_number' => '1',
+            'business_name' => 'Approved Logistics Co', 'registration_status' => 'active',
+        ]);
+        $centerUser = User::query()->create([
+            'name' => 'Calamba Center', 'email' => 'mobile-test-center@example.test', 'password' => 'password',
+            'role' => User::ROLE_SORTING_CENTER, 'registration_status' => 'active',
+        ]);
+        $branch = LogisticsBranch::query()->create([
+            'logistics_id' => $company->id, 'user_id' => $centerUser->id, 'name' => 'Calamba Sorting Center',
+            'address' => 'Calamba, Laguna', 'province' => 'Laguna', 'municipality' => 'Calamba', 'status' => 'active',
+        ]);
+        $hubUser = User::query()->create([
+            'name' => 'Calamba Hub', 'email' => 'mobile-test-hub@example.test', 'password' => 'password',
+            'role' => User::ROLE_DELIVERY_HUB, 'registration_status' => 'active',
+        ]);
+        $hub = LogisticsDeliveryHub::query()->create([
+            'logistics_branch_id' => $branch->id, 'user_id' => $hubUser->id, 'hub_name' => 'Calamba Delivery Hub',
+            'province' => 'Laguna', 'municipality' => 'Calamba', 'barangay' => 'Real', 'postal_code' => '4027',
+            'street' => 'Main Street', 'manager_name' => 'Hub Manager', 'manager_email' => $hubUser->email,
+            'manager_phone' => '09170000002', 'login_email' => $hubUser->email, 'status' => 'active',
+        ]);
+
         $response = $this->postJson('/api/v1/rider/register', [
             'role' => User::ROLE_RIDER,
+            'registration_type' => 'rider',
+            'delivery_hub_id' => $hub->id,
             'last_name' => 'Santos',
             'first_name' => 'Rina',
             'sex' => 'female',
@@ -159,7 +193,7 @@ class AuthRegistrationTest extends TestCase
             'plate_number' => 'DEF 5678',
             'courier_company' => 'Flash Express',
             'logistics_operation' => 'Deliver parcels (Rider Delivery)',
-            'municipal_hub' => 'Rider Dispatch Depot',
+            'municipal_hub' => $hub->hub_name,
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
         ])
@@ -192,7 +226,7 @@ class AuthRegistrationTest extends TestCase
         $this->assertDatabaseHas('riders', [
             'courier_company' => 'Flash Express',
             'logistics_operation' => 'Deliver parcels (Rider Delivery)',
-            'municipal_hub' => 'Rider Dispatch Depot',
+            'municipal_hub' => 'Calamba Delivery Hub',
         ]);
 
         $this->postJson('/api/v1/rider/register', ['role' => User::ROLE_BUYER])

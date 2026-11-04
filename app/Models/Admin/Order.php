@@ -4,6 +4,7 @@ namespace App\Models\Admin;
 
 use App\Models\Rider\DeliveryProof;
 use App\Models\Seller\Seller;
+use App\Models\Logistics\Logistics;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,10 +31,13 @@ class Order extends Model
     protected $fillable = [
         'buyer_id',
         'seller_id',
+        'logistics_id',
         'order_number',
         'total',
         'commission_amount',
         'status',
+        'buyer_received_at',
+        'buyer_received_automatically',
         'pickup_date',
         'pickup_time',
         'delivery_name',
@@ -52,6 +56,8 @@ class Order extends Model
         'voucher_discount' => 'decimal:2',
         'pickup_date' => 'date',
         'pickup_time' => 'datetime:H:i',
+        'buyer_received_at' => 'datetime',
+        'buyer_received_automatically' => 'boolean',
     ];
 
     protected $appends = [
@@ -97,6 +103,11 @@ class Order extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Seller::class);
+    }
+
+    public function logisticsCompany(): BelongsTo
+    {
+        return $this->belongsTo(Logistics::class, 'logistics_id');
     }
 
     public function statusHistory(): HasMany

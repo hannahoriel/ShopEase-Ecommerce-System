@@ -35,7 +35,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials, $request->boolean('remember', true))) {
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
@@ -76,6 +76,7 @@ class AuthController extends Controller
             User::ROLE_SORTING_CENTER => redirect()->route('sorting-center.dashboard'),
             User::ROLE_DELIVERY_HUB => redirect()->route('delivery-hub.dashboard'),
             User::ROLE_RIDER => redirect()->route('rider.dashboard'),
+            User::ROLE_COURIER => redirect()->route('courier.dashboard'),
             default => redirect()->route('dashboard'),
         };
     }

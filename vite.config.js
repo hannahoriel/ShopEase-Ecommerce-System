@@ -93,6 +93,7 @@ export default defineConfig({
                 'resources/css/buyer/pages/dashboard.css',
                 'resources/css/buyer/pages/my-purchases.css',
                 'resources/css/buyer/pages/product.css',
+                'resources/css/buyer/pages/shop.css',
 
                 // JS
                 'resources/js/buyer/pages/cart.js',
@@ -100,6 +101,7 @@ export default defineConfig({
                 'resources/js/buyer/pages/dashboard.js',
                 'resources/js/buyer/pages/my-purchases.js',
                 'resources/js/buyer/pages/product.js',
+                'resources/js/buyer/pages/shop.js',
 
                 // =========================
                 // SELLER

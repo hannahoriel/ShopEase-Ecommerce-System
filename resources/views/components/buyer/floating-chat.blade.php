@@ -306,7 +306,7 @@
                     hidden
                 >
                     <div class="buyer-floating-chat-active-header">
-                        <span class="buyer-floating-chat-active-avatar">
+                        <span id="buyerFloatingChatActiveAvatar" class="buyer-floating-chat-active-avatar">
                             <span class="buyer-floating-chat-admin-initials" aria-hidden="true">SA</span>
                             <svg viewBox="0 0 48 48" aria-hidden="true">
                                 <circle cx="24" cy="24" r="24" fill="#E3ECDF"/>

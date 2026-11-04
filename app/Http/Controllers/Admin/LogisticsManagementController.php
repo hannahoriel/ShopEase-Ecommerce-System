@@ -121,6 +121,7 @@ class LogisticsManagementController extends Controller
                 'user:id,name,email,created_at,profile_photo_path',
                 'branches' => fn ($query) => $query->withCount($this->branchCounts()),
                 'branches.riders',
+                'branches.deliveryHubs',
             ])
             ->orderBy('business_name')
             ->get();
@@ -170,6 +171,8 @@ class LogisticsManagementController extends Controller
             'registered_display' => $registration->created_at?->format('M d, Y g:i A'),
             'office_address' => $this->address($profile, $registration),
             'description' => '',
+            ...((array) ($profile?->registration_details['company'] ?? [])),
+            'documents' => $this->documentUrls($documents),
             'logo' => $registration->user?->profile_photo_path
                 ? Storage::disk('public')->url($registration->user->profile_photo_path)
                 : '',
@@ -192,6 +195,14 @@ class LogisticsManagementController extends Controller
             'id' => $logistics->id,
             'company' => $logistics->business_name ?: $logistics->user?->name ?: 'Logistics Company',
             'branches' => $branches->count(),
+            'sorting_centers' => $branches->count(),
+            'delivery_hubs' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->deliveryHubs->count()),
+            'couriers' => 0,
+            'registered_date' => $logistics->created_at?->format('M d, Y'),
+            'contact_person' => data_get($logistics->registration_details, 'company.representative_name') ?: data_get($logistics->registration_details,'representative_name') ?: $logistics->user?->name,
+            'contact_phone' => data_get($logistics->registration_details, 'company.representative_phone') ?: data_get($logistics->registration_details,'representative_phone') ?: $logistics->contact_no,
+            ...((array) ($logistics->registration_details['company'] ?? [])),
+            'documents' => $this->documentUrls($documents),
             'riders' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->riders->count()),
             'active_deliveries' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->active_deliveries_count),
             'contact_number' => $logistics->contact_no ?: '—',
@@ -218,6 +229,15 @@ class LogisticsManagementController extends Controller
                 'phone' => $branch->phone,
                 'riders' => $branch->riders->count(),
                 'active_deliveries' => $branch->active_deliveries_count,
+                'province' => $branch->province,
+                'city' => $branch->city,
+                'barangay' => $branch->barangay,
+                'manager_name' => $branch->manager_name,
+                'manager_email' => $branch->manager_email,
+                'manager_phone' => $branch->manager_phone,
+                'login_email' => $branch->login_email,
+                'delivery_hubs_count' => $branch->deliveryHubs->count(),
+                'delivery_hubs' => $branch->deliveryHubs->map(fn ($hub) => $hub->toArray())->values(),
             ])->values(),
         ];
     }
@@ -259,6 +279,16 @@ class LogisticsManagementController extends Controller
             'riders' => $branch->riders_count,
             'active_deliveries' => $branch->active_deliveries_count,
         ];
+    }
+
+    private function documentUrls(array $docs): array
+    {
+        $out = [];
+        foreach ($docs as $key => $doc) {
+            $path = is_array($doc) ? ($doc['path'] ?? null) : null;
+            $out[$key] = ['url' => $path ? Storage::disk('public')->url($path) : null];
+        }
+        return $out;
     }
 
     private function branchCounts(): array

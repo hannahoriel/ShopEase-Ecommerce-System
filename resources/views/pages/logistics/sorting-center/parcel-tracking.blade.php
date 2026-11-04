@@ -1,117 +1,8 @@
-{{-- Sorting Center Parcel Tracking. Pass already scoped $sortingCenterParcels / $sortingCenterReturns from controller. --}}
+{{-- Records and locations are scoped to the authenticated sorting center by its controller. --}}
 @php
-    // Resolve the center ONLY from the authenticated account, never a query parameter.
-    $scAssignedCenter = \App\Models\Logistics\LogisticsBranch::query()
-        ->where('user_id', auth()->id())
-        ->first();
-    $scCenterId = $scAssignedCenter?->id;
-
-    $scSourceParcels = $sortingCenterParcels ?? $logisticsParcels ?? [];
-    $scSourceReturns = $sortingCenterReturns ?? $logisticsReturns ?? [];
-    $scSourceLocations = $logisticsLocations ?? [];
-
-    // Delivery hubs are resolved on EVERY page request from the authenticated
-    // sorting center. Hubs added by Logistics become visible after refresh.
-    $scHubIds = [];
-    $scDbHubs = collect();
-    if ($scAssignedCenter) {
-        $hubModel = new \App\Models\Logistics\LogisticsDeliveryHub();
-        $hubTable = $hubModel->getTable();
-        foreach (['logistics_branch_id', 'branch_id', 'sorting_center_id'] as $parentColumn) {
-            if (\Illuminate\Support\Facades\Schema::hasColumn($hubTable, $parentColumn)) {
-                $scDbHubs = $hubModel->newQuery()
-                    ->where($parentColumn, $scAssignedCenter->id)->get()
-                    ->filter(fn ($hub) => !in_array(strtolower((string) data_get($hub, 'status', 'active')), ['inactive', 'archived', 'deleted'], true)
-                        && empty(data_get($hub, 'archived_at')))->values();
-                $scHubIds = $scDbHubs->pluck('id')->map(fn ($id) => (string) $id)->all();
-                break;
-            }
-        }
-    }
-
-    // Fail closed: if a record has no provable current sorting-center / hub association,
-    // it is NOT exposed in the view or embedded JSON. Historical origin alone is not sufficient.
-    $scInScope = function ($record) use ($scCenterId, $scHubIds) {
-        if (!$scCenterId) return false;
-        $get = fn($key) => data_get($record, $key);
-        $currentCenter = $get('current_sorting_center_id') ?? $get('sorting_center_id');
-        $currentHub = $get('current_delivery_hub_id') ?? $get('delivery_hub_id');
-        $awayCenter = $get('transferred_to_sorting_center_id') ?? $get('next_sorting_center_id');
-        $transferState = strtolower((string) ($get('transfer_status') ?? ''));
-        $transferComplete = in_array($transferState, ['departed','transferred','received','completed'], true)
-            || (bool) $get('transferred_out_at');
-        // Once a confirmed inter-center transfer is complete, its previous center loses visibility.
-        if ($transferComplete && $awayCenter && (string)$awayCenter !== (string)$scCenterId) return false;
-        if ($currentCenter !== null && (string)$currentCenter !== (string)$scCenterId) return false;
-        if ($currentHub !== null) return in_array((string)$currentHub, $scHubIds, true);
-        return $currentCenter !== null && (string)$currentCenter === (string)$scCenterId;
-    };
-
-    $scParcels = collect($scSourceParcels)->filter($scInScope)->values();
-    $scVisibleParcelIds = $scParcels->map(fn ($p) => (string)(data_get($p, 'id') ?? ''))->filter()->all();
-    $scVisibleTracking = $scParcels->map(fn ($p) => (string)(data_get($p, 'tracking_number') ?? data_get($p, 'tracking_no') ?? ''))->filter()->all();
-    $scReturns = collect($scSourceReturns)->filter(function ($r) use ($scInScope, $scVisibleParcelIds, $scVisibleTracking) {
-        $shipmentId = data_get($r,'shipment_id') ?? data_get($r,'parcel_id');
-        $tracking = data_get($r,'tracking_number') ?? data_get($r,'tracking_no');
-        if ($shipmentId && in_array((string)$shipmentId, $scVisibleParcelIds, true)) return true;
-        if ($tracking && in_array((string)$tracking, $scVisibleTracking, true)) return true;
-        return $scInScope($r);
-    })->values();
-    // Prefer actual DB hubs, not only a possibly stale logisticsLocations payload.
-    $scAllowedHubs = $scDbHubs->map(fn ($hub) => [
-        'id' => $hub->id,
-        'name' => data_get($hub, 'name') ?? data_get($hub, 'hub_name') ?? ('Delivery Hub #' . $hub->id),
-    ])->all();
-
-    // Preview data is ONLY used if there is no real parcel dataset and no
-    // assigned DB hub, avoiding leakage/mixture of fake and actual records.
-    $scDemoMode = collect($scSourceParcels)->isEmpty();
-    if ($scDemoMode) {
-        $scPreviewHubs = [
-            ['id'=>'preview-hub-1','name'=>'Santa Cruz Delivery Hub'],
-            ['id'=>'preview-hub-2','name'=>'Calamba Delivery Hub'],
-            ['id'=>'preview-hub-3','name'=>'San Pablo Delivery Hub'],
-        ];
-        $scAllowedHubs = $scDbHubs->isNotEmpty() ? $scAllowedHubs : $scPreviewHubs;
-        $demoHub = fn ($index) => $scAllowedHubs[$index % count($scAllowedHubs)];
-        $sampleName = $scAssignedCenter?->name ?? 'Sorting Center (UI Preview)';
-        $sampleParcels = [];
-        $sampleRows = [
-            ['SHP-DEMO-101','ORD-2026-101','Maria Santos','Wireless Earbuds','in-transit',$demoHub(0)['id'],$demoHub(0)['name']],
-            ['SHP-DEMO-102','ORD-2026-102','John Reyes','Laptop Stand','out-for-delivery',$demoHub(1)['id'],$demoHub(1)['name']],
-            ['SHP-DEMO-103','ORD-2026-103','Angela Cruz','Desk Lamp','delivered',$demoHub(2)['id'],$demoHub(2)['name']],
-            ['SHP-DEMO-104','ORD-2026-104','Kevin Lim','Travel Backpack','in-transit',null,$sampleName],
-            ['SHP-DEMO-105','ORD-2026-105','Nicole Ramos','Phone Case','processing',$demoHub(0)['id'],$demoHub(0)['name']],
-            ['SHP-DEMO-106','ORD-2026-106','Paolo Mendoza','Running Shoes','delivered',$demoHub(1)['id'],$demoHub(1)['name']],
-        ];
-        foreach ($sampleRows as $index=>$row) {
-            [$tracking,$order,$buyer,$product,$status,$hubId,$location] = $row;
-            $sampleParcels[] = [
-                'id'=>'preview-parcel-'.($index+1), 'order_number'=>$order,
-                'tracking_number'=>$tracking,'buyer_name'=>$buyer,
-                'buyer_email'=>'preview@example.test','buyer_phone'=>'09XX XXX XXXX',
-                'seller_name'=>'ShopEase Demo Store','seller_email'=>'store@example.test',
-                'product_name'=>$product,'items'=>[['product_name'=>$product,'quantity'=>1,'product_price'=>499 + $index*150]],
-                'shipping_status'=>$status,'current_location'=>$location,
-                'current_delivery_hub_id'=>$hubId,'current_sorting_center_id'=>$scCenterId,
-                'payment_method'=>'Cash on Delivery','total_amount'=>499 + $index*150,
-                'ordered_at'=>'2026-10-26 09:00:00','estimated_delivery'=>'2026-10-31 18:00:00',
-                'tracking_history'=>[['status'=>'picked_up','timestamp'=>'2026-10-27 11:20:00','location'=>$sampleName],['status'=>$status,'timestamp'=>'2026-10-29 08:15:00','location'=>$location]],
-                'notes'=>'UI preview parcel only — not a real shipment.',
-            ];
-        }
-        $scParcels = collect($sampleParcels);
-        $scReturns = collect([
-            ['id'=>'preview-return-1','order_id'=>'ORD-2026-103','tracking_number'=>'SHP-DEMO-103',
-             'buyer_name'=>'Angela Cruz','seller_name'=>'ShopEase Demo Store','product_name'=>'Desk Lamp',
-             'status'=>'pending','shipping_status'=>'delivered','reason'=>'Item arrived damaged',
-             'solution'=>'Replacement','requested_at'=>'2026-10-29 10:30:00','return_items'=>[['product_name'=>'Desk Lamp','quantity'=>1,'product_price'=>799]]],
-        ]);
-    }
-    $scLocationData = [
-        'sorting_centers' => $scAssignedCenter ? [['id'=>$scAssignedCenter->id,'name'=>$scAssignedCenter->name]] : [],
-        'delivery_hubs' => $scAllowedHubs,
-    ];
+    $scParcels = collect($sortingCenterParcels ?? []);
+    $scReturns = collect($sortingCenterReturns ?? []);
+    $scLocationData = $logisticsLocations ?? ['sorting_centers' => [], 'delivery_hubs' => []];
 @endphp
 <!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Parcel Tracking — ShopEase Sorting Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>
@@ -379,9 +270,6 @@ body.pt-modal-open{overflow:hidden}
 @include('components.logistics.sorting-center.navbar')
 <main class="lg-main" id="lgMain"><div class="pt-page">
 <header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Sorting Center Operations</span><h1>Parcel Tracking</h1><p>Monitor parcels at this sorting center and its assigned delivery hubs.</p></div></header>
-@if($scDemoMode)
-<div class="lg-notice" role="status"><span class="lg-notice-dot"></span><div><strong>UI preview only.</strong> Showing fictional parcel, return and delivery hub records. The Delivery Hub options use real assigned hubs when available. Fictional parcels disappear when live parcel data is provided. Refresh after Logistics adds a Delivery Hub to see it.</div></div>
-@endif
 <section class="pt-panel" aria-label="Parcel tracking records">
 <div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns</button></div>
 <div id="ptParcels" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabParcels">
@@ -518,6 +406,7 @@ function addressDetails(o,role){
   const obj=addr&&typeof addr==='object'&&!Array.isArray(addr)?addr:{};
   const pick=(...keys)=>{for(const key of keys){const value=obj[key]??o[role+'_'+key]??(role==='buyer'?o['shipping_'+key]??o['delivery_'+key]:o['pickup_'+key]??o['origin_'+key]);if(value!==undefined&&value!==null&&String(value).trim()!=='')return typeof value==='object'?(value.name||value.label||'—'):value}return '—'};
   const fields=[['Province',pick('province','province_name')],['Municipality / City',pick('municipality','municipality_name','city','city_name')],['Barangay',pick('barangay','barangay_name')],['ZIP Code',pick('zip_code','zipcode','postal_code','zip')],['Street',pick('street','street_name')],['House No.',pick('house_no','house_number','unit','unit_number')],['Building',pick('building','building_name')],['Subdivision',pick('subdivision','village')]];
+  if(role==='buyer'&&String(o.delivery_address||'').trim())fields.push(['Full Delivery Address',o.delivery_address]);
   return `<div class="pt-address-heading"><span class="pt-address-pin" aria-hidden="true">📍</span>Address</div><div class="pt-address-fields">${fields.map(([label,value])=>`<div class="pt-address-field"><label>${escape(label)}</label><div class="pt-address-value">${escape(value)}</div></div>`).join('')}</div>`;
 }
 function partyCard(title,pairs,o,role){return card(title,`<div>${pairs.map(([label,value])=>infoPair(label,value)).join('')}</div>${addressDetails(o,role)}`)}

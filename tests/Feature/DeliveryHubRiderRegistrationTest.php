@@ -27,6 +27,15 @@ class DeliveryHubRiderRegistrationTest extends TestCase
 
         $this->getJson('/api/v1/delivery-hubs/available?province=Laguna')
             ->assertOk()->assertJsonPath('data.0.id', $hub->id);
+        $this->getJson('/api/v1/delivery-hubs/available?province=Laguna&municipality=Pila')
+            ->assertOk()->assertJsonPath('data.0.logistics_company', 'Demo Logistics');
+        $this->getJson('/api/v1/delivery-hubs/available?province=Laguna&municipality=Calamba')
+            ->assertOk()->assertJsonCount(0, 'data');
+        $company = $hub->logisticsBranch->logistics;
+        $company->update(['registration_status' => 'pending']);
+        $this->getJson('/api/v1/delivery-hubs/available?province=Laguna&municipality=Pila')
+            ->assertOk()->assertJsonCount(0, 'data');
+        $company->update(['registration_status' => 'active']);
 
         $registrationResponse = $this->postJson('/api/v1/auth/register', [
             'role' => User::ROLE_RIDER,
@@ -47,12 +56,19 @@ class DeliveryHubRiderRegistrationTest extends TestCase
             'house_number' => '12',
             'vehicle' => 'Motorcycle',
             'plate_number' => 'ABC 1234',
+            'assignment_barangay' => 'Poblacion',
+            'logistics_operation' => 'pickup',
             'password' => 'RiderPassword123!',
             'password_confirmation' => 'RiderPassword123!',
         ])->assertCreated()->assertJsonPath('status', 'pending');
 
         $application = DeliveryHubRiderRegistration::query()->where('user_id', User::query()->where('email', $email)->value('id'))->firstOrFail();
         $this->assertSame($hub->id, $application->logistics_delivery_hub_id);
+        $this->assertDatabaseHas('riders', [
+            'user_id' => $application->user_id,
+            'assignment_barangay' => 'Poblacion',
+            'logistics_operation' => 'pickup',
+        ]);
         $this->assertDatabaseHas('users', ['email' => $email, 'registration_status' => 'pending']);
 
         $this->actingAs($hubUser)->getJson('/api/v1/delivery_hub/rider-registrations')

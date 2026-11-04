@@ -66,6 +66,10 @@
                             @endif
                         </div>
                     </div>
+                    <label for="logisticsRememberLogin" style="display:flex;align-items:center;gap:8px;margin:0 0 18px;font-size:13px;color:#665b57;cursor:pointer;">
+                        <input type="checkbox" id="logisticsRememberLogin" name="remember" value="1" @checked(old('remember', true))>
+                        Keep me logged in until I log out
+                    </label>
                     <button type="submit" class="btn-primary">Log In</button>
                     <p class="logistics-form-feedback" data-login-feedback role="status" hidden></p>
                 </form>

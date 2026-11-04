@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
             );
             const orderNumber = order.order_number || `ORD-${order.id}`;
             const customer = order.delivery_name || order.buyer?.name || 'Customer';
-            const phone = order.delivery_phone || order.buyer?.contact_no || '';
+            const phone = order.delivery_phone || order.buyer?.contact_no || order.buyer?.buyer_profile?.contact_no || '';
             const date = pickupDate && normalizedStatus === 'to-ship'
                 ? formatDateDisplay(pickupDate)
                 : (createdAt && !Number.isNaN(createdAt.getTime())
@@ -941,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td class="qty">${Number(item.quantity || 0)}</td>
             </tr>`).join('');
         const customerName = order.delivery_name || order.buyer?.name || 'Customer';
-        const buyerContact = order.delivery_phone || order.buyer?.contact_no || 'Not provided';
+        const buyerContact = order.delivery_phone || order.buyer?.contact_no || order.buyer?.buyer_profile?.contact_no || 'Not provided';
         const sellerName = order.seller?.store_name || 'ShopEase Seller';
         const sellerAddress = [
             order.seller?.house_number,
@@ -1131,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setText(
             'orderModalCustomerPhone',
             order.delivery_phone ||
-            buyer.contact_no
+            buyer.contact_no || buyer.buyer_profile?.contact_no
         );
 
         setText(
@@ -1334,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         setText('orderModalCustomerName', order.delivery_name || buyer.name);
         setText('orderModalCustomerEmail', buyer.email);
-        setText('orderModalCustomerPhone', order.delivery_phone || buyer.contact_no);
+        setText('orderModalCustomerPhone', order.delivery_phone || buyer.contact_no || buyer.buyer_profile?.contact_no);
         setText('orderModalCustomerAddress', order.delivery_address);
         setText('orderModalPaymentMethod', order.payment_method || 'Cash on Delivery');
         setText(

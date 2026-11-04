@@ -39,7 +39,10 @@ class DashboardController extends Controller
 
     public function products(Request $request): JsonResponse
     {
-        $query = Product::with(['seller', 'options', 'productSpecifications'])
+        $query = Product::with(['seller' => fn ($seller) => $seller->withAvg('reviews', 'rating')->withCount('reviews'), 'options', 'productSpecifications'])
+            ->withSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
+                'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
+            )], 'quantity')
             ->where('is_archived', false)
             ->where('status', 'active')
             ->whereHas('seller', fn ($q) => $q->where('registration_status', 'active'));
@@ -75,7 +78,10 @@ class DashboardController extends Controller
             404
         );
 
-        $product->load(['seller', 'options', 'productSpecifications', 'connectedVariants']);
+        $product->load(['seller' => fn ($seller) => $seller->withAvg('reviews', 'rating')->withCount('reviews'), 'options', 'productSpecifications', 'connectedVariants']);
+        $product->loadSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
+            'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
+        )], 'quantity');
 
         return response()->json($this->serializeProduct($product, true));
     }
@@ -92,6 +98,7 @@ class DashboardController extends Controller
             'sale_percentage' => $product->sale_percentage,
             'sale_price' => $product->sale_price,
             'stock' => $product->stock_quantity,
+            'sold_count' => (int) ($product->sold_count ?? 0),
             'category' => $product->category,
             'photos' => $photos,
             'image_url' => $photos[0] ?? null,
@@ -109,7 +116,8 @@ class DashboardController extends Controller
                     ->where('status', 'active')
                     ->where('is_archived', false)
                     ->count(),
-                'ratings' => 0,
+                'ratings' => round((float) ($product->seller->reviews_avg_rating ?? 0), 1),
+                'rating_count' => (int) ($product->seller->reviews_count ?? 0),
                 'followers' => 0,
                 'response_rate' => '100%',
                 'response_time' => 'within minutes',

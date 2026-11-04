@@ -8,6 +8,9 @@ use App\Models\Admin\Order;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
+use App\Models\Logistics\LogisticsDeliveryHub;
+use App\Models\Logistics\LogisticsTransferManifest;
+use App\Models\Logistics\LogisticsTransferManifestEvent;
 use App\Models\Rider\CodCollection;
 use App\Models\Rider\DeliveryProof;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Models\Rider\Rider;
 
 class SubmitDeliveryProofController extends Controller
 {
@@ -27,7 +31,8 @@ class SubmitDeliveryProofController extends Controller
     public function __invoke(
         Request $request,
         Order $order,
-        RiderDeliveryService $deliveries
+        RiderDeliveryService $deliveries,
+        bool $pickupFlow = false
     ): JsonResponse {
         $rider = $deliveries->activeRiderFor($request->user());
         $validated = $request->validate([
@@ -48,7 +53,7 @@ class SubmitDeliveryProofController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($order, $rider, $validated, $photoPath, $request): void {
+            DB::transaction(function () use ($order, $rider, $validated, $photoPath, $request, $pickupFlow): void {
                 $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
                 $lockedShipment = Shipment::query()
                     ->where('order_id', $lockedOrder->id)
@@ -81,6 +86,10 @@ class SubmitDeliveryProofController extends Controller
                     $lockedShipment->delivered_at = now();
                 }
                 $lockedShipment->save();
+
+                if ($pickupFlow) {
+                    $this->registerPickupAsHubInbound($lockedOrder, $lockedShipment, $rider);
+                }
 
                 if (
                     $validated['status'] === 'delivered'
@@ -120,6 +129,69 @@ class SubmitDeliveryProofController extends Controller
         $delivery = $order->fresh()->load($deliveries->deliveryRelations());
 
         return response()->json($deliveries->serializeDelivery($delivery));
+    }
+
+    private function registerPickupAsHubInbound(Order $order, Shipment $shipment, Rider $rider): void
+    {
+        $seller = $order->seller()->firstOrFail();
+        $hubQuery = LogisticsDeliveryHub::query()
+            ->where('status', 'active')->whereNull('archived_at')
+            ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $seller->province))])
+            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $seller->municipality))]);
+        if ($rider->logistics_branch_id) {
+            $hubQuery->where('logistics_branch_id', $rider->logistics_branch_id);
+        }
+        $hub = $hubQuery->orderBy('id')->first();
+        if (! $hub) {
+            throw ValidationException::withMessages([
+                'delivery_hub' => ['No active delivery hub exists for the seller municipality assigned to this rider.'],
+            ]);
+        }
+
+        abort_unless(
+            $shipment->logistics_delivery_hub_id === null
+                || (int) $shipment->logistics_delivery_hub_id === (int) $hub->id,
+            409,
+            'This parcel is already routed to another delivery hub.'
+        );
+        $shipment->update([
+            'logistics_branch_id' => $hub->logistics_branch_id,
+            'logistics_delivery_hub_id' => $hub->id,
+        ]);
+
+        $manifest = LogisticsTransferManifest::query()->firstOrCreate(
+            ['batch_key' => 'pickup-dropoff-'.$shipment->id],
+            [
+                'origin_type' => 'seller_collection',
+                'origin_id' => $hub->id,
+                'destination_type' => 'delivery_hub',
+                'destination_id' => $hub->id,
+                'courier_name' => trim($rider->first_name.' '.$rider->last_name),
+                'status' => 'preparing',
+            ],
+        );
+        abort_unless(
+            $manifest->origin_type === 'seller_collection'
+                && $manifest->destination_type === 'delivery_hub'
+                && (int) $manifest->destination_id === (int) $hub->id,
+            409,
+            'A conflicting delivery hub manifest already exists for this parcel.'
+        );
+
+        if (! $manifest->shipments()->whereKey($shipment->id)->exists()) {
+            $manifest->shipments()->attach($shipment->id, [
+                'load_status' => 'pending',
+                'loaded_by' => $rider->user_id,
+            ]);
+        }
+        LogisticsTransferManifestEvent::query()->firstOrCreate([
+            'transfer_manifest_id' => $manifest->id,
+            'shipment_id' => $shipment->id,
+            'event_type' => 'pickup_collected',
+        ], [
+            'actor_user_id' => $rider->user_id,
+            'occurred_at' => now(),
+        ]);
     }
 
     private function validateScannedCode(string $code, Order $order, Shipment $shipment): void
