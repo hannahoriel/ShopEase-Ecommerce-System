@@ -1,0 +1,930 @@
+/* Exact Seller Shipping Status modal styling, carried over for Admin Commission. */
+.shipping-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(0, 0, 0, .25);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .20s ease-out, visibility 0s linear .20s;
+}
+
+.shipping-modal.modal-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity .20s ease-out, visibility 0s linear 0s;
+}
+
+.shipping-modal-panel {
+    width: 916px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #B9867D #F8EFEC;
+    scrollbar-gutter: stable;
+    border-radius: 28px;
+    background: #FFFFFF;
+    box-shadow: 0 20px 60px rgba(35, 14, 11, .18);
+    transform: none !important;
+}
+
+.shipping-modal-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.shipping-modal-panel::-webkit-scrollbar-track {
+    background: #F8EFEC;
+    border-radius: 999px;
+}
+
+.shipping-modal-panel::-webkit-scrollbar-thumb {
+    background: #B9867D;
+    border: 2px solid #F8EFEC;
+    border-radius: 999px;
+}
+
+.shipping-modal-panel::-webkit-scrollbar-thumb:hover {
+    background: #96665E;
+}
+
+/* =====================================================
+   MODAL HEADER
+====================================================== */
+
+.shipping-modal-header {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 35px;
+    border-bottom: 1px solid #D9D5D3;
+}
+
+.shipping-modal-header h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 500;
+}
+
+.ease-express-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ease-express-brand svg {
+    width: 30px;
+    height: 30px;
+}
+
+.ease-express-brand span {
+    font-size: 19px;
+    font-weight: 700;
+}
+
+/* =====================================================
+   MODAL SUMMARY
+====================================================== */
+
+.shipping-modal-summary {
+    min-height: 108px;
+    display: grid;
+    grid-template-columns: minmax(275px, 1.45fr) minmax(145px, .8fr) minmax(235px, 1fr);
+    align-items: center;
+    gap: 24px;
+    padding: 0 30px;
+    border-bottom: 1px solid #D9D5D3;
+}
+
+.shipping-modal-order-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+.shipping-modal-status-box {
+    width: 65px;
+    height: 65px;
+    flex: 0 0 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.shipping-modal-status-box.blue-modal {
+    background: #E2EFFB;
+}
+
+.shipping-modal-status-box.green-modal {
+    background: #DDEFD5;
+}
+
+.shipping-modal-status-box img {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+}
+
+.modal-order-id {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 500;
+}
+
+.modal-status-text {
+    margin-top: 7px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.modal-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    flex: 0 0 9px;
+}
+
+.blue-dot {
+    background: #176495;
+}
+
+.green-dot {
+    background: #0A901C;
+}
+
+.orange-dot {
+    background: #E7A000;
+}
+
+.modal-summary-column {
+    min-width: 0;
+}
+
+.modal-summary-label {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 500;
+    color: #8A8582;
+    white-space: nowrap;
+}
+
+.modal-summary-value {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.2;
+    color: #17120F;
+    white-space: nowrap;
+}
+
+.modal-summary-subvalue {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.2;
+    color: #17120F;
+    white-space: nowrap;
+}
+
+.estimated-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #07588A;
+}
+
+.modal-tracking-label {
+    margin: 8px 0 0;
+    font-size: 9px;
+    line-height: 1.2;
+    color: #A29D9A;
+    white-space: nowrap;
+}
+
+.modal-tracking-value {
+    display: block;
+    margin-top: 3px;
+    font-size: 10px;
+    line-height: 1.2;
+    color: #17120F;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+}
+
+/* =====================================================
+   CUSTOMER + PAYMENT
+====================================================== */
+
+.shipping-modal-customer-payment {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 45px;
+    padding: 20px 35px 14px;
+}
+
+.shipping-modal-customer-payment h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.shipping-customer-list {
+    margin-top: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.shipping-customer-list > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.shipping-customer-list svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+}
+
+.shipping-customer-list span {
+    font-size: 12px;
+}
+
+.shipping-payment {
+    margin-top: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.shipping-payment svg {
+    width: 19px;
+    height: 19px;
+}
+
+.shipping-payment p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.shipping-payment p span {
+    color: #F07E23;
+}
+
+.shipping-payment small {
+    display: block;
+    margin-top: 7px;
+    font-size: 13px;
+    color: #77716E;
+}
+
+/* =====================================================
+   ITEMS
+====================================================== */
+
+.shipping-modal-items {
+    padding: 0 35px 10px;
+}
+
+.shipping-modal-items > h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.shipping-item-header {
+    margin-top: 5px;
+    height: 42px;
+    display: grid;
+    grid-template-columns: 2.25fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 0 24px;
+    border-radius: 11px;
+    background: #FBEDED;
+    font-size: 12px;
+    font-weight: 500;
+    color: #60100F;
+}
+
+.shipping-item-row {
+    height: 66px;
+    display: grid;
+    grid-template-columns: 2.25fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 0 19px;
+    border-bottom: 1px solid #D9D5D3;
+    font-size: 13px;
+}
+
+.shipping-item-name {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.shipping-item-name span {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.shipping-item-image {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #DDDAD8;
+    border-radius: 10px;
+    background: #F8F8F8;
+}
+
+.shipping-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+.modal-product-bag {
+    position: relative;
+    width: 34px;
+    height: 24px;
+    background: #292929;
+    border-radius: 4px 4px 6px 6px;
+}
+
+#shippingTable .order-product-icon img.shipping-product-photo {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    object-fit: cover !important;
+}
+
+.modal-product-bag::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: -6px;
+    width: 18px;
+    height: 9px;
+    border: 2px solid #292929;
+    border-bottom: none;
+    border-radius: 9px 9px 0 0;
+}
+
+.modal-product-bag::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 5px;
+    width: 26px;
+    height: 3px;
+    border-radius: 999px;
+    background: #363636;
+}
+
+.shipping-modal-totals {
+    padding-top: 10px;
+    margin-left: auto;
+    width: 320px;
+}
+
+.shipping-modal-totals > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.shipping-modal-totals > div + div {
+    margin-top: 10px;
+}
+
+.shipping-modal-totals span {
+    font-size: 13px;
+    color: #85807D;
+}
+
+.shipping-modal-totals strong {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.shipping-modal-totals > div:last-child {
+    margin-top: 12px;
+}
+
+.shipping-modal-totals > div:last-child span {
+    color: #17120F;
+    font-weight: 500;
+}
+
+.shipping-modal-totals b {
+    font-size: 20px;
+    color: #721313;
+}
+
+/* =====================================================
+   CUSTOMER NOTES
+====================================================== */
+
+.shipping-modal-notes {
+    padding: 12px 35px;
+}
+
+.shipping-modal-notes h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.shipping-modal-notes > div {
+    margin-top: 8px;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    padding: 11px 20px;
+    border-radius: 10px;
+    background: #ECECEC;
+    font-size: 13px;
+    color: #77716E;
+}
+
+/* =====================================================
+   TRACKING PROGRESS
+====================================================== */
+
+.shipping-tracking-progress {
+    padding: 16px 35px 22px;
+}
+
+.shipping-tracking-progress h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-progress-tracker {
+    margin-top: 15px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.modal-progress-step {
+    width: 75px;
+    flex: 0 0 75px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.modal-progress-step img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.modal-progress-step span {
+    margin-top: 7px;
+    font-size: 10px;
+    color: #77716E;
+    white-space: nowrap;
+}
+
+.modal-progress-line {
+    width: 90px;
+    height: 1px;
+    flex: 0 0 90px;
+    margin-top: 18px;
+    background: #BDBDBD;
+}
+
+.modal-progress-line.completed {
+    background: #8CC57E;
+}
+
+/* =====================================================
+   TRACKING HISTORY
+====================================================== */
+
+.shipping-history-section {
+    padding: 6px 35px 10px;
+    margin-top: 4px;
+}
+
+.shipping-history-section h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.shipping-history-list {
+    position: relative;
+    margin-top: 15px;
+    padding-bottom: 5px;
+}
+
+.shipping-history-list::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    bottom: 18px;
+    width: 1px;
+    background: #D5D5D5;
+}
+
+.shipping-history-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 32px 95px minmax(0, 1fr);
+    column-gap: 12px;
+    min-height: 57px;
+}
+
+.shipping-history-icon {
+    position: relative;
+    z-index: 2;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #E8F1FB;
+}
+
+.shipping-history-icon.active {
+    background: #185B8C;
+}
+
+.shipping-history-icon.green-active {
+    background: #2A8B36;
+}
+
+.shipping-history-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.shipping-history-time {
+    padding-top: 1px;
+    text-align: right;
+}
+
+.shipping-history-time .date,
+.shipping-history-time .time {
+    display: block;
+    font-size: 10px;
+    line-height: 1.35;
+    color: #17120F;
+}
+
+.shipping-history-content {
+    padding-top: 0;
+}
+
+.shipping-history-content strong {
+    display: block;
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #17120F;
+}
+
+.shipping-history-content p {
+    margin: 2px 0 0;
+    font-size: 10px;
+    line-height: 1.45;
+    color: #45403E;
+}
+
+/* =====================================================
+   FOOTER
+====================================================== */
+
+.shipping-modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 8px 35px 18px;
+}
+
+.shipping-modal-footer button {
+    height: 42px;
+    padding: 0 22px;
+    border: 1px solid #D9D3D0;
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: #625D5A;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color .20s ease;
+}
+
+.shipping-modal-footer button:hover {
+    background: #FAF7F5;
+}
+
+#shippingAdvanceButton {
+    border-color: #7B1B1B;
+    background: #7B1B1B;
+    color: #FFFFFF;
+}
+
+#shippingAdvanceButton:hover {
+    background: #641414;
+}
+
+#shippingAdvanceButton:disabled {
+    cursor: wait;
+    opacity: .7;
+}
+
+/* =====================================================
+   RESPONSIVE
+====================================================== */
+
+@media (max-width: 1250px) {
+    .shipping-row {
+        grid-template-columns: 295px 155px minmax(0, 1fr);
+    }
+
+    .tracking-and-courier {
+        grid-template-columns: minmax(340px, 1fr) 155px;
+        gap: 15px;
+    }
+
+    .tracker-step {
+        width: 64px;
+        flex-basis: 64px;
+    }
+
+    .tracker-line {
+        width: 55px;
+        flex-basis: 55px;
+    }
+
+    .shipping-modal-summary {
+        grid-template-columns: minmax(250px, 1.35fr) minmax(135px, .8fr) minmax(210px, 1fr);
+        gap: 16px;
+    }
+}
+
+@media (max-width: 1080px) {
+    .shipping-row {
+        grid-template-columns: 275px 145px minmax(0, 1fr);
+    }
+
+    .tracking-and-courier {
+        grid-template-columns: minmax(315px, 1fr) 145px;
+        gap: 10px;
+    }
+
+    .shipping-modal-summary {
+        grid-template-columns: minmax(235px, 1.25fr) minmax(125px, .75fr) minmax(190px, 1fr);
+        gap: 10px;
+    }
+}
+
+@media (max-width: 900px) {
+    .shipping-row {
+        min-width: 1050px;
+    }
+
+    .shipping-modal-panel {
+        max-height: calc(100vh - 16px);
+        border-radius: 20px;
+    }
+
+    .shipping-modal-summary {
+        grid-template-columns: 1fr 1fr;
+        padding: 20px;
+        gap: 18px;
+    }
+
+    .shipping-modal-order-main {
+        grid-column: 1 / -1;
+    }
+
+    .shipping-modal-customer-payment {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .shipping-modal-items {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .shipping-modal-notes {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .shipping-tracking-progress {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .shipping-history-section {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .shipping-modal-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+@media (max-width: 760px) {
+    #shipping-status-page {
+        margin-left: 0;
+    }
+
+    #shipping-status-page > div {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .shipping-controls {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .shipping-controls::-webkit-scrollbar {
+        display: none;
+    }
+
+    .shipping-table {
+        min-width: 1050px;
+    }
+
+    .shipping-row {
+        min-height: 160px;
+    }
+
+    .shipping-modal {
+        padding: 8px;
+    }
+
+    .shipping-modal-panel {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+    }
+
+    .shipping-modal-customer-payment {
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+
+    .shipping-item-header,
+    .shipping-item-row {
+        min-width: 650px;
+    }
+
+    .shipping-modal-items {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .shipping-modal-items::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* =====================================================
+   REDUCED MOTION
+====================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .shipping-modal,
+    .shipping-row,
+    .shipping-status-tab::after,
+    .pagination-button {
+        transition: none !important;
+    }
+}
+#commissionDetailsModalPanel {
+    border-radius: 20px !important;
+}
+
+#commissionDetailsModalPanel .shipping-modal-header {
+    padding: 14px 20px 10px !important;
+}
+
+#commissionModalTitle {
+    font-size: 19px !important;
+    line-height: 1.15 !important;
+    font-weight: 500 !important;
+    color: #17120F !important;
+}
+
+#commissionDetailsModalPanel .ease-express-brand {
+    gap: 8px !important;
+}
+
+#commissionDetailsModalPanel .ease-express-brand svg {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#commissionDetailsModalPanel .ease-express-brand span {
+    font-size: 19px !important;
+    line-height: 1.1 !important;
+    font-weight: 700 !important;
+}
+
+#commissionDetailsModalPanel .shipping-modal-summary,
+#commissionDetailsModalPanel .shipping-modal-customer-payment,
+#commissionDetailsModalPanel .shipping-modal-items,
+#commissionDetailsModalPanel .shipping-modal-tracking,
+#commissionDetailsModalPanel .shipping-modal-history,
+#commissionDetailsModalPanel .shipping-modal-footer {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+
+#commissionDetailsModalPanel h3,
+#commissionDetailsModalPanel .section-title,
+#commissionDetailsModalPanel .tracking-title {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+}
+
+#commissionDetailsModalPanel p,
+#commissionDetailsModalPanel span,
+#commissionDetailsModalPanel label {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================== */
+@media (max-width: 1180px) {
+    #shippingStatusTabs .shipping-status-tab {
+        margin-right: 18px !important;
+    }
+
+    #shippingSearch {
+        width: 280px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    #shipping-status-page {
+        margin-left: 0 !important;
+    }
+}
+
+/* Admin-only commission detail appended below the original order sections. */
+#commissionDetailsModal { z-index: 10000; }
+#commissionDetailsModal .shipping-modal-panel{position:relative;}
+#commissionDetailsModal .shipping-modal-items{min-height:0;}
+#commissionDetailsModal .shipping-item-image img{width:100%;height:100%;object-fit:cover;border-radius:6px;}
+#commissionDetailsModal .shipping-modal-footer{position:sticky;bottom:0;background:#fff;z-index:2;}
+.admin-commission-breakdown{margin:0 20px 18px;padding:22px;border:1px solid #eddcd8;border-radius:14px;background:#fffaf9;font-family:Poppins,Arial,sans-serif;}
+.admin-commission-breakdown-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.admin-commission-breakdown h3{font-size:15px!important;font-weight:700!important;margin:0 0 4px!important;color:#571e29;}
+.admin-commission-breakdown-heading p{font-size:11px;color:#9f8786;margin:0;}
+.admin-commission-earned{border-radius:30px;padding:6px 12px;background:#ebf8f0;color:#278455;font-size:11px;font-weight:600;}
+.admin-commission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.admin-commission-grid>div{border:1px solid #eee1de;border-radius:10px;background:#fff;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.admin-commission-grid span{font-size:11px;color:#846d70;}
+.admin-commission-grid strong{font-size:13px;color:#302127;white-space:nowrap;}
+.admin-commission-grid .admin-commission-highlight{border-color:#d9a4a8;background:#fff0f1;}
+.admin-commission-grid .admin-commission-highlight strong{color:#8a1f33;font-size:17px;}
+.admin-commission-note{font-size:11px;color:#927d7c;margin:12px 0 0;line-height:1.6;}
+#commissionDetailsModal .shipping-modal-status-box img{object-fit:contain;}
+#commissionDetailsModal .shipping-item-row,#commissionDetailsModal .shipping-item-header{grid-template-columns:minmax(0,2fr) repeat(3,minmax(70px,1fr));}
+.commission-order-id{cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;}
+.commission-order-id:hover{color:#7b1b1b;text-decoration-color:currentColor;}
+.commission-table tbody tr{cursor:pointer;}
+.commission-table tbody tr:focus-visible{outline:2px solid #8b2938;outline-offset:-2px;}
+@media(max-width:650px){.admin-commission-grid{grid-template-columns:1fr}.admin-commission-breakdown{margin:0 12px 14px;padding:16px;}}
