@@ -741,7 +741,6 @@
                 </div>
                 <nav class="sa-nav-list">
                     <a class="sa-nav-link active" href="#profile" data-settings-tab="profile" aria-current="page">Profile</a>
-                    <a class="sa-nav-link" href="#followers" data-settings-tab="followers">Followers</a>
                     <a class="sa-nav-link" href="#privacy" data-settings-tab="privacy">Privacy Settings</a>
                     <a class="sa-nav-link" href="#notifications" data-settings-tab="notifications">Notification Settings</a>
                     <a class="sa-nav-link" href="#policies" data-settings-tab="policies">Platform Policies</a>
@@ -750,7 +749,8 @@
 
             <div class="sa-workspace sa-tab-panel" id="profile" data-panel="profile">
                 <h1 class="sa-page-title">Profile</h1>
-                <p class="sa-intro">Manage your seller account information and business details.</p>
+                <p class="sa-intro">Changes to registered details and photos require admin approval. Your current information stays unchanged until approved.</p>
+                <div id="saPendingApprovalNotice" class="sa-approval-notice" hidden role="status"></div>
 
 
 
@@ -883,14 +883,8 @@
                             </div>
                         </section>
                     </div>
-                    <div class="sa-actions"><button type="submit" id="saSaveChanges" class="sa-action primary" disabled aria-disabled="true">Save Changes</button></div>
+                    <div class="sa-actions"><button type="submit" id="saSaveChanges" class="sa-action primary" disabled aria-disabled="true">Request Admin Approval</button></div>
                 </form>
-            </div>
-
-            <div class="sa-workspace sa-tab-panel" id="followers" data-panel="followers" hidden>
-                <h1 class="sa-page-title">Followers</h1>
-                <p class="sa-intro">People who follow your shop will appear here.</p>
-                <section class="sa-followers-card"><header><div><h2>Your shop followers</h2><p>Buyer accounts following {{ $seller->store_name ?: $seller->business_name ?: 'your shop' }}.</p></div><span id="saFollowersCount">Loading…</span></header><div id="saFollowersList" class="sa-followers-list" aria-live="polite"><p class="sa-followers-state">Loading followers…</p></div></section>
             </div>
 
             {{-- PRIVACY SETTINGS --}}
@@ -1052,7 +1046,7 @@
         const tabLinks=[...document.querySelectorAll('[data-settings-tab]')];
         const tabPanels=[...document.querySelectorAll('[data-panel]')];
         function activateAccountTab(tab){
-          const valid=['profile','followers','privacy','notifications','policies'].includes(tab)?tab:'profile';
+          const valid=['profile','privacy','notifications','policies'].includes(tab)?tab:'profile';
           tabPanels.forEach(panel=>panel.hidden=panel.dataset.panel!==valid);
           tabLinks.forEach(link=>{const active=link.dataset.settingsTab===valid;link.classList.toggle('active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
           history.replaceState(null,'','#'+valid);
@@ -1105,7 +1099,31 @@
          form.addEventListener('input', refreshSaveButton);
          form.addEventListener('change', refreshSaveButton);
          form.addEventListener('reset', () => setTimeout(() => { calculateAge(); refreshSaveButton(); }, 0));
-         form.addEventListener('submit', e => { if (!editableFields.some(isModified)) e.preventDefault(); });
+         form.addEventListener('submit', e => {
+           e.preventDefault();
+           if (!editableFields.some(isModified)) return;
+           const labels = {};
+           const changed = editableFields.filter(isModified).map(el => {
+             const field = el.closest('.sa-field, .sa-file-field') || el.parentElement;
+             const label = field?.querySelector('label:not(.sa-photo-button)')?.textContent?.replace(/\s*\*/g,'').trim()
+               || ({cover_photo:'Cover Photo',profile_photo:'Profile Photo'}[el.name]) || el.name.replaceAll('_',' ').replace(/\b\w/g,ch=>ch.toUpperCase());
+             const oldValue = el.type === 'file' ? 'Current uploaded photo' : String(initialValues.get(el)??'');
+             const newValue = el.type === 'file' ? (el.files?.[0]?.name || 'New photo') : String(el.value ?? '');
+             return { field:label, before:oldValue || 'Not provided', after:newValue || 'Not provided', type:el.type, name:el.name };
+           });
+           const modal=document.getElementById('saApprovalReview');
+           const body=document.getElementById('saApprovalReviewRows');
+           body.replaceChildren();
+           changed.forEach(change=>{
+             const row=document.createElement('tr');
+             for(const value of [change.field,change.before,change.after]){
+               const cell=document.createElement('td');cell.textContent=value;row.appendChild(cell);
+             }
+             body.appendChild(row);
+           });
+           modal._pendingChanges=changed;
+           modal.hidden=false; document.body.classList.add('sa-modal-open');
+         });
          refreshSaveButton();
          // Document previews (existing + newly selected files)
          const previewModal=document.getElementById('saPreviewModal');
@@ -1420,21 +1438,56 @@
 })();
 </script>
 
-<div id="saFollowerProfileModal" class="sa-follower-profile-overlay" hidden><section class="sa-follower-profile-card" role="dialog" aria-modal="true" aria-labelledby="saFollowerProfileName"><button type="button" class="sa-follower-profile-close" data-close-follower-profile aria-label="Close profile">&times;</button><div id="saFollowerProfilePhoto" class="sa-follower-profile-fallback">B</div><h2 id="saFollowerProfileName">Buyer</h2><p>ShopEase buyer</p><button type="button" data-message-buyer>Message buyer</button></section></div>
-<style>.sa-follower-profile-photo img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}</style>
+
+<style>
+/* Match Logistics Account: stationary account menu and independently scrolling workspace. */
+@media(min-width:1021px){
+  html:has(#sellerAccountPage),body:has(#sellerAccountPage){overflow:hidden!important;height:100%;}
+  #sellerAccountPage.seller-account-page{height:100dvh!important;min-height:0!important;overflow:hidden!important;padding-top:112px!important;padding-bottom:20px!important;}
+  #sellerAccountPage .sa-layout{height:calc(100dvh - 132px);min-height:0;align-items:stretch!important;grid-template-columns:228px minmax(0,1fr)!important;}
+  #sellerAccountPage .sa-navigation{position:relative!important;top:auto!important;align-self:start!important;min-height:0!important;height:auto!important;max-height:calc(100dvh - 152px);overflow-y:auto;overscroll-behavior:contain;}
+  #sellerAccountPage .sa-workspace{height:100%;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
+}
+@media(min-width:1021px) and (max-width:1260px){#sellerAccountPage .sa-layout{grid-template-columns:200px minmax(0,1fr)!important}}
+.sa-approval-notice{padding:12px 15px;margin:0 0 14px;border:1px solid #ead8b6;border-radius:10px;background:#fffaf0;color:#875f23;font-size:12px;line-height:1.65}
+.sa-approval-dialog{width:min(780px,100%)}
+.sa-approval-table-wrap{max-height:48vh;overflow:auto;border:1px solid #e7e5e4;border-radius:9px}
+.sa-approval-table{border-collapse:collapse;width:100%;min-width:510px;font-size:11px}
+.sa-approval-table th{text-align:left;background:#fbf7f6;color:#7a7372;padding:12px;border-bottom:1px solid #e7e5e4}
+.sa-approval-table td{padding:13px 12px;border-bottom:1px solid #f0eceb;vertical-align:top;overflow-wrap:anywhere;width:34%}
+.sa-approval-table td:first-child{font-weight:600;width:32%}
+.sa-approval-table td:last-child{color:#216c41}
+.sa-approval-review-note{font-size:11px;line-height:1.7;color:#8a7b70;margin-top:14px}
+</style>
+<div class="sa-modal-overlay" id="saApprovalReview" hidden>
+  <section class="sa-modal-dialog sa-approval-dialog" role="dialog" aria-modal="true" aria-labelledby="saApprovalTitle">
+    <button type="button" class="sa-modal-close" id="saApprovalClose" aria-label="Close">×</button>
+    <h2 id="saApprovalTitle">Request Account Information Change</h2>
+    <p class="sa-modal-description">Review the information you want to change. The updated values will only take effect after ShopEase Admin approval.</p>
+    <div class="sa-approval-table-wrap"><table class="sa-approval-table"><thead><tr><th>Information</th><th>Current</th><th>Requested</th></tr></thead><tbody id="saApprovalReviewRows"></tbody></table></div>
+    <p class="sa-approval-review-note">Preview only: requests are stored in this browser until the Admin approval backend is connected. Existing registration details are not updated.</p>
+    <div class="sa-modal-buttons"><button type="button" id="saApprovalCancel">Cancel</button><button type="button" class="primary" id="saApprovalConfirm">Submit Request</button></div>
+  </section>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
- const root=document.getElementById('sellerAccountPage'),modal=document.getElementById('saFollowerProfileModal'),photo=document.getElementById('saFollowerProfilePhoto'),name=document.getElementById('saFollowerProfileName');let selectedBuyerId=null;
- const close=()=>{modal.hidden=true;selectedBuyerId=null;};
- document.addEventListener('click',async event=>{
-  const profile=event.target.closest('[data-view-follower-profile]');
-  if(profile){selectedBuyerId=profile.dataset.viewFollowerProfile;name.textContent=profile.dataset.name||'Buyer';photo.replaceChildren();if(profile.dataset.avatar){photo.className='sa-follower-profile-photo';const img=document.createElement('img');img.src=profile.dataset.avatar;img.alt='';photo.append(img);}else{photo.className='sa-follower-profile-fallback';photo.textContent=(name.textContent||'B').slice(0,1).toUpperCase();}modal.hidden=false;return;}
-  if(event.target.closest('[data-close-follower-profile]')||event.target===modal){close();return;}
-  const message=event.target.closest('[data-message-buyer-id]');if(message)selectedBuyerId=message.dataset.messageBuyerId;
-  if(event.target.closest('[data-message-buyer]')||message){if(!selectedBuyerId)return;const button=event.target.closest('button');if(button)button.disabled=true;try{const response=await fetch('/api/v1/seller/messages/conversations',{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','Authorization':`Bearer ${root.dataset.apiToken||''}`},body:JSON.stringify({buyer_id:Number(selectedBuyerId)})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.message||'Could not start a conversation.');window.location.assign(`/seller/messages?conversation=${encodeURIComponent(payload.data.id)}`);}catch(error){window.showAccountFlash?.(error.message,true);}finally{if(button)button.disabled=false;}}
+ const dialog=document.getElementById('saApprovalReview');
+ const notice=document.getElementById('saPendingApprovalNotice');
+ const key='shopease_seller_profile_approval_preview_{{ auth()->id() }}';
+ function showPending(){try{const data=JSON.parse(localStorage.getItem(key)||'null');if(data&&Array.isArray(data.changes)&&data.changes.length){notice.hidden=false;notice.textContent='Pending Admin Approval — '+data.changes.length+' account field change(s) requested on '+new Date(data.date).toLocaleString()+'. Your registered details remain unchanged.';}}catch(e){}}
+ function close(){dialog.hidden=true;document.body.classList.remove('sa-modal-open');}
+ document.getElementById('saApprovalClose').addEventListener('click',close);
+ document.getElementById('saApprovalCancel').addEventListener('click',close);
+ dialog.addEventListener('click',e=>{if(e.target===dialog)close();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.hidden)close();});
+ document.getElementById('saApprovalConfirm').addEventListener('click',()=>{
+   if(!Array.isArray(dialog._pendingChanges)||!dialog._pendingChanges.length)return;
+   try{localStorage.setItem(key,JSON.stringify({date:new Date().toISOString(),changes:dialog._pendingChanges}));}catch(e){window.showAccountFlash?.('Browser storage is unavailable. Request was not saved.',true);return;}
+   close();showPending();window.showAccountFlash?.('Your change request is pending admin approval (UI preview only).',false,'Request Submitted');
  });
- document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.hidden)close();});
+ showPending();
 });
 </script>
+
 </body>
 </html>
