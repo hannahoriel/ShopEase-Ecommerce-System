@@ -1,6 +1,6 @@
 {{-- Sorting Center Dashboard — frontend-ready; inject $sortingCenter and $sortingCenterStats from controller later. --}}
 @php
-    $center = $sortingCenter ?? null;
+    $center = $center ?? $sortingCenter ?? null;
     $centerName = data_get($center, 'branch_name') ?: data_get($center, 'name') ?: 'Sorting Center';
     $stats = $sortingCenterStats ?? [];
     $number = fn($key) => is_numeric(data_get($stats, $key)) ? number_format((int)data_get($stats, $key)) : '0';
@@ -118,12 +118,12 @@
    @endforelse
    </tbody></table></div><div class="sc-table-footer" id="scHubCount">{{ count($centerHubs) }} delivery hub(s)</div>
   </section>
-  <section class="sc-panel sc-earnings-panel" aria-labelledby="scEarningsTitle"><div class="sc-panel-heading"><div><h2 id="scEarningsTitle">Network Earnings</h2><p>Sorting center earnings summary</p></div></div>
-   <div class="sc-earnings-total"><span>Available Earnings</span><strong>₱ {{ number_format((float) data_get($stats,'earnings',0),2) }}</strong><small>Figures display provided data only</small></div>
-   <div class="sc-earnings-row"><span>Parcel Handling Fees</span><strong>{{ is_numeric(data_get($stats,'handling_fees')) ? '₱ '.number_format((float)data_get($stats,'handling_fees'),2) : 'Not connected' }}</strong></div>
-   <div class="sc-earnings-row"><span>Transfer Fees</span><strong>{{ is_numeric(data_get($stats,'transfer_fees')) ? '₱ '.number_format((float)data_get($stats,'transfer_fees'),2) : 'Not connected' }}</strong></div>
-   <div class="sc-earnings-row"><span>Settlement Status</span><strong>{{ data_get($stats,'settlement_status','Not connected') }}</strong></div>
-  </section>
+   <section class="sc-panel sc-earnings-panel" aria-labelledby="scOperationsTitle"><div class="sc-panel-heading"><div><h2 id="scOperationsTitle">Center Operations</h2><p>Parcel handling and assigned facilities</p></div></div>
+    <div class="sc-earnings-total"><span>Assigned Delivery Hubs</span><strong>{{ number_format(count($centerHubs)) }}</strong><small>Facilities operating under this sorting center</small></div>
+    <div class="sc-earnings-row"><span>Parcels at This Center</span><strong>{{ number_format((int) data_get($stats, 'parcels_at_center', 0)) }}</strong></div>
+    <div class="sc-earnings-row"><span>Parcel Disputes</span><strong>{{ number_format((int) data_get($stats, 'parcel_disputes', 0)) }}</strong></div>
+    <div class="sc-earnings-row"><span>Financial reporting</span><strong>Managed by Logistics Company</strong></div>
+   </section>
  </div>
  <p class="sc-info">Dashboard counters currently show 0 unless your page receives real values. The sorting center name, activity counts, parcel search, and official announcements can be connected to backend records later.</p>
 </div></main>

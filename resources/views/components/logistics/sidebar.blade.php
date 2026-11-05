@@ -3,11 +3,10 @@
     $lgNavItems = [
         ['label'=>'Dashboard','icon'=>'dashboard.png','href'=>url('/logistics/dashboard'),'active'=>request()->routeIs('logistics.dashboard'),'enabled'=>true],
         ['label'=>'Network Hubs','icon'=>'logistic-management.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.deliveries') ? route('logistics.deliveries') : url('/logistics/deliveries'),'active'=>request()->routeIs('logistics.deliveries') || request()->routeIs('logistics.network-hubs'),'enabled'=>true],
-        ['label'=>'Finance Review','icon'=>'commission.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.rider-operations') ? route('logistics.rider-operations') : '#','active'=>request()->routeIs('logistics.rider-operations'),'enabled'=>\Illuminate\Support\Facades\Route::has('logistics.rider-operations')],
         ['label'=>'Messages','icon'=>'messages.png','href'=>route('logistics.messages'),'active'=>request()->routeIs('logistics.messages'),'enabled'=>true],
-        ['label'=>'Reports','icon'=>'reports.png','href'=>'#','active'=>false,'enabled'=>false],
+        ['label'=>'Reports','icon'=>'reports.png','href'=>route('logistics.reports'),'active'=>request()->routeIs('logistics.reports'),'enabled'=>true],
         ['label'=>'Parcel Tracking','icon'=>'reports.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.parcel-tracking') ? route('logistics.parcel-tracking') : '#','active'=>request()->routeIs('logistics.parcel-tracking'),'enabled'=>\Illuminate\Support\Facades\Route::has('logistics.parcel-tracking')],
-        ['label'=>'Logistics Earnings','icon'=>'commission.png','href'=>'#','active'=>false,'enabled'=>false],
+        ['label'=>'Logistics Earnings','icon'=>'commission.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.logistics-earnings') ? route('logistics.logistics-earnings') : url('/logistics/logistics-earnings'),'active'=>request()->routeIs('logistics.logistics-earnings'),'enabled'=>true],
         ['label'=>'Account','icon'=>'account-management.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.account') ? route('logistics.account') : url('/logistics/account'),'active'=>request()->routeIs('logistics.account'),'enabled'=>true],
     ];
 @endphp
@@ -21,7 +20,7 @@
                 $lgEntryIndex = 0;
                 $lgGroups = [
                     ['heading' => 'OVERVIEW', 'labels' => ['Dashboard']],
-                    ['heading' => 'NETWORK MANAGEMENT', 'labels' => ['Network Hubs', 'Finance Review', 'Parcel Tracking', 'Messages', 'Reports']],
+                    ['heading' => 'NETWORK MANAGEMENT', 'labels' => ['Network Hubs', 'Parcel Tracking', 'Messages', 'Reports']],
                     ['heading' => 'FINANCE & ACCOUNT', 'labels' => ['Logistics Earnings', 'Account']],
                 ];
             @endphp

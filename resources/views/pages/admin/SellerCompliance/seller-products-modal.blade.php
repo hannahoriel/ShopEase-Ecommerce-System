@@ -47,6 +47,7 @@
           <div class="product-details-tab-panel" data-admin-product-panel="details">
             <div class="product-details-inspo-basic-grid">
               <div class="product-details-inspo-detail-item"><span>Total stock (all variations)</span><strong data-bind="stock">—</strong></div>
+              <div class="product-details-inspo-detail-item"><span>Product weight</span><strong data-bind="weight">Not set</strong></div>
               <div class="product-details-inspo-detail-item"><span>Date added</span><strong data-bind="uploaded">—</strong></div>
               <div class="product-details-inspo-detail-item"><span>Pricing type</span><strong data-bind="pricingType">—</strong></div>
               <div class="product-details-inspo-detail-item"><span>Base price source</span><strong data-bind="pricingSource">—</strong></div>

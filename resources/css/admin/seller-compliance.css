@@ -798,3 +798,213 @@ body.sc-modal-open { overflow: hidden; }
     box-shadow: 0 0 0 2px rgba(156, 163, 175, .14);
     outline: none;
 }
+
+
+/* Seller Compliance viewport/zoom-safe header and cards (2026-11-02). */
+html { scroll-padding-top: 110px; }
+.seller-compliance-page {
+    padding-top: 118px;
+    min-height: 100dvh;
+}
+.seller-compliance-content { padding-top: 12px; }
+.sc-summary-grid { align-items: stretch; }
+@media (max-width: 1280px) {
+    .sc-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    .sc-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+    .seller-compliance-page { padding-top: 102px; }
+}
+@media (max-width: 480px) {
+    .sc-summary-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* ==========================================================
+   SELLER COMPLIANCE TABLE — COMPACT HEADER & ALIGNED COLUMNS
+   Keep one shared grid for headings and JavaScript-generated rows.
+   ========================================================== */
+.seller-compliance-page .compliance-table-header,
+.seller-compliance-page .seller-compliance-row {
+    grid-template-columns: minmax(170px, 1.02fr) minmax(250px, 1.60fr) minmax(205px, 1.22fr) minmax(160px, 1.02fr) minmax(110px, .72fr);
+    column-gap: 15px;
+    padding-left: 20px;
+    padding-right: 20px;
+    box-sizing: border-box;
+}
+.seller-compliance-page .compliance-table-header {
+    min-height: 36px;
+    height: 36px;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom: 1px solid #E8E4E1;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+.seller-compliance-page .compliance-table-header > div {
+    min-width: 0;
+    transform: none !important;
+}
+.seller-compliance-page .seller-compliance-row {
+    min-height: 69px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: 12px;
+}
+.seller-compliance-page .category-pill-group {
+    transform: none !important;
+    min-width: 0;
+    gap: 5px;
+}
+.seller-compliance-page .seller-products {
+    white-space: normal;
+    min-width: 0;
+}
+.seller-compliance-page .seller-products-preview {
+    max-width: 100%;
+    white-space: nowrap;
+}
+.seller-compliance-page .score-cell { min-width: 0; }
+.seller-compliance-page .score-bar { width: min(100%, 150px); }
+.seller-compliance-page .status-pill { max-width: 100%; }
+@media (max-width: 1200px) {
+    .seller-compliance-page .compliance-table-card { overflow-x: auto; }
+    .seller-compliance-page .compliance-table-header,
+    .seller-compliance-page .seller-compliance-row { min-width: 940px; }
+}
+/* Align Admin Seller Compliance Product Details with Seller Inventory dialog. */
+@media(min-width:761px){
+ #sellerProductDetailsModal .sc-inventory-product-dialog{width:min(1090px,calc(100vw - 36px))!important;height:min(700px,calc(100dvh - 36px))!important;max-height:calc(100dvh - 30px)!important}
+ #sellerProductDetailsModal .product-details-inspo-body{grid-template-columns:245px minmax(0,1fr)!important}
+ #sellerProductDetailsModal .product-details-inspo-gallery{width:245px!important}
+ #sellerProductDetailsModal .product-details-inspo-main-photo{width:245px!important;height:345px!important}
+}
+
+/* Final Admin Product Details modal sizing — same desktop outer size as Seller Inventory */
+@media (min-width: 701px) {
+  #sellerProductDetailsModal .sc-inventory-product-dialog {
+    width: min(1095px, calc(100vw - 36px)) !important;
+    max-width: 1095px !important;
+    height: min(700px, calc(100dvh - 36px)) !important;
+    max-height: min(700px, calc(100dvh - 36px)) !important;
+    margin: auto !important;
+  }
+}
+
+
+/* ===== SELLER COMPLIANCE: COMPACT MODALS (2026-11-03) =====
+   Final scoped overrides. All dialogs remain scrollable on short screens. */
+@media (min-width: 761px) {
+  #sellerProductDetailsModal .sc-inventory-product-dialog {
+    width: min(1060px, calc(100vw - 56px)) !important;
+    max-width: 1060px !important;
+    height: min(660px, calc(100dvh - 56px)) !important;
+    max-height: calc(100dvh - 56px) !important;
+    margin: auto !important;
+    border-radius: 24px !important;
+  }
+  #sellerProductDetailsModal .product-details-inspo-header {
+    min-height: 70px !important;
+    padding: 12px 26px !important;
+  }
+  #sellerProductDetailsModal .product-details-inspo-header h2 {font-size: 22px !important;}
+  #sellerProductDetailsModal .product-details-inspo-close {width: 42px !important;height: 42px !important;}
+  #sellerProductDetailsModal .product-details-inspo-body {
+    grid-template-columns: 230px minmax(0,1fr) !important;
+    gap: 15px !important;
+    padding: 15px 26px !important;
+    min-height: 0 !important;
+  }
+  #sellerProductDetailsModal .product-details-inspo-gallery {width: 230px !important;}
+  #sellerProductDetailsModal .product-details-inspo-main-photo {width: 230px !important;height: 315px !important;}
+  #sellerProductDetailsModal .product-details-inspo-footer {padding: 11px 25px !important;}
+  .sc-overlay--seller .seller-details-dialog {width: min(760px, calc(100vw - 48px)) !important;max-height: calc(100dvh - 54px) !important;padding: 21px 24px !important;}
+  .sc-overlay--product .seller-product-details-dialog {width: min(740px, calc(100vw - 48px)) !important;max-height: calc(100dvh - 54px) !important;padding: 18px 22px !important;}
+  .sc-overlay--decision .decision-dialog {width: min(460px, calc(100vw - 48px)) !important;max-height: calc(100dvh - 54px) !important;overflow-y: auto !important;padding: 21px 22px !important;}
+}
+@media (max-width: 760px) {
+  #sellerProductDetailsModal .sc-inventory-product-dialog {width: calc(100vw - 24px) !important;height: min(680px, calc(100dvh - 30px)) !important;max-height: calc(100dvh - 30px) !important;border-radius: 19px !important;}
+  #sellerProductDetailsModal .product-details-inspo-gallery {width: auto !important;}
+  #sellerProductDetailsModal .product-details-inspo-main-photo {max-width: 100% !important;width: 100% !important;height: 230px !important;}
+  .sc-overlay--seller .seller-details-dialog,.sc-overlay--product .seller-product-details-dialog {width: calc(100vw - 24px) !important;max-height: calc(100dvh - 30px) !important;}
+  .sc-overlay--decision .decision-dialog {width: calc(100vw - 24px) !important;max-height: calc(100dvh - 30px) !important;overflow-y: auto !important;}
+}
+
+
+/* === 2026-11-03: Restore original product card proportions, independently of modal width === */
+/* The old 5-column rule squeezed cards whenever the seller products panel was narrower. */
+.seller-products-panel .seller-products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+    gap: 15px !important;
+    align-items: start;
+}
+.seller-products-panel .seller-product-card { width: 100%; min-width: 0; border-radius: 11px; }
+.seller-products-panel .seller-product-image { height: 175px; }
+.seller-products-panel .seller-product-info { padding: 10px 11px 12px; }
+.seller-products-panel .seller-product-name { font-size: 12px; line-height: 1.35; min-height: 33px; }
+.seller-products-panel .seller-product-bottom { margin-top: 9px; }
+.seller-products-panel .seller-product-price { font-size: 15px; }
+.seller-products-panel .seller-product-status-label { font-size: 9px; line-height: 1.3; }
+@media (max-width: 520px) {
+  .seller-products-panel .seller-products-grid { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 10px !important; }
+  .seller-products-panel .seller-product-image {height: 135px;}
+}
+
+/* Product Details: smaller than previous 1060x660; scoped ONLY to that modal. */
+@media (min-width: 761px) {
+  #sellerProductDetailsModal .sc-inventory-product-dialog {
+    width: min(920px, calc(100vw - 56px)) !important;
+    max-width: 920px !important;
+    height: min(590px, calc(100dvh - 48px)) !important;
+    max-height: calc(100dvh - 48px) !important;
+    border-radius: 22px !important;
+  }
+  #sellerProductDetailsModal .product-details-inspo-header {
+    min-height: 62px !important;
+    padding: 10px 23px !important;
+  }
+  #sellerProductDetailsModal .product-details-inspo-header h2 {font-size: 20px !important;}
+  #sellerProductDetailsModal .product-details-inspo-close {width: 38px !important; height:38px !important;}
+  #sellerProductDetailsModal .product-details-inspo-body {
+    grid-template-columns: 205px minmax(0,1fr) !important;
+    padding: 13px 22px !important;
+    gap: 14px !important;
+    min-height: 0 !important;
+  }
+  #sellerProductDetailsModal .product-details-inspo-gallery {width:205px !important;}
+  #sellerProductDetailsModal .product-details-inspo-main-photo {width:205px !important; height:280px !important;}
+  #sellerProductDetailsModal .product-details-inspo-footer {min-height:57px !important; padding:9px 22px !important;}
+}
+
+
+/* Final product-card size correction: keep cards compact even with only two products. */
+.seller-products-panel .seller-products-grid {
+  grid-template-columns: repeat(auto-fill, minmax(175px, 205px)) !important;
+  justify-content: start !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+.seller-products-panel .seller-product-card {
+  width: 100% !important;
+  max-width: 205px !important;
+}
+.seller-products-panel .seller-product-image {height: 153px !important;}
+.seller-products-panel .seller-product-info {padding: 9px 10px 11px !important;}
+.seller-products-panel .seller-product-name {
+  font-size: 10.5px !important;
+  line-height: 1.4 !important;
+  min-height: 29px !important;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .seller-products-panel .seller-products-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 10px !important;
+  }
+  .seller-products-panel .seller-product-card {max-width: none !important;}
+  .seller-products-panel .seller-product-image {height: 130px !important;}
+}

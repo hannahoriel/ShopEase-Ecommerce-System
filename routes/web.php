@@ -265,13 +265,11 @@ Route::get('/logistics/messages', function () {
     return view('pages.logistics.messages');
 })->middleware('auth')->name('logistics.messages');
 
-Route::get('/logistics/rider-operations', function () {
-    abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
-
-    return view('pages.logistics.rider-operations', [
-        'apiToken' => Auth::user()->createToken('logistics-rider-operations')->plainTextToken,
-    ]);
-})->middleware('auth')->name('logistics.rider-operations');
+// Logistics Company only: consolidated company earnings view.
+Route::get('/logistics/logistics-earnings', function () {
+    abort_unless(Auth::user()?->role === User::ROLE_LOGISTICS, 403);
+    return view('pages.logistics.logistics-earnings');
+})->middleware('auth')->name('logistics.logistics-earnings');
 
 Route::get('/buyer/dashboard', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
@@ -1985,9 +1983,19 @@ Route::get('/admin/complaints-disputes', [AdminComplaintController::class, 'page
     ->middleware(['auth', 'role:admin'])
     ->name('admin.complaints.disputes');
 
+// Admin overall reporting (date-scoped reports and CSV export)
+Route::get('/admin/reports', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])
+    ->middleware(['auth', 'role:admin'])->name('admin.reports');
+Route::get('/admin/reports/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])
+    ->middleware(['auth', 'role:admin'])->name('admin.reports.export');
+
 Route::get('/admin/commission', [CommissionController::class, 'page'])
     ->middleware(['auth', 'role:admin'])
     ->name('admin.commission');
+
+Route::get('/admin/commission/transactions/{commissionTransaction}', [CommissionController::class, 'show'])
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.commission.transactions.show');
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin/logistics-management')->group(function () {
     Route::get('/', [LogisticsManagementController::class, 'page'])->name('admin.logistics.management');
@@ -2264,9 +2272,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/account', [AdminAccountController::class, 'index'])->name('admin.account');
 });
 
-Route::get('/logistics/landing', function () {
-    return view('pages.logistics-landing');
-})->name('logistics.landing.info');
+Route::get('/logistics/landing', [\App\Http\Controllers\Logistics\LogisticsRegistrationController::class, 'landingPage'])
+    ->name('logistics.landing.info');
 
 use App\Http\Controllers\Logistics\LogisticsRegistrationController;
 
@@ -2540,7 +2547,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
         Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
         Route::get('/parcel-disputes', $hubPage('parcel-disputes'))->name('parcel-disputes');
         Route::get('/vehicle-drivers', $hubPage('vehicle-drivers'))->name('vehicle-drivers');
-        Route::get('/network-earnings', $hubPage('network-earnings'))->name('network-earnings');
+        Route::get('/finance', $hubPage('finance'))->name('finance');
         Route::get('/messages', $hubPage('messages'))->name('messages');
         Route::get('/notifications', $hubPage('notifications'))->name('notifications');
 
@@ -2574,3 +2581,31 @@ Route::middleware(['auth', 'role:delivery_hub'])
     });
 // Separate administrator account management from personal Account Settings.
 Route::get('/admin/admin-management', function () { $response = app(\App\Http\Controllers\Admin\AdminAccountController::class)->index(request()); return view('pages.admin.admin-management', $response->getData()); })->middleware(['auth','role:admin'])->name('admin.management');
+
+// Add directly AFTER the existing /buyer/dashboard route in routes/web.php:
+Route::get('/buyer/categories', function () {
+    abort_unless(\Illuminate\Support\Facades\Auth::user()?->role === \App\Models\User::ROLE_BUYER, 403);
+    return view('pages.buyer.categories', [
+        'apiToken' => \Illuminate\Support\Facades\Auth::user()->createToken('buyer-categories')->plainTextToken,
+    ]);
+})->middleware('auth')->name('buyer.categories');
+
+// Buyer product search results (authenticated buyer)
+Route::get('/buyer/search/suggestions', [\App\Http\Controllers\Api\Buyer\SearchController::class, 'suggestions'])
+    ->middleware('auth')->name('buyer.search.suggestions');
+
+Route::get('/buyer/search', function () {
+    abort_unless(\Illuminate\Support\Facades\Auth::user()?->role === \App\Models\User::ROLE_BUYER, 403);
+    return view('pages.buyer.search', [
+        'apiToken' => \Illuminate\Support\Facades\Auth::user()->createToken('buyer-search')->plainTextToken,
+    ]);
+})->middleware('auth')->name('buyer.search');
+
+// Seller Wallet (read-only ledger; completed orders and refunds are synced on load)
+Route::get('/seller/wallet', [\App\Http\Controllers\Seller\WalletController::class, 'index'])
+    ->middleware(['auth', 'role:seller'])
+    ->name('seller.wallet.index');
+
+Route::view('/logistics/reports', 'pages.logistics.reports')
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.reports');

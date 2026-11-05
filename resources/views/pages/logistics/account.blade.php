@@ -777,7 +777,59 @@ html,body.lg-body{overflow-x:hidden}
 .la-cover img{width:100%;height:100%;display:block;object-fit:cover}.la-cover-button{position:absolute;top:16px;right:18px;z-index:2}.la-photo-button{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #d6d9df;border-radius:7px;padding:9px 12px;font:500 11px Poppins,sans-serif;color:#253044;cursor:pointer}.la-avatar{position:relative;width:124px;height:124px;min-width:124px;border:5px solid white;overflow:visible}.la-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}.la-avatar-camera{position:absolute;bottom:5px;right:2px;width:28px;height:28px;display:grid;place-items:center;border:3px solid #fff;border-radius:50%;background:#485467;color:white;cursor:pointer;font-size:15px}.la-avatar-line{margin:-48px 20px 25px}.la-identity{padding-top:45px}.la-identity h2{margin-top:0}.la-photo-hint{font:400 10px Poppins;color:#918a87;margin:8px 0 0}.la-photo-save{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin:7px 0 20px}.la-photo-save [hidden]{display:none!important}.la-account-toast{padding:11px 15px;background:#eaf7ee;color:#2e7142;border:1px solid #c4e8cf;border-radius:9px;font-size:11px;margin-bottom:12px}.la-account-toast[hidden]{display:none}.la-photo-view{position:fixed;inset:0;background:#1d1317aa;display:grid;place-items:center;z-index:1900;padding:20px}.la-photo-view[hidden]{display:none}.la-photo-view-dialog{background:#fff;border-radius:15px;padding:18px;max-width:min(700px,100%);max-height:90vh;overflow:auto}.la-photo-view img{width:auto;height:auto;max-width:100%;max-height:70vh;display:block;margin:12px auto}.la-photo-view header{display:flex;justify-content:space-between;align-items:center;gap:10px}.la-photo-view button{border:0;background:#f8eeed;border-radius:50%;width:32px;height:32px;cursor:pointer}
 .la-cover{position:relative;overflow:hidden;background:linear-gradient(110deg,#ded5cb 0%,#f6efeb 45%,#d8c9c1 100%);height:165px;border-radius:11px}
 @media(max-width:700px){.la-cover{height:140px}.la-avatar{height:98px;width:98px;min-width:98px}.la-identity{padding-top:28px}.la-cover-button{top:8px;right:8px}}
-</style></head><body class="lg-body">
+</style>
+<style>
+/* Account page: keep the settings navigation stationary while only the right panel scrolls. */
+html:has(#laPage), body.lg-body:has(#laPage){height:100%;overflow:hidden!important;}
+body.lg-body #laPage.la-page{
+  height:100dvh!important;min-height:0!important;
+  overflow:hidden!important;
+  display:flex;flex-direction:column;
+  padding-bottom:20px!important;
+}
+body.lg-body #laPage .la-layout{
+  width:100%;max-width:1450px;flex:1;min-height:0;
+  align-items:stretch;
+}
+body.lg-body #laPage .la-side{
+  position:relative!important;top:auto!important;
+  align-self:start;max-height:100%;overflow-y:auto;
+}
+body.lg-body #laPage .la-layout > div:not(.la-side){
+  min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  padding-right:5px;padding-bottom:25px;
+  scrollbar-width:thin;scrollbar-color:#d5c7c2 transparent;
+}
+body.lg-body #laPage .la-layout > div:not(.la-side)::-webkit-scrollbar{width:7px}
+body.lg-body #laPage .la-layout > div:not(.la-side)::-webkit-scrollbar-thumb{background:#d5c7c2;border-radius:10px}
+@media(max-width:1020px){
+ body.lg-body #laPage .la-side{overflow-x:auto;max-height:160px;}
+ body.lg-body #laPage .la-layout{grid-template-rows:auto minmax(0,1fr)}
+}
+@media(max-width:700px){
+ body.lg-body #laPage.la-page{padding-bottom:10px!important}
+ body.lg-body #laPage .la-side{max-height:140px}
+}
+</style>
+<style>
+/* Neutral gray registration-style address pickers (account pages only). */
+.la-page .la-field input:focus,.la-page .la-field select:focus,.la-page .sa-control:focus,
+.la-page .sa-phone:focus-within,.la-page .sa-request-reason:focus,
+.la-page .la-address-search:focus,.la-page .la-address-region:focus{
+ border-color:#9ca3af!important;box-shadow:0 0 0 3px rgba(107,114,128,.13)!important;outline:none!important;
+}
+.la-page .la-field input[readonly],.la-page .la-address-locked{background:#f1f2f4!important;color:#727983!important;border-color:#d5d7db!important;cursor:not-allowed!important}
+.la-page .sa-required,.la-page .la-field .required{color:#6b7280!important}
+.la-address-picker{position:relative;min-width:0}
+.la-address-search,.la-address-region{height:42px;width:100%;border:1px solid #d1d5db;border-radius:8px;background:white;padding:0 12px;color:#302a2b;font:400 12px Poppins,sans-serif}
+.la-address-options{position:absolute;z-index:50;left:0;right:0;top:calc(100% + 4px);max-height:218px;overflow-y:auto;background:white;border:1px solid #d1d5db;border-radius:9px;box-shadow:0 10px 24px #0002;padding:5px}
+.la-address-options[hidden]{display:none!important}
+.la-address-options button{display:block;width:100%;padding:10px 11px;background:transparent;border:0;border-radius:6px;color:#374151;text-align:left;font-size:12px;cursor:pointer}
+.la-address-options button:hover,.la-address-options button:focus-visible{background:#f3f4f6;outline:none}
+.la-address-options p{padding:8px;color:#6b7280;font-size:11px}
+</style>
+</head><body class="lg-body">
 @include('components.logistics.sidebar')
 @include('components.logistics.navbar')
 <main class="la-page" id="laPage"><div class="la-layout"><aside class="la-side"><div class="la-menu-head">Company Account</div><nav class="la-menu" aria-label="Company settings"><a href="#profile" class="la-nav active" data-section="profile">Profile</a><a href="#privacy" class="la-nav" data-section="privacy">Privacy Settings</a><a href="#notifications" class="la-nav" data-section="notifications">Notification Settings</a><a href="#policies" class="la-nav" data-section="policies">Platform Policies</a></nav></aside><div>
@@ -892,4 +944,107 @@ $('lgSidebarToggle')?.addEventListener('click',()=>{document.body.classList.togg
 $('lgProfileButton')?.addEventListener('click',()=>{const menu=$('lgProfileMenu');if(menu){menu.hidden=!menu.hidden;$('lgProfileButton').setAttribute('aria-expanded',String(!menu.hidden));}});
 document.addEventListener('click',e=>{const menu=$('lgProfileMenu');if(menu&&!e.target.closest('.lg-profile-wrap'))menu.hidden=true;});
 });
-</script></body></html>
+</script><script>
+// Registration-style cascading Philippine address picker (UI only).
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('.la-approval-form');
+  if (!form) return;
+  const province = form.elements.namedItem('province');
+  const city = form.elements.namedItem('city');
+  const barangay = form.elements.namedItem('barangay');
+  const region = form.elements.namedItem('region');
+  if (!province || !city || !barangay) return;
+  const API = 'https://psgc.gitlab.io/api';
+  const cache = new Map();
+  async function get(path) {
+    if(cache.has(path)) return cache.get(path);
+    const res = await fetch(API + path, {headers:{Accept:'application/json'}});
+    if(!res.ok) throw new Error('Address directory unavailable');
+    const records = await res.json();
+    if(!Array.isArray(records)) throw new Error('Invalid address directory');
+    cache.set(path, records);
+    return records;
+  }
+  function makePicker(original, kind, locked=false) {
+    const initial=original.value.trim();
+    const label=original.closest('.la-field');
+    const box=document.createElement('div');box.className='la-address-picker';
+    const search=document.createElement('input');search.type='text';search.autocomplete='off';search.className='la-address-search';search.value=initial;
+    search.placeholder=locked?'Assigned sorting center province':'Search and select '+kind;
+    search.setAttribute('role','combobox');search.setAttribute('aria-expanded','false');search.setAttribute('aria-autocomplete','list');
+    const menu=document.createElement('div');menu.className='la-address-options';menu.hidden=true;
+    original.type='hidden';label.appendChild(box);box.append(search,menu);
+    const state={initial,original,search,menu,records:[],selected:null,locked};
+    if(locked){search.readOnly=true;search.classList.add('la-address-locked');search.title='Province is based on the assigned Sorting Center';}
+    else {
+      search.addEventListener('input',()=>{original.value='';original.dispatchEvent(new Event('input',{bubbles:true}));render(state);});
+      search.addEventListener('focus',()=>render(state));
+      search.addEventListener('keydown',e=>{if(e.key==='Escape') menu.hidden=true;if(e.key==='Enter'&&!menu.hidden){const first=menu.querySelector('button');if(first){e.preventDefault();first.click();}}});
+      document.addEventListener('pointerdown', e=>{if(!box.contains(e.target))menu.hidden=true;});
+    }
+    return state;
+  }
+  function select(state,item) {
+    state.selected=item;
+    state.search.value=item.name;
+    state.original.value=item.name;
+    state.menu.hidden=true;state.search.setAttribute('aria-expanded','false');
+    state.original.dispatchEvent(new Event('input',{bubbles:true}));
+    state.original.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  function render(state){
+    if(state.locked || state.search.disabled)return;
+    const q=state.search.value.toLocaleLowerCase().trim();
+    const matches=state.records.filter(x=>x.name.toLocaleLowerCase().includes(q)).slice(0,70);
+    state.menu.replaceChildren();
+    if(!matches.length){const p=document.createElement('p');p.textContent=state.records.length?'No matching locations':'No locations loaded';state.menu.append(p);}
+    matches.forEach(item=>{const btn=document.createElement('button');btn.type='button';btn.textContent=item.name;btn.addEventListener('click',()=>select(state,item));state.menu.append(btn);});
+    state.menu.hidden=false;state.search.setAttribute('aria-expanded','true');
+  }
+  function enable(s,yes,msg){s.search.disabled=!yes;s.search.placeholder=yes?'Search and select location':msg;if(!yes)s.menu.hidden=true;}
+  const p=makePicker(province,'province',false);
+  const c=makePicker(city,'city / municipality');
+  const b=makePicker(barangay,'barangay');
+  async function loadCities(pcode, preserve=false) {
+    if(!preserve){c.search.value='';city.value='';b.search.value='';barangay.value='';}
+    enable(c,false,'Loading cities...');enable(b,false,'Select city / municipality first');
+    try{c.records=await get('/provinces/'+encodeURIComponent(pcode)+'/cities-municipalities/');enable(c,true);
+      if(preserve){const match=c.records.find(x=>x.name.toLowerCase()===c.initial.toLowerCase());if(match){select(c,match);await loadBarangays(match.code,true);}}}
+    catch{enable(c,false,'Unable to load cities. Check internet.');}
+  }
+  async function loadBarangays(ccode,preserve=false){
+    if(!preserve){b.search.value='';barangay.value='';}
+    enable(b,false,'Loading barangays...');
+    try{b.records=await get('/cities-municipalities/'+encodeURIComponent(ccode)+'/barangays/');enable(b,true);
+      if(preserve){const match=b.records.find(x=>x.name.toLowerCase()===b.initial.toLowerCase());if(match)select(b,match);}}
+    catch{enable(b,false,'Unable to load barangays. Check internet.');}
+  }
+  let version=0;
+  province.addEventListener('change',async()=>{const v=++version;const match=p.records.find(x=>x.name.toLowerCase()===province.value.toLowerCase());if(match&&v===version) await loadCities(match.code);});
+  city.addEventListener('change',async()=>{const match=c.records.find(x=>x.name.toLowerCase()===city.value.toLowerCase());if(match)await loadBarangays(match.code);});
+  form.addEventListener('reset',()=>{setTimeout(()=>{p.search.value=province.value;c.search.value=city.value;b.search.value=barangay.value;p.menu.hidden=c.menu.hidden=b.menu.hidden=true;},0);});
+  (async()=>{
+    enable(c,false,'Select province first');enable(b,false,'Select municipality first');
+    try{
+      if(region){
+        const regions=await get('/regions/');
+        const raw=region.value;
+        // Region is an existing text field: retain the original value until the user selects an option.
+        const selectRegion=document.createElement('select');selectRegion.className='la-address-region';
+        const opt=document.createElement('option');opt.value='';opt.textContent='Select region';selectRegion.append(opt);
+        regions.forEach(r=>{const o=document.createElement('option');o.value=r.name;o.textContent=r.name;selectRegion.append(o);});
+        if(raw&&!regions.some(r=>r.name.toLowerCase()===raw.toLowerCase())){const o=document.createElement('option');o.value=raw;o.textContent=raw;selectRegion.append(o);}
+        selectRegion.value=raw;
+        region.type='hidden';region.closest('.la-field').append(selectRegion);
+        selectRegion.addEventListener('change',async()=>{region.value=selectRegion.value;region.dispatchEvent(new Event('input',{bubbles:true}));p.search.value='';province.value='';c.search.value='';city.value='';b.search.value='';barangay.value='';enable(c,false,'Select province first');enable(b,false,'Select municipality first');const r=regions.find(x=>x.name===selectRegion.value);p.records=r?await get('/regions/'+r.code+'/provinces/'):[];});
+        const chosen=regions.find(x=>x.name.toLowerCase()===raw.toLowerCase());
+        p.records=chosen?await get('/regions/'+chosen.code+'/provinces/'):await get('/provinces/');
+      }else p.records=await get('/provinces/');
+      const match=p.records.find(x=>x.name.toLowerCase()===p.initial.toLowerCase());
+      if(match){if(!false) select(p,match);await loadCities(match.code,true);}
+      else if(false)enable(c,false,'Province not found in directory');
+    }catch(e){enable(c,false,'Address directory unavailable');}
+  })();
+});
+</script>
+</body></html>

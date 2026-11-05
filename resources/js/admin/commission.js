@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tbody.innerHTML =
             pageRows.map(row => `
-                <tr>
+                <tr class="commission-order-row" data-commission-id="${Number(row.transaction_id || 0)}" tabindex="0" role="button" aria-label="View order details for ${escapeHtml(row.order_id)}">
                     <td>
                         <div class="commission-date-cell">
                             ${escapeHtml(row.date_label)}<br>

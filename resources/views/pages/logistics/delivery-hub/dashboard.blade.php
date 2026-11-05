@@ -68,6 +68,16 @@
 
 .dh-move-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.dh-table-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin-top:18px}.dh-section-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px 19px 13px}.dh-section-head h2{font-size:14px;font-weight:600;margin:0}.dh-section-head p{font-size:10px;color:#948782;margin:5px 0 0}.dh-view-link{color:#83242c;font-size:11px;font-weight:600;white-space:nowrap}.dh-list{padding:0 17px 13px;display:grid;gap:9px}.dh-batch{border:1px solid #f1e8e5;border-radius:11px;padding:12px 13px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px}.dh-batch strong{font-size:11px;font-weight:600;display:block;color:#322622}.dh-batch small{display:block;color:#998b86;font-size:10px;margin-top:4px;line-height:1.5}.dh-batch-side{text-align:right;flex:0 0 auto}.dh-batch-side b{font-size:12px;display:block}.dh-pill{font-size:9px;font-weight:600;padding:5px 8px;border-radius:20px;display:inline-block;margin-top:5px}.dh-pill.incoming{color:#a36a1e;background:#fff2de}.dh-pill.received{color:#287745;background:#e9f7ed}.dh-pill.departed{color:#8462a3;background:#f3eefa}.dh-pill.delivery{color:#336daa;background:#eaf2fd}.dh-empty{text-align:center;color:#a0938d;font-size:11px;padding:22px 10px;line-height:1.7}.dh-count-note{color:#968880;font-size:10px;margin:0 19px 15px}.dh-rider{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #f0e8e5;padding:12px;border-radius:12px}.dh-avatar{width:38px;height:38px;background:#f7e4e1;color:#862d33;font-size:12px;font-weight:700;border-radius:50%;display:grid;place-items:center;flex:0 0 auto}.dh-rider-main{flex:1;min-width:0}.dh-rider-main b{display:block;font-size:11px}.dh-rider-main small{display:block;font-size:10px;color:#958783;margin-top:4px}.dh-rider-count{font-size:12px;font-weight:700;color:#8d2c36;white-space:nowrap}.dh-note{color:#958b85;font-size:10px;margin-top:17px;line-height:1.8}.dh-top-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.dh-stats-compact .sc-kpi{min-height:105px}.dh-batch-tag{font-size:10px;background:#fbedec;color:#8e2e36;padding:6px 10px;border-radius:20px}.dh-bar{height:5px;width:100%;border-radius:9px;background:#f2eae7;overflow:hidden;margin:10px 0 5px}.dh-bar span{height:100%;display:block;background:#8e333b;border-radius:9px}.dh-summary-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 17px;background:#fff9f6;border-top:1px solid #f2e8e3;font-size:10px;color:#938580}.dh-summary-strip b{color:#7b1b1b;font-weight:600}@media(max-width:1200px){.dh-table-grid{grid-template-columns:1fr}}@media(max-width:850px){.dh-move-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.dh-batch{padding:11px}.dh-section-head{flex-wrap:wrap}}
 .dh-date-filter{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin:0 0 20px;padding:13px 16px;border:1px solid #eee0dc;border-radius:13px;background:#fff}.dh-date-filter label{font-size:10px;color:#806d68;display:grid;gap:5px}.dh-date-filter input{height:37px;min-width:155px;padding:0 10px;border:1px solid #d9d0cc;border-radius:8px;font:500 11px Poppins,sans-serif;color:#3e3030}.dh-date-filter button{height:37px;border:1px solid #e7cac8;background:#fff4f1;color:#782329;border-radius:8px;padding:0 13px;font:600 11px Poppins,sans-serif;cursor:pointer}.dh-date-hint{font-size:10px;color:#958680;margin-left:auto}.dh-batch-info{font-size:10px;color:#6e5e59;line-height:1.6;margin-top:6px}.dh-batch-extra{display:block;margin-top:3px;color:#85343d;font-weight:600}.dh-batch{align-items:flex-start}.dh-batch>div:first-child{min-width:0;overflow-wrap:anywhere}@media(max-width:650px){.dh-date-hint{margin-left:0;width:100%}.dh-date-filter input{min-width:0;width:100%}}
+
+/* Delivery Hub dashboard: finance summary is visible near the main KPI cards. */
+.dh-finance-section{margin-top:18px;margin-bottom:18px}
+.dh-finance-section-heading{margin:0 0 11px}
+.dh-finance-section-heading h2{margin:0;font-size:15px;font-weight:600;color:#241b1b}
+.dh-finance-section-heading p{margin:5px 0 0;font-size:11px;color:#938680;line-height:1.6}
+.dh-finance-section .sc-earnings-panel{width:100%;max-width:none}
+.dh-finance-section .sc-earnings-total{margin-bottom:9px}
+.dh-finance-section .sc-panel-heading{flex-wrap:wrap}
+.dh-activity-full{grid-template-columns:minmax(0,1fr)}
 </style></head><body class="lg-body">
 @include('components.logistics.delivery-hub.sidebar')
 @include('components.logistics.delivery-hub.navbar')
@@ -94,6 +104,15 @@
  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><div><span class="sc-kpi-label">Drivers</span><strong id="dhStatDrivers">0</strong></div></article>
  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3zm0 7v5m0 3h.01"/></svg></span><div><span class="sc-kpi-label">Parcel Disputes</span><strong id="dhStatDisputes">0</strong></div></article>
 </div></section>
+<section class="sc-section dh-finance-section" aria-label="Delivery Hub cash distribution">
+  <div class="dh-finance-section-heading">
+    <div><h2>Cash Distribution</h2><p>Only verified funds distributed to Seller, Admin, and Logistics are counted.</p></div>
+  </div>
+  <section class="sc-panel sc-earnings-panel"><div class="sc-panel-heading"><div><h2>Cash Distribution Overview</h2><p>Verified COD funds distributed to Seller, Admin, and Logistics</p></div><a class="dh-view-link" href="{{ route('delivery-hub.finance') }}">View Finance →</a></div>
+ <div class="sc-earnings-total"><span>Total Distributed Cash</span><strong id="dhDistributedTotal">₱0.00</strong><small>Confirmed distributions only · excludes held/pending cash-ins</small></div>
+ <div class="sc-earnings-row"><span>Completed Distributions</span><strong id="dhDistributionCount">0</strong></div>
+ <div class="sc-earnings-row"><span>Ledger status</span><strong id="dhDistributionState">Not connected</strong></div></section>
+</section>
 <section class="sc-section sc-movement"><h2>Parcels Moving Through This Hub</h2><p class="sc-section-sub">Incoming transfers, departed parcels, and current last-mile deliveries.</p><div class="dh-move-grid">
  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h14m-5-5 5 5-5 5M3 5h6m-6 14h6"/></svg></span><div><span class="sc-kpi-label">Incoming Transfers</span><strong id="dhStatIncoming">0</strong></div></article>
  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18m-6-6 6 6-6 6M3 6h6m-6 12h6"/></svg></span><div><span class="sc-kpi-label">Departed Parcels</span><strong id="dhStatDeparted">0</strong></div></article>
@@ -108,9 +127,9 @@
   <article class="sc-panel"><div class="dh-section-head"><div><h2>Out for Delivery · Rider / Driver Assignments</h2><p>Who is currently on the road with customer parcels</p></div><span class="dh-batch-tag" id="dhActiveRiders">0 active</span></div><div class="dh-list" id="dhRiderList"></div><div class="dh-summary-strip"><span>Assigned parcels on the road</span><b id="dhRiderParcelTotal">0 parcels</b></div></article>
  </div>
 </section>
-<div class="sc-bottom-panels">
+<div class="sc-bottom-panels dh-activity-full">
  <section class="sc-panel"><div class="sc-panel-heading"><div><h2>Recent Hub Activity</h2><p>Parcel movement and operational events</p></div><span class="sc-hub-tag">Latest updates</span></div><div class="sc-table-scroll"><table class="sc-hub-table"><thead><tr><th>Batch / Parcel</th><th>Activity</th><th>Assigned Courier / Truck</th><th>Date &amp; Time</th></tr></thead><tbody id="dhActivityRows"></tbody></table></div><div class="sc-table-footer">Activity from this delivery hub only</div></section>
- <section class="sc-panel sc-earnings-panel"><div class="sc-panel-heading"><div><h2>Network Earnings</h2><p>Delivery hub revenue overview</p></div><a class="dh-view-link" href="{{ \Illuminate\Support\Facades\Route::has('delivery-hub.network-earnings') ? route('delivery-hub.network-earnings') : '#' }}">View Details →</a></div><div class="sc-earnings-total"><span>Available Earnings</span><strong id="dhEarnings">₱ 0.00</strong><small id="dhEarningsNote">Dashboard preview data</small></div><div class="sc-earnings-row"><span>Delivery Fees</span><strong id="dhDeliveryFees">₱ 0.00</strong></div><div class="sc-earnings-row"><span>Handling Fees</span><strong id="dhHandlingFees">₱ 0.00</strong></div><div class="sc-earnings-row"><span>Settlement Status</span><strong id="dhSettlement">Not connected</strong></div></section>
+ 
 </div>
 <p class="dh-note">Demo batches and rider assignments appear only when the dashboard has no supplied operational data. They demonstrate grouping and display; they do not confirm parcel scans, dispatches, payments, or actual rider locations.</p>
 </div></main>
@@ -158,7 +177,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   set('dhActiveRiders',`${assignments.length} active`);set('dhRiderParcelTotal',`${assignments.reduce((sum,r)=>sum+n(r,'count','parcels_count'),0)} parcels`);
   const events=[...received.map(r=>({id:r.id||r.batch_id,action:'Received / at hub',staff:r.staff||'Receiving Team',at:eventDate(r,'received')})),...incoming.map(r=>({id:r.id||r.batch_id,action:'Incoming transfer',staff:courierTruck(r),at:eventDate(r,'arrival')})),...departed.map(r=>({id:r.id||r.batch_id,action:'Departed → '+(r.destination||r.destination_name||'Destination not recorded'),staff:courierTruck(r),at:eventDate(r,'departed')})),...assignments.map(r=>({id:r.id||r.route_id,action:'Out for delivery',staff:r.name||r.rider_name||r.driver_name,at:eventDate(r,'left')})),...delivered.map(r=>({id:r.id||r.tracking_number||'Delivery',action:'Delivered',staff:r.staff||r.rider_name||'—',at:eventDate(r,'delivered')}))].sort((a,b)=>new Date(b.at||0)-new Date(a.at||0)).slice(0,8);
   $('dhActivityRows').innerHTML=events.length?events.map(r=>`<tr><td><strong>${esc(r.id)}</strong></td><td>${esc(r.action)}</td><td>${esc(r.staff)}</td><td>${esc(fmtTime(r.at))}</td></tr>`).join(''):'<tr class="sc-hub-empty"><td colspan="4">No activity recorded for selected dates.</td></tr>';
-  const pesos=v=>'₱ '+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});set('dhEarnings',pesos(data.stats.earnings));set('dhDeliveryFees',pesos(data.stats.delivery_fees));set('dhHandlingFees',pesos(data.stats.handling_fees));set('dhSettlement',data.stats.settlement_status||'Not connected');set('dhEarningsNote',haveData?'Earnings supplied by backend; period filtering needs dated transactions':'Illustrative demo earnings · not date-filtered');
+  const pesos = v => '₱' + Number(v || 0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  // Only verified distribution records count; cash collected or cash-in pending verification is not distributed cash.
+  const verifiedDistributions = Array.isArray(data.stats?.verified_distributions) ? data.stats.verified_distributions : [];
+  const completed = verifiedDistributions.filter(r => r.status === 'completed' && r.verified_at && r.distributed_at);
+  set('dhDistributedTotal',pesos(completed.reduce((sum,r)=>sum+Number(r.total_distributed || 0),0)));
+  set('dhDistributionCount',completed.length);
+  set('dhDistributionState',completed.length ? 'Verified and distributed' : 'No verified distributions');
   set('dhDateHint',`Showing hub activity: ${$('dhDateFrom').value} to ${$('dhDateTo').value} (Philippine dates)`);
  }
  const today=todayPH();$('dhDateFrom').value=today;$('dhDateTo').value=today;
