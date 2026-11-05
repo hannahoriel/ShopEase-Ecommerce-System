@@ -123,6 +123,11 @@
                         <input
                             type="text"
                             id="buyerSearchInput"
+                            role="combobox"
+                            aria-autocomplete="list"
+                            aria-controls="buyerSearchSuggestions"
+                            aria-expanded="false"
+                            aria-haspopup="listbox"
                             placeholder="Search products, or shop"
                             autocomplete="off"
                             class="
@@ -175,6 +180,8 @@
                         </svg>
                     </button>
                 </div>
+                {{-- Live search suggestions: populated from product database --}}
+                <div id="buyerSearchSuggestions" class="buyer-search-suggestions" role="listbox" aria-label="Product search suggestions" hidden></div>
             </div>
 
             {{-- RIGHT SIDE ACTIONS --}}
@@ -384,6 +391,20 @@
                             </span>
 
                             <span>My Purchases</span>
+                        </a>
+
+                        <a
+                            href="{{ route('buyer.my-purchases', ['section' => 'wallet']) }}"
+                            class="buyer-account-menu-link"
+                            role="menuitem"
+                        >
+                            <span class="buyer-account-menu-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="6" width="18" height="14" rx="3" />
+                                    <path d="M3 10h18M16 15h2M6 6V4h12" />
+                                </svg>
+                            </span>
+                            <span>ShopEase Wallet</span>
                         </a>
 
                         <div class="buyer-account-menu-divider"></div>

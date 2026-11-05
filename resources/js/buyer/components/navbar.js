@@ -42,6 +42,21 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCartBadge(event.detail?.count);
     });
 
+    // Keep count accurate after navigation/back-forward or updates on another tab.
+    async function refreshCartBadge() {
+        if (!cartBadge) return;
+        try {
+            const response = await fetch('/api/v1/buyer/cart', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            if (!response.ok) return;
+            const payload = await response.json();
+            const items = Array.isArray(payload) ? payload : (payload.items || payload.data?.items || payload.data || []);
+            if (Array.isArray(items)) updateCartBadge(items.reduce((sum, item) => sum + Number(item.quantity || 0), 0));
+        } catch (_) { /* server-rendered badge remains as fallback */ }
+    }
+    refreshCartBadge();
+    window.addEventListener('pageshow', refreshCartBadge);
+    window.addEventListener('focus', refreshCartBadge);
+
     /* =================================================
        CATEGORY DROPDOWN
     ================================================== */
@@ -101,26 +116,160 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* =================================================
-       SEARCH
+       SEARCH + LIVE SUGGESTIONS
     ================================================== */
-    function runBuyerSearch() {
-        const searchTerm = searchInput?.value?.trim();
+    const suggestionPanel = document.getElementById('buyerSearchSuggestions');
+    let suggestionItems = [];
+    let activeSuggestion = -1;
+    let searchDebounce = null;
+    let latestRequest = null;
+    let latestQuery = '';
 
-        if (!searchTerm) {
+    function searchUrl(term) {
+        return '/buyer/search?q=' + encodeURIComponent(term);
+    }
+
+    function closeSuggestions() {
+        if (!suggestionPanel) return;
+        suggestionPanel.hidden = true;
+        searchInput?.setAttribute('aria-expanded', 'false');
+        searchInput?.removeAttribute('aria-activedescendant');
+        activeSuggestion = -1;
+    }
+
+    function runBuyerSearch(term = searchInput?.value?.trim()) {
+        if (!term) {
             searchInput?.focus();
             return;
         }
-
-        console.log('Buyer search:', searchTerm);
+        closeSuggestions();
+        window.location.href = searchUrl(term);
     }
 
-    searchButton?.addEventListener('click', runBuyerSearch);
+    function drawSuggestions(values) {
+        if (!suggestionPanel || !searchInput) return;
+        suggestionPanel.replaceChildren();
+        suggestionItems = values.filter(v => typeof v === 'string' && v.trim()).slice(0, 6);
+        activeSuggestion = -1;
 
-    searchInput?.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            runBuyerSearch();
+        if (suggestionItems.length === 0) {
+            closeSuggestions();
+            return;
         }
+
+        const heading = document.createElement('div');
+        heading.className = 'buyer-search-suggestion-heading';
+        heading.textContent = 'Suggested products';
+        suggestionPanel.appendChild(heading);
+
+        suggestionItems.forEach((value, index) => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.id = 'buyerSearchSuggestion-' + index;
+            option.className = 'buyer-search-suggestion';
+            option.setAttribute('role', 'option');
+            option.setAttribute('aria-selected', 'false');
+
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            icon.setAttribute('width', '16');
+            icon.setAttribute('height', '16');
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('fill', 'none');
+            icon.setAttribute('stroke', 'currentColor');
+            icon.setAttribute('stroke-width', '2');
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '11');circle.setAttribute('cy', '11');circle.setAttribute('r', '7');
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            line.setAttribute('d', 'm20 20-4-4');
+            icon.append(circle, line);
+            const text = document.createElement('span');
+            text.className = 'buyer-search-suggestion-text';
+            text.textContent = value;
+            option.append(icon, text);
+
+            // mousedown happens before input blur: navigation remains reliable.
+            option.addEventListener('mousedown', event => event.preventDefault());
+            option.addEventListener('click', () => runBuyerSearch(value));
+            suggestionPanel.appendChild(option);
+        });
+        suggestionPanel.hidden = false;
+        searchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function setActiveSuggestion(index) {
+        const buttons = [...(suggestionPanel?.querySelectorAll('[role="option"]') || [])];
+        if (!buttons.length) return;
+        activeSuggestion = (index + buttons.length) % buttons.length;
+        buttons.forEach((button, i) => {
+            const selected = i === activeSuggestion;
+            button.classList.toggle('is-active', selected);
+            button.setAttribute('aria-selected', String(selected));
+            if (selected) button.scrollIntoView({ block: 'nearest' });
+        });
+        searchInput?.setAttribute('aria-activedescendant', buttons[activeSuggestion].id);
+    }
+
+    async function fetchSuggestions() {
+        const query = searchInput?.value?.trim() || '';
+        if (query.length < 2) { closeSuggestions(); return; }
+        latestRequest?.abort();
+        const controller = new AbortController();
+        latestRequest = controller;
+        latestQuery = query;
+        try {
+            const response = await fetch('/buyer/search/suggestions?q=' + encodeURIComponent(query), {
+                signal: controller.signal,
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok) throw new Error('Suggestions unavailable');
+            const payload = await response.json();
+            if (controller.signal.aborted || searchInput?.value?.trim() !== latestQuery) return;
+            drawSuggestions(Array.isArray(payload.suggestions) ? payload.suggestions : []);
+        } catch (error) {
+            if (error.name !== 'AbortError') closeSuggestions();
+        }
+    }
+
+    searchInput?.addEventListener('input', () => {
+        window.clearTimeout(searchDebounce);
+        latestRequest?.abort();
+        closeSuggestions();
+        if (searchInput.value.trim().length < 2) return;
+        searchDebounce = window.setTimeout(fetchSuggestions, 300);
+    });
+
+    searchInput?.addEventListener('focus', () => {
+        if (searchInput.value.trim().length >= 2) {
+            window.clearTimeout(searchDebounce);
+            searchDebounce = window.setTimeout(fetchSuggestions, 300);
+        }
+    });
+
+    searchInput?.addEventListener('keydown', event => {
+        if (event.key === 'ArrowDown' && !suggestionPanel?.hidden && suggestionItems.length) {
+            event.preventDefault(); setActiveSuggestion(activeSuggestion + 1);
+        } else if (event.key === 'ArrowUp' && !suggestionPanel?.hidden && suggestionItems.length) {
+            event.preventDefault(); setActiveSuggestion(activeSuggestion - 1);
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            runBuyerSearch(activeSuggestion >= 0 && !suggestionPanel?.hidden
+                ? suggestionItems[activeSuggestion] : searchInput.value.trim());
+        } else if (event.key === 'Escape') {
+            closeSuggestions();
+        }
+    });
+
+    searchButton?.addEventListener('click', () => runBuyerSearch());
+    document.addEventListener('click', event => {
+        if (!searchInput?.contains(event.target) &&
+            !suggestionPanel?.contains(event.target) &&
+            !searchButton?.contains(event.target)) closeSuggestions();
+    });
+    searchInput?.addEventListener('blur', () => {
+        window.setTimeout(() => {
+            if (!suggestionPanel?.contains(document.activeElement)) closeSuggestions();
+        }, 150);
     });
 
     /* =================================================
