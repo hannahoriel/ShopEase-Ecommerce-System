@@ -24,7 +24,16 @@
 </header>
 <main>
 @if (session('success'))
-<div role="status" style="max-width:1100px;margin:20px auto 0;padding:16px 20px;border:1px solid #b7dfc0;border-radius:12px;background:#effaf1;color:#205b2c;font-weight:600;">{{ session('success') }}</div>
+<div class="logistics-registration-flash-wrap" role="status" aria-live="polite" aria-atomic="true">
+  <div class="logistics-registration-flash">
+    <span class="logistics-registration-flash-icon" aria-hidden="true">✓</span>
+    <div class="logistics-registration-flash-content">
+      <strong>Registration submitted successfully</strong>
+      <p>{{ session('success') }}</p>
+    </div>
+    <button type="button" class="logistics-registration-flash-close" aria-label="Dismiss registration notification" onclick="this.closest('.logistics-registration-flash-wrap').remove()">&times;</button>
+  </div>
+</div>
 @endif
 <section class="hero" aria-labelledby="logisticsHeading" id="home">
 <div class="hero-bg-circle one"></div><div class="hero-bg-circle two"></div><div class="hero-bg-circle three"></div>
