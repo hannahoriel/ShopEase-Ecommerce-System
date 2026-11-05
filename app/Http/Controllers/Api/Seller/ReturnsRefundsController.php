@@ -9,6 +9,7 @@ use App\Models\Seller\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Services\BuyerWalletService;
 
 class ReturnsRefundsController extends Controller
 {
@@ -126,6 +127,11 @@ class ReturnsRefundsController extends Controller
             $locked = OrderReturn::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
             abort_unless($locked->status === 'accepted', 409, 'Only accepted requests can be refunded.');
             $locked->forceFill(['status' => 'refunded', 'refunded_at' => now()])->save();
+            // Credit the buyer only after the refund is actually completed, not when merely approved.
+            if ((float) $locked->refund_amount > 0) {
+                app(BuyerWalletService::class)->move((int)$locked->order->buyer_id, 'refund_credit',
+                    $locked->refund_amount, 'order_return', (int)$locked->id, 'Refund for order '.$locked->order->order_number);
+            }
             $locked->events()->create(['status' => 'refunded', 'location' => 'Seller refund processing', 'scanned_at' => now()]);
             return response()->json(['data' => $locked->fresh(['events'])]);
         });
