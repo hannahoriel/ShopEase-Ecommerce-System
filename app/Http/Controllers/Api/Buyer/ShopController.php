@@ -87,12 +87,28 @@ class ShopController extends Controller
         $seller->load(['user:id,name,profile_photo_path', 'reviews']);
         $allProductCount = $seller->products()->where('status', 'active')->where('is_archived', false)->count();
 
+        // Show actual active products from other sellers after this shop's collection.
+        // This is independent of the current shop's search/category filters.
+        $recommendedProducts = Product::query()
+            ->where('seller_id', '!=', $seller->id)
+            ->where('status', 'active')
+            ->where('is_archived', false)
+            ->whereHas('seller', fn ($query) => $query->where('registration_status', 'active'))
+            ->with('seller:id,store_name,business_name')
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->inRandomOrder()
+            ->limit(10)
+            ->get();
+
         return response()->json([
             'shop' => [
                 'id' => $seller->id,
                 'name' => $seller->store_name ?: $seller->business_name ?: $seller->user?->name,
                 'owner_name' => $seller->user?->name,
-                'avatar_url' => $seller->user?->profile_photo_path ? Storage::disk('public')->url($seller->user->profile_photo_path) : null,
+                'avatar_url' => $seller->profile_photo_path ? Storage::disk('public')->url($seller->profile_photo_path) : ($seller->user?->profile_photo_path ? Storage::disk('public')->url($seller->user->profile_photo_path) : null),
+                'cover_url' => $seller->cover_photo_path ? Storage::disk('public')->url($seller->cover_photo_path) : null,
+                'compliance_score' => null, // UI placeholder until authoritative admin compliance score integration
                 'location' => collect([$seller->municipality, $seller->province])->filter()->implode(', '),
                 'joined_at' => ($seller->approved_at ?? $seller->created_at)?->toISOString(),
                 'product_count' => $allProductCount,
@@ -111,6 +127,9 @@ class ShopController extends Controller
                     ->values(),
             ],
             'data' => $page->getCollection()->map(fn (Product $product): array => $this->serializeProduct($product))->values(),
+            'recommendations' => $recommendedProducts->map(fn (Product $product): array => array_merge($this->serializeProduct($product), [
+                'shop_name' => $product->seller?->store_name ?: $product->seller?->business_name ?: 'ShopEase Seller',
+            ]))->values(),
             'total' => $page->total(),
             'current_page' => $page->currentPage(),
             'last_page' => $page->lastPage(),

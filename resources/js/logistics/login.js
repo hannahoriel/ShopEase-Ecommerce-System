@@ -57,7 +57,7 @@ window.initLogisticsLogin = function(root) {
                 // Laravel's authenticated redirect has been followed by fetch. Verify the final route.
                 const destination = new URL(response.url, window.location.href);
                 if (destination.origin !== window.location.origin ||
-                    !/^\/logistics\/dashboard\/?$/.test(destination.pathname)) {
+                    !/^\/(?:logistics|sorting-center|delivery-hub)\/dashboard\/?$/.test(destination.pathname)) {
                     window.location.assign(destination.href);
                     return;
                 }

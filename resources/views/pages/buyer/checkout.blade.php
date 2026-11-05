@@ -343,7 +343,13 @@
                             >
                                 Cash on Delivery
                             </button>
+                            <button type="button" id="checkoutWalletOption" class="payment-option" data-payment-method="ShopEase Wallet" disabled aria-disabled="true" title="Loading wallet balance">
+                                ShopEase Wallet
+                            </button>
                         </div>
+                        <p id="checkoutWalletAvailability" class="checkout-wallet-availability" role="status">
+                            Wallet balance: Loading…
+                        </p>
                     </div>
 
                     <div class="selected-payment-method">

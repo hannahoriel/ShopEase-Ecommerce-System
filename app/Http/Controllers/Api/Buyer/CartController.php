@@ -118,6 +118,7 @@ class CartController extends Controller
     {
         $product = $item->product;
         $photos  = $this->resolvePhotos($product->photos ?? []);
+        $selectedPhoto = $product->selectedImageForCart($item->variation, $item->color, $item->size);
 
         return [
             'id'        => $item->id,
@@ -134,8 +135,8 @@ class CartController extends Controller
                 'pricing_mode' => $product->pricing_mode,
                 'stock'        => $product->stock_quantity,
                 'category'     => $product->category,
-                'image_url'    => $photos[0] ?? null,
-                'photos'       => $photos,
+                'image_url'    => $selectedPhoto ?: ($photos[0] ?? null),
+                'photos'       => $selectedPhoto ? array_values(array_unique([$selectedPhoto, ...$photos])) : $photos,
                 'variations'   => $product->variations,
                 'colors'       => $product->colors,
                 'sizes'        => $product->sizes,
@@ -149,7 +150,7 @@ class CartController extends Controller
 
     private function ensureSelectedStock(Product $product, array $selection, int $quantity): void
     {
-        $combinations = $product->connectedVariants;
+        $combinations = $product->connectedVariants()->get();
         if ($combinations->isNotEmpty()) {
             $matching = $combinations->first(function ($variant) use ($selection) {
                 $choices = $variant->choices ?? [];

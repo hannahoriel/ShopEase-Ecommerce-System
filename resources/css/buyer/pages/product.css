@@ -1424,3 +1424,9 @@
     font-size: 12px;
     font-weight: 700;
 }
+
+/* Product-specific rating next to the star, shop name below it. */
+.product-card .product-review-meta{min-width:0;margin-top:4px}
+.product-card .product-review-meta .product-rating{display:flex;align-items:center;gap:5px;margin:0;font-size:12px;line-height:1.4}
+.product-card .product-review-meta .product-rating-number{font-weight:600;color:#3a302f;font-variant-numeric:tabular-nums}
+.product-card .product-review-meta .product-shop-name{margin:2px 0 0;color:#938985;font-size:11px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

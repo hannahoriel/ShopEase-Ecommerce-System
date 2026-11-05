@@ -1011,6 +1011,7 @@ function initSellerCompliance(cfg) {
                                     ${esc(name)}
                                 </div>
 
+                                <div class="seller-product-weight" style="font-size:10px;color:#8a7b79;margin:5px 0">Weight: ${Number(product.weight_kg)>0 ? Number(product.weight_kg).toLocaleString('en-PH', {maximumFractionDigits:3})+' kg' : 'Not set'}</div>
                                 <div class="seller-product-bottom">
                                     <span class="seller-product-price">
                                         ${peso(product.price)}
@@ -1575,6 +1576,7 @@ function initSellerCompliance(cfg) {
             pricingType,pricingSource,
             stock: `${Number(pick(product,'stock_quantity','stock','total_stock') || 0).toLocaleString('en-PH')} units`,
             uploaded: formatDate(pick(product,'created_at','createdAt')),
+            weight: Number(product.weight_kg) > 0 ? `${Number(product.weight_kg).toLocaleString('en-PH', {maximumFractionDigits:3})} kg` : 'Not set',
             variationNames: rawVariations.length ? rawVariations.map(g=>typeof g==='object' ? (g.name || g.group_name || g.label || 'Variation') : String(g)).join(', ') : '—',
             colors: colors.length ? colors.map(x => typeof x==='object' ? (x.name||x.label||x.value||readable(x)) : x).join(', ') : '—',
             sizes: sizes.length ? sizes.map(x => typeof x==='object' ? (x.name||x.label||x.value||readable(x)) : x).join(', ') : '—',

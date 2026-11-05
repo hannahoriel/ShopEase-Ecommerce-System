@@ -228,7 +228,7 @@
             align-items: center;
             gap: 9px;
             color: #28211F;
-            font-size: 12px;
+            font-size: 13.5px;
             white-space: nowrap;
         }
 
@@ -243,7 +243,7 @@
         .address-content p {
             margin: 0;
             color: #5E5754;
-            font-size: 12px;
+            font-size: 13.5px;
             line-height: 1.45;
         }
 
@@ -256,7 +256,7 @@
             border: 1px solid #B85D64;
             border-radius: 5px;
             color: #8A202A;
-            font-size: 10px;
+            font-size: 11.5px;
             font-weight: 600;
         }
 
@@ -264,7 +264,7 @@
             padding: 0;
             background: transparent;
             color: #7A1620;
-            font-size: 11px;
+            font-size: 12.5px;
             font-weight: 700;
             cursor: pointer;
             transition:
@@ -289,7 +289,7 @@
             align-items: center;
             border-bottom: 1px solid #ECE3E0;
             color: #6E6663;
-            font-size: 12px;
+            font-size: 13.5px;
             font-weight: 500;
         }
 
@@ -323,7 +323,7 @@
             align-items: center;
             gap: 8px;
             color: #302725;
-            font-size: 11px;
+            font-size: 12.5px;
         }
 
         .checkout-shop-name-wrap strong {
@@ -351,7 +351,7 @@
             gap: 6px;
             background: transparent;
             color: #7A1620;
-            font-size: 10px;
+            font-size: 11.5px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -402,7 +402,7 @@
             display: block;
             overflow: hidden;
             color: #29211F;
-            font-size: 13px;
+            font-size: 14px;
             line-height: 1.35;
             font-weight: 700;
             text-overflow: ellipsis;
@@ -413,7 +413,7 @@
             display: block;
             margin-top: 5px;
             color: #918986;
-            font-size: 10px;
+            font-size: 11.5px;
             line-height: 1.35;
         }
 
@@ -422,11 +422,11 @@
         .checkout-item-subtotal {
             color: #3D3431;
             text-align: center;
-            font-size: 12px;
+            font-size: 13.5px;
             font-weight: 500;
         }
 
-        .checkout-unit-price{display:flex;flex-direction:column;align-items:center;gap:3px}.checkout-unit-price strong{font-size:12px;color:#d94d45}.checkout-unit-price del{font-size:10px;color:#a49a96}.checkout-unit-price em{padding:2px 5px;border-radius:3px;background:#fff0ed;color:#d94d45;font-size:9px;font-style:normal;font-weight:650}
+        .checkout-unit-price{display:flex;flex-direction:column;align-items:center;gap:3px}.checkout-unit-price strong{font-size:13.5px;color:#d94d45}.checkout-unit-price del{font-size:11.5px;color:#a49a96}.checkout-unit-price em{padding:2px 5px;border-radius:3px;background:#fff0ed;color:#d94d45;font-size:9px;font-style:normal;font-weight:650}
 
         .checkout-item-subtotal {
             color: #251E1C;
@@ -451,7 +451,7 @@
 
         .seller-message-field > span {
             color: #514845;
-            font-size: 10px;
+            font-size: 11.5px;
             font-weight: 600;
             white-space: nowrap;
         }
@@ -465,7 +465,7 @@
             outline: none;
             background: #FFFFFF;
             color: #3B3330;
-            font-size: 10px;
+            font-size: 11.5px;
             transition:
                 border-color .16s ease,
                 box-shadow .16s ease;
@@ -499,13 +499,13 @@
 
         .shipping-option > div strong {
             color: #332A28;
-            font-size: 11px;
+            font-size: 12.5px;
             font-weight: 700;
         }
 
         .shipping-option > div span {
             color: #6A1A23;
-            font-size: 10px;
+            font-size: 11.5px;
             font-weight: 600;
         }
 
@@ -519,7 +519,7 @@
         .shipping-fee {
             color: #302725;
             text-align: right;
-            font-size: 11px;
+            font-size: 12.5px;
             font-weight: 700;
         }
 
@@ -535,7 +535,7 @@
 
         .shop-total-row span {
             color: #756D6A;
-            font-size: 10px;
+            font-size: 11.5px;
         }
 
         .shop-total-row strong {
@@ -580,7 +580,7 @@
             border-radius: 7px;
             background: #FFFFFF;
             color: #514946;
-            font-size: 10px;
+            font-size: 11.5px;
             font-weight: 600;
             cursor: pointer;
             transition:
@@ -613,7 +613,7 @@
         .selected-payment-method span {
             min-width: 165px;
             color: #342B29;
-            font-size: 11px;
+            font-size: 12.5px;
             font-weight: 700;
         }
 
@@ -637,7 +637,7 @@
             justify-content: space-between;
             gap: 24px;
             color: #766E6B;
-            font-size: 10px;
+            font-size: 11.5px;
         }
 
         .checkout-summary-row strong {
@@ -650,7 +650,7 @@
         .checkout-summary-total {
             margin-top: 3px;
             color: #4B403D;
-            font-size: 11px;
+            font-size: 12.5px;
         }
 
         .checkout-summary-total strong {
@@ -680,14 +680,14 @@
         .checkout-message {
             margin: 8px 22px 14px;
             color: #A32626;
-            font-size: 11px;
+            font-size: 12.5px;
         }
 
         .checkout-empty-cart {
             padding: 28px;
             color: #7F7774;
             text-align: center;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .checkout-product-image img {
@@ -698,7 +698,7 @@
 
         .checkout-product-placeholder {
             color: #8A827F;
-            font-size: 10px;
+            font-size: 11.5px;
         }
 
         .checkout-placed-order {
@@ -723,13 +723,13 @@
             display: grid;
             gap: 5px;
             color: #554A47;
-            font-size: 10px;
+            font-size: 11.5px;
             overflow-wrap: anywhere;
         }
 
         .checkout-placed-order-copy strong {
             color: #7A1620;
-            font-size: 12px;
+            font-size: 13.5px;
         }
 
         .checkout-placed-order-copy small {
@@ -743,7 +743,7 @@
             border-radius: 999px;
             background: #8B201A;
             color: #FFFFFF;
-            font-size: 12px;
+            font-size: 13.5px;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 3px 8px rgba(110, 27, 35, .16);
@@ -840,7 +840,7 @@
         .modal-description,
         .modal-heading-row p {
             color: #827A77;
-            font-size: 10px;
+            font-size: 11.5px;
             line-height: 1.55;
         }
 
@@ -861,7 +861,7 @@
         .modal-address-preview strong,
         .modal-address-preview span {
             color: #342A28;
-            font-size: 10px;
+            font-size: 11.5px;
         }
 
         .modal-address-preview strong {
@@ -877,7 +877,7 @@
         .modal-address-preview p {
             margin: 7px 0 0;
             color: #776F6C;
-            font-size: 10px;
+            font-size: 11.5px;
             line-height: 1.5;
         }
 
@@ -892,7 +892,7 @@
             min-height: 38px;
             padding: 0 15px;
             border-radius: 8px;
-            font-size: 11px;
+            font-size: 12.5px;
             font-weight: 700;
             cursor: pointer;
             transition:
@@ -963,7 +963,7 @@
             outline: none;
             background: #FFFFFF;
             color: #302725;
-            font-size: 10px;
+            font-size: 11.5px;
             transition:
                 border-color .16s ease,
                 box-shadow .16s ease;
@@ -1019,7 +1019,7 @@
         .checkout-address-section-heading p {
             margin: 3px 0 0;
             color: #A0A0A0;
-            font-size: 12px;
+            font-size: 13.5px;
             line-height: 1.4;
             font-weight: 400;
         }
@@ -1049,7 +1049,7 @@
             display: block;
             margin-bottom: 6px;
             color: #161616;
-            font-size: 13px;
+            font-size: 14px;
             line-height: 1.2;
             font-weight: 500;
         }
@@ -1062,7 +1062,7 @@
             border-radius: 9px;
             background: #FFFFFF;
             color: #333333;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 400;
             outline: none;
             transition:
@@ -1188,7 +1188,7 @@
             background: transparent;
             color: #333333;
             text-align: left;
-            font-size: 13px;
+            font-size: 14px;
             cursor: pointer;
             transition:
                 background .15s ease,
@@ -1212,7 +1212,7 @@
             padding: 10px;
             color: #999999;
             text-align: center;
-            font-size: 10px;
+            font-size: 11.5px;
         }
 
         .modal-form-actions {
@@ -1254,7 +1254,7 @@
             max-width: 330px;
             margin: 9px auto 0;
             color: #7F7774;
-            font-size: 11px;
+            font-size: 12.5px;
             line-height: 1.55;
         }
 
@@ -1426,3 +1426,33 @@
                 animation: none !important;
             }
         }
+
+
+/* Checkout logistics availability — readable, compact and responsive. */
+.shop-checkout-options{grid-template-columns:minmax(0,1fr);min-width:0}
+.shop-checkout-options .shipping-option{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;min-height:110px;padding:20px 24px}
+.shop-checkout-options .shipping-option>.checkout-shipping-choice{display:flex;flex-direction:column;align-items:stretch;gap:11px;min-width:0;flex:1;max-width:650px}
+.checkout-logistics-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.shop-checkout-options .checkout-logistics-heading strong{font-size:14px;color:#30201f;line-height:1.4}
+.shop-checkout-options .checkout-logistics-status{display:inline-flex;align-items:center;width:max-content;border:1px solid #e6d0cb;background:#fff7f4;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.4;color:#8a4d43}
+.shop-checkout-options .checkout-logistics-status.is-available{background:#eaf7ed;border-color:#b5ddc1;color:#237044}
+.shop-checkout-options .checkout-logistics-status.is-unavailable{background:#f8e9ec;border-color:#d7a4b0;color:#7b1b1b}
+.shop-checkout-options .checkout-logistics-label{display:block;font-size:12px;color:#695c58;line-height:1.55}
+.shop-checkout-options .checkout-logistics-select{display:block;width:min(100%,450px);max-width:100%;height:42px;padding:0 13px;border:1px solid #d9ccca;background:#fff;border-radius:8px;color:#352a29;font-size:13px;outline:0;cursor:pointer}
+.shop-checkout-options .checkout-logistics-select:focus{border-color:#8e2934;box-shadow:0 0 0 3px #8e293414}
+.shop-checkout-options .checkout-logistics-select:disabled{color:#8d8582;background:#f9f6f5;cursor:wait}
+.shop-checkout-options .checkout-logistics-notice{display:flex;gap:11px;align-items:flex-start;max-width:650px;background:#fff5f6;border:1px solid #e6bac4;border-radius:10px;padding:13px 14px;color:#67202d}
+.checkout-logistics-notice-icon{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;border-radius:50%;background:#f0d5dc;color:#7b1b1b;font-size:14px;font-weight:800}
+.shop-checkout-options .checkout-logistics-notice strong{font-size:12px;font-weight:700;color:#7b1b1b;line-height:1.4}
+.shop-checkout-options .checkout-logistics-notice p{font-size:11.5px;line-height:1.65;color:#825660;margin:4px 0 0}
+.shop-checkout-options .shipping-fee{margin-left:auto;padding-top:5px;flex-shrink:0;white-space:nowrap;font-size:13px}
+@media(max-width:700px){.shop-checkout-options .shipping-option{flex-direction:column;gap:10px;padding:16px}.shop-checkout-options .shipping-fee{margin-left:0;padding-top:0}.shop-checkout-options{min-width:0!important}}
+
+/* Shop voucher field: smaller, readable placeholder without changing other checkout text. */
+#checkoutVoucherCode{font-size:12px!important;}
+#checkoutVoucherCode::placeholder{font-size:11px!important;letter-spacing:0!important;text-transform:none;opacity:1;}
+
+/* ShopEase refund-only wallet payment option */
+.checkout-wallet-availability{margin:10px 0 0;font-size:12px;line-height:1.7;color:#67202b;}
+.payment-option:disabled{opacity:.48;cursor:not-allowed;filter:grayscale(.2);}
+.payment-option[data-payment-method="ShopEase Wallet"]:not(:disabled){border-color:#a05260;}

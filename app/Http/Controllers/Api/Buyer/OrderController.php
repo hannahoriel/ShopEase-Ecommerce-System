@@ -20,6 +20,7 @@ use Illuminate\Support\Collection;
 use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
+use App\Services\BuyerWalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -133,7 +134,7 @@ class OrderController extends Controller
                 'items' => $order->items->map(fn ($item): array => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
-                    'image_url' => $this->productImageUrl($item->product?->photos[0] ?? null),
+                    'image_url' => ($item->product?->selectedImageForCart($item->variation, $item->color, $item->size) ?: $this->productImageUrl($item->product?->photos[0] ?? null)),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'variation' => $item->variation,
@@ -318,7 +319,7 @@ class OrderController extends Controller
             'delivery_address' => ['required', 'string', 'max:1000'],
             'delivery_province' => ['required', 'string', 'max:150'],
             'delivery_municipality' => ['required', 'string', 'max:150'],
-            'payment_method' => ['required', 'in:Cash on Delivery'],
+            'payment_method' => ['required', 'in:Cash on Delivery,ShopEase Wallet'],
             'logistics_selections' => ['required', 'array', 'min:1'],
             'logistics_selections.*.seller_id' => ['required', 'integer', 'distinct', 'exists:sellers,id'],
             'logistics_selections.*.logistics_id' => ['required', 'integer', 'exists:logistics,id'],
@@ -334,6 +335,10 @@ class OrderController extends Controller
             'checkout_items.*.size' => ['nullable', 'string', 'max:100'],
         ]);
 
+        // Ensure a lockable wallet record exists before transaction begins.
+        if ($validated['payment_method'] === 'ShopEase Wallet') {
+            app(BuyerWalletService::class)->account((int)$request->user()->id);
+        }
         $orders = DB::transaction(function () use ($request, $validated) {
             $checkoutCartItemIds = $validated['cart_item_ids'] ?? [];
             foreach ($validated['checkout_items'] ?? [] as $checkoutItem) {
@@ -351,7 +356,8 @@ class OrderController extends Controller
             $itemsQuery = CartItem::query()
                 ->where('user_id', $request->user()->id)
                 ->with(['product.seller']);
-            if ($checkoutCartItemIds !== []) {
+            if (array_key_exists('cart_item_ids', $validated)) {
+                // An explicit buyer cart selection must never fall back to purchasing the entire cart.
                 $itemsQuery->whereIn('id', $checkoutCartItemIds);
             }
             $items = $itemsQuery
@@ -435,6 +441,10 @@ class OrderController extends Controller
                         'delivery_address' => $validated['delivery_address'],
                         'payment_method' => $validated['payment_method'],
                     ]);
+                    if ($validated['payment_method'] === 'ShopEase Wallet') {
+                        app(BuyerWalletService::class)->move((int)$request->user()->id, 'order_payment',
+                            $total, 'order', (int)$order->id, 'Wallet payment for order '.$order->id);
+                    }
                     $order->forceFill([
                         'order_number' => $this->orderNumberFor($order),
                     ])->saveQuietly();
@@ -511,7 +521,7 @@ class OrderController extends Controller
                 'items' => $order->items->map(fn ($item): array => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
-                    'image_url' => $this->productImageUrl($item->product?->photos[0] ?? null),
+                    'image_url' => ($item->product?->selectedImageForCart($item->variation, $item->color, $item->size) ?: $this->productImageUrl($item->product?->photos[0] ?? null)),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                 ])->all(),
@@ -685,6 +695,11 @@ class OrderController extends Controller
             'pickup_time' => null,
         ]);
         $order->shipment()->update(['rider_id' => null]);
+        // An approved cancellation restores wallet-paid funds exactly once.
+        if ($order->payment_method === 'ShopEase Wallet') {
+            app(BuyerWalletService::class)->move((int)$order->buyer_id, 'payment_reversal',
+                $order->total, 'order', (int)$order->id, 'Cancelled order '.$order->order_number);
+        }
 
         $reason = $cancellationRequest->buyer_reason === 'other'
             ? 'Other: '.$cancellationRequest->buyer_other_reason

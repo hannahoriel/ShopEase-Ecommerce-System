@@ -30,10 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             /* ─── Load cart from API and render ─────────────────── */
             function loadCart() {
-                if (!apiToken) {
-                    console.warn('[Cart] No apiToken — skipping loadCart');
-                    return;
-                }
+                // Cookie-authenticated sessions may not expose a separate API token.
 
                 apiFetch(cartUrl)
                     .then((res) => {
@@ -117,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const groups = {};
                 items.forEach((item) => {
                     const key = item.product.seller.id;
-                    if (!groups[key]) groups[key] = { shop: item.product.seller.store_name, items: [] };
+                    if (!groups[key]) groups[key] = { shop: item.product.seller.store_name, sellerId: key, items: [] };
                     groups[key].items.push(item);
                 });
 
@@ -131,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="cart-shop-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1-5H5L4 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5 9v10h14V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
                             </span>
-                            <span class="cart-shop-name">${escapeHtml(group.shop)}</span>
+                            <a class="cart-shop-name cart-shop-link" href="/buyer/shop?seller=${encodeURIComponent(group.sellerId)}" title="Visit ${escapeHtml(group.shop)} shop">${escapeHtml(group.shop)}</a>
                         </div>
                         ${group.items.map((item) => {
                             const img = item.product.image_url
@@ -139,15 +136,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                 : `<svg viewBox="0 0 180 150"><rect width="180" height="150" rx="14" fill="#E9E8E2"/></svg>`;
                             const optionParts = [item.variation, item.color, item.size].filter(Boolean);
                             return `
-                            <article class="cart-item-row" data-cart-item data-item-id="${item.id}" data-api-item-id="${item.id}" data-price="${item.product.price}">
+                            <article class="cart-item-row" data-cart-item data-product-url="/buyer/product?id=${encodeURIComponent(item.product.id)}" data-item-id="${item.id}" data-api-item-id="${item.id}" data-price="${item.product.price}">
                                 <div class="cart-item-product">
                                     <label class="cart-check-wrap">
                                         <input type="checkbox" class="cart-checkbox item-checkbox" checked>
                                         <span class="cart-checkmark"></span>
                                     </label>
-                                    <div class="cart-product-image cart-product-link">${img}</div>
+                                    <a class="cart-product-image cart-product-link" href="/buyer/product?id=${encodeURIComponent(item.product.id)}" aria-label="View ${escapeHtml(item.product.name)}">${img}</a>
                                     <div class="cart-product-copy">
-                                        <h3>${escapeHtml(item.product.name)}</h3>
+                                        <h3><a href="/buyer/product?id=${encodeURIComponent(item.product.id)}" style="color:inherit;text-decoration:none;">${escapeHtml(item.product.name)}</a></h3>
                                         ${optionParts.length ? `<div class="cart-selected-variation"><p><span>${escapeHtml(optionParts.join(' · '))}</span></p></div>` : ''}
                                         <span class="cart-sale-price"><strong>₱${Number(item.product.price).toLocaleString('en-PH', {minimumFractionDigits:2})}</strong>${item.product.sale_percentage ? `<del>₱${Number(item.product.original_price).toLocaleString('en-PH', {minimumFractionDigits:2})}</del><em>-${item.product.sale_percentage}%</em>` : ''}</span>
                                     </div>
