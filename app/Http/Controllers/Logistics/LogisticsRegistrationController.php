@@ -18,16 +18,43 @@ use RuntimeException;
 
 class LogisticsRegistrationController extends Controller
 {
+    /** Visiting the public logistics landing page ends an unfinished signup. */
+    public function landingPage(Request $request)
+    {
+        $documents = $request->session()->get('logistics_registration.documents', []);
+        if (is_array($documents)) {
+            foreach ($documents as $document) {
+                $path = is_array($document) ? ($document['path'] ?? null) : null;
+                // Only clean up files belonging to the temporary registration area.
+                if (is_string($path) && str_starts_with($path, 'logistics-registrations/temporary/')) {
+                    Storage::disk('local')->delete($path);
+                }
+            }
+        }
+
+        // Clear only the signup draft; keep auth and unrelated session data.
+        $request->session()->forget('logistics_registration');
+        $request->session()->forget('_old_input');
+
+        return view('pages.logistics-landing');
+    }
+
+
     public function companyPage()
     {
         return view('pages.logistics landing page.signup-firstpage', [
             'companyData' => request()->session()->get('logistics_registration.company', []),
+            'hasSavedRegistrationPassword' => request()->session()->has('logistics_registration.encrypted_password'),
         ]);
     }
 
     public function saveCompany(Request $request)
     {
         $data = $request->validate([
+            'sec_registration_number' => ['required','regex:/^[A-Za-z]{2}[0-9]{9}$/'],
+            'tin' => ['required','regex:/^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/'],
+            'service_areas' => ['required','array','min:1'],
+            'service_areas.*' => ['required','string','max:60'],
             'company_name' => ['required','string','max:255'],
             'registered_business_name' => ['required','string','max:255'],
             'company_type' => ['required','string','max:100'],
@@ -52,15 +79,17 @@ class LogisticsRegistrationController extends Controller
             'house_no' => ['nullable','string','max:80'],
             'building' => ['nullable','string','max:255'],
             'subdivision' => ['nullable','string','max:255'],
-            'password' => ['required','confirmed',Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => [$request->session()->has('logistics_registration.encrypted_password') ? 'nullable' : 'required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'accept_terms' => ['accepted'],
         ]);
         // Never put a raw password into a session or file. Encrypt only until
         // Step 3 creates the actual user and securely hashes it using Hash::make.
-        $password = $data['password'];
+        $password = $data['password'] ?? null;
         unset($data['password']);
         $request->session()->put('logistics_registration.company', $data);
-        $request->session()->put('logistics_registration.encrypted_password', Crypt::encryptString($password));
+        if ($password !== null && $password !== '') {
+            $request->session()->put('logistics_registration.encrypted_password', Crypt::encryptString($password));
+        }
         return redirect()->route('logistics.register.permits');
     }
 
