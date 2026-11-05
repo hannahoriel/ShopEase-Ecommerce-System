@@ -928,3 +928,24 @@ body:has(#admin-sidebar.collapsed) #sellerAccountPage.seller-account-page {
     overflow: visible !important;
   }
 }
+
+/* ===============================================
+   Admin Management — consistent admin typography
+   and email-only credential UI (frontend only)
+   =============================================== */
+#sellerAccountPage #admin-management .sa-section-title { font-size: 18px; line-height: 1.5; font-weight: 650; }
+#sellerAccountPage #admin-management .sa-section-subtitle { font-size: 13px; line-height: 1.65; }
+#sellerAccountPage #admin-management .sa-field label { font-size: 13px; font-weight: 550; }
+#sellerAccountPage #admin-management .sa-control { font-size: 13px; }
+#sellerAccountPage #admin-management .sa-request-hint { font-size: 12px; }
+#sellerAccountPage #admin-management .aam-page-tab { font-size: 14px; }
+#sellerAccountPage #admin-management .aam-permission { font-size: 13px; }
+#sellerAccountPage #admin-management .aam-subpermission { font-size: 12px; }
+#sellerAccountPage #admin-management .aam-role-toolbar,
+#sellerAccountPage #admin-management .aam-text-button { font-size: 12px; }
+#sellerAccountPage #admin-management .aam-permission small { font-size: 11px; }
+#sellerAccountPage #admin-management .aam-form-actions .sa-action { font-size: 13px; }
+#sellerAccountPage #admin-management .aam-email-field { max-width: 650px; width: 100%; }
+#sellerAccountPage #admin-management .sa-section-heading .sa-section-icon img { width: 24px; height: 24px; object-fit: contain; }
+#sellerAccountPage #admin-management .aam-ui-notice { margin: 0 0 20px; border: 1px solid #e5d5cd; border-radius: 9px; background: #fff8f4; color: #805242; padding: 12px 15px; font-size: 12px; line-height: 1.7; }
+#sellerAccountPage #admin-management .aam-ui-notice[hidden] { display:none!important; }

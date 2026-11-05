@@ -295,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileSection = form.querySelector('[data-aam-profile]');
   const credentialsSection = form.querySelector('[data-aam-credentials]');
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-  let temporaryPassword = '';
   const flash = (message, error=false, title=undefined) => {
     if (typeof window.showAccountFlash === 'function') window.showAccountFlash(message,error,title);
   };
@@ -304,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       form.dataset.editAdminId = String(admin.id);
       profileSection.hidden = true;
       credentialsSection.hidden = true;
-      $('aamPassword').required = false;
+
       $('aamCreate').textContent = 'Save Admin Access';
       $('aamReset').textContent = 'Cancel Edit';
       permissions.forEach(box => { box.checked = admin.permissions?.includes(box.value) || false; });
@@ -316,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
     delete form.dataset.editAdminId;
     profileSection.hidden = false;
     credentialsSection.hidden = false;
-    $('aamPassword').required = true;
     $('aamCreate').textContent = 'Create Admin Account';
     $('aamReset').textContent = 'Clear Form';
   }
@@ -405,20 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
       list.replaceChildren();
     }
   }
-  function generatePassword() {
-    if (!globalThis.crypto?.getRandomValues) { flash('Secure password generation is unavailable in this browser.',true); return; }
-    const groups = ['ABCDEFGHJKLMNPQRSTUVWXYZ','abcdefghijkmnopqrstuvwxyz','23456789','!@#$%*-_'];
-    const random = max => { const buf = new Uint32Array(1); const limit = Math.floor(0x100000000/max)*max; let x; do {crypto.getRandomValues(buf); x=buf[0];} while (x>=limit); return x%max; };
-    const chars=groups.map(g=>g[random(g.length)]);
-    const all=groups.join('');
-    for(let i=chars.length;i<18;i++)chars.push(all[random(all.length)]);
-    for(let i=chars.length-1;i>0;i--){const j=random(i+1);[chars[i],chars[j]]=[chars[j],chars[i]];}
-    temporaryPassword=chars.join('');
-    $('aamPassword').value=temporaryPassword;
-    $('aamPassword').type='password';$('aamRevealPassword').textContent='Show';
-    $('aamResult').hidden=true;
-    flash('A new strong temporary password has been generated.',false,'Password Generated');
-  }
   function updatePermissions() {
     const enabled=$('aamMessages').checked;
     messagePermissions.forEach(box=>{box.disabled=!enabled;if(!enabled)box.checked=false;});
@@ -428,11 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
   permissions.forEach(box=>box.addEventListener('change',updatePermissions));
   $('aamSelectAll').addEventListener('click',()=>{permissions.forEach(x=>x.checked=true);updatePermissions();messagePermissions.forEach(x=>x.checked=true);});
   $('aamClearAll').addEventListener('click',()=>{permissions.forEach(x=>x.checked=false);updatePermissions();});
-  $('aamGenerate').addEventListener('click',generatePassword);
-  $('aamRevealPassword').addEventListener('click',()=>{if(!temporaryPassword){flash('Generate a password first.',true);return;}$('aamPassword').type=$('aamPassword').type==='password'?'text':'password';$('aamRevealPassword').textContent=$('aamPassword').type==='password'?'Show':'Hide';});
-  async function copy(text){if(!text){flash('Generate a password first.',true);return;}try{await navigator.clipboard.writeText(text);flash('Copied to clipboard.',false,'Copied');}catch(_){flash('Clipboard is unavailable. Use Show to copy the password manually.',true);}}
-  $('aamCopyPassword').addEventListener('click',()=>copy(temporaryPassword));
-  $('aamCopyCredentials').addEventListener('click',()=>copy(`ShopEase Administrator\nEmail: ${$('aamEmail').value.trim()}\nTemporary password: ${temporaryPassword}`));
   $('aamBirthday').addEventListener('change',()=>{const value=$('aamBirthday').value;const b=value?new Date(value+'T00:00:00'):null;let age='';if(b&&!isNaN(b)&&b<=new Date()){const n=new Date();age=n.getFullYear()-b.getFullYear()-(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate())?1:0);} $('aamAge').value=age;});
   ['aamProfilePhoto','aamIdPhoto'].forEach(id=>$(id).addEventListener('change',e=>{const file=e.target.files[0];if(file&&(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))){e.target.value='';flash('Please select a JPG, PNG or WebP image under 5 MB.',true);}}));
   form.addEventListener('submit',async event=>{
@@ -441,7 +420,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!editId && !form.reportValidity())return;
     if(!permissions.some(x=>x.checked)){flash('Select at least one administrator module.',true,'Permissions Required');return;}
     if($('aamMessages').checked&&!messagePermissions.some(x=>x.checked)){flash('Select at least one Messages category.',true,'Messages Access Required');return;}
-    if(!editId && !temporaryPassword){flash('Generate a temporary password first.',true);return;}
+    if (!editId) {
+      // UI-only account creation: never send account data until the backend handles secure password provisioning.
+      const notice = $('aamUiNotice');
+      if (notice) {
+        notice.hidden = false;
+        notice.textContent = 'UI preview only. Backend implementation will generate and securely deliver the temporary password. No administrator account was created.';
+      }
+      return;
+    }
     const fullname=[$('aamFirst').value.trim(),$('aamMiddle').value.trim(),$('aamLast').value.trim()].filter(Boolean).join(' ');
     const chosen=permissions.filter(x=>x.checked).map(x=>x.value);
     const messages=messagePermissions.filter(x=>x.checked).map(x=>x.value);
@@ -465,15 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messagePermissions.forEach(box => { box.checked = false; });
         updatePermissions();
         flash(result.message,false,'Access Updated');
-      } else {
-        $('aamResultSummary').textContent=`${fullname} — administrator account created successfully.`;
-        $('aamResultEmail').textContent=$('aamEmail').value.trim();
-        $('aamResultPassword').textContent='Hidden — use Copy Credentials';
-        $('aamResultRoles').textContent=`Module access: ${chosen.join(', ')}${messages.length?'. Messages: '+messages.join(', '):''}.`;
-        $('aamResult').hidden=false;
-        flash(result.message,false,'Administrator Created');
-        $('aamResult').scrollIntoView({behavior:'smooth',block:'nearest'});
-      }
+       }
       await loadAccounts();
     } catch(error) {
       flash(error.message,true);
@@ -481,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
       button.disabled=false;
     }
   });
-  form.addEventListener('reset',()=>setTimeout(()=>{setEditMode();temporaryPassword='';$('aamPassword').value='';$('aamAge').value='';$('aamResult').hidden=true;$('aamPassword').type='password';$('aamRevealPassword').textContent='Show';updatePermissions();flash('The administrator form has been cleared.',false,'Form Cleared');},0));
+  form.addEventListener('reset',()=>setTimeout(()=>{setEditMode();$('aamAge').value='';const notice=$('aamUiNotice');if(notice)notice.hidden=true;updatePermissions();flash('The administrator form has been cleared.',false,'Form Cleared');},0));
   updatePermissions();
   loadAccounts();
 });
