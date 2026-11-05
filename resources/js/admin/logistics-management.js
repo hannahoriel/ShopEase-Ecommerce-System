@@ -19,6 +19,46 @@ const logisticsManagementConfig = logisticsManagementConfigElement
 
 document.addEventListener('DOMContentLoaded', function () {
 
+    // Shared document lightbox, for both Pending Registration and Company Details.
+    const lmDocumentLayer = document.getElementById('lmDocumentPreviewLayer');
+    const lmDocumentBody = document.getElementById('lmDocumentPreviewBody');
+    const lmDocumentHeading = document.getElementById('lmDocumentPreviewHeading');
+    function closeLmDocument() {
+        if (!lmDocumentLayer) return;
+        lmDocumentLayer.hidden = true;
+        lmDocumentBody.replaceChildren();
+        document.body.classList.remove('lm-document-preview-open');
+    }
+    document.addEventListener('click', function (event) {
+        const view = event.target.closest('.ar-view-document');
+        if (view) {
+            event.preventDefault();
+            const url = view.dataset.documentUrl || '';
+            if (!/^https?:\/\/|^\/storage\//i.test(url)) return;
+            lmDocumentHeading.textContent = view.dataset.documentTitle || 'Document Preview';
+            lmDocumentBody.replaceChildren();
+            const ext = new URL(url, window.location.origin).pathname.toLowerCase();
+            if (/\.pdf$/.test(ext)) {
+                const frame = document.createElement('iframe');
+                frame.src = url;
+                frame.title = lmDocumentHeading.textContent;
+                lmDocumentBody.append(frame);
+            } else {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = lmDocumentHeading.textContent;
+                img.onerror = () => {lmDocumentBody.textContent='Document preview unavailable.';};
+                lmDocumentBody.append(img);
+            }
+            lmDocumentLayer.hidden = false;
+            document.body.classList.add('lm-document-preview-open');
+        }
+        if (event.target.closest('[data-close-lm-document]')) closeLmDocument();
+    });
+    lmDocumentLayer?.addEventListener('click', function(event) { if(event.target === lmDocumentLayer) closeLmDocument(); });
+    document.addEventListener('keydown', event => { if(event.key === 'Escape' && lmDocumentLayer && !lmDocumentLayer.hidden) closeLmDocument(); });
+
+
     /* =========================================================
        DATA
     ========================================================== */
@@ -864,6 +904,37 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const detailHost = document.getElementById('pending-registration-full-details');
+        request = {...(logisticsManagementConfig.registrationPreview||{})[request.company], ...request};
+        if (detailHost) {
+            const val = keys => {for(const k of keys){let v=request[k];if(Array.isArray(v))v=v.join(', ');if(v!==null&&v!==undefined&&String(v).trim())return String(v);}return 'Not provided';};
+            const section = (title,fields) => `<section class="ar-section"><h3>${escapeHtml(title)}</h3><div class="ar-grid">${fields.map(([label,keys])=>`<div class="ar-cell"><small>${escapeHtml(label)}</small><strong>${escapeHtml(val(keys))}</strong></div>`).join('')}</div></section>`;
+            detailHost.innerHTML =
+              section('Company Information',[
+                ['SEC Registration No.',['sec_registration_number']],['TIN',['tin']],['Service Areas',['service_areas']],
+                ['Company / Logistics Business Name',['company_name','company']],['Registered Legal Business Name',['registered_business_name']],
+                ['Company Type',['company_type']],['Years in Operation',['years_in_operation']],['Company Email Address',['company_email','email']],
+                ['Company Contact Number',['company_phone','phone']],['Company Website',['website','company_website']],['Number of Sorting Centers (Optional)',['sorting_center_count','branch_count']]
+              ]) +
+              section('Authorized Representative',[
+                ['Representative Name',['representative_name','contact_person']],['Position',['representative_position']],
+                ['Email Address',['representative_email']],['Contact Number',['representative_phone','phone']],
+                ['Sex',['representative_sex']],['Date of Birth',['representative_birthday']]
+              ]) +
+              section('Registered Office Address',[
+                ['Region',['region']],['Province',['province']],['City / Municipality',['city','municipality']],
+                ['Barangay',['barangay']],['ZIP Code',['postal_code']],['Street',['street']],
+                ['House No.',['house_no']],['Building / Unit',['building']],['Subdivision',['subdivision']],
+                ['Full Office Address',['office_address']]
+              ]) +
+              `<section class="ar-section"><h3>Registration Documents</h3><div class="ar-docs">${[
+                ['SEC / DTI / CDA Registration','business_registration'],['Mayor’s / Business Permit','mayors_permit'],
+                ['BIR Certificate of Registration (Form 2303)','bir_certificate'],
+                ['Courier / Delivery Accreditation (Optional)','courier_authority'],
+                ['Business / Cargo Liability Insurance (Optional)','insurance_certificate'],
+                ['Valid ID of Authorized Representative','representative_authorization']
+              ].map(([label,key])=>{const d=request.documents?.[key]||request[key];const path=typeof d==='object'?(d?.url||''):(typeof d==='string'?d:'');const valid=typeof path==='string'&&(/^(https?:\/\/|\/storage\/)/i).test(path);return `<div class="ar-doc"><b>${escapeHtml(label)}</b>${valid?`<button type="button" class="ar-view-document" data-document-url="${escapeHtml(path)}" data-document-title="${escapeHtml(label)}">View Document</button>`:(key==='courier_authority'||key==='insurance_certificate'?'Not uploaded (optional)':'Document not available')}</div>`}).join('')}</div></section>`;
+        }
         pendingReviewCompany.textContent =
             request.company || '—';
 
@@ -1297,8 +1368,15 @@ document.addEventListener('DOMContentLoaded', function () {
             throw new Error(payload.message || 'Unable to load logistics management data.');
         }
 
-        pendingLogisticsRequests = payload.pendingRequests || [];
-        logisticsCompanies = payload.companies || [];
+        pendingLogisticsRequests = (payload.pendingRequests?.length ? payload.pendingRequests : pendingLogisticsRequests).map(r => {
+            const demo = (logisticsManagementConfig.pendingRequests||[]).find(d => d.company===r.company) || {};
+            const full = (logisticsManagementConfig.registrationPreview||{})[r.company] || {};
+            return {...demo,...full,...r};
+        });
+        logisticsCompanies = (payload.companies?.length ? payload.companies : logisticsCompanies).map(c => {
+            const demo = (logisticsManagementConfig.companies||[]).find(d => d.company===c.company) || {};
+            return {...demo,...c};
+        });
         rejectedLogisticsArchive = payload.rejectedArchive || [];
         pendingOriginalTotalEntries = Number(payload.pendingTotalEntries || 0);
         originalTotalEntries = Number(payload.totalEntries || 0);
@@ -1681,13 +1759,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 [
                     company.company,
                     company.company_email,
-                    company.branches,
+                    company.sorting_centers ?? company.branches,
+                    company.delivery_hubs,
+                    company.couriers,
+                    company.registered_date,
+                    company.contact_person,
+                    company.contact_phone,
                     company.riders,
                     company.active_deliveries
                 ].join(' ')
             ).includes(query)
         );
     }
+
+    // UI-only account information change requests. No backend mutation.
+    const accountChangeRequests = Array.isArray(logisticsManagementConfig.accountChangePreview) ? logisticsManagementConfig.accountChangePreview : [];
+    const decisionKey = 'shopease-admin-logistics-change-requests-ui-v1';
+    let decisions = {};
+    try { decisions = JSON.parse(localStorage.getItem(decisionKey) || '{}') || {}; } catch (_) {}
+    const pendingAccountChangeRequests = name => accountChangeRequests.filter(r => r.company === name && !decisions[r.id]);
+    function showAccountChangeRequest(id) {
+        const r = accountChangeRequests.find(x => x.id === id);
+        if (!r) return;
+        const layer = document.getElementById('lmChangeLayer');
+        document.getElementById('lmChangeDesc').textContent = `${r.company} · ${r.id} · ${r.submitted} · ${String(decisions[id] || 'pending').toUpperCase()} (UI-only)`;
+        document.getElementById('lmChangeBody').innerHTML = `<table class="lm-change-table"><thead><tr><th>Field</th><th>Current Information</th><th>Requested Information</th></tr></thead><tbody>${(r.changes || []).map(c => `<tr><td>${escapeHtml(c.field)}</td><td>${escapeHtml(c.before)}</td><td><strong>${escapeHtml(c.after)}</strong></td></tr>`).join('')}</tbody></table><p>Preview only. No changes are applied to the account or database.</p>`;
+        document.getElementById('lmChangeActions').innerHTML = `<button type="button" data-change-action="close">Close</button>${!decisions[id] ? `<button type="button" class="reject" data-change-action="rejected" data-change-id="${escapeHtml(id)}">Reject</button><button type="button" class="approve" data-change-action="approved" data-change-id="${escapeHtml(id)}">Approve</button>` : ''}`;
+        layer.hidden = false;
+    }
+    function refreshAccountChangeStrip() {
+        let strip = document.getElementById('lmChangeStrip');
+        if (!strip) { strip = document.createElement('div'); strip.id = 'lmChangeStrip'; strip.className = 'lm-change-strip'; document.querySelector('.logistics-main-tabs-card')?.after(strip); }
+        const rows = accountChangeRequests.filter(r => !decisions[r.id]);
+        strip.innerHTML = `<strong>Account Information Change Requests:</strong> ${rows.length} pending (demo) ` + rows.map(r => `<button type="button" data-change-id="${escapeHtml(r.id)}">${escapeHtml(r.company)} · Review ${escapeHtml(r.id)}</button>`).join('');
+    }
+    document.addEventListener('click', e => { const btn = e.target.closest('[data-change-id]'); if (btn && !btn.hasAttribute('data-change-action')) { e.preventDefault(); e.stopPropagation(); showAccountChangeRequest(btn.dataset.changeId); } });
+    document.getElementById('lmChangeLayer')?.addEventListener('click', e => {
+        const layer = document.getElementById('lmChangeLayer');
+        const btn = e.target.closest('[data-change-action]');
+        if (!btn && e.target !== layer) return;
+        if (!btn || btn.dataset.changeAction === 'close') { layer.hidden = true; return; }
+        decisions[btn.dataset.changeId] = btn.dataset.changeAction;
+        localStorage.setItem(decisionKey, JSON.stringify(decisions));
+        layer.hidden = true; refreshAccountChangeStrip(); render();
+    });
+    refreshAccountChangeStrip();
 
     function renderRows(filteredRows) {
         const startIndex =
@@ -1730,26 +1846,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                 <span class="logistics-company-name">
                                     ${escapeHtml(company.company)}
+                                    ${pendingAccountChangeRequests(company.company).length ? `<button type="button" class="lm-change-badge" data-change-id="${escapeHtml(pendingAccountChangeRequests(company.company)[0].id)}">Pending Account Change (${pendingAccountChangeRequests(company.company).length})</button>` : ''}
                                 </span>
                             </div>
                         </td>
 
                         <td>
                             <span class="logistics-number">
-                                ${escapeHtml(company.branches)}
+                                ${escapeHtml(company.sorting_centers ?? company.branches ?? 0)}
                             </span>
                         </td>
+                        <td><span class="logistics-number">${escapeHtml(company.delivery_hubs ?? 0)}</span></td>
+                        <td><span class="logistics-number">${escapeHtml(company.couriers ?? 0)}</span></td>
 
                         <td>
                             <span class="logistics-number">
-                                ${escapeHtml(company.riders)}
+                                ${escapeHtml(company.riders ?? 0)}
                             </span>
                         </td>
-                        <td>
-                            <span class="logistics-number">
-                                ${escapeHtml(company.active_deliveries ?? 0)}
-                            </span>
-                        </td>
+                        <td><strong style="display:block;font-size:11px">${escapeHtml(company.contact_person || company.representative_name || '—')}</strong><small style="display:block;margin-top:4px;color:#8e8684;font-size:10px">${escapeHtml(company.contact_phone || company.representative_phone || company.contact_number || '—')}</small></td>
+                        <td><span style="font-size:11px">${escapeHtml(company.registered_date || company.account_created_date || '—')}</span></td>
                     </tr>
                 `;
             }).join('');
@@ -2004,19 +2120,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const detailsCompanyDescription =
         document.getElementById('details-company-description');
 
-    const detailsDtiPermitButton =
-        document.getElementById('details-dti-permit-button');
-
-    const detailsDtiPermit =
-        document.getElementById('details-dti-permit');
-
-    const detailsBusinessPermitButton =
-        document.getElementById('details-business-permit-button');
-
-    const detailsBusinessPermit =
-        document.getElementById('details-business-permit');
-
-    const detailsCreatedDate =
+const detailsCreatedDate =
         document.getElementById('details-created-date');
 
     const detailsCreatedTime =
@@ -2057,30 +2161,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderCompanyBranches(company) {
-        const branches =
-            Array.isArray(company?.branches_data)
-                ? company.branches_data
-                : [];
-
-        if (!branches.length) {
-            branchesBody.innerHTML = '';
-            branchesEmpty.hidden = false;
-            return;
+        const branches = Array.isArray(company?.branches_data) ? company.branches_data : [];
+        if (!branches.length) { branchesBody.innerHTML=''; branchesEmpty.hidden=false; return; }
+        branchesEmpty.hidden=true;
+        branchesBody.innerHTML=branches.map((branch,i)=>`<tr class="lm-center-row" data-branch-index="${i}" role="button" tabindex="0" style="cursor:pointer">
+            <td><b>${escapeHtml(branch.name||'—')}</b><small style="display:block;color:#9b8985">Click for sorting center & delivery hub details</small></td>
+            <td>${escapeHtml(branch.address||'—')}</td><td>${escapeHtml(branch.contact_person||branch.manager_name||'—')}</td>
+            <td>${escapeHtml(branch.phone||branch.manager_phone||'—')}</td><td>${escapeHtml(branch.riders??0)}</td><td>${escapeHtml(branch.delivery_hubs_count??branch.delivery_hubs?.length??0)}</td></tr>`).join('');
+        function detail(i){
+          const b=branches[i];if(!b)return;
+          const layer=document.getElementById('lmCenterOverlay'),el=document.getElementById('lmCenterBody');
+          if(!layer||!el)return;
+          const rows=[['Sorting Center Name',b.name],['Province',b.province],['City / Municipality',b.city||b.municipality],['Barangay',b.barangay],['Postal Code',b.postal_code],['Complete Address',b.address],['Manager',b.manager_name||b.contact_person],['Manager Email',b.manager_email],['Manager Phone',b.manager_phone||b.phone],['Login Email',b.login_email],['Riders',b.riders],['Couriers',b.couriers]];
+          const hubs=Array.isArray(b.delivery_hubs)?b.delivery_hubs:[];
+          const field=(label,value)=>`<div class="ar-cell"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value??'—')}</strong></div>`;
+          const hubField=(label,value)=>`<div><small>${escapeHtml(label)}</small><strong>${escapeHtml(value??'—')}</strong></div>`;
+          el.innerHTML=`<section class="ar-section"><h3>Sorting Center Information</h3><div class="ar-grid">${rows.map(([k,v])=>field(k,v)).join('')}</div></section><section class="ar-section"><h3>Delivery Hubs (${hubs.length})</h3>${hubs.length?hubs.map(h=>`<details class="lm-facility-detail"><summary>${escapeHtml(h.hub_name||h.name||'Delivery Hub')}</summary><div class="lm-hub-info">${[['Hub Name',h.hub_name||h.name],['Province',h.province],['City / Municipality',h.municipality||h.city],['Barangay',h.barangay],['Postal Code',h.postal_code],['Address',[h.house_no,h.street,h.building,h.subdivision,h.barangay,h.municipality||h.city,h.province].filter(Boolean).join(', ')],['Manager',h.manager_name],['Manager Email',h.manager_email],['Manager Phone',h.manager_phone],['Login Email',h.login_email],['Riders',h.riders],['Couriers',h.couriers]].map(([k,v])=>hubField(k,v)).join('')}</div></details>`).join(''):'<p style="padding:16px;font-size:11px;color:#948681">No delivery hubs assigned.</p>'}</section>`;
+          document.getElementById('lmCenterTitle').textContent=b.name||'Sorting Center Details';
+          layer.hidden=false;
         }
-
-        branchesEmpty.hidden = true;
-
-        branchesBody.innerHTML =
-            branches.map(branch => `
-                <tr>
-                    <td>${escapeHtml(branch.name || '—')}</td>
-                    <td>${escapeHtml(branch.address || '—')}</td>
-                    <td>${escapeHtml(branch.contact_person || '—')}</td>
-                    <td>${escapeHtml(branch.phone || '—')}</td>
-                    <td>${escapeHtml(branch.riders ?? '—')}</td>
-                    <td>${escapeHtml(branch.active_deliveries ?? 0)}</td>
-                </tr>
-            `).join('');
+        branchesBody.querySelectorAll('[data-branch-index]').forEach(r=>{r.addEventListener('click',()=>detail(Number(r.dataset.branchIndex)));r.addEventListener('keydown',e=>{if(e.key==='Enter')detail(Number(r.dataset.branchIndex));});});
+        const layer=document.getElementById('lmCenterOverlay');
+        if(layer?.dataset.bound==='1')return;
+        if(layer)layer.dataset.bound='1';
+        const close=()=>{if(layer)layer.hidden=true;};
+        document.getElementById('lmCenterClose')?.addEventListener('click',close);
+        document.getElementById('lmCenterDone')?.addEventListener('click',close);
+        layer?.addEventListener('click',e=>{if(e.target===layer)close();});
     }
 
     function populateCompanyDetails(company) {
@@ -2131,19 +2238,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 companyName
             );
 
-        detailsDtiPermit.src =
-            companyDtiPermitSource;
-
-        detailsDtiPermit.dataset.fullSrc =
-            companyDtiPermitSource;
-
-        detailsBusinessPermit.src =
-            companyBusinessPermitSource;
-
-        detailsBusinessPermit.dataset.fullSrc =
-            companyBusinessPermitSource;
-
-        detailsCreatedDate.textContent =
+detailsCreatedDate.textContent =
             company.account_created_date ||
             'May 26, 2026';
 
@@ -2178,6 +2273,12 @@ document.addEventListener('DOMContentLoaded', function () {
             );
         }
 
+        const detailHost=document.getElementById('lmCompanyRegistrationDetails');
+        if(detailHost){
+          const v=(...keys)=>{for(const key of keys){let x=company[key]??company.registration_details?.[key];if(Array.isArray(x))x=x.join(', ');if(x!==null&&x!==undefined&&String(x).trim())return String(x);}return 'Not provided';};
+          const sec=(title,fields)=>`<section class="ar-section"><h3>${escapeHtml(title)}</h3><div class="ar-grid">${fields.map(([label,...keys])=>`<div class="ar-cell"><small>${escapeHtml(label)}</small><strong>${escapeHtml(v(...keys))}</strong></div>`).join('')}</div></section>`;
+          detailHost.innerHTML=sec('Complete Registration Information',[['Company / Logistics Business Name','company_name','company'],['Registered Legal Business Name','registered_business_name'],['SEC Registration No.','sec_registration_number'],['TIN','tin'],['Service Areas','service_areas'],['Registered Legal Business Name','registered_business_name'],['Company Type','company_type'],['Years in Operation','years_in_operation'],['Company Email','company_email','company_email'],['Company Contact Number','company_phone','contact_number'],['Website','website'],['Number of Sorting Centers (Registration)','branch_count'],['Sorting Centers','sorting_centers','branches'],['Delivery Hubs','delivery_hubs'],['Couriers','couriers']])+sec('Authorized Representative',[['Name','representative_name','contact_person'],['Position','representative_position'],['Email Address','representative_email'],['Contact Number','representative_phone','contact_phone'],['Sex','representative_sex'],['Birthday','representative_birthday']])+sec('Registered Office Address',[['Region','region'],['Province','province'],['City / Municipality','city','municipality'],['Barangay','barangay'],['ZIP Code','postal_code'],['Street','street'],['House No.','house_no'],['Building','building'],['Subdivision','subdivision'],['Full Office Address','office_address']])+`<section class="ar-section"><h3>Registration Documents</h3><div class="ar-docs">${[['SEC / DTI / CDA Registration','business_registration'],["Mayor’s / Business Permit",'mayors_permit'],['BIR Certificate of Registration (Form 2303)','bir_certificate'],['Courier / Delivery Accreditation (Optional)','courier_authority'],['Business / Cargo Liability Insurance (Optional)','insurance_certificate'],['Valid ID of Authorized Representative','representative_authorization']].map(([label,key])=>{const f=company.documents?.[key];const url=f?.url||'';return `<div class="ar-doc"><b>${escapeHtml(label)}</b>${url?`<button type="button" class="ar-view-document" data-document-url="${escapeHtml(url)}" data-document-title="${escapeHtml(label)}">View Document</button>`:'Not provided'}</div>`}).join('')}</div></section>`;
+        }
         renderCompanyBranches(
             company
         );
@@ -2246,27 +2347,6 @@ document.addEventListener('DOMContentLoaded', function () {
         closeCompanyDetails
     );
 
-    detailsDtiPermitButton.addEventListener(
-        'click',
-        function () {
-            openPermitZoom(
-                'DTI Permit',
-                detailsDtiPermit.dataset.fullSrc ||
-                detailsDtiPermit.src
-            );
-        }
-    );
-
-    detailsBusinessPermitButton.addEventListener(
-        'click',
-        function () {
-            openPermitZoom(
-                'Business Permit',
-                detailsBusinessPermit.dataset.fullSrc ||
-                detailsBusinessPermit.src
-            );
-        }
-    );
 
     detailsModal.addEventListener(
         'click',
