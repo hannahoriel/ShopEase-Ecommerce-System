@@ -9402,6 +9402,11 @@ document.addEventListener(
                                 `${productDescription.scrollHeight}px`;
                         }
 
+                        const weightDisplay = document.getElementById('productDetailsWeightDisplay');
+                        if (weightDisplay) {
+                            const kg = Number(createdProduct.weight_kg ?? createdProduct.listingSnapshot?.weight_kg);
+                            weightDisplay.textContent = Number.isFinite(kg) && kg > 0 ? `${kg.toLocaleString('en-PH', {maximumFractionDigits:3})} kg` : 'Not set';
+                        }
                         if (productDescriptionDisplay) {
                             productDescriptionDisplay.textContent =
                                 createdProduct.description ||
@@ -10489,6 +10494,11 @@ document.addEventListener(
                                     )}`;
                             }
 
+                            const weightDisplay2 = document.getElementById('productDetailsWeightDisplay');
+                            if (weightDisplay2) {
+                                const kg = Number(createdProduct.weight_kg ?? createdProduct.listingSnapshot?.weight_kg);
+                                weightDisplay2.textContent = Number.isFinite(kg) && kg > 0 ? `${kg.toLocaleString('en-PH', {maximumFractionDigits:3})} kg` : 'Not set';
+                            }
                             if (productDetailsPriceDisplay) {
                                 renderProductDetailsSalePrice(createdProduct);
                             }
@@ -15073,6 +15083,10 @@ document.addEventListener(
                             '';
                     }
 
+                    if (document.getElementById('createProductWeight')) {
+                        document.getElementById('createProductWeight').value =
+                            product.weight_kg ?? product.listingSnapshot?.weight_kg ?? '';
+                    }
                     if (createProductDescription) {
                         createProductDescription.value =
                             product.description ||
@@ -16135,6 +16149,34 @@ document.addEventListener(
                                 addProductForm
                             );
 
+                        // Upload real File objects for every variation and grouped combination.
+                        // Dynamically created picker inputs may live outside the form element.
+                        // In that case new FormData(form) silently skips their files.
+                        const attachedGroups = Array.isArray(window.__shopEaseConnectedVariantGroups)
+                            ? window.__shopEaseConnectedVariantGroups : [];
+                        attachedGroups.forEach((group, index) => {
+                            if (!group || !group.choices) return;
+                            const key = Object.entries(group.choices)
+                                .filter(([, value]) => value !== null && String(value) !== '')
+                                .map(([name, value]) => `${name}=${value}`)
+                                .join('|');
+                            formData.set(`variant_group_photo_keys[${index}]`, key);
+                            if (group.photo instanceof File) {
+                                formData.set(`variant_group_photos[${index}]`, group.photo, group.photo.name);
+                            }
+                        });
+                        [
+                            ['variation_items', productVariations],
+                            ['color_items', productColors],
+                            ['size_items', productSizes],
+                        ].forEach(([field, options]) => {
+                            options.forEach((option, index) => {
+                                if (option?.photo instanceof File) {
+                                    formData.set(`${field}[${index}][photo]`, option.photo, option.photo.name);
+                                }
+                            });
+                        });
+
                         if (!formData.has('name')) {
                             formData.append('name', formData.get('title') || '');
                         }
@@ -17014,9 +17056,28 @@ document.addEventListener(
                             );
 
                             if (!response.ok) {
-                                const errorPayload = await response.json().catch(() => ({}));
-                                const firstError = Object.values(errorPayload.errors || {})[0]?.[0];
-                                throw new Error(firstError || 'Product could not be saved.');
+                                const raw = await response.text();
+                                let errorPayload = {};
+                                try { errorPayload = JSON.parse(raw); } catch (_) {}
+                                const validationMessages = Object.entries(errorPayload.errors || {})
+                                    .flatMap(([field, messages]) => (Array.isArray(messages) ? messages : [messages])
+                                        .map(message => `${field}: ${message}`));
+                                const explanation = validationMessages.length
+                                    ? validationMessages.slice(0, 8).join('\n')
+                                    : (errorPayload.message || (raw.trim().startsWith('<')
+                                        ? 'Server returned an HTML error page. Check storage/logs/laravel.log for the exception.'
+                                        : raw.trim().slice(0, 500)) || 'Unknown server error');
+                                console.error('[ShopEase Inventory] Product create failed', {
+                                    status: response.status,
+                                    endpoint: inventoryConfig.storeProductUrl,
+                                    errors: errorPayload.errors || null,
+                                    serverMessage: errorPayload.message || null,
+                                    responsePreview: raw.slice(0, 1200),
+                                    uploadedFiles: Array.from(formData.entries())
+                                        .filter(([, v]) => v instanceof File)
+                                        .map(([key, file]) => ({ field: key, name: file.name, size: file.size, type: file.type }))
+                                });
+                                throw new Error(`Save failed (HTTP ${response.status})\n${explanation}`);
                             }
 
                             persistedProduct = await response.json();
@@ -17147,6 +17208,7 @@ document.addEventListener(
                             specificationDisplay:
                                 specificationDisplay,
 
+                            weight_kg: formData.get('weight_kg'),
                             description:
                                 formData.get(
                                     'description'
@@ -21042,4 +21104,4 @@ document.addEventListener(
             );
 
             applyRules();
-        });
+        });xx

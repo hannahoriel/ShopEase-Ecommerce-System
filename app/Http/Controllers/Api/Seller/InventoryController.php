@@ -134,6 +134,7 @@ class InventoryController extends Controller
                 Rule::unique('products', 'sku')->where(fn ($query) => $query->where('seller_id', $seller->id)),
             ],
             'description' => ['nullable', 'string', 'max:2000'],
+            'weight_kg' => ['required', 'numeric', 'gt:0', 'max:999999'],
             'price' => [Rule::requiredIf($pricingMode !== 'varies'), 'nullable', 'numeric', 'min:0'],
             'stock_quantity' => [Rule::requiredIf($pricingMode !== 'varies'), 'nullable', 'integer', 'min:0'],
             'pricing_mode' => ['nullable', Rule::in(['fixed', 'varies'])],
@@ -156,6 +157,10 @@ class InventoryController extends Controller
             'variant_combinations.*.final_price' => ['required', 'numeric', 'min:0'],
             'variant_combinations.*.stock' => ['required', 'integer', 'min:0'],
             'variant_combinations.*.available' => ['sometimes', 'boolean'],
+            'variant_group_photos' => ['sometimes', 'array'],
+            'variant_group_photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'variant_group_photo_keys' => ['sometimes', 'array'],
+            'variant_group_photo_keys.*' => ['nullable', 'string', 'max:1000'],
         ];
 
         foreach ($optionGroups as $source => $group) {
@@ -207,6 +212,7 @@ class InventoryController extends Controller
         try {
             $product = DB::transaction(function () use (
                 $seller,
+                $request,
                 $validated,
                 $optionGroups,
                 $pricingMode,
@@ -227,6 +233,7 @@ class InventoryController extends Controller
                     'name' => $validated['name'],
                     'sku' => $validated['sku'] ?? null,
                     'description' => $validated['description'] ?? null,
+                    'weight_kg' => $validated['weight_kg'],
                     'price' => $validated['price'] ?? 0,
                     'pricing_mode' => $validated['pricing_mode'] ?? 'fixed',
                     'pricing_source' => $pricingMode === 'varies' ? $pricingSource : null,
@@ -279,6 +286,7 @@ class InventoryController extends Controller
                 foreach ($connectedVariants as $index => $variant) {
                     $product->connectedVariants()->create([
                         ...$variant,
+                        'photo' => $this->resolveGroupPhoto($request, $variant['choices'] ?? [], $storedFiles),
                         'sort_order' => $index,
                     ]);
                 }
@@ -401,6 +409,33 @@ class InventoryController extends Controller
         return $variants;
     }
 
+    private function combinationPhotoKey(array $choices): string
+    {
+        return collect($choices)->filter(fn ($value) => $value !== null && $value !== '')
+            ->map(fn ($value, $key) => $key.'='.$value)->sortKeys()->implode('|');
+    }
+
+    /** Photos uploaded by the grouped-variant picker must persist on the combination. */
+    private function resolveGroupPhoto(Request $request, array $choices, array &$storedFiles, array $oldPhotos = []): ?string
+    {
+        $expected = $this->combinationPhotoKey($choices);
+        $keys = $request->input('variant_group_photo_keys', []);
+        foreach ($keys as $index => $rawKey) {
+            $pairs = [];
+            foreach (explode('|', (string) $rawKey) as $part) {
+                if (! str_contains($part, '=')) continue;
+                [$key, $value] = explode('=', $part, 2);
+                if ($value !== '') $pairs[$key] = $value;
+            }
+            if ($this->combinationPhotoKey($pairs) !== $expected) continue;
+            $file = $request->file('variant_group_photos.'.$index);
+            if ($file instanceof UploadedFile) {
+                return $this->storeUploadedPhoto($file, 'product-variants', $storedFiles);
+            }
+        }
+        return $oldPhotos[$expected] ?? null;
+    }
+
     private function storeUploadedPhoto(UploadedFile $photo, string $directory, array &$storedFiles): string
     {
         $path = $photo->store($directory, 'public');
@@ -502,6 +537,7 @@ class InventoryController extends Controller
                 Rule::unique('products', 'sku')->where(fn ($query) => $query->where('seller_id', $seller->id))->ignore($product->id),
             ],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'weight_kg' => ['sometimes', 'required', 'numeric', 'gt:0', 'max:999999'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'stock_quantity' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', 'string', 'max:50'],
@@ -525,6 +561,10 @@ class InventoryController extends Controller
             'variant_combinations.*.final_price' => ['required', 'numeric', 'min:0'],
             'variant_combinations.*.stock' => ['required', 'integer', 'min:0'],
             'variant_combinations.*.available' => ['sometimes', 'boolean'],
+            'variant_group_photos' => ['sometimes', 'array'],
+            'variant_group_photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'variant_group_photo_keys' => ['sometimes', 'array'],
+            'variant_group_photo_keys.*' => ['nullable', 'string', 'max:1000'],
         ];
 
         foreach ($optionGroups as $source => $group) {
@@ -600,6 +640,7 @@ class InventoryController extends Controller
         try {
             DB::transaction(function () use (
                 $product,
+                $request,
                 $validated,
                 $optionGroups,
                 $pricingMode,
@@ -611,6 +652,7 @@ class InventoryController extends Controller
                     'name',
                     'sku',
                     'description',
+                    'weight_kg',
                     'price',
                     'stock_quantity',
                     'status',
@@ -703,11 +745,15 @@ class InventoryController extends Controller
                 }
 
                 if (array_key_exists('variant_combinations', $validated)) {
+                    $oldCombinationPhotos = $product->connectedVariants()->get()
+                        ->mapWithKeys(fn ($row) => [$this->combinationPhotoKey($row->choices ?? []) => $row->photo])
+                        ->all();
                     $product->connectedVariants()->delete();
 
                     foreach ($connectedVariants as $index => $variant) {
                         $product->connectedVariants()->create([
                             ...$variant,
+                            'photo' => $this->resolveGroupPhoto($request, $variant['choices'] ?? [], $storedFiles, $oldCombinationPhotos),
                             'sort_order' => $index,
                         ]);
                     }

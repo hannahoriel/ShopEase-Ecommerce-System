@@ -1959,6 +1959,18 @@
                     </section>
 
 
+                    {{-- Required shipping/product weight for all categories --}}
+                    <section class="create-product-section">
+                        <div class="create-product-section-heading"><div>
+                            <h4>Product Weight (kg) <span class="required-mark">*</span></h4>
+                            <p>Enter the weight of one item in kilograms (e.g. 0.500 for 500 grams).</p>
+                        </div></div>
+                        <input id="createProductWeight" name="weight_kg" type="number"
+                               min="0.001" max="999999" step="0.001" required
+                               placeholder="e.g. 0.500"
+                               style="display:block;width:min(280px,100%);height:42px;min-height:42px;max-height:42px;padding:0 12px;border:1px solid #d8dbe1;border-radius:8px;background:#fff;color:#303b4e;font:400 12px Poppins,sans-serif;box-sizing:border-box;outline-offset:2px">
+                    </section>
+
                     {{-- =====================================================
                          PRODUCT DESCRIPTION
                     ====================================================== --}}
@@ -2307,6 +2319,7 @@
                                     <strong id="productDetailsStockDisplay">0 units</strong>
                                 </div>
 
+                                <div class="product-details-inspo-detail-item"><span>Product weight</span><strong id="productDetailsWeightDisplay">Not set</strong></div>
                                 <div class="product-details-inspo-detail-item">
                                     <span>Date added</span>
                                     <strong id="productDetailsUploaded">—</strong>
