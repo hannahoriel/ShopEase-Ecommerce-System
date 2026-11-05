@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardControll
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
+use App\Http\Controllers\Api\Buyer\WalletController as BuyerWalletController;
 use App\Http\Controllers\Api\Buyer\OrderReturnController as BuyerOrderReturnController;
 use App\Http\Controllers\Api\Buyer\VoucherController as BuyerVoucherController;
 use App\Http\Controllers\Api\Buyer\ProductReviewController;
@@ -255,11 +256,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/messages/conversations', [BuyerMessagesController::class, 'storeConversation'])->name('buyer.api.messages.conversations.store');
             Route::get('/messages/conversations/{conversation}', [BuyerMessagesController::class, 'show'])->name('buyer.api.messages.conversations.show');
             Route::post('/messages/conversations/{conversation}/messages', [BuyerMessagesController::class, 'send'])->name('buyer.api.messages.send');
+            Route::get('/wallet', [BuyerWalletController::class, 'show'])->name('buyer.api.wallet.show');
             Route::get('/orders', [BuyerOrderController::class, 'index'])->name('buyer.api.orders.index');
             Route::get('/shipping-options', [BuyerOrderController::class, 'shippingOptions'])->name('buyer.api.shipping-options');
             Route::patch('/orders/{order}/confirm-received', [BuyerOrderController::class, 'confirmReceived'])->name('buyer.api.orders.confirm-received');
             Route::post('/orders/{order}/cancel', [BuyerOrderController::class, 'cancel'])->name('buyer.api.orders.cancel');
             Route::get('/dashboard/products', [BuyerDashboardController::class, 'products'])->name('buyer.api.dashboard.products');
+            Route::get('/search', [\App\Http\Controllers\Api\Buyer\SearchController::class, 'index'])->name('buyer.api.search');
             Route::get('/shops/{seller}', [BuyerShopController::class, 'show'])->name('buyer.api.shops.show');
             Route::get('/following', [BuyerShopController::class, 'following'])->name('buyer.api.following');
             Route::post('/shops/{seller}/follow', [BuyerShopController::class, 'follow'])->name('buyer.api.shops.follow');
