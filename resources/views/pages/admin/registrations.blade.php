@@ -1,6 +1,3 @@
-
-
-
 @extends('layouts.admin')
 
 @section('page-title', 'Account Registrations')
@@ -1001,14 +998,6 @@
                         Buyer
                     </option>
 
-                    <option value="logistics">
-                        Logistics
-                    </option>
-
-                    <option value="rider">
-                        Rider
-                    </option>
-
                 </select>
 
                 <svg
@@ -1200,8 +1189,6 @@
                                         <img src="{{ asset('icons/admin/dashboard/body/seller.png') }}" class="w-[18px] h-[18px] object-contain" alt="Seller">
                                     @elseif(strtolower($registration->user_type) === 'buyer')
                                         <img src="{{ asset('icons/admin/dashboard/body/buyer.png') }}" class="w-[18px] h-[18px] object-contain" alt="Buyer">
-                                    @elseif(strtolower($registration->user_type) === 'logistics')
-                                        <img src="{{ asset('icons/admin/logistics/truck.png') }}" class="w-[18px] h-[18px] object-contain" alt="Logistics">
                                     @endif
                                     <span class="text-[12px] text-gray-800">{{ ucfirst($registration->user_type) }}</span>
                                 </div>
@@ -1294,6 +1281,39 @@
 
 </div>
 
+
+
+<!-- ACCOUNT INFORMATION CHANGE REQUESTS: UI-ONLY DEMO -->
+<style>
+.acr-badge{display:inline-flex;align-items:center;gap:6px;margin-top:7px;border:1px solid #efd3a4;background:#fff6e8;color:#94601c;padding:6px 9px;border-radius:999px;font:600 10px Poppins,sans-serif;cursor:pointer;white-space:nowrap}
+.acr-badge:before{content:"";height:6px;width:6px;background:#d99636;border-radius:50%}.acr-badge:hover{background:#ffebc9}.acr-badge:focus-visible{outline:2px solid #955622;outline-offset:2px}
+.acr-overlay{position:fixed;inset:0;z-index:220;background:rgba(20,9,10,.5);backdrop-filter:blur(2px);display:flex;justify-content:center;align-items:center;padding:18px}.acr-overlay[hidden]{display:none!important}
+.acr-dialog{width:min(680px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 22px 70px #0003;font-family:Poppins,sans-serif;color:#281d1a}
+.acr-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 26px;border-bottom:1px solid #eee8e5}.acr-head h2{font-size:19px;font-weight:600;margin:0}.acr-head p{font-size:12px;color:#958984;margin:5px 0 0}.acr-close{border:0;background:#f5f2f0;width:34px;height:34px;border-radius:50%;font-size:21px;cursor:pointer;color:#726663}
+.acr-body{padding:24px 26px}.acr-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:17px}.acr-meta span{font-size:11px;color:#846f5c;background:#fff7ee;border-radius:99px;padding:5px 10px}
+.acr-section{font-size:13px;font-weight:600;color:#8c2226;padding-bottom:12px;border-bottom:1px solid #eee8e4;margin-bottom:14px}.acr-table{width:100%;border-collapse:collapse}.acr-table th{text-align:left;font-weight:500;font-size:11px;color:#99918c;padding:11px;border-bottom:1px solid #eee6e2;background:#fbf9f8}.acr-table td{padding:13px 11px;font-size:12px;border-bottom:1px solid #f2ebe8;vertical-align:top;overflow-wrap:anywhere}.acr-table td:last-child{color:#267044;font-weight:600}
+.acr-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 26px 22px;border-top:1px solid #eee8e4}.acr-btn{font:600 12px Poppins,sans-serif;cursor:pointer;border-radius:8px;padding:10px 18px;border:1px solid #ddd0cc;background:white;color:#663f3b}.acr-btn.approve{background:#e6f4e5;border-color:#83bb86;color:#287338}.acr-btn.reject{background:#fff0ef;border-color:#e5b5b8;color:#a22a2e}
+.acr-reasons{display:grid;gap:9px;margin:15px 0}.acr-reasons label{display:flex;gap:10px;align-items:center;border:1px solid #ebe2df;background:#fcfbfa;border-radius:9px;padding:11px 13px;font-size:12px;cursor:pointer}.acr-reasons input{accent-color:#7B1B1B}.acr-textarea{width:100%;resize:vertical;min-height:82px;border:1px solid #dcd2cd;border-radius:8px;padding:11px;font:12px Poppins,sans-serif}.acr-error{color:#b4232f;font-size:11px;min-height:18px;margin-top:5px}
+.acr-flash{position:fixed;right:20px;bottom:20px;z-index:260;background:white;border:1px solid #dfd5ce;border-left:4px solid #39834a;border-radius:12px;padding:15px 18px;box-shadow:0 14px 32px #0002;font:12px Poppins,sans-serif;max-width:min(390px,calc(100vw - 32px))}.acr-flash[hidden]{display:none}.acr-flash.error{border-left-color:#b53d43}.acr-flash strong{font-size:13px;display:block;margin-bottom:5px}
+@media(max-width:560px){.acr-head,.acr-body,.acr-actions{padding-left:16px;padding-right:16px}.acr-actions{flex-wrap:wrap}.acr-table{display:block;overflow:auto}}
+</style>
+<div class="acr-overlay" id="acrReviewModal" hidden role="presentation"><section class="acr-dialog" role="dialog" aria-modal="true" aria-labelledby="acrReviewTitle">
+ <div class="acr-head"><div><h2 id="acrReviewTitle">Account Information Change Request</h2><p>Review the updated information before making a decision.</p></div><button class="acr-close" type="button" data-acr-close aria-label="Close">×</button></div>
+ <div class="acr-body"><div class="acr-meta" id="acrReviewMeta"></div><h3 class="acr-section">Requested Changes</h3><div style="overflow:auto"><table class="acr-table"><thead><tr><th>Field</th><th>Current Information</th><th>Requested Information</th></tr></thead><tbody id="acrComparisonBody"></tbody></table></div><p style="font-size:11px;color:#988d89;line-height:1.7;margin-top:15px">Demo review only. Approval does not change the user's account in the database.</p></div>
+ <div class="acr-actions"><button class="acr-btn" type="button" data-acr-close>Cancel</button><button class="acr-btn reject" type="button" id="acrRejectOpen">Disapprove</button><button class="acr-btn approve" type="button" id="acrApprove">Approve</button></div>
+</section></div>
+<div class="acr-overlay" id="acrRejectModal" hidden role="presentation"><section class="acr-dialog" role="dialog" aria-modal="true" aria-labelledby="acrRejectTitle" style="max-width:540px">
+ <div class="acr-head"><div><h2 id="acrRejectTitle">Disapprove Information Change</h2><p>Select a reason to reject the requested account updates.</p></div><button class="acr-close" type="button" data-acr-reject-close aria-label="Close">×</button></div>
+ <div class="acr-body"><label style="font-size:12px;font-weight:600">Reason <span style="color:#b4232f">*</span></label><div class="acr-reasons" id="acrReasons">
+ <label><input type="radio" name="acr_reason" value="Information cannot be verified"> Information cannot be verified</label>
+ <label><input type="radio" name="acr_reason" value="Incorrect or inconsistent information"> Incorrect or inconsistent information</label>
+ <label><input type="radio" name="acr_reason" value="Missing supporting documents"> Missing supporting documents</label>
+ <label><input type="radio" name="acr_reason" value="Does not meet account update requirements"> Does not meet account update requirements</label>
+ <label><input type="radio" name="acr_reason" value="Other"> Other (please specify)</label></div>
+ <label style="font-size:12px;font-weight:600" for="acrReasonNote">Additional Details <span style="font-weight:400;color:#999">(optional, required for Other)</span></label><textarea id="acrReasonNote" class="acr-textarea" maxlength="300" placeholder="Enter details here..."></textarea><p class="acr-error" id="acrReasonError" role="alert"></p></div>
+ <div class="acr-actions"><button class="acr-btn" data-acr-reject-close type="button">Cancel</button><button class="acr-btn reject" type="button" id="acrRejectConfirm">Confirm Disapproval</button></div>
+</section></div>
+<div id="acrFlash" class="acr-flash" hidden role="status" aria-live="polite"><strong id="acrFlashTitle"></strong><span id="acrFlashMessage"></span></div>
 
 <!-- =========================================================
      IMAGE PREVIEW MODAL

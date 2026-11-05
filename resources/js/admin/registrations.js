@@ -3562,3 +3562,77 @@ document.addEventListener('DOMContentLoaded', function () {
     renderTable();
 
 });
+
+/* Admin Account Registrations: UI-only account information change approval demo. */
+document.addEventListener('DOMContentLoaded', () => {
+    'use strict';
+    const get = (id) => document.getElementById(id);
+    const rows = [...document.querySelectorAll('.registration-row[data-id]')];
+    const storageKey = 'shopease_admin_account_change_demo_v1';
+    let decisions = {};
+    try { decisions = JSON.parse(localStorage.getItem(storageKey) || '{}') || {}; } catch (_) { decisions = {}; }
+    const examples = rows.slice(0, Math.min(3, rows.length)).map((row, idx) => {
+        const name = row.dataset.name || 'Registered User';
+        const currentPhone = row.dataset.phone || '09XXXXXXXXX';
+        const given = name.trim().split(/\s+/);
+        return {id: String(row.dataset.id), row, name, submitted: 'November 2, 2026', changes: idx % 2 === 0 ? [
+            {field: 'Contact Number', before: currentPhone, after: '0918 456 2211'},
+            {field: 'Address — Street', before: 'Original registered street', after: 'National Highway'}
+        ] : [
+            {field: 'Full Name', before: name, after: given.length > 1 ? `${given[0]} M. ${given.slice(1).join(' ')}` : name + ' M.'},
+            {field: 'Contact Number', before: currentPhone, after: '0917 555 3082'}
+        ]};
+    });
+    let selected = null;
+    const review = get('acrReviewModal'), reject = get('acrRejectModal');
+    if (!review || !reject) return;
+    function syncScroll() { document.body.style.overflow = (!review.hidden || !reject.hidden) ? 'hidden' : ''; }
+    function closeReview(){review.hidden=true;syncScroll();}
+    function closeReject(){reject.hidden=true;syncScroll();}
+    function showFlash(title, message, error=false){
+        const box=get('acrFlash');get('acrFlashTitle').textContent=title;get('acrFlashMessage').textContent=message;
+        box.classList.toggle('error', error);box.hidden=false;
+    }
+    function renderBadges(){
+        for (const item of examples){
+            const statusCell=item.row.querySelector('td:last-child'); if(!statusCell) continue;
+            statusCell.querySelector('.acr-badge')?.remove();
+            if(decisions[item.id]) continue;
+            const badge=document.createElement('button');badge.type='button';badge.className='acr-badge';
+            badge.textContent='Pending Information Update';badge.title='Review account information change request';
+            badge.addEventListener('click', ev=>{
+                ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();selected=item;
+                const meta=get('acrReviewMeta');meta.replaceChildren();
+                [item.name,item.row.dataset.type || 'Account',item.submitted,'Pending Review'].forEach(val=>{const tag=document.createElement('span');tag.textContent=val;meta.append(tag);});
+                const body=get('acrComparisonBody');body.replaceChildren();
+                item.changes.forEach(change=>{const tr=document.createElement('tr');
+                    [change.field,change.before,change.after].forEach(val=>{const td=document.createElement('td');td.textContent=val;tr.append(td);});body.append(tr);});
+                review.hidden=false;syncScroll();
+            });
+            statusCell.append(badge);
+        }
+    }
+    renderBadges();
+    document.querySelectorAll('[data-acr-close]').forEach(b=>b.addEventListener('click',closeReview));
+    document.querySelectorAll('[data-acr-reject-close]').forEach(b=>b.addEventListener('click',closeReject));
+    get('acrRejectOpen').addEventListener('click',()=>{reject.hidden=false;get('acrReasonError').textContent='';get('acrReasonNote').value='';
+        document.querySelectorAll('input[name="acr_reason"]').forEach(r=>r.checked=false);syncScroll();});
+    function decide(action, reason=''){
+        if(!selected)return;
+        decisions[selected.id]={decision:action,reason,at:new Date().toISOString()};
+        try{localStorage.setItem(storageKey,JSON.stringify(decisions));}catch(_){}
+        const name=selected.name;closeReject();closeReview();renderBadges();
+        showFlash(action==='Approved'?'Information Update Approved':'Information Update Disapproved',
+            action==='Approved'?`${name}'s information update request was approved in this UI preview.`:`${name}'s request was disapproved. Reason: ${reason}.`,action!=='Approved');
+        selected=null;
+    }
+    get('acrApprove').addEventListener('click',()=>decide('Approved'));
+    get('acrRejectConfirm').addEventListener('click',()=>{
+        const chosen=document.querySelector('input[name="acr_reason"]:checked');const note=get('acrReasonNote').value.trim();
+        if(!chosen){get('acrReasonError').textContent='Please select a reason.';return;}
+        if(chosen.value==='Other'&&!note){get('acrReasonError').textContent='Please specify a reason for Other.';return;}
+        decide('Disapproved',chosen.value==='Other'?note:chosen.value+(note?' — '+note:''));
+    });
+    [review,reject].forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el===review?closeReview():closeReject();}));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!reject.hidden)closeReject();else if(!review.hidden)closeReview();}});
+});
