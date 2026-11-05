@@ -440,6 +440,7 @@
 
             {{-- VOUCHERS & PROMOTIONS --}}
             <a
+                id="sellerVouchersSidebarLink"
                 href="{{ route('seller.vouchers.index') }}"
                 title="Vouchers & Promotions"
                 class="
@@ -660,7 +661,7 @@
     <form
         action="{{ route('logout') }}"
         method="POST"
-        class="w-full"
+        class="w-full shrink-0 seller-sidebar-footer"
         id="sellerLogoutForm"
     >
         @csrf
@@ -1001,6 +1002,25 @@
             transform: none;
         }
     }
+
+/* Delivery Hub-style scroll behavior: independent nav scroll and pinned logout. */
+#sellerSidebar { display:flex!important; flex-direction:column!important; height:100vh!important; height:100dvh!important; overflow:hidden!important; }
+#sellerSidebar > .seller-sidebar-scroll { flex:1 1 0%!important; min-height:0!important; overflow-y:auto!important; overflow-x:hidden!important; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:10px; }
+#sellerSidebar > .seller-sidebar-scroll::-webkit-scrollbar { display:none; }
+#sellerSidebar > .seller-sidebar-footer { position:relative!important; flex:0 0 auto!important; min-height:54px; padding-top:10px; margin-top:0!important; z-index:2; background:transparent; }
+#sellerSidebar > .seller-sidebar-footer .sidebar-logout { position:relative; margin-top:0!important; }
+
+
+/* Prevent hover pills from being cropped by the independent vertical scroller.
+   The right-side inset reserves room for Tailwind's translate-x-1 (4px). */
+#sellerSidebar > .seller-sidebar-scroll {
+    box-sizing:border-box !important;
+    padding-right:12px !important;
+    padding-left:2px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+}
+#sellerSidebar > .seller-sidebar-scroll #seller-sidebar-nav { max-width:100%; }
 </style>
 
 
@@ -1305,4 +1325,168 @@ document.addEventListener(
         }
     }
 );
+</script>
+
+{{-- ==============================================================
+     SHARED SELLER PAGE WIDTH / SIDEBAR STATE SYNCHRONIZATION
+     A single source of truth for all pages using this component.
+     Dashboard desktop rhythm: expanded 270px, collapsed 100px.
+     ============================================================== --}}
+<style id="sellerUnifiedLayoutStyles">
+    @media (min-width: 761px) {
+        body :is(
+            .seller-dashboard-page,
+            #inventory-page,
+            #order-status-page,
+            #shipping-status-page,
+            #feedbackPage,
+            #sellerReportsPage,
+            #sellerNotificationsPage,
+            #sellerAccountPage,
+            .seller-messages-page,
+            .rr-page,
+            .sv-page,
+            .sw-page
+        ) {
+            margin-left: 270px !important;
+            width: auto !important;
+            max-width: none !important;
+            padding-left: 20px !important;
+            padding-right: 25px !important;
+            box-sizing: border-box !important;
+            transition: margin-left .30s ease, padding-left .30s ease, padding-right .30s ease !important;
+        }
+
+        body.seller-sidebar-collapsed :is(
+            .seller-dashboard-page,
+            #inventory-page,
+            #order-status-page,
+            #shipping-status-page,
+            #feedbackPage,
+            #sellerReportsPage,
+            #sellerNotificationsPage,
+            #sellerAccountPage,
+            .seller-messages-page,
+            .rr-page,
+            .sv-page,
+            .sw-page
+        ) {
+            margin-left: 100px !important;
+        }
+
+        /* Like Dashboard, content fills the available main viewport width. */
+        body :is(
+            .seller-dashboard-content,
+            #inventory-page > .inventory-content,
+            #feedbackPage > .feedback-content,
+            .seller-messages-content,
+            .rr-container,
+            .sv-wrap,
+            .sw-content,
+            .sa-layout
+        ) {
+            width: 100% !important;
+            max-width: none !important;
+            box-sizing: border-box !important;
+        }
+    }
+
+    @media (max-width: 760px) {
+        body :is(
+            .seller-dashboard-page,
+            #inventory-page,
+            #order-status-page,
+            #shipping-status-page,
+            #feedbackPage,
+            #sellerReportsPage,
+            #sellerNotificationsPage,
+            #sellerAccountPage,
+            .seller-messages-page,
+            .rr-page,
+            .sv-page,
+            .sw-page
+        ) {
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 13px !important;
+            padding-right: 13px !important;
+        }
+    }
+
+    /* Preserve the original icon position, spacing and 14px voucher label.
+       Only give its highlighted background the full available row width. */
+    #sellerSidebar:not(.seller-sidebar-collapsed) > .seller-sidebar-scroll {
+        padding-right: 3px !important;
+    }
+    #sellerSidebar:not(.seller-sidebar-collapsed) #seller-sidebar-nav {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    #sellerSidebar:not(.seller-sidebar-collapsed) #sellerVouchersSidebarLink {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        gap: 10px !important;
+        padding-left: 12px !important;
+        padding-right: 2px !important;
+        overflow: visible !important;
+    }
+    #sellerSidebar:not(.seller-sidebar-collapsed) #sellerVouchersSidebarLink .sidebar-label {
+        font-size: 14px !important;
+        letter-spacing: normal !important;
+        white-space: nowrap !important;
+    }
+    /* Match the other sidebar links: move the pill 4px right on hover.
+       Keep a small right-side gutter so the highlighted pill is not clipped. */
+    #sellerSidebar:not(.seller-sidebar-collapsed) #sellerVouchersSidebarLink {
+        width: calc(100% - 6px) !important;
+        max-width: calc(100% - 6px) !important;
+    }
+    #sellerSidebar:not(.seller-sidebar-collapsed) #sellerVouchersSidebarLink:hover {
+        translate: 4px 0 !important;
+    }
+    #sellerSidebar.seller-sidebar-collapsed #sellerVouchersSidebarLink {
+        width: 40px !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+</style>
+<script>
+(function () {
+    'use strict';
+    if (window.__sellerUnifiedSidebarLayoutInstalled) return;
+    window.__sellerUnifiedSidebarLayoutInstalled = true;
+
+    function install() {
+        const sidebar = document.getElementById('sellerSidebar');
+        if (!sidebar) return;
+        const collapsed = () => sidebar.classList.contains('seller-sidebar-collapsed') ||
+            sidebar.classList.contains('w-20') ||
+            sidebar.classList.contains('sidebar-collapsed');
+
+        function syncLayout() {
+            const isCollapsed = collapsed();
+            document.body.classList.toggle('seller-sidebar-collapsed', isCollapsed);
+            // Also mirror Dashboard's page-state class for existing scripts/styles.
+            document.querySelectorAll('.seller-dashboard-page').forEach(page => {
+                page.classList.toggle('sidebar-collapsed', isCollapsed);
+            });
+        }
+
+        new MutationObserver(syncLayout).observe(sidebar, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+        document.body.addEventListener('seller-sidebar-state-changed', syncLayout);
+        syncLayout();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, { once: true });
+    } else {
+        install();
+    }
+})();
 </script>
