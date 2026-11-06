@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\CourierRegistrationController;
 use App\Http\Controllers\Api\Logistics\DeliveryHubScannerController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubCodFinanceController;
 use App\Http\Controllers\Api\Logistics\ParcelRouteScanController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
@@ -390,6 +391,12 @@ Route::prefix('v1')->group(function () {
                 if ($facilityRole === 'delivery_hub') {
                     Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
+                    Route::get('/finance', [DeliveryHubCodFinanceController::class, 'index'])->name('delivery_hub.api.finance.index');
+                    Route::patch('/rider-remittances/{remittance}/review', [DeliveryHubCodFinanceController::class, 'review'])->name('delivery_hub.api.finance.remittances.review');
+                    Route::post('/rider-remittances/{remittance}/cash-in/otp', [DeliveryHubCodFinanceController::class, 'requestCashInOtp'])
+                        ->middleware('throttle:3,10')->name('delivery_hub.api.finance.remittances.cash-in.otp');
+                    Route::post('/rider-remittances/{remittance}/cash-in', [DeliveryHubCodFinanceController::class, 'cashIn'])->name('delivery_hub.api.finance.remittances.cash-in');
+                    Route::post('/rider-remittances/{remittance}/distribute', [DeliveryHubCodFinanceController::class, 'distribute'])->name('delivery_hub.api.finance.remittances.distribute');
                 }
                 if ($facilityRole === 'sorting_center') {
                     Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'index'])

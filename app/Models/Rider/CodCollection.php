@@ -26,4 +26,10 @@ class CodCollection extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function remittances(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Remittance::class, 'rider_cod_remittance_items', 'cod_collection_id', 'remittance_id')
+            ->withTimestamps();
+    }
 }

@@ -43,8 +43,21 @@ class SellerWalletService
         if ($order->status !== 'completed' && ! $order->statusHistory()->where('to_status', 'completed')->exists()) return;
 
         DB::transaction(function () use ($seller, $order) {
-            $voucher = max(0, (float) $order->voucher_discount);
-            $productGross = max(0, round((float) $order->total - (float) $order->shipping_fee + $voucher, 2));
+            $codCollection = DB::table('rider_cod_collections')->where('order_id', $order->id)->exists();
+            $codSettlement = $codCollection
+                ? DB::table('cod_settlements')->where('order_id', $order->id)->first()
+                : null;
+            if ($codCollection && (! $codSettlement || ! in_array($codSettlement->status, ['released', 'partially_refunded'], true))) return;
+
+            $voucher = $codCollection ? 0 : max(0, (float) $order->voucher_discount);
+            $codRefunds = $codCollection ? abs((float) DB::table('cod_wallet_transactions as t')
+                ->join('cod_wallet_accounts as a', 'a.id', '=', 't.wallet_account_id')
+                ->where('a.owner_key', 'seller:'.$seller->id.':'.($codSettlement->seller_released_at ? 'available' : 'on_hold'))
+                ->whereIn('t.entry_type', ['seller_refund_hold_reversal', 'seller_refund_reversal'])
+                ->where('t.order_id', $order->id)->sum('t.amount')) : 0;
+            $productGross = $codCollection
+                ? max(0, round((float) $codSettlement->seller_amount - $codRefunds, 2))
+                : max(0, round((float) $order->total - (float) $order->shipping_fee + $voucher, 2));
             $date = $order->buyer_received_at ?? $order->updated_at;
             $ref = $order->order_number ?: '#'.$order->id;
 

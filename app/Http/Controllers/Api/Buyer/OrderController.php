@@ -21,6 +21,7 @@ use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
 use App\Services\BuyerWalletService;
+use App\Services\CodSettlementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -181,6 +182,7 @@ class OrderController extends Controller
                 'notes' => 'Buyer confirmed receipt of the order.',
             ]);
             BuyerNotification::createForOrderStatus($lockedOrder, 'completed');
+            app(CodSettlementService::class)->releaseSellerEarnings((int) $lockedOrder->id);
 
             return $lockedOrder->fresh();
         });
