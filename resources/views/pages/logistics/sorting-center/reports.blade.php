@@ -1,62 +1,12 @@
 @php
-    // Frontend preview only. Replace $sortingCenterReportRecords with real center-scoped records later.
     $reportCenter = $center ?? $sortingCenter ?? null;
-    $reportCenterName = data_get($reportCenter, 'branch_name') ?: data_get($reportCenter, 'name') ?: 'Laguna Sorting Center';
-    $reportHubSource = $sortingCenterDeliveryHubs ?? data_get($reportCenter, 'hubs', []);
-    $assignedHubNames = collect(is_iterable($reportHubSource) ? $reportHubSource : [])
-        ->map(fn ($hub) => is_string($hub) ? $hub : (data_get($hub, 'branch_name') ?: data_get($hub, 'name')))
-        ->filter()->unique()->values()->all();
-    $hasAssignedHubs = count($assignedHubNames) > 0;
-    // Only named demo hubs from this center are used if the actual assignment was not injected.
-    if (!$hasAssignedHubs) $assignedHubNames = ['Santa Cruz Delivery Hub', 'Cavite Delivery Hub', 'Calamba Delivery Hub'];
-    $transferCenterNames = ['Batangas Sorting Center', 'Cebu Sorting Center']; // Destinations only, not their operational statistics.
-    // UI preview: transport couriers assigned to THIS center, not hub riders.
-    // When integrated, pass an authorized, center-scoped $sortingCenterCouriers collection.
-    $courierSource = $sortingCenterCouriers ?? null;
-    $courierNames = collect(is_iterable($courierSource) ? $courierSource : [])
-        ->map(fn ($courier) => is_string($courier) ? $courier : (data_get($courier, 'name') ?: data_get($courier, 'full_name')))
-        ->filter()->unique()->values()->all();
-    if (!count($courierNames) && !isset($sortingCenterCouriers)) {
-        $courierNames = ['Adrian Reyes', 'Mark Villanueva', 'Paolo Mendoza', 'Kevin Dela Cruz'];
-    }
     $todayManila = \Carbon\Carbon::today('Asia/Manila');
-    $exampleRecords = [];
-    $demoId = 0;
-    for ($d = $todayManila->copy()->subDays(89); $d->lte($todayManila); $d->addDay()) {
-        $daily = 7 + (($d->day * 5 + $d->month * 3) % 10);
-        for ($i = 0; $i < $daily; $i++) {
-            $demoId++;
-            $step = ($demoId * 3 + $i) % 16;
-            $status = $step <= 2 ? 'incoming' : ($step <= 5 ? 'received' : ($step <= 10 ? 'hub_dispatch' : ($step <= 13 ? 'center_transfer' : 'dispute')));
-            $toNextCenter = $status === 'center_transfer' || ($status === 'incoming' && $demoId % 4 === 0);
-            $destination = $toNextCenter
-                ? $transferCenterNames[$demoId % count($transferCenterNames)]
-                : $assignedHubNames[$demoId % count($assignedHubNames)];
-            $exampleRecords[] = [
-                'ref' => 'SC-' . (350000 + $demoId),
-                'date' => $d->format('Y-m-d'),
-                'time' => sprintf('%02d:%02d', 8 + ($i % 10), ($i * 13) % 60),
-                'batch' => 'B-' . $d->format('md') . '-' . sprintf('%02d', intdiv($i, 4) + 1),
-                'destination' => $destination,
-                'destination_type' => $toNextCenter ? 'Sorting Center' : 'Delivery Hub',
-                'status' => $status,
-                'issue' => $status === 'dispute' ? ($demoId % 2 ? 'Damaged' : 'Lost') : null,
-                // Courier is credited with the outbound transfer from this center only.
-                'courier' => in_array($status, ['hub_dispatch','center_transfer'], true) && count($courierNames)
-                    ? $courierNames[$demoId % count($courierNames)] : null,
-            ];
-        }
-    }
-    // Controller may later pass $sortingCenterReportRecords after applying auth center scope.
-    $reportRecords = $sortingCenterReportRecords ?? $exampleRecords;
-    // Prepare JSON data before Blade renders; complex array expressions inside @json can break Blade's parser.
     $sortingCenterReportPayload = [
-        'records' => $reportRecords,
-        'hubs' => $assignedHubNames,
-        'couriers' => $courierNames,
-        'center' => $reportCenterName,
+        'records' => [],
+        'hubs' => [],
+        'couriers' => [],
+        'center' => data_get($reportCenter, 'name') ?: 'Sorting Center',
         'today' => $todayManila->toDateString(),
-        'preview' => !isset($sortingCenterReportRecords),
     ];
 @endphp
 <!DOCTYPE html>
@@ -113,7 +63,7 @@
   </section>
   <div class="sr-two">
     <section class="sr-card"><div class="sr-card-header"><div><h2>Parcel volume trend</h2><p>Daily parcels handled by this sorting center</p></div><span class="sr-pill">Parcels</span></div><div class="sr-chart" id="sr-volume-chart"></div></section>
-    <section class="sr-card"><div class="sr-card-header"><div><h2>Parcel movement</h2><p>Operational status of parcels recorded at this center</p></div><span class="sr-pill" id="sr-count-pill">— records</span></div><div id="sr-status-bars"></div><p class="sr-small-note">Each sample parcel is counted in one current stage. Outbound records can go to a delivery hub or another sorting center.</p></section>
+    <section class="sr-card"><div class="sr-card-header"><div><h2>Parcel movement</h2><p>Operational status of parcels recorded at this center</p></div><span class="sr-pill" id="sr-count-pill">— records</span></div><div id="sr-status-bars"></div><p class="sr-small-note">Each parcel movement is based on its recorded transfer and scan activity.</p></section>
   </div>
   <div class="sr-two sr-balanced">
     <section class="sr-card"><div class="sr-card-header"><div><h2>Assigned delivery hubs</h2><p>Only delivery hubs under this sorting center</p></div><span class="sr-pill" id="sr-hubs-pill">Assigned hubs</span></div><div id="sr-hubs"></div><p class="sr-small-note">These are subordinate delivery hubs; other sorting centers are not included in this list.</p></section>
@@ -140,7 +90,7 @@
     <div class="sr-table-wrap"><table class="sr-table"><thead><tr><th>Date &amp; time</th><th>Parcel reference</th><th>Batch</th><th>Destination</th><th>Type</th><th>Status</th></tr></thead><tbody id="sr-record-rows"></tbody></table></div>
     <div class="sr-table-footer"><span id="sr-record-summary">Showing 0 records</span><div class="sr-pager" id="sr-pager" aria-label="Parcel record pagination"></div></div>
   </section>
-  <p class="sr-footnote">Interface preview only. Records and operational figures are illustrative unless your controller supplies center-scoped data. No company-wide shipping revenue, network payouts, or other sorting centers' statistics appear in this report.</p>
+  <p class="sr-footnote">Figures are based on parcel scans and transfer manifests assigned to this sorting center.</p>
 </div></main>
 <script type="application/json" id="sr-report-data">@json($sortingCenterReportPayload)</script>
 <script>
@@ -150,9 +100,9 @@
   const root=document.getElementById('sorting-center-reports'), source=document.getElementById('sr-report-data');
   if(!root||!source)return;
   let payload;try{payload=JSON.parse(source.textContent)}catch(error){console.error('Sorting center report data is invalid',error);return;}
-  const records=Array.isArray(payload.records)?payload.records:[];
-  const hubs=Array.isArray(payload.hubs)?payload.hubs:[];
-  const couriers=Array.isArray(payload.couriers)?payload.couriers:[];
+  let records=Array.isArray(payload.records)?payload.records:[];
+  let hubs=Array.isArray(payload.hubs)?payload.hubs:[];
+  let couriers=Array.isArray(payload.couriers)?payload.couriers:[];
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const fmt=n=>Number(n||0).toLocaleString('en-PH');
@@ -161,15 +111,21 @@
   const statusKeys=Object.keys(names);
   const from=$('sr-from'), to=$('sr-to'), reset=$('sr-reset'), error=$('sr-error');
   const search=$('sr-search'), status=$('sr-status-filter');
-  const pageSize=10;let page=1;let selected=[];let filtered=[];let animationToken=0;
+  const pageSize=10;let page=1;let selected=[];let filtered=[];let animationToken=0;let requestToken=0;
   const outgoing=r=>r.status==='hub_dispatch'||r.status==='center_transfer';
   const count=(rows,key)=>rows.filter(r=>r.status===key).length;
   const ratio=(a,b)=>b?Math.round(a/b*1000)/10:0;
   function rowHtml(label,value){return `<div class="sr-info-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;}
   function currentMonth(){from.value=payload.today.slice(0,7)+'-01';to.value=payload.today;page=1;search.value='';status.value='all';updateAll();}
-  function updateAll(){
+  async function updateAll(){
     if(!from.value||!to.value||from.value>to.value){error.textContent='Select a valid From and To date.';return;}
     error.textContent='';
+    const token=++requestToken;
+    try {
+    const response=await fetch(`{{ route('sorting-center.reports.data') }}?from=${encodeURIComponent(from.value)}&to=${encodeURIComponent(to.value)}`,{headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+    if(!response.ok)throw new Error('Could not load sorting center reports. Please try again.');
+    const result=await response.json();if(token!==requestToken)return;
+    const data=result.data||{};records=Array.isArray(data.records)?data.records:[];hubs=Array.isArray(data.hubs)?data.hubs:[];couriers=Array.isArray(data.couriers)?data.couriers:[];
     selected=records.filter(r=>r.date>=from.value&&r.date<=to.value);
     $('sr-period-name').textContent=`${labelDate(from.value)} – ${labelDate(to.value)} ${to.value.slice(0,4)}`;
     $('sr-handled').textContent=fmt(new Set(selected.map(x=>x.ref)).size);
@@ -182,6 +138,7 @@
      const c=count(selected,k);return `<div class="sr-meter-row"><div><span>${esc(names[k])}</span><strong>${fmt(c)}</strong></div><div class="sr-meter"><i style="width:${ratio(c,selected.length)}%"></i></div></div>`;
     }).join('');
     renderHubs();renderDestinations();renderOperations();renderCouriers();drawChart();page=1;renderTable();
+    } catch (failure) { if(token===requestToken)error.textContent=failure.message; }
   }
   function renderHubs(){
     $('sr-hubs').innerHTML=hubs.map(h=>{

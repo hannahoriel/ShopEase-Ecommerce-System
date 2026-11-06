@@ -267,6 +267,10 @@ Route::get('/logistics/logistics-earnings', function () {
     return view('pages.logistics.logistics-earnings');
 })->middleware('auth')->name('logistics.logistics-earnings');
 
+Route::get('/logistics/api/earnings', [\App\Http\Controllers\Api\Logistics\EarningsController::class, 'index'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.earnings.data');
+
 Route::get('/buyer/dashboard', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
     $token = Auth::user()->createToken('buyer-dashboard')->plainTextToken;
@@ -2475,6 +2479,9 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/reports', 'pages.logistics.sorting-center.reports')
             ->name('reports');
 
+        Route::get('/reports/data', [\App\Http\Controllers\Api\Logistics\SortingCenterReportsController::class, 'index'])
+            ->name('reports.data');
+
         Route::view('/account', 'pages.logistics.sorting-center.account')
             ->name('account');
 
@@ -2573,6 +2580,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
             return redirect()->back()->with('success', 'Notification marked as read.');
         })->name('notifications.read');
         Route::get('/reports', $hubPage('reports'))->name('reports');
+        Route::get('/reports/data', [\App\Http\Controllers\Api\Logistics\DeliveryHubReportsController::class, 'index'])->name('reports.data');
         Route::get('/account', $hubPage('account'))->name('account');
     });
 // Separate administrator account management from personal Account Settings.
