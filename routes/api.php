@@ -392,6 +392,10 @@ Route::prefix('v1')->group(function () {
                     Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
                     Route::get('/finance', [DeliveryHubCodFinanceController::class, 'index'])->name('delivery_hub.api.finance.index');
+                    Route::post('/finance/wallet-pin/setup', [DeliveryHubCodFinanceController::class, 'setupWalletPin'])
+                        ->middleware('throttle:5,15')->name('delivery_hub.api.finance.wallet-pin.setup');
+                    Route::post('/finance/wallet-pin/verify', [DeliveryHubCodFinanceController::class, 'verifyWalletPin'])
+                        ->middleware('throttle:10,15')->name('delivery_hub.api.finance.wallet-pin.verify');
                     Route::patch('/rider-remittances/{remittance}/review', [DeliveryHubCodFinanceController::class, 'review'])->name('delivery_hub.api.finance.remittances.review');
                     Route::post('/rider-remittances/{remittance}/cash-in/otp', [DeliveryHubCodFinanceController::class, 'requestCashInOtp'])
                         ->middleware('throttle:3,10')->name('delivery_hub.api.finance.remittances.cash-in.otp');

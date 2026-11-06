@@ -15,6 +15,8 @@ use App\Models\User;
 use App\Mail\DeliveryHubCashInOtp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class DeliveryHubCodFinanceApiTest extends TestCase
@@ -77,14 +79,34 @@ class DeliveryHubCodFinanceApiTest extends TestCase
         ])->assertStatus(422);
 
         $this->actingAs($hubUser)->getJson('/api/v1/delivery_hub/finance')
-            ->assertOk()->assertJsonPath('data.remittances.0.id', $remittance->id);
+            ->assertOk()->assertJsonPath('data.remittances.0.id', $remittance->id)
+            ->assertJsonPath('data.wallet_pin_configured', false);
         $this->actingAs($hubUser)->patchJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/review", [
             'status' => 'verified', 'actual_amount' => '558.00',
         ])->assertOk()->assertJsonPath('data.status', 'discrepancy');
         $this->actingAs($hubUser)->patchJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/review", [
             'status' => 'verified', 'actual_amount' => '559.00',
         ])->assertOk()->assertJsonPath('data.status', 'verified');
-        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in/otp")
+        $pinSetup = $this->actingAs($hubUser)->postJson('/api/v1/delivery_hub/finance/wallet-pin/setup', ['pin' => '246810'])
+            ->assertOk()->assertJsonPath('data.configured', true);
+        $walletPinToken = $pinSetup->json('data.verification_token');
+        $pinRecord = \Illuminate\Support\Facades\DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)->first();
+        $this->assertNotSame('246810', $pinRecord->pin_hash);
+        $this->assertTrue(Hash::check('246810', $pinRecord->pin_hash));
+        $this->assertSame(64, strlen($walletPinToken));
+        $this->actingAs($hubUser)->postJson('/api/v1/delivery_hub/finance/wallet-pin/setup', ['pin' => '111111'])
+            ->assertStatus(409);
+        $this->actingAs($hubUser)->postJson('/api/v1/delivery_hub/finance/wallet-pin/verify', ['pin' => '000000'])
+            ->assertUnprocessable();
+        $verifiedPin = $this->actingAs($hubUser)->postJson('/api/v1/delivery_hub/finance/wallet-pin/verify', ['pin' => '246810'])
+            ->assertOk()->assertJsonPath('data.configured', true);
+        $walletPinToken = $verifiedPin->json('data.verification_token');
+        $this->actingAs($hubUser)->getJson('/api/v1/delivery_hub/finance')
+            ->assertOk()->assertJsonPath('data.wallet_pin_configured', true);
+        RateLimiter::clear(sha1((string) $hubUser->id));
+        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in/otp", [
+            'wallet_pin_token' => $walletPinToken,
+        ])
             ->assertOk()->assertJsonPath('resend_after_seconds', 60);
         Mail::assertSent(DeliveryHubCashInOtp::class, fn (DeliveryHubCashInOtp $mail) => $mail->hasTo('hub@example.test'));
         $firstOtp = null;
@@ -93,8 +115,9 @@ class DeliveryHubCodFinanceApiTest extends TestCase
             return true;
         });
         $this->travel(61)->seconds();
-        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in/otp")
-            ->assertOk();
+        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in/otp", [
+            'wallet_pin_token' => $walletPinToken,
+        ])->assertOk();
         Mail::assertSent(DeliveryHubCashInOtp::class, 2);
         $otp = null;
         Mail::assertSent(DeliveryHubCashInOtp::class, function (DeliveryHubCashInOtp $mail) use (&$otp): bool {
@@ -102,10 +125,18 @@ class DeliveryHubCodFinanceApiTest extends TestCase
             return true;
         });
         $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", ['otp_code' => $firstOtp])
-            ->assertUnprocessable();
+            ->assertForbidden();
+        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", [
+            'otp_code' => $firstOtp, 'wallet_pin_token' => $walletPinToken,
+        ])->assertUnprocessable();
         $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", ['otp_code' => '000000'])
-            ->assertUnprocessable();
-        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", ['otp_code' => $otp])
+            ->assertForbidden();
+        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", [
+            'otp_code' => '000000', 'wallet_pin_token' => $walletPinToken,
+        ])->assertUnprocessable();
+        $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", [
+            'otp_code' => $otp, 'wallet_pin_token' => $walletPinToken,
+        ])
             ->assertOk()->assertJsonPath('data.amount', 559);
         $this->assertDatabaseHas('cod_wallet_accounts', ['owner_key' => 'delivery_hub:'.$hub->id.':available', 'balance' => '559.00']);
         $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/cash-in", ['otp_code' => $otp])

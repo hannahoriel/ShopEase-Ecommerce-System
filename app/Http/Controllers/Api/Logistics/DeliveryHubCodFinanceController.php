@@ -52,6 +52,7 @@ class DeliveryHubCodFinanceController extends Controller
 
         return response()->json(['data' => [
             'hub' => ['id' => $hub->id, 'name' => $hub->hub_name],
+            'wallet_pin_configured' => DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)->exists(),
             'summary' => [
                 'wallet_balance' => $wallet,
                 'today_orders' => $todayCollections->count(),
@@ -77,6 +78,63 @@ class DeliveryHubCodFinanceController extends Controller
             ])->values(),
             'cash_ins' => DB::table('hub_cod_cash_ins')->where('delivery_hub_id', $hub->id)->latest('received_at')->get(),
         ]]);
+    }
+
+    public function setupWalletPin(Request $request): JsonResponse
+    {
+        $data = $request->validate(['pin' => ['required', 'digits:6']]);
+        $hub = $this->hub($request);
+
+        $result = DB::transaction(function () use ($hub, $request, $data): array {
+            $existing = DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)->lockForUpdate()->first();
+            abort_if($existing, 409, 'A wallet PIN is already set. Verify your existing PIN to continue.');
+
+            DB::table('hub_wallet_pins')->insert([
+                'delivery_hub_id' => $hub->id,
+                'pin_hash' => Hash::make($data['pin']),
+                'set_by' => $request->user()->id,
+                'failed_attempts' => 0,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+
+            return $this->issueWalletPinToken($hub, (int) $request->user()->id);
+        });
+
+        return response()->json(['data' => $result + ['configured' => true], 'message' => 'Wallet PIN saved securely.']);
+    }
+
+    public function verifyWalletPin(Request $request): JsonResponse
+    {
+        $data = $request->validate(['pin' => ['required', 'digits:6']]);
+        $hub = $this->hub($request);
+        $result = DB::transaction(function () use ($hub, $request, $data): array {
+            $pin = DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)->lockForUpdate()->first();
+            abort_unless($pin, 409, 'Set up a wallet PIN before using Cash In.');
+
+            if ($pin->locked_until && now()->lt($pin->locked_until)) {
+                return ['error' => 'Wallet PIN is temporarily locked. Try again later.', 'status' => 429];
+            }
+            if (! Hash::check($data['pin'], $pin->pin_hash)) {
+                $attempts = (int) $pin->failed_attempts + 1;
+                $lockedUntil = $attempts >= 5 ? now()->addMinutes(15) : null;
+                DB::table('hub_wallet_pins')->where('id', $pin->id)->update([
+                    'failed_attempts' => $lockedUntil ? 0 : $attempts,
+                    'locked_until' => $lockedUntil,
+                    'updated_at' => now(),
+                ]);
+                return ['error' => $lockedUntil
+                    ? 'Too many incorrect PIN attempts. Try again in 15 minutes.'
+                    : 'Incorrect wallet PIN. '.(5 - $attempts).' attempt(s) remaining.', 'status' => 422];
+            }
+
+            DB::table('hub_wallet_pins')->where('id', $pin->id)->update([
+                'failed_attempts' => 0, 'locked_until' => null, 'updated_at' => now(),
+            ]);
+            return $this->issueWalletPinToken($hub, (int) $request->user()->id);
+        });
+
+        if (isset($result['error'])) return response()->json(['message' => $result['error']], $result['status']);
+        return response()->json(['data' => $result + ['configured' => true], 'message' => 'Wallet PIN verified.']);
     }
 
     public function review(Request $request, Remittance $remittance): JsonResponse
@@ -143,27 +201,12 @@ class DeliveryHubCodFinanceController extends Controller
         $hub = $this->hub($request);
         abort_unless($this->belongsToHub($remittance, $hub), 404);
         abort_unless($remittance->status === 'verified', 409, 'Only verified remittances can be cashed in.');
-        $data = $request->validate(['otp_code' => ['required', 'digits:6']]);
-        $result = DB::transaction(function () use ($request, $remittance, $hub, $settlements, $data): array {
-            $otp = DB::table('hub_cash_in_otps')->where('delivery_hub_id', $hub->id)
-                ->where('remittance_id', $remittance->id)->where('requested_by', $request->user()->id)
-                ->whereNull('consumed_at')->latest('id')->lockForUpdate()->first();
-            if (! $otp || now()->greaterThan($otp->expires_at)) {
-                return ['error' => 'The cash-in code has expired. Request a new email code.', 'status' => 410];
-            }
-            if ((int) $otp->attempts >= 5) {
-                DB::table('hub_cash_in_otps')->where('id', $otp->id)->update(['consumed_at' => now(), 'updated_at' => now()]);
-                return ['error' => 'Too many incorrect code attempts. Request a new email code.', 'status' => 429];
-            }
-            if (! Hash::check($data['otp_code'], $otp->code_hash)) {
-                DB::table('hub_cash_in_otps')->where('id', $otp->id)->update([
-                    'attempts' => (int) $otp->attempts + 1, 'updated_at' => now(),
-                ]);
-                return ['error' => 'The email verification code is incorrect.', 'status' => 422];
-            }
-
+        $result = DB::transaction(function () use ($request, $remittance, $hub, $settlements): array {
+            $pinVerification = $this->walletPinVerification($request, $hub, true);
             $result = $settlements->cashIn($remittance, $hub->id, (int) $request->user()->id);
-            DB::table('hub_cash_in_otps')->where('id', $otp->id)->update(['consumed_at' => now(), 'updated_at' => now()]);
+            DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)
+                ->where('verification_token_hash', $pinVerification->verification_token_hash)
+                ->update(['token_consumed_at' => now(), 'updated_at' => now()]);
             return ['data' => $result];
         });
         if (isset($result['error'])) {
@@ -176,6 +219,7 @@ class DeliveryHubCodFinanceController extends Controller
     public function requestCashInOtp(Request $request, Remittance $remittance): JsonResponse
     {
         $hub = $this->hub($request);
+        $this->walletPinVerification($request, $hub);
         abort_unless($this->belongsToHub($remittance, $hub), 404);
         abort_unless($remittance->status === 'verified' && abs((float) $remittance->discrepancy_amount) < 0.009, 409,
             'Only verified remittances without discrepancies can be cashed in.');
@@ -222,6 +266,35 @@ class DeliveryHubCodFinanceController extends Controller
         abort_unless($this->belongsToHub($remittance, $hub), 404);
         $result = $settlements->distribute($remittance, $hub->id);
         return response()->json(['data' => $result, 'message' => 'COD distribution recorded.']);
+    }
+
+    private function issueWalletPinToken(LogisticsDeliveryHub $hub, int $userId): array
+    {
+        $token = bin2hex(random_bytes(32));
+        DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)->update([
+            'verification_token_hash' => hash('sha256', $token),
+            'verified_by' => $userId,
+            'token_expires_at' => now()->addMinutes(15),
+            'token_consumed_at' => null,
+            'updated_at' => now(),
+        ]);
+
+        return ['verification_token' => $token, 'expires_in_seconds' => 900];
+    }
+
+    private function walletPinVerification(Request $request, LogisticsDeliveryHub $hub, bool $lock = false): object
+    {
+        $token = (string) $request->input('wallet_pin_token', '');
+        abort_unless($token !== '', 403, 'Verify your delivery hub wallet PIN before cash-in.');
+        $query = DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)
+            ->where('verified_by', $request->user()->id)
+            ->where('verification_token_hash', hash('sha256', $token))
+            ->whereNull('token_consumed_at')->where('token_expires_at', '>', now());
+        if ($lock) $query->lockForUpdate();
+        $verification = $query->first();
+        abort_unless($verification, 403, 'Wallet PIN verification expired. Enter your PIN again to continue.');
+
+        return $verification;
     }
 
     private function hub(Request $request): LogisticsDeliveryHub
