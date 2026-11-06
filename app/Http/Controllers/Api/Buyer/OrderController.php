@@ -31,7 +31,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
 {
-    private const SHIPPING_FEE_PER_STORE = 58.00;
+    public const SHIPPING_FEE_PER_STORE = 50.00;
 
     public function __construct(
         private readonly OrderInventoryService $inventory

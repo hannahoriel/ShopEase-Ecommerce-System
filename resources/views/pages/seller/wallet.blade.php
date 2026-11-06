@@ -62,7 +62,7 @@
                     <span class="sw-history-count" id="walletResultCount">{{ $wallet['transactions']->total() }} records</span>
                 </div>
 
-                <form method="GET" action="{{ route('seller.wallet.index') }}" class="sw-filters" id="walletFilterForm" data-wallet-url="{{ route('seller.wallet.index') }}">
+                <form method="GET" action="{{ route('seller.wallet.index') }}" class="sw-filters" id="walletFilterForm" data-wallet-url="{{ route('seller.wallet.index') }}" data-wallet-api-url="{{ route('seller.api.wallet.index') }}">
                     <div class="sw-search-wrap">
                         <input
                             type="text"

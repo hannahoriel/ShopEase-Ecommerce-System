@@ -293,6 +293,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
+            Route::get('/wallet', [\App\Http\Controllers\Api\Seller\WalletController::class, 'index'])->name('seller.api.wallet.index');
             Route::get('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'show']);
             Route::get('/account/followers', [\App\Http\Controllers\Api\Seller\AccountController::class, 'followers']);
             Route::put('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'update']);

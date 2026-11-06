@@ -44,14 +44,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkoutMessage = document.getElementById('checkoutMessage');
             const placeOrderButton = document.getElementById('placeOrderButton');
             let cartItems = [];
-            // IDs are saved when the buyer clicks Proceed to Checkout with checked cart rows.
-            // Do not silently turn an empty/stale selection into a checkout for the entire cart.
+            // The cart page saves checked row IDs before navigation. If checkout is opened
+            // directly (or from a cached older cart script), use the cart's default checked
+            // state and include all current cart rows.
             const checkoutSelectionKey = 'shopease_checkout_cart_item_ids';
             const selectedCartIds = (() => {
                 try {
-                    const ids = JSON.parse(sessionStorage.getItem(checkoutSelectionKey) || '[]');
-                    return Array.isArray(ids) ? [...new Set(ids.map(Number).filter(id => Number.isSafeInteger(id) && id > 0))] : [];
-                } catch { return []; }
+                    const stored = sessionStorage.getItem(checkoutSelectionKey);
+                    if (stored === null) return null;
+                    const ids = JSON.parse(stored);
+                    return Array.isArray(ids) ? [...new Set(ids.map(Number).filter(id => Number.isSafeInteger(id) && id > 0))] : null;
+                } catch { return null; }
             })();
             let appliedVoucherCode = '';
             let appliedVoucherDiscount = 0;
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedShippingFee = sellerId => {
                 const options = shippingOptionsBySeller[String(sellerId)] || [];
                 const selected = selectedLogisticsBySeller[String(sellerId)];
-                return shippingOptionsLoaded && selected && options.some(option => String(option.id) === String(selected)) ? 58 : 0;
+                return shippingOptionsLoaded && selected && options.some(option => String(option.id) === String(selected)) ? 50 : 0;
             };
             const walletTotal = () => cartItems.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0)
                 + [...new Set(cartItems.map(item => String(item.product.seller.id)))].reduce((sum, id) => sum + selectedShippingFee(id), 0)
@@ -254,17 +257,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 try {
-                    if (!selectedCartIds.length) {
+                    if (Array.isArray(selectedCartIds) && !selectedCartIds.length) {
                         renderCheckoutCart([]);
                         if (checkoutMessage) checkoutMessage.textContent = 'No cart items were selected. Return to your cart and select the products you want to checkout.';
                         return;
                     }
                     const payload = await checkoutApiFetch(checkoutConfig.api.cartUrl || '/api/v1/buyer/cart');
                     const actual = payload.data || [];
-                    const selection = new Set(selectedCartIds);
-                    const chosen = actual.filter(item => selection.has(Number(item.id)));
+                    const selection = Array.isArray(selectedCartIds) ? new Set(selectedCartIds) : null;
+                    const chosen = selection ? actual.filter(item => selection.has(Number(item.id))) : actual;
                     renderCheckoutCart(chosen);
-                    if (chosen.length !== selectedCartIds.length && checkoutMessage) {
+                    if (selection && chosen.length !== selectedCartIds.length && checkoutMessage) {
                         checkoutMessage.textContent = 'Some selected products are no longer in your cart. Review the items before placing the order.';
                     }
                 } catch (error) {

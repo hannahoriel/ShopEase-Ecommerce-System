@@ -892,6 +892,17 @@ document.addEventListener('DOMContentLoaded', function () {
                             return;
                         }
 
+                        // Checkout reads this exact selection before loading the buyer's cart.
+                        // Persist it here so checked rows are not lost during navigation.
+                        const selectedIds = selected
+                            .map(row => Number(row.dataset.apiItemId || row.dataset.itemId))
+                            .filter(id => Number.isSafeInteger(id) && id > 0);
+                        if (!selectedIds.length) {
+                            alert('The selected cart items could not be identified. Refresh your cart and try again.');
+                            return;
+                        }
+                        sessionStorage.setItem('shopease_checkout_cart_item_ids', JSON.stringify(selectedIds));
+
                         window.location.href =
                             document.body.dataset.checkoutUrl;
                     }

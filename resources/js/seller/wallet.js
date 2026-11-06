@@ -1,4 +1,4 @@
-/* ShopEase seller wallet — fetch filtered table data without full-page navigation. */
+/* Seller wallet filters use the authenticated JSON API and preserve the page's query URL. */
 document.addEventListener('DOMContentLoaded', () => {
   const panel = document.getElementById('sellerWalletHistory');
   const form = document.getElementById('walletFilterForm');
@@ -8,12 +8,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const fromInput = form.querySelector('[name="from"]');
   const toInput = form.querySelector('[name="to"]');
   const status = document.getElementById('walletLiveStatus');
+  const apiUrl = form.dataset.walletApiUrl;
   let selectedType = new URL(window.location.href).searchParams.get('type') || 'all';
   let controller = null;
   let debounceTimer = null;
   let lastRequest = 0;
 
-  function makeUrl(page = null) {
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[char]);
+  const money = amount => `₱${Math.abs(Number(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const labels = {
+    order_income: 'Completed order earnings',
+    refund: 'Buyer refund',
+    return_shipping: 'Return shipping',
+    voucher_discount: 'Seller voucher deduction'
+  };
+
+  function makeUrl(page = 1) {
     const url = new URL(form.action || window.location.href, window.location.href);
     url.search = '';
     const term = searchInput.value.trim();
@@ -21,7 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fromInput.value) url.searchParams.set('from', fromInput.value);
     if (toInput.value) url.searchParams.set('to', toInput.value);
     if (selectedType !== 'all') url.searchParams.set('type', selectedType);
-    if (page && page !== '1') url.searchParams.set('page', page);
+    if (page > 1) url.searchParams.set('page', String(page));
+    return url;
+  }
+
+  function makeApiUrl(page) {
+    const url = new URL(apiUrl, window.location.href);
+    const pageUrl = makeUrl(page);
+    url.search = pageUrl.search;
     return url;
   }
 
@@ -34,37 +53,64 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function refresh(url, push = false) {
+  function renderTransactions(rows) {
+    const tbody = panel.querySelector('#walletResultsTable tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="sw-empty">No matching transactions found. Try another search term or change the filters.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(row => {
+      const positive = Number(row.amount) >= 0;
+      const date = row.occurred_at ? new Date(String(row.occurred_at).replace(' ', 'T')).toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+      return `<tr>
+        <td><div class="sw-transaction"><span class="sw-tr-icon ${positive ? 'sw-positive-bg' : 'sw-negative-bg'}">${positive ? '↗' : '↙'}</span><span><strong>${escapeHtml(labels[row.entry_type] || 'Wallet adjustment')}</strong><small>${escapeHtml(row.description)}</small></span></div></td>
+        <td class="sw-order">${escapeHtml(row.reference || '—')}</td>
+        <td>${escapeHtml(date)}</td><td><span class="sw-status">Recorded</span></td>
+        <td class="sw-right sw-money ${positive ? 'sw-positive' : 'sw-negative'}">${positive ? '+' : '−'}${money(row.amount)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderPagination(meta) {
+    const container = panel.querySelector('#walletPagination');
+    if (meta.last_page <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+    const current = Number(meta.current_page);
+    const pages = [];
+    for (let page = Math.max(1, current - 2); page <= Math.min(meta.last_page, current + 2); page++) {
+      pages.push(page === current
+        ? `<span class="sw-page-link sw-current" aria-current="page">${page}</span>`
+        : `<a class="sw-page-link" href="${escapeHtml(makeUrl(page).toString())}">${page}</a>`);
+    }
+    container.innerHTML = `<p class="sw-pagination-summary">Showing ${meta.from ?? 0}–${meta.to ?? 0} of ${meta.total}</p><div class="sw-pagination-pages" aria-label="Wallet pages">${current > 1 ? `<a class="sw-page-link" href="${escapeHtml(makeUrl(current - 1).toString())}" aria-label="Previous page">‹</a>` : '<span class="sw-page-link sw-disabled" aria-disabled="true">‹</span>'}${pages.join('')}${current < meta.last_page ? `<a class="sw-page-link" href="${escapeHtml(makeUrl(current + 1).toString())}" aria-label="Next page">›</a>` : '<span class="sw-page-link sw-disabled" aria-disabled="true">›</span>'}</div>`;
+  }
+
+  async function refresh(page = 1, push = false) {
     const requestNumber = ++lastRequest;
     if (controller) controller.abort();
     controller = new AbortController();
     panel.classList.add('sw-is-loading');
     status.textContent = 'Updating transactions…';
     try {
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
-        credentials: 'same-origin',
-        signal: controller.signal
+      const response = await fetch(makeApiUrl(page), {
+        method: 'GET', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin', signal: controller.signal
       });
-      if (!response.ok) throw new Error('Could not load transactions.');
-      const html = await response.text();
+      if (!response.ok) throw new Error(response.status === 422 ? 'Check the selected date range.' : 'Could not load transactions.');
+      const result = await response.json();
       if (requestNumber !== lastRequest) return;
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const freshPanel = doc.getElementById('sellerWalletHistory');
-      if (!freshPanel) throw new Error('Transaction results were not returned.');
-      for (const id of ['walletResultCount', 'walletResultsTable', 'walletPagination']) {
-        const oldEl = document.getElementById(id);
-        const freshEl = freshPanel.querySelector('#' + id);
-        if (!oldEl || !freshEl) throw new Error('Missing wallet result element: ' + id);
-        oldEl.replaceWith(freshEl);
-      }
+      renderTransactions(result.transactions.data);
+      renderPagination(result.transactions);
+      document.getElementById('walletResultCount').textContent = `${result.transactions.total} records`;
+      const url = makeUrl(result.transactions.current_page);
       window.history[push ? 'pushState' : 'replaceState']({ walletFilter: true }, '', url.pathname + url.search);
       status.textContent = '';
     } catch (error) {
       if (error.name !== 'AbortError') {
-        status.textContent = 'Unable to update transactions. Please retry.';
-        console.error('Wallet filters:', error);
+        status.textContent = error.message || 'Unable to update transactions. Please retry.';
+        console.error('Wallet API:', error);
       }
     } finally {
       if (requestNumber === lastRequest) panel.classList.remove('sw-is-loading');
@@ -73,49 +119,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function scheduleRefresh() {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => refresh(makeUrl()), 320);
+    debounceTimer = setTimeout(() => refresh(1, true), 320);
   }
 
   searchInput?.addEventListener('input', scheduleRefresh);
   [fromInput, toInput].forEach(input => input?.addEventListener('change', () => {
     clearTimeout(debounceTimer);
-    refresh(makeUrl());
+    refresh(1, true);
   }));
+  form.addEventListener('submit', event => { event.preventDefault(); clearTimeout(debounceTimer); refresh(1, true); });
 
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    clearTimeout(debounceTimer);
-    refresh(makeUrl());
-  });
-
-  form.querySelector('.sw-clear-btn')?.addEventListener('click', e => {
-    e.preventDefault();
-    clearTimeout(debounceTimer);
+  form.querySelector('.sw-clear-btn')?.addEventListener('click', event => {
+    event.preventDefault();
     searchInput.value = '';
     fromInput.value = '';
     toInput.value = '';
     selectedType = 'all';
     setTabs();
-    refresh(makeUrl());
+    refresh(1, true);
   });
 
-  panel.addEventListener('click', e => {
-    const typeLink = e.target.closest('a[data-wallet-type]');
+  panel.addEventListener('click', event => {
+    const typeLink = event.target.closest('a[data-wallet-type]');
     if (typeLink) {
-      e.preventDefault();
+      event.preventDefault();
       selectedType = typeLink.dataset.walletType || 'all';
-      clearTimeout(debounceTimer);
       setTabs();
-      refresh(makeUrl());
+      refresh(1, true);
       return;
     }
-    const paginationLink = e.target.closest('#walletPagination a[href]');
+    const paginationLink = event.target.closest('#walletPagination a[href]');
     if (paginationLink) {
-      e.preventDefault();
-      clearTimeout(debounceTimer);
-      const url = new URL(paginationLink.href, window.location.href);
-      // Keep the currently selected filters, change only the requested page.
-      refresh(makeUrl(url.searchParams.get('page') || '1'));
+      event.preventDefault();
+      const page = Number(new URL(paginationLink.href).searchParams.get('page') || 1);
+      refresh(page, true);
     }
   });
 
@@ -126,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toInput.value = url.searchParams.get('to') || '';
     selectedType = url.searchParams.get('type') || 'all';
     setTabs();
-    clearTimeout(debounceTimer);
-    refresh(url);
+    refresh(Number(url.searchParams.get('page') || 1));
   });
 });

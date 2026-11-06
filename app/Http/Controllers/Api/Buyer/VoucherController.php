@@ -118,7 +118,7 @@ class VoucherController extends Controller
                 'seller_id' => (int) $voucher->seller_id,
                 'seller_name' => $sellerItems->first()->product->seller->store_name ?? 'Shop',
                 'discount' => $result['discount'],
-                'shipping_fee' => 58,
+                'shipping_fee' => OrderController::SHIPPING_FEE_PER_STORE,
             ],
             'message' => 'Voucher applied.',
         ]);
