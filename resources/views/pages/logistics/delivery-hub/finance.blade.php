@@ -88,7 +88,7 @@
 <!-- SEARCH_FIELDS_BLANK_V4: both Today and History search boxes have zero initial text -->
 <main class="lg-main dhf-main"><div class="dhf-shell">
 <section class="dhf-card dhf-section"><div class="dhf-head"><div><h2>Rider Cash Remittances</h2><p>Review rider-submitted COD totals before adding funds to this hub wallet.</p></div><button class="dhf-btn ghost" type="button" id="finance-refresh">Refresh</button></div>
-<div class="dhf-tablewrap"><table class="dhf-table"><thead><tr><th>Submitted</th><th>Rider</th><th>Method &amp; Reference</th><th>Declared COD</th><th>Status</th><th>Action</th></tr></thead><tbody id="remittance-rows"></tbody></table></div>
+<div class="dhf-tablewrap"><table class="dhf-table"><thead><tr><th>Submitted</th><th>Rider</th><th>Method / Reference</th><th>Declared COD</th><th>Status</th><th>Action</th></tr></thead><tbody id="remittance-rows"></tbody></table></div>
 </section>
 <section class="dhf-kpis" aria-label="Today's overview">
 <div class="dhf-card dhf-kpi"><small>Delivered Today</small><strong id="today-count">0</strong><p>Eligible COD orders delivered today</p></div>
@@ -115,6 +115,25 @@
 <div class="dhf-history-kpis"><div><small>History Orders</small><strong id="history-count">0</strong></div><div><small>Total COD Value</small><strong id="history-total">â‚±0.00</strong></div><div><small>Released Seller Earnings</small><strong id="history-distributed">â‚±0.00</strong></div></div>
 <div class="dhf-tablewrap"><table class="dhf-table"><thead><tr><th>Distributed Date</th><th>Order</th><th>Buyer</th><th>COD Amount</th><th>Seller Funds</th></tr></thead><tbody id="history-rows"></tbody></table></div><div class="dhf-footrow"><small id="history-page-text"></small><div class="dhf-pager" id="history-pager"></div></div></section>
 </div></main>
+<div class="dhf-modal" id="wallet-pin-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-pin-title">
+  <form class="dhf-dialog dhf-pin-dialog" id="wallet-pin-form">
+    <div class="dhf-lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></div>
+    <span class="dhf-step">WALLET ACCESS</span>
+    <h3 id="wallet-pin-title">Set up Wallet PIN</h3>
+    <p>Create a 6-digit PIN to access Cash In.</p>
+    <div class="dhf-pin-grid" id="wallet-pin-grid" role="group" aria-label="Enter a six-digit wallet PIN">
+      <input class="dhf-pin-cell" type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="PIN digit 1" required>
+      <input class="dhf-pin-cell" type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="PIN digit 2" required>
+      <input class="dhf-pin-cell" type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="PIN digit 3" required>
+      <input class="dhf-pin-cell" type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="PIN digit 4" required>
+      <input class="dhf-pin-cell" type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="PIN digit 5" required>
+      <input class="dhf-pin-cell" type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="PIN digit 6" required>
+    </div>
+    <p class="dhf-status" id="wallet-pin-error" role="alert" aria-live="polite"></p>
+    <div class="dhf-actions"><button class="dhf-btn ghost" type="button" id="wallet-pin-cancel">Cancel</button><button class="dhf-btn" type="submit" id="wallet-pin-continue" disabled>Continue</button></div>
+    <div class="dhf-modal-footnote">This PIN is not stored or verified by a server; it resets when the page reloads.</div>
+  </form>
+</div>
 <div class="dhf-modal" id="cashin-modal" role="dialog" aria-modal="true" aria-labelledby="cashin-title">
   <div class="dhf-dialog dhf-cashin-dialog">
     <div class="dhf-cashin-header"><div class="dhf-cashin-symbol">â‚±</div><div><span class="dhf-step">DELIVERY HUB WALLET</span><h3 id="cashin-title">Cash In</h3><p>Select a verified rider remittance; a one-time code will be emailed to the hub manager.</p></div></div>
@@ -203,5 +222,13 @@ $('verify-amount').addEventListener('input',event=>{const input=event.currentTar
 $('verify-form').addEventListener('submit',async event=>{event.preventDefault();if(!remittanceToVerify)return;const value=$('verify-amount').value.trim();if(!/^\d+(\.\d{1,2})?$/.test(value)){setCashInStatus($('verify-error'),'Enter a valid amount with no more than two decimal places.','error');$('verify-amount').focus();return}const button=$('verify-submit');button.disabled=true;setCashInStatus($('verify-error'),'Saving counted amount…');try{const result=await call(api+'/rider-remittances/'+remittanceToVerify.id+'/review',{method:'PATCH',body:JSON.stringify({status:'verified',actual_amount:Number(value).toFixed(2)})});$('verify-modal').classList.remove('open');$('action-message').textContent=result.status==='verified'?'Remittance verified and ready for cash-in.':'Cash discrepancy recorded. Recount required.';remittanceToVerify=null;await load()}catch(e){setCashInStatus($('verify-error'),e.message||'Could not save the counted amount.','error')}finally{button.disabled=false}});
 const loadBeforeRemittancePolish=load;
 load=async function(){await loadBeforeRemittancePolish();if(!state)return;document.querySelectorAll('#remittance-rows tr[data-ref]').forEach(row=>{const remittance=state.remittances.find(item=>String(item.id)===row.dataset.ref);if(!remittance)return;const methodCell=row.cells[2];if(methodCell){const parts=methodCell.textContent.split(' / '),method=(parts.shift()||'').replaceAll('_',' ').replace(/\b\w/g,char=>char.toUpperCase());methodCell.replaceChildren();const label=document.createElement('span');label.className='dhf-method';label.textContent=method;methodCell.append(label);if(parts.length){const reference=document.createElement('small');reference.className='dhf-reference';reference.textContent='Reference: '+parts.join(' / ');methodCell.append(reference)}}if(['verified','cashed_in'].includes(remittance.status)&&row.cells[5])row.cells[5].replaceChildren()})};
+let walletPinReady=false,pendingPinRemittanceId=null;
+const openCashInWithoutPin=openCashIn;
+openCashIn=function(id){if(walletPinReady){openCashInWithoutPin(id);return}pendingPinRemittanceId=id;const cells=[...document.querySelectorAll('#wallet-pin-grid .dhf-pin-cell')];cells.forEach(cell=>cell.value='');$('wallet-pin-continue').disabled=true;setCashInStatus($('wallet-pin-error'),'');$('wallet-pin-modal').classList.add('open');cells[0]?.focus()};
+const walletPinCells=[...document.querySelectorAll('#wallet-pin-grid .dhf-pin-cell')];
+function syncWalletPin(){const complete=walletPinCells.every(cell=>/^[0-9]$/.test(cell.value));$('wallet-pin-continue').disabled=!complete;return complete}
+walletPinCells.forEach((cell,index)=>{cell.addEventListener('input',event=>{const digits=event.currentTarget.value.replace(/[^0-9]/g,'');event.currentTarget.value=digits.slice(-1);setCashInStatus($('wallet-pin-error'),'');if(event.currentTarget.value&&index<walletPinCells.length-1)walletPinCells[index+1].focus();syncWalletPin()});cell.addEventListener('keydown',event=>{if(event.key==='Backspace'&&!cell.value&&index>0){walletPinCells[index-1].value='';walletPinCells[index-1].focus();syncWalletPin()}if(event.key==='ArrowLeft'&&index>0)walletPinCells[index-1].focus();if(event.key==='ArrowRight'&&index<walletPinCells.length-1)walletPinCells[index+1].focus()});cell.addEventListener('paste',event=>{const value=event.clipboardData?.getData('text')||'';const digits=value.replace(/[^0-9]/g,'').slice(0,6);if(!digits)return;event.preventDefault();digits.split('').forEach((digit,position)=>{if(walletPinCells[position])walletPinCells[position].value=digit});walletPinCells[Math.min(digits.length,walletPinCells.length)-1]?.focus();syncWalletPin()})});
+$('wallet-pin-form').addEventListener('submit',event=>{event.preventDefault();if(!syncWalletPin()){setCashInStatus($('wallet-pin-error'),'Enter all six digits to continue.','error');return}walletPinReady=true;walletPinCells.forEach(cell=>cell.value='');$('wallet-pin-modal').classList.remove('open');if(pendingPinRemittanceId)openCashInWithoutPin(pendingPinRemittanceId);pendingPinRemittanceId=null});
+$('wallet-pin-cancel').onclick=()=>{$('wallet-pin-modal').classList.remove('open');walletPinCells.forEach(cell=>cell.value='');pendingPinRemittanceId=null;setCashInStatus($('wallet-pin-error'),'')};
 const historySearch=$('history-search');['history-from','history-to'].forEach(id=>$(id).addEventListener('change',load));historySearch.textContent='';historySearch.addEventListener('input',()=>{clearTimeout(window.financeSearchTimer);window.financeSearchTimer=setTimeout(load,250)});$('history-reset').onclick=()=>{const d=new Date(),date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(d);$('history-from').value=date.slice(0,7)+'-01';$('history-to').value=date;historySearch.textContent='';load()};$('history-from').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(new Date()).slice(0,7)+'-01';$('history-to').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(new Date());document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.dhf-modal').classList.remove('open'));document.querySelectorAll('.dhf-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));load();})();
 </script></body></html>
