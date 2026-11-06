@@ -26,7 +26,7 @@ class CommissionController extends Controller
         $query = $this->earnedTransactions();
 
         if (! empty($validated['search'])) {
-            $search = trim($validated['search']);
+            $search = ltrim(trim($validated['search']), '#');
             $query->where(function (Builder $builder) use ($search): void {
                 $builder->whereHas('order', fn (Builder $orders) => $orders
                     ->where('order_number', 'like', "%{$search}%"))
@@ -116,14 +116,13 @@ class CommissionController extends Controller
 
     private function commissionData(): array
     {
-        $rows = $this->earnedTransactions()
-            ->get()
-            ->map(fn (CommissionTransaction $item): array => $this->serialize($item));
-
         return [
-            'commissionRows' => $rows,
+            // The browser loads the searchable/paginated ledger from index().
+            // Keep the page response limited to summary data instead of loading
+            // every commission row twice on the initial page request.
+            'commissionRows' => collect(),
             'commissionStats' => $this->stats(),
-            'commissionTotalEntries' => $rows->count(),
+            'commissionTotalEntries' => CommissionTransaction::query()->where('status', 'earned')->count(),
         ];
     }
 
@@ -146,7 +145,6 @@ class CommissionController extends Controller
             ->selectRaw('COUNT(DISTINCT seller_id) as seller_count')
             ->first();
 
-        $orderTotal = (float) $aggregate->order_total;
         $commissionTotal = (float) $aggregate->commission_total;
 
         return [
