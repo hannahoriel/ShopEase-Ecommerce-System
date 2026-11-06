@@ -2375,6 +2375,9 @@ Route::middleware(['auth', 'role:sorting_center'])
         })
             ->name('dashboard');
 
+        Route::get('/dashboard/data', [\App\Http\Controllers\Api\Logistics\SortingCenterDashboardController::class, 'index'])
+            ->name('dashboard.data');
+
         Route::get('/courier-registrations', function () {
             $center = \App\Models\Logistics\LogisticsBranch::query()
                 ->where('user_id', Auth::id())
@@ -2545,6 +2548,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
         };
 
         Route::get('/dashboard', $hubPage('dashboard'))->name('dashboard');
+        Route::get('/dashboard/data', [\App\Http\Controllers\Api\Logistics\DeliveryHubDashboardController::class, 'index'])->name('dashboard.data');
         Route::get('/rider-registrations', [\App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController::class, 'page'])->name('rider-registrations');
         Route::get('/scanners', $hubPage('scanners'))->name('scanners');
         Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
