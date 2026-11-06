@@ -148,7 +148,8 @@ class Product extends Model
 
     public function selectedOptionPhoto(array $choices): ?string
     {
-        foreach (['variation' => 'variations', 'color' => 'colors', 'size' => 'sizes'] as $type => $plural) {
+        // Color photos are usually the buyer's most specific visual choice.
+        foreach (['color' => 'colors', 'variation' => 'variations', 'size' => 'sizes'] as $type => $plural) {
             $name = $choices[$plural] ?? $choices[$type] ?? null;
             if (! is_scalar($name) || (string) $name === '') continue;
             $option = $this->options()->where('type', $type)->where('name', (string) $name)->first();
@@ -159,17 +160,52 @@ class Product extends Model
 
     public function selectedImageForCart(?string $variation, ?string $color, ?string $size): ?string
     {
+        $combination = $this->selectedCombinationForCart($variation, $color, $size);
         $choices = ['variations' => $variation, 'colors' => $color, 'sizes' => $size];
-        $combination = $this->connectedVariants()->get()->first(function ($variant) use ($choices) {
-            foreach ($choices as $key => $chosen) {
-                $saved = data_get($variant->choices, $key);
-                if ($saved !== null && (string) $saved !== (string) ($chosen ?? '')) return false;
-                if ($chosen !== null && $saved === null) return false;
-            }
-            return true;
-        });
+
         return $this->publicOptionPhoto($combination?->photo)
             ?: $this->selectedOptionPhoto($choices);
+    }
+
+    public function selectedCombinationForCart(?string $variation, ?string $color, ?string $size): ?ProductVariantCombination
+    {
+        $selected = [
+            'variations' => $variation,
+            'colors' => $color,
+            'sizes' => $size,
+        ];
+
+        $variants = $this->relationLoaded('connectedVariants')
+            ? $this->getRelation('connectedVariants')
+            : $this->connectedVariants()->get();
+
+        return $variants->first(function (ProductVariantCombination $variant) use ($selected): bool {
+            $choices = $variant->choices ?? [];
+
+            foreach ($selected as $plural => $value) {
+                $singular = match ($plural) {
+                    'variations' => 'variation',
+                    'colors' => 'color',
+                    default => 'size',
+                };
+                $saved = $choices[$plural] ?? $choices[$singular] ?? null;
+
+                if ((string) ($saved ?? '') !== (string) ($value ?? '')) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    public function salePriceForCart(?string $variation, ?string $color, ?string $size): float
+    {
+        $combination = $this->selectedCombinationForCart($variation, $color, $size);
+        $price = $combination ? (float) $combination->final_price : (float) $this->price;
+        $percentage = (int) $this->sale_percentage;
+
+        return $percentage > 0 ? round($price * (100 - $percentage) / 100, 2) : $price;
     }
 
     private function optionPayload(string $type): array

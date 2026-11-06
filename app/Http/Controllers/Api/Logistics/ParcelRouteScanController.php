@@ -480,12 +480,17 @@ class ParcelRouteScanController extends Controller
                     // manifest write was missed or an older app version sent
                     // the proof through the legacy endpoint.
                     $query->where(function ($scheduled) use ($node): void {
-                        $scheduled->whereNull('logistics_delivery_hub_id')
-                            ->whereHas('order', fn ($order) => $order
-                                ->where('status', 'to_ship')
-                                ->whereHas('seller', fn ($seller) => $seller
-                                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
-                                    ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])));
+                    $scheduled->where(function ($hubScope) use ($node): void {
+                        $hubScope->where('logistics_delivery_hub_id', $node->id)
+                            ->orWhere(function ($unassigned) use ($node): void {
+                                $unassigned->whereNull('logistics_delivery_hub_id')
+                                    ->whereHas('order', fn ($order) => $order
+                                        ->where('logistics_id', $node->logisticsBranch?->logistics_id)
+                                        ->whereHas('seller', fn ($seller) => $seller
+                                            ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
+                                            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])));
+                            });
+                    })->whereHas('order', fn ($order) => $order->where('status', 'to_ship'));
                     })->orWhere(function ($collected) use ($node): void {
                         $collected->where('logistics_delivery_hub_id', $node->id)
                             ->whereHas('order', fn ($order) => $order->where('status', 'in_transit'))

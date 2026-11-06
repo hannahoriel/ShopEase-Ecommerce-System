@@ -48,6 +48,54 @@ class DeliveryHubDashboardController extends Controller
                 'courier' => $manifest->courier_name, 'truck' => $manifest->vehicle_reference, 'status' => $manifest->status];
         })->filter(fn ($batch) => $batch['pending'] > 0 && $this->inPeriod($batch['arrival_at'], $dates))->values();
 
+        // Seller-scheduled pickups are incoming work for the hub in the
+        // seller's municipality, even before the pickup rider drops them off.
+        $scheduledPickups = Shipment::query()
+            ->where(function ($query) use ($hub): void {
+                $query->where('logistics_delivery_hub_id', $hub->id)
+                    ->orWhere(function ($unassigned) use ($hub): void {
+                        $unassigned->whereNull('logistics_delivery_hub_id')
+                            ->whereHas('order', fn ($order) => $order
+                                ->where('logistics_id', $hub->logisticsBranch?->logistics_id)
+                                ->whereHas('seller', fn ($seller) => $seller
+                                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($hub->province))])
+                                    ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($hub->municipality))])));
+                    });
+            })
+            ->whereHas('order', fn ($order) => $order->where('status', 'to_ship'))
+            ->with(['order.seller', 'rider.user'])
+            ->oldest('created_at')
+            ->get()
+            ->map(function (Shipment $shipment): array {
+                $order = $shipment->order;
+                $seller = $order?->seller;
+                $riderName = trim(($shipment->rider?->first_name ?? '').' '.($shipment->rider?->last_name ?? ''));
+                $pickupSchedule = collect([
+                    $order?->pickup_date?->format('M d, Y'),
+                    $order?->pickup_time?->format('g:i A'),
+                ])->filter()->implode(' at ');
+
+                return [
+                    'id' => $shipment->tracking_number ?: ($order?->order_number ?: 'Shipment '.$shipment->id),
+                    'origin' => collect([
+                        'Seller pickup',
+                        $seller?->store_name,
+                        $seller?->barangay,
+                        $pickupSchedule !== '' ? 'Pickup '.$pickupSchedule : null,
+                    ])->filter()->implode(' · '),
+                    'total' => 1,
+                    'received' => 0,
+                    'pending' => 1,
+                    'arrival_at' => $shipment->created_at?->toIso8601String(),
+                    'courier' => $riderName !== '' ? $riderName : 'Pickup rider pending',
+                    'truck' => $shipment->rider?->plate_number ?: 'Not assigned',
+                    'stage' => 'scheduled_pickup',
+                ];
+            })
+            ->filter(fn ($batch) => $this->inPeriod($batch['arrival_at'], $dates))
+            ->values();
+        $incomingBatches = $incomingBatches->concat($scheduledPickups)->sortByDesc('arrival_at')->values();
+
         $receivedBatches = $inbound->map(function ($manifest) use ($hub): array {
             $receivedShipments = $manifest->shipments->filter(fn (Shipment $shipment) => $shipment->pivot?->received_at !== null);
             $onSite = $receivedShipments->filter(fn (Shipment $shipment) => $shipment->logistics_delivery_hub_id === $hub->id
