@@ -42,6 +42,7 @@ use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
 use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
 use App\Http\Controllers\Api\Logistics\ParcelTrackingController;
+use App\Http\Controllers\Api\Logistics\ReportsController as LogisticsReportsController;
 use App\Http\Controllers\Api\Logistics\ListRiderRemittancesController;
 use App\Http\Controllers\Api\Logistics\ListRiderSupportTicketsController;
 use App\Http\Controllers\Api\Logistics\ListRiderDeliveryActionsController;
@@ -341,6 +342,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:logistics')->prefix('logistics')->group(function () {
+            Route::get('/reports', [LogisticsReportsController::class, 'index'])->name('logistics.api.reports.index');
             Route::get('/account', [LogisticsAccountController::class, 'show'])->name('logistics.api.account.show');
             Route::post('/account/profile-requests', [LogisticsAccountController::class, 'requestProfileChange'])->name('logistics.api.account.profile-requests.store');
             Route::put('/account/preferences', [LogisticsAccountController::class, 'savePreferences'])->name('logistics.api.account.preferences.update');

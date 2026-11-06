@@ -1,42 +1,4 @@
-@php
-    // Logistics Reports prototype. Demonstration data only; no orders or finance rows are inserted.
-    // Each sample parcel has one parent sorting center and one child delivery hub.
-    // Revenue is based on a flat ₱50 shipping fee per parcel; no returns or registrations.
-    $demoCenters = [
-        ['name' => 'Laguna Sorting Center', 'hubs' => ['Santa Cruz Delivery Hub', 'Cavite Delivery Hub']],
-        ['name' => 'Cebu Sorting Center', 'hubs' => ['Cebu Operations Hub', 'Mandaue Delivery Hub']],
-        ['name' => 'Batangas Sorting Center', 'hubs' => ['Lipa Delivery Hub', 'Tanauan Delivery Hub']],
-    ];
-    $demoParcels = [];
-    $nowManila = \Carbon\Carbon::now('Asia/Manila');
-    $startDemo = $nowManila->copy()->subDays(90)->startOfDay();
-    $idSequence = 0;
-    for ($date = $startDemo->copy(); $date->lte($nowManila); $date->addDay()) {
-        $parcelCount = 8 + (($date->day * 3 + $date->month * 5) % 10);
-        for ($index = 0; $index < $parcelCount; $index++) {
-            $centerIndex = ($idSequence + $date->day) % count($demoCenters);
-            $center = $demoCenters[$centerIndex];
-            $hub = $center['hubs'][($idSequence + $index) % count($center['hubs'])];
-            $stateKey = ($idSequence * 7 + $date->day) % 20;
-            $status = $stateKey < 14 ? 'delivered' : ($stateKey < 17 ? 'in_transit' : ($stateKey < 19 ? 'at_hub' : 'exception'));
-            $exception = $status === 'exception' ? (($idSequence % 2) ? 'damaged' : 'lost') : null;
-            $durationHours = 14 + (($idSequence * 11) % 74);
-            $targetHours = 48;
-            $demoParcels[] = [
-                'date' => $date->format('Y-m-d'),
-                'ref' => 'SE-' . (200000 + $idSequence),
-                'center' => $center['name'],
-                'hub' => $hub,
-                'status' => $status,
-                'issue' => $exception,
-                'hours' => $durationHours,
-                'on_time' => $status === 'delivered' && $durationHours <= $targetHours,
-                'fee' => 50,
-            ];
-            $idSequence++;
-        }
-    }
-@endphp
+@php($today = \Carbon\CarbonImmutable::now('Asia/Manila')->toDateString())
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,9 +24,9 @@
                     <div><strong>Reporting period</strong><small>Select a date range to update all report sections</small></div>
                 </div>
                 <div class="ar-dates">
-                    <label for="lr-from">From <input type="date" id="lr-from" max="{{ $nowManila->toDateString() }}"></label>
+                    <label for="lr-from">From <input type="date" id="lr-from" max="{{ $today }}"></label>
                     <span class="ar-date-dash">—</span>
-                    <label for="lr-to">To <input type="date" id="lr-to" max="{{ $nowManila->toDateString() }}"></label>
+                    <label for="lr-to">To <input type="date" id="lr-to" max="{{ $today }}"></label>
                 </div>
                 <div class="ar-period-actions">
                     <button type="button" class="ar-reset-icon" id="lr-reset" aria-label="Reset report filters to current month" title="Reset to current month">
@@ -77,9 +39,9 @@
             <div class="ar-section-caption">NETWORK PERFORMANCE <span id="lr-period-label">Current month</span></div>
             <div class="ar-kpis" aria-live="polite">
                 <article class="ar-kpi"><div class="ar-kpi-head"><span>Parcels processed</span><span class="ar-kpi-icon">▣</span></div><strong id="lr-parcels">—</strong><small>Unique parcels recorded across the network</small></article>
-                <article class="ar-kpi"><div class="ar-kpi-head"><span>Delivered parcels</span><span class="ar-kpi-icon">✓</span></div><strong id="lr-delivered">—</strong><small>Parcels marked delivered in the selected period</small></article>
-                <article class="ar-kpi"><div class="ar-kpi-head"><span>On-time delivery rate</span><span class="ar-kpi-icon">◷</span></div><strong id="lr-on-time">—</strong><small>Delivered within the 48-hour example target</small></article>
-                <article class="ar-kpi"><div class="ar-kpi-head"><span>Company shipping fee income</span><span class="ar-kpi-icon">₱</span></div><strong id="lr-shipping">—</strong><small>Delivered parcels × ₱50 (company income preview)</small></article>
+                <article class="ar-kpi"><div class="ar-kpi-head"><span>Delivered parcels</span><span class="ar-kpi-icon">âœ“</span></div><strong id="lr-delivered">â€”</strong><small>Parcels marked delivered in the selected period</small></article>
+                <article class="ar-kpi"><div class="ar-kpi-head"><span>On-time delivery rate</span><span class="ar-kpi-icon">◷</span></div><strong id="lr-on-time">—</strong><small>Delivered within 48 hours of pickup</small></article>
+                <article class="ar-kpi"><div class="ar-kpi-head"><span>Company shipping fee income</span><span class="ar-kpi-icon">₱</span></div><strong id="lr-shipping">—</strong><small>Sum of recorded fees for delivered shipments</small></article>
             </div>
 
             <div class="ar-two ar-main-charts">
@@ -88,7 +50,7 @@
                     <div class="ar-chart" id="lr-volume-chart" aria-label="Daily parcel volume chart"><p class="ar-chart-empty">Preparing chart…</p></div>
                 </section>
                 <section class="ar-card ar-cohort">
-                    <div class="ar-card-head"><div><h2>Parcel movement</h2><p>Current simulated parcel stages from the selected period</p></div><span class="ar-muted-pill" id="lr-status-total">— records</span></div>
+                    <div class="ar-card-head"><div><h2>Parcel movement</h2><p>Current parcel stages from the selected period</p></div><span class="ar-muted-pill" id="lr-status-total">— records</span></div>
                     <div id="lr-status-bars" class="ar-status-grid"></div>
                     <p class="ar-note">Each parcel belongs to one status. Counts are not added again under sorting centers or delivery hubs.</p>
                 </section>
@@ -107,9 +69,9 @@
 
             <div class="ar-three">
                 <section class="ar-card ar-compact">
-                    <div class="ar-card-head"><div><h2>Delivery timeliness</h2><p>Time taken for successfully delivered parcels</p></div><span class="ar-muted-pill">48h example target</span></div>
+                    <div class="ar-card-head"><div><h2>Delivery timeliness</h2><p>Time taken for successfully delivered parcels</p></div><span class="ar-muted-pill">48 hour target</span></div>
                     <div class="ar-status-list" id="lr-timeliness"></div>
-                    <p class="ar-card-foot">Illustrative SLA target, not a committed ShopEase delivery guarantee.</p>
+                    <p class="ar-card-foot">Based on recorded pickup and delivery timestamps.</p>
                 </section>
                 <section class="ar-card ar-compact">
                     <div class="ar-card-head"><div><h2>Parcel Disputes</h2><p>Cases requiring network investigation</p></div><span class="ar-muted-pill" id="lr-issue-total">— cases</span></div>
@@ -127,7 +89,7 @@
 
             <div class="ar-two">
                 <section class="ar-card ar-table-card">
-                    <div class="ar-card-head"><div><h2>Shipping fee collections by route</h2><p>Company-owned fees attributed to sorting-center parcel routes, not center payouts</p></div><span class="ar-muted-pill">₱50 / parcel</span></div>
+                    <div class="ar-card-head"><div><h2>Shipping fee collections by route</h2><p>Recorded shipment fees attributed to each branch</p></div><span class="ar-muted-pill">Recorded fees</span></div>
                     <div class="ar-table-scroll"><table class="ar-table"><thead><tr><th>Sorting center</th><th>Delivered parcels</th><th class="ar-num">Company fee income</th></tr></thead><tbody id="lr-revenue-rows"></tbody></table></div>
                 </section>
                 <section class="ar-card">
@@ -135,9 +97,9 @@
                     <div id="lr-insights" class="ar-status-list"></div>
                 </section>
             </div>
-            <p class="ar-report-footer">Sample data preview only. Sorting center and hub names, statuses, durations and figures here are illustrative and are not read from your ShopEase database. There is no registration reporting or return/refund accounting. All shipping-fee income is assigned to the logistics company; sorting centers and delivery hubs have no separate earnings wallets.</p>
+            <p class="ar-report-footer">Report data comes from shipments assigned to your logistics company. Only recorded shipment fees and timestamps are included; unrecorded operating costs are not estimated.</p>
         </div>
     </main>
-    <script id="lr-demo-data" type="application/json">@json(['parcels' => $demoParcels, 'centers' => $demoCenters, 'today' => $nowManila->toDateString()])</script>
+    <script id="lr-report-config" type="application/json">@json(['endpoint' => url('/api/v1/logistics/reports'), 'today' => $today])</script>
 </body>
 </html>

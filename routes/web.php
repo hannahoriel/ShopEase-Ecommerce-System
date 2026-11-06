@@ -13,12 +13,12 @@ use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ParcelScanController;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
 use App\Mail\BuyerVerificationCode;
 use App\Mail\SellerVerificationCode;
-use App\Models\Admin\Announcement;
 use App\Models\Admin\Registration;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -209,7 +209,6 @@ Route::get('/admin/dashboard', function () {
 */
 
 foreach ([
-    'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
     'courier' => User::ROLE_COURIER,
 ] as $dashboard => $role) {
@@ -228,13 +227,6 @@ foreach ([
 
             $viewData = [];
 
-            if ($dashboard === 'logistics') {
-                $viewData['dashboardAnnouncements'] = Announcement::publishedForAudience([
-                    'All Users',
-                    'Logistics',
-                ])->get();
-            }
-
             if ($dashboard === 'rider') {
                 $viewData['apiToken'] = Auth::user()->createToken('rider-dashboard')->plainTextToken;
             }
@@ -251,6 +243,10 @@ foreach ([
         ->name("$dashboard.dashboard");
 
 }
+
+Route::get('/logistics/dashboard', [LogisticsDashboardController::class, 'index'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.dashboard');
 
 Route::get('/logistics/deliveries', function () {
     abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
