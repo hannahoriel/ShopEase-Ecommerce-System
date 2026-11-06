@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Logistics;
 use App\Models\Admin\Order;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
+use App\Services\CodSettlementService;
 use Illuminate\Http\Request;
 
 class EarningsController
@@ -18,7 +19,7 @@ class EarningsController
 
         $company = Logistics::query()->where('user_id', $request->user()->id)->firstOrFail();
         $orders = Order::query()
-            ->with(['shipment.logisticsBranch', 'shipment.deliveryHub'])
+            ->with(['shipment.logisticsBranch', 'shipment.deliveryHub.logisticsBranch'])
             ->where('logistics_id', $company->id)
             ->where('status', 'completed')
             ->whereHas('shipment', fn ($query) => $query->whereNotNull('delivered_at'))
@@ -27,9 +28,16 @@ class EarningsController
 
         $rows = $orders->map(function (Order $order): array {
             $shipment = $order->shipment;
-            $center = $shipment->logisticsBranch?->name ?: 'Unassigned sorting center';
+            // Some existing shipments only have the destination hub saved. The
+            // hub already belongs to a sorting center, so use that relationship
+            // to place the parcel under the correct network unit.
+            $branch = $shipment->logisticsBranch ?: $shipment->deliveryHub?->logisticsBranch;
+            $center = $branch?->name ?: 'Unassigned sorting center';
             $hub = $shipment->deliveryHub?->hub_name ?: 'Unassigned delivery hub';
-            $fee = (float) ($shipment->shipping_fee ?: $order->shipping_fee);
+            // Shipping is a flat ₱50 fee across the logistics network. Some older
+            // orders and shipment rows have a null/zero fee, so do not let those
+            // legacy values erase the logistics company's recorded earnings.
+            $fee = CodSettlementService::LOGISTICS_SHIPPING_FEE;
 
             return [
                 'date' => $shipment->delivered_at->timezone('Asia/Manila')->format('Y-m-d H:i'),
@@ -37,7 +45,7 @@ class EarningsController
                 'route' => $center.' → '.$hub,
                 'center' => $center,
                 'hub' => $hub,
-                'center_id' => $shipment->logistics_branch_id,
+                'center_id' => $branch?->id,
                 'hub_id' => $shipment->logistics_delivery_hub_id,
                 'status' => 'Credited',
                 'amount' => $fee,

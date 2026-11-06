@@ -43,12 +43,8 @@ class StoreRemittanceController extends Controller
             ? $operations->storePrivatePhoto('rider-remittances', $validated['receipt'])
             : null;
         try {
-            $remittance = DB::transaction(function () use ($rider, $hub, $validated, $receiptPath) {
+            [$remittance, $reconciled] = DB::transaction(function () use ($rider, $hub, $validated, $receiptPath) {
                 $lockedRider = $rider->newQuery()->lockForUpdate()->findOrFail($rider->id);
-                $unlinkedPending = $lockedRider->remittances()->whereIn('status', ['pending', 'discrepancy'])
-                    ->whereDoesntHave('collections')->exists();
-                abort_if($unlinkedPending, 409,
-                    'A previous remittance is awaiting hub review. Ask the hub to reconcile it before submitting another remit.');
                 $collections = $lockedRider->codCollections()->whereDoesntHave('remittances')
                     ->lockForUpdate()->get();
                 $due = round((float) $collections->sum('amount'), 2);
@@ -59,16 +55,30 @@ class StoreRemittanceController extends Controller
                     ]);
                 }
 
-                $remittance = $lockedRider->remittances()->create([
-                    'delivery_hub_id' => $hub->id,
-                    'amount' => number_format($due, 2, '.', ''),
-                    'method' => $validated['method'],
-                    'reference_number' => $validated['reference_number'] ?? null,
-                    'receipt_path' => $receiptPath,
-                    'status' => 'pending',
-                ]);
+                // Reconcile an exact-amount legacy row left unlinked by an older app.
+                $legacyPending = $lockedRider->remittances()->where('status', 'pending')
+                    ->whereDoesntHave('collections')->orderBy('id')->lockForUpdate()->get();
+                $remittance = $legacyPending->first(fn ($candidate) => abs((float) $candidate->amount - $due) < 0.009);
+                $reconciled = $remittance !== null;
+                if ($remittance) {
+                    $remittance->update([
+                        'delivery_hub_id' => $hub->id,
+                        'method' => $validated['method'],
+                        'reference_number' => $validated['reference_number'] ?? null,
+                        'receipt_path' => $receiptPath ?: $remittance->receipt_path,
+                    ]);
+                } else {
+                    $remittance = $lockedRider->remittances()->create([
+                        'delivery_hub_id' => $hub->id,
+                        'amount' => number_format($due, 2, '.', ''),
+                        'method' => $validated['method'],
+                        'reference_number' => $validated['reference_number'] ?? null,
+                        'receipt_path' => $receiptPath,
+                        'status' => 'pending',
+                    ]);
+                }
                 $remittance->collections()->sync($collections->modelKeys());
-                return $remittance;
+                return [$remittance, $reconciled];
             });
         } catch (\Throwable $exception) {
             if ($receiptPath) {
@@ -77,6 +87,11 @@ class StoreRemittanceController extends Controller
             throw $exception;
         }
 
-        return response()->json(['data' => $remittance], 201);
+        return response()->json([
+            'data' => $remittance,
+            'message' => $reconciled
+                ? 'The existing pending remittance was matched to these COD collections and sent to the hub for review.'
+                : 'COD remittance submitted to the delivery hub for review.',
+        ], $reconciled ? 200 : 201);
     }
 }

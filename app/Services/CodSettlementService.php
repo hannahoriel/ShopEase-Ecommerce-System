@@ -103,6 +103,12 @@ class CodSettlementService
                         $sellerShare, $order->id, $locked->id, 'Held until buyer confirms '.$order->order_number);
                 }
 
+                // Receipt can be confirmed before the hub distributes this remittance.
+                // Release immediately when the settlement is finally created.
+                if ($order->status === 'completed' && $order->buyer_received_at) {
+                    $this->releaseSellerEarnings((int) $order->id);
+                }
+
                 $distributed += $cod;
             }
 

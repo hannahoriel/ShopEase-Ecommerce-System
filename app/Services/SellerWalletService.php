@@ -24,6 +24,10 @@ class SellerWalletService
                 $q->where('status', 'completed')->orWhereHas('statusHistory', fn ($history) => $history->where('to_status', 'completed'));
             })->orderBy('id')->chunkById(200, function ($orders) use ($seller) {
                 foreach ($orders as $order) {
+                    // A buyer can confirm receipt before the hub finishes distributing
+                    // the rider's COD remittance. In that case the first release attempt
+                    // has no settlement to release, so retry once the seller wallet loads.
+                    app(CodSettlementService::class)->releaseSellerEarnings((int) $order->id);
                     $this->recordOrder($seller, $order);
                 }
             });

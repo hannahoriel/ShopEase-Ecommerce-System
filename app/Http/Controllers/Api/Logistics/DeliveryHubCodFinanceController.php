@@ -25,6 +25,14 @@ class DeliveryHubCodFinanceController extends Controller
             'search' => ['nullable', 'string', 'max:120'],
         ]);
         $hub = $this->hub($request);
+
+        // Reconcile completed orders that were confirmed before their remittance
+        // was distributed, so the finance view reflects the seller wallet release.
+        DB::table('cod_settlements')->where('delivery_hub_id', $hub->id)
+            ->whereIn('status', ['held', 'partially_refunded'])->whereNull('seller_released_at')
+            ->orderBy('id')->pluck('order_id')
+            ->each(fn ($orderId) => $settlements->releaseSellerEarnings((int) $orderId));
+
         $remittances = $this->remittanceQuery($hub)->with(['rider.user', 'collections.order.buyer'])->latest()->get();
         $today = now()->toDateString();
         $todaySettlements = DB::table('cod_settlements')->where('delivery_hub_id', $hub->id)
@@ -67,13 +75,15 @@ class DeliveryHubCodFinanceController extends Controller
             'today' => $todaySettlements->map(function ($row): array {
                 $order = Order::query()->with('buyer')->find($row->order_id);
                 return ['id' => $row->id, 'ref' => $order?->order_number, 'buyer' => $order?->buyer?->name,
-                    'amount' => (float) $row->cod_amount, 'status' => $row->status, 'time' => $row->distributed_at];
+                    'amount' => (float) $row->cod_amount,
+                    'status' => $row->seller_released_at ? 'released' : 'held', 'time' => $row->distributed_at];
             })->values(),
             'history' => $history->map(fn ($row): array => [
                 'id' => $row->id, 'ref' => $row->order_number, 'buyer' => $row->buyer_name,
                 'amount' => (float) $row->cod_amount, 'shipping_fee' => (float) $row->shipping_fee,
                 'platform_shipping_margin' => (float) $row->platform_shipping_margin,
-                'seller_amount' => (float) $row->seller_amount, 'status' => $row->status,
+                'seller_amount' => (float) $row->seller_amount,
+                'status' => $row->seller_released_at ? 'released' : 'held',
                 'distributed_at' => $row->distributed_at, 'seller_released_at' => $row->seller_released_at,
             ])->values(),
             'cash_ins' => DB::table('hub_cod_cash_ins')->where('delivery_hub_id', $hub->id)->latest('received_at')->get(),

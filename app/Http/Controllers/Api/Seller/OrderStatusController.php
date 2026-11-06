@@ -381,10 +381,9 @@ class OrderStatusController extends Controller
                 $shipment->save();
             }
 
-            // Route the scheduled pickup to this order's logistics provider and
-            // the active delivery hub in the seller's municipality. A rider is
-            // attached when one covers the seller barangay; the hub still sees
-            // the parcel if rider assignment is pending.
+            // Route to this order's provider and the seller municipality hub,
+            // then balance the pickup among active riders covering the seller's
+            // barangay for this exact pickup date and time.
             $seller = $order->seller()->first();
             if ($seller && $seller->province && $seller->municipality) {
                 $branch = LogisticsBranch::query()
@@ -407,8 +406,8 @@ class OrderStatusController extends Controller
 
                 if ($hub) {
                     $rider = null;
-                    if ($seller->barangay) {
-                        $rider = Rider::query()
+                    if ($seller->barangay && $order->pickup_date && $order->pickup_time) {
+                        $eligibleRiders = Rider::query()
                             ->where('logistics_branch_id', $branch->id)
                             ->where('registration_status', 'active')
                             ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
@@ -419,8 +418,20 @@ class OrderStatusController extends Controller
                                     ->orWhereRaw('LOWER(municipal_hub) = ?', [mb_strtolower(trim($hub->municipality))]);
                             })
                             ->whereRaw("LOWER(REPLACE(REPLACE(logistics_operation, ' ', ''), '-', '')) LIKE ?", ['%pickup%'])
-                            ->orderBy('id')
-                            ->first();
+                            ->orderBy('id')->lockForUpdate()->get();
+
+                        $rider = $eligibleRiders->map(function (Rider $candidate) use ($order): array {
+                            $scheduledCount = $candidate->shipments()
+                                ->whereHas('order', fn ($query) => $query->where('status', 'to_ship')
+                                    ->whereDate('pickup_date', $order->pickup_date->toDateString())
+                                    ->whereTime('pickup_time', $order->pickup_time->format('H:i:s')))
+                                ->count();
+
+                            return ['rider' => $candidate, 'scheduled_count' => $scheduledCount];
+                        })->sort(function (array $left, array $right): int {
+                            return [$left['scheduled_count'], $left['rider']->id]
+                                <=> [$right['scheduled_count'], $right['rider']->id];
+                        })->first()['rider'] ?? null;
                     }
 
                     $shipment->update([

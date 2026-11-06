@@ -430,8 +430,10 @@ Route::prefix('v1')->group(function () {
             });
         }
 
+        Route::post('/rider/location', \App\Http\Controllers\Api\Rider\UpdateRiderLocationController::class)
+            ->middleware('role:rider,courier')->name('rider.api.location.update');
+
         Route::middleware('role:rider')->prefix('rider')->group(function () {
-            Route::post('/location', \App\Http\Controllers\Api\Rider\UpdateRiderLocationController::class)->name('rider.api.location.update');
             Route::get('/dashboard', ShowRiderDashboardController::class)->name('rider.api.dashboard');
             Route::get('/star-courier', ShowStarCourierMetricsController::class)->name('rider.api.star-courier');
             Route::get('/content/{page}', ShowRiderPageContentController::class)->name('rider.api.content.show');
