@@ -26,6 +26,7 @@ class OrderReturn extends Model
         'refund_amount',
         'refunded_at',
         'evidence',
+        'complaint_id', 'problem_type', 'buyer_solution', 'pickup_date', 'pickup_time', 'pickup_address',
     ];
 
     protected $casts = [
@@ -36,12 +37,15 @@ class OrderReturn extends Model
         'refunded_at' => 'datetime',
         'refund_amount' => 'decimal:2',
         'evidence' => 'array',
+        'pickup_date' => 'date',
     ];
 
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function complaint(): BelongsTo { return $this->belongsTo(Complaint::class); }
 
     public function events(): HasMany
     {

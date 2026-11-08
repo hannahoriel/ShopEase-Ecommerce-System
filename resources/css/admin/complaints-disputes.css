@@ -1981,3 +1981,31 @@
 .complaints-modal-description { line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .complaints-modal-meta-item strong, .complaints-detail-text { line-height: 1.55; overflow-wrap: anywhere; }
 .complaints-party-message-button img, .complaints-modal-message-button img { object-fit: contain; }
+
+/* Keep each card at its natural height beside the longer review section. */
+#complaints-details-modal .complaints-modal-grid{align-items:start}
+#complaints-details-modal .complaints-modal-parties-card{align-self:start;min-height:0;height:auto}
+#complaints-details-modal .complaints-modal-actions-area{min-height:0;align-items:center;flex-wrap:wrap;gap:10px;padding-top:20px}
+#complaints-details-modal .admin-return-decisions{display:flex;margin:0;gap:10px;align-items:center}
+#complaints-details-modal .admin-return-decisions button{min-height:42px}
+@media(max-width:600px){#complaints-details-modal .admin-return-decisions{width:100%}#complaints-details-modal .admin-return-decisions button{flex:1}}
+
+#complaints-details-modal .complaints-modal-summary-main{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+#complaints-details-modal .complaints-modal-summary-main .complaints-modal-update-wrap{margin-left:auto;align-self:flex-start}
+#complaints-details-modal .complaints-modal-summary-main .complaints-modal-update-status{min-height:36px;padding:8px 12px;font-size:12px;white-space:nowrap}
+#complaints-details-modal .complaints-modal-summary{overflow:visible}
+#complaints-details-modal .complaints-modal-summary-main .complaints-modal-status-menu{right:0;left:auto;z-index:20}
+#complaints-details-modal .complaints-modal-actions-area:empty{display:none}
+
+#complaints-details-modal .complaints-modal-parties-card .complaints-modal-party-row{grid-template-columns:40px minmax(0,1fr) auto 34px;align-items:center;gap:10px}
+#complaints-details-modal .complaints-modal-parties-card .complaints-modal-message-button{grid-column:4;grid-row:1;display:grid;place-items:center;width:34px;height:34px;padding:7px;border:1px solid #eadfdb;border-radius:9px;background:#fff8f5;align-self:center}
+#complaints-details-modal .complaints-modal-parties-card .complaints-modal-message-button img{display:block;width:18px;height:18px;object-fit:contain}
+#complaints-details-modal .complaints-modal-parties-card .complaints-modal-party-role{grid-column:3;grid-row:1}
+#complaints-details-modal .complaints-modal-card,#complaints-details-modal .complaints-modal-description,#complaints-details-modal .complaints-modal-order-row,#complaints-details-modal .complaints-modal-product-name,#complaints-details-modal .complaints-modal-product-variant,#complaints-details-modal .complaints-modal-product-price,#complaints-details-modal .complaints-modal-item-extra,#complaints-details-modal .complaints-modal-shop-line,#complaints-details-modal .complaints-modal-note-copy,#complaints-details-modal .complaints-modal-note-copy strong,#complaints-details-modal .complaints-modal-note-copy span,#complaints-details-modal .complaints-modal-party-copy strong,#complaints-details-modal .complaints-modal-party-copy span,#complaints-details-modal .se-return-details{font-size:13px!important;line-height:1.6}
+#complaints-details-modal .complaints-modal-card-title,#complaints-details-modal .se-return-title{font-size:14px!important;font-weight:600}
+#complaints-details-modal .complaints-modal-label,#complaints-details-modal .complaints-modal-meta-item,#complaints-details-modal .complaints-modal-note-time,#complaints-details-modal .complaints-modal-parties-card .complaints-modal-party-role{font-size:12px!important}
+#complaints-details-modal .complaints-modal-title{font-size:20px!important}#complaints-details-modal .complaints-modal-id{font-size:22px!important}
+@media(max-width:600px){#complaints-details-modal .complaints-modal-parties-card .complaints-modal-party-row{grid-template-columns:40px minmax(0,1fr) 34px}#complaints-details-modal .complaints-modal-parties-card .complaints-modal-message-button{grid-column:3;grid-row:1}#complaints-details-modal .complaints-modal-parties-card .complaints-modal-party-role{grid-column:2;grid-row:2}}
+
+#complaints-details-modal .complaints-modal-parties-card .complaints-modal-message-button{background:transparent!important;border:0!important;box-shadow:none!important}
+#complaints-details-modal .complaints-modal-parties-card .complaints-modal-message-button:hover{background:transparent!important}

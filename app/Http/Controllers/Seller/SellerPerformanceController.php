@@ -204,12 +204,13 @@ class SellerPerformanceController extends Controller
         return Complaint::query()
             ->whereHas('order', fn ($query) => $query->where('seller_id', $seller->id))
             ->with([
-                'user:id,name,email',
-                'order.seller',
-                'order.buyer:id,name,email',
+                'user:id,name,email,profile_photo_path',
+                'order.seller.user:id,name,email,profile_photo_path',
+                'order.buyer:id,name,email,profile_photo_path',
                 'order.items.product',
                 'order.shipment',
                 'updates.user:id,name',
+                'returnRequest.events',
             ])
             ->latest()
             ->limit(500)
@@ -218,7 +219,7 @@ class SellerPerformanceController extends Controller
                 $order = $complaint->order;
                 $seller = $order?->seller;
                 $buyer = $complaint->user ?? $order?->buyer;
-                $item = $order?->items->first();
+                $item = $complaint->selectedOrderItem();
                 $product = $item?->product;
                 $status = strtolower(str_replace('_', '-', (string) $complaint->status));
                 $photos = is_array($product?->photos) ? $product->photos : [];
@@ -237,6 +238,9 @@ class SellerPerformanceController extends Controller
                     'party2' => $seller?->store_name ?? 'Your Shop',
                     'role2' => 'Seller',
                     'party1Email' => $buyer?->email,
+                    'party2Email' => $seller?->user?->email,
+                    'party1Photo' => $buyer?->profile_photo_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyer->profile_photo_path) : null,
+                    'party2Photo' => ($seller?->user?->profile_photo_path ?: $seller?->profile_photo_path) ? \Illuminate\Support\Facades\Storage::disk('public')->url($seller?->user?->profile_photo_path ?: $seller?->profile_photo_path) : null,
                     'description' => $complaint->description ?: $complaint->subject,
                     'orderDate' => $order?->created_at?->toISOString(),
                     'paymentMethod' => $order?->payment_method,
@@ -252,7 +256,8 @@ class SellerPerformanceController extends Controller
                     'productCategory' => $product?->category,
                     'productImage' => $photos[0] ?? null,
                     'shopName' => $seller?->store_name,
-                    'evidence' => [],
+                    'evidence' => collect($complaint->evidence ?? [])->map(fn ($path) => \Illuminate\Support\Facades\Storage::disk('public')->url($path))->all(),
+                    'returnRequest' => $complaint->returnRequest?->toArray(),
                     'updates' => $complaint->updates->map(fn ($update): array => [
                         'type' => $update->type,
                         'message' => $update->message,
