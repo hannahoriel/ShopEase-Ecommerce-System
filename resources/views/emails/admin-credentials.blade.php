@@ -16,7 +16,7 @@
         <strong>Temporary password:</strong> {{ $password }}
     </div>
     <p style="margin:0 0 22px">
-        <a href="{{ url('/auth/login') }}" style="display:inline-block;padding:12px 18px;background:#7b1b1b;color:#fff;text-decoration:none;border-radius:7px;font-weight:600">Open ShopEase Login</a>
+        <a href="{{ route('admin.login') }}" style="display:inline-block;padding:12px 18px;background:#7b1b1b;color:#fff;text-decoration:none;border-radius:7px;font-weight:600">Open Admin Login</a>
     </p>
     <p style="margin:0;color:#777;font-size:13px;line-height:1.6">For your security, change your temporary password after signing in and keep it private.</p>
 </div>

@@ -37,7 +37,7 @@
 
     <form
         method="POST"
-        action="{{ route('login.attempt') }}"
+        action="{{ route($loginRoute ?? 'login.attempt') }}"
     >
 
         @csrf
