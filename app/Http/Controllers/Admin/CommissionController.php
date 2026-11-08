@@ -90,6 +90,7 @@ class CommissionController extends Controller
             'voucher_discount' => (float) $order->voucher_discount,
             'items' => $order->items->map(fn ($item) => [
                 'name' => $item->product_name,
+                'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                 'variation' => $item->variation,
                 'quantity' => $item->quantity,
                 'unit_price' => (float) $item->unit_price,
