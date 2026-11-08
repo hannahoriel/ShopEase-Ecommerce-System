@@ -50,6 +50,7 @@ class VoucherController extends Controller
                 'per_buyer' => $voucher->per_buyer,
                 'terms' => $voucher->terms,
                 'stacking' => $voucher->stacking === 'shipping' ? 'Can combine with shipping voucher only' : 'Cannot combine with other vouchers',
+                'issuer_type' => $voucher->seller_id === null ? 'admin' : 'seller',
                 'seller_name' => $voucher->seller?->store_name ?? 'ShopEase Admin',
             ])->values();
 
