@@ -269,7 +269,7 @@
                 const filtered = allConversations.filter(conversation =>
                     conversation.title.toLowerCase().includes(query)
                     || (conversation.preview || '').toLowerCase().includes(query)
-                );
+                ).sort((a, b) => new Date(b.updated_at || b.updatedAt || 0) - new Date(a.updated_at || a.updatedAt || 0));
                 conversationList.replaceChildren();
                 filtered.forEach(conversation => {
                     const button = document.createElement('button');
@@ -293,7 +293,8 @@
                     button.append(copy);
                     if (conversation.unread > 0) {
                         const unread = document.createElement('span');
-                        unread.className = 'buyer-floating-chat-unread-dot';
+                        unread.className = 'buyer-floating-chat-unread-count';
+                        unread.textContent = String(conversation.unread);
                         button.append(unread);
                     }
                     conversationList.append(button);

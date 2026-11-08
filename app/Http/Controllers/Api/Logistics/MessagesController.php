@@ -194,14 +194,9 @@ class MessagesController extends Controller
             ->where('contact_user_id', $user->id)
             ->with(['logistics.user:id,name,email', 'messages.sender:id,name,role'])
             ->withCount(['messages as unread_count' => fn (Builder $messages) => $messages
-                ->whereNull('read_at')->where('sender_id', '!=', $user->id)]);
+                ->whereNull('read_at')->where('sender_id', '!=', $user->id)
+                ->whereDoesntHave('reads', fn (Builder $reads) => $reads->where('user_id', $user->id))]);
         $conversations = $conversationQuery->orderByDesc('updated_at')->get();
-        $conversations->each(function (LogisticsConversation $conversation) use ($user): void {
-            $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
-            $conversation->unsetRelation('messages')->load('messages.sender:id,name,role');
-            $conversation->unread_count = 0;
-        });
-
         return response()->json(['data' => $conversations->map(fn (LogisticsConversation $conversation) => [
             'key' => $conversation->contact_type.':'.$conversation->id,
             'type' => $conversation->contact_type,
@@ -271,7 +266,7 @@ class MessagesController extends Controller
                 ]);
             }
 
-            $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
+            $this->markFacilityMessagesRead($conversation, $user);
             $conversation->load('messages.sender:id,name,role');
             return response()->json(['data' => [
                 'conversation_id' => $conversation->id,
@@ -299,7 +294,7 @@ class MessagesController extends Controller
                 'logistics_branch_id' => $branch->id,
                 'logistics_delivery_hub_id' => $hub->id,
             ]);
-            $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
+            $this->markFacilityMessagesRead($conversation, $user);
             $conversation->load('messages.sender:id,name,role');
             return response()->json(['data' => [
                 'conversation_id' => $conversation->id,
@@ -316,7 +311,7 @@ class MessagesController extends Controller
             ->with(['messages.sender:id,name,role'])->first();
 
         if ($conversation) {
-            $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
+            $this->markFacilityMessagesRead($conversation, $user);
             $conversation->unsetRelation('messages')->load('messages.sender:id,name,role');
         }
 
@@ -404,7 +399,7 @@ class MessagesController extends Controller
         } else {
             $this->authorizeFacilityConversation($user, $conversation);
         }
-        $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
+        $this->markFacilityMessagesRead($conversation, $user);
         $conversation->load('messages.sender:id,name,role');
 
         return response()->json(['data' => [
@@ -515,7 +510,7 @@ class MessagesController extends Controller
             'conversation_id' => $conversation?->id, 'name' => $name, 'sub' => $sub,
             'detail' => $detail, 'preview' => $latest?->body ?? $latest?->attachment_name ?? $contact->email,
             'last_message_at' => $latest?->created_at?->toISOString(),
-            'unread' => $messages->whereNull('read_at')->where('sender_id', '!=', $owner->id)->count(),
+            'unread' => $conversation ? $this->facilityUnreadCount($conversation, $owner) : 0,
             'messages' => $messages->map(fn ($message) => $this->serializeMessage($message, $owner))->all(),
             'branch_id' => $branchId,
         ];
@@ -546,6 +541,35 @@ class MessagesController extends Controller
             'attachment_mime_type' => $message->attachment_mime_type,
             'attachment_url' => $attachmentUrl,
         ];
+    }
+
+    private function facilityUnreadCount(LogisticsConversation $conversation, User $viewer): int
+    {
+        return $conversation->messages()
+            ->where('sender_id', '!=', $viewer->id)
+            ->whereNull('read_at')
+            ->whereDoesntHave('reads', fn (Builder $reads) => $reads->where('user_id', $viewer->id))
+            ->count();
+    }
+
+    private function markFacilityMessagesRead(LogisticsConversation $conversation, User $viewer): void
+    {
+        $messageIds = $conversation->messages()
+            ->where('sender_id', '!=', $viewer->id)
+            ->whereNull('read_at')
+            ->whereDoesntHave('reads', fn (Builder $reads) => $reads->where('user_id', $viewer->id))
+            ->pluck('id');
+
+        if ($messageIds->isEmpty()) {
+            return;
+        }
+
+        $timestamp = now();
+        DB::table('logistics_message_reads')->insertOrIgnore($messageIds->map(fn ($messageId) => [
+            'logistics_message_id' => $messageId,
+            'user_id' => $viewer->id,
+            'read_at' => $timestamp,
+        ])->all());
     }
 
     private function storeAttachment(?\Illuminate\Http\UploadedFile $file, string $directory): array

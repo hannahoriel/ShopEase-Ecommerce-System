@@ -192,6 +192,7 @@ class MessagesController extends Controller
             'product_name' => $product?->name,
             'preview' => $latestMessage?->body ?? 'Start a conversation with this seller.',
             'time' => $latestMessage?->created_at?->diffForHumans(short: true),
+            'updated_at' => $latestMessage?->created_at?->toISOString() ?? $conversation->updated_at?->toISOString(),
             'unread' => $conversation->messages
                 ->where('sender_id', '!=', $conversation->buyer_id)
                 ->whereNull('read_at')
