@@ -2050,6 +2050,7 @@ Route::get('/buyer/my-purchases', function () {
             ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyerProfile->upload_id)
             : null,
         'buyerEmail' => $user->email,
+        'buyerNotificationPreferences' => app(\App\Services\BuyerNotificationPreferences::class)->forUser($user),
     ]);
 })->middleware('auth')->name('buyer.my-purchases');
 

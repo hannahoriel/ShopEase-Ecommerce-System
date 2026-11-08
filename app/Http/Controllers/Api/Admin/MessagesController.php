@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\AdminConversation;
 use App\Models\Admin\AdminMessage;
 use App\Models\Admin\Complaint;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Logistics\Logistics;
 use App\Models\Seller\Seller;
 use App\Models\User;
@@ -280,6 +281,27 @@ class MessagesController extends Controller
                 'ShopEase administration sent you a new message.',
                 '/seller/messages',
             );
+        }
+
+        if ($conversation->user?->role === User::ROLE_BUYER) {
+            if ($conversation->category === AdminConversation::CATEGORY_BUYERS) {
+                BuyerNotification::createForBuyer(
+                    $conversation->user,
+                    'message',
+                    'New ShopEase support message',
+                    'ShopEase administration sent you a new message.',
+                    ['url' => '/buyer/my-purchases?tab=messages'],
+                );
+            } elseif ($conversation->category === AdminConversation::CATEGORY_COMPLAINTS) {
+                BuyerNotification::createForBuyer(
+                    $conversation->user,
+                    'complaint_update',
+                    'Complaint update',
+                    'ShopEase administration sent an update about your complaint.',
+                    ['complaint_id' => $conversation->complaint_id, 'url' => '/buyer/my-purchases?tab=complaints'],
+                    $conversation->complaint?->order,
+                );
+            }
         }
 
         return response()->json([

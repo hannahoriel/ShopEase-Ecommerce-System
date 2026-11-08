@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
+use App\Http\Controllers\Api\Buyer\NotificationPreferencesController as BuyerNotificationPreferencesController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\WalletController as BuyerWalletController;
 use App\Http\Controllers\Api\Buyer\OrderReturnController as BuyerOrderReturnController;
@@ -255,6 +256,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('/password/reset', [BuyerAccountSecurityController::class, 'resetPassword'])->name('password.reset');
             });
             Route::get('/notifications', [BuyerNotificationController::class, 'index'])->name('buyer.api.notifications.index');
+            Route::get('/account/notification-preferences', [BuyerNotificationPreferencesController::class, 'show'])->name('buyer.api.notification-preferences.show');
+            Route::put('/account/notification-preferences', [BuyerNotificationPreferencesController::class, 'update'])->name('buyer.api.notification-preferences.update');
             Route::patch('/notifications/{notification}/read', [BuyerNotificationController::class, 'markRead'])->name('buyer.api.notifications.read');
             Route::post('/notifications/read-all', [BuyerNotificationController::class, 'markAllRead'])->name('buyer.api.notifications.read-all');
             Route::get('/dashboard/announcements', [BuyerDashboardController::class, 'announcements'])->name('buyer.api.dashboard.announcements');

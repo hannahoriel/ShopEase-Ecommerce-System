@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderReturn;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Seller\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -114,7 +115,19 @@ class ReturnsRefundsController extends Controller
                 'reviewed_at' => now(),
             ])->save();
             $locked->events()->create(['status' => $data['decision'], 'location' => 'Seller review', 'scanned_at' => now()]);
-            return response()->json(['data' => $locked->fresh(['order.buyer:id,name,email', 'order.items', 'events'])]);
+            $reviewed = $locked->fresh(['order.buyer:id,name,email', 'order.items', 'events']);
+            if ($reviewed->order?->buyer) {
+                BuyerNotification::createForBuyer(
+                    $reviewed->order->buyer,
+                    'return_update',
+                    $data['decision'] === 'accepted' ? 'Return request accepted' : 'Return request declined',
+                    'The seller '.($data['decision'] === 'accepted' ? 'accepted' : 'declined')
+                        .' your '.($reviewed->return_type === 'refund' ? 'refund' : 'return').' request.',
+                    ['return_id' => $reviewed->id, 'status' => $reviewed->status, 'url' => '/buyer/my-purchases?tab=returns'],
+                    $reviewed->order,
+                );
+            }
+            return response()->json(['data' => $reviewed]);
         });
     }
 
@@ -135,7 +148,18 @@ class ReturnsRefundsController extends Controller
             }
             app(CodSettlementService::class)->reverseSellerEarningsForRefund($locked);
             $locked->events()->create(['status' => 'refunded', 'location' => 'Seller refund processing', 'scanned_at' => now()]);
-            return response()->json(['data' => $locked->fresh(['events'])]);
+            $refunded = $locked->fresh(['order.buyer:id,name,email', 'order', 'events']);
+            if ($refunded->order?->buyer) {
+                BuyerNotification::createForBuyer(
+                    $refunded->order->buyer,
+                    'refund_update',
+                    'Refund completed',
+                    'Your refund for order '.$refunded->order->order_number.' has been completed.',
+                    ['return_id' => $refunded->id, 'status' => 'refunded', 'url' => '/buyer/my-purchases?tab=returns'],
+                    $refunded->order,
+                );
+            }
+            return response()->json(['data' => $refunded]);
         });
     }
 }

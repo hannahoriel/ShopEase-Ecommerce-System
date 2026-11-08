@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Announcement;
 use App\Models\Admin\PlatformPolicy;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\User;
 use App\Services\LogisticsNotificationService;
 use App\Services\SellerNotificationService;
@@ -76,6 +77,7 @@ class PlatformSettingsController extends Controller
         if (! $isScheduled) {
             $this->notifyLogisticsAnnouncement($announcement);
             $this->notifySellerAnnouncement($announcement);
+            $this->notifyBuyerAnnouncement($announcement);
         }
 
         return response()->json(['announcement' => $this->announcementData($announcement)], 201);
@@ -116,6 +118,7 @@ class PlatformSettingsController extends Controller
         if (! $isScheduled && ! $wasPublished) {
             $this->notifyLogisticsAnnouncement($announcement);
             $this->notifySellerAnnouncement($announcement);
+            $this->notifyBuyerAnnouncement($announcement);
         }
 
         return response()->json(['announcement' => $this->announcementData($announcement)]);
@@ -245,6 +248,7 @@ class PlatformSettingsController extends Controller
             $announcement->update(['status' => 'Published', 'is_active' => true]);
             $this->notifyLogisticsAnnouncement($announcement);
             $this->notifySellerAnnouncement($announcement);
+            $this->notifyBuyerAnnouncement($announcement);
         }
 
         PlatformPolicy::where('status', 'Scheduled')
@@ -286,6 +290,27 @@ class PlatformSettingsController extends Controller
                 $announcement->title,
                 $announcement->body,
                 '/seller/notifications',
+            );
+        });
+    }
+
+    private function notifyBuyerAnnouncement(Announcement $announcement): void
+    {
+        if (! in_array($announcement->audience, ['All Users', 'Buyers'], true)) {
+            return;
+        }
+
+        $type = str_contains(strtolower((string) $announcement->type), 'promotion')
+            ? 'promotion'
+            : 'announcement';
+
+        User::query()->where('role', User::ROLE_BUYER)->each(function (User $user) use ($announcement, $type): void {
+            BuyerNotification::createForBuyer(
+                $user,
+                $type,
+                $announcement->title,
+                $announcement->body,
+                ['url' => '/buyer/dashboard'],
             );
         });
     }
