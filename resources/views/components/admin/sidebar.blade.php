@@ -94,6 +94,13 @@
                     ],
 
                     [
+                        'label' => 'Vouchers',
+                        'icon' => 'vouchers-promotions.png',
+                        'icon_path' => 'icons/seller/sidebar&navbar/vouchers-promotions.png',
+                        'route' => 'admin.vouchers.index',
+                    ],
+
+                    [
                         'label' => 'Platform Settings',
                         'icon' => 'settings.png',
                         'route' => 'admin.platform.settings',

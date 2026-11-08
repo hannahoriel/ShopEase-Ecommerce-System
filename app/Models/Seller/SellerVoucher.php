@@ -11,7 +11,7 @@ class SellerVoucher extends Model
     protected $fillable = [
         'seller_id', 'code', 'title', 'discount_type', 'discount_value', 'minimum_spend',
         'maximum_discount', 'product_ids', 'eligible_buyers', 'stacking', 'quantity',
-        'claimed', 'per_buyer', 'starts_at', 'ends_at', 'terms', 'enabled',
+        'claimed', 'per_buyer', 'starts_at', 'ends_at', 'terms', 'enabled', 'created_by', 'platform_code', 'eligible_category',
     ];
 
     protected $casts = [

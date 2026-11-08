@@ -27,7 +27,7 @@ class VoucherController extends Controller
             ->filter(function ($voucher) use ($request): bool {
                 if ($voucher->buyer_uses_count >= $voucher->per_buyer) return false;
                 $hasPreviousShopOrder = Order::where('buyer_id', $request->user()->id)
-                    ->where('seller_id', $voucher->seller_id)->exists();
+                    ->when($voucher->seller_id !== null, fn ($query) => $query->where('seller_id', $voucher->seller_id))->exists();
                 return match ($voucher->eligible_buyers) {
                     'first' => ! $hasPreviousShopOrder,
                     'returning' => $hasPreviousShopOrder,
@@ -43,14 +43,14 @@ class VoucherController extends Controller
                 'maximum_discount' => (float) $voucher->maximum_discount,
                 'starts_at' => $voucher->starts_at->toISOString(),
                 'ends_at' => $voucher->ends_at->toISOString(),
-                'eligible_items' => $voucher->product_ids ? 'Selected shop products' : 'All products in this shop',
-                'eligible_buyers' => ['all' => 'All buyers', 'first' => 'First-time buyers at this shop', 'returning' => 'Returning buyers'][$voucher->eligible_buyers],
+                'eligible_items' => $voucher->eligible_category ? config('admin.seller_compliance.categories.'.$voucher->eligible_category) : ($voucher->product_ids ? 'Selected products' : ($voucher->seller_id === null ? 'All eligible ShopEase products' : 'All products in this shop')),
+                'eligible_buyers' => ['all' => 'All buyers', 'first' => $voucher->seller_id === null ? 'First-time ShopEase buyers' : 'First-time buyers at this shop', 'returning' => 'Returning buyers'][$voucher->eligible_buyers],
                 'quantity' => $voucher->quantity,
                 'claimed' => $voucher->claimed,
                 'per_buyer' => $voucher->per_buyer,
                 'terms' => $voucher->terms,
                 'stacking' => $voucher->stacking === 'shipping' ? 'Can combine with shipping voucher only' : 'Cannot combine with other vouchers',
-                'seller_name' => $voucher->seller?->store_name ?? 'Shop',
+                'seller_name' => $voucher->seller?->store_name ?? 'ShopEase Admin',
             ])->values();
 
         return response()->json(['data' => $vouchers]);
@@ -98,24 +98,15 @@ class VoucherController extends Controller
         if ($items->isEmpty()) abort(422, 'Your cart is empty.');
         $sellerGroups = $items->groupBy(fn ($item) => $item->product?->seller_id);
         $code = strtoupper(trim($data['code']));
-        $cartSellerIds = $sellerGroups->keys()->filter()->map(fn ($id) => (int) $id)->values();
-        $voucher = SellerVoucher::where('code', $code)->whereIn('seller_id', $cartSellerIds)->first();
-        if (! $voucher) {
-            $exists = SellerVoucher::where('code', $code)->exists();
-            abort(422, $exists
-                ? 'This voucher belongs to a shop that has no items in your cart.'
-                : 'Voucher code not found. Check the code and try again.');
-        }
-
-        $sellerItems = $sellerGroups->get((string) $voucher->seller_id)
-            ?? $sellerGroups->get($voucher->seller_id);
+        $sellerId = $vouchers->sellerFor($code, $request->user(), $items);
+        $sellerItems = $sellerGroups->get($sellerId);
         if (! $sellerItems) abort(422, 'Add an item from this voucher’s shop to your cart.');
 
-        $result = $vouchers->evaluate($code, $request->user(), (int) $voucher->seller_id, $sellerItems);
+        $result = $vouchers->evaluate($code, $request->user(), $sellerId, $sellerItems);
         return response()->json([
             'data' => [
                 'code' => $result['voucher']->code,
-                'seller_id' => (int) $voucher->seller_id,
+                'seller_id' => $sellerId,
                 'seller_name' => $sellerItems->first()->product->seller->store_name ?? 'Shop',
                 'discount' => $result['discount'],
                 'shipping_fee' => OrderController::SHIPPING_FEE_PER_STORE,

@@ -33,6 +33,7 @@ const input = [
     'resources/css/admin/reports.css',
     'resources/css/admin/seller-compliance.css',
     'resources/css/admin/user-management.css',
+    'resources/css/admin/vouchers.css',
 
     // BUYER
     'resources/css/buyer/components/floating-chat.css',
@@ -82,6 +83,7 @@ const input = [
 
     // ADMIN
     'resources/js/admin/account.js',
+    'resources/js/admin/vouchers.js',
     'resources/js/admin/commission-order-modal.js',
     'resources/js/admin/commission.js',
     'resources/js/admin/complaints-disputes.js',

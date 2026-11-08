@@ -176,7 +176,7 @@
          <div class="sa-section-heading"><span class="sa-section-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="23" height="23"><path d="M12 3 3 7v5c0 5 3 8 9 10 6-2 9-5 9-10V7l-9-4Z"/><path d="m8 12 3 3 5-6"/></svg></span><div><h3 class="sa-section-title">Role & Access Permissions</h3><p class="sa-section-subtitle">Choose which Admin Sidebar modules this administrator can access.</p></div></div>
          <div class="aam-role-toolbar"><span id="aamRoleCount">0 modules selected</span><button type="button" id="aamSelectAll" class="aam-text-button">Select all</button><button type="button" id="aamClearAll" class="aam-text-button">Clear all</button></div>
          <div class="aam-permission-grid">
-           @foreach (['Dashboard','Registrations','User Management','Seller Compliance','Complaints and Disputes','Commission','Logistics Management','Reports','Platform Settings','Notifications'] as $permission)
+           @foreach (['Dashboard','Registrations','User Management','Seller Compliance','Complaints and Disputes','Commission','Logistics Management','Reports','Vouchers','Platform Settings','Notifications'] as $permission)
              <label class="aam-permission"><input type="checkbox" name="permissions[]" value="{{ $permission }}" data-aam-permission><span>{{ $permission }}</span></label>
            @endforeach
            <div class="aam-message-permission">

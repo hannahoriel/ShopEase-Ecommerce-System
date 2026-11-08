@@ -395,10 +395,10 @@ class OrderController extends Controller
 
             $voucherSellerId = null;
             if (! empty($validated['voucher_code'])) {
-                $voucherQuery = \App\Models\Seller\SellerVoucher::where('code', strtoupper(trim($validated['voucher_code'])));
-                if (! empty($validated['voucher_seller_id'])) $voucherQuery->where('seller_id', $validated['voucher_seller_id']);
-                $voucherSellerId = $voucherQuery->value('seller_id');
-                if (! $voucherSellerId) throw ValidationException::withMessages(['voucher_code' => ['This voucher does not exist.']]);
+                $voucherSellerId = app(SellerVoucherService::class)->sellerFor(
+                    $validated['voucher_code'], $request->user(), $items,
+                    !empty($validated['voucher_seller_id']) ? (int) $validated['voucher_seller_id'] : null,
+                );
             }
 
             $approvedProviders = $this->approvedLogisticsProviders();
