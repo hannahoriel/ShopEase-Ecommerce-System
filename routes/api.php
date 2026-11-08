@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\Logistics\ParcelRouteScanController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
 use App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubFleetController;
 use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
 use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
@@ -426,9 +427,13 @@ Route::prefix('v1')->group(function () {
                     Route::post('/fleet/{type}/{record}/archive', [SortingCenterFleetController::class, 'archive'])->name('sorting_center.api.fleet.archive');
                     Route::post('/fleet/{type}/{record}/restore', [SortingCenterFleetController::class, 'restore'])->name('sorting_center.api.fleet.restore');
                 } elseif ($facilityRole === 'delivery_hub') {
+                    Route::get('/fleet', [DeliveryHubFleetController::class, 'index'])->name('delivery_hub.api.fleet.index');
+                    Route::post('/fleet/{type}/{record}/archive', [DeliveryHubFleetController::class, 'archive'])->name('delivery_hub.api.fleet.archive');
+                    Route::post('/fleet/{type}/{record}/restore', [DeliveryHubFleetController::class, 'restore'])->name('delivery_hub.api.fleet.restore');
                     Route::get('/rider-registrations', [DeliveryHubRiderRegistrationController::class, 'index'])->name('delivery_hub.api.rider-registrations.index');
                     Route::get('/rider-registrations/{registration}', [DeliveryHubRiderRegistrationController::class, 'show'])->name('delivery_hub.api.rider-registrations.show');
                     Route::patch('/rider-registrations/{registration}/decision', [DeliveryHubRiderRegistrationController::class, 'decide'])->name('delivery_hub.api.rider-registrations.decide');
+                    Route::patch('/rider-registrations/{registration}/assignment', [DeliveryHubRiderRegistrationController::class, 'assign'])->name('delivery_hub.api.rider-registrations.assignment');
                 }
                 Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
                 Route::post('/messages/thread', [LogisticsMessagesController::class, 'thread'])->name("{$facilityRole}.api.messages.thread");
