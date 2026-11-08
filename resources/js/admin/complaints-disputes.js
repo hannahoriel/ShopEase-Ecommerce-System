@@ -795,6 +795,7 @@ document.addEventListener('DOMContentLoaded', function () {
             orderStatus: complaint.orderStatus || '—',
             orderTotal: complaint.orderTotal || '—',
             productName: complaint.productName || '—',
+            is_fragile: Boolean(complaint.is_fragile),
             productVariant: complaint.productVariant || '—',
             productPrice: complaint.productPrice || '—',
             productQuantity: complaint.productQuantity || '—',
@@ -930,6 +931,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         modalProductName.textContent =
             modalData.productName;
+        if (modalData.is_fragile) { const fragile = document.createElement('span'); fragile.className = 'se-fragile-pill'; fragile.textContent = 'Fragile'; modalProductName.append(fragile); }
 
         modalProductVariant.textContent =
             modalData.productVariant;
