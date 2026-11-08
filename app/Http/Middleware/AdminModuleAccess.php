@@ -18,7 +18,7 @@ class AdminModuleAccess
         'Seller Compliance' => ['admin/seller-compliance', 'api/v1/admin/seller-compliance'],
         'Complaints and Disputes' => ['admin/complaints-disputes', 'admin/complaints', 'api/v1/admin/complaints'],
         'Commission' => ['admin/commission', 'api/v1/admin/commissions'],
-        'Logistics Management' => ['admin/logistics-management', 'api/v1/admin/logistics-management'],
+        'Logistics Management' => ['admin/logistics-management', 'api/v1/admin/logistics-management', 'api/v1/admin/logistics/account-change-requests'],
         'Reports' => ['admin/reports', 'api/v1/admin/reports'],
         'Platform Settings' => ['admin/platform-settings', 'api/v1/admin/platform-settings'],
         'Notifications' => ['admin/notifications', 'api/v1/admin/notifications'],
@@ -42,18 +42,26 @@ class AdminModuleAccess
             $permissions = $profile?->permissions === null
                 ? null
                 : json_decode($profile->permissions, true);
-            $isFullAdmin = $profile === null || $profile->permissions === null;
+            $primaryAdminId = (int) DB::table('users')
+                ->where('role', User::ROLE_ADMIN)
+                ->orderBy('id')
+                ->value('id');
+            $isFullAdmin = (int) $user->id === $primaryAdminId
+                && ($profile === null || $profile->permissions === null);
             $canManageModule = $isFullAdmin
+                || $module === 'Account Management'
                 || ($module !== null && is_array($permissions) && in_array($module, $permissions, true));
 
             $request->attributes->set('adminModuleAccess', [
                 'module' => $module,
                 'canManage' => $canManageModule,
                 'readOnly' => ! $canManageModule,
+                'permissions' => $isFullAdmin ? null : (is_array($permissions) ? $permissions : []),
+                'isFullAdmin' => $isFullAdmin,
             ]);
 
             if (! $isFullAdmin && $this->isAdminPath($path) && ! $request->isMethodSafe()) {
-                abort_unless($canManageModule, 403, 'You do not have permission to edit this admin module.');
+                abort_unless($canManageModule, 403, "You don't have access to edit this page.");
             }
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\ComplaintUpdate;
+use App\Models\Buyer\BuyerNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -91,6 +92,17 @@ class ComplaintController extends Controller
 
         $complaint->refresh();
 
+        if ($update && $complaint->user) {
+            BuyerNotification::createForBuyer(
+                $complaint->user,
+                'complaint_update',
+                'Complaint status updated',
+                $update->message,
+                ['complaint_id' => $complaint->id, 'url' => '/buyer/my-purchases?tab=complaints'],
+                $complaint->order,
+            );
+        }
+
         return response()->json([
             'data' => [
                 'id' => $complaint->id,
@@ -149,6 +161,7 @@ class ComplaintController extends Controller
             'orderStatus' => $order?->status ? str($order->status)->replace('_', ' ')->title()->toString() : '—',
             'orderTotal' => $order ? '₱'.number_format((float) $order->total, 2) : '—',
             'productName' => $item?->product_name ?? '—',
+            'is_fragile' => (bool) ($item?->is_fragile || $item?->product?->is_fragile),
             'productVariant' => collect([$item?->variation, $item?->color, $item?->size])->filter()->implode(' · ') ?: '—',
             'productPrice' => $item ? '₱'.number_format((float) $item->unit_price, 2) : '—',
             'productQuantity' => $item ? 'x'.$item->quantity : '—',

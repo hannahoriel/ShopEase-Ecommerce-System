@@ -84,6 +84,17 @@ class SellerNotificationPreferences
         return $preference === null || $this->forUser($user)[$preference];
     }
 
+    public function notify(User $user, Notification $notification): bool
+    {
+        if (! $this->allows($user, $notification)) {
+            return false;
+        }
+
+        $user->notify($notification);
+
+        return true;
+    }
+
     private function preferenceFor(array $data): ?string
     {
         $explicitPreference = $data['preference'] ?? null;

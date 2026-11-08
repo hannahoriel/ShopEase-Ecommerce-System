@@ -1,120 +1,11 @@
-{{-- Records and locations are scoped to the authenticated sorting center by its controller. --}}
+{{-- Parcel and return records are loaded from the authenticated hub's parcel-tracking API. --}}
 @php
-    // Delivery Hub tracking: never expose another hub's records, including in the client JSON.
     $deliveryHub = $deliveryHub ?? $hub ?? null;
-    if (!$deliveryHub && auth()->check()) {
-        $deliveryHub = \App\Models\Logistics\LogisticsDeliveryHub::query()
-            ->where('user_id', auth()->id())->first();
-    }
     $dhId = (string) ($deliveryHubId ?? data_get($deliveryHub, 'id') ?? '');
-    $dhId = $dhId !== '' ? $dhId : 'DEMO-HUB'; // Preview fallback only when no hub is resolved.
     $dhName = (string) (data_get($deliveryHub, 'hub_name') ?? data_get($deliveryHub, 'name') ?? 'Assigned Delivery Hub');
-
-    // The controller should supply $deliveryHubParcels and $deliveryHubReturns,
-    // already authorized and scoped. The Blade additionally enforces hub IDs.
-    // UI-only sample records when the page has no backend parcel/return data yet.
-    // Never mix these fictional records with real account records.
-    $dhDemoMode = !isset($deliveryHubParcels, $deliveryHubReturns)
-        && !isset($hubParcels, $hubReturns);
-    $previewHubId = $dhId !== '' ? $dhId : 'DEMO-HUB';
-    if ($dhDemoMode) {
-        $demoBuyerAddress = ['province'=>'Laguna','municipality'=>'Pila','barangay'=>'Poblacion','zip_code'=>'4010','street'=>'Rizal Street','house_no'=>'24','building'=>'','subdivision'=>''];
-        $demoSellerAddress = ['province'=>'Metro Manila','municipality'=>'Quezon City','barangay'=>'Bagumbayan','zip_code'=>'1110','street'=>'Commerce Avenue','house_no'=>'18','building'=>'Unit 3','subdivision'=>''];
-        $names = [
-            ['Mariel Dela Cruz','mariel.demo@example.test','09170000001','Wireless Earbuds','White','Standard',1299.00,'in-transit','Laguna Sorting Center','2026-11-04 16:00:00'],
-            ['Jasper Mendoza','jasper.demo@example.test','09170000002','Cotton Oversized Shirt','Navy Blue','Large',699.00,'out-for-delivery','Pila Delivery Hub - Rider dispatched','2026-11-02 19:00:00'],
-            ['Patricia Reyes','patricia.demo@example.test','09170000003','Stainless Water Bottle','Mint','750 mL',450.00,'delivered','Pila, Laguna - Delivered','2026-11-01 15:00:00'],
-            ['Angela Villanueva','angela.demo@example.test','09170000004','Mechanical Keyboard','Black','Red Switch',2199.00,'in-transit','Incoming to Pila Delivery Hub','2026-11-05 14:00:00'],
-            ['Rafael Santos','rafael.demo@example.test','09170000005','Portable Desk Lamp','Warm White','Rechargeable',899.00,'out-for-delivery','Pila Delivery Hub - Rider dispatched','2026-11-02 20:00:00'],
-            ['Bea Navarro','bea.demo@example.test','09170000006','Canvas Tote Bag','Beige','Medium',350.00,'delivered','Pila, Laguna - Delivered','2026-10-31 17:00:00'],
-            ['Nico Bautista','nico.demo@example.test','09170000007','Phone Case','Lavender','iPhone',299.00,'in-transit','Laguna Sorting Center','2026-11-04 12:00:00'],
-            ['Trisha Lim','trisha.demo@example.test','09170000008','Running Shoes','Gray','EU 39',1899.00,'out-for-delivery','Pila Delivery Hub - Rider dispatched','2026-11-03 18:00:00'],
-            ['Daniel Flores','daniel.demo@example.test','09170000009','Power Bank','Black','10000mAh',1190.00,'delivered','Pila, Laguna - Delivered','2026-10-30 13:30:00'],
-        ];
-        $demoParcels = [];
-        foreach ($names as $i => $entry) {
-            [$buyer, $email, $phone, $product, $color, $variation, $price, $status, $location, $eta] = $entry;
-            $n = $i + 1;
-            $events = [
-                ['status'=>'Order Placed','timestamp'=>'2026-10-29T09:20:00+08:00','location'=>'ShopEase Online'],
-                ['status'=>'Order Prepared','timestamp'=>'2026-10-29T15:15:00+08:00','location'=>'Seller Warehouse'],
-                ['status'=>'Picked Up','timestamp'=>'2026-10-30T08:35:00+08:00','location'=>'Quezon City'],
-                ['status'=>'Arrived at Sorting Center','timestamp'=>'2026-10-31T11:20:00+08:00','location'=>'Laguna Sorting Center'],
-            ];
-            if (in_array($status, ['out-for-delivery', 'delivered'], true)) {
-                $events[] = ['status'=>'Arrived at Delivery Hub','timestamp'=>'2026-11-01T08:10:00+08:00','location'=>'Pila Delivery Hub'];
-                $events[] = ['status'=>'Out for Delivery','timestamp'=>'2026-11-01T10:30:00+08:00','location'=>'Pila, Laguna'];
-            }
-            if ($status === 'delivered') {
-                $events[] = ['status'=>'Delivered','timestamp'=>'2026-11-01T15:45:00+08:00','location'=>'Pila, Laguna'];
-            }
-            $demoParcels[] = [
-                'id'=>99000+$n, 'order_id'=>'DEMO-ORD-'.str_pad((string)$n,4,'0',STR_PAD_LEFT),
-                'order_number'=>'DEMO-ORD-'.str_pad((string)$n,4,'0',STR_PAD_LEFT),
-                'tracking_number'=>'SHP-DH-DEMO-'.str_pad((string)$n,5,'0',STR_PAD_LEFT),
-                'destination_delivery_hub_id'=>$previewHubId,
-                'buyer_name'=>$buyer,'buyer_email'=>$email,'buyer_phone'=>$phone,
-                'buyer_address_details'=>array_merge($demoBuyerAddress,['house_no'=>(string)(24+$n)]),
-                'seller_name'=>'ShopEase Sample Store','seller_email'=>'seller.demo@example.test','seller_phone'=>'09170000100',
-                'seller_address_details'=>$demoSellerAddress,
-                'product_name'=>$product,'items'=>[['product_name'=>$product,'name'=>$product,'variation'=>$variation,'color'=>$color,'size'=>'—','quantity'=>1,'product_price'=>$price]],
-                'shipping_status'=>$status,'current_location'=>$location,
-                'estimated_delivery'=>$eta,'ordered_at'=>'2026-10-29T09:20:00+08:00',
-                'payment_method'=>$n%2?'Cash on Delivery':'GCash','total_amount'=>$price,
-                'notes'=>$n%2?'Please call upon arrival.':'Deliver during daytime if possible.',
-                'tracking_history'=>$events,
-            ];
-        }
-        $returnData = [
-            ['DEMO-RET-001','Mariel Dela Cruz','Wireless Earbuds','pending','Item has charging issues.','Return and refund','2026-11-01T11:00:00+08:00','return-requested'],
-            ['DEMO-RET-002','Bea Navarro','Canvas Tote Bag','returned','Wrong color received.','Replace item','2026-10-31T12:00:00+08:00','returned'],
-            ['DEMO-RET-003','Nico Bautista','Phone Case','pending','Received incorrect size.','Return and refund','2026-11-02T09:15:00+08:00','return-in-transit'],
-            ['DEMO-RET-004','Patricia Reyes','Water Bottle','returned','Damaged cap upon arrival.','Refund after return','2026-10-30T16:30:00+08:00','returned'],
-        ];
-        $demoReturns = [];
-        foreach ($returnData as $i => $entry) {
-            [$order, $buyer, $product, $status, $reason, $solution, $requested, $shipping] = $entry;
-            $demoReturns[] = [
-                'id'=>98000+$i,'order_id'=>$order,'order_number'=>$order,
-                'destination_delivery_hub_id'=>$previewHubId,
-                'buyer_name'=>$buyer,'buyer_email'=>'buyer.demo@example.test','buyer_phone'=>'09170000011',
-                'buyer_address_details'=>$demoBuyerAddress,
-                'seller_name'=>'ShopEase Sample Store','seller_email'=>'seller.demo@example.test','seller_phone'=>'09170000100',
-                'seller_address_details'=>$demoSellerAddress,'product_name'=>$product,
-                'return_items'=>[['product_name'=>$product,'quantity'=>1,'variation'=>'Standard','color'=>'Assorted','size'=>'—','product_price'=>799]],
-                'status'=>$status,'shipping_status'=>$shipping,'return_type'=>'Return',
-                'tracking_number'=>'SHP-RETURN-DEMO-'.($i+1),'courier'=>'Demo Delivery Hub Rider',
-                'requested_at'=>$requested,'returned_at'=>$status==='returned'?'2026-11-01T14:00:00+08:00':null,
-                'reason'=>$reason,'solution'=>$solution,'evidence_description'=>'Demo photo evidence placeholder (no image uploaded).',
-                'tracking_history'=>[
-                    ['status'=>'Return Requested','timestamp'=>$requested,'location'=>'ShopEase App'],
-                    ['status'=>'Return Parcel Processing','timestamp'=>'2026-11-02T08:30:00+08:00','location'=>'Pila Delivery Hub'],
-                ],
-            ];
-        }
-    }
-    $dhParcelInput = collect($dhDemoMode ? $demoParcels : ($deliveryHubParcels ?? $hubParcels ?? []));
-    $dhReturnInput = collect($dhDemoMode ? $demoReturns : ($deliveryHubReturns ?? $hubReturns ?? []));
-    $belongsToHub = static function ($record) use ($dhId) {
-        if ($dhId === '') return false;
-        // The destination hub is authoritative for *incoming* parcels.
-        // Current hub may instead be assigned for already received/out-for-delivery items.
-        $identifiers = [
-            data_get($record, 'destination_delivery_hub_id'),
-            data_get($record, 'assigned_delivery_hub_id'),
-            data_get($record, 'delivery_hub_id'),
-            data_get($record, 'current_delivery_hub_id'),
-            data_get($record, 'next_delivery_hub_id'),
-            data_get($record, 'destination_hub_id'),
-        ];
-        return collect($identifiers)->contains(static fn ($id) => $id !== null && $id !== '' && (string) $id === $dhId);
-    };
-    $dhParcels = $dhParcelInput->filter($belongsToHub)->values();
-    $dhReturns = $dhReturnInput->filter($belongsToHub)->values();
-    $dhLocationData = [
-        'sorting_centers' => [],
-        'delivery_hubs' => $dhId !== '' ? [['id' => $dhId, 'name' => $dhName]] : [],
-    ];
+    $dhParcels = collect();
+    $dhReturns = collect();
+    $dhLocationData = ['sorting_centers' => [], 'delivery_hubs' => $dhId !== '' ? [['id' => $dhId, 'name' => $dhName]] : []];
 @endphp
 <!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Parcel Tracking — ShopEase Delivery Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>
@@ -389,9 +280,6 @@ body.pt-modal-open{overflow:hidden}
 @include('components.logistics.delivery-hub.navbar')
 <main class="lg-main" id="lgMain"><div class="pt-page">
 <header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Delivery Hub Operations</span><h1>Parcel Tracking</h1><p>Monitor incoming, received, and out-for-delivery parcels assigned to this delivery hub.</p></div></header>
-@if ($dhDemoMode)
-<div style="margin:0 0 15px;background:#fff4e4;border:1px solid #f0d6ab;border-radius:10px;padding:12px 16px;font-size:11px;color:#865622;"><strong>DEMO PREVIEW · SAMPLE DATA ONLY</strong> — 9 sample parcels and 4 sample returns. These are fictional records and are not connected to scanner operations or the database.</div>
-@endif
 <section class="pt-panel" aria-label="Parcel tracking records">
 <div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns</button></div>
 <div id="ptParcels" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabParcels">
@@ -423,7 +311,7 @@ const pill=v=>`<span class="pt-status ${escape(clean(v))}">${escape(statusName(v
 const field=(title,value)=>`<div class="pt-field"><label>${escape(title)}</label><strong>${escape(value??'—')}</strong></div>`;
 const card=(title,body)=>`<section class="pt-detail-card"><div class="pt-detail-title">${escape(title)}</div><div class="pt-detail-body">${body}</div></section>`;
 const rowsFrom=id=>{try{let data=JSON.parse($(id)?.textContent||'[]');if(data&& !Array.isArray(data) && Array.isArray(data.data))data=data.data;return Array.isArray(data)?data:[]}catch(e){return []}};
-const parcels=rowsFrom('ptParcelData');const returns=rowsFrom('ptReturnData');let trackingLocations={};try{trackingLocations=JSON.parse($('ptLocationData')?.textContent||'{}')}catch{}
+let parcels=rowsFrom('ptParcelData');let returns=rowsFrom('ptReturnData');let trackingLocations={};try{trackingLocations=JSON.parse($('ptLocationData')?.textContent||'{}')}catch{}
 const states={parcels:{tab:'all',search:'',page:1,data:parcels},returns:{tab:'all',search:'',page:1,data:returns}};
 const perPage=7;let active='parcels';let lastFocus=null;
 function parcelStatus(p){return clean(p.shipping_status||p.status||'processing')}
@@ -437,7 +325,27 @@ function updateLocationOptions(){
   delivery.replaceChildren(new Option(hub?.name||'Delivery Hub not assigned',hub?.id||'unassigned'));
   delivery.disabled=true;
 }
-window.addEventListener('pageshow',()=>{updateLocationOptions();render('parcels');render('returns');});
+window.addEventListener('pageshow',event=>{if(event.persisted)loadTracking();});
+async function loadTracking(){
+  const rows=$('ptParcelsRows');if(rows)rows.innerHTML='<tr><td class="pt-empty" colspan="5">Loading parcel records…</td></tr>';
+  try{
+    const response=await fetch(@json(route('delivery_hub.api.parcel-tracking.index')),{credentials:'same-origin',headers:{Accept:'application/json'}});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.message||'Unable to load parcel tracking records.');
+    const payload=result.data||result;
+    parcels=Array.isArray(payload.parcels)?payload.parcels:[];
+    returns=Array.isArray(payload.returns)?payload.returns:[];
+    trackingLocations=payload.locations||{};
+    states.parcels.data=parcels;states.parcels.page=1;
+    states.returns.data=returns;states.returns.page=1;
+    updateLocationOptions();render('parcels');render('returns');
+  }catch(error){
+    const message=escape(error.message||'Unable to load parcel tracking records.');
+    $('ptParcelsRows').innerHTML=`<tr><td class="pt-empty" colspan="5">${message}</td></tr>`;
+    $('ptReturnsRows').innerHTML=`<tr><td class="pt-empty" colspan="4">${message}</td></tr>`;
+    $('ptParcelsCount').textContent='Could not load records';$('ptReturnsCount').textContent='Could not load records';
+  }
+}
 function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
 function render(section){
   const filtered=filterRecords(section),state=states[section];
@@ -517,7 +425,7 @@ function addressDetails(o,role){
   const pick=(...keys)=>{for(const key of keys){const value=obj[key]??o[role+'_'+key]??(role==='buyer'?o['shipping_'+key]??o['delivery_'+key]:o['pickup_'+key]??o['origin_'+key]);if(value!==undefined&&value!==null&&String(value).trim()!=='')return typeof value==='object'?(value.name||value.label||'—'):value}return '—'};
   const fields=[['Province',pick('province','province_name')],['Municipality / City',pick('municipality','municipality_name','city','city_name')],['Barangay',pick('barangay','barangay_name')],['ZIP Code',pick('zip_code','zipcode','postal_code','zip')],['Street',pick('street','street_name')],['House No.',pick('house_no','house_number','unit','unit_number')],['Building',pick('building','building_name')],['Subdivision',pick('subdivision','village')]];
   if(role==='buyer'&&String(o.delivery_address||'').trim())fields.push(['Full Delivery Address',o.delivery_address]);
-  return `<div class="pt-address-heading"><span class="pt-address-pin" aria-hidden="true">📍</span>Address</div><div class="pt-address-fields">${fields.map(([label,value])=>`<div class="pt-address-field"><label>${escape(label)}</label><div class="pt-address-value">${escape(value)}</div></div>`).join('')}</div>`;
+  return `<div class="pt-address-heading"><span class="pt-address-pin" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;flex-shrink:0"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>Address</div><div class="pt-address-fields">${fields.map(([label,value])=>`<div class="pt-address-field"><label>${escape(label)}</label><div class="pt-address-value">${escape(value)}</div></div>`).join('')}</div>`;
 }
 function destinationDetails(o,role){
   const nested=o[role+'_address_details']||o[role+'_address_data']||(role==='buyer'?(o.shipping_address_details||o.delivery_address_details):o.origin_address_details)||{};
@@ -529,7 +437,7 @@ function destinationDetails(o,role){
 function isReturnDestination(o){return /return/i.test(String(o.shipment_type||o.parcel_type||o.type||''))||o.is_return===true||o.isReturn===true;}
 function destinationBanner(o,returnParcel=false){const seller=returnParcel||isReturnDestination(o),role=seller?'seller':'buyer';return `<div class="pt-destination-banner">${seller?'RETURN PARCEL · Destination: Seller':'PARCEL DESTINATION · Buyer Delivery Address'}<strong>${escape(destinationDetails(o,role))}</strong></div>`;}
 function partyCard(title,pairs,o,role,highlight=false){const contents=`<div>${pairs.map(([label,value])=>infoPair(label,value)).join('')}</div>${addressDetails(o,role)}`;return highlight?`<section class="pt-detail-card pt-destination-card"><div class="pt-detail-title">${escape(title)} · DELIVERY DESTINATION</div><div class="pt-detail-body"><span class="pt-destination-pill">DESTINATION ADDRESS</span>${contents}</div></section>`:card(title,contents)}
-function returnItemsMarkup(items,record,quantityLabel='Quantity to Return'){const list=(Array.isArray(items)&&items.length?items:[{product_name:record.product_name||'Product',variation:record.variation,color:record.color,size:record.size,quantity:record.quantity||1,product_price:record.product_price||record.price}]);return `<div class="pt-item-stack">${list.map((x,index)=>`<article class="pt-order-item"><div class="pt-order-item-head"><span class="pt-order-item-index">Item ${index+1}</span><div class="pt-order-item-name">${escape(x.product_name||x.name||'Product')}</div></div><div class="pt-order-item-body"><div class="pt-order-item-fields"><div class="pt-order-item-field"><label>Variation</label><strong>${escape(x.variation||'—')}</strong></div><div class="pt-order-item-field"><label>Color</label><strong>${escape(x.color||'—')}</strong></div><div class="pt-order-item-field"><label>Size</label><strong>${escape(x.size||'—')}</strong></div><div class="pt-order-item-field"><label>${escape(quantityLabel)}</label><strong>${escape(x.quantity||1)}</strong></div><div class="pt-order-item-field"><label>Unit Price</label><strong>${money(x.product_price||x.price||x.unit_price||0)}</strong></div></div></div></article>`).join('')}</div>`}
+function returnItemsMarkup(items,record,quantityLabel='Quantity to Return'){const list=(Array.isArray(items)&&items.length?items:[{product_name:record.product_name||'Product',variation:record.variation,color:record.color,size:record.size,quantity:record.quantity||1,product_price:record.product_price||record.price}]);return `<div class="pt-item-stack">${list.map((x,index)=>`<article class="pt-order-item"><div class="pt-order-item-head"><span class="pt-order-item-index">Item ${index+1}</span><div class="pt-order-item-name">${escape(x.product_name||x.name||'Product')}${x.is_fragile ? '<span class="se-fragile-pill">Fragile</span>' : ''}</div></div><div class="pt-order-item-body"><div class="pt-order-item-fields"><div class="pt-order-item-field"><label>Variation</label><strong>${escape(x.variation||'—')}</strong></div><div class="pt-order-item-field"><label>Color</label><strong>${escape(x.color||'—')}</strong></div><div class="pt-order-item-field"><label>Size</label><strong>${escape(x.size||'—')}</strong></div><div class="pt-order-item-field"><label>${escape(quantityLabel)}</label><strong>${escape(x.quantity||1)}</strong></div><div class="pt-order-item-field"><label>Unit Price</label><strong>${money(x.product_price||x.price||x.unit_price||0)}</strong></div></div></div></article>`).join('')}</div>`}
 
 function openParcel(o){if(!o)return;const status=parcelStatus(o),items=Array.isArray(o.items)?o.items:[];const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];$('ptParcelModalBody').innerHTML=destinationBanner(o)+card('Order Information',`<div class="pt-fields">${field('Order Number',o.order_number||o.order_id||o.id)}${field('Ordered At',formatDate(o.ordered_at||o.created_at))}${field('Estimated Delivery',formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta))}${field('Tracking Number',o.tracking_number||o.tracking_no)}${field('Current Location',o.current_location||o.location||'Not scanned yet')}${field('Shipping Status',statusName(status))}</div>`)+card('Tracking Progress',progress(status))+`<div class="pt-party-grid">${partyCard('Buyer Information',buyerPairs,o,'buyer',!isReturnDestination(o))}${partyCard('Seller Information',sellerPairs,o,'seller',isReturnDestination(o))}</div>`+card('Payment Information',`<div class="pt-fields">${field('Payment Method',o.payment_method)}${field('Order Total',money(o.total_amount??o.total))}</div>`)+card('Ordered Items',returnItemsMarkup(items,o,'Quantity Ordered'))+card('Tracking History',historyList(o))+card('Customer Notes',`<div class="pt-notes">${escape(o.notes||o.customer_notes||'No customer notes provided.')}</div>`);openModal('ptParcelModal')}
 function openReturn(o){
@@ -563,7 +471,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.lg-profile-wrap')&&
 $('lgNotifyButton')?.addEventListener('click',()=>window.alert('No live notifications connected yet.'));
 $('lgChangeProfilePhoto')?.addEventListener('click',()=>$('lgProfilePhotoInput')?.click());
 $('lgProfilePhotoInput')?.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){window.alert('Choose a JPG, PNG, or WebP under 5 MB.');e.target.value='';return}const data=new FormData();data.append('profile_photo',file);try{const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:data});const result=await response.json();if(!response.ok)throw Error(result.message||'Unable to update photo');const avatar=document.querySelector('#lgProfileButton .account-avatar');if(avatar){let image=avatar.querySelector('img');if(!image){image=document.createElement('img');avatar.append(image)}image.src=result.profile_photo_url;image.style.cssText='position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover;'}}catch(err){window.alert(err.message||'Could not update profile photo')}finally{e.target.value=''}});
-updateLocationOptions();render('parcels');render('returns');if(window.location.hash==='#returns')switchTab('returns');
+updateLocationOptions();render('parcels');render('returns');if(window.location.hash==='#returns')switchTab('returns');loadTracking();
 });
 
 </script>

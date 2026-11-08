@@ -53,7 +53,11 @@ Route::post('/parcel/scan/{token}', [ParcelScanController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('parcel.scan.store');
 
-Route::get('/auth/login', function () {
+Route::get('/auth/login', function (Request $request) {
+
+    if (! $request->boolean('modal') && $request->header('Sec-Fetch-Dest') !== 'iframe') {
+        return redirect()->route('landing.page', ['auth' => 'login']);
+    }
 
     return view(
         'auth.login'
@@ -2050,6 +2054,7 @@ Route::get('/buyer/my-purchases', function () {
             ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyerProfile->upload_id)
             : null,
         'buyerEmail' => $user->email,
+        'buyerNotificationPreferences' => app(\App\Services\BuyerNotificationPreferences::class)->forUser($user),
     ]);
 })->middleware('auth')->name('buyer.my-purchases');
 
@@ -2256,6 +2261,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/account', [SellerAccountController::class, 'index'])->name('account');
     Route::put('/account', [SellerAccountController::class, 'update'])->name('account.update');
+    Route::post('/account/information-change-request', [SellerAccountController::class, 'requestInformationChange'])->name('account.information-change-request');
     Route::get('/account/document/{type}', [SellerAccountController::class, 'document'])->name('account.document');
     Route::post('/account/category-change-request', [SellerAccountController::class, 'requestCategoryChange'])->name('account.categories.request');
 });
@@ -2355,6 +2361,15 @@ Route::get('/logistics/parcel-tracking', [\App\Http\Controllers\Api\Logistics\Pa
 Route::get('/logistics/account', [\App\Http\Controllers\Api\Logistics\AccountController::class, 'page'])
     ->middleware(['auth', 'role:logistics'])
     ->name('logistics.account');
+
+Route::middleware(['auth', 'role:logistics'])->prefix('logistics')->name('logistics.')->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\Logistics\NotificationController::class, 'index'])
+        ->name('notifications');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Logistics\NotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Logistics\NotificationController::class, 'read'])
+        ->name('notifications.read');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -2551,7 +2566,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
         Route::get('/dashboard/data', [\App\Http\Controllers\Api\Logistics\DeliveryHubDashboardController::class, 'index'])->name('dashboard.data');
         Route::get('/rider-registrations', [\App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController::class, 'page'])->name('rider-registrations');
         Route::get('/scanners', $hubPage('scanners'))->name('scanners');
-        Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
+        Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelTrackingController::class, 'page'])->name('parcel-tracking');
         Route::get('/parcel-disputes', $hubPage('parcel-disputes'))->name('parcel-disputes');
         Route::get('/vehicle-drivers', $hubPage('vehicle-drivers'))->name('vehicle-drivers');
         Route::get('/finance', $hubPage('finance'))->name('finance');
@@ -2617,3 +2632,9 @@ Route::get('/seller/wallet', [\App\Http\Controllers\Seller\WalletController::cla
 Route::view('/logistics/reports', 'pages.logistics.reports')
     ->middleware(['auth', 'role:logistics'])
     ->name('logistics.reports');
+
+Route::middleware(['auth', 'role:logistics'])->prefix('logistics/notifications')->name('logistics.notifications')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Logistics\NotificationController::class, 'index']);
+    Route::post('/read-all', [\App\Http\Controllers\Logistics\NotificationController::class, 'readAll'])->name('.read-all');
+    Route::post('/{notification}/read', [\App\Http\Controllers\Logistics\NotificationController::class, 'read'])->name('.read');
+});

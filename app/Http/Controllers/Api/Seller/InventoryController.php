@@ -135,6 +135,7 @@ class InventoryController extends Controller
             ],
             'description' => ['nullable', 'string', 'max:2000'],
             'weight_kg' => ['required', 'numeric', 'gt:0', 'max:999999'],
+            'is_fragile' => ['sometimes', 'boolean'],
             'price' => [Rule::requiredIf($pricingMode !== 'varies'), 'nullable', 'numeric', 'min:0'],
             'stock_quantity' => [Rule::requiredIf($pricingMode !== 'varies'), 'nullable', 'integer', 'min:0'],
             'pricing_mode' => ['nullable', Rule::in(['fixed', 'varies'])],
@@ -177,6 +178,7 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $validated = $this->applyChoiceStock($validated, $optionGroups);
         $connectedVariants = $this->buildConnectedVariants(
             $validated['variant_combinations'] ?? [],
             $validated,
@@ -234,6 +236,7 @@ class InventoryController extends Controller
                     'sku' => $validated['sku'] ?? null,
                     'description' => $validated['description'] ?? null,
                     'weight_kg' => $validated['weight_kg'],
+                    'is_fragile' => (bool) ($validated['is_fragile'] ?? false),
                     'price' => $validated['price'] ?? 0,
                     'pricing_mode' => $validated['pricing_mode'] ?? 'fixed',
                     'pricing_source' => $pricingMode === 'varies' ? $pricingSource : null,
@@ -301,6 +304,22 @@ class InventoryController extends Controller
         return response()->json($this->serializeProduct($product->fresh()), 201);
     }
 
+    /** Stock has one owner: the product, a single option group, or exact combinations. */
+    private function applyChoiceStock(array $validated, array $optionGroups): array
+    {
+        $active = collect($optionGroups)->filter(fn ($group) => !empty($validated[$group['input']]));
+        if ($active->count() === 1) {
+            $input = $active->first()['input'];
+            $validated['stock_quantity'] = collect($validated[$input])->sum(fn ($option) => (int) $option['stock']);
+            $validated['variant_combinations'] = [];
+        } elseif ($active->count() >= 2) {
+            if (empty($validated['variant_combinations'])) {
+                throw ValidationException::withMessages(['variant_combinations' => 'Add grouped choices and enter stock for each exact combination.']);
+            }
+            $validated['stock_quantity'] = collect($validated['variant_combinations'])->sum(fn ($variant) => (int) $variant['stock']);
+        }
+        return $validated;
+    }
     private function buildConnectedVariants(
         array $combinations,
         array $validated,
@@ -538,6 +557,7 @@ class InventoryController extends Controller
             ],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'weight_kg' => ['sometimes', 'required', 'numeric', 'gt:0', 'max:999999'],
+            'is_fragile' => ['sometimes', 'boolean'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'stock_quantity' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', 'string', 'max:50'],
@@ -578,6 +598,7 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $validated = $this->applyChoiceStock($validated, $optionGroups);
         $connectedVariants = [];
         if (array_key_exists('variant_combinations', $validated)) {
             $connectedVariants = $this->buildConnectedVariants(
@@ -653,6 +674,7 @@ class InventoryController extends Controller
                     'sku',
                     'description',
                     'weight_kg',
+                    'is_fragile',
                     'price',
                     'stock_quantity',
                     'status',

@@ -2,11 +2,11 @@
 @php
     $dhMenuConfig = [
         ['Dashboard', 'dashboard.png', 'dashboard'],
-        ['Rider Registrations', 'logistic-management.png', 'rider-registrations'],
-        ['Scanners', 'reports.png', 'scanners'],
-        ['Parcel Tracking', 'reports.png', 'parcel-tracking'],
+        ['Rider Registrations', 'icons/admin/logistics/rider.png', 'rider-registrations'],
+        ['Scanners', 'icons/admin/logistics/scanner.png', 'scanners'],
+        ['Parcel Tracking', 'icons/admin/logistics/tracking.png', 'parcel-tracking'],
         ['Parcel Disputes', 'complaints-disputes.png', 'parcel-disputes'],
-        ['Vehicles & Drivers', 'logistic-management.png', 'vehicle-drivers'],
+        ['Vehicles & Drivers', 'icons/admin/dashboard/sidebar&navbar/user-management.png', 'vehicle-drivers'],
         ['Notifications', 'notifications.png', 'notifications'],
         ['Finance', 'commission.png', 'finance'],
         ['Messages', 'messages.png', 'messages'],
@@ -112,12 +112,12 @@ html,body.lg-body{overflow-x:hidden}
                     ?>
                     @if($item && $item['enabled'])
                         <a class="lg-nav-link lg-admin-menu-item {{ $item['active'] ? 'active' : '' }}" href="{{ $item['href'] }}" title="{{ $item['label'] }}" @if($item['active']) aria-current="page" @endif style="animation-delay:{{ $lgAnimDelay }}s">
-                            <span class="lg-admin-icon-wrap"><img src="{{ asset($item['label'] === 'Notifications' ? 'icons/seller/notifications.png' : 'icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}" alt=""></span>
+                            <span class="lg-admin-icon-wrap"><img src="{{ asset($item['label'] === 'Notifications' ? 'icons/seller/notifications.png' : (str_contains($item['icon'], '/') ? $item['icon'] : 'icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}" alt=""></span>
                             <span class="lg-admin-label">{{ $item['label'] }}</span>
                         </a>
                     @elseif($item)
                         <span class="lg-nav-link lg-nav-unavailable lg-admin-menu-item" aria-disabled="true" title="Not available yet" style="animation-delay:{{ $lgAnimDelay }}s">
-                            <span class="lg-admin-icon-wrap"><img src="{{ asset($item['label'] === 'Notifications' ? 'icons/seller/notifications.png' : 'icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}" alt=""></span>
+                            <span class="lg-admin-icon-wrap"><img src="{{ asset($item['label'] === 'Notifications' ? 'icons/seller/notifications.png' : (str_contains($item['icon'], '/') ? $item['icon'] : 'icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}" alt=""></span>
                             <span class="lg-admin-label">{{ $item['label'] }}</span>
                         </span>
                     @endif

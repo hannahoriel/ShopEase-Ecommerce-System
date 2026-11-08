@@ -14,7 +14,7 @@
     "
 >
 
-    <div class="flex-1 min-h-0 overflow-y-auto admin-sidebar-scroll">
+    <div class="flex flex-col flex-1 min-h-0 overflow-hidden admin-sidebar-scroll">
 
         <!-- ==================== LOGO ==================== -->
 
@@ -128,7 +128,6 @@
                 ];
 
             @endphp
-
 
             @foreach ($menu as $item)
 
@@ -346,22 +345,9 @@
 
 </aside>
 
-@php($adminModuleAccess = request()->attributes->get('adminModuleAccess', []))
-@if (!empty($adminModuleAccess['readOnly']))
-    <div
-        id="admin-read-only-notice"
-        class="fixed right-6 top-24 z-[60] rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg"
-        role="status"
-    >
-        <strong>Read-only access:</strong>
-        {{ $adminModuleAccess['module'] ?? 'This module' }} can be viewed, but you do not have permission to edit it.
-    </div>
-@endif
-
-
 <style>
 
-    body.admin-module-read-only #admin-content,
+    body.admin-module-read-only .admin-content-shell,
     body.admin-module-read-only .seller-account-page {
         pointer-events: none;
     }
@@ -541,9 +527,9 @@
 
 /* Delivery Hub-style scroll behavior: menu scrolls, footer stays accessible. */
 #admin-sidebar { display:flex!important; flex-direction:column!important; height:100vh!important; height:100dvh!important; overflow:hidden!important; }
-#admin-sidebar > .admin-sidebar-scroll { flex:1 1 0%!important; min-height:0!important; overflow-y:auto!important; overflow-x:hidden!important; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:10px; }
+#admin-sidebar > .admin-sidebar-scroll { flex:1 1 0%!important; min-height:0!important; display:flex!important; flex-direction:column!important; overflow:hidden!important; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:0; }
 #admin-sidebar > .admin-sidebar-scroll::-webkit-scrollbar { display:none; }
-#admin-sidebar > .admin-sidebar-footer { position:relative!important; flex:0 0 auto!important; min-height:54px; padding-top:10px; margin-top:0!important; z-index:2; background:transparent; }
+#admin-sidebar > .admin-sidebar-footer { position:relative!important; flex:0 0 auto!important; min-height:0; padding-top:0; margin-top:0!important; z-index:2; background:transparent; }
 #admin-sidebar > .admin-sidebar-footer .sidebar-logout { position:relative; margin-top:0!important; }
 
 
@@ -553,18 +539,29 @@
     box-sizing:border-box !important;
     padding-right:12px !important;
     padding-left:2px !important;
-    overflow-y:auto !important;
+    overflow-y:hidden !important;
     overflow-x:hidden !important;
 }
 #admin-sidebar > .admin-sidebar-scroll .sidebar-link { box-sizing:border-box; max-width:100%; }
+
+/* Keep the logo and logout stationary; only the menu scrolls, as in Logistics. */
+#admin-sidebar > .admin-sidebar-scroll > #sidebar-logo { flex:0 0 auto; }
+#admin-sidebar > .admin-sidebar-scroll > nav {
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+    padding-right:5px;
+    padding-bottom:0;
+}
+#admin-sidebar > .admin-sidebar-scroll > nav::-webkit-scrollbar { display:none; }
 </style>
 
 
 <script>
-
-if (document.getElementById('admin-read-only-notice')) {
-    document.body.classList.add('admin-module-read-only');
-}
 
 document.addEventListener(
     'DOMContentLoaded',

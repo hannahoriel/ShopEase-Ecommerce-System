@@ -13,12 +13,34 @@ class ReportsController extends Controller
     public function index(Request $request)
     {
         [$from, $to] = $this->range($request);
-        $data = $this->buildReport($from, $to);
-        $data['from'] = $from->toDateString();
-        $data['to'] = $to->toDateString();
-        $data['dateLabel'] = $from->format('M d, Y') . ' — ' . $to->format('M d, Y');
+        $data = $this->reportViewData($from, $to);
 
         return view('pages.admin.reports', $data);
+    }
+
+    public function apiIndex(Request $request)
+    {
+        [$from, $to] = $this->range($request);
+        $data = $this->reportViewData($from, $to);
+
+        return response()->json([
+            'data' => collect($data)->except(['from', 'to', 'dateLabel'])->all(),
+            'meta' => [
+                'from' => $data['from'],
+                'to' => $data['to'],
+                'dateLabel' => $data['dateLabel'],
+            ],
+            'html' => view('pages.admin.reports', $data)->render(),
+        ]);
+    }
+
+    private function reportViewData(Carbon $from, Carbon $to): array
+    {
+        return array_merge($this->buildReport($from, $to), [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'dateLabel' => $from->format('M d, Y') . ' — ' . $to->format('M d, Y'),
+        ]);
     }
 
     public function export(Request $request)
@@ -41,6 +63,9 @@ class ReportsController extends Controller
             ['Delivered shipments', $r['shipping']['delivered'], 'Shipments delivered in period'],
             ['Average delivery time (hours)', $r['shipping']['average_hours'] ?? 'N/A', 'Pickup to delivery for period deliveries with both timestamps'],
             ['Registrations submitted', $r['registration']['total'], 'New registration applications in period'],
+            ['Seller approvals', $r['sellerCompliance']['approved'], 'Seller records created in period with active or approved registration status'],
+            ['Pending seller verification', $r['sellerCompliance']['pending'], 'Seller records created in period with pending registration status'],
+            ['Rejected seller registrations', $r['sellerCompliance']['rejected'], 'Seller records created in period with rejected registration status'],
             ['Complaints opened', $r['complaints']['total'], 'Complaint records created in period'],
             ['Returns requested', $r['returns']['total'], 'Return requests submitted in period'],
             [], ['Order cohort - current status', 'Count'],
@@ -91,7 +116,16 @@ class ReportsController extends Controller
         $completedCount = (int) (clone $completed)->count();
         $commission = (float) DB::table('commission_transactions')
             ->where('status', 'earned')->whereBetween('earned_at', [$start, $end])->sum('commission_amount');
-        $refunds = (float) DB::table('order_returns')->where('status', 'refunded')
+        // Local demo return seeders create records that look fully refunded. Keep
+        // those clearly marked fixtures out of production-facing report totals.
+        $demoReturnOrderIds = DB::table('orders')
+            ->where(function ($query) {
+                $query->where('order_number', 'like', 'SE-DEMO-RET-%')
+                    ->orWhere('order_number', 'like', 'DEMO-TRACK-%');
+            })
+            ->select('id');
+        $reportReturns = DB::table('order_returns')->whereNotIn('order_id', $demoReturnOrderIds);
+        $refunds = (float) (clone $reportReturns)->where('status', 'refunded')
             ->whereBetween('refunded_at', [$start, $end])->sum('refund_amount');
 
         // This is a created-order cohort (current statuses), not a count of status-change events.
@@ -129,7 +163,7 @@ class ReportsController extends Controller
         $complaints = DB::table('complaints')->whereBetween('created_at', [$start, $end]);
         $complaintStatuses = (clone $complaints)->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')->pluck('total', 'status')->all();
-        $returns = DB::table('order_returns')->whereBetween('requested_at', [$start, $end]);
+        $returns = (clone $reportReturns)->whereBetween('requested_at', [$start, $end]);
         $returnTypes = (clone $returns)->select('return_type', DB::raw('COUNT(*) as total'))
             ->groupBy('return_type')->pluck('total', 'return_type')->all();
         $delivered = DB::table('shipments')->whereBetween('delivered_at', [$start, $end]);
@@ -138,6 +172,16 @@ class ReportsController extends Controller
         $newUsers = DB::table('users')->whereBetween('created_at', [$start, $end]);
         $newUsersByRole = (clone $newUsers)->select('role', DB::raw('COUNT(*) as total'))
             ->groupBy('role')->pluck('total', 'role')->all();
+        $sellerStatusCounts = DB::table('sellers')->whereBetween('created_at', [$start, $end])
+            ->select('registration_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('registration_status')->pluck('total', 'registration_status');
+        $sellerApproved = (int) ($sellerStatusCounts['active'] ?? 0) + (int) ($sellerStatusCounts['approved'] ?? 0);
+        $sellerCompliance = [
+            'approved' => $sellerApproved,
+            'pending' => (int) ($sellerStatusCounts['pending'] ?? 0),
+            'rejected' => (int) ($sellerStatusCounts['rejected'] ?? 0),
+        ];
+        $sellerCompliance['reviewed'] = $sellerCompliance['approved'] + $sellerCompliance['rejected'];
         $newProducts = DB::table('products')->whereBetween('created_at', [$start, $end]);
         $catalog = [
             'created' => (int) (clone $newProducts)->count(),
@@ -157,6 +201,7 @@ class ReportsController extends Controller
             'shipping' => ['delivered' => (int) (clone $delivered)->count(), 'average_hours' => $averageHours === null ? null : round((float) $averageHours, 1)],
             'voucher' => ['orders' => (int) (clone $voucher)->count(), 'amount' => (float) (clone $voucher)->sum('voucher_discount')],
             'accounts' => ['created' => (int) (clone $newUsers)->count(), 'roles' => $newUsersByRole],
+            'sellerCompliance' => $sellerCompliance,
             'catalog' => $catalog,
         ];
     }

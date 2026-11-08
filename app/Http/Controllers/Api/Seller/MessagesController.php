@@ -9,6 +9,7 @@ use App\Models\Seller\Seller;
 use App\Models\Seller\SellerConversation;
 use App\Models\Seller\SellerMessage;
 use App\Models\User;
+use App\Models\Buyer\BuyerNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -230,6 +231,18 @@ class MessagesController extends Controller
 
             return $message->load('sender:id,name,role');
         });
+
+        $buyer = $conversation->buyer;
+        if ($buyer) {
+            BuyerNotification::createForBuyer(
+                $buyer,
+                'message',
+                'New seller message',
+                'A seller replied to your message.',
+                ['url' => '/buyer/my-purchases?tab=messages'],
+                $conversation->order,
+            );
+        }
 
         return response()->json([
             'data' => $this->serializeMessage($message, $request->user()),

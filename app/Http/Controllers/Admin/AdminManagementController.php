@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AdminCredentials;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -33,12 +35,13 @@ class AdminManagementController extends Controller
     public function index(Request $request): JsonResponse
     {
         abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
+        $primaryAdminId = (int) User::query()->where('role', User::ROLE_ADMIN)->orderBy('id')->value('id');
 
         $admins = User::query()
             ->where('role', User::ROLE_ADMIN)
             ->orderBy('name')
             ->get()
-            ->map(function (User $user): array {
+            ->map(function (User $user) use ($primaryAdminId): array {
                 $profile = DB::table('admin_account_profiles')
                     ->where('user_id', $user->id)
                     ->first();
@@ -49,6 +52,8 @@ class AdminManagementController extends Controller
                     'email' => $user->email,
                     'permissions' => $this->decodeArray($profile->permissions ?? null),
                     'message_permissions' => $this->decodeArray($profile->message_permissions ?? null),
+                    'is_full_admin' => (int) $user->id === $primaryAdminId
+                        && (! $profile || $profile->permissions === null),
                     'is_enabled' => (bool) ($profile->is_enabled ?? true),
                     'created_at' => $user->created_at?->toISOString(),
                 ];
@@ -95,7 +100,6 @@ class AdminManagementController extends Controller
             'permissions.*' => ['required', 'string', Rule::in(self::MODULES)],
             'message_permissions' => ['nullable', 'array'],
             'message_permissions.*' => ['required', 'string', Rule::in(self::MESSAGE_CATEGORIES)],
-            'password' => ['required', 'string', 'min:12', 'max:128'],
         ]);
 
         $permissions = array_values(array_unique($data['permissions']));
@@ -114,6 +118,7 @@ class AdminManagementController extends Controller
         }
 
         $storedFiles = [];
+        $temporaryPassword = $this->generateTemporaryPassword();
 
         try {
             foreach (['profile_photo', 'admin_id_photo'] as $field) {
@@ -123,7 +128,7 @@ class AdminManagementController extends Controller
                 }
             }
 
-            $user = DB::transaction(function () use ($data, $permissions, $messagePermissions, $storedFiles): User {
+            $user = DB::transaction(function () use ($data, $permissions, $messagePermissions, $storedFiles, $temporaryPassword): User {
                 $name = implode(' ', array_filter([
                     trim($data['first_name']),
                     isset($data['middle_name']) ? trim($data['middle_name']) : null,
@@ -133,7 +138,7 @@ class AdminManagementController extends Controller
                 $user = User::create([
                     'name' => $name,
                     'email' => $data['email'],
-                    'password' => $data['password'],
+                    'password' => $temporaryPassword,
                     'role' => User::ROLE_ADMIN,
                     'email_verified_at' => now(),
                     'registration_status' => 'active',
@@ -156,6 +161,8 @@ class AdminManagementController extends Controller
                     'updated_at' => now(),
                 ]);
 
+                Mail::to($user->email)->send(new AdminCredentials($user->name, $user->email, $temporaryPassword));
+
                 return $user;
             });
         } catch (\Throwable $exception) {
@@ -166,7 +173,7 @@ class AdminManagementController extends Controller
         }
 
         return response()->json([
-            'message' => 'Administrator account created successfully.',
+            'message' => 'Administrator account created successfully. Login credentials were emailed to the new administrator.',
             'admin' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -264,7 +271,12 @@ class AdminManagementController extends Controller
             ->first(['permissions', 'is_enabled']);
 
         abort_if($profile && ! $profile->is_enabled, 403, 'This administrator account is disabled.');
-        abort_unless($profile?->permissions === null, 403, 'Only a full administrator can manage administrator accounts.');
+        $primaryAdminId = (int) User::query()->where('role', User::ROLE_ADMIN)->orderBy('id')->value('id');
+        abort_unless(
+            (int) $actor->id === $primaryAdminId && (! $profile || $profile->permissions === null),
+            403,
+            'Only the primary administrator can manage administrator accounts.'
+        );
     }
 
     private function decodeArray(?string $value): array
@@ -272,5 +284,32 @@ class AdminManagementController extends Controller
         $decoded = $value === null ? null : json_decode($value, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function generateTemporaryPassword(): string
+    {
+        $characters = [
+            'lower' => 'abcdefghjkmnpqrstuvwxyz',
+            'upper' => 'ABCDEFGHJKLMNPQRSTUVWXYZ',
+            'number' => '23456789',
+            'symbol' => '!@#$%&*?',
+        ];
+
+        $password = [
+            $characters['upper'][random_int(0, strlen($characters['upper']) - 1)],
+            $characters['number'][random_int(0, strlen($characters['number']) - 1)],
+            $characters['symbol'][random_int(0, strlen($characters['symbol']) - 1)],
+        ];
+
+        for ($i = 0; $i < 5; $i++) {
+            $password[] = $characters['lower'][random_int(0, strlen($characters['lower']) - 1)];
+        }
+
+        for ($i = count($password) - 1; $i > 0; $i--) {
+            $swap = random_int(0, $i);
+            [$password[$i], $password[$swap]] = [$password[$swap], $password[$i]];
+        }
+
+        return implode('', $password);
     }
 }

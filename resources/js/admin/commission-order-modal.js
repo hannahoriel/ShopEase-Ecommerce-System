@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="shipping-item-row">
                     <div class="shipping-item-name">
                         <div class="shipping-item-image"><div class="modal-product-bag"></div></div>
-                        <span>${escapeHtml(item.name || 'Product')}${item.variation ? `<small style="display:block;font-size:10px;color:#928482">${escapeHtml(item.variation)}</small>` : ''}</span>
+                        <span>${escapeHtml(item.name || 'Product')}${item.is_fragile ? '<span class="se-fragile-pill">Fragile</span>' : ''}${item.variation ? `<small style="display:block;font-size:10px;color:#928482">${escapeHtml(item.variation)}</small>` : ''}</span>
                     </div>
                     <span>${money(item.unit_price)}</span><span>${Number(item.quantity || 0)}</span>
                     <span>${money(Number(item.unit_price || 0) * Number(item.quantity || 0))}</span>

@@ -44,7 +44,7 @@
         sidebar-reload
     "
 >
-    <div class="flex-1 min-h-0 overflow-y-auto seller-sidebar-scroll">
+    <div class="flex flex-col flex-1 min-h-0 overflow-hidden seller-sidebar-scroll">
 
         {{-- =====================================================
              LOGO
@@ -1005,9 +1005,9 @@
 
 /* Delivery Hub-style scroll behavior: independent nav scroll and pinned logout. */
 #sellerSidebar { display:flex!important; flex-direction:column!important; height:100vh!important; height:100dvh!important; overflow:hidden!important; }
-#sellerSidebar > .seller-sidebar-scroll { flex:1 1 0%!important; min-height:0!important; overflow-y:auto!important; overflow-x:hidden!important; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:10px; }
+#sellerSidebar > .seller-sidebar-scroll { flex:1 1 0%!important; min-height:0!important; display:flex!important; flex-direction:column!important; overflow:hidden!important; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:0; }
 #sellerSidebar > .seller-sidebar-scroll::-webkit-scrollbar { display:none; }
-#sellerSidebar > .seller-sidebar-footer { position:relative!important; flex:0 0 auto!important; min-height:54px; padding-top:10px; margin-top:0!important; z-index:2; background:transparent; }
+#sellerSidebar > .seller-sidebar-footer { position:relative!important; flex:0 0 auto!important; min-height:0; padding-top:0; margin-top:0!important; z-index:2; background:transparent; }
 #sellerSidebar > .seller-sidebar-footer .sidebar-logout { position:relative; margin-top:0!important; }
 
 
@@ -1017,10 +1017,25 @@
     box-sizing:border-box !important;
     padding-right:12px !important;
     padding-left:2px !important;
-    overflow-y:auto !important;
+    overflow-y:hidden !important;
     overflow-x:hidden !important;
 }
 #sellerSidebar > .seller-sidebar-scroll #seller-sidebar-nav { max-width:100%; }
+
+/* Keep the logo and logout stationary; only the menu scrolls, as in Logistics. */
+#sellerSidebar > .seller-sidebar-scroll > #seller-sidebar-logo { flex:0 0 auto; }
+#sellerSidebar > .seller-sidebar-scroll > nav {
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+    padding-right:5px;
+    padding-bottom:0;
+}
+#sellerSidebar > .seller-sidebar-scroll > nav::-webkit-scrollbar { display:none; }
 </style>
 
 

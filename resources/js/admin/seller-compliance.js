@@ -1352,9 +1352,11 @@ function initSellerCompliance(cfg) {
 
             showFlash(
                 'error',
-                isSuspended
-                    ? 'Unable to reactivate this seller. Please try again.'
-                    : 'Unable to suspend this seller. Please try again.'
+                error.status === 403
+                    ? error.message
+                    : isSuspended
+                      ? 'Unable to reactivate this seller. Please try again.'
+                      : 'Unable to suspend this seller. Please try again.'
             );
         } finally {
             button.disabled = false;
@@ -1606,6 +1608,8 @@ function initSellerCompliance(cfg) {
             categoryBadge.className = 'product-details-category-display category-badge category-' +
                 (knownCategories.has(categorySlug) ? categorySlug : 'default');
         }
+        const fragile = $('#sellerProductFragile');
+        if (fragile) fragile.hidden = !product.is_fragile;
         const badge = $('#sellerProductStatusBadge');
         if (badge) { badge.textContent = PRODUCT_STATUS_LABEL[status] || titleCase(status); badge.className = `sc-product-status ${status}`; }
         const archive = $('#sellerProductArchiveInfo');
@@ -1852,15 +1856,13 @@ function initSellerCompliance(cfg) {
 
             showFlash(
                 'error',
-                {
-                    approve:
-                        'Unable to approve this product.',
-                    warn:
-                        'Unable to issue a warning for this product. Please try again.',
-                    remove:
-                        'Unable to remove this product. Please try again.',
-                }[type] ||
-                    'Unable to update this product.'
+                error.status === 403
+                    ? error.message
+                    : {
+                          approve: 'Unable to approve this product.',
+                          warn: 'Unable to issue a warning for this product. Please try again.',
+                          remove: 'Unable to remove this product. Please try again.',
+                      }[type] || 'Unable to update this product.'
             );
 
             return false;

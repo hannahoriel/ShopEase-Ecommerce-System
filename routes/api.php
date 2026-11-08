@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LogisticsManagementController;
 use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\RegistrationController;
+use App\Http\Controllers\Admin\ReportsController as AdminReportsController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Api\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Api\Buyer\MessagesController as BuyerMessagesController;
 use App\Http\Controllers\Api\Buyer\NotificationController as BuyerNotificationController;
+use App\Http\Controllers\Api\Buyer\NotificationPreferencesController as BuyerNotificationPreferencesController;
 use App\Http\Controllers\Api\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Api\Buyer\WalletController as BuyerWalletController;
 use App\Http\Controllers\Api\Buyer\OrderReturnController as BuyerOrderReturnController;
@@ -39,6 +41,7 @@ use App\Http\Controllers\Api\Logistics\ParcelRouteScanController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
 use App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubFleetController;
 use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
 use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
@@ -171,6 +174,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/logistics/account-change-requests', [LogisticsAccountController::class, 'requests'])->name('admin.api.logistics-account.requests');
             Route::patch('/logistics/account-change-requests/{changeRequest}', [LogisticsAccountController::class, 'review'])->name('admin.api.logistics-account.review');
             Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');
+            Route::get('/reports', [AdminReportsController::class, 'apiIndex'])->name('admin.api.reports.index');
             Route::get('/messages', [AdminMessagesController::class, 'index'])->name('admin.api.messages.index');
             Route::get('/messages/contacts', [AdminMessagesController::class, 'contacts'])->name('admin.api.messages.contacts');
             Route::post('/messages/conversations', [AdminMessagesController::class, 'storeConversation'])->name('admin.api.messages.conversations.store');
@@ -225,6 +229,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('admin.api.registrations.show');
             Route::post('/registrations/{registration}/approve', [RegistrationController::class, 'approve'])->name('admin.api.registrations.approve');
             Route::post('/registrations/{registration}/reject', [RegistrationController::class, 'reject'])->name('admin.api.registrations.reject');
+            Route::get('/users/account-change-requests', [UserManagementController::class, 'changeRequests'])->name('admin.api.users.account-change-requests.index');
+            Route::patch('/users/account-change-requests/{changeRequest}', [UserManagementController::class, 'reviewChangeRequest'])->name('admin.api.users.account-change-requests.review');
             Route::get('/users', [UserManagementController::class, 'list'])->name('admin.api.users.index');
             Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('admin.api.users.show');
             Route::patch('/users/{user}/status', [UserManagementController::class, 'updateStatus'])->name('admin.api.users.status');
@@ -251,6 +257,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('/password/reset', [BuyerAccountSecurityController::class, 'resetPassword'])->name('password.reset');
             });
             Route::get('/notifications', [BuyerNotificationController::class, 'index'])->name('buyer.api.notifications.index');
+            Route::get('/account/notification-preferences', [BuyerNotificationPreferencesController::class, 'show'])->name('buyer.api.notification-preferences.show');
+            Route::put('/account/notification-preferences', [BuyerNotificationPreferencesController::class, 'update'])->name('buyer.api.notification-preferences.update');
             Route::patch('/notifications/{notification}/read', [BuyerNotificationController::class, 'markRead'])->name('buyer.api.notifications.read');
             Route::post('/notifications/read-all', [BuyerNotificationController::class, 'markAllRead'])->name('buyer.api.notifications.read-all');
             Route::get('/dashboard/announcements', [BuyerDashboardController::class, 'announcements'])->name('buyer.api.dashboard.announcements');
@@ -390,6 +398,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('/scanner/queue', [ParcelRouteScanController::class, 'queue'])
                     ->name("{$facilityRole}.api.scanner.queue");
                 if ($facilityRole === 'delivery_hub') {
+                    Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelTrackingController::class, 'index'])
+                        ->name('delivery_hub.api.parcel-tracking.index');
+                    Route::get('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelDisputesController::class, 'index'])
+                        ->name('delivery_hub.api.parcel-disputes.index');
                     Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
                     Route::get('/finance', [DeliveryHubCodFinanceController::class, 'index'])->name('delivery_hub.api.finance.index');
@@ -419,11 +431,16 @@ Route::prefix('v1')->group(function () {
                     Route::post('/fleet/{type}/{record}/archive', [SortingCenterFleetController::class, 'archive'])->name('sorting_center.api.fleet.archive');
                     Route::post('/fleet/{type}/{record}/restore', [SortingCenterFleetController::class, 'restore'])->name('sorting_center.api.fleet.restore');
                 } elseif ($facilityRole === 'delivery_hub') {
+                    Route::get('/fleet', [DeliveryHubFleetController::class, 'index'])->name('delivery_hub.api.fleet.index');
+                    Route::post('/fleet/{type}/{record}/archive', [DeliveryHubFleetController::class, 'archive'])->name('delivery_hub.api.fleet.archive');
+                    Route::post('/fleet/{type}/{record}/restore', [DeliveryHubFleetController::class, 'restore'])->name('delivery_hub.api.fleet.restore');
                     Route::get('/rider-registrations', [DeliveryHubRiderRegistrationController::class, 'index'])->name('delivery_hub.api.rider-registrations.index');
                     Route::get('/rider-registrations/{registration}', [DeliveryHubRiderRegistrationController::class, 'show'])->name('delivery_hub.api.rider-registrations.show');
                     Route::patch('/rider-registrations/{registration}/decision', [DeliveryHubRiderRegistrationController::class, 'decide'])->name('delivery_hub.api.rider-registrations.decide');
+                    Route::patch('/rider-registrations/{registration}/assignment', [DeliveryHubRiderRegistrationController::class, 'assign'])->name('delivery_hub.api.rider-registrations.assignment');
                 }
                 Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
+                Route::post('/messages/thread', [LogisticsMessagesController::class, 'thread'])->name("{$facilityRole}.api.messages.thread");
                 Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name("{$facilityRole}.api.messages.attachments.show");
                 Route::get('/messages/{conversation}', [LogisticsMessagesController::class, 'show'])->name("{$facilityRole}.api.messages.show");
                 Route::post('/messages', [LogisticsMessagesController::class, 'send'])->name("{$facilityRole}.api.messages.send");

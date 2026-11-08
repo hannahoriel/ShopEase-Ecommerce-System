@@ -159,6 +159,58 @@ class DeliveryHubRiderRegistrationController extends Controller
         ]);
     }
 
+    public function assign(Request $request, DeliveryHubRiderRegistration $registration): JsonResponse
+    {
+        $hub = $this->hub($request);
+        abort_unless((int) $registration->logistics_delivery_hub_id === (int) $hub->id, 404);
+        abort_unless($registration->status === 'approved', 409, 'Only approved riders can be assigned.');
+
+        $data = $request->validate([
+            'role' => ['required', 'in:pickup,delivery'],
+            'barangay' => ['required', 'string', 'max:255'],
+        ]);
+        $barangay = trim($data['barangay']);
+        $rider = $registration->user?->riderProfile;
+        abort_unless($rider, 404);
+
+        $conflict = DeliveryHubRiderRegistration::query()
+            ->where('logistics_delivery_hub_id', $hub->id)
+            ->where('status', 'approved')
+            ->where('id', '!=', $registration->id)
+            ->with('user.riderProfile')
+            ->get()
+            ->contains(function (DeliveryHubRiderRegistration $other) use ($data, $barangay): bool {
+                $profile = $other->user?->riderProfile;
+                if (! $profile) return false;
+                $operation = mb_strtolower((string) $profile->logistics_operation);
+                $sameRole = str_contains($operation, $data['role']);
+                $sameBarangay = mb_strtolower(trim((string) ($profile->assignment_barangay ?: $profile->barangay)))
+                    === mb_strtolower($barangay);
+
+                return $sameRole && $sameBarangay;
+            });
+
+        if ($conflict) {
+            throw ValidationException::withMessages([
+                'barangay' => 'This barangay already has an assigned '.($data['role'] === 'pickup' ? 'pickup' : 'delivery').' rider.',
+            ]);
+        }
+
+        $rider->forceFill([
+            'logistics_operation' => ucfirst($data['role']),
+            'assignment_barangay' => $barangay,
+        ])->save();
+
+        return response()->json([
+            'message' => 'Rider duty assignment saved.',
+            'data' => [
+                'registration_id' => $registration->id,
+                'role' => $data['role'],
+                'barangay' => $barangay,
+            ],
+        ]);
+    }
+
     public function page(Request $request, DeliveryHubRiderRegistrationService $service): View
     {
         $hub = $this->hub($request);

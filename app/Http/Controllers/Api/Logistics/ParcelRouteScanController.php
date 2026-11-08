@@ -14,6 +14,7 @@ use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\Rider\Rider;
+use App\Services\LogisticsNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -310,6 +311,17 @@ class ParcelRouteScanController extends Controller
 
             return $shipment->fresh(['order', 'scans']);
         });
+
+        $logisticsUser = $shipment->order?->logisticsCompany?->user;
+        if ($logisticsUser) {
+            app(LogisticsNotificationService::class)->send(
+                $logisticsUser,
+                'parcel_updates',
+                'Parcel movement updated',
+                "Shipment {$shipment->tracking_number} was updated: {$shipment->current_location}.",
+                '/logistics/parcel-tracking',
+            );
+        }
 
         return response()->json([
             'message' => 'Parcel scan recorded.',
@@ -846,6 +858,7 @@ class ParcelRouteScanController extends Controller
             'total_amount' => (float) ($order?->total ?? 0), 'payment_method' => $order?->payment_method,
             'items' => $order?->items?->map(fn ($item) => [
                 'product_name' => $item->product?->name ?: $item->product_name,
+                'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                 'variation' => $item->variation,
                 'color' => $item->color,
                 'size' => $item->size,

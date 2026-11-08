@@ -2069,6 +2069,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 await response.json()
             );
 
+            modal?.querySelectorAll('.registration-approve, .registration-reject').forEach(button => { button.disabled = false; });
+
             return true;
 
         } catch (
@@ -2079,7 +2081,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 error
             );
 
-            return false;
+            // Keep the original details dialog accessible even if its API fails.
+            // Never leave a click silently doing nothing or show a previous applicant.
+            const body = modal?.querySelector('.registration-detail-body');
+            if (body) {
+                body.replaceChildren();
+                const message = document.createElement('p');
+                message.className = 'py-10 text-center text-[13px] text-[#7B1B1B]';
+                message.setAttribute('role', 'alert');
+                message.textContent = 'Unable to load registration details. Close this window and select the applicant again to retry.';
+                body.append(message);
+            }
+            modal?.querySelectorAll('.registration-approve, .registration-reject').forEach(button => { button.disabled = true; });
+            return !!modal;
 
         }
 

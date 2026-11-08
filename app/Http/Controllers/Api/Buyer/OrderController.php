@@ -23,6 +23,8 @@ use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
 use App\Services\BuyerWalletService;
 use App\Services\CodSettlementService;
+use App\Services\LogisticsNotificationService;
+use App\Services\SellerNotificationPreferences;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -136,6 +138,7 @@ class OrderController extends Controller
                 'items' => $order->items->map(fn ($item): array => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
+                    'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                     'image_url' => ($item->product?->selectedImageForCart($item->variation, $item->color, $item->size) ?: $this->productImageUrl($item->product?->photos[0] ?? null)),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
@@ -528,6 +531,7 @@ class OrderController extends Controller
                         $orderItem = $order->items()->create([
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->name,
+                            'is_fragile' => (bool) $item->product->is_fragile,
                             'variation' => $item->variation,
                             'color' => $item->color,
                             'size' => $item->size,
@@ -542,7 +546,10 @@ class OrderController extends Controller
 
                     // Notify the seller — fires after items are persisted so
                     // the notification can include an accurate item count.
-                    $seller->user->notify(new NewOrderNotification($order));
+                    app(SellerNotificationPreferences::class)->notify(
+                        $seller->user,
+                        new NewOrderNotification($order),
+                    );
 
                     return $order;
                 })
@@ -559,6 +566,19 @@ class OrderController extends Controller
 
             return $orders;
         });
+
+        foreach ($orders as $order) {
+            $logisticsUser = $order->logisticsCompany?->user;
+            if ($logisticsUser) {
+                app(LogisticsNotificationService::class)->send(
+                    $logisticsUser,
+                    'order_updates',
+                    'New order assigned',
+                    "Order {$order->order_number} has been assigned to your logistics company.",
+                    '/logistics/dashboard',
+                );
+            }
+        }
 
         return response()->json([
             'message' => 'Order placed successfully.',
@@ -577,6 +597,7 @@ class OrderController extends Controller
                 'items' => $order->items->map(fn ($item): array => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
+                    'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                     'image_url' => ($item->product?->selectedImageForCart($item->variation, $item->color, $item->size) ?: $this->productImageUrl($item->product?->photos[0] ?? null)),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
@@ -722,6 +743,21 @@ class OrderController extends Controller
 
         $cancelled = $result['auto_cancelled'];
         $alreadyCancelled = $result['already_cancelled'];
+
+        if (! $alreadyCancelled) {
+            $sellerUser = $result['order']->seller?->user;
+            if ($sellerUser) {
+                app(\App\Services\SellerNotificationService::class)->send(
+                    $sellerUser,
+                    'order_updates',
+                    $cancelled ? 'Order cancelled' : 'Cancellation request received',
+                    $cancelled
+                        ? "Order {$result['order']->order_number} was cancelled by the buyer."
+                        : "The buyer requested cancellation of order {$result['order']->order_number}.",
+                    '/seller/order-status',
+                );
+            }
+        }
 
         return response()->json([
             'message' => $alreadyCancelled

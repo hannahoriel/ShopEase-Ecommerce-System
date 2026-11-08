@@ -226,7 +226,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Name
         const nameEl = document.getElementById('productName');
-        if (nameEl) nameEl.textContent = p.name;
+        if (nameEl) {
+            nameEl.textContent = p.name;
+            document.getElementById('buyerProductFragile')?.remove();
+            if (p.is_fragile) { const badge = document.createElement('span'); badge.id = 'buyerProductFragile'; badge.className = 'se-fragile-pill'; badge.textContent = 'Fragile'; nameEl.after(badge); }
+        }
 
         // Meta row
         const metaEl = document.getElementById('productMeta');

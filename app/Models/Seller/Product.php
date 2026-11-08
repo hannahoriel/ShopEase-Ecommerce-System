@@ -18,6 +18,7 @@ class Product extends Model
         'name',
         'description',
         'weight_kg',
+        'is_fragile',
         'category',
         'sku',
         'price',
@@ -36,6 +37,7 @@ class Product extends Model
 
     protected $casts = [
         'weight_kg' => 'decimal:3',
+        'is_fragile' => 'boolean',
         'price' => 'decimal:2',
         'sale_percentage' => 'integer',
         'stock_quantity' => 'integer',

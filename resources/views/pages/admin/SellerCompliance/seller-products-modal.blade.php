@@ -18,6 +18,7 @@
           <h3 class="product-details-title-display" data-bind="title">Product</h3>
           <div class="product-details-inspo-sku"><span>SKU:</span><strong data-bind="sku">—</strong></div>
           <div class="product-details-inspo-badges">
+            <span id="sellerProductFragile" class="se-fragile-pill" hidden>Fragile</span>
             <span class="product-details-category-display" data-bind="category">—</span>
             <span class="product-details-soft-badge" data-bind="subcategory">—</span>
             <span class="sc-product-status" id="sellerProductStatusBadge">Under Review</span>

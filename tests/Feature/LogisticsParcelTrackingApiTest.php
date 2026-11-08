@@ -21,6 +21,55 @@ class LogisticsParcelTrackingApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_delivery_hub_dashboard_is_today_only_without_a_date_picker(): void
+    {
+        [, , $hub] = $this->trackingFixture('today-overview');
+        $hubUser = $this->makeTestUser(User::ROLE_DELIVERY_HUB);
+        $hub->update(['user_id' => $hubUser->id]);
+        $today = now('Asia/Manila')->toDateString();
+        $this->actingAs($hubUser)->getJson(route('delivery-hub.dashboard.data'))
+            ->assertOk()->assertJsonPath('data.today', $today);
+        $this->getJson(route('delivery-hub.dashboard.data', ['from' => '2020-01-01', 'to' => '2020-01-02']))
+            ->assertOk()->assertJsonPath('data.today', $today);
+        $this->get(route('delivery-hub.dashboard'))->assertOk()
+            ->assertDontSee('id="dhDateFrom"', false)->assertDontSee('id="dhDateTo"', false)
+            ->assertDontSee('id="dhDateToday"', false);
+    }
+
+    public function test_fragile_handling_flag_reaches_buyer_tracking_and_scanner_details(): void
+    {
+        [$company, $branch, $hub, $order, $shipment] = $this->trackingFixture('fragile');
+        $product = \App\Models\Seller\Product::create([
+            'seller_id' => $order->seller_id, 'name' => 'Fragile Glass Vase', 'sku' => 'FRAGILE-TRACK',
+            'price' => 100, 'stock_quantity' => 4, 'weight_kg' => 0.5, 'status' => 'active', 'is_fragile' => true,
+        ]);
+        $item = $order->items()->create(['product_id' => $product->id, 'product_name' => $product->name,
+            'quantity' => 1, 'unit_price' => 100, 'is_fragile' => true]);
+        $this->actingAs($company)->getJson('/api/v1/logistics/parcel-tracking')
+            ->assertOk()->assertJsonPath('parcels.0.items.0.is_fragile', true);
+        $centerUser = $this->makeTestUser(User::ROLE_SORTING_CENTER);
+        $branch->update(['user_id' => $centerUser->id]);
+        $this->actingAs($centerUser)->getJson(route('sorting_center.api.parcel-tracking.index'))
+            ->assertOk()->assertJsonPath('parcels.0.items.0.is_fragile', true);
+        $this->actingAs($order->buyer)->getJson('/api/v1/buyer/products/'.$product->id)
+            ->assertOk()->assertJsonPath('is_fragile', true);
+        $this->getJson('/api/v1/buyer/orders')->assertOk()->assertJsonPath('data.0.items.0.is_fragile', true);
+        $adminSerializer = new \ReflectionMethod(\App\Http\Controllers\Api\Admin\SellerComplianceController::class, 'productPayload');
+        $adminPayload = $adminSerializer->invoke(app(\App\Http\Controllers\Api\Admin\SellerComplianceController::class), $product);
+        $this->assertTrue($adminPayload['is_fragile']);
+        $hubUser = $this->makeTestUser(User::ROLE_DELIVERY_HUB);
+        $hub->update(['user_id' => $hubUser->id]);
+        $this->actingAs($hubUser)->get(route('delivery-hub.parcel-tracking'))
+            ->assertOk()->assertSee('Fragile Glass Vase')->assertSee('is_fragile', false);
+        // A completed order retains its handling flag if a listing is edited later.
+        $product->update(['is_fragile' => false]);
+        $shipment->unsetRelation('order');
+        $serializer = new \ReflectionMethod(\App\Http\Controllers\Api\Logistics\ParcelRouteScanController::class, 'parcelPayload');
+        $payload = $serializer->invoke(app(\App\Http\Controllers\Api\Logistics\ParcelRouteScanController::class), $shipment, 'shipment-'.$shipment->id, 'received', $branch->id, 'test-transfer');
+        $this->assertTrue($payload['items'][0]['is_fragile']);
+        $this->assertTrue($item->fresh()->is_fragile);
+    }
+
     public function test_logistics_reports_api_returns_only_real_company_shipments_for_the_requested_period(): void
     {
         [$user, $branch, $hub, $order, $shipment] = $this->trackingFixture('report-1001');
