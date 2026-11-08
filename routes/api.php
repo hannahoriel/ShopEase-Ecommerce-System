@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LogisticsManagementController;
 use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\RegistrationController;
+use App\Http\Controllers\Admin\ReportsController as AdminReportsController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
@@ -171,6 +172,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/logistics/account-change-requests', [LogisticsAccountController::class, 'requests'])->name('admin.api.logistics-account.requests');
             Route::patch('/logistics/account-change-requests/{changeRequest}', [LogisticsAccountController::class, 'review'])->name('admin.api.logistics-account.review');
             Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');
+            Route::get('/reports', [AdminReportsController::class, 'apiIndex'])->name('admin.api.reports.index');
             Route::get('/messages', [AdminMessagesController::class, 'index'])->name('admin.api.messages.index');
             Route::get('/messages/contacts', [AdminMessagesController::class, 'contacts'])->name('admin.api.messages.contacts');
             Route::post('/messages/conversations', [AdminMessagesController::class, 'storeConversation'])->name('admin.api.messages.conversations.store');
