@@ -31,6 +31,10 @@ class ShowRiderFinanceController extends Controller
                 'remittances' => $remittances,
                 'earnings' => $rider->earningEntries()->where('status', 'posted')->latest('posted_at')->get(),
                 'earnings_total' => $rider->earningEntries()->where('status', 'posted')->sum('amount'),
+                'delivered_parcels' => $rider->shipments()
+                    ->whereNotNull('delivered_at')
+                    ->latest('delivered_at')
+                    ->get(['id', 'order_id', 'delivered_at']),
             ],
         ]);
     }

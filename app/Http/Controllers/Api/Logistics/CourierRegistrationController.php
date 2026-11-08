@@ -104,15 +104,33 @@ class CourierRegistrationController extends Controller
             ->with('user')
             ->where('registration_type', 'courier')
             ->where('registration_status', 'pending')
-            ->whereRaw('LOWER(TRIM(assignment_province)) = ?', [mb_strtolower(trim($center->province))])
             ->whereHas('user', fn ($query) => $query
                 ->where('role', User::ROLE_RIDER)
                 ->where('registration_status', 'pending'));
-        $riders = $company === ''
-            ? collect()
-            : (clone $pendingCouriers)
-                ->whereRaw('LOWER(TRIM(courier_company)) = ?', [mb_strtolower($company)])
+
+        // New mobile registrations keep the selected sorting center on the
+        // rider profile. Use that explicit assignment before legacy heuristics.
+        $riders = (clone $pendingCouriers)
+            ->where('logistics_branch_id', $center->id)
+            ->get();
+
+        $provinceCouriers = (clone $pendingCouriers)
+            ->whereRaw('LOWER(TRIM(assignment_province)) = ?', [mb_strtolower(trim((string) $center->province))]);
+
+        if ($riders->isEmpty() && $company !== '') {
+            $centerNames = array_values(array_unique(array_filter([
+                mb_strtolower(trim($company)),
+                mb_strtolower(trim((string) $center->name)),
+            ])));
+
+            $riders = (clone $provinceCouriers)
+                ->where(function ($query) use ($centerNames): void {
+                    foreach ($centerNames as $name) {
+                        $query->orWhereRaw('LOWER(TRIM(courier_company)) = ?', [$name]);
+                    }
+                })
                 ->get();
+        }
 
         if ($riders->isEmpty()) {
             $centerCount = LogisticsBranch::query()
@@ -123,16 +141,22 @@ class CourierRegistrationController extends Controller
                     ->where('registration_status', 'active'))
                 ->count();
             if ($centerCount === 1) {
-                $riders = $pendingCouriers->get();
+                $riders = $provinceCouriers->get();
             }
         }
 
         foreach ($riders as $rider) {
-            if (! $rider->user || CourierRegistration::query()->where('user_id', $rider->user_id)->exists()) {
+            if (! $rider->user) {
                 continue;
             }
 
-            CourierRegistration::query()->create([
+            // If an earlier sync attached this still-pending courier to the
+            // wrong center, repair it from the rider's explicit center link.
+            if ($rider->logistics_branch_id && (int) $rider->logistics_branch_id !== (int) $center->id) {
+                continue;
+            }
+
+            $courierData = [
                 'sorting_center_id' => $center->id,
                 'user_id' => $rider->user_id,
                 'first_name' => $rider->first_name,
@@ -153,7 +177,28 @@ class CourierRegistrationController extends Controller
                 'or_cr_path' => $rider->upload_or_cr,
                 'drivers_license_path' => $rider->upload_id_license,
                 'status' => 'pending',
-            ]);
+            ];
+
+            $existing = CourierRegistration::query()
+                ->where(function ($query) use ($rider): void {
+                    $query->where('user_id', $rider->user_id)
+                        ->orWhere(function ($emailQuery) use ($rider): void {
+                            $emailQuery->whereNull('user_id')
+                                ->whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($rider->user->email))]);
+                        });
+                })
+                ->latest('id')
+                ->first();
+
+            if ($existing && $existing->status !== 'pending') {
+                continue;
+            }
+
+            if ($existing) {
+                $existing->update($courierData);
+            } else {
+                CourierRegistration::query()->create($courierData);
+            }
         }
     }
 

@@ -53,12 +53,13 @@ class SellerWalletService
                 : null;
             if ($codCollection && (! $codSettlement || ! in_array($codSettlement->status, ['released', 'partially_refunded','refunded'], true) || !$codSettlement->seller_released_at)) return;
 
-            $voucher = $codCollection ? 0 : max(0, (float) $order->voucher_discount);
+            $sellerFundedVoucher = ! $order->voucher_funding_source || $order->voucher_funding_source === 'seller';
+            $voucher = ! $codCollection && $sellerFundedVoucher ? max(0, (float) $order->voucher_discount) : 0;
             $productGross = $codCollection
                 // Refunds have their own idempotent debit below. Keep original
                 // income here so first wallet sync after a refund does not deduct twice.
                 ? max(0, round((float) $codSettlement->seller_amount, 2))
-                : max(0, round((float) $order->total - (float) $order->shipping_fee + $voucher, 2));
+                : max(0, round((float) $order->total - (float) $order->shipping_fee + (float) $order->voucher_discount, 2));
             $date = $order->buyer_received_at ?? $order->updated_at;
             $ref = $order->order_number ?: '#'.$order->id;
 

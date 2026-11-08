@@ -11,7 +11,7 @@
         <h1 style="margin-top: 0; color: #7b1e2b;">Verify your ShopEase email</h1>
         <p>Use the verification code below to complete your rider registration:</p>
         <p style="margin: 28px 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #7b1e2b;">{{ $code }}</p>
-        <p>This code expires in 10 minutes. If you did not start a rider registration, you can ignore this email.</p>
+        <p>This code expires in 15 minutes. If you did not start a rider registration, you can ignore this email.</p>
         <p>Thanks,<br>The ShopEase Team</p>
     </div>
 </body>

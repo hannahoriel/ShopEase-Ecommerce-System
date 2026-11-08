@@ -20,15 +20,19 @@ class AuthController extends Controller
      */
     public function login(Request $request): RedirectResponse
     {
-        return $this->authenticate($request);
+        return $this->authenticate($request, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_ADMIN]);
     }
 
     public function loginLogistics(Request $request): RedirectResponse
     {
-        return $this->authenticate($request, User::ROLE_LOGISTICS);
+        return $this->authenticate($request, [
+            User::ROLE_LOGISTICS,
+            User::ROLE_SORTING_CENTER,
+            User::ROLE_DELIVERY_HUB,
+        ]);
     }
 
-    private function authenticate(Request $request, ?string $requiredRole = null): RedirectResponse
+    private function authenticate(Request $request, array $allowedRoles): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
@@ -42,14 +46,15 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
-        $roleIsAllowed = $requiredRole === User::ROLE_LOGISTICS
-            ? in_array($user->role, [User::ROLE_LOGISTICS, User::ROLE_SORTING_CENTER, User::ROLE_DELIVERY_HUB], true)
-            : ($requiredRole === null || $user->role === $requiredRole);
-        if (! $roleIsAllowed) {
+        if (! in_array($user->role, $allowedRoles, true)) {
             Auth::logout();
 
+            $accountType = in_array(User::ROLE_LOGISTICS, $allowedRoles, true)
+                ? 'a logistics, sorting center, or delivery hub account'
+                : 'a buyer, seller, or administrator account';
+
             throw ValidationException::withMessages([
-                'email' => 'These credentials are not for a logistics account.',
+                'email' => 'These credentials are not for '.$accountType.'.',
             ]);
         }
 

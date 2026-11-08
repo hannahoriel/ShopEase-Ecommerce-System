@@ -592,7 +592,7 @@
                         <section class="bv-vouchers" aria-labelledby="bv-title">
                             <div class="bv-section-head"><div><h2 id="bv-title">Available vouchers</h2><p>Explore discounts for your next order. Tap a voucher to review all terms before checkout.</p></div><span class="bv-count" id="bvVoucherCount">0 vouchers</span></div>
                             <div class="bv-voucher-grid" id="bvVoucherGrid" aria-live="polite"></div>
-                            <div class="bv-voucher-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><strong>Shop vouchers:</strong> Active seller vouchers appear here. Check each offer's terms, then use it at checkout.</p></div>
+                            <div class="bv-voucher-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><strong>Shop vouchers:</strong> Active seller and ShopEase Admin vouchers appear here. Check each offer's terms, then use it at checkout.</p></div>
                         </section>
                     </div>
 

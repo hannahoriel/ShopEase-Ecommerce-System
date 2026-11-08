@@ -19,6 +19,7 @@ class NotificationController extends Controller
         return response()->json([
             'data' => $notifications->getCollection()->map(fn (BuyerNotification $notification): array => [
                 'id' => $notification->id,
+                'order_id' => $notification->order_id,
                 'type' => $notification->type,
                 'title' => $notification->title,
                 'message' => $notification->message,

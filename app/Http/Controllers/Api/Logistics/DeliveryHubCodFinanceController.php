@@ -340,17 +340,20 @@ class DeliveryHubCodFinanceController extends Controller
             'created_at' => $remittance->created_at?->toIso8601String(), 'cash_in_at' => $remittance->cash_in_at?->toIso8601String(),
             'orders' => $remittance->collections->map(function ($collection): array {
                 $amount = (float) $collection->amount;
-                $buyerShipping = min($amount, max(0, (float) ($collection->order?->shipping_fee ?? 0)));
-                $shipping = min($buyerShipping, CodSettlementService::LOGISTICS_SHIPPING_FEE);
-                $shippingMargin = round($buyerShipping - $shipping, 2);
+                $order = $collection->order;
+                $shippingVoucher = $order?->voucher_type === 'shipping' ? max(0, (float) $order->voucher_discount) : 0;
+                $buyerShipping = min($amount, max(0, (float) ($order?->shipping_fee ?? 0) - $shippingVoucher));
+                $agreedShipping = min(max(0, (float) ($order?->shipping_fee ?? 0)), CodSettlementService::LOGISTICS_SHIPPING_FEE);
+                $shipping = $order?->voucher_type === 'shipping' && $order?->voucher_funding_source === 'logistics' ? max(0, $agreedShipping - $shippingVoucher) : $agreedShipping;
+                $shippingMargin = max(0, round($buyerShipping - $agreedShipping, 2));
                 $collectedProductAmount = max(0, $amount - $buyerShipping);
-                $base = round($collectedProductAmount + (float) ($collection->order?->voucher_discount ?? 0), 2);
+                $base = round($collectedProductAmount + ($order?->voucher_type === 'shipping' ? 0 : (float) ($order?->voucher_discount ?? 0)), 2);
                 $commission = min($collectedProductAmount, round($base * CodSettlementService::COMMISSION_RATE / 100, 2));
                 return [
                     'id' => $collection->order_id, 'ref' => $collection->order?->order_number,
                     'buyer' => $collection->order?->buyer?->name, 'amount' => $amount, 'shipping_fee' => $shipping,
                     'platform_shipping_margin' => $shippingMargin,
-                    'commission_amount' => $commission, 'seller_amount' => round($collectedProductAmount - $commission, 2),
+                    'commission_amount' => $commission, 'seller_amount' => round($collectedProductAmount - $commission - ($order?->voucher_type === 'shipping' && $order?->voucher_funding_source === 'seller' ? $shippingVoucher : 0), 2),
                 ];
             })->values(),
         ];

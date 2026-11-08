@@ -397,12 +397,15 @@
                             @php
                                 // Shipping Status begins only after courier pickup.
                                 // Orders still waiting for shipment remain under Seller Order Status.
-                                if (!in_array(strtolower((string) $order->status), ['in_transit', 'out_for_delivery', 'delivered'], true)) {
+                                if (!in_array(strtolower((string) $order->status), ['in_transit', 'out_for_delivery', 'delivered', 'completed'], true)) {
                                     continue;
                                 }
 
-                                $shippingStatus = str_replace('_', '-', $order->status);
-                                $shippingLabel = match ($order->status) {
+                                // Buyer receipt confirmation advances delivered orders to completed.
+                                // Keep them in Shipping Status and present completed as Delivered.
+                                $shippingStatusValue = $order->status === 'completed' ? 'delivered' : $order->status;
+                                $shippingStatus = str_replace('_', '-', $shippingStatusValue);
+                                $shippingLabel = match ($shippingStatusValue) {
                                     'to_ship' => 'Ready to Ship',
                                     'in_transit' => 'In Transit',
                                     'out_for_delivery' => 'Out for Delivery',
@@ -445,12 +448,12 @@
                                 data-courier="{{ $shipment?->courier ?? 'Ease Express' }}"
                             >
                                 <div class="order-info">
-                                    <div class="order-product-icon {{ $order->status === 'delivered' ? 'green-bg' : 'blue-bg' }}">
+                                    <div class="order-product-icon {{ $shippingStatusValue === 'delivered' ? 'green-bg' : 'blue-bg' }}">
                                         @if ($productPhotoUrl)
                                             <img class="shipping-product-photo" src="{{ $productPhotoUrl }}" alt="{{ $productName }}">
                                         @else
                                             <img
-                                                src="{{ asset('icons/seller/shipping-status/' . ($order->status === 'delivered' ? 'delivered.png' : 'in-transit.png')) }}"
+                                                src="{{ asset('icons/seller/shipping-status/' . ($shippingStatusValue === 'delivered' ? 'delivered.png' : 'in-transit.png')) }}"
                                                 alt="{{ $shippingLabel }}"
                                             >
                                         @endif
@@ -476,15 +479,15 @@
                                     </div>
                                 </div>
                                 <div class="delivery-info">
-                                    <span class="status-pill {{ $order->status === 'delivered' ? 'delivered' : 'transit' }}">{{ $shippingLabel }}</span>
+                                    <span class="status-pill {{ $shippingStatusValue === 'delivered' ? 'delivered' : 'transit' }}">{{ $shippingLabel }}</span>
                                     <span class="delivery-label">Estimated Delivery</span>
-                                    <strong class="delivery-date {{ $order->status === 'delivered' ? 'delivered' : '' }}">{{ $shipment?->estimated_delivery?->format('M d, Y') ?? '—' }}</strong>
+                                    <strong class="delivery-date {{ $shippingStatusValue === 'delivered' ? 'delivered' : '' }}">{{ $shipment?->estimated_delivery?->format('M d, Y') ?? '—' }}</strong>
                                 </div>
                                 <div class="tracking-and-courier">
                                     <div class="tracking-block">
                                         @php
-                                            $isOutForDelivery = $order->status === 'out_for_delivery';
-                                            $isDelivered = $order->status === 'delivered';
+                                            $isOutForDelivery = $shippingStatusValue === 'out_for_delivery';
+                                            $isDelivered = $shippingStatusValue === 'delivered';
                                             $transitIcon = $isDelivered || $isOutForDelivery
                                                 ? ($isDelivered ? 'delivered-check.png' : 'in-transit-check.png')
                                                 : 'in-transit-blue.png';

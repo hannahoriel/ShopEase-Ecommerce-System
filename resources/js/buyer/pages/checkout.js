@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let appliedVoucherCode = '';
             let appliedVoucherDiscount = 0;
             let appliedVoucherSellerId = null;
+            let appliedVoucherType = 'merchandise';
             let shippingOptionsBySeller = {};
             let selectedLogisticsBySeller = {};
             let shippingOptionsLoaded = false;
@@ -77,11 +78,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 + [...new Set(cartItems.map(item => String(item.product.seller.id)))].reduce((sum, id) => sum + selectedShippingFee(id), 0)
                 - appliedVoucherDiscount;
             const refreshWalletOption = () => {
-                const available = walletLoaded && cartItems.length > 0 && walletBalance + 0.001 >= Math.max(0, walletTotal());
+                const total = Math.max(0, walletTotal());
+                const available = walletLoaded && walletBalance > 0 && total > 0 && cartItems.length > 0 && !appliedVoucherCode
+                    && walletBalance + 0.001 >= total;
                 if (walletOption) { walletOption.disabled = !available; walletOption.setAttribute('aria-disabled', String(!available)); }
                 if (walletAvailability) walletAvailability.textContent = walletLoaded
                     ? `Available ShopEase Wallet balance: ${money(walletBalance)} · Order total: ${money(Math.max(0,walletTotal()))}`
-                        + (available ? ' · Sufficient balance' : ' · Insufficient balance — Cash on Delivery only')
+                        + (available ? ' · Sufficient balance' : walletBalance <= 0
+                            ? ' · Wallet balance is zero — Cash on Delivery only'
+                            : ' · Insufficient balance — Cash on Delivery only')
                     : walletError
                         ? `Wallet balance unavailable · Unable to verify the balance. Wallet payment is temporarily disabled.`
                         : `Wallet balance: ${money(0)} · Checking wallet…`;
@@ -364,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 appliedVoucherCode = '';
                 appliedVoucherDiscount = 0;
                 appliedVoucherSellerId = null;
+                appliedVoucherType = 'merchandise';
                 if (!code) {
                     if (message) message.textContent = 'Enter a voucher code first.';
                     renderCheckoutCart(cartItems);
@@ -376,7 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     appliedVoucherCode = result.data.code;
                     appliedVoucherDiscount = Number(result.data.discount || 0);
                     appliedVoucherSellerId = Number(result.data.seller_id);
-                    if (message) message.textContent = `${result.data.code} applied to ${result.data.seller_name}.`;
+                    appliedVoucherType = result.data.voucher_type || 'merchandise';
+                    if (message) message.textContent = `${result.data.code} applied to ${result.data.seller_name}${appliedVoucherType === 'shipping' ? ' shipping fee' : ''}.`;
                 } catch (error) {
                     if (message) message.textContent = error.message;
                 }
@@ -387,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 appliedVoucherCode = '';
                 appliedVoucherDiscount = 0;
                 appliedVoucherSellerId = null;
+                appliedVoucherType = 'merchandise';
                 const message = document.getElementById('checkoutVoucherMessage');
                 if (message) message.textContent = '';
                 renderCheckoutCart(cartItems);

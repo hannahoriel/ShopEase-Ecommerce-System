@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = JSON.parse($('adminVoucherConfig').textContent).apiToken;
     const endpoint = '/api/v1/admin/vouchers';
     const form = $('svVoucherForm');
+    const fundingField = $('avFundingField');
+    const eligibleField = form?.elements.eligibleItems?.closest('label');
     const createModal = $('svCreateOverlay');
     const detailModal = $('svDetailsOverlay');
     const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -80,9 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
         $('svDetailsSubtitle').textContent = 'ShopEase platform-issued voucher';
         $('svDetailsStatus').textContent = statusLabel(status(voucher));
         $('svDetailsPurpose').textContent = voucher.purpose;
-        const fields = [['Voucher Code',voucher.id],['Discount',discount(voucher)],['Minimum Spend',money(voucher.minimumSpend)],['Maximum Discount',money(voucher.maximumDiscount)],['Valid From',date(voucher.starts)],['Expires',date(voucher.ends)],['Eligible Items',voucher.eligibleItems],['Eligible Buyers',voucher.eligibleBuyers],['Total Allocation',voucher.quantity],['Already Claimed',voucher.claimed],['Remaining Allocation',Math.max(0,voucher.quantity-voucher.claimed)],['Uses Per Buyer',voucher.perBuyer],['Voucher Stacking',voucher.stacking],['Scope',voucher.scope],['Payment Method','Cash on Delivery (COD)'],['Status',statusLabel(status(voucher))]];
+        const fields = [['Voucher Code',voucher.id],['Applies To',voucher.voucherType === 'shipping' ? 'Shipping fee' : 'Products'],['Funded By',voucher.fundingSource === 'logistics' ? 'Logistics promotion' : 'ShopEase'],['Discount',discount(voucher)],['Minimum Spend',money(voucher.minimumSpend)],['Maximum Discount',money(voucher.maximumDiscount)],['Valid From',date(voucher.starts)],['Expires',date(voucher.ends)],['Eligible Items',voucher.eligibleItems],['Eligible Buyers',voucher.eligibleBuyers],['Total Allocation',voucher.quantity],['Already Claimed',voucher.claimed],['Remaining Allocation',Math.max(0,voucher.quantity-voucher.claimed)],['Uses Per Buyer',voucher.perBuyer],['Voucher Stacking',voucher.stacking],['Scope',voucher.scope],['Payment Method','Cash on Delivery (COD)'],['Status',statusLabel(status(voucher))]];
         $('svDetailsGrid').innerHTML = fields.map(([label,value]) => `<div class="sv-detail"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join('');
-        $('svDetailsTerms').innerHTML = [voucher.terms || 'Discount applies to the eligible merchandise subtotal.', 'Valid for one qualifying shop order per checkout, subject to remaining allocation and per-buyer limits.', 'Cannot be exchanged for cash or applied retroactively.'].map(text => `<li>${esc(text)}</li>`).join('');
+        $('svDetailsTerms').innerHTML = [voucher.terms || (voucher.voucherType === 'shipping' ? 'Discount applies to the shipping fee.' : 'Discount applies to the eligible merchandise subtotal.'), voucher.voucherType === 'shipping' && voucher.fundingSource !== 'logistics' ? 'The discount funder covers the buyer discount; logistics receives its agreed rate.' : 'Valid for one qualifying shop order per checkout, subject to remaining allocation and per-buyer limits.', 'Cannot be exchanged for cash or applied retroactively.'].map(text => `<li>${esc(text)}</li>`).join('');
         $('svDetailsToggle').hidden = !canManage;
         $('svDetailsToggle').textContent = voucher.enabled ? 'Pause Voucher' : 'Publish Voucher';
         open(detailModal);
@@ -127,10 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
     $('svCreate').addEventListener('click', () => {
         if (!canManage) return;
         form.reset(); message('svFormError','');
+        if (fundingField) fundingField.hidden = form.elements.voucherType.value !== 'shipping';
+        if (eligibleField) eligibleField.hidden = form.elements.voucherType.value === 'shipping';
         const local = time => new Date(time - new Date(time).getTimezoneOffset()*60000).toISOString().slice(0,16);
         form.elements.starts.value = local(Date.now()+60000);
         form.elements.ends.value = local(Date.now()+30*86400000);
         open(createModal);
+    });
+    form.elements.voucherType?.addEventListener('change', () => {
+        if (fundingField) fundingField.hidden = form.elements.voucherType.value !== 'shipping';
+        if (eligibleField) eligibleField.hidden = form.elements.voucherType.value === 'shipping';
     });
     form.elements.code.addEventListener('input', event => {
         event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g,'');

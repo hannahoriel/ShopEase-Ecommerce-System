@@ -151,6 +151,8 @@ class CartController extends Controller
 
     private function ensureSelectedStock(Product $product, array $selection, int $quantity): void
     {
+        // Product exposes connected_variants through an array accessor. Query the
+        // relation directly here because the stock check needs a Collection.
         $combinations = $product->connectedVariants()->get();
         if ($combinations->isNotEmpty()) {
             $matching = $combinations->first(function ($variant) use ($selection) {

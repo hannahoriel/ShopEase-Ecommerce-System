@@ -47,6 +47,22 @@ class SellerVoucherService
         if ($voucher->eligible_buyers === 'first' && $hasPreviousOrders) $fail('This voucher is for first-time buyers at '.$audience.'.');
         if ($voucher->eligible_buyers === 'returning' && ! $hasPreviousOrders) $fail('This voucher is for returning buyers at '.$audience.'.');
 
+        if (($voucher->voucher_type ?? 'merchandise') === 'shipping') {
+            if ((float) $voucher->minimum_spend > 0 && (float) $items->sum(fn ($item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity) < (float) $voucher->minimum_spend) {
+                $fail('This order does not meet the voucher minimum spend.');
+            }
+            $shippingFee = \App\Http\Controllers\Api\Buyer\OrderController::SHIPPING_FEE_PER_STORE;
+            $discount = $voucher->discount_type === 'percent'
+                ? min($shippingFee * (float) $voucher->discount_value / 100, (float) $voucher->maximum_discount, $shippingFee)
+                : min((float) $voucher->discount_value, (float) $voucher->maximum_discount, $shippingFee);
+            if (($voucher->funding_source ?? ($voucher->seller_id === null ? 'platform' : 'seller')) === 'seller') {
+                $productSubtotal = (float) $items->sum(fn ($item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity);
+                $sellerProceeds = max(0, $productSubtotal - round($productSubtotal * CodSettlementService::COMMISSION_RATE / 100, 2));
+                if ($discount > $sellerProceeds) $fail('This shipping discount is greater than the estimated seller proceeds on the qualifying order.');
+            }
+            return ['voucher' => $voucher, 'discount' => round($discount, 2), 'eligible_subtotal' => $shippingFee];
+        }
+
         $eligibleIds = $voucher->product_ids;
         $eligibleItems = $eligibleIds
             ? $items->filter(fn ($item) => in_array((string) $item->product_id, array_map('strval', $eligibleIds), true))
