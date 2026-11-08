@@ -12,6 +12,7 @@ class SellerVoucher extends Model
         'seller_id', 'code', 'title', 'discount_type', 'discount_value', 'minimum_spend',
         'maximum_discount', 'product_ids', 'eligible_buyers', 'stacking', 'quantity',
         'claimed', 'per_buyer', 'starts_at', 'ends_at', 'terms', 'enabled', 'created_by', 'platform_code', 'eligible_category',
+        'voucher_type', 'funding_source',
     ];
 
     protected $casts = [

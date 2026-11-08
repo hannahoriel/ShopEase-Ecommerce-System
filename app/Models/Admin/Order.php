@@ -47,6 +47,8 @@ class Order extends Model
         'shipping_fee',
         'voucher_discount',
         'voucher_code',
+        'voucher_type',
+        'voucher_funding_source',
     ];
 
     protected $casts = [

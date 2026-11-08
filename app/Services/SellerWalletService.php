@@ -53,7 +53,7 @@ class SellerWalletService
                 : null;
             if ($codCollection && (! $codSettlement || ! in_array($codSettlement->status, ['released', 'partially_refunded'], true))) return;
 
-            $voucher = $codCollection ? 0 : max(0, (float) $order->voucher_discount);
+            $voucher = $codCollection || ($order->voucher_funding_source && $order->voucher_funding_source !== 'seller') ? 0 : max(0, (float) $order->voucher_discount);
             $codRefunds = $codCollection ? abs((float) DB::table('cod_wallet_transactions as t')
                 ->join('cod_wallet_accounts as a', 'a.id', '=', 't.wallet_account_id')
                 ->where('a.owner_key', 'seller:'.$seller->id.':'.($codSettlement->seller_released_at ? 'available' : 'on_hold'))
@@ -61,7 +61,7 @@ class SellerWalletService
                 ->where('t.order_id', $order->id)->sum('t.amount')) : 0;
             $productGross = $codCollection
                 ? max(0, round((float) $codSettlement->seller_amount - $codRefunds, 2))
-                : max(0, round((float) $order->total - (float) $order->shipping_fee + $voucher, 2));
+                : max(0, round((float) $order->total - (float) $order->shipping_fee + (float) $order->voucher_discount, 2));
             $date = $order->buyer_received_at ?? $order->updated_at;
             $ref = $order->order_number ?: '#'.$order->id;
 

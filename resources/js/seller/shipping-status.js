@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
             in_transit: 'In Transit',
             out_for_delivery: 'Out for Delivery',
             delivered: 'Delivered',
+            completed: 'Delivered',
         })[status] || 'Shipping';
     }
 
@@ -298,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = document.createElement('div');
             item.className = 'shipping-history-item';
 
-            const deliveredOrder = order.status === 'delivered';
+            const deliveredOrder = ['delivered', 'completed'].includes(order.status);
             const iconClass = deliveredOrder ? 'active green-active' : (isLast ? 'active' : '');
 
             item.innerHTML = `
@@ -374,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const order = await requestJson(`${config.ordersUrl}/${id}`);
             if (selectedRow !== row) return;
             selectedOrder = order;
-            const status = order.status;
+            const status = order.status === 'completed' ? 'delivered' : order.status;
             const shipment = order.shipment || {};
             if (modalCurrentLocation) {
                 modalCurrentLocation.textContent = shipment.current_location || 'Not scanned yet';

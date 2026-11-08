@@ -11,7 +11,7 @@ class ShippingStatusController extends ApiShippingStatusController
     {
         $seller = $this->sellerFor($request->user());
         $orders = $this->shippingQuery($seller->id)
-            ->whereIn('status', ['to_ship', 'in_transit', 'out_for_delivery', 'delivered'])
+            ->whereIn('status', ['to_ship', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])
             ->latest()
             ->get();
         $apiToken = $request->user()->createToken('seller-shipping-status')->plainTextToken;

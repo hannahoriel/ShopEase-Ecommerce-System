@@ -437,6 +437,11 @@ class OrderController extends Controller
 
             $voucherSellerId = null;
             if (! empty($validated['voucher_code'])) {
+                if ($validated['payment_method'] !== 'Cash on Delivery') {
+                    throw ValidationException::withMessages([
+                        'payment_method' => ['Voucher codes are currently valid for Cash on Delivery orders only.'],
+                    ]);
+                }
                 $voucherSellerId = app(SellerVoucherService::class)->sellerFor(
                     $validated['voucher_code'], $request->user(), $items,
                     !empty($validated['voucher_seller_id']) ? (int) $validated['voucher_seller_id'] : null,
@@ -492,6 +497,8 @@ class OrderController extends Controller
                         'shipping_fee' => $shippingFee,
                         'voucher_discount' => $voucherDiscount,
                         'voucher_code' => $voucherResult['voucher']->code ?? null,
+                        'voucher_type' => $voucherResult ? ($voucherResult['voucher']->voucher_type ?? 'merchandise') : null,
+                        'voucher_funding_source' => $voucherResult ? ($voucherResult['voucher']->funding_source ?? ($voucherResult['voucher']->seller_id === null ? 'platform' : 'seller')) : null,
                         'commission_amount' => round($total * (CommissionTransaction::DEFAULT_RATE / 100), 2),
                         'status' => 'pending',
                         'delivery_name' => $validated['delivery_name'],

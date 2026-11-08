@@ -1764,6 +1764,7 @@
         'rejectedArchive' => $rejectedLogisticsArchive,
         'totalEntries' => $logisticsTotalEntries,
         'stats' => $logisticsStats,
+        'accountChangeRequests' => $logisticsAccountChangeRequests ?? [],
         'apiUrl' => url('/api/v1/admin/logistics-management'),
         'accountChangeRequestsUrl' => url('/api/v1/admin/logistics/account-change-requests'),
         'registrationPreview' => $registrationDetailDemos,

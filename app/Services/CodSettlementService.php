@@ -62,13 +62,16 @@ class CodSettlementService
                     'An order in this remittance has already been settled.');
 
                 $cod = round((float) $collection->amount, 2);
-                $buyerShipping = min($cod, max(0, round((float) $order->shipping_fee, 2)));
-                $shipping = min($buyerShipping, self::LOGISTICS_SHIPPING_FEE);
-                $shippingMargin = round($buyerShipping - $shipping, 2);
+                $shippingVoucher = $order->voucher_type === 'shipping' ? max(0, (float) $order->voucher_discount) : 0;
+                $buyerShipping = min($cod, max(0, round((float) $order->shipping_fee - $shippingVoucher, 2)));
+                $agreedShipping = min(max(0, round((float) $order->shipping_fee, 2)), self::LOGISTICS_SHIPPING_FEE);
+                $shipping = $order->voucher_type === 'shipping' && $order->voucher_funding_source === 'logistics'
+                    ? max(0, $agreedShipping - $shippingVoucher) : $agreedShipping;
+                $shippingMargin = round(max(0, $buyerShipping - $agreedShipping), 2);
                 $collectedProductAmount = max(0, round($cod - $buyerShipping, 2));
-                $commissionBase = max(0, round($collectedProductAmount + (float) $order->voucher_discount, 2));
+                $commissionBase = max(0, round($collectedProductAmount + ($order->voucher_type === 'shipping' ? 0 : (float) $order->voucher_discount), 2));
                 $commission = min($collectedProductAmount, round($commissionBase * self::COMMISSION_RATE / 100, 2));
-                $sellerShare = round($collectedProductAmount - $commission, 2);
+                $sellerShare = round($collectedProductAmount - $commission - ($order->voucher_type === 'shipping' && $order->voucher_funding_source === 'seller' ? $shippingVoucher : 0), 2);
                 $logisticsId = $order->logistics_id ?: $order->logisticsCompany?->id;
                 abort_if($shipping > 0 && ! $logisticsId, 409, 'The shipment has no logistics company assigned, so its shipping fee cannot be settled.');
                 $settlementId = DB::table('cod_settlements')->insertGetId([
@@ -97,6 +100,10 @@ class CodSettlementService
                 if ($commission > 0) {
                     $this->post('platform', null, 'available', 'commission', 'cod_settlement', $settlementId,
                         $commission, $order->id, $locked->id, '10% COD commission for '.$order->order_number);
+                }
+                if ($order->voucher_type === 'shipping' && $order->voucher_funding_source === 'platform' && $shippingVoucher > 0) {
+                    $this->post('platform', null, 'available', 'shipping_voucher_subsidy', 'cod_settlement', $settlementId,
+                        -$shippingVoucher, $order->id, $locked->id, 'ShopEase-funded shipping voucher '.$order->voucher_code);
                 }
                 if ($sellerShare > 0) {
                     $this->post('seller', $order->seller_id, 'on_hold', 'seller_hold', 'cod_settlement', $settlementId,

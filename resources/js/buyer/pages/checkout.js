@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let appliedVoucherCode = '';
             let appliedVoucherDiscount = 0;
             let appliedVoucherSellerId = null;
+            let appliedVoucherType = 'merchandise';
             let shippingOptionsBySeller = {};
             let selectedLogisticsBySeller = {};
             let shippingOptionsLoaded = false;
@@ -78,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 - appliedVoucherDiscount;
             const refreshWalletOption = () => {
                 const total = Math.max(0, walletTotal());
-                const available = walletLoaded && walletBalance > 0 && total > 0 && cartItems.length > 0
+                const available = walletLoaded && walletBalance > 0 && total > 0 && cartItems.length > 0 && !appliedVoucherCode
                     && walletBalance + 0.001 >= total;
                 if (walletOption) { walletOption.disabled = !available; walletOption.setAttribute('aria-disabled', String(!available)); }
                 if (walletAvailability) walletAvailability.textContent = walletLoaded
@@ -368,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 appliedVoucherCode = '';
                 appliedVoucherDiscount = 0;
                 appliedVoucherSellerId = null;
+                appliedVoucherType = 'merchandise';
                 if (!code) {
                     if (message) message.textContent = 'Enter a voucher code first.';
                     renderCheckoutCart(cartItems);
@@ -380,7 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     appliedVoucherCode = result.data.code;
                     appliedVoucherDiscount = Number(result.data.discount || 0);
                     appliedVoucherSellerId = Number(result.data.seller_id);
-                    if (message) message.textContent = `${result.data.code} applied to ${result.data.seller_name}.`;
+                    appliedVoucherType = result.data.voucher_type || 'merchandise';
+                    if (message) message.textContent = `${result.data.code} applied to ${result.data.seller_name}${appliedVoucherType === 'shipping' ? ' shipping fee' : ''}.`;
                 } catch (error) {
                     if (message) message.textContent = error.message;
                 }
@@ -391,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 appliedVoucherCode = '';
                 appliedVoucherDiscount = 0;
                 appliedVoucherSellerId = null;
+                appliedVoucherType = 'merchandise';
                 const message = document.getElementById('checkoutVoucherMessage');
                 if (message) message.textContent = '';
                 renderCheckoutCart(cartItems);
