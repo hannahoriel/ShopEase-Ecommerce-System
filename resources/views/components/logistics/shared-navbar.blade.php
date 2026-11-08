@@ -1,6 +1,17 @@
 @php
     $navbarUser = auth()->user();
     $navbarRole = ['logistics' => 'Logistics', 'sorting-center' => 'Sorting Center', 'delivery-hub' => 'Delivery Hub'][$navbarArea];
+    $navbarPageKey = request()->segment(2) ?: 'dashboard';
+    $navbarPageTitle = [
+        'dashboard' => 'Dashboard', 'delivery-hub-dashboard' => 'Dashboard',
+        'network-hubs' => 'Network Hubs', 'deliveries' => 'Network Hubs', 'delivery-hubs' => 'Delivery Hubs',
+        'courier-registrations' => 'Courier Registrations', 'rider-registrations' => 'Rider Registrations',
+        'scanners' => 'Scanners', 'parcel-tracking' => 'Parcel Tracking', 'parcel-disputes' => 'Parcel Disputes',
+        'vehicles-drivers' => 'Vehicles and Drivers', 'vehicle-drivers' => 'Vehicles and Drivers',
+        'logistics-earnings' => 'Logistics Earnings', 'earnings' => 'Logistics Earnings', 'finance' => 'Finance',
+        'reports' => 'Reports', 'notifications' => 'Notifications', 'messages' => 'Messages',
+        'account' => 'Account',
+    ][$navbarPageKey] ?? \Illuminate\Support\Str::headline($navbarPageKey);
     $navbarEntity = match ($navbarArea) {
         'sorting-center' => \App\Models\Logistics\LogisticsBranch::where('user_id', $navbarUser->id)->first(),
         'delivery-hub' => \App\Models\Logistics\LogisticsDeliveryHub::where('user_id', $navbarUser->id)->first(),
@@ -42,7 +53,7 @@
 <header class="lg-navbar">
     <div class="lg-nav-left">
         <button type="button" id="lgSidebarToggle" class="lg-icon-button" aria-label="Toggle sidebar" aria-expanded="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-        <h2 title="{{ $navbarName }}">{{ $navbarName }}</h2>
+        <h2 title="{{ $navbarPageTitle }}">{{ $navbarPageTitle }}</h2>
     </div>
     <div class="lg-nav-right">
         <span class="lg-navbar-caption">{{ $navbarRole }} Management</span>

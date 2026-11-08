@@ -19,7 +19,7 @@
   <div class="landing-nav-actions">
     <!-- Logistics login opens the dedicated Blade modal. -->
     <button class="login-button" type="button" id="logisticsLogin" aria-haspopup="dialog" aria-controls="logisticsLoginModal">Log In</button>
-    <button class="signup-button" type="button" id="logisticsSignup">Sign Up</button>
+    <button class="signup-button" type="button" id="logisticsSignup" data-loading="off">Sign Up</button>
   </div>
 </header>
 <main>
@@ -40,7 +40,7 @@
 <div class="hero-copy">
   <h1 class="hero-title" id="logisticsHeading">Deliver More,<br><span>Grow Together.</span></h1>
   <p class="hero-description">Partner with ShopEase and connect your logistics company to a growing marketplace. Let's make every delivery easier, together.</p>
-  <div class="hero-actions"><a class="hero-primary" id="heroSignup" href="#partnershipProcess">How Partnership Works <span aria-hidden="true">↗</span></a><a class="hero-secondary" href="{{ url('/') }}#logisticsPartners">Explore ShopEase ↗</a></div>
+  <div class="hero-actions"><a class="hero-primary" id="heroSignup" href="#partnershipProcess">How Partnership Works</a><a class="hero-secondary" href="{{ url('/') }}#logisticsPartners">Explore ShopEase</a></div>
   <p class="logistics-note">For logistics companies interested in partnering with ShopEase.</p>
 </div>
 <div class="hero-visual">

@@ -33,6 +33,13 @@ class ShopEaseLoading
         // The PNG has a large transparent canvas. Crop its viewport without altering the asset.
         $outline = 'M720 610V594C720 534 767 486 827 486S935 534 935 594V610H962Q994 610 998 642L1044 921Q1052 978 994 978H672Q615 978 621 920L660 642Q664 610 695 610Z';
         $hasSidebar = (bool) preg_match('/<aside\b[^>]*\bid=["\'](?:admin-sidebar|sellerSidebar|lgSidebar)["\']/i', $html);
+        $hasLogisticsSidebar = (bool) preg_match('/<aside\b[^>]*\bid=["\']lgSidebar["\']/i', $html);
+        if ($hasLogisticsSidebar) {
+            $tableCss = e(asset('css/logistics-tables.css').'?v='.filemtime(public_path('css/logistics-tables.css')));
+            // Load after each page's styles, including standalone inline styles.
+            $html = preg_replace_callback('/<\/head>/i', fn ($match) => '<link rel="stylesheet" href="'.$tableCss.'">'.$match[0], $html, 1);
+            $html = preg_replace('/<body\b/i', '<body data-se-logistics-tables', $html, 1);
+        }
         $head = '<meta name="se-page-kind" content="'.($hasSidebar ? 'account' : 'public').'"><link rel="stylesheet" href="'.$css.'"><script src="'.$navigation.'"></script><script src="'.$js.'"></script>';
         if ($hasSidebar) {
             // Vite's development CSS arrives through modules. Supply the shared

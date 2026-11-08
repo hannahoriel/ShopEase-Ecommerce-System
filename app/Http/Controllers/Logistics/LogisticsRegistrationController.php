@@ -56,6 +56,7 @@ class LogisticsRegistrationController extends Controller
             'service_areas' => ['required','array','min:1'],
             'service_areas.*' => ['required','string','max:60'],
             'company_name' => ['required','string','max:255'],
+            'company_description' => ['nullable','string','max:1000'],
             'registered_business_name' => ['required','string','max:255'],
             'company_type' => ['required','string','max:100'],
             'years_in_operation' => ['nullable','integer','min:0'],
@@ -237,6 +238,7 @@ class LogisticsRegistrationController extends Controller
 
         $companyValidator = validator($company, [
             'company_name' => ['required', 'string', 'max:255'],
+            'company_description' => ['nullable', 'string', 'max:1000'],
             'registered_business_name' => ['required', 'string', 'max:255'],
             'company_type' => ['required', 'string', 'max:100'],
             'company_email' => ['required', 'email', 'max:255'],

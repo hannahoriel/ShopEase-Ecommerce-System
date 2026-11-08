@@ -13,8 +13,20 @@ html.se-shell-mounted,html.se-shell-mounted>body{overflow:hidden!important}
 #se-account-content{position:fixed;inset:0;width:100%;height:100dvh;border:0;z-index:40;background:#fdf1eb}
 html.se-content-frame :is(#admin-sidebar,#sellerSidebar,#lgSidebar){visibility:hidden!important;pointer-events:none!important}
 html.se-content-frame #se-page-loader{display:none!important}
-/* The sidebar remains mounted but joins the modal's blurred backdrop. */
-html:is(.se-frame-modal,.se-modal-open) :is(#admin-sidebar,#sellerSidebar,#lgSidebar){filter:blur(5px);pointer-events:none!important}
+/* The content frame supplies the whole backdrop, including its matching sidebar.
+   One overlay then treats the sidebar exactly like the rest of the page. */
+html.se-frame-modal #se-account-content{z-index:1000}
+html.se-content-frame.se-modal-open :is(#admin-sidebar,#sellerSidebar,#lgSidebar){visibility:visible!important;pointer-events:none!important}
+html:is(.se-frame-modal,.se-modal-open) :is(#admin-sidebar,#sellerSidebar,#lgSidebar){pointer-events:none!important}
+[data-se-modal-layer]{inset:0!important;margin:0!important;width:auto!important;height:auto!important;z-index:2000!important;place-items:center!important;align-items:center!important;justify-content:center!important;padding:20px!important;box-sizing:border-box!important}
+[data-se-modal-layer] > :is(div,section,form){margin:0!important;box-sizing:border-box!important}
+/* Admin's light modal backdrop is shared by every interface. The overlay
+   blurs the actual page behind it, including the sidebar and navbar. */
+[data-se-modal-layer], html body dialog[open]::backdrop {
+    background:rgba(0,0,0,.35)!important;
+    backdrop-filter:blur(2px)!important;
+    -webkit-backdrop-filter:blur(2px)!important;
+}
 /* Sidebar toggles may restore original classes; current-page state wins. */
 :is(#admin-sidebar,#sellerSidebar,#lgSidebar) [data-se-current="true"]{background-color:rgba(143,35,35,.6)!important}
 :is(#admin-sidebar,#sellerSidebar,#lgSidebar) [data-se-current="false"]{background-color:transparent!important}

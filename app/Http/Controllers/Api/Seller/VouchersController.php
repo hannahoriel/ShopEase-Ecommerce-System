@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 
 class VouchersController extends Controller
 {
-    private function sellerId(Request $request): int
+    protected function sellerId(Request $request): ?int
     {
         return (int) $request->user()->sellerProfile()->value('id');
     }
@@ -22,13 +22,23 @@ class VouchersController extends Controller
     public function index(Request $request): JsonResponse
     {
         $sellerId = $this->sellerId($request);
-        return response()->json(['data' => SellerVoucher::where('seller_id', $sellerId)->latest()->get()->map(fn ($voucher) => $this->present($voucher))]);
+        return response()->json([
+            'data' => SellerVoucher::where('seller_id', $sellerId)->latest()->get()->map(fn ($voucher) => $this->present($voucher)),
+            'platform' => $sellerId === null ? [] : SellerVoucher::whereNull('seller_id')->latest()->get()->map(fn ($voucher) => $this->present($voucher)),
+        ]);
     }
 
     public function store(Request $request): JsonResponse
     {
+        return \Illuminate\Support\Facades\DB::transaction(fn () => $this->createVoucher($request));
+    }
+
+    protected function createVoucher(Request $request): JsonResponse
+    {
         $data = $this->validated($request);
-        $voucher = SellerVoucher::create([...$data, 'seller_id' => $this->sellerId($request), 'code' => strtoupper($data['code'])]);
+        $sellerId = $this->sellerId($request);
+        $voucher = SellerVoucher::create([...$data, 'seller_id' => $sellerId, 'code' => strtoupper($data['code']),
+            'created_by' => $request->user()->id, 'platform_code' => $sellerId === null ? strtoupper($data['code']) : null]);
 
         if ($voucher->enabled && $voucher->starts_at->lte(now()) && $voucher->ends_at->gte(now())) {
             $buyerIdsWithOrders = Order::query()->whereNotIn('status', ['cancelled', 'refunded'])->select('buyer_id');
@@ -39,7 +49,7 @@ class VouchersController extends Controller
                 $buyers->whereIn('id', $buyerIdsWithOrders);
             }
 
-            $shopName = $request->user()->sellerProfile?->store_name ?: 'A ShopEase seller';
+            $shopName = $sellerId === null ? 'ShopEase' : ($request->user()->sellerProfile?->store_name ?: 'A ShopEase seller');
             $buyers->each(function (User $buyer) use ($voucher, $shopName): void {
                 BuyerNotification::createForBuyer(
                     $buyer,
@@ -62,7 +72,7 @@ class VouchersController extends Controller
         return response()->json(['data' => $this->present($voucher->fresh())]);
     }
 
-    private function validated(Request $request): array
+    protected function validated(Request $request): array
     {
         $data = $request->validate([
             'code' => ['required', 'regex:/^[A-Za-z0-9_-]{4,20}$/', Rule::unique('seller_vouchers', 'code')->where('seller_id', $this->sellerId($request))],
@@ -82,6 +92,11 @@ class VouchersController extends Controller
             'terms' => ['nullable', 'string', 'max:650'],
             'enabled' => ['required', 'boolean'],
         ]);
+        $codeQuery = SellerVoucher::where('code', strtoupper($data['code']));
+        if ($this->sellerId($request) !== null) $codeQuery->whereNull('seller_id');
+        if ($codeQuery->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['code' => 'This code is already used by a platform voucher or shop voucher.']);
+        }
         if ($data['discountType'] === 'percent' && $data['discountValue'] > 100) {
             abort(422, 'Percentage discount cannot exceed 100%.');
         }
@@ -96,7 +111,7 @@ class VouchersController extends Controller
             abort(422, 'Enter at least one product ID for selected products.');
         }
         if ($data['eligibleItems'] === 'selected') {
-            $products = Product::where('seller_id', $this->sellerId($request))
+            $products = Product::query()->when($this->sellerId($request) !== null, fn ($query) => $query->where('seller_id', $this->sellerId($request)))
                 ->where(function ($query) use ($productIds): void {
                     $numericIds = $productIds->filter(fn ($id) => ctype_digit($id));
                     if ($numericIds->isNotEmpty()) $query->whereIn('id', $numericIds->all());
@@ -107,7 +122,7 @@ class VouchersController extends Controller
                     }
                 })->get(['id', 'sku']);
             if ($products->count() !== $productIds->count()) {
-                abort(422, 'One or more selected products do not belong to your shop.');
+                abort(422, 'One or more selected product IDs or SKUs are invalid.');
             }
             $productIds = $products->pluck('id')->map(fn ($id) => (string) $id)->values();
         }
@@ -123,20 +138,20 @@ class VouchersController extends Controller
         ];
     }
 
-    private function present(SellerVoucher $voucher): array
+    protected function present(SellerVoucher $voucher): array
     {
         $status = ! $voucher->enabled ? 'paused' : ($voucher->claimed >= $voucher->quantity ? 'exhausted' : (now()->lt($voucher->starts_at) ? 'upcoming' : (now()->gt($voucher->ends_at) ? 'expired' : 'active')));
         return [
             'id' => $voucher->code, 'recordId' => $voucher->id, 'title' => $voucher->title,
-            'purpose' => 'Store-exclusive promotional discount on eligible COD orders.',
+            'purpose' => $voucher->seller_id === null ? 'ShopEase platform discount on eligible COD orders.' : 'Store-exclusive promotional discount on eligible COD orders.',
             'discountType' => $voucher->discount_type, 'discountValue' => (float) $voucher->discount_value,
             'minimumSpend' => (float) $voucher->minimum_spend, 'maximumDiscount' => (float) $voucher->maximum_discount,
             'starts' => $voucher->starts_at->format('Y-m-d\TH:i'), 'ends' => $voucher->ends_at->format('Y-m-d\TH:i'),
-            'eligibleItems' => $voucher->product_ids ? 'Selected shop products: '.implode(', ', $voucher->product_ids) : 'All products in my shop',
-            'eligibleBuyers' => ['all' => 'All buyers', 'first' => 'First-time buyers at my shop', 'returning' => 'Returning buyers'][$voucher->eligible_buyers],
+            'eligibleItems' => $voucher->eligible_category ? config('admin.seller_compliance.categories.'.$voucher->eligible_category, $voucher->eligible_category) : ($voucher->product_ids ? 'Selected products: '.implode(', ', $voucher->product_ids) : ($voucher->seller_id === null ? 'All eligible ShopEase products' : 'All products in my shop')),
+            'eligibleBuyers' => ['all' => 'All buyers', 'first' => $voucher->seller_id === null ? 'First-time ShopEase buyers' : 'First-time buyers at my shop', 'returning' => 'Returning buyers'][$voucher->eligible_buyers],
             'productIds' => $voucher->product_ids, 'quantity' => $voucher->quantity, 'claimed' => $voucher->claimed,
             'perBuyer' => $voucher->per_buyer, 'stacking' => $voucher->stacking === 'shipping' ? 'Can combine with shipping voucher only' : 'Cannot combine with other vouchers',
-            'terms' => $voucher->terms, 'enabled' => $voucher->enabled, 'scope' => 'This shop only', 'status' => $status,
+            'terms' => $voucher->terms, 'enabled' => $voucher->enabled, 'scope' => $voucher->seller_id === null ? 'Across ShopEase shops; one qualifying shop order per checkout' : 'This shop only', 'status' => $status,
         ];
     }
 }

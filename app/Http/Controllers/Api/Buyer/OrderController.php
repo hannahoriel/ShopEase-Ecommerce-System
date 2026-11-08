@@ -66,7 +66,14 @@ class OrderController extends Controller
             ->pluck('product_id')->map(fn ($id): string => (string) $id)->all();
 
         return response()->json([
-            'data' => $orders->getCollection()->map(function (Order $order) use ($reviewedProductIds): array {
+            'data' => $orders->getCollection()->map(fn (Order $order) => $this->presentOrder($order, $reviewedProductIds))->values(),
+            'total' => $orders->total(),
+            'status_counts' => $statusCounts,
+        ]);
+    }
+
+    public function presentOrder(Order $order, array $reviewedProductIds = []): array
+    {
                 return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
@@ -136,6 +143,7 @@ class OrderController extends Controller
                     'status' => str_replace('_', '-', $order->complaints->first()->status),
                 ] : null,
                 'items' => $order->items->map(fn ($item): array => [
+                    'id' => $item->id,
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
                     'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
@@ -150,10 +158,6 @@ class OrderController extends Controller
                         && ! in_array((string) $item->product_id, $reviewedProductIds, true),
                 ])->all(),
                 ];
-            })->values(),
-            'total' => $orders->total(),
-            'status_counts' => $statusCounts,
-        ]);
     }
 
     public function confirmReceived(Request $request, Order $order): JsonResponse
@@ -433,10 +437,10 @@ class OrderController extends Controller
 
             $voucherSellerId = null;
             if (! empty($validated['voucher_code'])) {
-                $voucherQuery = \App\Models\Seller\SellerVoucher::where('code', strtoupper(trim($validated['voucher_code'])));
-                if (! empty($validated['voucher_seller_id'])) $voucherQuery->where('seller_id', $validated['voucher_seller_id']);
-                $voucherSellerId = $voucherQuery->value('seller_id');
-                if (! $voucherSellerId) throw ValidationException::withMessages(['voucher_code' => ['This voucher does not exist.']]);
+                $voucherSellerId = app(SellerVoucherService::class)->sellerFor(
+                    $validated['voucher_code'], $request->user(), $items,
+                    !empty($validated['voucher_seller_id']) ? (int) $validated['voucher_seller_id'] : null,
+                );
             }
 
             $approvedProviders = $this->approvedLogisticsProviders();

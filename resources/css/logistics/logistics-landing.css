@@ -1809,6 +1809,7 @@
 .logistics-glass small{display:block;margin-top:5px;color:#888;font-weight:500;font-size:10px}
 .logistics-stamp{position:absolute;top:25px;right:28px;color:#ffe1d6;font-size:11px;letter-spacing:2px;font-weight:700;z-index:4}
 .hero-actions{flex-wrap:wrap}
+.hero-actions #heroSignup{min-width:190px;padding:0 26px;white-space:nowrap}
 .hero-secondary{height:48px;padding:0 22px;border:1px solid #e8cfc9;color:var(--maroon);background:white;border-radius:99px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;transition:all .25s}
 .hero-secondary:hover{background:var(--peach-soft);transform:translateY(-2px)}
 .logistics-note{font-size:11px;color:#8b7b77;margin-top:17px;line-height:1.7}
@@ -1874,23 +1875,6 @@ body.logistics-modal-open{overflow:hidden}
 .logistics-signup-transition-iframe{display:block;width:100%;height:100%;border:0;background:#FBF5F2;pointer-events:none}
 @media(max-width:760px){.logistics-signup-transition{padding:12px}.logistics-signup-transition-card{height:min(92dvh,680px)}}
 @media(prefers-reduced-motion:reduce){.logistics-signup-transition,.logistics-signup-transition-card{transition:none!important}}
-
-
-/* ShopEase landing-to-landing: minimal fade only (no sliding or scaling). */
-body > .landing-page {
-  transition: opacity 250ms ease-in-out;
-}
-body.shopease-landing-leaving > .landing-page {
-  opacity: 0;
-  pointer-events: none;
-}
-body.shopease-landing-enter > .landing-page { opacity: 0; }
-body.shopease-landing-enter.shopease-landing-entered > .landing-page { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  body > .landing-page { transition: none !important; }
-  body.shopease-landing-leaving > .landing-page,
-  body.shopease-landing-enter > .landing-page { opacity: 1; }
-}
 
 
 /* Registration success flash: sits immediately below the fixed landing navbar. */

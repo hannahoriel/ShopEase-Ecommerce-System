@@ -190,7 +190,7 @@ class LogisticsManagementController extends Controller
             'registered_date' => $registration->created_at?->toDateString(),
             'registered_display' => $registration->created_at?->format('M d, Y g:i A'),
             'office_address' => $this->address($profile, $registration),
-            'description' => '',
+            'description' => data_get($profile?->registration_details, 'company.company_description') ?: '',
             ...((array) ($profile?->registration_details['company'] ?? [])),
             'documents' => $this->documentUrls($documents),
             'logo' => $registration->user?->profile_photo_path
@@ -228,7 +228,7 @@ class LogisticsManagementController extends Controller
             'contact_number' => $logistics->contact_no ?: '—',
             'company_email' => $logistics->user?->email ?: '—',
             'office_address' => $this->address($logistics),
-            'description' => '',
+            'description' => data_get($logistics->registration_details, 'company.company_description') ?: '',
             'dti_permit' => $businessRegistration
                 ? Storage::disk('public')->url($businessRegistration)
                 : '',
