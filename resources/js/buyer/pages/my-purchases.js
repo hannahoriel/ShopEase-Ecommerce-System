@@ -1,4 +1,4 @@
-import QRCode from 'qrcode';
+
 
 document.addEventListener('DOMContentLoaded', () => {
             const configElement = document.getElementById('buyerPurchasesConfig');
@@ -1451,99 +1451,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-/* Order cards open a details dialog backed by the authenticated purchases API response. */
-const purchaseDetailsModal = document.getElementById('buyerOrderDetailsModal');
-const purchaseDetailsBody = document.getElementById('buyerOrderDetailsBody');
-const purchaseDetailsDialog = purchaseDetailsModal?.querySelector('.buyer-order-details-dialog');
-const safeText = value => String(value ?? '—').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
-const purchaseMoney = value => `₱${Number(value || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-const purchaseDate = value => value ? safeText(new Intl.DateTimeFormat('en-PH', {dateStyle:'medium', timeStyle:'short'}).format(new Date(value))) : '—';
-function closePurchaseDetails(){if(!purchaseDetailsModal)return;purchaseDetailsModal.hidden=true;purchaseDetailsModal.setAttribute('aria-hidden','true');document.body.classList.remove('buyer-order-details-open');}
-function openPurchaseDetails(order){
-    if(!order||!purchaseDetailsModal||!purchaseDetailsBody)return;
-    const items=Array.isArray(order.items)?order.items:[];
-    const normalizedStatus=String(order.status||'processing').toLowerCase().replace(/[_-]/g,' ');
-    const isCompleted=normalizedStatus==='completed';
-    const reviewableItems=items.filter(item=>item.can_review&&item.product_id);
-    const tracking=order.shipment||{};
-    const events=Array.isArray(order.tracking_events)?order.tracking_events:[];
-    purchaseDetailsBody.innerHTML=`
-      <section class="buyer-order-detail-summary"><div><span>ORDER NUMBER</span><strong>${safeText(order.order_number)}</strong></div><span class="buyer-order-detail-status">${safeText(normalizedStatus)}</span><div><span>SHOP</span><strong>${safeText(order.shop||'—')}</strong></div><div><span>PLACED</span><strong>${purchaseDate(order.created_at)}</strong></div></section>
-      <section class="buyer-order-seller-help"><div class="buyer-order-seller-help-copy"><strong>Need help with this order?</strong><span>Contact the shop or report an issue.</span></div><div class="buyer-order-seller-help-actions"><button type="button" class="buyer-order-action-primary" data-buyer-chat-order="${safeText(order.id)}">Contact Seller</button><button type="button" class="buyer-order-action-secondary" data-buyer-complaint-order="${safeText(order.id)}" data-order-number="${safeText(order.order_number)}">Report a Problem</button></div></section>
-      <p id="buyerOrderActionFeedback" class="buyer-order-action-feedback" role="status" hidden></p>
-      ${isCompleted?`<section class="buyer-order-rating-card ${reviewableItems.length?'is-actionable':'is-reviewed'}"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h3>${reviewableItems.length?'How was your experience?':'Thanks for sharing your feedback'}</h3><p>${reviewableItems.length?`Your order is complete. Rate a product from ${safeText(order.shop||'the seller')} and help other buyers shop with confidence.`:'You have already rated the eligible product(s) in this order.'}</p></div>${reviewableItems.length?`<button type="button" class="buyer-order-action-rating" id="buyerOrderOpenRating" data-order-number="${safeText(order.order_number)}">Rate Product</button>`:''}</section>`:`<section class="buyer-order-rating-card is-locked"><div class="buyer-order-rating-icon" aria-hidden="true">★</div><div class="buyer-order-rating-copy"><span class="buyer-order-section-kicker">PRODUCT FEEDBACK</span><h3>Rate a product after receiving your order</h3><p>Once you confirm receipt, or the order is automatically completed after 7 days, the rating form will be available here.</p></div><span class="buyer-order-rating-lock">Available after receipt</span></section>`}
-      <div class="buyer-order-detail-grid">
-        <section class="buyer-order-detail-card"><h3>Delivery details</h3><dl><dt>Recipient</dt><dd>${safeText(order.delivery_name||'—')}</dd><dt>Contact</dt><dd>${safeText(order.delivery_phone||'—')}</dd><dt>Address</dt><dd>${safeText(order.delivery_address||'—')}</dd><dt>Estimated delivery</dt><dd>${purchaseDate(tracking.estimated_delivery)}</dd><dt>Current location</dt><dd>${safeText(tracking.current_location||'Not available yet')}</dd><dt>Tracking number</dt><dd>${safeText(tracking.tracking_number||'Not assigned yet')}</dd><dt>Courier</dt><dd>${safeText(tracking.courier||'Not assigned yet')}</dd></dl></section>
-        <section class="buyer-order-detail-card"><h3>Payment summary</h3><dl><dt>Payment method</dt><dd>${safeText(order.payment_method||'—')}</dd><dt>Shipping fee</dt><dd>${purchaseMoney(order.shipping_fee)}</dd>${Number(order.voucher_discount)>0?`<dt>Voucher${order.voucher_code?` (${safeText(order.voucher_code)})`:''}</dt><dd>−${purchaseMoney(order.voucher_discount)}</dd>`:''}<dt class="buyer-order-total-label">Order total</dt><dd class="buyer-order-total-value">${purchaseMoney(order.total)}</dd></dl></section>
-      </div>
-      <section class="buyer-order-detail-card buyer-order-items-card"><h3>Items in this order</h3><div class="buyer-order-detail-items">${items.map(item=>`<article><div class="buyer-order-detail-image">${item.image_url?`<img src="${safeText(item.image_url)}" alt="${safeText(item.product_name)}">`:'<span aria-hidden="true">Product</span>'}</div><div class="buyer-order-detail-item-copy"><strong>${safeText(item.product_name||'Product')}</strong>${item.is_fragile ? '<span class="se-fragile-pill">Fragile</span>' : ''}<span>${safeText([item.variation,item.color,item.size].filter(Boolean).join(' · ')||'No variant selected')}</span><small>Qty ${safeText(item.quantity||0)} × ${purchaseMoney(item.unit_price)}</small></div><strong>${purchaseMoney(Number(item.quantity||0)*Number(item.unit_price||0))}</strong></article>`).join('')||'<p>No item details are available for this order.</p>'}</div></section>
-      <div class="buyer-order-detail-bottom"><section class="buyer-order-detail-card buyer-order-tracking-card"><div class="buyer-order-tracking-heading"><h3>Tracking History</h3>${events.length>3?`<button type="button" class="buyer-order-history-toggle" aria-expanded="false" aria-label="Show full tracking history">Show more <span>(${events.length-3})</span></button>`:''}</div>${events.length?`<ol class="buyer-order-timeline">${events.map(event=>{const description=String(event.description||event.status||'Order update');const location=String(event.location||'');const title=location&&description.endsWith(location)?description.slice(0,-location.length).replace(/[\s·Â]+$/,''):description;return `<li><strong>${safeText(title)}</strong><span>${purchaseDate(event.created_at)}${location?` · ${safeText(location)}`:''}</span></li>`}).join('')}</ol>`:'<p class="buyer-order-detail-muted">No tracking updates have been recorded yet.</p>'}</section><section class="buyer-order-detail-qr"><h3>Order verification</h3><canvas id="buyerOrderDetailsQr" width="160" height="160" aria-label="Order verification QR code"></canvas><p>Show this QR code when your order needs to be verified.</p></section></div>`;
-    document.getElementById('buyerOrderDetailsTitle').textContent=`Order ${order.order_number||''}`;
-    const footerConfirm=purchaseDetailsModal.querySelector('.buyer-order-footer-confirm');
-    if(footerConfirm){footerConfirm.hidden=!order.can_confirm_received;footerConfirm.dataset.confirmOrderId=order.can_confirm_received?String(order.id):'';footerConfirm.textContent='Confirm Order Received';footerConfirm.disabled=false;}
-    purchaseDetailsModal.hidden=false;purchaseDetailsModal.setAttribute('aria-hidden','false');document.body.classList.add('buyer-order-details-open');purchaseDetailsDialog?.focus();
-    const canvas=document.getElementById('buyerOrderDetailsQr');
-    if(canvas&&order.qr_payload)QRCode.toCanvas(canvas,order.qr_payload,{width:160,margin:1,errorCorrectionLevel:'M'}).catch(()=>{});
-}
-const sellerRatingModal=document.getElementById('buyerSellerRatingModal');
-const sellerRatingForm=document.getElementById('buyerSellerRatingForm');
-function closeSellerRatingModal(){if(!sellerRatingModal)return;sellerRatingModal.hidden=true;sellerRatingModal.setAttribute('aria-hidden','true');document.body.classList.remove('buyer-seller-rating-open');}
-function openSellerRatingModal(order){
-    if(!order||!sellerRatingModal||!sellerRatingForm)return;
-    const eligible=(order.items||[]).filter(item=>item.can_review&&item.product_id);
-    if(!eligible.length)return;
-    sellerRatingForm.dataset.orderId=String(order.id);
-    sellerRatingForm.dataset.orderNumber=String(order.order_number||'');
-    sellerRatingForm.querySelector('[name="product_id"]').innerHTML=eligible.map(item=>`<option value="${safeText(item.product_id)}">${safeText(item.product_name)}</option>`).join('');
-    sellerRatingForm.querySelector('[name="rating"]').value='5';
-    sellerRatingForm.querySelectorAll('[data-seller-rating]').forEach(button=>{button.classList.add('is-selected');button.setAttribute('aria-checked',String(button.dataset.sellerRating==='5'));});
-    sellerRatingForm.querySelector('[name="body"]').value='';
-    sellerRatingForm.querySelector('[name="photo"]').value='';
-    sellerRatingForm.querySelector('[name="is_anonymous"]').checked=false;
-    const feedback=sellerRatingForm.querySelector('.buyer-order-rating-feedback');if(feedback){feedback.hidden=true;feedback.textContent='';}
-    const title=sellerRatingModal.querySelector('[data-rating-modal-shop]');if(title)title.textContent=order.shop||'the seller';
-    sellerRatingModal.hidden=false;sellerRatingModal.setAttribute('aria-hidden','false');document.body.classList.add('buyer-seller-rating-open');sellerRatingForm.querySelector('[name="product_id"]')?.focus();
-}
-document.getElementById('buyerOrderDetailsClose')?.addEventListener('click',closePurchaseDetails);
-document.querySelectorAll('[data-close-buyer-order-details]').forEach(button=>button.addEventListener('click',closePurchaseDetails));
-purchaseDetailsModal?.addEventListener('click',event=>{if(event.target===purchaseDetailsModal)closePurchaseDetails();});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&purchaseDetailsModal&&!purchaseDetailsModal.hidden)closePurchaseDetails();});
-document.getElementById('buyerSellerRatingClose')?.addEventListener('click',closeSellerRatingModal);
-sellerRatingModal?.addEventListener('click',event=>{if(event.target===sellerRatingModal)closeSellerRatingModal();});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&sellerRatingModal&&!sellerRatingModal.hidden)closeSellerRatingModal();});
-document.addEventListener('click',event=>{
-    const contact=event.target.closest('#buyerOrderDetailsModal [data-buyer-chat-order]');
-    if(contact)closePurchaseDetails();
-    const rateButton=event.target.closest('#buyerOrderOpenRating');
-    if(rateButton){openSellerRatingModal(window.__buyerPurchaseOrders?.get(String(rateButton.dataset.orderNumber||'')));}
-    const historyToggle=event.target.closest('.buyer-order-history-toggle');
-    if(historyToggle){const card=historyToggle.closest('.buyer-order-tracking-card');const expanded=card.classList.toggle('is-expanded');historyToggle.setAttribute('aria-expanded',String(expanded));historyToggle.setAttribute('aria-label',expanded?'Show only the three most recent tracking events':'Show full tracking history');historyToggle.innerHTML=expanded?'<span class="buyer-order-history-close" aria-hidden="true">×</span>':`Show more <span>(${Math.max(0,card.querySelectorAll('.buyer-order-timeline li').length-3)})</span>`;}
-    const star=event.target.closest('#buyerSellerRatingForm [data-seller-rating]');
-    if(star){const form=star.closest('form');const value=Number(star.dataset.sellerRating);form.querySelector('[name="rating"]').value=String(value);form.querySelectorAll('[data-seller-rating]').forEach(button=>{const selected=Number(button.dataset.sellerRating)===value;button.classList.toggle('is-selected',Number(button.dataset.sellerRating)<=value);button.setAttribute('aria-checked',String(selected));});}
-    const confirmButton=event.target.closest('[data-confirm-order-id]');
-    if(!confirmButton)return;
-    confirmButton.disabled=true;confirmButton.textContent='Confirming…';
-    const config=window.__buyerPurchasesConfig||{};
-    fetch(`${config.ordersUrl||'/api/v1/buyer/orders'}/${encodeURIComponent(confirmButton.dataset.confirmOrderId)}/confirm-received`,{method:'PATCH',headers:{Accept:'application/json',Authorization:`Bearer ${config.apiToken||''}`,'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},credentials:'same-origin'})
-      .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message||'Could not confirm this order.');if(window.__refreshBuyerPurchases)await window.__refreshBuyerPurchases();const updated=window.__buyerPurchaseOrders?.get(String(result.order?.order_number));if(updated)openPurchaseDetails(updated);})
-      .catch(error=>{const feedback=document.getElementById('buyerOrderActionFeedback');if(feedback){feedback.hidden=false;feedback.textContent=error.message;}confirmButton.disabled=false;confirmButton.textContent='Confirm Order Received';});
-});
-document.addEventListener('submit',event=>{
-    const form=event.target.closest('#buyerSellerRatingForm');
-    if(!form)return;
-    event.preventDefault();
-    const submit=form.querySelector('[type="submit"]');const feedback=form.querySelector('.buyer-order-rating-feedback');
-    const config=window.__buyerPurchasesConfig||{};const productId=form.querySelector('[name="product_id"]').value;
-    const body=new FormData(form);
-    submit.disabled=true;feedback.hidden=true;
-    fetch(`/api/v1/buyer/products/${encodeURIComponent(productId)}/reviews`,{method:'POST',headers:{Accept:'application/json',Authorization:`Bearer ${config.apiToken||''}`,'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},credentials:'same-origin',body})
-      .then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.message||Object.values(result.errors||{}).flat()[0]||'Could not submit your rating.');const orderNumber=form.dataset.orderNumber;closeSellerRatingModal();if(window.__refreshBuyerPurchases)await window.__refreshBuyerPurchases();const updated=window.__buyerPurchaseOrders?.get(String(orderNumber));if(updated)openPurchaseDetails(updated);})
-      .catch(error=>{feedback.hidden=false;feedback.textContent=error.message;submit.disabled=false;});
-});
+/* Open the authenticated order page for every real purchase card. */
 document.addEventListener('click', (event) => {
     const card = event.target.closest('#purchaseRows [data-view-order-id]');
     if (!card || event.target.closest('a, button, input, select, textarea, label, [role="button"], [data-no-order-navigation]')) return;
-    openPurchaseDetails(window.__buyerPurchaseOrders?.get(String(card.dataset.viewOrderId)));
+    window.location.assign(`/buyer/view-order?order=${encodeURIComponent(card.dataset.viewOrderId)}`);
 });
 
 document.addEventListener('keydown', (event) => {
@@ -1551,7 +1463,7 @@ document.addEventListener('keydown', (event) => {
     const card = event.target.closest('#purchaseRows [data-view-order-id]');
     if (!card || event.target !== card) return;
     event.preventDefault();
-    openPurchaseDetails(window.__buyerPurchaseOrders?.get(String(card.dataset.viewOrderId)));
+    window.location.assign(`/buyer/view-order?order=${encodeURIComponent(card.dataset.viewOrderId)}`);
 });
 
 

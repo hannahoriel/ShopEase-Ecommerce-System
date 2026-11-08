@@ -2330,8 +2330,8 @@ Route::get('/logistics/register/review/document/{type}',
     [LogisticsRegistrationController::class, 'reviewDocument']
 )->name('logistics.register.review.document');
 
-Route::view('/buyer/view-order', 'pages.buyer.view-order')
-    ->name('buyer.view-order');
+Route::get('/buyer/view-order', [\App\Http\Controllers\Buyer\OrderPageController::class, 'show'])
+    ->middleware(['auth', 'role:buyer'])->name('buyer.view-order');
 
 Route::middleware(['auth', 'role:buyer'])->prefix('buyer/likes')->name('buyer.likes.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\Buyer\LikeController::class, 'index'])->name('index');

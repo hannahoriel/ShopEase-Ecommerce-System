@@ -71,6 +71,7 @@ const input = [
 
     // APP
     'resources/js/app.js',
+    'resources/js/buyer/pages/view-order.js',
 
     // COMPONENTS
     'resources/js/components/dashboard-announcement-carousel.js',
