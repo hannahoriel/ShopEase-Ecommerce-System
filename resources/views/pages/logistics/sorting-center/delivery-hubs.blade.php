@@ -80,8 +80,8 @@
 .hb-profile-avatar{width:64px;height:64px;background:#f2e5e2;border-radius:50%;display:grid;place-items:center;color:#751b1b;font-weight:700;font-size:21px;margin-bottom:7px}
 .hb-profile-summary>strong{font-size:14px;overflow-wrap:anywhere}.hb-profile-summary>small{font-size:11px;color:#958b87}.hb-profile-contact{display:grid;gap:5px;width:100%;margin-top:17px;overflow-wrap:anywhere}
 .hb-profile-contact span{font-size:10px;color:#988e8a}.hb-profile-contact b{font-size:11px;font-weight:500;margin-bottom:9px}
-.hb-profile-content{min-width:0}.hb-profile-section{margin-bottom:25px}.hb-profile-section h3{color:#902424;font-size:13px;font-weight:650;padding:0 0 11px;border-bottom:1px solid #eee7e3;margin:0 0 16px}
-.hb-profile-section h3 span{margin-right:5px}.hb-profile-list{display:grid;grid-template-columns:1fr 1fr;gap:13px 23px}.hb-profile-row{min-width:0;display:grid;gap:4px;align-content:start}
+.hb-profile-content{min-width:0}.hb-profile-section{margin-bottom:25px}.hb-profile-section h3{display:flex;align-items:center;gap:8px;color:#902424;font-size:13px;font-weight:650;padding:0 0 11px;border-bottom:1px solid #eee7e3;margin:0 0 16px}
+.hb-profile-section h3>span{display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;width:18px;margin:0}.hb-profile-section h3>span svg{display:block;width:18px;height:18px}.hb-profile-list{display:grid;grid-template-columns:1fr 1fr;gap:13px 23px}.hb-profile-row{min-width:0;display:grid;gap:4px;align-content:start}
 .hb-profile-row>span{font-size:11px;color:#99908c}.hb-profile-row>b{font-size:12px;line-height:1.6;font-weight:500;overflow-wrap:anywhere}.hb-profile-row .hb-status{font-weight:500}
 .hb-status{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:100px;background:#e9f7ed;color:#2e7d46;font-size:11px!important;width:max-content;font-weight:550!important}
 .hb-status.inactive{background:#f2eded;color:#776e70}.hb-status:before{content:'';height:6px;width:6px;border-radius:100%;background:currentColor}
@@ -171,6 +171,39 @@
 .sc-archive-filter{font-size:12px;color:#766c67}
 @media(max-width:780px){.sc-summary{grid-template-columns:1fr 1fr}.sc-summary-card{padding:14px}.sc-summary-card strong{font-size:21px}}
 @media(max-width:520px){.sc-summary{grid-template-columns:1fr}.hb-toolbar{flex-wrap:wrap}.hb-toolbar input{max-width:100%;width:100%}}
+/* Compact details card, centered above the complete account interface. */
+#scHubModal {
+  padding:24px;
+  box-sizing:border-box;
+}
+#scHubModal .hb-details-dialog {
+  width:min(920px, 100%); max-width:920px; min-width:0;
+  max-height:min(82dvh, 740px);
+  display:flex; flex-direction:column; overflow:hidden;
+  container-type:inline-size;
+}
+#scHubModal .hb-dialog-head, #scHubModal .hb-detail-actions { flex-shrink:0; }
+#scHubModal .hb-detail-section { overflow-y:auto; min-height:0; overscroll-behavior:contain; }
+#scHubModal .hb-detail-actions { margin-top:0; }
+#scHubModal .hb-dialog-head { padding:16px 22px; }
+#scHubModal .hb-dialog-head h2 { font-size:18px; }
+#scHubModal .hb-detail-section { padding:18px 22px; }
+#scHubModal .hb-profile-layout { grid-template-columns:minmax(170px,210px) minmax(0,1fr); gap:24px; }
+#scHubModal .hb-profile-summary { padding-right:20px; }
+#scHubModal .hb-profile-list { column-gap:20px; row-gap:12px; }
+#scHubModal .hb-profile-row>b { font-size:12px; }
+#scHubModal .hb-detail-actions { padding:12px 0; margin-left:22px; margin-right:22px; }
+@container (max-width:720px) {
+  #scHubModal .hb-profile-layout { grid-template-columns:minmax(0,1fr); gap:18px; }
+  #scHubModal .hb-profile-summary { border-right:0; border-bottom:1px solid #eee5e1; padding:0 0 18px; }
+}
+@container (max-width:430px) {
+  #scHubModal .hb-profile-list { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:700px) {
+  #scHubModal { padding:12px; }
+  #scHubModal .hb-details-dialog { max-height:calc(100dvh - 24px); }
+}
 </style>
 </head>
 <body class="lg-body">
@@ -237,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('scHubModal').hidden=false;document.body.classList.add('lg-modal-open');$('scHubClose').focus();
   }
   function closeDetails(){ $('scHubModal').hidden=true;document.body.classList.remove('lg-modal-open'); }
+
   $('scHubRows').addEventListener('click',event=>{const row=event.target.closest('[data-hub-id]');if(row)openDetails(row.dataset.hubId)});
   $('scHubRows').addEventListener('keydown',event=>{const row=event.target.closest('[data-hub-id]');if(row&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openDetails(row.dataset.hubId)}});
   $('scHubClose').addEventListener('click',closeDetails);

@@ -69,8 +69,8 @@
 .hb-profile-avatar{width:64px;height:64px;background:#f2e5e2;border-radius:50%;display:grid;place-items:center;color:#751b1b;font-weight:700;font-size:21px;margin-bottom:7px}
 .hb-profile-summary>strong{font-size:14px;overflow-wrap:anywhere}.hb-profile-summary>small{font-size:11px;color:#958b87}.hb-profile-contact{display:grid;gap:5px;width:100%;margin-top:17px;overflow-wrap:anywhere}
 .hb-profile-contact span{font-size:10px;color:#988e8a}.hb-profile-contact b{font-size:11px;font-weight:500;margin-bottom:9px}
-.hb-profile-content{min-width:0}.hb-profile-section{margin-bottom:25px}.hb-profile-section h3{color:#902424;font-size:13px;font-weight:650;padding:0 0 11px;border-bottom:1px solid #eee7e3;margin:0 0 16px}
-.hb-profile-section h3 span{margin-right:5px}.hb-profile-list{display:grid;grid-template-columns:1fr 1fr;gap:13px 23px}.hb-profile-row{min-width:0;display:grid;gap:4px;align-content:start}
+.hb-profile-content{min-width:0}.hb-profile-section{margin-bottom:25px}.hb-profile-section h3{display:flex;align-items:center;gap:8px;color:#902424;font-size:13px;font-weight:650;padding:0 0 11px;border-bottom:1px solid #eee7e3;margin:0 0 16px}
+.hb-profile-section h3>span{display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;width:18px;margin:0}.hb-profile-section h3>span svg{display:block;width:18px;height:18px}.hb-profile-list{display:grid;grid-template-columns:1fr 1fr;gap:13px 23px}.hb-profile-row{min-width:0;display:grid;gap:4px;align-content:start}
 .hb-profile-row>span{font-size:11px;color:#99908c}.hb-profile-row>b{font-size:12px;line-height:1.6;font-weight:500;overflow-wrap:anywhere}.hb-profile-row .hb-status{font-weight:500}
 .hb-status{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:100px;background:#e9f7ed;color:#2e7d46;font-size:11px!important;width:max-content;font-weight:550!important}
 .hb-status.inactive{background:#f2eded;color:#776e70}.hb-status:before{content:'';height:6px;width:6px;border-radius:100%;background:currentColor}
@@ -157,11 +157,32 @@
 .hb-request-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#8c807b}.hb-request-actions{display:flex;gap:10px;justify-content:flex-end;padding:15px 24px 22px;border-top:1px solid #eee6e1}.hb-request-actions .hb-action.approve{background:#287c49;border-color:#287c49;color:white}.hb-request-actions .hb-action.reject{background:#fff0ef;border-color:#edc2c1;color:#ac3434}.hb-request-actions button:disabled{opacity:.5}
 .hb-request-note{margin:16px 25px;font-size:11px;color:#887970;line-height:1.7}.hb-request-result{margin:0 24px 16px;font-size:11px;color:#955c23}
 @media(max-width:640px){.hb-request-comparison{display:block;overflow-x:auto}.hb-request-comparison th,.hb-request-comparison td{min-width:100px}.hb-request-actions{flex-wrap:wrap;padding:14px}}
+/* Compact Sorting Center details; header, tabs and actions stay visible. */
+#hbDetailsModal .hb-details-dialog {
+  width:min(920px,100%); max-width:920px; max-height:min(82dvh,740px);
+  display:flex; flex-direction:column; overflow:hidden; container-type:inline-size;
+}
+#hbDetailsModal .hb-dialog-head { padding:16px 22px; flex-shrink:0; }
+#hbDetailsModal .hb-dialog-head h2 { font-size:18px; }
+#hbDetailsModal > .hb-dialog > .hb-tab-bar { flex-shrink:0; padding:8px 22px 0; }
+#hbDetailsModal .hb-detail-section { min-height:0; overflow:auto; padding:18px 22px; }
+#hbDetailsModal .hb-profile-layout { grid-template-columns:minmax(170px,210px) minmax(0,1fr); gap:24px; }
+#hbDetailsModal .hb-profile-summary { padding-right:20px; }
+#hbDetailsModal .hb-profile-list { column-gap:20px; row-gap:12px; }
+#hbDetailsModal .hb-profile-row>b { font-size:12px; }
+#hbDetailsModal .hb-detail-actions { flex-shrink:0; margin-top:0; padding-top:12px; padding-bottom:12px; }
+#hbDetailsModal .hb-panel { overflow-x:auto; }
+@container(max-width:720px) {
+  #hbDetailsModal .hb-profile-layout { grid-template-columns:minmax(0,1fr); gap:18px; }
+  #hbDetailsModal .hb-profile-summary { border-right:0; border-bottom:1px solid #eee5e1; padding:0 0 18px; }
+}
+@container(max-width:430px) { #hbDetailsModal .hb-profile-list { grid-template-columns:minmax(0,1fr); } }
+.lg-pagehead.hb-create-toolbar { justify-content:flex-end; }
 </style></head><body class="lg-body">
 @include('components.logistics.sidebar')
 @include('components.logistics.navbar')
 <main class="lg-main" id="lgMain"><div class="lg-page-wrap">
-<div class="lg-pagehead"><div><h1>Sorting Centers</h1><p>Manage your provincial sorting centers. Each province can have one main sorting center with its own office and manager.</p></div><button class="lg-btn lg-btn-primary" id="hbOpen">+ Create Sorting Center</button></div>
+<div class="lg-pagehead hb-create-toolbar"><button class="lg-btn lg-btn-primary" id="hbOpen">+ Create Sorting Center</button></div>
 <div class="hb-filters" role="group" aria-label="Filter sorting centers"><button class="hb-pill active" data-filter="all">All <small id="hbCountAll">0</small></button><button class="hb-pill" data-filter="active">Active <small id="hbCountActive">0</small></button><button class="hb-pill" data-filter="inactive">Inactive <small id="hbCountInactive">0</small></button></div>
 <div class="hb-toolbar"><input id="hbSearch" type="search" aria-label="Search sorting centers" placeholder="⌕  Search center, province or manager"><span id="hbResultCount" class="hb-count">0 centers</span></div>
 <div class="hb-panel"><table class="hb-table"><thead><tr><th>Sorting Center</th><th>Province</th><th>Manager</th><th>Delivery Hubs</th><th>Drivers</th><th>Vehicles</th><th>Status</th></tr></thead><tbody id="hbRows"><tr><td colspan="7" style="text-align:center;color:#999;padding:35px">No sorting centers yet.</td></tr></tbody></table></div>

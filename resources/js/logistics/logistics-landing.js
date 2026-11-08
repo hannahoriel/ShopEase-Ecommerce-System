@@ -114,64 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 
-/* ShopEase: Main Landing <-> Logistics Landing transition. */
-(() => {
-  const TRANSITION_KEY = 'shopease:landing-switch';
-  const DURATION = 250;
-  const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
-  const currentIsMain = currentPath === '/';
-  const currentIsLogistics = currentPath === '/logistics/landing';
-  if (!currentIsMain && !currentIsLogistics) return;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  // Exit is handled on the source page; entry animates only after a matching switch.
-  let entering = false;
-  try {
-    const value = window.sessionStorage.getItem(TRANSITION_KEY);
-    if (value) {
-      const state = JSON.parse(value);
-      window.sessionStorage.removeItem(TRANSITION_KEY);
-      if (state && state.to === currentPath && Date.now() - state.when < 10000) entering = true;
-    }
-  } catch (_) { /* Storage may be disabled; navigation still works. */ }
-
-  if (entering && !reducedMotion.matches) {
-    document.body.classList.add('shopease-landing-enter');
-    // Allow the browser to paint its initial transition state before animating.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.body.classList.add('shopease-landing-entered');
-    }));
-    window.setTimeout(() => {
-      document.body.classList.remove('shopease-landing-enter', 'shopease-landing-entered');
-    }, 650);
-  }
-
-  let switching = false;
-  document.addEventListener('click', (event) => {
-    if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-    const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
-    if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
-    let url;
-    try { url = new URL(link.href, location.href); } catch (_) { return; }
-    if (url.origin !== location.origin) return;
-    const destination = url.pathname.replace(/\/+$/, '') || '/';
-    const isLandingSwitch = (currentIsMain && destination === '/logistics/landing') ||
-      (currentIsLogistics && destination === '/');
-    if (!isLandingSwitch) return;
-    event.preventDefault();
-    if (switching) return;
-    switching = true;
-    try { sessionStorage.setItem(TRANSITION_KEY, JSON.stringify({to: destination, when: Date.now()})); } catch (_) {}
-    if (reducedMotion.matches) { location.assign(url.href); return; }
-    document.body.classList.add('shopease-landing-leaving');
-    window.setTimeout(() => location.assign(url.href), DURATION);
-  });
-  // Back-forward-cache pages should never remain faded out.
-  window.addEventListener('pageshow', () => {
-    document.body.classList.remove('shopease-landing-leaving');
-    switching = false;
-  });
-})();
+// Landing switches use the shared bag loader; keep the outgoing page visible.
+try { sessionStorage.removeItem('shopease:landing-switch'); } catch (_) {}
 
 // Successful-login expansion: use the SAME overlay/card/iframe CSS as signup.
 // A rejected login never calls this function.

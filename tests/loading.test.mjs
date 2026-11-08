@@ -13,7 +13,9 @@ function setup(options = {}) {
     const document = {
         referrer: options.referrer || '',
         querySelector: () => ({ content: options.publicPage ? 'public' : 'account' }),
-        querySelectorAll: () => options.modals || [],
+        querySelectorAll: selector => selector === '[data-se-modal-layer]'
+            ? (options.layers || options.modals || []).filter(el => el.hasAttribute?.('data-se-modal-layer'))
+            : options.modals || [],
         documentElement: { classList }, contains: () => true,
         getElementById: () => bar,
         addEventListener: (name, fn) => {
@@ -36,7 +38,7 @@ function setup(options = {}) {
         window, document, XMLHttpRequest: XHR, URL,
         MutationObserver: class { observe() {} }, requestAnimationFrame: fn => fn(),
         getComputedStyle: el => el.computed || { display: 'block', visibility: 'visible', opacity: '1' },
-        location: new URL('https://shop.test/dashboard'), queueMicrotask,
+        location: new URL(options.url || 'https://shop.test/dashboard'), queueMicrotask,
         setTimeout: (fn, ms) => { timers.set(++timerId, { fn, ms }); return timerId; },
         clearTimeout: id => timers.delete(id),
     });
@@ -54,6 +56,21 @@ function button() {
         setAttribute: (key, value) => attrs.set(key, value), removeAttribute: key => attrs.delete(key),
     };
 }
+
+test('logistics signup skips the bag transition while its form actions retain feedback', () => {
+    const landing = setup({ publicPage:true }), signup = button();
+    signup.closest = selector => selector.includes('data-loading') ? {} : null;
+    landing.events.load();
+    landing.documentEvents.click({target:{closest:selector => selector.startsWith('button') ? signup : null},button:0});
+    landing.events.beforeunload();
+    assert.equal(landing.classes.has('se-loading-action'),false);
+    assert.equal(landing.classes.has('se-loading-page'),false);
+    const registration = setup({publicPage:true,url:'https://shop.test/logistics/register/company'});
+    assert.equal(registration.classes.has('se-loading-boot'),false);
+    const action = button();
+    registration.documentEvents.click({target:{closest:selector => selector.startsWith('button') ? action : null},button:0});
+    assert.equal(registration.classes.has('se-loading-action'),true);
+});
 
 test('overlapping requests keep feedback until the last success or failure', async () => {
     const s = setup();
@@ -197,6 +214,22 @@ test('Inventory open-modal buttons never blur the sidebar, actual open dialogs d
     const open = setup({ modals: [opener, dialog] });
     open.readyListeners.find(fn => fn.toString().includes('modalSelector'))();
     assert.equal(open.classes.has('se-modal-open'), true);
+});
+
+test('modal stacking uses its fixed overlay and releases it when closed', () => {
+    const overlay = button();
+    Object.assign(overlay, { matches: () => false, computed: {position:'fixed',display:'flex',visibility:'visible',opacity:'1'}, parentElement:null });
+    overlay.hasAttribute = key => overlay.attrs.has(key);
+    const dialog = { matches: () => false, getClientRects: () => [{}], getAttribute: () => null, parentElement:overlay };
+    const s = setup({ modals:[dialog], layers:[overlay] });
+    const update = s.readyListeners.find(fn => fn.toString().includes('modalSelector'));
+    update();
+    assert.equal(overlay.attrs.has('data-se-modal-layer'),true);
+    assert.equal(s.classes.has('se-modal-open'),true);
+    overlay.hidden = true;
+    update();
+    assert.equal(overlay.attrs.has('data-se-modal-layer'),false);
+    assert.equal(s.classes.has('se-modal-open'),false);
 });
 test('product info controls stay quiet while selected product photos show the bag', () => {
     const s = setup(), control = button(); s.events.load();

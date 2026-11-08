@@ -4979,22 +4979,6 @@ html, body {max-width:100%;overflow-x:clip;}
 }
 
 
-/* ShopEase landing-to-landing: minimal fade only (no sliding or scaling). */
-body > .landing-page {
-  transition: opacity 250ms ease-in-out;
-}
-body.shopease-landing-leaving > .landing-page {
-  opacity: 0;
-  pointer-events: none;
-}
-body.shopease-landing-enter > .landing-page { opacity: 0; }
-body.shopease-landing-enter.shopease-landing-entered > .landing-page { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  body > .landing-page { transition: none !important; }
-  body.shopease-landing-leaving > .landing-page,
-  body.shopease-landing-enter > .landing-page { opacity: 1; }
-}
-
 /* Android APK download link: preserve existing .mobile-cta button appearance. */
 a.mobile-cta { text-decoration: none; }
 a.mobile-cta:visited { color: #fff; }
