@@ -7,10 +7,12 @@ use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsAccountChangeRequest;
 use App\Models\Logistics\LogisticsAccountSetting;
 use App\Models\User;
+use App\Notifications\LogisticsAccountChangeRequested;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -83,6 +85,11 @@ class AccountController extends Controller
             'requested_data' => $changes,
             'status' => 'pending',
         ]);
+
+        $companyName = Logistics::query()->where('user_id', $request->user()->id)->value('business_name')
+            ?: $request->user()->name;
+        $admins = User::query()->where('role', User::ROLE_ADMIN)->get();
+        Notification::send($admins, new LogisticsAccountChangeRequested($changeRequest->id, $companyName));
 
         return response()->json([
             'message' => 'Your profile change request was sent to ShopEase administration for review.',
@@ -158,7 +165,7 @@ class AccountController extends Controller
     {
         abort_unless($request->user()->role === User::ROLE_ADMIN, 403);
         $filters = $request->validate(['status' => ['nullable', Rule::in(['pending', 'approved', 'rejected'])]]);
-        $query = LogisticsAccountChangeRequest::query()->with('user:id,name,email')
+        $query = LogisticsAccountChangeRequest::query()->with(['user:id,name,email', 'user.logisticsProfile:user_id,business_name'])
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status));
 
         return response()->json(['data' => $query->latest()->paginate(25)]);
@@ -200,7 +207,7 @@ class AccountController extends Controller
                 'reviewed_by' => $request->user()->id, 'reviewed_at' => now(),
             ])->save();
 
-            return $changeRequest->fresh('user:id,name,email');
+            return $changeRequest->fresh(['user:id,name,email', 'user.logisticsProfile:user_id,business_name']);
         });
 
         return response()->json(['message' => 'Account change request reviewed.', 'data' => $this->serializeChangeRequest($changeRequest)]);
@@ -252,6 +259,7 @@ class AccountController extends Controller
             'created_at' => $request->created_at?->toISOString(),
             'reviewed_at' => $request->reviewed_at?->toISOString(),
             'user' => $request->relationLoaded('user') ? $request->user : null,
+            'company_name' => $request->relationLoaded('user') ? ($request->user?->logisticsProfile?->business_name ?? null) : null,
         ];
     }
 }
