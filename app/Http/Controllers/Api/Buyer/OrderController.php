@@ -13,6 +13,7 @@ use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductReview;
+use App\Models\Seller\Seller;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
@@ -263,18 +264,27 @@ class OrderController extends Controller
         $validated = $request->validate([
             'province' => ['required', 'string', 'max:150'],
             'municipality' => ['required', 'string', 'max:150'],
+            'seller_ids' => ['sometimes', 'array', 'min:1'],
+            'seller_ids.*' => ['required', 'integer', 'distinct', 'exists:sellers,id'],
         ]);
         $cartItems = CartItem::query()
             ->where('user_id', $request->user()->id)
             ->with('product.seller')
             ->get();
 
-        $providers = $this->approvedLogisticsProviders();
-        $data = $cartItems
+        $sellerIds = $cartItems
             ->filter(fn (CartItem $item) => $item->product?->seller)
-            ->groupBy(fn (CartItem $item) => $item->product->seller_id)
-            ->map(function ($items, $sellerId) use ($providers, $validated): array {
-                $seller = $items->first()->product->seller;
+            ->map(fn (CartItem $item) => (int) $item->product->seller_id)
+            ->merge(array_map('intval', $validated['seller_ids'] ?? []))
+            ->unique()
+            ->values();
+        $sellers = Seller::query()
+            ->where('registration_status', 'active')
+            ->whereIn('id', $sellerIds)
+            ->get();
+        $providers = $this->approvedLogisticsProviders();
+        $data = $sellers
+            ->map(function (Seller $seller) use ($providers, $validated): array {
                 $options = $providers
                     ->filter(fn (Logistics $provider) => $this->coversLocations(
                         $provider,
@@ -290,7 +300,7 @@ class OrderController extends Controller
                     ->values();
 
                 return [
-                    'seller_id' => (int) $sellerId,
+                    'seller_id' => (int) $seller->id,
                     'seller_name' => $seller->store_name,
                     'options' => $options,
                 ];
@@ -346,30 +356,28 @@ class OrderController extends Controller
         }
         $orders = DB::transaction(function () use ($request, $validated) {
             $checkoutCartItemIds = $validated['cart_item_ids'] ?? [];
+            $itemsQuery = CartItem::query()
+                ->where('user_id', $request->user()->id)
+                ->with(['product.seller']);
+            // Only use explicitly selected cart rows. Buy Now items are added as
+            // in-memory rows below so they cannot collide with a matching cart row.
+            $itemsQuery->whereIn('id', $checkoutCartItemIds);
+            $items = $itemsQuery
+                ->orderBy('product_id')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
             foreach ($validated['checkout_items'] ?? [] as $checkoutItem) {
-                $cartItem = CartItem::create([
+                $items->push(new CartItem([
                     'user_id' => $request->user()->id,
                     'product_id' => $checkoutItem['product_id'],
                     'quantity' => $checkoutItem['quantity'],
                     'variation' => $checkoutItem['variation'] ?? null,
                     'color' => $checkoutItem['color'] ?? null,
                     'size' => $checkoutItem['size'] ?? null,
-                ]);
-                $checkoutCartItemIds[] = $cartItem->id;
+                ]));
             }
-
-            $itemsQuery = CartItem::query()
-                ->where('user_id', $request->user()->id)
-                ->with(['product.seller']);
-            if (array_key_exists('cart_item_ids', $validated)) {
-                // An explicit buyer cart selection must never fall back to purchasing the entire cart.
-                $itemsQuery->whereIn('id', $checkoutCartItemIds);
-            }
-            $items = $itemsQuery
-                ->orderBy('product_id')
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
 
             if ($items->isEmpty()) {
                 throw new HttpException(422, 'Your cart is empty. Add items before placing an order.');
@@ -393,6 +401,36 @@ class OrderController extends Controller
                 }
             }
 
+            $cartSellerIds = $items
+                ->map(fn (CartItem $item): int => (int) $item->product->seller_id)
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+            $selectedSellerIds = collect($validated['logistics_selections'])
+                ->pluck('seller_id')
+                ->map(fn ($id): int => (int) $id)
+                ->sort()
+                ->values()
+                ->all();
+            if ($cartSellerIds !== $selectedSellerIds) {
+                throw ValidationException::withMessages([
+                    'logistics_selections' => ['Choose one logistics company for every shop in your order.'],
+                ]);
+            }
+
+            if ($validated['payment_method'] === 'ShopEase Wallet') {
+                $walletBalance = DB::table('buyer_wallets')
+                    ->where('user_id', $request->user()->id)
+                    ->lockForUpdate()
+                    ->value('balance');
+                if ((float) $walletBalance <= 0) {
+                    throw ValidationException::withMessages([
+                        'payment_method' => ['Your ShopEase Wallet balance is zero. Choose Cash on Delivery.'],
+                    ]);
+                }
+            }
+
             $voucherSellerId = null;
             if (! empty($validated['voucher_code'])) {
                 $voucherQuery = \App\Models\Seller\SellerVoucher::where('code', strtoupper(trim($validated['voucher_code'])));
@@ -405,17 +443,20 @@ class OrderController extends Controller
             $orders = $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
                 ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId, $approvedProviders): Order {
                     $seller = $sellerItems->first()->product->seller;
-                    $providerSelection = collect($validated['logistics_selections'])
+                    $providerSelection = collect($validated['logistics_selections'] ?? [])
                         ->first(fn (array $selection) => (int) $selection['seller_id'] === (int) $sellerId);
-                    $logistics = $providerSelection
-                        ? $approvedProviders->first(fn (Logistics $provider) =>
+                    if (! $providerSelection) {
+                        throw ValidationException::withMessages([
+                            'logistics_selections' => ['Choose a logistics company for every shop in your order.'],
+                        ]);
+                    }
+                    $logistics = $approvedProviders->first(fn (Logistics $provider) =>
                             (int) $provider->id === (int) $providerSelection['logistics_id']
                             && $this->coversLocations($provider, [
                                 ['province' => $validated['delivery_province'], 'municipality' => $validated['delivery_municipality']],
                                 ['province' => $seller->province, 'municipality' => $seller->municipality],
                             ])
-                        )
-                        : null;
+                        );
                     if (! $logistics) {
                         throw ValidationException::withMessages([
                             'logistics_selections' => ['Choose an approved logistics company with an active hub or sorting center at both delivery locations.'],
@@ -429,11 +470,19 @@ class OrderController extends Controller
                     }
                     $voucherDiscount = $voucherResult['discount'] ?? 0;
                     $total = max(0, $subtotal + $shippingFee - $voucherDiscount);
+                    if ($validated['payment_method'] === 'ShopEase Wallet' && $total <= 0) {
+                        throw ValidationException::withMessages([
+                            'payment_method' => ['ShopEase Wallet can only be used for an order with a positive total.'],
+                        ]);
+                    }
 
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
-                        'logistics_id' => $logistics->id,
+                        // Buyers can place the order before a delivery provider is chosen.
+                        // The seller's To Ship flow creates the pickup shipment and assigns
+                        // a rider from the seller's dispatch area.
+                        'logistics_id' => $logistics?->id,
                         'order_number' => null,
                         'total' => $total,
                         'shipping_fee' => $shippingFee,
@@ -506,9 +555,14 @@ class OrderController extends Controller
                 })
                 ->values();
 
-            CartItem::where('user_id', $request->user()->id)
-                ->whereIn('id', $items->pluck('id'))
-                ->delete();
+            $purchasedCartItemIds = $items
+                ->filter(fn (CartItem $item): bool => $item->exists)
+                ->pluck('id');
+            if ($purchasedCartItemIds->isNotEmpty()) {
+                CartItem::where('user_id', $request->user()->id)
+                    ->whereIn('id', $purchasedCartItemIds)
+                    ->delete();
+            }
 
             return $orders;
         });

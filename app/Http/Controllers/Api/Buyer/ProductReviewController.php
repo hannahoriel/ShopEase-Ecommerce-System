@@ -19,6 +19,17 @@ class ProductReviewController extends Controller
     {
         abort_unless($product->status === 'active' && ! $product->is_archived, 404);
 
+        $buyerId = $request->user()->id;
+        $hasCompletedPurchase = Order::query()
+            ->where('buyer_id', $buyerId)
+            ->where('status', 'completed')
+            ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
+            ->exists();
+        $hasReviewed = ProductReview::query()
+            ->where('product_id', $product->id)
+            ->where('buyer_id', $buyerId)
+            ->exists();
+
         $validated = $request->validate([
             'rating' => ['nullable', 'integer', 'between:1,5'],
         ]);
@@ -35,6 +46,8 @@ class ProductReviewController extends Controller
 
         return response()->json([
             'summary' => $this->summary($product->id),
+            'can_review' => $hasCompletedPurchase && ! $hasReviewed,
+            'has_reviewed' => $hasReviewed,
             'data' => $reviews->map(fn (ProductReview $review): array => $this->serializeReview($review))->values(),
             'total' => ProductReview::where('product_id', $product->id)->when(isset($validated['rating']), fn ($query) => $query->where('rating', $validated['rating']))->count(),
         ]);

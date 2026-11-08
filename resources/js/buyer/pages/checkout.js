@@ -77,11 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 + [...new Set(cartItems.map(item => String(item.product.seller.id)))].reduce((sum, id) => sum + selectedShippingFee(id), 0)
                 - appliedVoucherDiscount;
             const refreshWalletOption = () => {
-                const available = walletLoaded && cartItems.length > 0 && walletBalance + 0.001 >= Math.max(0, walletTotal());
+                const total = Math.max(0, walletTotal());
+                const available = walletLoaded && walletBalance > 0 && total > 0 && cartItems.length > 0
+                    && walletBalance + 0.001 >= total;
                 if (walletOption) { walletOption.disabled = !available; walletOption.setAttribute('aria-disabled', String(!available)); }
                 if (walletAvailability) walletAvailability.textContent = walletLoaded
                     ? `Available ShopEase Wallet balance: ${money(walletBalance)} · Order total: ${money(Math.max(0,walletTotal()))}`
-                        + (available ? ' · Sufficient balance' : ' · Insufficient balance — Cash on Delivery only')
+                        + (available ? ' · Sufficient balance' : walletBalance <= 0
+                            ? ' · Wallet balance is zero — Cash on Delivery only'
+                            : ' · Insufficient balance — Cash on Delivery only')
                     : walletError
                         ? `Wallet balance unavailable · Unable to verify the balance. Wallet payment is temporarily disabled.`
                         : `Wallet balance: ${money(0)} · Checking wallet…`;

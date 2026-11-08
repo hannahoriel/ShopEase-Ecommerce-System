@@ -1957,8 +1957,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </section>
 
                 ${
-                    registration.user_type ===
-                    'seller'
+                    ['seller', 'logistics'].includes(registration.user_type)
                         ? `
                             <div class="border-t border-gray-200 my-7"></div>
 
@@ -2024,10 +2023,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             title.textContent =
                 `${
-                    registration.user_type ===
-                    'seller'
+                    registration.user_type === 'seller'
                         ? 'Seller'
-                        : 'Buyer'
+                        : registration.user_type === 'logistics'
+                            ? 'Logistics'
+                            : 'Buyer'
                 } Details`;
 
         }
@@ -2236,6 +2236,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                 openRegistrationModal(
                                     buyerDetailsModal
+                                );
+
+                            }
+
+                        }
+
+                        if (
+                            type ===
+                            'logistics'
+                        ) {
+
+                            if (
+                                await loadRegistrationDetails(
+                                    this,
+                                    sellerDetailsModal
+                                )
+                            ) {
+
+                                openRegistrationModal(
+                                    sellerDetailsModal
                                 );
 
                             }

@@ -46,7 +46,9 @@ class AuthController extends Controller
         if ($user->role !== User::ROLE_ADMIN && $user->registration_status === 'pending') {
             throw ValidationException::withMessages([
                 'email' => $user->role === User::ROLE_RIDER
-                    ? 'Your rider registration is still pending delivery hub approval.'
+                    ? ($user->riderProfile?->registration_type === 'courier'
+                        ? 'Your courier registration is still pending sorting center approval.'
+                        : 'Your rider registration is still pending delivery hub approval.')
                     : 'Your registration is still pending administrator approval.',
             ]);
         }
@@ -168,7 +170,11 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'message' => 'Your registration has been submitted and is awaiting administrator approval.',
+            'message' => $isCourier
+                ? 'Your courier registration has been submitted and is awaiting sorting center approval.'
+                : ($role === User::ROLE_RIDER
+                    ? 'Your rider registration has been submitted and is awaiting delivery hub approval.'
+                    : 'Your registration has been submitted and is awaiting administrator approval.'),
             'status' => 'pending',
             'application_id' => $role === User::ROLE_RIDER && $application
                 ? 'RC-'.str_pad((string) $application->id, 6, '0', STR_PAD_LEFT)
