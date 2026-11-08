@@ -412,6 +412,13 @@ class OrderStatusController extends Controller
                             'logistics_branch_id' => $rider->logistics_branch_id,
                             'logistics_delivery_hub_id' => $hub?->id,
                         ]);
+                        if (! $order->logistics_id) {
+                            $assignedLogisticsId = $rider->logisticsBranch()
+                                ->value('logistics_id');
+                            if ($assignedLogisticsId) {
+                                $order->update(['logistics_id' => $assignedLogisticsId]);
+                            }
+                        }
                     }
                 }
             }

@@ -319,7 +319,7 @@ class OrderController extends Controller
             'delivery_province' => ['required', 'string', 'max:150'],
             'delivery_municipality' => ['required', 'string', 'max:150'],
             'payment_method' => ['required', 'in:Cash on Delivery'],
-            'logistics_selections' => ['required', 'array', 'min:1'],
+            'logistics_selections' => ['sometimes', 'array'],
             'logistics_selections.*.seller_id' => ['required', 'integer', 'distinct', 'exists:sellers,id'],
             'logistics_selections.*.logistics_id' => ['required', 'integer', 'exists:logistics,id'],
             'voucher_code' => ['nullable', 'string', 'max:20'],
@@ -394,7 +394,7 @@ class OrderController extends Controller
             $orders = $items->groupBy(fn (CartItem $item) => $item->product->seller_id)
                 ->map(function ($sellerItems, $sellerId) use ($validated, $request, $voucherSellerId, $approvedProviders): Order {
                     $seller = $sellerItems->first()->product->seller;
-                    $providerSelection = collect($validated['logistics_selections'])
+                    $providerSelection = collect($validated['logistics_selections'] ?? [])
                         ->first(fn (array $selection) => (int) $selection['seller_id'] === (int) $sellerId);
                     $logistics = $providerSelection
                         ? $approvedProviders->first(fn (Logistics $provider) =>
@@ -405,7 +405,7 @@ class OrderController extends Controller
                             ])
                         )
                         : null;
-                    if (! $logistics) {
+                    if ($providerSelection && ! $logistics) {
                         throw ValidationException::withMessages([
                             'logistics_selections' => ['Choose an approved logistics company with an active hub or sorting center at both delivery locations.'],
                         ]);
@@ -422,7 +422,10 @@ class OrderController extends Controller
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
-                        'logistics_id' => $logistics->id,
+                        // Buyers can place the order before a delivery provider is chosen.
+                        // The seller's To Ship flow creates the pickup shipment and assigns
+                        // a rider from the seller's dispatch area.
+                        'logistics_id' => $logistics?->id,
                         'order_number' => null,
                         'total' => $total,
                         'shipping_fee' => $shippingFee,
