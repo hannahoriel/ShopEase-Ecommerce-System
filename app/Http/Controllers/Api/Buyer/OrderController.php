@@ -135,6 +135,7 @@ class OrderController extends Controller
                 'items' => $order->items->map(fn ($item): array => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
+                    'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                     'image_url' => ($item->product?->selectedImageForCart($item->variation, $item->color, $item->size) ?: $this->productImageUrl($item->product?->photos[0] ?? null)),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
@@ -479,6 +480,7 @@ class OrderController extends Controller
                         $orderItem = $order->items()->create([
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->name,
+                            'is_fragile' => (bool) $item->product->is_fragile,
                             'variation' => $item->variation,
                             'color' => $item->color,
                             'size' => $item->size,
@@ -523,6 +525,7 @@ class OrderController extends Controller
                 'items' => $order->items->map(fn ($item): array => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
+                    'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                     'image_url' => ($item->product?->selectedImageForCart($item->variation, $item->color, $item->size) ?: $this->productImageUrl($item->product?->photos[0] ?? null)),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
