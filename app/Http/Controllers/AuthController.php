@@ -20,7 +20,7 @@ class AuthController extends Controller
      */
     public function login(Request $request): RedirectResponse
     {
-        return $this->authenticate($request, [User::ROLE_BUYER, User::ROLE_SELLER]);
+        return $this->authenticate($request, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_ADMIN]);
     }
 
     public function loginLogistics(Request $request): RedirectResponse
@@ -30,11 +30,6 @@ class AuthController extends Controller
             User::ROLE_SORTING_CENTER,
             User::ROLE_DELIVERY_HUB,
         ]);
-    }
-
-    public function loginAdmin(Request $request): RedirectResponse
-    {
-        return $this->authenticate($request, [User::ROLE_ADMIN]);
     }
 
     private function authenticate(Request $request, array $allowedRoles): RedirectResponse
@@ -56,7 +51,7 @@ class AuthController extends Controller
 
             $accountType = in_array(User::ROLE_LOGISTICS, $allowedRoles, true)
                 ? 'a logistics, sorting center, or delivery hub account'
-                : (in_array(User::ROLE_ADMIN, $allowedRoles, true) ? 'an administrator account' : 'a buyer or seller account');
+                : 'a buyer, seller, or administrator account';
 
             throw ValidationException::withMessages([
                 'email' => 'These credentials are not for '.$accountType.'.',
