@@ -10,6 +10,7 @@ use App\Models\Seller\SellerMessage;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\SellerMessageAutoReply;
+use App\Services\SellerNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -143,7 +144,7 @@ class MessagesController extends Controller
             ->whereHas('sellerProfile', fn ($seller) => $seller->whereKey($conversation->seller_id))
             ->firstOrFail();
 
-        [$buyerMessage, $sellerMessage] = DB::transaction(function () use ($conversation, $request, $validated, $autoReply, $sellerUser): array {
+        [$buyerMessage, $sellerMessage, $needsSellerFollowUp] = DB::transaction(function () use ($conversation, $request, $validated, $autoReply, $sellerUser): array {
             $response = $autoReply->respond(
                 $validated['body'],
                 $conversation->loadMissing(['seller', 'order.shipment', 'order.items.product', 'product']),
@@ -159,8 +160,18 @@ class MessagesController extends Controller
             ]);
             $conversation->touch();
 
-            return [$buyerMessage, $sellerMessage];
+            return [$buyerMessage, $sellerMessage, $response['needs_seller_follow_up']];
         });
+
+        if ($needsSellerFollowUp) {
+            app(SellerNotificationService::class)->send(
+                $sellerUser,
+                'messages',
+                'New buyer message',
+                'A buyer sent a message that needs your attention.',
+                '/seller/messages',
+            );
+        }
 
         return response()->json([
             'data' => [

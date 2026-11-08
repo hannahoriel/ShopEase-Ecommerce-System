@@ -7,6 +7,7 @@ use App\Models\Admin\Announcement;
 use App\Models\Admin\PlatformPolicy;
 use App\Models\User;
 use App\Services\LogisticsNotificationService;
+use App\Services\SellerNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -74,6 +75,7 @@ class PlatformSettingsController extends Controller
 
         if (! $isScheduled) {
             $this->notifyLogisticsAnnouncement($announcement);
+            $this->notifySellerAnnouncement($announcement);
         }
 
         return response()->json(['announcement' => $this->announcementData($announcement)], 201);
@@ -113,6 +115,7 @@ class PlatformSettingsController extends Controller
 
         if (! $isScheduled && ! $wasPublished) {
             $this->notifyLogisticsAnnouncement($announcement);
+            $this->notifySellerAnnouncement($announcement);
         }
 
         return response()->json(['announcement' => $this->announcementData($announcement)]);
@@ -241,6 +244,7 @@ class PlatformSettingsController extends Controller
         foreach ($dueAnnouncements as $announcement) {
             $announcement->update(['status' => 'Published', 'is_active' => true]);
             $this->notifyLogisticsAnnouncement($announcement);
+            $this->notifySellerAnnouncement($announcement);
         }
 
         PlatformPolicy::where('status', 'Scheduled')
@@ -261,6 +265,27 @@ class PlatformSettingsController extends Controller
                 $announcement->title,
                 $announcement->body,
                 '/logistics/dashboard',
+            );
+        });
+    }
+
+    private function notifySellerAnnouncement(Announcement $announcement): void
+    {
+        if (! in_array($announcement->audience, ['All Users', 'Sellers'], true)) {
+            return;
+        }
+
+        $preference = str_contains(strtolower((string) $announcement->type), 'promotion')
+            ? 'promotions'
+            : 'announcements';
+
+        User::query()->where('role', User::ROLE_SELLER)->each(function (User $user) use ($announcement, $preference): void {
+            app(SellerNotificationService::class)->send(
+                $user,
+                $preference,
+                $announcement->title,
+                $announcement->body,
+                '/seller/notifications',
             );
         });
     }

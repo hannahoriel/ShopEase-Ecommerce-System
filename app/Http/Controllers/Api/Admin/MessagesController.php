@@ -10,6 +10,7 @@ use App\Models\Logistics\Logistics;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\LogisticsNotificationService;
+use App\Services\SellerNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -266,6 +267,18 @@ class MessagesController extends Controller
                 'New admin message',
                 'ShopEase administration sent you a new message.',
                 '/logistics/messages',
+            );
+        }
+
+        if ($conversation->category === AdminConversation::CATEGORY_SELLERS
+            && $conversation->user?->role === User::ROLE_SELLER
+            && (int) $conversation->user_id !== (int) $request->user()->id) {
+            app(SellerNotificationService::class)->send(
+                $conversation->user,
+                'messages',
+                'New admin message',
+                'ShopEase administration sent you a new message.',
+                '/seller/messages',
             );
         }
 

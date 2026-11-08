@@ -10,6 +10,8 @@ use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\SellerNotificationPreferences;
+use App\Services\SellerNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -35,13 +37,17 @@ class SellerComplianceController extends Controller
                 'account_action_details' => null,
             ])->save();
 
-            $seller->user?->email && Mail::to($seller->user->email)->send(new AccountStatusChanged(
+            $seller->user?->email
+                && app(SellerNotificationPreferences::class)->forUser($seller->user)['email_alerts']
+                && Mail::to($seller->user->email)->send(new AccountStatusChanged(
                 user: $seller->user,
                 status: 'active',
                 reason: null,
                 details: null,
                 duration: null,
             ));
+
+            $this->notifyCompliance($seller, 'Seller account reactivated', 'Your ShopEase seller account has been reactivated.');
 
             return response()->json([
                 'message' => 'Seller reactivated successfully.',
@@ -69,13 +75,21 @@ class SellerComplianceController extends Controller
             'account_action_details' => $validated['details'] ?? null,
         ])->save();
 
-        $seller->user?->email && Mail::to($seller->user->email)->send(new AccountStatusChanged(
+        $seller->user?->email
+            && app(SellerNotificationPreferences::class)->forUser($seller->user)['email_alerts']
+            && Mail::to($seller->user->email)->send(new AccountStatusChanged(
             user: $seller->user,
             status: 'suspended',
             reason: $validated['reason'],
             details: $validated['details'] ?? null,
             duration: (int) $validated['duration'],
         ));
+
+        $this->notifyCompliance(
+            $seller,
+            'Seller account suspended',
+            'Your ShopEase seller account was suspended: '.$validated['reason'],
+        );
 
         return response()->json([
             'message' => 'Seller suspended successfully.',
@@ -87,6 +101,22 @@ class SellerComplianceController extends Controller
                 'details' => $validated['details'] ?? null,
             ],
         ]);
+    }
+
+    private function notifyCompliance(Seller $seller, string $title, string $message): void
+    {
+        $user = $seller->user;
+        if (! $user) {
+            return;
+        }
+
+        app(SellerNotificationService::class)->send(
+            $user,
+            'compliance',
+            $title,
+            $message,
+            '/seller/notifications',
+        );
     }
 
     /*
