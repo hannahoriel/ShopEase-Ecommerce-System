@@ -65,7 +65,7 @@ class ParcelTrackingController extends Controller
             ->with([
                 'buyer.buyerProfile',
                 'seller.user',
-                'items',
+                'items.product',
                 'shipment.scans',
                 'shipment.rider.logisticsBranch.deliveryHubs',
                 'shipment.logisticsBranch.deliveryHubs',
@@ -80,7 +80,7 @@ class ParcelTrackingController extends Controller
             ->with([
                 'order.buyer.buyerProfile',
                 'order.seller.user',
-                'order.items',
+                'order.items.product',
                 'order.shipment.rider.logisticsBranch',
                 'order.shipment.rider.logisticsBranch.deliveryHubs',
                 'order.shipment.logisticsBranch.deliveryHubs',
@@ -108,7 +108,7 @@ class ParcelTrackingController extends Controller
         ];
     }
 
-    private function serializeParcel(Order $order): array
+    protected function serializeParcel(Order $order): array
     {
         /** @var Shipment $shipment */
         $shipment = $order->shipment;
@@ -148,6 +148,7 @@ class ParcelTrackingController extends Controller
             'total_amount' => (float) $order->total,
             'items' => $order->items->map(fn ($item): array => [
                 'product_name' => $item->product_name,
+                    'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                 'variation' => $item->variation,
                 'color' => $item->color,
                 'size' => $item->size,
@@ -164,7 +165,7 @@ class ParcelTrackingController extends Controller
         ];
     }
 
-    private function serializeReturn(OrderReturn $return): array
+    protected function serializeReturn(OrderReturn $return): array
     {
         $order = $return->order;
         $parcel = $this->serializeParcel($order);
