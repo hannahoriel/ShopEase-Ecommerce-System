@@ -21,6 +21,7 @@ use App\Notifications\NewOrderNotification;
 use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
 use App\Services\BuyerWalletService;
+use App\Services\CodSettlementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
 {
-    private const SHIPPING_FEE_PER_STORE = 58.00;
+    public const SHIPPING_FEE_PER_STORE = 50.00;
 
     public function __construct(
         private readonly OrderInventoryService $inventory
@@ -181,6 +182,7 @@ class OrderController extends Controller
                 'notes' => 'Buyer confirmed receipt of the order.',
             ]);
             BuyerNotification::createForOrderStatus($lockedOrder, 'completed');
+            app(CodSettlementService::class)->releaseSellerEarnings((int) $lockedOrder->id);
 
             return $lockedOrder->fresh();
         });
@@ -416,7 +418,7 @@ class OrderController extends Controller
                             'logistics_selections' => ['Choose an approved logistics company with an active hub or sorting center at both delivery locations.'],
                         ]);
                     }
-                    $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->sale_price * $item->quantity);
+                    $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity);
                     $shippingFee = self::SHIPPING_FEE_PER_STORE;
                     $voucherResult = null;
                     if (! empty($validated['voucher_code']) && (int) $sellerId === (int) $voucherSellerId) {
@@ -481,7 +483,7 @@ class OrderController extends Controller
                             'color' => $item->color,
                             'size' => $item->size,
                             'quantity' => $item->quantity,
-                            'unit_price' => $item->product->sale_price,
+                            'unit_price' => $item->product->salePriceForCart($item->variation, $item->color, $item->size),
                         ]);
 
                         $this->inventory->reserve($orderItem);

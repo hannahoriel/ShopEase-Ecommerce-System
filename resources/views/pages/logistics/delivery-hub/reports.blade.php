@@ -1,51 +1,13 @@
 @php
-    // DELIVERY HUB REPORTS: demonstration records for UI review only.
-    // Replace the generated data with authenticated-hub-scoped backend records later.
     $hubRecord = $deliveryHub ?? $hub ?? null;
     $hubIdForAssignments = (string)($deliveryHubId ?? data_get($hubRecord, 'id') ?? 'account-'.(auth()->id() ?? 'preview'));
     $hubName = data_get($hubRecord, 'hub_name') ?: data_get($hubRecord, 'branch_name') ?: data_get($hubRecord, 'name') ?: 'Delivery Hub';
     $reportToday = \Carbon\Carbon::today('Asia/Manila');
-    $reportStart = $reportToday->copy()->subDays(92);
-    $sampleRiders = ['Alex Rivera', 'Bea Santos', 'Carlo Cruz', 'Diane Reyes', 'Enzo Garcia', 'Faith Mendoza'];
-    $sampleDestinations = ['Pila, Laguna', 'Victoria, Laguna', 'Santa Cruz, Laguna', 'Calauan, Laguna', 'Bay, Laguna'];
-    $sampleRows = [];
-    $index = 0;
-    for ($day = $reportStart->copy(); $day->lte($reportToday); $day->addDay()) {
-        $count = 5 + (($day->day * 5 + $day->month * 3) % 8);
-        for ($i=0; $i < $count; $i++) {
-            $index++;
-            $key = ($index * 7 + $day->day) % 24;
-            $status = $key < 16 ? 'delivered' : ($key < 19 ? 'out_for_delivery' : ($key < 22 ? 'at_hub' : 'exception'));
-            $issue = $status === 'exception' ? (($index % 2) ? 'damaged' : 'lost') : null;
-            $itemSubtotal = 340 + (($index * 97) % 1390);
-            $cod = $itemSubtotal + 50;
-            $onTime = $status === 'delivered' && ($index % 9 !== 0);
-            $distributed = $status === 'delivered' && ($index % 5 !== 0);
-            $cashIn = $distributed || ($status === 'delivered' && $index % 3 === 0);
-            $sampleRows[] = [
-                'date'=>$day->toDateString(),
-                'time'=>sprintf('%02d:%02d',9+($i%10),($i*7)%60),
-                'reference'=>'SE-COD-'.(62000+$index),
-                'status'=>$status,
-                'issue'=>$issue,
-                'destination'=>$sampleDestinations[$index % count($sampleDestinations)],
-                'rider'=>$sampleRiders[$index % count($sampleRiders)],
-                'hours'=>12 + (($index*11)%71),
-                'on_time'=>$onTime,
-                'cod'=>$cod,
-                'cash_in'=>$cashIn,
-                'distributed'=>$distributed,
-                'distribution_amount'=>$distributed ? $cod : 0,
-                'shipping'=>50,
-            ];
-        }
-    }
-    // Prepare JSON payload in PHP so Blade does not misparse array syntax in @json.
     $deliveryHubReportPayload = [
         'today' => $reportToday->toDateString(),
         'hub' => $hubName,
         'hub_id' => $hubIdForAssignments,
-        'rows' => $sampleRows,
+        'rows' => [],
     ];
 @endphp
 <!DOCTYPE html>
@@ -111,11 +73,11 @@
                 <p class="dhr-date-error" id="dhr-date-error" role="alert"></p>
             </section>
 
-            <div class="dhr-section-heading"><strong>HUB PERFORMANCE</strong><span id="dhr-period-caption">Current month</span><span class="dhr-right-note">{{ $hubName }} · Sample data</span></div>
+            <div class="dhr-section-heading"><strong>HUB PERFORMANCE</strong><span id="dhr-period-caption">Current month</span><span class="dhr-right-note">{{ $hubName }} · Live data</span></div>
             <section class="dhr-kpis">
                 <article class="dhr-kpi"><div class="dhr-kpi-label"><span>Parcels handled</span><span class="dhr-kpi-icon">▣</span></div><strong id="dhr-total-parcels">0</strong><small>Unique parcel records assigned to this hub</small></article>
                 <article class="dhr-kpi"><div class="dhr-kpi-label"><span>Delivered parcels</span><span class="dhr-kpi-icon">✓</span></div><strong id="dhr-delivered">0</strong><small>Successful deliveries during the period</small></article>
-                <article class="dhr-kpi"><div class="dhr-kpi-label"><span>On-time delivery rate</span><span class="dhr-kpi-icon">◷</span></div><strong id="dhr-on-time">0%</strong><small>On-time share of delivered parcels (sample 48-hour target)</small></article>
+                <article class="dhr-kpi"><div class="dhr-kpi-label"><span>On-time delivery rate</span><span class="dhr-kpi-icon">◷</span></div><strong id="dhr-on-time">0%</strong><small>On-time share of delivered parcels by estimated delivery date</small></article>
                 <article class="dhr-kpi"><div class="dhr-kpi-label"><span>Distribution completed</span><span class="dhr-kpi-icon">₱</span></div><strong id="dhr-distributed">₱0.00</strong><small>Buyer cash already distributed to authorized recipients</small></article>
             </section>
 
@@ -132,10 +94,10 @@
 
             <section class="dhr-card" style="margin-bottom:18px"><div class="dhr-card-header"><div><h2>Rider Role & Barangay Coverage</h2><p>See pickup and delivery assignments for this hub only. Pickup riders collect seller parcels and buyer returns; delivery riders deliver buyer orders.</p></div><span class="dhr-pill">Rider assignments</span></div>
 <div class="dhr-rider-role-stats"><div><small>Pickup riders</small><strong id="dhr-pickup-count">0</strong></div><div><small>Delivery riders</small><strong id="dhr-delivery-count">0</strong></div><div><small>Barangays fully staffed</small><strong id="dhr-covered-count">0</strong></div><div><small>Barangays needing a rider</small><strong id="dhr-needing-count">0</strong></div></div>
-<div class="dhr-table-scroll"><table class="dhr-table"><thead><tr><th>Barangay</th><th>Pickup rider</th><th>Delivery rider</th><th>Coverage</th></tr></thead><tbody id="dhr-role-coverage"></tbody></table></div><p class="dhr-footnote">Assignment information is preview data stored in this browser until an authenticated assignment API is connected. Rider assignment counts are separate from completed-parcel statistics.</p></section>
+<div class="dhr-table-scroll"><table class="dhr-table"><thead><tr><th>Barangay</th><th>Pickup rider</th><th>Delivery rider</th><th>Coverage</th></tr></thead><tbody id="dhr-role-coverage"></tbody></table></div><p class="dhr-footnote">Active rider assignments are loaded for this delivery hub. Rider coverage is separate from completed-parcel statistics.</p></section>
 
             <section class="dhr-two">
-                <article class="dhr-card"><div class="dhr-card-header"><div><h2>Parcels at This Hub</h2><p>Simple breakdown of where the hub’s parcels are now</p></div><span class="dhr-pill">Hub operations</span></div><div id="dhr-dispatch" class="dhr-metric-list"></div><p class="dhr-footnote">Each order is counted once according to its latest parcel status. Sample figures only.</p></article>
+                <article class="dhr-card"><div class="dhr-card-header"><div><h2>Parcels at This Hub</h2><p>Simple breakdown of where the hub’s parcels are now</p></div><span class="dhr-pill">Hub operations</span></div><div id="dhr-dispatch" class="dhr-metric-list"></div><p class="dhr-footnote">Each order is counted once according to its latest parcel status.</p></article>
                 <article class="dhr-card"><div class="dhr-card-header"><div><h2>COD collection & settlement</h2><p>Cash handling and distribution accountability</p></div><span class="dhr-pill">Finance</span></div><div class="dhr-metric-list" id="dhr-cod-stats"></div><div class="dhr-cod-note">These are buyer-payment handling figures, not earnings retained by the Delivery Hub.</div></article>
             </section>
 
@@ -145,7 +107,7 @@
                 <div class="dhr-table-scroll"><table class="dhr-table dhr-history-table"><thead><tr><th>Date & time</th><th>Order reference</th><th>Delivery destination</th><th>Rider</th><th>Status</th><th class="dhr-num">COD</th><th>Settlement</th></tr></thead><tbody id="dhr-history-rows"></tbody></table></div>
                 <div class="dhr-table-bottom"><span id="dhr-page-caption">Showing 0 records</span><div id="dhr-pagination" class="dhr-pagination"></div></div>
             </section>
-            <p class="dhr-source-note">Illustrative UI data for {{ $hubName }} only. Figures are generated in this Blade file, not read from parcel or finance ledgers. Once connected, all records must be scoped by authenticated delivery hub and settlement dates.</p>
+            <p class="dhr-source-note">Parcel and COD figures are loaded from shipment scans and settlement records assigned to {{ $hubName }}.</p>
         </div>
     </main>
     <script type="application/json" id="dhr-data">@json($deliveryHubReportPayload)</script>
@@ -158,7 +120,8 @@
     if (!root || !raw) return;
     let source;
     try {source = JSON.parse(raw.textContent);} catch (e) {return;}
-    const records = Array.isArray(source.rows) ? source.rows : [];
+    let records = Array.isArray(source.rows) ? source.rows : [];
+    let riderAssignments = [];
     const $ = id => document.getElementById(id);
     const from = $('dhr-from'), to = $('dhr-to'), reset = $('dhr-reset');
     const search = $('dhr-search'), type = $('dhr-type');
@@ -167,10 +130,8 @@
     const pct = (a,b) => b ? `${(a/b*100).toFixed(1)}%` : '0.0%';
     const escape = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const labels = {delivered:'Delivered',out_for_delivery:'Out for delivery',at_hub:'At delivery hub',exception:'Under investigation'};
-    const assignmentKey='shopease-dh-rider-assignments-v1:'+String(source.hub_id);
     function renderAssignedRiderRoles(){
-      let saved={};try{saved=JSON.parse(localStorage.getItem(assignmentKey)||'{}')||{}}catch{}
-      const assignments=Object.values(saved).filter(a=>a&&['pickup','delivery'].includes(a.role)&&String(a.barangay||'').trim());
+      const assignments=riderAssignments.filter(a=>a&&['pickup','delivery'].includes(a.role)&&String(a.barangay||'').trim());
       const groups=new Map();
       for(const assignment of assignments){const barangay=String(assignment.barangay).trim();const key=barangay.toLocaleLowerCase();const row=groups.get(key)||{barangay,pickup:[],delivery:[]};row[assignment.role].push(assignment);groups.set(key,row)}
       const roles=Array.from(groups.values()).sort((a,b)=>a.barangay.localeCompare(b.barangay));
@@ -179,13 +140,12 @@
       document.getElementById('dhr-covered-count').textContent=roles.filter(a=>a.pickup.length&&a.delivery.length).length;
       document.getElementById('dhr-needing-count').textContent=roles.filter(a=>!a.pickup.length||!a.delivery.length).length;
       const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      document.getElementById('dhr-role-coverage').innerHTML=roles.length?roles.map(r=>`<tr><td>${safe(r.barangay)}</td><td>${r.pickup.length?r.pickup.map(a=>safe(a.name||'Assigned rider')).join(', '):'Unassigned'}</td><td>${r.delivery.length?r.delivery.map(a=>safe(a.name||'Assigned rider')).join(', '):'Unassigned'}</td><td><span class="${r.pickup.length&&r.delivery.length?'dhr-role-ok':'dhr-role-partial'}">${r.pickup.length&&r.delivery.length?'Complete pair':'Needs assignment'}</span></td></tr>`).join(''):'<tr><td colspan="4" class="dhr-empty">No rider duty assignments saved for this hub yet. Assign approved riders in Rider Registrations.</td></tr>';
+      document.getElementById('dhr-role-coverage').innerHTML=roles.length?roles.map(r=>`<tr><td>${safe(r.barangay)}</td><td>${r.pickup.length?r.pickup.map(a=>safe(a.name||'Assigned rider')).join(', '):'Unassigned'}</td><td>${r.delivery.length?r.delivery.map(a=>safe(a.name||'Assigned rider')).join(', '):'Unassigned'}</td><td><span class="${r.pickup.length&&r.delivery.length?'dhr-role-ok':'dhr-role-partial'}">${r.pickup.length&&r.delivery.length?'Complete pair':'Needs assignment'}</span></td></tr>`).join(''):'<tr><td colspan="4" class="dhr-empty">No active pickup or delivery riders are assigned to this hub.</td></tr>';
     }
-    window.addEventListener('storage',e=>{if(e.key===assignmentKey)renderAssignedRiderRoles()});
     renderAssignedRiderRoles();
 
     const dateLabel = value => new Date(`${value}T12:00:00`).toLocaleDateString('en-PH',{month:'short',day:'2-digit'});
-    let selected = [], filtered = [], currentPage = 1, chartToken = 0;
+    let selected = [], filtered = [], currentPage = 1, chartToken = 0, requestToken = 0;
     const perPage = 10;
     function setMonth(){
       from.value = source.today.slice(0,7)+'-01';to.value = source.today;
@@ -201,9 +161,15 @@
       header.className='dhr-meter-head';track.className='dhr-meter';name.textContent=label;count.textContent=num(value);
       fill.style.width=(total?Math.min(100,value*100/total):0)+'%';track.appendChild(fill);header.append(name,count);row.append(header,track);container.appendChild(row);
     }
-    function refresh(){
+    async function refresh(){
       if(!from.value || !to.value || from.value>to.value){$('dhr-date-error').textContent='Please choose a valid From and To date.';return;}
       $('dhr-date-error').textContent='';
+      const token=++requestToken;
+      try {
+      const response=await fetch(`{{ route('delivery-hub.reports.data') }}?from=${encodeURIComponent(from.value)}&to=${encodeURIComponent(to.value)}`,{headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+      if(!response.ok)throw new Error('Could not load delivery hub reports. Please try again.');
+      const result=await response.json();if(token!==requestToken)return;
+      const data=result.data||{};records=Array.isArray(data.rows)?data.rows:[];riderAssignments=Array.isArray(data.assignments)?data.assignments:[];renderAssignedRiderRoles();
       selected=records.filter(x=>x.date>=from.value && x.date<=to.value);
       currentPage=1;
       const delivered=selected.filter(x=>x.status==='delivered');
@@ -246,6 +212,7 @@
       metric(cashBox,'Distributed to recipients',money(distributed.reduce((a,r)=>a+r.distribution_amount,0)));
       metric(cashBox,'Undistributed delivered COD',money(pending.reduce((a,r)=>a+r.cod,0)));
       drawChart();renderTable();
+      } catch(error) {if(token===requestToken)$('dhr-date-error').textContent=error.message;}
     }
     function renderTable(){
       const q=search.value.trim().toLowerCase();

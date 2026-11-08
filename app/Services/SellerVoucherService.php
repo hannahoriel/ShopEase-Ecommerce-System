@@ -30,7 +30,7 @@ class SellerVoucherService
             ? $items->filter(fn ($item) => in_array((string) $item->product_id, array_map('strval', $eligibleIds), true))
             : $items;
         if ($eligibleItems->isEmpty()) $fail('No products in this order qualify for the voucher.');
-        $subtotal = (float) $eligibleItems->sum(fn ($item) => $item->product->sale_price * $item->quantity);
+        $subtotal = (float) $eligibleItems->sum(fn ($item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity);
         if ($subtotal < (float) $voucher->minimum_spend) $fail('This order does not meet the voucher minimum spend.');
         $discount = $voucher->discount_type === 'percent'
             ? min($subtotal * (float) $voucher->discount_value / 100, (float) $voucher->maximum_discount)

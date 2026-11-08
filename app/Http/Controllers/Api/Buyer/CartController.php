@@ -13,7 +13,7 @@ class CartController extends Controller
     /** GET /api/v1/buyer/cart — list all cart items for the authenticated buyer */
     public function index(Request $request): JsonResponse
     {
-        $items = CartItem::with(['product.seller', 'product.options', 'product.productSpecifications'])
+        $items = CartItem::with(['product.seller', 'product.options', 'product.connectedVariants', 'product.productSpecifications'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get();
@@ -118,6 +118,7 @@ class CartController extends Controller
     {
         $product = $item->product;
         $photos  = $this->resolvePhotos($product->photos ?? []);
+        $combination = $product->selectedCombinationForCart($item->variation, $item->color, $item->size);
         $selectedPhoto = $product->selectedImageForCart($item->variation, $item->color, $item->size);
 
         return [
@@ -129,8 +130,8 @@ class CartController extends Controller
             'product'   => [
                 'id'           => $product->id,
                 'name'         => $product->name,
-                'price'        => $product->sale_price,
-                'original_price' => (float) $product->price,
+                'price'        => $product->salePriceForCart($item->variation, $item->color, $item->size),
+                'original_price' => $combination ? (float) $combination->final_price : (float) $product->price,
                 'sale_percentage' => $product->sale_percentage,
                 'pricing_mode' => $product->pricing_mode,
                 'stock'        => $product->stock_quantity,

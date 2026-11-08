@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Services\BuyerWalletService;
+use App\Services\CodSettlementService;
 
 class ReturnsRefundsController extends Controller
 {
@@ -132,6 +133,7 @@ class ReturnsRefundsController extends Controller
                 app(BuyerWalletService::class)->move((int)$locked->order->buyer_id, 'refund_credit',
                     $locked->refund_amount, 'order_return', (int)$locked->id, 'Refund for order '.$locked->order->order_number);
             }
+            app(CodSettlementService::class)->reverseSellerEarningsForRefund($locked);
             $locked->events()->create(['status' => 'refunded', 'location' => 'Seller refund processing', 'scanned_at' => now()]);
             return response()->json(['data' => $locked->fresh(['events'])]);
         });

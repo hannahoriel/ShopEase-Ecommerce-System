@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\Buyer\ProductReviewController;
 use App\Http\Controllers\Api\Logistics\DeliveryController as LogisticsDeliveryController;
 use App\Http\Controllers\Api\Logistics\CourierRegistrationController;
 use App\Http\Controllers\Api\Logistics\DeliveryHubScannerController;
+use App\Http\Controllers\Api\Logistics\DeliveryHubCodFinanceController;
 use App\Http\Controllers\Api\Logistics\ParcelRouteScanController;
 use App\Http\Controllers\Api\Logistics\SortingCenterFleetController;
 use App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\Api\Logistics\NetworkHubController;
 use App\Http\Controllers\Api\Logistics\MessagesController as LogisticsMessagesController;
 use App\Http\Controllers\Api\Logistics\AccountController as LogisticsAccountController;
 use App\Http\Controllers\Api\Logistics\ParcelTrackingController;
+use App\Http\Controllers\Api\Logistics\ReportsController as LogisticsReportsController;
 use App\Http\Controllers\Api\Logistics\ListRiderRemittancesController;
 use App\Http\Controllers\Api\Logistics\ListRiderSupportTicketsController;
 use App\Http\Controllers\Api\Logistics\ListRiderDeliveryActionsController;
@@ -291,6 +293,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:seller')->prefix('seller')->group(function () {
+            Route::get('/wallet', [\App\Http\Controllers\Api\Seller\WalletController::class, 'index'])->name('seller.api.wallet.index');
             Route::get('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'show']);
             Route::get('/account/followers', [\App\Http\Controllers\Api\Seller\AccountController::class, 'followers']);
             Route::put('/account', [\App\Http\Controllers\Api\Seller\AccountController::class, 'update']);
@@ -341,6 +344,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:logistics')->prefix('logistics')->group(function () {
+            Route::get('/reports', [LogisticsReportsController::class, 'index'])->name('logistics.api.reports.index');
             Route::get('/account', [LogisticsAccountController::class, 'show'])->name('logistics.api.account.show');
             Route::post('/account/profile-requests', [LogisticsAccountController::class, 'requestProfileChange'])->name('logistics.api.account.profile-requests.store');
             Route::put('/account/preferences', [LogisticsAccountController::class, 'savePreferences'])->name('logistics.api.account.preferences.update');
@@ -388,6 +392,16 @@ Route::prefix('v1')->group(function () {
                 if ($facilityRole === 'delivery_hub') {
                     Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
+                    Route::get('/finance', [DeliveryHubCodFinanceController::class, 'index'])->name('delivery_hub.api.finance.index');
+                    Route::post('/finance/wallet-pin/setup', [DeliveryHubCodFinanceController::class, 'setupWalletPin'])
+                        ->middleware('throttle:5,15')->name('delivery_hub.api.finance.wallet-pin.setup');
+                    Route::post('/finance/wallet-pin/verify', [DeliveryHubCodFinanceController::class, 'verifyWalletPin'])
+                        ->middleware('throttle:10,15')->name('delivery_hub.api.finance.wallet-pin.verify');
+                    Route::patch('/rider-remittances/{remittance}/review', [DeliveryHubCodFinanceController::class, 'review'])->name('delivery_hub.api.finance.remittances.review');
+                    Route::post('/rider-remittances/{remittance}/cash-in/otp', [DeliveryHubCodFinanceController::class, 'requestCashInOtp'])
+                        ->middleware('throttle:3,10')->name('delivery_hub.api.finance.remittances.cash-in.otp');
+                    Route::post('/rider-remittances/{remittance}/cash-in', [DeliveryHubCodFinanceController::class, 'cashIn'])->name('delivery_hub.api.finance.remittances.cash-in');
+                    Route::post('/rider-remittances/{remittance}/distribute', [DeliveryHubCodFinanceController::class, 'distribute'])->name('delivery_hub.api.finance.remittances.distribute');
                 }
                 if ($facilityRole === 'sorting_center') {
                     Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'index'])
@@ -416,8 +430,10 @@ Route::prefix('v1')->group(function () {
             });
         }
 
+        Route::post('/rider/location', \App\Http\Controllers\Api\Rider\UpdateRiderLocationController::class)
+            ->middleware('role:rider,courier')->name('rider.api.location.update');
+
         Route::middleware('role:rider')->prefix('rider')->group(function () {
-            Route::post('/location', \App\Http\Controllers\Api\Rider\UpdateRiderLocationController::class)->name('rider.api.location.update');
             Route::get('/dashboard', ShowRiderDashboardController::class)->name('rider.api.dashboard');
             Route::get('/star-courier', ShowStarCourierMetricsController::class)->name('rider.api.star-courier');
             Route::get('/content/{page}', ShowRiderPageContentController::class)->name('rider.api.content.show');

@@ -135,6 +135,11 @@ class Order extends Model
         return $this->hasMany(Complaint::class)->latest();
     }
 
+    public function returns(): HasMany
+    {
+        return $this->hasMany(OrderReturn::class, 'order_id');
+    }
+
     public function commissionTransaction(): HasOne
     {
         return $this->hasOne(CommissionTransaction::class);

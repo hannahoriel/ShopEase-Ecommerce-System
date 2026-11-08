@@ -11,6 +11,7 @@ use App\Models\Buyer\BuyerNotification;
 use App\Models\Seller\Seller;
 use App\Models\Rider\Rider;
 use App\Models\Logistics\LogisticsDeliveryHub;
+use App\Models\Logistics\LogisticsBranch;
 use App\Models\User;
 use App\Services\OrderInventoryService;
 use Illuminate\Http\JsonResponse;
@@ -380,39 +381,64 @@ class OrderStatusController extends Controller
                 $shipment->save();
             }
 
-            // A scheduled pickup is routed to an active pickup rider covering
-            // the seller's exact barangay/municipality and province.
-            if ($shipment->rider_id === null) {
-                $seller = $order->seller()->first();
-                if ($seller && $seller->province && $seller->municipality && $seller->barangay) {
-                    $rider = Rider::query()
-                        ->where('registration_status', 'active')
-                        ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
-                        ->whereRaw('LOWER(COALESCE(assignment_province, province)) = ?', [mb_strtolower(trim($seller->province))])
-                        ->whereRaw('LOWER(COALESCE(assignment_barangay, barangay)) = ?', [mb_strtolower(trim($seller->barangay))])
-                        ->whereHas('logisticsBranch.deliveryHubs', fn ($query) => $query
-                            ->whereNull('archived_at')
-                            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($seller->municipality))])
-                            ->where(function ($hubQuery): void {
-                                $hubQuery->whereColumn('hub_name', 'riders.municipal_hub')
-                                    ->orWhereColumn('municipality', 'riders.municipal_hub');
-                            }))
-                        ->whereRaw("LOWER(REPLACE(REPLACE(logistics_operation, ' ', ''), '-', '')) LIKE ?", ['%pickup%'])
-                        ->orderBy('id')
-                        ->first();
+            // Route to this order's provider and the seller municipality hub,
+            // then balance the pickup among active riders covering the seller's
+            // barangay for this exact pickup date and time.
+            $seller = $order->seller()->first();
+            if ($seller && $seller->province && $seller->municipality) {
+                $branch = LogisticsBranch::query()
+                    ->where('logistics_id', $order->logistics_id)
+                    ->where('status', 'active')
+                    ->whereNull('archived_at')
+                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($seller->province))])
+                    ->whereHas('deliveryHubs', fn ($query) => $query
+                        ->where('status', 'active')
+                        ->whereNull('archived_at')
+                        ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($seller->province))])
+                        ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($seller->municipality))]))
+                    ->first();
+                $hub = $branch?->deliveryHubs()
+                    ->where('status', 'active')
+                    ->whereNull('archived_at')
+                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($seller->province))])
+                    ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($seller->municipality))])
+                    ->first();
 
-                    if ($rider) {
-                        $hub = LogisticsDeliveryHub::query()
-                            ->where('logistics_branch_id', $rider->logistics_branch_id)
-                            ->whereNull('archived_at')
-                            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($seller->municipality))])
-                            ->first();
-                        $shipment->update([
-                            'rider_id' => $rider->id,
-                            'logistics_branch_id' => $rider->logistics_branch_id,
-                            'logistics_delivery_hub_id' => $hub?->id,
-                        ]);
+                if ($hub) {
+                    $rider = null;
+                    if ($seller->barangay && $order->pickup_date && $order->pickup_time) {
+                        $eligibleRiders = Rider::query()
+                            ->where('logistics_branch_id', $branch->id)
+                            ->where('registration_status', 'active')
+                            ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
+                            ->whereRaw('LOWER(COALESCE(assignment_province, province)) = ?', [mb_strtolower(trim($seller->province))])
+                            ->whereRaw('LOWER(COALESCE(assignment_barangay, barangay)) = ?', [mb_strtolower(trim($seller->barangay))])
+                            ->where(function ($query) use ($hub): void {
+                                $query->whereRaw('LOWER(municipal_hub) = ?', [mb_strtolower(trim($hub->hub_name))])
+                                    ->orWhereRaw('LOWER(municipal_hub) = ?', [mb_strtolower(trim($hub->municipality))]);
+                            })
+                            ->whereRaw("LOWER(REPLACE(REPLACE(logistics_operation, ' ', ''), '-', '')) LIKE ?", ['%pickup%'])
+                            ->orderBy('id')->lockForUpdate()->get();
+
+                        $rider = $eligibleRiders->map(function (Rider $candidate) use ($order): array {
+                            $scheduledCount = $candidate->shipments()
+                                ->whereHas('order', fn ($query) => $query->where('status', 'to_ship')
+                                    ->whereDate('pickup_date', $order->pickup_date->toDateString())
+                                    ->whereTime('pickup_time', $order->pickup_time->format('H:i:s')))
+                                ->count();
+
+                            return ['rider' => $candidate, 'scheduled_count' => $scheduledCount];
+                        })->sort(function (array $left, array $right): int {
+                            return [$left['scheduled_count'], $left['rider']->id]
+                                <=> [$right['scheduled_count'], $right['rider']->id];
+                        })->first()['rider'] ?? null;
                     }
+
+                    $shipment->update([
+                        'rider_id' => $rider?->id,
+                        'logistics_branch_id' => $branch->id,
+                        'logistics_delivery_hub_id' => $hub->id,
+                    ]);
                 }
             }
         }

@@ -1,41 +1,3 @@
-@php
-    $logisticsName = data_get(auth()->user(), 'name') ?: 'Logistics Partner';
-    $registeredCompanyName = auth()->check()
-        ? \App\Models\Logistics\Logistics::query()->where('user_id', auth()->id())->value('business_name')
-        : null;
-    $companyName = filled($registeredCompanyName) ? trim($registeredCompanyName) : 'ShopEase Logistics';
-
-    // UI-only demonstration. Every completed parcel generates a fixed ₱50 shipping credit.
-    // Shipping fees are held by the Logistics Company; child facilities are operational units.
-    $shippingFee = 50.00;
-    $demoSplit = ['logistics' => 0.50, 'sorting' => 0.30, 'hubs' => 0.20];
-    $demoNetwork = [
-        ['name' => 'Laguna Sorting Center', 'hubs' => ['Cavite Delivery Hub', 'Santa Cruz Delivery Hub']],
-        ['name' => 'Cebu Sorting Center', 'hubs' => ['Cebu Operations Hub', 'Mandaue Delivery Hub']],
-    ];
-    $transactions = [];
-    $today = \Carbon\Carbon::today('Asia/Manila');
-    $begin = $today->copy()->startOfMonth()->subMonth();
-    $orderIndex = 0;
-    for ($day = $begin->copy(); $day->lte($today); $day->addDay()) {
-        $count = 8 + (($day->day * 7 + $day->month * 3) % 12);
-        for ($i = 0; $i < $count; $i++) {
-            $centerIndex = ($orderIndex + $day->day) % count($demoNetwork);
-            $network = $demoNetwork[$centerIndex];
-            $hub = $network['hubs'][($orderIndex + $i) % count($network['hubs'])];
-            $transactions[] = [
-                'date' => $day->format('Y-m-d') . sprintf(' %02d:%02d', 8 + ($i % 11), ($i * 11) % 60),
-                'reference' => 'SE-' . (184000 + $orderIndex),
-                'route' => $network['name'] . ' → ' . $hub,
-                'center' => $network['name'],
-                'hub' => $hub,
-                'status' => 'Credited',
-                'amount' => $shippingFee,
-            ];
-            $orderIndex++;
-        }
-    }
-@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -360,8 +322,8 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <article class="lg-balance-card lg-card">
                     <span class="lg-balance-label">Total Network Shipping Earnings</span>
                     <div class="lg-balance-amount" id="lgHeroGross">₱0.00</div>
-                    <p class="lg-balance-sub">Shipping income from completed parcels across the network, calculated at a fixed ₱50 per parcel for the selected period.</p>
-                    <div class="lg-balance-tags"><span class="lg-balance-tag">₱50 shipping fee</span><span class="lg-balance-tag">Sample transaction data</span></div>
+                    <p class="lg-balance-sub">Shipping income from delivered, completed parcels for the selected period, using the fee recorded for each shipment.</p>
+                    <div class="lg-balance-tags"><span class="lg-balance-tag">Completed parcel fees</span><span class="lg-balance-tag">Live database ledger</span></div>
                 </article>
                 <aside class="lg-side-summary lg-card">
                     <h3>Shipping Fee Ownership</h3>
@@ -378,7 +340,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Total Network Earnings</span><span class="lg-stat-pill maroon">Network</span></div><strong id="lgGrossStat">₱0.00</strong><p>Combined shipping fees for the selected period.</p></article>
                 <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Company Shipping Income</span><span class="lg-stat-pill green">100% fees</span></div><strong id="lgShareStat">₱0.00</strong><p>Company-held shipping fees from the selected parcel records.</p></article>
                 <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Total Parcels</span><span class="lg-stat-pill orange">Completed</span></div><strong id="lgParcelStat">0</strong><p>Completed parcels credited in this period.</p></article>
-                <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Shipping Fee</span><span class="lg-stat-pill maroon">Fixed</span></div><strong>₱50.00</strong><p>Amount received for each completed parcel.</p></article>
+                <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Average Shipping Fee</span><span class="lg-stat-pill maroon">Per parcel</span></div><strong id="lgAverageFee">₱0.00</strong><p>Average recorded fee for completed parcels.</p></article>
             </section>
 
             <section class="lg-grid">
@@ -402,7 +364,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                         </div>
                     </div>
                     <div class="lg-allocation">
-                        <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Logistics Company</h3><span>Receives fees</span></div><strong id="lgAllocationLogistics">₱0.00</strong><p>All shipping-fee credits at ₱50 per parcel.</p></article>
+                        <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Logistics Company</h3><span>Receives fees</span></div><strong id="lgAllocationLogistics">₱0.00</strong><p>All shipping-fee credits recorded for completed parcels.</p></article>
                         <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Sorting Centers</h3><span>No share</span></div><strong id="lgAllocationSorting">₱0.00</strong><p>Parcel handling and inter-center transfers only.</p></article>
                         <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Delivery Hubs</h3><span>No share</span></div><strong id="lgAllocationHubs">₱0.00</strong><p>Cash collections and COD distribution only.</p></article>
                     </div>
@@ -413,9 +375,9 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <div class="lg-panel-head">
                     <div>
                         <h2>Shipping Fee Ledger</h2>
-                        <p>One ₱50 shipping credit for every completed parcel.</p>
+                        <p>Recorded shipping fee for each completed parcel.</p>
                     </div>
-                    <span class="lg-pill" id="lgLedgerCount">{{ count($transactions) }} entries</span>
+                    <span class="lg-pill" id="lgLedgerCount">0 entries</span>
                 </div>
                 <div class="lg-toolbar">
                     <div class="lg-field lg-search">
@@ -448,9 +410,9 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <div class="lg-panel-head">
                     <div>
                         <h2>Network Unit Snapshot</h2>
-                        <p>Delivery hubs are grouped beneath their parent sorting center. Amounts shown are illustrative shipping-fee volumes, not payouts.</p>
+                        <p>Registered delivery hubs are grouped beneath their parent sorting center. Amounts reflect completed parcel fees in the selected period.</p>
                     </div>
-                    <span class="lg-pill">Preview</span>
+                    <span class="lg-pill">Live data</span>
                 </div>
                 <div class="lg-unit-grid lg-unit-hierarchy" id="lgNetworkSnapshot"></div>
             </section>
@@ -477,9 +439,8 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
             const pageNumbers = document.getElementById('lgPageNumbers');
             const prevBtn = document.getElementById('lgPrevPage');
             const nextBtn = document.getElementById('lgNextPage');
-            const demoTransactions = @json($transactions);
-            const demoCenters = @json($demoNetwork);
-            const shippingFee = 50;
+            let transactions = [];
+            let networkUnits = [];
             const split = {logistics:1, sorting:0, hubs:0};
             const pageSize = 12;
             let page = 1;
@@ -508,23 +469,37 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                     return null;
                 }
                 periodError.textContent = '';
-                return demoTransactions.filter(row => row.date.slice(0,10) >= dateFrom.value && row.date.slice(0,10) <= dateTo.value);
+                return true;
             }
-            function updateAll() {
+            async function updateAll() {
                 const rows = selectedPeriod();
                 if (!rows) return;
-                periodRows = rows;
-                const gross = rows.length * shippingFee;
+                chartElement.innerHTML = '<div class="lg-empty">Loading earnings…</div>';
+                try {
+                    const response = await fetch(`{{ route('logistics.earnings.data') }}?from=${encodeURIComponent(dateFrom.value)}&to=${encodeURIComponent(dateTo.value)}`, {headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+                    if (!response.ok) throw new Error('Could not load earnings. Please refresh and try again.');
+                    const data = await response.json();
+                    transactions = data.transactions || [];
+                    networkUnits = data.units || [];
+                    periodRows = transactions;
+                    const gross = Number(data.summary?.gross || 0);
+                    const parcels = Number(data.summary?.parcels || 0);
                 byId('lgHeroGross').textContent = peso(gross);
                 byId('lgGrossStat').textContent = peso(gross);
-                byId('lgShareStat').textContent = peso(gross*split.logistics);
-                byId('lgParcelStat').textContent = number(rows.length);
-                byId('lgAllocationLogistics').textContent = peso(gross*split.logistics);
-                byId('lgAllocationSorting').textContent = peso(gross*split.sorting);
-                byId('lgAllocationHubs').textContent = peso(gross*split.hubs);
-                renderChart(rows);
-                renderNetwork(rows);
+                byId('lgShareStat').textContent = peso(gross);
+                byId('lgParcelStat').textContent = number(parcels);
+                byId('lgAllocationLogistics').textContent = peso(gross);
+                byId('lgAllocationSorting').textContent = peso(0);
+                byId('lgAllocationHubs').textContent = peso(0);
+                byId('lgAverageFee').textContent = peso(data.summary?.shipping_fee || 0);
+                renderChart(data.daily || []);
+                renderNetwork(networkUnits);
                 renderLedger();
+                } catch (error) {
+                    periodError.textContent = error.message;
+                    chartElement.innerHTML = '<div class="lg-empty">Earnings data could not be loaded.</div>';
+                    ledgerRows.innerHTML = '<tr><td colspan="5" class="lg-empty">Earnings data could not be loaded.</td></tr>';
+                }
             }
             function renderLedger() {
                 const q = searchInput.value.trim().toLowerCase();
@@ -538,7 +513,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                     <td><strong>${escapeHtml(row.reference)}</strong><small>ShopEase order</small></td>
                     <td><strong>${escapeHtml(row.route)}</strong><small>${escapeHtml(row.center)}</small></td>
                     <td><span class="lg-status credited">Credited</span></td>
-                    <td style="text-align:right" class="lg-amount pos">+${peso(50)}</td>
+                    <td style="text-align:right" class="lg-amount pos">+${peso(row.amount)}</td>
                 </tr>`).join('') : '<tr><td colspan="5" class="lg-empty">No completed parcels match this search or period.</td></tr>';
                 ledgerCount.textContent = `${number(rows.length)} entries`;
                 ledgerSummary.textContent = rows.length ? `Showing ${(page-1)*pageSize+1}–${Math.min(page*pageSize,rows.length)} of ${number(rows.length)}` : 'Showing 0 entries';
@@ -560,21 +535,17 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 prevBtn.disabled = page===1;
                 nextBtn.disabled = page===totalPages;
             }
-            function renderNetwork(rows) {
+            function renderNetwork(units) {
                 const target = byId('lgNetworkSnapshot');
-                target.innerHTML = demoCenters.map(center => {
-                    const centerRows = rows.filter(row=>row.center===center.name);
+                target.innerHTML = units.length ? units.map(center => {
                     const hubs = center.hubs.map(hub=>{
-                        const hubRows = centerRows.filter(row=>row.hub===hub);
-                        return `<div class="lg-child-unit"><div class="lg-child-identity"><span class="lg-tree-line"></span><div><small>DELIVERY HUB · UNDER ${escapeHtml(center.name)}</small><strong>${escapeHtml(hub)}</strong></div></div><div class="lg-child-figures"><span>${number(hubRows.length)} parcels</span><strong>${peso(hubRows.length*shippingFee)}</strong></div></div>`;
+                        return `<div class="lg-child-unit"><div class="lg-child-identity"><span class="lg-tree-line"></span><div><small>DELIVERY HUB · UNDER ${escapeHtml(center.name)}</small><strong>${escapeHtml(hub.name)}</strong></div></div><div class="lg-child-figures"><span>${number(hub.parcels)} parcels</span><strong>${peso(hub.amount)}</strong></div></div>`;
                     }).join('');
-                    return `<article class="lg-unit-card lg-parent-unit"><div class="lg-unit-top"><div><span class="lg-parent-caption">SORTING CENTER</span><h3>${escapeHtml(center.name)}</h3></div><span>${center.hubs.length} delivery hubs</span></div><div class="lg-unit-metrics lg-parent-metrics"><div><small>Completed parcels</small><strong>${number(centerRows.length)}</strong></div><div><small>Shipping fee volume</small><strong>${peso(centerRows.length*shippingFee)}</strong></div></div><div class="lg-child-list">${hubs}</div></article>`;
-                }).join('');
+                    return `<article class="lg-unit-card lg-parent-unit"><div class="lg-unit-top"><div><span class="lg-parent-caption">SORTING CENTER</span><h3>${escapeHtml(center.name)}</h3></div><span>${center.hubs.length} delivery hubs</span></div><div class="lg-unit-metrics lg-parent-metrics"><div><small>Completed parcels</small><strong>${number(center.parcels)}</strong></div><div><small>Shipping fee volume</small><strong>${peso(center.amount)}</strong></div></div><div class="lg-child-list">${hubs}</div></article>`;
+                }).join('') : '<div class="lg-empty">No sorting center or hub earnings in this period.</div>';
             }
-            function renderChart(rows) {
-                const amounts = new Map();
-                rows.forEach(row=>amounts.set(row.date.slice(0,10),(amounts.get(row.date.slice(0,10))||0)+shippingFee));
-                const days = Array.from(amounts.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+            function renderChart(daily) {
+                const days = daily.map(row=>[row.date,Number(row.amount)]).sort((a,b)=>a[0].localeCompare(b[0]));
                 const data = days.length > 15 ? days.filter((_,i)=>i % Math.ceil(days.length/15)===0 || i===days.length-1) : days;
                 if (!data.length) {chartElement.innerHTML='<div class="lg-empty">No completed parcels in the selected period.</div>';return;}
                 const maxValue=Math.max(50,...data.map(x=>x[1]));

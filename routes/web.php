@@ -13,12 +13,12 @@ use App\Http\Controllers\Api\Seller\ReportsController as SellerReportsController
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ParcelScanController;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
+use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Seller\OrderStatusController;
 use App\Http\Controllers\Seller\ShippingStatusController;
 use App\Mail\BuyerVerificationCode;
 use App\Mail\SellerVerificationCode;
-use App\Models\Admin\Announcement;
 use App\Models\Admin\Registration;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -209,7 +209,6 @@ Route::get('/admin/dashboard', function () {
 */
 
 foreach ([
-    'logistics' => User::ROLE_LOGISTICS,
     'rider' => User::ROLE_RIDER,
     'courier' => User::ROLE_COURIER,
 ] as $dashboard => $role) {
@@ -228,13 +227,6 @@ foreach ([
 
             $viewData = [];
 
-            if ($dashboard === 'logistics') {
-                $viewData['dashboardAnnouncements'] = Announcement::publishedForAudience([
-                    'All Users',
-                    'Logistics',
-                ])->get();
-            }
-
             if ($dashboard === 'rider') {
                 $viewData['apiToken'] = Auth::user()->createToken('rider-dashboard')->plainTextToken;
             }
@@ -251,6 +243,10 @@ foreach ([
         ->name("$dashboard.dashboard");
 
 }
+
+Route::get('/logistics/dashboard', [LogisticsDashboardController::class, 'index'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.dashboard');
 
 Route::get('/logistics/deliveries', function () {
     abort_unless(Auth::user()->role === User::ROLE_LOGISTICS, 403);
@@ -270,6 +266,10 @@ Route::get('/logistics/logistics-earnings', function () {
     abort_unless(Auth::user()?->role === User::ROLE_LOGISTICS, 403);
     return view('pages.logistics.logistics-earnings');
 })->middleware('auth')->name('logistics.logistics-earnings');
+
+Route::get('/logistics/api/earnings', [\App\Http\Controllers\Api\Logistics\EarningsController::class, 'index'])
+    ->middleware(['auth', 'role:logistics'])
+    ->name('logistics.earnings.data');
 
 Route::get('/buyer/dashboard', function () {
     abort_unless(Auth::user()->role === User::ROLE_BUYER, 403);
@@ -2375,6 +2375,9 @@ Route::middleware(['auth', 'role:sorting_center'])
         })
             ->name('dashboard');
 
+        Route::get('/dashboard/data', [\App\Http\Controllers\Api\Logistics\SortingCenterDashboardController::class, 'index'])
+            ->name('dashboard.data');
+
         Route::get('/courier-registrations', function () {
             $center = \App\Models\Logistics\LogisticsBranch::query()
                 ->where('user_id', Auth::id())
@@ -2479,6 +2482,9 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::view('/reports', 'pages.logistics.sorting-center.reports')
             ->name('reports');
 
+        Route::get('/reports/data', [\App\Http\Controllers\Api\Logistics\SortingCenterReportsController::class, 'index'])
+            ->name('reports.data');
+
         Route::view('/account', 'pages.logistics.sorting-center.account')
             ->name('account');
 
@@ -2542,6 +2548,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
         };
 
         Route::get('/dashboard', $hubPage('dashboard'))->name('dashboard');
+        Route::get('/dashboard/data', [\App\Http\Controllers\Api\Logistics\DeliveryHubDashboardController::class, 'index'])->name('dashboard.data');
         Route::get('/rider-registrations', [\App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController::class, 'page'])->name('rider-registrations');
         Route::get('/scanners', $hubPage('scanners'))->name('scanners');
         Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
@@ -2577,6 +2584,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
             return redirect()->back()->with('success', 'Notification marked as read.');
         })->name('notifications.read');
         Route::get('/reports', $hubPage('reports'))->name('reports');
+        Route::get('/reports/data', [\App\Http\Controllers\Api\Logistics\DeliveryHubReportsController::class, 'index'])->name('reports.data');
         Route::get('/account', $hubPage('account'))->name('account');
     });
 // Separate administrator account management from personal Account Settings.

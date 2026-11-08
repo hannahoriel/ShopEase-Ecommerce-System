@@ -7,6 +7,7 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Admin\PlatformPolicy;
 use App\Models\User;
+use App\Services\CodSettlementService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -110,6 +111,7 @@ Artisan::command('orders:auto-confirm-delivered', function () {
                         'notes' => 'Automatically marked received seven days after delivery because the buyer did not confirm.',
                     ]);
                     BuyerNotification::createForOrderStatus($lockedOrder, 'completed');
+                    app(CodSettlementService::class)->releaseSellerEarnings((int) $lockedOrder->id);
                     $confirmed++;
                 });
             }
@@ -119,3 +121,10 @@ Artisan::command('orders:auto-confirm-delivered', function () {
 })->purpose('Mark delivered orders as received after seven days without buyer confirmation');
 
 Schedule::command('orders:auto-confirm-delivered')->everyMinute()->withoutOverlapping();
+
+Artisan::command('cod:settle-eligible-seller-earnings', function (): void {
+    $released = app(CodSettlementService::class)->releaseEligibleSellerEarnings();
+    $this->info("Released {$released} eligible COD seller settlement(s).");
+})->purpose('Release held COD seller earnings after delivery confirmation and case resolution');
+
+Schedule::command('cod:settle-eligible-seller-earnings')->everyMinute()->withoutOverlapping();

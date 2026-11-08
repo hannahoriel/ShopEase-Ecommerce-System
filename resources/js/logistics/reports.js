@@ -2,15 +2,15 @@
   'use strict';
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('logistics-reports');
-    const configNode = document.getElementById('lr-demo-data');
+    const configNode = document.getElementById('lr-report-config');
     if (!root || !configNode) return;
-    let data;
-    try { data = JSON.parse(configNode.textContent); } catch { return; }
-    const all = Array.isArray(data.parcels) ? data.parcels : [];
-    const centers = Array.isArray(data.centers) ? data.centers : [];
+    let config;
+    try { config = JSON.parse(configNode.textContent); } catch { return; }
+    let all = [];
+    let centers = [];
     const $ = id => document.getElementById(id);
     const from = $('lr-from'), to = $('lr-to'), reset = $('lr-reset'), error = $('lr-error');
-    const today = data.today;
+    const today = config.today;
     const money = value => '₱' + Number(value).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
     const integer = value => Number(value).toLocaleString('en-PH');
     const percent = (num, den) => den ? (100 * num / den).toFixed(1) + '%' : '0.0%';
@@ -19,10 +19,36 @@
     const toLabel = iso => new Date(iso + 'T12:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric'});
     let selected = [];
 
-    function resetPeriod() {
+    async function resetPeriod() {
       from.value = today.slice(0,7) + '-01';
       to.value = today;
-      render();
+      await loadReport();
+    }
+    async function loadReport() {
+      if (!from.value || !to.value || from.value > to.value) {
+        error.textContent = 'Please select a valid From and To date.';
+        return;
+      }
+      error.textContent = '';
+      $('lr-volume-chart').innerHTML = '<p class="ar-chart-empty">Loading report…</p>';
+      try {
+        const url = new URL(config.endpoint, window.location.origin);
+        url.searchParams.set('from', from.value);
+        url.searchParams.set('to', to.value);
+        const response = await fetch(url, {headers: {Accept: 'application/json'}, credentials: 'same-origin'});
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || 'Could not load logistics report data.');
+        all = Array.isArray(payload.data?.parcels) ? payload.data.parcels : [];
+        centers = Array.isArray(payload.data?.centers) ? payload.data.centers : [];
+        render();
+        if (!all.length) $('lr-volume-chart').innerHTML = '<p class="ar-chart-empty">No shipment records for this period.</p>';
+      } catch (failure) {
+        all = [];
+        centers = [];
+        render();
+        error.textContent = failure.message || 'Could not load logistics report data.';
+        $('lr-volume-chart').innerHTML = '<p class="ar-chart-empty">Report data could not be loaded.</p>';
+      }
     }
     function render() {
       if (!from.value || !to.value || from.value > to.value) {
@@ -37,7 +63,7 @@
       $('lr-parcels').textContent = integer(selected.length);
       $('lr-delivered').textContent = integer(delivered.length);
       $('lr-on-time').textContent = percent(onTime, delivered.length);
-      $('lr-shipping').textContent = money(delivered.length * 50);
+      $('lr-shipping').textContent = money(delivered.reduce((sum, row) => sum + Number(row.fee || 0), 0));
       $('lr-status-total').textContent = `${integer(selected.length)} records`;
       const statusContainer = $('lr-status-bars');
       statusContainer.replaceChildren();
@@ -67,7 +93,8 @@
         tr.innerHTML=`<td class="ar-table-strong">${escape(center.name)}</td><td>${integer(rows.length)}</td><td>${integer(delivered)}</td><td class="ar-num">${percent(rows.length,selected.length)}</td>`;
         centerRows.appendChild(tr);
         const revenue=document.createElement('tr');
-        revenue.innerHTML=`<td class="ar-table-strong">${escape(center.name)}</td><td>${integer(delivered)}</td><td class="ar-num">${money(delivered*50)}</td>`;
+        const fees=rows.filter(x=>x.status==='delivered').reduce((sum,row)=>sum+Number(row.fee||0),0);
+        revenue.innerHTML=`<td class="ar-table-strong">${escape(center.name)}</td><td>${integer(delivered)}</td><td class="ar-num">${money(fees)}</td>`;
         revenueRows.appendChild(revenue);
         const box=document.createElement('article');box.className='ar-center';
         const head=document.createElement('div');head.className='ar-center-head';
@@ -92,7 +119,7 @@
       const lost=issues.filter(r=>r.issue==='lost').length, damaged=issues.filter(r=>r.issue==='damaged').length;
       $('lr-issue-total').textContent=integer(issues.length)+' cases';
       $('lr-issues').innerHTML=`<div><span><i class="ar-dot"></i>Lost parcels</span><strong>${integer(lost)}</strong></div><div><span><i class="ar-dot"></i>Damaged parcels</span><strong>${integer(damaged)}</strong></div><div><span><i class="ar-dot"></i>Exception share</span><strong>${percent(issues.length, selected.length)}</strong></div>`;
-      const hours=delivered.map(r=>r.hours);
+      const hours=delivered.map(r=>r.hours).filter(Number.isFinite);
       $('lr-average-hours').textContent=hours.length ? (hours.reduce((a,b)=>a+b,0)/hours.length).toFixed(1)+' hrs' : '—';
       $('lr-fastest').textContent=hours.length ? Math.min(...hours)+' hrs' : '—';
       $('lr-longest').textContent=hours.length ? Math.max(...hours)+' hrs' : '—';
@@ -101,7 +128,7 @@
       const counts=centers.map(center=>({name:center.name,total:selected.filter(r=>r.center===center.name).length})).sort((a,b)=>b.total-a.total);
       const highest=counts[0];
       const problemCount=selected.filter(r=>r.status==='exception').length;
-      $('lr-insights').innerHTML=`<div><span>Highest parcel throughput</span><strong>${escape(highest?.name || '—')}</strong></div><div><span>On-time among delivered</span><strong>${percent(onTime, delivered.length)}</strong></div><div><span>Parcels under investigation</span><strong>${integer(problemCount)}</strong></div><div><span>Gross fee basis</span><strong>₱50 × ${integer(selected.length)}</strong></div>`;
+      $('lr-insights').innerHTML=`<div><span>Highest parcel throughput</span><strong>${escape(highest?.name || '—')}</strong></div><div><span>On-time among delivered</span><strong>${percent(onTime, delivered.length)}</strong></div><div><span>Parcels under investigation</span><strong>${integer(problemCount)}</strong></div><div><span>Recorded delivered fees</span><strong>${money(delivered.reduce((sum,row)=>sum+Number(row.fee||0),0))}</strong></div>`;
     }
 
     let chartToken = 0;
@@ -110,7 +137,7 @@
       const sums=new Map();
       for(const row of selected) sums.set(row.date,(sums.get(row.date)||0)+1);
       const entries=[...sums.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-      if (!entries.length) {target.innerHTML='<p class="ar-chart-empty">No sample parcel records for this period.</p>';return;}
+      if (!entries.length) {target.innerHTML='<p class="ar-chart-empty">No shipment records for this period.</p>';return;}
       const step=Math.max(1,Math.ceil(entries.length/14));
       const points=[];
       for(let i=0;i<entries.length;i+=step){
@@ -157,7 +184,7 @@
       }else{bars.forEach(({bar,finalHeight,finalY})=>{bar.setAttribute('height',finalHeight);bar.setAttribute('y',finalY);});}
     }
 
-    from.addEventListener('change',render);to.addEventListener('change',render);
+    from.addEventListener('change',loadReport);to.addEventListener('change',loadReport);
     reset.addEventListener('click',()=>{
       reset.classList.remove('is-spinning');void reset.offsetWidth;reset.classList.add('is-spinning');resetPeriod();
     });

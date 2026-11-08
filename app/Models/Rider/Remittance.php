@@ -12,7 +12,10 @@ class Remittance extends Model
 
     protected $fillable = [
         'rider_id',
+        'delivery_hub_id',
         'amount',
+        'actual_amount',
+        'discrepancy_amount',
         'method',
         'reference_number',
         'receipt_path',
@@ -20,11 +23,16 @@ class Remittance extends Model
         'reviewed_by',
         'reviewed_at',
         'review_notes',
+        'cash_in_at',
+        'cash_in_by',
     ];
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'reviewed_at' => 'datetime'];
+        return [
+            'amount' => 'decimal:2', 'actual_amount' => 'decimal:2', 'discrepancy_amount' => 'decimal:2',
+            'reviewed_at' => 'datetime', 'cash_in_at' => 'datetime',
+        ];
     }
 
     public function rider(): BelongsTo
@@ -35,5 +43,16 @@ class Remittance extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function deliveryHub(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Logistics\LogisticsDeliveryHub::class, 'delivery_hub_id');
+    }
+
+    public function collections(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(CodCollection::class, 'rider_cod_remittance_items', 'remittance_id', 'cod_collection_id')
+            ->withTimestamps();
     }
 }

@@ -174,10 +174,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const matchPhoto = (group) => (group?.options || []).find(option => String(option.name) === String(selectedProductOptions[group.field]))?.photo
                 || (group?.options || []).find(option => String(option.name) === String(selectedProductOptions[group.field]))?.image_url;
             const selectedPhoto = selectedVariant?.image_url || selectedVariant?.photo
+                || matchPhoto(variantGroups.find(group => group.field === 'color'))
                 || variantGroups.map(matchPhoto).find(Boolean);
             const mainPhotos = Array.isArray(p.photos) ? p.photos : (p.image_url ? [p.image_url] : []);
+            const combinationPhotos = activeConnectedVariants
+                .map(variant => variant.image_url || variant.photo)
+                .filter(Boolean);
             const optionPhotos = variantGroups.flatMap(group => group.options.map(opt => opt.photo || opt.image_url).filter(Boolean));
-            const gallery = [...new Set([selectedPhoto, ...optionPhotos, ...mainPhotos].filter(Boolean))];
+            const gallery = [...new Set([selectedPhoto, ...combinationPhotos, ...optionPhotos, ...mainPhotos].filter(Boolean))];
             if (JSON.stringify(gallery) !== JSON.stringify(galleryPhotos)) renderGallery(gallery);
             if (priceEl) {
                 priceEl.innerHTML = salePriceMarkup(selectedVariant?.final_price ?? p.price, p.sale_percentage);
