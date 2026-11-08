@@ -78,6 +78,8 @@ class VouchersController extends Controller
             'code' => ['required', 'regex:/^[A-Za-z0-9_-]{4,20}$/', Rule::unique('seller_vouchers', 'code')->where('seller_id', $this->sellerId($request))],
             'title' => ['required', 'string', 'max:65'],
             'discountType' => ['required', Rule::in(['fixed', 'percent'])],
+            'voucherType' => ['sometimes', Rule::in(['merchandise', 'shipping'])],
+            'fundingSource' => ['sometimes', Rule::in($this->sellerId($request) === null ? ['platform', 'logistics'] : ['seller'])],
             'discountValue' => ['required', 'numeric', 'gt:0'],
             'minimumSpend' => ['required', 'numeric', 'min:0'],
             'maximumDiscount' => ['required', 'numeric', 'gt:0'],
@@ -107,10 +109,10 @@ class VouchersController extends Controller
             abort(422, 'Maximum discount cannot be below the fixed discount amount.');
         }
         $productIds = collect(explode(',', $data['productIds'] ?? ''))->map(fn ($id) => trim($id))->filter()->unique()->values();
-        if ($data['eligibleItems'] === 'selected' && $productIds->isEmpty()) {
+        if (($data['voucherType'] ?? 'merchandise') !== 'shipping' && $data['eligibleItems'] === 'selected' && $productIds->isEmpty()) {
             abort(422, 'Enter at least one product ID for selected products.');
         }
-        if ($data['eligibleItems'] === 'selected') {
+        if (($data['voucherType'] ?? 'merchandise') !== 'shipping' && $data['eligibleItems'] === 'selected') {
             $products = Product::query()->when($this->sellerId($request) !== null, fn ($query) => $query->where('seller_id', $this->sellerId($request)))
                 ->where(function ($query) use ($productIds): void {
                     $numericIds = $productIds->filter(fn ($id) => ctype_digit($id));
@@ -128,6 +130,8 @@ class VouchersController extends Controller
         }
         return [
             'code' => strtoupper($data['code']), 'title' => $data['title'],
+            'voucher_type' => $data['voucherType'] ?? 'merchandise',
+            'funding_source' => $this->sellerId($request) === null ? ($data['fundingSource'] ?? 'platform') : 'seller',
             'discount_type' => $data['discountType'], 'discount_value' => $data['discountValue'],
             'minimum_spend' => $data['minimumSpend'], 'maximum_discount' => $data['maximumDiscount'],
             'product_ids' => $data['eligibleItems'] === 'selected' ? $productIds->all() : null,
@@ -143,11 +147,12 @@ class VouchersController extends Controller
         $status = ! $voucher->enabled ? 'paused' : ($voucher->claimed >= $voucher->quantity ? 'exhausted' : (now()->lt($voucher->starts_at) ? 'upcoming' : (now()->gt($voucher->ends_at) ? 'expired' : 'active')));
         return [
             'id' => $voucher->code, 'recordId' => $voucher->id, 'title' => $voucher->title,
-            'purpose' => $voucher->seller_id === null ? 'ShopEase platform discount on eligible COD orders.' : 'Store-exclusive promotional discount on eligible COD orders.',
+            'purpose' => ($voucher->voucher_type ?? 'merchandise') === 'shipping' ? 'Shipping fee voucher funded by '.ucfirst($voucher->funding_source ?? ($voucher->seller_id === null ? 'platform' : 'seller')).'. Logistics earnings follow the promotion funding rules.' : ($voucher->seller_id === null ? 'ShopEase platform discount on eligible COD orders.' : 'Store-exclusive promotional discount on eligible COD orders.'),
+            'voucherType' => $voucher->voucher_type ?? 'merchandise', 'fundingSource' => $voucher->funding_source ?? ($voucher->seller_id === null ? 'platform' : 'seller'),
             'discountType' => $voucher->discount_type, 'discountValue' => (float) $voucher->discount_value,
             'minimumSpend' => (float) $voucher->minimum_spend, 'maximumDiscount' => (float) $voucher->maximum_discount,
             'starts' => $voucher->starts_at->format('Y-m-d\TH:i'), 'ends' => $voucher->ends_at->format('Y-m-d\TH:i'),
-            'eligibleItems' => $voucher->eligible_category ? config('admin.seller_compliance.categories.'.$voucher->eligible_category, $voucher->eligible_category) : ($voucher->product_ids ? 'Selected products: '.implode(', ', $voucher->product_ids) : ($voucher->seller_id === null ? 'All eligible ShopEase products' : 'All products in my shop')),
+            'eligibleItems' => ($voucher->voucher_type ?? 'merchandise') === 'shipping' ? 'Shipping fee' : ($voucher->eligible_category ? config('admin.seller_compliance.categories.'.$voucher->eligible_category, $voucher->eligible_category) : ($voucher->product_ids ? 'Selected products: '.implode(', ', $voucher->product_ids) : ($voucher->seller_id === null ? 'All eligible ShopEase products' : 'All products in my shop'))),
             'eligibleBuyers' => ['all' => 'All buyers', 'first' => $voucher->seller_id === null ? 'First-time ShopEase buyers' : 'First-time buyers at my shop', 'returning' => 'Returning buyers'][$voucher->eligible_buyers],
             'productIds' => $voucher->product_ids, 'quantity' => $voucher->quantity, 'claimed' => $voucher->claimed,
             'perBuyer' => $voucher->per_buyer, 'stacking' => $voucher->stacking === 'shipping' ? 'Can combine with shipping voucher only' : 'Cannot combine with other vouchers',
