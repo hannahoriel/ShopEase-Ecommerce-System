@@ -8,6 +8,27 @@ use Tests\TestCase;
 
 class ShopEaseLoadingTest extends TestCase
 {
+    public function test_logistics_interfaces_share_table_style_without_changing_their_content(): void
+    {
+        $middleware = new ShopEaseLoading;
+        foreach (['/logistics/reports', '/sorting-center/vehicles-drivers', '/delivery-hub/parcel-tracking'] as $path) {
+            $content = '<table class="custom-table"><thead><tr><th>Parcel</th></tr></thead><tbody id="rows"></tbody></table><div class="pt-pagination"><button id="next">Next</button></div>';
+            $html = '<html><head><style>.custom-table td{font-size:10px}</style></head><body class="lg-body"><aside id="lgSidebar"></aside>'.$content.'</body></html>';
+            $response = $middleware->handle(Request::create($path), fn () => response($html, 200, ['Content-Type' => 'text/html']));
+            $result = $response->getContent();
+            $this->assertStringContainsString('<body data-se-logistics-tables class="lg-body">', $result);
+            $this->assertStringContainsString('css/logistics-tables.css?v=', $result);
+            $this->assertStringContainsString($content, $result);
+            $this->assertGreaterThan(strpos($result, '</style>'), strpos($result, 'css/logistics-tables.css'));
+        }
+        foreach (['admin-sidebar', 'sellerSidebar', 'public-page'] as $sidebar) {
+            $html = '<html><head></head><body><aside id="'.$sidebar.'"></aside></body></html>';
+            $response = $middleware->handle(Request::create('/test'), fn () => response($html, 200, ['Content-Type' => 'text/html']));
+            $this->assertStringNotContainsString('logistics-tables.css', $response->getContent());
+            $this->assertStringNotContainsString('data-se-logistics-tables', $response->getContent());
+        }
+    }
+
     public function test_web_route_automatically_receives_the_loader(): void
     {
         config(['session.driver' => 'array']);

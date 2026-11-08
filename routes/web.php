@@ -1990,6 +1990,11 @@ Route::get('/admin/complaints-disputes', [AdminComplaintController::class, 'page
 // Admin overall reporting (date-scoped reports and CSV export)
 Route::get('/admin/reports', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])
     ->middleware(['auth', 'role:admin'])->name('admin.reports');
+
+Route::get('/admin/vouchers', function () {
+    $apiToken = request()->user()->createToken('admin-vouchers')->plainTextToken;
+    return view('pages.admin.vouchers', compact('apiToken'));
+})->middleware(['auth', 'role:admin'])->name('admin.vouchers.index');
 Route::get('/admin/reports/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])
     ->middleware(['auth', 'role:admin'])->name('admin.reports.export');
 
@@ -2325,8 +2330,8 @@ Route::get('/logistics/register/review/document/{type}',
     [LogisticsRegistrationController::class, 'reviewDocument']
 )->name('logistics.register.review.document');
 
-Route::view('/buyer/view-order', 'pages.buyer.view-order')
-    ->name('buyer.view-order');
+Route::get('/buyer/view-order', [\App\Http\Controllers\Buyer\OrderPageController::class, 'show'])
+    ->middleware(['auth', 'role:buyer'])->name('buyer.view-order');
 
 Route::middleware(['auth', 'role:buyer'])->prefix('buyer/likes')->name('buyer.likes.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\Buyer\LikeController::class, 'index'])->name('index');

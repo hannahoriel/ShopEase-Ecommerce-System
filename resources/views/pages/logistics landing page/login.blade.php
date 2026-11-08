@@ -74,7 +74,7 @@
                     <p class="logistics-form-feedback" data-login-feedback role="status" hidden></p>
                 </form>
                 <p class="foot-note">New to ShopEase Logistics?
-                    <a href="{{ url('/logistics/register/company') }}" class="link" data-logistics-signup>Sign Up</a>
+                    <a href="{{ url('/logistics/register/company') }}" class="link" data-logistics-signup data-loading="off">Sign Up</a>
                 </p>
             </div>
         </div>

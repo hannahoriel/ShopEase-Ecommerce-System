@@ -1,83 +1,38 @@
-{{-- ShopEase Buyer | View Order. Self-contained view (CSS and JS inline).
-     Optional controller variable: $order (array/model). Until connected, demo records are displayed.
-     Access example: /buyer/view-order?order=ORD-DEMO-1801 --}}
+{{-- Buyer order details, backed by the authenticated buyer's database order. --}}
 @php
-    $demoProducts = [
-      ['Wireless Bluetooth Earbuds Pro','Tech Haven',1299,'processing','Black · Bluetooth 5.3',1],
-      ['Everyday Canvas Tote Bag','Mia Boutique',459,'to-ship','Beige · Medium',2],
-      ['Hydrating Skincare Essentials Set','Glow Essentials',899,'in-transit','Sensitive Skin',1],
-      ['Everyday Running Sneakers','Stride Studio',1799,'out-for-delivery','White · Size 39',1],
-      ['Minimalist Smart Watch','Watch Avenue',2199,'delivered','Midnight Black',1],
-      ['Ceramic Coffee Mug Set','Home & Cozy',349,'completed','Cream · Set of 2',2],
-      ['Vitamin C Glow Serum','Beauty Bloom',599,'completed','30 ml',1],
-      ['Classic Crossbody Bag','Urban Finds',799,'return-refund','Brown · Small',1],
-      ['Portable Wireless Speaker','Tech Haven',999,'return-refund','Navy Blue',1],
-      ['Classic Canvas Sneakers','Stride Studio',1299,'cancelled','Black · Size 40',1],
-      ['Noise-Cancelling Headphones','Sound Source',2499,'processing','Silver',1],
-      ['Indoor Plant Pot Set','Green Living',549,'delivered','White · Set of 3',1],
-    ];
-    $requestedOrder = (string) request('order', 'SH-2026-1005');
-    $demoIndex = null;
-    if (preg_match('/^SH-2026-(10\d{2})$/', $requestedOrder, $demoMatches)) {
-        $candidate = (int) $demoMatches[1] - 1001;
-        if (array_key_exists($candidate, $demoProducts)) $demoIndex = $candidate;
-    }
-    // Legacy demo links remain supported.
-    if ($demoIndex === null && preg_match('/^ORD-DEMO-(18\d{2})$/', $requestedOrder, $demoMatches)) {
-        $candidate = (int) $demoMatches[1] - 1801;
-        if (array_key_exists($candidate, $demoProducts)) $demoIndex = $candidate;
-    }
-    $sample = $demoProducts[$demoIndex ?? 4];
-    $provided = $order ?? null;
-    $isDemo = $provided === null;
+    $provided = $order;
     $read = fn($key, $fallback = null) => data_get($provided, $key, $fallback);
-    $number = $isDemo ? ($demoIndex === null ? 'SH-2026-1005' : $requestedOrder) : (string) ($read('order_number', $read('order_id', $read('id', 'Order'))));
-    $status = strtolower(str_replace('_', '-', (string) $read('status', $sample[3])));
-    // UI-only five-stage journey; old demo labels map to the closest delivery stage.
-    $status = ['return-refund'=>'delivered','cancelled'=>'processing','pending'=>'processing','to_ship'=>'to-ship'][$status] ?? $status;
-    $validStatuses = ['processing','to-ship','in-transit','out-for-delivery','delivered','completed'];
-    if (!in_array($status,$validStatuses,true)) $status = 'processing';
-    $statusNames = ['processing'=>'Processing','to-ship'=>'To Ship','in-transit'=>'In Transit','out-for-delivery'=>'Out for Delivery','delivered'=>'Delivered','completed'=>'Completed'];
-    $shop = $read('shop', $sample[1]);
-    $name = $read('product_name', data_get($provided, 'items.0.product_name', $sample[0]));
-    $variant = $read('variant', data_get($provided, 'items.0.variation', $sample[4]));
-    $quantity = max(1,(int)$read('quantity',data_get($provided,'items.0.quantity',$sample[5])));
-    $unitPrice = (float)$read('price',data_get($provided,'items.0.unit_price',$sample[2]));
-    $subtotal = $unitPrice * $quantity;
-    $shipping = (float)$read('shipping_fee', 60);
-    $shippingDiscount = (float)$read('shipping_discount', 60);
+    $number = $read('order_number');
+    $status = str_replace('_', '-', $read('status', 'pending'));
+    $status = ['pending'=>'processing','new'=>'processing','preparing'=>'processing'][$status] ?? $status;
+    $statusNames = ['processing'=>'Processing','to-ship'=>'To Ship','in-transit'=>'In Transit','out-for-delivery'=>'Out for Delivery','delivered'=>'Delivered','completed'=>'Completed','cancelled'=>'Cancelled','refunded'=>'Refunded','returned'=>'Returned','return-refund'=>'Return / Refund'];
+    $statusNames[$status] ??= \Illuminate\Support\Str::headline($status);
+    $shop = $read('shop', 'Shop');
+    $items = collect($read('items', []));
+    $name = $items->first()['product_name'] ?? 'Product';
+    $subtotal = $items->sum(fn($item) => $item['unit_price'] * $item['quantity']);
+    $shipping = (float)$read('shipping_fee', 0);
+    $shippingDiscount = 0;
     $voucher = (float)$read('voucher_discount', 0);
-    $total = max(0, (float)$read('total', $subtotal + $shipping - $shippingDiscount - $voucher));
-    $placed = (string)$read('created_at','2026-10-19 13:33:00');
-    $placedAt = \Carbon\Carbon::parse($placed);
-    $shippedAt = $placedAt->copy()->addDay();
-    $deliveredAt = $placedAt->copy()->addDays(3);
-    $currentStep = match($status) {'processing'=>1,'to-ship'=>2,'in-transit'=>3,'out-for-delivery'=>4,'delivered'=>5,'completed'=>5,default=>1};
-    $buyer = auth()->user();
-    $buyerName = trim((string)data_get($buyer,'name','Buyer')) ?: 'Buyer';
-    $buyerPhone = (string)(data_get($buyer,'phone',data_get($buyer,'contact_number','Not provided')));
-    $parts = array_filter([data_get($buyer,'street'),data_get($buyer,'barangay'),data_get($buyer,'municipality'),data_get($buyer,'province'),data_get($buyer,'zip_code')],fn($v)=>filled($v));
-    $address = (string)$read('shipping_address', implode(', ', $parts) ?: 'Your registered delivery address will appear here.');
-    $courier = (string)$read('courier','ShopEase Delivery');
-    $tracking = (string)$read('tracking_number','SE-'.preg_replace('/[^A-Z0-9]/i','', $number));
-    $productImage = (string)$read('product_image',data_get($provided,'items.0.image',''));
-    $safeProductImage = str_starts_with($productImage,'/') || preg_match('~^https?://~i',$productImage) ? $productImage : '';
-    $steps = [
-      ['Processing','processing.png','Order being processed'],
-      ['To Ship','to-ship.png','Seller is preparing your order'],
-      ['In Transit','in-transit.png','Order has shipped'],
-      ['Out for Delivery','out-for-delivery.png','Courier is delivering your parcel'],
-      ['Delivered','delivered.png','Parcel has been delivered'],
-    ];
+    $total = (float)$read('total', 0);
+    $placedAt = \Carbon\Carbon::parse($read('created_at'));
+    $currentStep = match($status) {'processing'=>1,'to-ship'=>2,'in-transit'=>3,'out-for-delivery'=>4,'delivered','completed'=>5,default=>0};
+    $buyerName = $read('delivery_name', 'Not provided');
+    $buyerPhone = $read('delivery_phone', 'Not provided');
+    $address = $read('delivery_address', 'Not provided');
+    $courier = $read('shipment.courier') ?: 'Not assigned yet';
+    $tracking = $read('shipment.tracking_number') ?: 'Not assigned yet';
+    $steps = [['Processing','processing.png'],['To Ship','to-ship.png'],['In Transit','in-transit.png'],['Out for Delivery','out-for-delivery.png'],['Delivered','delivered.png']];
     $backUrl = route('buyer.my-purchases', ['section'=>'purchases']);
+    $events = collect($read('tracking_events', []));
 @endphp
 <!DOCTYPE html>
 <html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8"><meta name="csrf-token" content="{{ csrf_token() }}"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Order {{ $number }} · ShopEase</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-@vite(['resources/css/app.css'])
+@vite(['resources/css/app.css','resources/js/buyer/pages/view-order.js'])
 <style>
 :root{--vo-maroon:#74232d;--vo-deep:#52070b;--vo-peach:#fff1ed;--vo-bg:#fcf6f4;--vo-line:#ece1dd;--vo-muted:#8c807c;--vo-good:#27ab69;--vo-text:#2a2221}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body.vo-page{margin:0;background:var(--vo-bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--vo-text);font-size:13px}button{font:inherit;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.48}[hidden]{display:none!important}
@@ -136,52 +91,50 @@
     <div class="vo-order-head"><span>ORDER ID: <strong>{{ $number }}</strong></span><span class="vo-head-divider"></span><span class="vo-status-head">{{ in_array($status, ['delivered','completed'], true) ? ($status === 'completed' ? 'Your order is completed' : 'Your order has been delivered') : 'Order '.$statusNames[$status] }}</span></div>
   </section>
   <section class="vo-card vo-progress" aria-label="Order progress">
-    <div class="vo-progress-track" style="--progress-width:{{ ($currentStep - 1) * 20 }}%"><div class="vo-progress-fill"></div>
+    <div class="vo-progress-track" style="--progress-width:{{ max(0, ($currentStep - 1) * 20) }}%"><div class="vo-progress-fill"></div>
       @foreach($steps as $i => $step)
-      @php $passed = ($i + 1) <= $currentStep; @endphp
-      <div class="vo-step {{ $passed ? 'passed' : '' }} {{ $i + 1 === $currentStep ? 'current' : '' }}"><div class="vo-step-icon"><img src="{{ asset('icons/buyer/'.$step[1]) }}" alt="" loading="lazy"></div><span class="vo-step-title">{{ $step[0] }}</span><span class="vo-step-time">{{ $passed ? ($i===0 ? $placedAt->format('M d, Y · h:i A') : ($i===1 ? $placedAt->copy()->addHours(2)->format('M d, Y') : ($i===2 ? $shippedAt->format('M d, Y') : ($i===3 ? $deliveredAt->copy()->subHours(3)->format('M d, Y') : $deliveredAt->format('M d, Y'))))) : 'Awaiting update' }}</span></div>
+      @php
+        $passed = ($i + 1) <= $currentStep;
+        $stageKeys = [['pending','new','preparing'],['to_ship','to-ship'],['in_transit','in-transit'],['out_for_delivery','out-for-delivery'],['delivered','completed']][$i];
+        $stageDate = $i === 0 ? $read('created_at') : data_get($events->filter(fn($event) => in_array($event['status'], $stageKeys, true))->sortBy('created_at')->first(), 'created_at');
+      @endphp
+      <div class="vo-step {{ $passed ? 'passed' : '' }} {{ $i + 1 === $currentStep ? 'current' : '' }}"><div class="vo-step-icon"><img src="{{ asset('icons/buyer/'.$step[1]) }}" alt="" loading="lazy"></div><span class="vo-step-title">{{ $step[0] }}</span><span class="vo-step-time">{{ $stageDate ? \Carbon\Carbon::parse($stageDate)->format('M d, Y · h:i A') : ($passed ? 'No timestamp available' : 'Awaiting update') }}</span></div>
       @endforeach
     </div>
   </section>
+
+<section class="vo-card" style="padding:20px 22px"><div class="vo-section-title"><h2>Order Information</h2></div><p>Placed: {{ $placedAt->format('M d, Y · h:i A') }}</p><p>Estimated delivery: {{ $read('shipment.estimated_delivery') ?: 'Not available yet' }}</p><p>Current location: {{ $read('shipment.current_location') ?: 'Not available yet' }}</p>@if($read('shipment.rider'))<p>Rider: {{ $read('shipment.rider.name') }} · {{ $read('shipment.rider.contact_no') }}</p>@endif @if($read('buyer_received_at'))<p>Receipt confirmed: {{ \Carbon\Carbon::parse($read('buyer_received_at'))->format('M d, Y · h:i A') }}{{ $read('buyer_received_automatically') ? ' (automatically)' : '' }}</p>@endif @if($read('cancellation_request'))<p>Cancellation request: {{ \Illuminate\Support\Str::headline($read('cancellation_request.status')) }} · {{ \Illuminate\Support\Str::headline($read('cancellation_request.reason')) }}</p>@endif @if($read('complaint'))<p>Complaint: <a href="{{ $backUrl }}&complaint={{ $read('complaint.id') }}">{{ $read('complaint.reference') }}</a> · {{ $read('complaint.status') }}</p>@endif @foreach($read('returns',[]) as $return)<p>{{ ucfirst($return['return_type']) }} request #{{ $return['id'] }} · {{ $return['status'] }} · {{ $return['reason'] }}</p>@endforeach<div style="margin-top:18px"><h3>Order verification</h3><canvas id="voOrderQr" width="160" height="160" aria-label="Order verification QR code"></canvas><p>Show this QR code when your order needs to be verified.</p></div></section>
   <section class="vo-card vo-actions-card">
     <div class="vo-attention">
       <div>
         <h3>{{ match($status) {'processing'=>'Your order is being processed','to-ship'=>'Your parcel is being prepared','in-transit'=>'Your parcel is on the way','out-for-delivery'=>'Your parcel is out for delivery','delivered'=>'Your order has arrived!','completed'=>'Order completed',default=>'Order update'} }}</h3>
-        <p>{{ match($status) {'processing'=>'We are confirming your order details. You can still cancel before the parcel enters transit.','to-ship'=>'Your seller is preparing your parcel. You can still request cancellation at this stage.','in-transit'=>'Your parcel has been shipped. Order cancellation is no longer available.','out-for-delivery'=>'Your courier is delivering your parcel. Please prepare your COD payment.','delivered'=>'Check your parcel. You can confirm receipt, request a return/refund, or rate your purchase.','completed'=>'Your product has been rated. You can review your submitted rating below.',''=>'Check your order status.',default=>'Track the progress of your order.'} }}</p>
+        <p>{{ match($status) {'processing'=>'We are confirming your order details. You can still cancel before the parcel enters transit.','to-ship'=>'Your seller is preparing your parcel. You can still request cancellation at this stage.','in-transit'=>'Your parcel has been shipped. Order cancellation is no longer available.','out-for-delivery'=>'Your courier is delivering your parcel. Please prepare your COD payment.','delivered'=>'Check your parcel. You can confirm receipt, request a return/refund, or rate your purchase.','completed'=>'Your order is complete. You can rate eligible products or view your submitted reviews below.',''=>'Check your order status.',default=>'Track the progress of your order.'} }}</p>
       </div>
       <span class="vo-stage-pill">{{ $statusNames[$status] }}</span>
     </div>
     <div class="vo-action-row">
-      @if(in_array($status, ['processing','to-ship'], true))<button class="vo-outline" type="button" data-vo-action="cancel">Cancel Order</button>@endif
-      @if($status === 'delivered')<button class="vo-outline" type="button" data-vo-action="return">Request Return / Refund</button>@endif
-      <button class="vo-outline" type="button" data-vo-action="seller">Contact Seller</button>
+      @if($read('can_cancel'))<button class="vo-outline" type="button" data-vo-action="cancel">Cancel Order</button>@endif
+      @if(in_array($status, ['delivered','completed'], true))<button class="vo-outline" type="button" data-vo-action="return">Request Return / Refund</button>@endif
+      <button class="vo-outline" type="button" data-vo-action="seller">Contact Seller</button><button class="vo-outline" type="button" data-vo-action="report">Report a Problem</button>
     </div>
   </section>
   <section class="vo-card"><div class="vo-section-title"><h2>Delivery & Tracking</h2><span>{{ $courier }} · {{ $tracking }}</span></div><div class="vo-trackhead"><span>Shipment progress and delivery updates</span><strong>{{ $courier }}</strong></div><div class="vo-delivery"><div class="vo-address"><h3>Delivery Address</h3><strong>{{ $buyerName }}</strong><p>{{ $buyerPhone }}</p><p>{{ $address }}</p></div><div class="vo-timeline" id="voTimeline">
-    @php $events = [
-      ['Delivered','Your parcel has been delivered.',$deliveredAt->format('M d, Y · h:i A'),5],
-      ['Out for Delivery','The courier is on the way to your address.',$deliveredAt->copy()->subHours(3)->format('M d, Y · h:i A'),4],
-      ['In Transit','Parcel has arrived at the local delivery hub.',$shippedAt->copy()->addHours(12)->format('M d, Y · h:i A'),3],
-      ['Order Shipped','Parcel has departed from the sorting facility.',$shippedAt->format('M d, Y · h:i A'),3],
-      ['Preparing for Shipment','Seller is preparing your parcel.',$placedAt->copy()->addHours(2)->format('M d, Y · h:i A'),2],
-      ['Order Placed','Your order was placed successfully.',$placedAt->format('M d, Y · h:i A'),1]
-    ];
-    @endphp
-    @foreach($events as $event)
-    @if($currentStep >= $event[3])<div class="vo-event"><span class="vo-dot">{{ $loop->first ? '✓' : '·' }}</span><time>{{ $event[2] }}</time><div class="vo-event-copy"><strong>{{ $event[0] }}</strong><p>{{ $event[1] }}</p></div></div>@endif
-    @endforeach
+    @forelse($events as $event)
+    <div class="vo-event"><span class="vo-dot">{{ $loop->first ? '✓' : '·' }}</span><time>{{ filled($event['created_at'] ?? null) ? \Carbon\Carbon::parse($event['created_at'])->format('M d, Y · h:i A') : '—' }}</time><div class="vo-event-copy"><strong>{{ $event['description'] ?? $event['status'] }}</strong>@if(filled($event['location'] ?? null))<p>{{ $event['location'] }}</p>@endif</div></div>
+    @empty <p>No tracking updates have been recorded yet.</p> @endforelse
+
   </div></div></section>
-  <section class="vo-card"><div class="vo-shop-head"><strong>▣ {{ $shop }}</strong><button class="vo-outline" data-vo-action="seller" type="button">Chat with Seller</button></div><div class="vo-product"><div class="vo-product-img">@if($safeProductImage)<img src="{{ $safeProductImage }}" alt="{{ $name }}">@else<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="15" width="44" height="42" rx="6"/><path d="M20 15c0-8 24-8 24 0M19 38l8-8 8 7 6-4 7 8"/><circle cx="44" cy="26" r="3"/></svg>@endif</div><div class="vo-product-copy"><h3>{{ $name }}</h3><p>Variation: {{ $variant }}</p><p>Quantity: {{ $quantity }}</p></div><span class="vo-product-price">₱{{ number_format($unitPrice,2) }}</span></div><div class="vo-breakdown"><div class="vo-money-row"><span>Merchandise Subtotal</span><strong>₱{{ number_format($subtotal,2) }}</strong></div><div class="vo-money-row"><span>Shipping Fee</span><strong>₱{{ number_format($shipping,2) }}</strong></div><div class="vo-money-row"><span>Shipping Discount</span><strong>−₱{{ number_format($shippingDiscount,2) }}</strong></div><div class="vo-money-row"><span>Voucher Discount</span><strong>−₱{{ number_format($voucher,2) }}</strong></div><div class="vo-money-row grand"><span>Order Total</span><strong>₱{{ number_format($total,2) }}</strong></div></div><div class="vo-cod">◉ <span>Cash on Delivery (COD) · Pay ₱{{ number_format($total,2) }} when you receive your parcel.</span></div><div class="vo-payment"><span>Payment Method</span><strong>Cash on Delivery</strong></div></section>
+  <section class="vo-card"><div class="vo-shop-head"><strong>▣ {{ $shop }}</strong><button class="vo-outline" data-vo-action="seller" type="button">Chat with Seller</button></div>@foreach($items as $item)<div class="vo-product"><div class="vo-product-img">@if($item['image_url'])<img src="{{ $item['image_url'] }}" alt="{{ $item['product_name'] }}">@else<span>Product</span>@endif</div><div class="vo-product-copy"><h3>{{ $item['product_name'] }} @if($item['is_fragile'])<span class="se-fragile-pill">Fragile</span>@endif</h3><p>{{ collect([$item['variation'],$item['color'],$item['size']])->filter()->implode(' · ') ?: 'No variant selected' }}</p><p>Quantity: {{ $item['quantity'] }}</p><p>Unit price: ₱{{ number_format($item['unit_price'],2) }}</p></div><span class="vo-product-price">₱{{ number_format($item['unit_price'] * $item['quantity'],2) }}</span></div>@endforeach<div class="vo-breakdown"><div class="vo-money-row"><span>Merchandise Subtotal</span><strong>₱{{ number_format($subtotal,2) }}</strong></div><div class="vo-money-row"><span>Shipping Fee</span><strong>₱{{ number_format($shipping,2) }}</strong></div><div class="vo-money-row"><span>Shipping Discount</span><strong>−₱{{ number_format($shippingDiscount,2) }}</strong></div><div class="vo-money-row"><span>Voucher Discount @if($read('voucher_code'))({{ $read('voucher_code') }})@endif</span><strong>−₱{{ number_format($voucher,2) }}</strong></div><div class="vo-money-row grand"><span>Order Total</span><strong>₱{{ number_format($total,2) }}</strong></div></div><div class="vo-cod">◉ <span>{{ $read('payment_method') === 'ShopEase Wallet' ? 'Paid with ShopEase Wallet.' : 'Cash on Delivery (COD) · Pay ₱'.number_format($total,2).' when you receive your parcel.' }}</span></div><div class="vo-payment"><span>Payment Method</span><strong>{{ $read('payment_method') }}</strong></div></section>
   @if(in_array($status, ['delivered','completed'], true))
   <section class="vo-card vo-receipt-card">
     <div><h3>Confirm your delivery</h3><p>Received everything in good condition? Confirm your order after checking your items. Return/refund requests remain a separate action.</p></div>
     <div class="vo-receipt-buttons">
-      @if($status === 'delivered')<button type="button" class="vo-primary" id="voOrderReceived" data-vo-action="received">Order Received</button>@endif
-      <button type="button" class="vo-outline vo-rate-action" id="voRateAction" data-vo-action="rate">☆ Rate Product</button>
+      @if($read('can_confirm_received'))<button type="button" class="vo-primary" id="voOrderReceived" data-vo-action="received">Order Received</button>@endif
+      <button type="button" class="vo-outline vo-rate-action" id="voRateAction" data-vo-action="rate">{{ $status === 'completed' ? 'Rate / View Product Reviews' : 'Ratings available after receipt' }}</button>
     </div>
   </section>
   @endif
-  <div class="vo-footer-help">{{ $isDemo ? 'Preview using sample order information. Real tracking, delivery confirmation, refunds and ratings require backend integration.' : 'Order data provided by the application. Carrier tracking actions require backend support.' }}</div>
+  <div class="vo-footer-help">For help with this order, contact the seller or report a problem.</div>
 </div></main>
 @include('components.buyer.floating-chat')
 <div class="vo-modal-overlay" id="voRateModal" hidden>
@@ -189,23 +142,22 @@
     <button type="button" class="vo-rating-close" id="voRatingClose" aria-label="Close rating modal">×</button>
     <span class="vo-rating-icon">☆</span>
     <h2 id="voRatingHeading">Rate Your Purchase</h2>
-    <p class="vo-rating-product">{{ $name }} <span>· {{ $shop }}</span></p>
+    <label class="vo-rating-label" for="voRatingProduct">Product</label><select id="voRatingProduct" class="vo-rating-product-select">@foreach($items->unique('product_id') as $item)@if($item['product_id'])<option value="{{ $item['product_id'] }}">{{ $item['product_name'] }}</option>@endif @endforeach</select><p class="vo-rating-product">{{ $name }} <span>· {{ $shop }}</span></p>
     <div class="vo-rating-stars" id="voRatingStars" role="group" aria-label="Product rating">
       @for($star=1;$star<=5;$star++)<button type="button" data-vo-star="{{ $star }}" aria-label="Rate {{ $star }} {{ $star===1?'star':'stars' }}" aria-pressed="false">☆</button>@endfor
     </div>
     <p id="voRatingHint">Tap a star to rate your product</p>
-    <label class="vo-rating-label" for="voRatingReview">Your review <span>(optional)</span></label>
-    <textarea id="voRatingReview" maxlength="500" rows="4" placeholder="Share your experience with this product..."></textarea>
+    <label class="vo-rating-label" for="voRatingReview">Your review <span>(required)</span></label>
+    <textarea id="voRatingReview" maxlength="2000" minlength="2" required rows="4" placeholder="Share your experience with this product..."></textarea>
     <div class="vo-rating-photo-block">
-      <label class="vo-rating-label" for="voRatingPhotos">Product photos <span>(optional · up to 3 photos)</span></label>
-      <label class="vo-rating-upload" id="voRatingUploadLabel" for="voRatingPhotos"><span aria-hidden="true">＋</span><strong>Add product photos</strong><small>JPG, PNG, WEBP · max 1 MB each (demo storage)</small></label>
-      <input id="voRatingPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+      <label class="vo-rating-label" for="voRatingPhotos">Product photos <span>(optional · one photo)</span></label>
+      <label class="vo-rating-upload" id="voRatingUploadLabel" for="voRatingPhotos"><span aria-hidden="true">＋</span><strong>Add product photos</strong><small>JPG, PNG, WEBP · max 5 MB</small></label>
+      <input id="voRatingPhotos" type="file" accept="image/jpeg,image/png,image/webp" hidden>
       <div id="voRatingPhotoPreviews" class="vo-rating-photo-previews" aria-live="polite"></div>
     </div>
     <label class="vo-rating-check"><input type="checkbox" id="voRatingAnonymous"> Post anonymously</label>
     <p class="vo-rating-error" id="voRatingError" role="alert" hidden>Please choose a star rating first.</p>
     <div class="vo-modal-buttons"><button type="button" class="vo-outline" id="voRatingCancel">Cancel</button><button type="submit" class="vo-primary" id="voRatingSubmit" disabled>Submit Rating</button></div>
-    <p class="vo-rating-demo">Preview only — rating is stored in this browser, not submitted to ShopEase.</p>
   </form>
 </div>
 <div class="vo-modal-overlay" id="voCancelModal" hidden role="presentation">
@@ -217,148 +169,14 @@
     <label class="vo-rating-label" for="voCancelReason">Cancellation reason <span>*</span></label>
     <select id="voCancelReason" required>
       <option value="">Select a reason</option>
-      <option value="changed-mind">I changed my mind</option>
-      <option value="wrong-details">Wrong product, variation, or quantity</option>
-      <option value="wrong-address">Incorrect delivery address</option>
-      <option value="duplicate">I placed a duplicate order</option>
-      <option value="found-better">Found a better option</option>
-      <option value="delivery-time">Delivery will take too long</option>
-      <option value="other">Other reason</option>
+      @foreach(['changed_mind'=>'I changed my mind','ordered_by_mistake'=>'Ordered by mistake','wrong_address'=>'Incorrect delivery address','delivery_too_slow'=>'Delivery is taking too long','payment_issue'=>'Payment issue','other'=>'Other reason'] as $value=>$label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
     </select>
     <div id="voCancelOtherWrap" hidden><label class="vo-rating-label" for="voCancelOther">Please specify <span>*</span></label><textarea id="voCancelOther" rows="3" maxlength="300" placeholder="Enter your reason"></textarea></div>
     <p id="voCancelError" class="vo-rating-error" role="alert" hidden></p>
-    <p class="vo-rating-demo">Demo only — no cancellation request will be sent.</p>
     <div class="vo-modal-buttons"><button type="button" class="vo-outline" id="voCancelKeep">Keep Order</button><button type="submit" class="vo-primary">Submit Cancellation</button></div>
   </form>
 </div>
 <div class="vo-modal-overlay" id="voModal" hidden role="presentation"><div class="vo-modal" role="dialog" aria-modal="true" aria-labelledby="voModalTitle"><div class="vo-modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5m0 4h.01"/></svg></div><h2 id="voModalTitle">Action unavailable</h2><p id="voModalText">This action requires backend support.</p><div class="vo-modal-buttons"><button class="vo-primary" id="voModalOkay" type="button">Okay, Got it</button></div></div></div>
-<script>
-(() => {
- const orderId = @json($number);
- const demo = @json($isDemo);
- const status = @json($status);
- const modal=document.getElementById('voModal'), title=document.getElementById('voModalTitle'), copy=document.getElementById('voModalText');
- const open=(t,m)=>{title.textContent=t;copy.textContent=m;modal.hidden=false;document.getElementById('voModalOkay').focus();};
- const close=()=>{modal.hidden=true;};
- document.getElementById('voModalOkay').addEventListener('click',close);
- modal.addEventListener('click',e=>{if(e.target===modal)close();});
- const rateModal=document.getElementById('voRateModal');
- const form=document.getElementById('voRatingForm');
- const ratingButtons=[...document.querySelectorAll('[data-vo-star]')];
- const ratingSubmit=document.getElementById('voRatingSubmit');
- let rating=0;
- let savedRating=null;
- let ratingPhotos=[];
- const ratingPhotoInput=document.getElementById('voRatingPhotos');
- const ratingPhotoPreviews=document.getElementById('voRatingPhotoPreviews');
- const ratingUploadLabel=document.getElementById('voRatingUploadLabel');
- const ratingError=document.getElementById('voRatingError');
- const ratingKey='shopease-demo-rating:'+orderId;
- const receivedKey='shopease-demo-received:'+orderId;
- const labels=['','Very poor','Poor','Okay','Good','Excellent'];
- function renderRatingPhotos(locked=false){
-   ratingPhotoPreviews.replaceChildren();
-   ratingUploadLabel.hidden=locked || ratingPhotos.length>=3;
-   ratingPhotoInput.disabled=locked;
-   ratingPhotos.forEach((src,index)=>{
-     const tile=document.createElement('div');tile.className='vo-rating-photo-item';
-     const view=document.createElement('button');view.type='button';view.className='vo-rating-photo-view';view.title='View product photo';
-     const img=document.createElement('img');img.src=src;img.alt='Product review photo '+(index+1);view.append(img);
-     view.addEventListener('click',()=>window.open(src,'_blank','noopener,noreferrer'));
-     tile.append(view);
-     if(!locked){const remove=document.createElement('button');remove.type='button';remove.className='vo-rating-photo-remove';remove.textContent='×';remove.setAttribute('aria-label','Remove photo '+(index+1));remove.addEventListener('click',()=>{ratingPhotos.splice(index,1);ratingError.hidden=true;renderRatingPhotos(false);});tile.append(remove);}
-     ratingPhotoPreviews.append(tile);
-   });
- }
- ratingPhotoInput.addEventListener('change',async()=>{
-   const chosen=[...ratingPhotoInput.files];ratingPhotoInput.value='';
-   if(chosen.length+ratingPhotos.length>3){ratingError.textContent='You can upload a maximum of 3 product photos.';ratingError.hidden=false;return;}
-   for(const file of chosen){
-     if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>1024*1024){ratingError.textContent='Each photo must be JPG, PNG or WebP and not exceed 1 MB.';ratingError.hidden=false;return;}
-   }
-   try{
-     const photos=await Promise.all(chosen.map(file=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(file);})));
-     ratingPhotos.push(...photos);ratingError.hidden=true;renderRatingPhotos(false);
-   }catch(_){ratingError.textContent='Unable to preview your photos. Please try again.';ratingError.hidden=false;}
- });
- function showRating(viewOnly=false){
-   const locked=viewOnly || status==='completed' || !!savedRating;
-   document.getElementById('voRatingHeading').textContent=locked?'Your Product Rating':'Rate Your Purchase';
-   document.getElementById('voRatingReview').readOnly=locked;
-   document.getElementById('voRatingAnonymous').disabled=locked;
-   ratingButtons.forEach(btn=>btn.disabled=locked);
-   ratingSubmit.hidden=locked;
-   if(locked && savedRating)ratingPhotos=Array.isArray(savedRating.photos)?savedRating.photos.slice(0,3):[];
-   renderRatingPhotos(locked);
-   document.getElementById('voRatingCancel').textContent=locked?'Close':'Cancel';
-   rateModal.hidden=false;
-   (locked?document.getElementById('voRatingClose'):ratingButtons[rating-1]||ratingButtons[0])?.focus();
- }
- function hideRating(){rateModal.hidden=true;}
- function paintStars(){
-   ratingButtons.forEach(btn=>{const n=Number(btn.dataset.voStar), selected=n<=rating;btn.textContent=selected?'★':'☆';btn.classList.toggle('selected',selected);btn.setAttribute('aria-pressed',String(n===rating));});
-   document.getElementById('voRatingHint').textContent=rating ? `${rating}/5 · ${labels[rating]}` : 'Tap a star to rate your product';
-   ratingSubmit.disabled=rating===0;
-   document.getElementById('voRatingError').hidden=true;
- }
- ratingButtons.forEach(btn=>btn.addEventListener('click',()=>{rating=Number(btn.dataset.voStar);paintStars();}));
- document.getElementById('voRatingClose').addEventListener('click',hideRating);
- document.getElementById('voRatingCancel').addEventListener('click',hideRating);
- rateModal.addEventListener('click',e=>{if(e.target===rateModal)hideRating();});
- try {const saved=JSON.parse(localStorage.getItem(ratingKey)||'null');if(saved?.stars>=1&&saved.stars<=5){savedRating=saved;rating=saved.stars;ratingPhotos=Array.isArray(saved.photos)?saved.photos.slice(0,3):[];document.getElementById('voRatingReview').value=saved.review||'';document.getElementById('voRatingAnonymous').checked=!!saved.anonymous;}}catch(_){}
- if(status==='completed' && !savedRating && demo){
-   savedRating={stars:5,review:'The product arrived in good condition and met my expectations. (Sample rating)',anonymous:false};
-   rating=savedRating.stars;
-   document.getElementById('voRatingReview').value=savedRating.review;
-   document.getElementById('voRatingAnonymous').checked=false;
- }
- paintStars();
- const rateAction=document.getElementById('voRateAction');
- function refreshRateAction(){
-   const viewed=status==='completed'||!!savedRating;
-   if(rateAction){rateAction.textContent=viewed?'★ View Rating':'☆ Rate Product';rateAction.dataset.voAction=viewed?'view-rating':'rate';}
-   if(viewed){
-     const pill=document.querySelector('.vo-stage-pill');if(pill)pill.textContent='Completed';
-     const headline=document.querySelector('.vo-status-head');if(headline)headline.textContent='Your order is completed';
-   }
- }
- refreshRateAction();
- const receivedButton=document.getElementById('voOrderReceived');
- function refreshReceived(){if(receivedButton && localStorage.getItem(receivedKey)==='1'){receivedButton.textContent='✓ Order Received';receivedButton.disabled=true;}}
- refreshReceived();
- form.addEventListener('submit',event=>{
-   event.preventDefault();if(!rating){document.getElementById('voRatingError').hidden=false;return;}
-   savedRating={stars:rating,review:document.getElementById('voRatingReview').value.trim(),anonymous:document.getElementById('voRatingAnonymous').checked,photos:ratingPhotos.slice()};
-   try{localStorage.setItem(ratingKey,JSON.stringify(savedRating));}catch(_){ratingError.textContent='Photos exceed browser storage. Please remove some photos and retry.';ratingError.hidden=false;return;}refreshRateAction();
-   hideRating();open('Rating Saved (Demo)','Your '+rating+'-star review was saved in this browser only. It has not been submitted to ShopEase.');
- });
- const cancelModal=document.getElementById('voCancelModal');
- const cancelForm=document.getElementById('voCancelForm');
- const cancelReason=document.getElementById('voCancelReason');
- const cancelOther=document.getElementById('voCancelOther');
- const cancelOtherWrap=document.getElementById('voCancelOtherWrap');
- const cancelError=document.getElementById('voCancelError');
- function showCancel(){cancelForm.reset();cancelOtherWrap.hidden=true;cancelError.hidden=true;cancelModal.hidden=false;cancelReason.focus();}
- function hideCancel(){cancelModal.hidden=true;}
- cancelReason.addEventListener('change',()=>{cancelOtherWrap.hidden=cancelReason.value!=='other';cancelError.hidden=true;});
- document.getElementById('voCancelClose').addEventListener('click',hideCancel);
- document.getElementById('voCancelKeep').addEventListener('click',hideCancel);
- cancelModal.addEventListener('click',e=>{if(e.target===cancelModal)hideCancel();});
- cancelForm.addEventListener('submit',e=>{e.preventDefault();const reason=cancelReason.value;const other=cancelOther.value.trim();if(!reason||(reason==='other'&&!other)){cancelError.textContent=!reason?'Please select a cancellation reason.':'Please explain your cancellation reason.';cancelError.hidden=false;return;}hideCancel();open('Cancellation Request Preview','Reason: '+(reason==='other'?other:cancelReason.options[cancelReason.selectedIndex].text)+'. This is a UI demo only. Your order was not cancelled.');});
- document.querySelectorAll('[data-vo-action]').forEach(button=>button.addEventListener('click',()=>{
-   switch(button.dataset.voAction){
-    case 'received':
-      if(status!=='delivered')return;
-      localStorage.setItem(receivedKey,'1');refreshReceived();
-      open('Order Received (Demo)','You confirmed receipt for this demo order. No actual order status was changed on the server.');break;
-    case 'rate':if(status==='delivered' || status==='completed')showRating(false);break;
-    case 'view-rating':if(status==='delivered' || status==='completed')showRating(true);break;
-    case 'return':if(status==='delivered')open('Request Return / Refund','Return/refund requests are available after delivery. This is a demo preview; no request was submitted.');break;
-    case 'cancel':if(['processing','to-ship'].includes(status))showCancel();break;
-    case 'seller':open('Contact Seller','Seller messaging for this order requires linking the page to its database order ID. No message was sent.');break;
-   }
- }));
- document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!cancelModal.hidden)hideCancel();else if(!rateModal.hidden)hideRating();else if(!modal.hidden)close();}});
-})();
-</script>
+<script type="application/json" id="voOrderData">{!! json_encode(['order'=>$order,'apiToken'=>$apiToken], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+@include('components.buyer.floating-chat')
 </body></html>

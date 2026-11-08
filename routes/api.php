@@ -171,6 +171,9 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/vouchers', [\App\Http\Controllers\Api\Admin\VouchersController::class, 'index'])->name('admin.api.vouchers.index');
+            Route::post('/vouchers', [\App\Http\Controllers\Api\Admin\VouchersController::class, 'store'])->name('admin.api.vouchers.store');
+            Route::patch('/vouchers/{voucher}', [\App\Http\Controllers\Api\Admin\VouchersController::class, 'update'])->name('admin.api.vouchers.update');
             Route::get('/logistics/account-change-requests', [LogisticsAccountController::class, 'requests'])->name('admin.api.logistics-account.requests');
             Route::patch('/logistics/account-change-requests/{changeRequest}', [LogisticsAccountController::class, 'review'])->name('admin.api.logistics-account.review');
             Route::get('/dashboard', [AdminDashboardController::class, 'apiIndex'])->name('admin.api.dashboard');

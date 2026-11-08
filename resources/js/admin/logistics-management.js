@@ -951,7 +951,7 @@ document.addEventListener('DOMContentLoaded', function () {
             request.office_address || '—';
 
         pendingReviewDescription.textContent =
-            request.description ||
+            request.company_description || request.description ||
             'No logistics description was provided.';
 
         pendingReviewDate.textContent =
@@ -2268,7 +2268,7 @@ const detailsCreatedDate =
             company.office_address || '—';
 
         detailsCompanyDescription.textContent =
-            company.description ||
+            company.company_description || company.description ||
             'No logistics description was provided.';
 
         const companyDtiPermitSource =

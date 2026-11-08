@@ -20,6 +20,7 @@ class AdminModuleAccess
         'Commission' => ['admin/commission', 'api/v1/admin/commissions'],
         'Logistics Management' => ['admin/logistics-management', 'api/v1/admin/logistics-management', 'api/v1/admin/logistics/account-change-requests'],
         'Reports' => ['admin/reports', 'api/v1/admin/reports'],
+        'Vouchers' => ['admin/vouchers', 'api/v1/admin/vouchers'],
         'Platform Settings' => ['admin/platform-settings', 'api/v1/admin/platform-settings'],
         'Notifications' => ['admin/notifications', 'api/v1/admin/notifications'],
         'Account Management' => ['admin/account', 'api/v1/admin/account'],

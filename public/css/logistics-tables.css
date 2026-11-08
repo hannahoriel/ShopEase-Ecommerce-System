@@ -1,0 +1,116 @@
+/* Shared logistics table presentation, matching Admin registrations/commission.
+   Scoped to authenticated logistics shells; existing data and paging stay local. */
+body[data-se-logistics-tables] table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Poppins, Arial, sans-serif !important;
+}
+body[data-se-logistics-tables] table :is(th, td) {
+    font-family: Poppins, Arial, sans-serif !important;
+    line-height: 1.5 !important;
+    vertical-align: middle;
+    padding: 16px 24px !important;
+    border-bottom: 1px solid #f0eae6 !important;
+}
+body[data-se-logistics-tables] table th {
+    background: #fff !important;
+    color: #9ca3af !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+}
+body[data-se-logistics-tables] table td,
+body[data-se-logistics-tables] table td :is(span, div, p, a, label) {
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+body[data-se-logistics-tables] table td :is(strong, b) {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+body[data-se-logistics-tables] table td small {
+    font-size: 11px !important;
+    font-weight: 400 !important;
+}
+body[data-se-logistics-tables] table td :is([class*="badge"], [class*="status"], [class*="pill"], .lg-tag, .sc-tag, .vd-tag) {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+}
+body[data-se-logistics-tables] table td :is(button, input, select) {
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+body[data-se-logistics-tables] table tbody tr:last-child td { border-bottom: 0 !important; }
+body[data-se-logistics-tables] table td[colspan] { padding-top: 32px !important; padding-bottom: 32px !important; }
+body[data-se-logistics-tables] table tbody tr:hover { background-color: #fffaf8; }
+body[data-se-logistics-tables] :is(.cr-foot, .pt-footer, .lg-table-foot, .sc-table-footer, .sr-table-footer, .dhr-table-bottom, .dhf-footrow, .sn-pagination) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 24px !important;
+    font-family: Poppins, Arial, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    color: #8c8784 !important;
+}
+body[data-se-logistics-tables] :is(.cr-foot, .pt-footer, .lg-table-foot, .sc-table-footer, .sr-table-footer, .dhr-table-bottom, .dhf-footrow, .sn-pagination) :is(small, span) {
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .lg-page-numbers, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) :is(button, a),
+body[data-se-logistics-tables] :is(#vdPageNo, #crPageNo, #crPageNumber) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    color: #374151 !important;
+    font-family: Poppins, Arial, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    transition: background .15s ease, color .15s ease;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) :is(button, a):hover:not(:disabled):not(.disabled):not([aria-disabled="true"]) {
+    background: #f3f4f6 !important;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) :is(button, a):is(.active, .current, .selected, [aria-current="page"]),
+body[data-se-logistics-tables] :is(#vdPageNo, #crPageNo, #crPageNumber) {
+    background: #ffd1c2 !important;
+    color: #7b1b1b !important;
+    font-weight: 600 !important;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) :is(button, a):is(:disabled, .disabled, [aria-disabled="true"]) {
+    opacity: .35 !important;
+    cursor: default !important;
+    pointer-events: none;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) :is(button, a):focus-visible {
+    outline: 2px solid #9ca3af;
+    outline-offset: 2px;
+}
+body[data-se-logistics-tables] :is(.cr-pagebuttons, .pt-pagination, .lg-pager, .sr-pager, .dhr-pagination, .dhf-pager, .sn-pagination-buttons) svg {
+    width: 14px !important;
+    height: 14px !important;
+}
+@media (max-width: 760px) {
+    body[data-se-logistics-tables] table :is(th, td) { padding: 12px 16px !important; }
+    body[data-se-logistics-tables] :is(.cr-foot, .pt-footer, .lg-table-foot, .sc-table-footer, .sr-table-footer, .dhr-table-bottom, .dhf-footrow, .sn-pagination) { padding: 12px 16px !important; }
+}

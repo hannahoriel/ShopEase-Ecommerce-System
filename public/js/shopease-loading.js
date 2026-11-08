@@ -4,7 +4,9 @@
     const root = document.documentElement;
     const publicPage = document.querySelector?.('meta[name="se-page-kind"]')?.content === 'public';
     if (publicPage) root.classList.add('se-public-page');
-    root.classList.add('se-loading-boot');
+    // Logistics sign-up already expands the actual registration preview.
+    // Its first paint should not add a second bag transition.
+    if (!/^\/logistics\/register\/company\/?$/.test(location.pathname)) root.classList.add('se-loading-boot');
     const sidebarSelector = '#admin-sidebar, #sellerSidebar, #lgSidebar';
     let sidebarHandoff;
     try {
@@ -145,6 +147,7 @@
     };
     document.addEventListener('click', event => {
         const button = event.target.closest?.('button, input[type="submit"], input[type="button"], [role="button"]');
+        if (button && skipped(button)) { trigger = null; skipUnloadUntil = Date.now() + 10000; return; }
         if (isProductEditorControl(button)) { trigger = null; return; }
         if (isNavbarControl(button)) { trigger = null; return; }
         if (button) {
@@ -177,7 +180,7 @@
         }
         const link = event.target.closest?.('a[href]');
         if (link && (skipped(link) || link.hasAttribute('download') || /\/(?:export|download)(?:[/?#]|$)|\.(?:pdf|csv|xlsx?|zip)(?:[?#]|$)/i.test(link.href))) {
-            skipUnloadUntil = Date.now() + 1000;
+            skipUnloadUntil = Date.now() + (skipped(link) ? 10000 : 1000);
             return;
         }
         if (!link || skipped(link) || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
@@ -245,12 +248,12 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (typeof MutationObserver === 'undefined') return;
         let scheduled = false, previous = null;
-        const modalSelector = '[role="dialog"], [aria-modal="true"], .modal, .lg-modal, .acr-overlay, [id$="-modal"], [id$="Modal"]';
+        const modalSelector = 'dialog[open], [role="dialog"], [aria-modal="true"], .modal, .lg-modal, .acr-overlay, [id$="-modal"], [id$="Modal"]';
         const update = () => {
             scheduled = false;
             // Once content is hosted separately, old source-page dialogs are
             // behind that content and must not keep its persistent sidebar blurred.
-            const visible = !root.classList.contains('se-shell-mounted') && [...document.querySelectorAll(modalSelector)].some(modal => {
+            const visibleModals = root.classList.contains('se-shell-mounted') ? [] : [...document.querySelectorAll(modalSelector)].filter(modal => {
                 // Inventory's openAddProductModal is a visible BUTTON, not a dialog.
                 if (modal.matches('button, a, input, select, textarea, label')) return false;
                 if (modal.hidden || !modal.getClientRects().length) return false;
@@ -261,6 +264,22 @@
                 }
                 return true;
             });
+            const layers = new Set();
+            visibleModals.forEach(modal => {
+                if (modal.tagName === 'DIALOG' && modal.open) return;
+                let layer = null;
+                for (let element = modal; element && element !== document.body; element = element.parentElement) {
+                    if (getComputedStyle(element).position === 'fixed') layer = element;
+                }
+                if (layer) layers.add(layer);
+            });
+            document.querySelectorAll('[data-se-modal-layer]').forEach(layer => {
+                if (!layers.has(layer)) layer.removeAttribute('data-se-modal-layer');
+            });
+            layers.forEach(layer => {
+                if (!layer.hasAttribute('data-se-modal-layer')) layer.setAttribute('data-se-modal-layer', '');
+            });
+            const visible = visibleModals.length > 0;
             if (visible === previous) return;
             previous = visible;
             root.classList.toggle('se-modal-open', visible);

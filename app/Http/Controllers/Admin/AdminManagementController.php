@@ -24,6 +24,7 @@ class AdminManagementController extends Controller
         'Commission',
         'Logistics Management',
         'Reports',
+        'Vouchers',
         'Platform Settings',
         'Notifications',
         'Account Management',
