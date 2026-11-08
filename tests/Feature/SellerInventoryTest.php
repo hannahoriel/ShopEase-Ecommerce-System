@@ -14,6 +14,50 @@ class SellerInventoryTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_stock_and_photos_follow_zero_single_and_grouped_choice_modes(): void
+    {
+        Storage::fake('public');
+        $user = User::create(['name' => 'Choices Seller', 'email' => 'choices@example.com', 'password' => 'Password123!', 'role' => User::ROLE_SELLER]);
+        Seller::create(['user_id' => $user->id, 'store_name' => 'Choice Store', 'registration_status' => 'active']);
+        $this->actingAs($user);
+        $base = ['name' => 'Choice product', 'price' => 100, 'weight_kg' => 0.5, 'stock_quantity' => 99,
+            'category' => 'electronics', 'photos' => ['https://example.test/product.jpg'], 'pricing_mode' => 'fixed'];
+        $this->postJson('/api/v1/seller/inventory', $base)->assertCreated()->assertJsonPath('stock_quantity', 99);
+        foreach (['variation_items', 'color_items', 'size_items'] as $group) {
+            $photo = UploadedFile::fake()->createWithContent('choice.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aYioAAAAASUVORK5CYII='));
+            $response = $this->post('/api/v1/seller/inventory', [...$base, $group => [
+                ['name' => 'First', 'price' => 0, 'stock' => 3, 'photo' => $photo], ['name' => 'Second', 'price' => 0, 'stock' => 7],
+            ]], ['Accept' => 'application/json'])->assertCreated()->assertJsonPath('stock_quantity', 10);
+            $product = Product::findOrFail($response->json('id'));
+            $this->assertNotEmpty($product->options()->where('name', 'First')->first()?->photo);
+        }
+        $groups = ['variation_items' => [['name' => 'Classic', 'price' => 0, 'stock' => 90]], 'color_items' => [['name' => 'Black', 'price' => 0, 'stock' => 90]]];
+        $this->postJson('/api/v1/seller/inventory', [...$base, ...$groups])->assertUnprocessable()->assertJsonValidationErrors('variant_combinations');
+        $this->postJson('/api/v1/seller/inventory', [...$base, ...$groups, 'variant_combinations' => [[
+            'variations' => 'Classic', 'colors' => 'Black', 'pricing_mode' => 'fixed', 'base_price' => 100,
+            'additional_price' => 0, 'final_price' => 100, 'stock' => 4, 'available' => true,
+        ]]])->assertCreated()->assertJsonPath('stock_quantity', 4);
+    }
+
+    public function test_fragile_flag_is_saved_returned_and_can_be_switched_off(): void
+    {
+        $sellerUser = User::create(['name' => 'Fragile Seller', 'email' => 'fragile-seller@example.com', 'password' => 'Password123!', 'role' => User::ROLE_SELLER]);
+        Seller::create(['user_id' => $sellerUser->id, 'store_name' => 'Fragile Test Store', 'registration_status' => 'active']);
+        $created = $this->actingAs($sellerUser)->postJson('/api/v1/seller/inventory', [
+            'name' => 'Glass vase', 'sku' => 'FRAGILE-VASE', 'price' => 299,
+            'weight_kg' => 0.500, 'stock_quantity' => 5, 'category' => 'home-living',
+            'photos' => ['https://example.test/vase.jpg'], 'is_fragile' => true,
+        ])->assertCreated()->assertJsonPath('is_fragile', true);
+        $id = $created->json('id');
+        $this->assertDatabaseHas('products', ['id' => $id, 'is_fragile' => 1]);
+        $this->getJson('/api/v1/seller/inventory/'.$id)->assertOk()->assertJsonPath('is_fragile', true);
+        $this->patchJson('/api/v1/seller/inventory/'.$id, ['is_fragile' => false])
+            ->assertOk()->assertJsonPath('is_fragile', false);
+        $this->assertDatabaseHas('products', ['id' => $id, 'is_fragile' => 0]);
+        $this->patchJson('/api/v1/seller/inventory/'.$id, ['is_fragile' => 'invalid'])
+            ->assertUnprocessable()->assertJsonValidationErrors('is_fragile');
+    }
+
     public function test_seller_can_manage_only_their_inventory(): void
     {
         [$sellerUser, $seller] = $this->createSeller('seller@example.com');
