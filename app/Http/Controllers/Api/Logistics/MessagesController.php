@@ -10,6 +10,7 @@ use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsConversation;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\User;
+use App\Services\LogisticsNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -384,6 +385,20 @@ class MessagesController extends Controller
             $conversation->touch();
             return $message;
         });
+
+        // Facility replies notify their parent Logistics account when the Messages setting is enabled.
+        if ($user->role !== User::ROLE_LOGISTICS) {
+            $recipient = $conversation->logistics()->with('user')->first()?->user;
+            if ($recipient) {
+                app(LogisticsNotificationService::class)->send(
+                    $recipient,
+                    'messages',
+                    'New logistics message',
+                    "{$user->name} sent you a new message.",
+                    '/logistics/messages',
+                );
+            }
+        }
 
         return response()->json(['data' => [
             'conversation_id' => $conversation->id,

@@ -8,6 +8,7 @@ use App\Models\Logistics\LogisticsAccountChangeRequest;
 use App\Models\Logistics\LogisticsAccountSetting;
 use App\Models\User;
 use App\Notifications\LogisticsAccountChangeRequested;
+use App\Services\LogisticsNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -209,6 +210,17 @@ class AccountController extends Controller
 
             return $changeRequest->fresh(['user:id,name,email', 'user.logisticsProfile:user_id,business_name']);
         });
+
+        if ($changeRequest->user) {
+            app(LogisticsNotificationService::class)->send(
+                $changeRequest->user,
+                'compliance',
+                'Account change request '.($changeRequest->status === 'approved' ? 'approved' : 'rejected'),
+                'Your account information change request was '.$changeRequest->status
+                    .($changeRequest->review_note ? ': '.$changeRequest->review_note : '.'),
+                '/logistics/account',
+            );
+        }
 
         return response()->json(['message' => 'Account change request reviewed.', 'data' => $this->serializeChangeRequest($changeRequest)]);
     }

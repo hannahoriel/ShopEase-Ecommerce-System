@@ -14,6 +14,7 @@ use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\Rider\Rider;
+use App\Services\LogisticsNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -310,6 +311,17 @@ class ParcelRouteScanController extends Controller
 
             return $shipment->fresh(['order', 'scans']);
         });
+
+        $logisticsUser = $shipment->order?->logisticsCompany?->user;
+        if ($logisticsUser) {
+            app(LogisticsNotificationService::class)->send(
+                $logisticsUser,
+                'parcel_updates',
+                'Parcel movement updated',
+                "Shipment {$shipment->tracking_number} was updated: {$shipment->current_location}.",
+                '/logistics/parcel-tracking',
+            );
+        }
 
         return response()->json([
             'message' => 'Parcel scan recorded.',

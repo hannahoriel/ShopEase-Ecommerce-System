@@ -22,6 +22,7 @@ use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
 use App\Services\BuyerWalletService;
 use App\Services\CodSettlementService;
+use App\Services\LogisticsNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -505,6 +506,19 @@ class OrderController extends Controller
 
             return $orders;
         });
+
+        foreach ($orders as $order) {
+            $logisticsUser = $order->logisticsCompany?->user;
+            if ($logisticsUser) {
+                app(LogisticsNotificationService::class)->send(
+                    $logisticsUser,
+                    'order_updates',
+                    'New order assigned',
+                    "Order {$order->order_number} has been assigned to your logistics company.",
+                    '/logistics/dashboard',
+                );
+            }
+        }
 
         return response()->json([
             'message' => 'Order placed successfully.',

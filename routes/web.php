@@ -2357,6 +2357,15 @@ Route::get('/logistics/account', [\App\Http\Controllers\Api\Logistics\AccountCon
     ->middleware(['auth', 'role:logistics'])
     ->name('logistics.account');
 
+Route::middleware(['auth', 'role:logistics'])->prefix('logistics')->name('logistics.')->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\Logistics\NotificationController::class, 'index'])
+        ->name('notifications');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Logistics\NotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Logistics\NotificationController::class, 'read'])
+        ->name('notifications.read');
+});
+
 /*
 |--------------------------------------------------------------------------
 | SORTING CENTER PAGES
