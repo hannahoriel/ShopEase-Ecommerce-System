@@ -13270,13 +13270,8 @@ document.addEventListener(
                 }
 
                 function createOptionPriceControl(group, item) {
-                    // Fixed Price has one product-level price. Never render a
-                    // per-choice price control (even a disabled/hidden one).
-                    // This also prevents older layout CSS from showing it.
-                    if (pricingMode !== 'varies') {
-                        return null;
-                    }
-
+                    // Keep a dormant price control so switching modes can reveal
+                    // it without rebuilding choice rows or losing attached photos.
                     const meta =
                         getOptionPriceMeta(group);
 
@@ -13289,6 +13284,10 @@ document.addEventListener(
 
                     wrap.className =
                         'create-option-price-wrap';
+                    wrap.dataset.choiceField = 'price';
+                    if (pricingMode === 'fixed') {
+                        wrap.style.setProperty('display', 'none', 'important');
+                    }
 
                     const label =
                         document.createElement('small');
@@ -13409,6 +13408,7 @@ document.addEventListener(
                 function createOptionStockControl(item) {
                     const wrap = document.createElement('div');
                     wrap.className = 'create-option-price-wrap';
+                    wrap.dataset.choiceField = 'stock';
 
                     const label = document.createElement('small');
                     label.className = 'create-option-price-label';
@@ -17684,6 +17684,24 @@ document.addEventListener(
             const fixedPriceInput =
                 document.getElementById('createProductPrice');
 
+            const isProductPriceInput = (input) => input instanceof HTMLInputElement &&
+                (input === fixedPriceInput || Boolean(input.closest('[data-choice-field="price"]')));
+            const acceptsPriceText = (value) => /^\d*(?:\.\d*)?$/.test(value);
+            document.addEventListener('keydown', (event) => {
+                if (!isProductPriceInput(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
+                if (event.key.length === 1 && !/[0-9.]/.test(event.key)) event.preventDefault();
+            }, true);
+            document.addEventListener('beforeinput', (event) => {
+                if (isProductPriceInput(event.target) && event.data && !acceptsPriceText(event.data)) {
+                    event.preventDefault();
+                }
+            }, true);
+            document.addEventListener('paste', (event) => {
+                if (isProductPriceInput(event.target) && !acceptsPriceText(event.clipboardData?.getData('text') || '')) {
+                    event.preventDefault();
+                }
+            }, true);
+
             const productStockInput =
                 document.getElementById('createProductStock');
 
@@ -18339,6 +18357,15 @@ document.addEventListener(
             }
 
             function syncPricingUI() {
+                const activeGroups = getActiveGroups();
+                if (pricingMode === 'varies' && activeGroups.length === 1) {
+                    pricingSource = activeGroups[0].groupName;
+                } else if (!activeGroups.some(group => group.groupName === pricingSource)) {
+                    pricingSource = '';
+                }
+                sourceButtons.forEach(button => {
+                    button.disabled = !activeGroups.some(group => group.groupName === button.dataset.pricingSource);
+                });
                 if (modeInput) {
                     modeInput.value =
                         pricingMode;
@@ -18390,7 +18417,8 @@ document.addEventListener(
                 } else {
                     hide(fixedPanel);
                     show(variablePanel);
-                    show(variableSetup);
+                    if (activeGroups.length >= 2) show(variableSetup);
+                    else hide(variableSetup);
 
                     if (fixedPriceInput) {
                         fixedPriceInput.disabled =
@@ -18429,10 +18457,18 @@ document.addEventListener(
             }
 
             function findRowParts(row) {
+                // Fields are optional: never infer them from child positions.
+                // In Fixed mode the old fallback treated Stock as Price and hid it.
+                if (row.querySelector('[data-choice-field]')) {
+                    return {
+                        priceField: row.querySelector('[data-choice-field="price"]'),
+                        stockField: row.querySelector('[data-choice-field="stock"]'),
+                    };
+                }
                 const labels =
                     Array.from(
                         row.querySelectorAll(
-                            'label'
+                            'label, small.create-option-price-label'
                         )
                     );
 
@@ -18480,35 +18516,6 @@ document.addEventListener(
                             stockLabel
                         )
                         : null;
-
-                const children =
-                    Array.from(
-                        row.children
-                    );
-
-                /*
-                 * Existing generated row fallback:
-                 * choice | price | stock | remove
-                 */
-                if (
-                    !priceField &&
-                    children.length >= 4
-                ) {
-                    priceField =
-                        children[
-                            children.length - 3
-                        ];
-                }
-
-                if (
-                    !stockField &&
-                    children.length >= 3
-                ) {
-                    stockField =
-                        children[
-                            children.length - 2
-                        ];
-                }
 
                 return {
                     priceField,
