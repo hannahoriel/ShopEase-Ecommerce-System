@@ -4,8 +4,9 @@
         ['label'=>'Dashboard','icon'=>'dashboard.png','href'=>url('/logistics/dashboard'),'active'=>request()->routeIs('logistics.dashboard'),'enabled'=>true],
         ['label'=>'Network Hubs','icon'=>'logistic-management.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.deliveries') ? route('logistics.deliveries') : url('/logistics/deliveries'),'active'=>request()->routeIs('logistics.deliveries') || request()->routeIs('logistics.network-hubs'),'enabled'=>true],
         ['label'=>'Messages','icon'=>'messages.png','href'=>route('logistics.messages'),'active'=>request()->routeIs('logistics.messages'),'enabled'=>true],
+        ['label'=>'Notifications','icon'=>'icons/seller/notifications.png','href'=>route('logistics.notifications'),'active'=>request()->routeIs('logistics.notifications*'),'enabled'=>true],
         ['label'=>'Reports','icon'=>'reports.png','href'=>route('logistics.reports'),'active'=>request()->routeIs('logistics.reports'),'enabled'=>true],
-        ['label'=>'Parcel Tracking','icon'=>'reports.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.parcel-tracking') ? route('logistics.parcel-tracking') : '#','active'=>request()->routeIs('logistics.parcel-tracking'),'enabled'=>\Illuminate\Support\Facades\Route::has('logistics.parcel-tracking')],
+        ['label'=>'Parcel Tracking','icon'=>'icons/admin/logistics/tracking.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.parcel-tracking') ? route('logistics.parcel-tracking') : '#','active'=>request()->routeIs('logistics.parcel-tracking'),'enabled'=>\Illuminate\Support\Facades\Route::has('logistics.parcel-tracking')],
         ['label'=>'Logistics Earnings','icon'=>'commission.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.logistics-earnings') ? route('logistics.logistics-earnings') : url('/logistics/logistics-earnings'),'active'=>request()->routeIs('logistics.logistics-earnings'),'enabled'=>true],
         ['label'=>'Account','icon'=>'account-management.png','href'=>\Illuminate\Support\Facades\Route::has('logistics.account') ? route('logistics.account') : url('/logistics/account'),'active'=>request()->routeIs('logistics.account'),'enabled'=>true],
     ];
@@ -20,7 +21,7 @@
                 $lgEntryIndex = 0;
                 $lgGroups = [
                     ['heading' => 'OVERVIEW', 'labels' => ['Dashboard']],
-                    ['heading' => 'NETWORK MANAGEMENT', 'labels' => ['Network Hubs', 'Parcel Tracking', 'Messages', 'Reports']],
+                    ['heading' => 'NETWORK MANAGEMENT', 'labels' => ['Network Hubs', 'Parcel Tracking', 'Messages', 'Notifications', 'Reports']],
                     ['heading' => 'FINANCE & ACCOUNT', 'labels' => ['Logistics Earnings', 'Account']],
                 ];
             @endphp
@@ -35,12 +36,12 @@
                     ?>
                     @if($item && $item['enabled'])
                         <a class="lg-nav-link lg-admin-menu-item {{ $item['active'] ? 'active' : '' }}" href="{{ $item['href'] }}" title="{{ $item['label'] }}" @if($item['active']) aria-current="page" @endif style="animation-delay:{{ $lgAnimDelay }}s">
-                            <span class="lg-admin-icon-wrap"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}" alt=""></span>
+                            <span class="lg-admin-icon-wrap"><img src="{{ asset(str_contains($item['icon'], '/') ? $item['icon'] : 'icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}" alt=""></span>
                             <span class="lg-admin-label">{{ $item['label'] }}</span>
                         </a>
                     @elseif($item)
                         <span class="lg-nav-link lg-nav-unavailable lg-admin-menu-item" aria-disabled="true" title="Not available yet" style="animation-delay:{{ $lgAnimDelay }}s">
-                            <span class="lg-admin-icon-wrap"><img src="{{ asset('icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}" alt=""></span>
+                            <span class="lg-admin-icon-wrap"><img src="{{ asset(str_contains($item['icon'], '/') ? $item['icon'] : 'icons/admin/dashboard/sidebar&navbar/' . $item['icon']) }}" alt=""></span>
                             <span class="lg-admin-label">{{ $item['label'] }}</span>
                         </span>
                     @endif
