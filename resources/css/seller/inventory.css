@@ -11442,3 +11442,421 @@
     background: #ECEAE8 !important;
     color: #66615E !important;
 }
+.create-option-photo-control{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:6px 9px;border:1px solid #e1d4cf;border-radius:7px;background:#fff7f3;color:#7b1b1b;font:500 10px Poppins,sans-serif;cursor:pointer;white-space:nowrap}
+.create-option-photo-control[hidden]{display:none!important}
+.create-option-photo-control input[hidden]{display:none!important}
+.buyer-option-stock-field.stock-managed-by-matrix{display:none!important}
+
+
+/* ==============================================================
+   ADD PRODUCT: single choice type, independent photo tile on right
+   0 active types: product stock editable
+   1 active type: per-option stock + photo tile
+   2+ types: exact-group table owns stock and photo (existing logic)
+   ============================================================== */
+#addProductModal .create-option-photo-control[hidden] { display: none !important; }
+#addProductModal .create-option-photo-control input[hidden] { display: none !important; }
+
+#addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> .single-choice-photo-enabled {
+    grid-template-columns: minmax(75px, 1fr) minmax(70px, 88px) 63px 94px 18px !important;
+    gap: 8px !important;
+    align-items: center !important;
+    min-height: 92px !important;
+    padding: 10px 9px !important;
+}
+/* Fixed-price and non-pricing-source choice rows have no editable price.
+   Hide the empty pricing column while keeping the choice name visible. */
+#addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> .single-choice-photo-enabled:is(.buyer-option-fixed-row, .buyer-option-no-master-price, .buyer-option-awaiting-source) {
+    grid-template-columns: minmax(75px, 1fr) 63px 94px 18px !important;
+}
+#addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> .single-choice-photo-enabled > .create-variation-identity {
+    min-width: 0 !important;
+    align-self: center !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+}
+#addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+> .single-choice-photo-enabled .create-option-photo-control {
+    display: flex !important;
+    width: 94px !important;
+    min-width: 94px !important;
+    min-height: 66px !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    border: 1px solid #d8ceca !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    justify-content: center !important;
+    align-items: center !important;
+    color: #795152 !important;
+    cursor: pointer !important;
+    overflow: hidden;
+    transition: background .15s ease, border-color .15s ease;
+}
+#addProductModal .single-choice-photo-enabled .create-option-photo-control:hover {
+    background: #fffaf8 !important;
+    border-color: #b8b0ac !important;
+}
+#addProductModal .single-choice-photo-enabled .create-option-photo-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    justify-content: center;
+    align-items: center;
+    min-width: 0;
+}
+#addProductModal .single-choice-photo-enabled .create-option-photo-visual {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 32px;
+    border-radius: 8px;
+    background: #fae9e6;
+    color: #8b252b;
+    font-family: Poppins, sans-serif;
+    font-size: 23px;
+    font-weight: 600;
+    line-height: 1;
+    overflow: hidden;
+}
+#addProductModal .single-choice-photo-enabled .create-option-photo-visual img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+#addProductModal .single-choice-photo-enabled .create-option-photo-caption {
+    color: #795152;
+    font-family: Poppins, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+#addProductModal .single-choice-photo-enabled > :is(.create-option-remove, .create-variation-chip-remove) {
+    align-self: center;
+}
+@media (max-width: 650px) {
+    #addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+    > .single-choice-photo-enabled {
+        grid-template-columns: minmax(60px, 1fr) 63px 82px 18px !important;
+        gap: 5px !important;
+    }
+    #addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+    > .single-choice-photo-enabled .create-option-photo-control {
+        min-width: 0 !important;
+        width: 82px !important;
+    }
+    #addProductModal :is(#productVariationsContainer, #productColorsContainer, #productSizesContainer)
+    > .single-choice-photo-enabled:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source) {
+        grid-template-columns: minmax(60px, 1fr) 63px 82px 18px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .buyer-option-price-field {
+        grid-column: 1 / -1 !important;
+        grid-row: 2;
+        width: min(140px, 100%) !important;
+        max-width: 140px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .buyer-option-stock-field {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    #addProductModal .single-choice-photo-enabled > .create-option-photo-control {
+        grid-column: 3;
+        grid-row: 1;
+    }
+    #addProductModal .single-choice-photo-enabled > :is(.create-option-remove, .create-variation-chip-remove) {
+        grid-column: 4;
+        grid-row: 1;
+    }
+}
+
+
+/* ShopEase refinement: compact remove control right of single-choice photo
+   Keep the choice name visible and give price/stock controls consistent space. */
+#addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+> .single-choice-photo-enabled {
+    position: relative !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    grid-template-columns: minmax(60px,1fr) minmax(80px,112px) 64px 92px !important;
+    column-gap: 9px !important;
+    row-gap: 7px !important;
+    padding: 9px 22px 9px 11px !important;
+    min-height: 86px !important;
+}
+#addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+> .single-choice-photo-enabled:is(.buyer-option-fixed-row,.buyer-option-no-master-price,.buyer-option-awaiting-source) {
+    grid-template-columns: minmax(60px,1fr) 64px 92px !important;
+}
+#addProductModal .single-choice-photo-enabled > .create-variation-identity,
+#addProductModal .single-choice-photo-enabled > .create-option-value-name {
+    min-width: 0 !important;
+    overflow: hidden;
+}
+#addProductModal .single-choice-photo-enabled > .buyer-option-price-field {
+    min-width: 0 !important;
+    max-width: 112px !important;
+    width: 100% !important;
+}
+#addProductModal .single-choice-photo-enabled > .buyer-option-stock-field {
+    min-width: 0 !important;
+    max-width: 64px !important;
+    width: 100% !important;
+}
+#addProductModal .single-choice-photo-enabled > .create-option-photo-control {
+    grid-column: -2 / -1 !important;
+    width: 92px !important;
+    min-width: 0 !important;
+    min-height: 72px !important;
+    justify-self: end !important;
+    margin: 0 !important;
+}
+#addProductModal .single-choice-photo-enabled > :is(.create-option-remove,.create-variation-chip-remove) {
+    position: absolute !important;
+    right: 3px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #a55653 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    z-index: 2 !important;
+}
+#addProductModal .single-choice-photo-enabled > :is(.create-option-remove,.create-variation-chip-remove):hover {
+    color: #811d20 !important;
+}
+/* On narrow modals, keep name on top left, photo on right, and price/stock
+   directly below the name rather than crushing all controls into one line. */
+@media (max-width: 650px) {
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled,
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled:is(.buyer-option-fixed-row,.buyer-option-no-master-price,.buyer-option-awaiting-source),
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled:not(.buyer-option-no-master-price):not(.buyer-option-fixed-row):not(.buyer-option-awaiting-source) {
+        grid-template-columns: minmax(0,1fr) minmax(0,1fr) 92px !important;
+        grid-template-rows: auto auto !important;
+        gap: 5px 8px !important;
+        padding: 9px 22px 9px 10px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > :is(.create-variation-identity,.create-option-value-name) {
+        grid-column: 1 / 3 !important;
+        grid-row: 1 !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .buyer-option-price-field {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+        max-width: 112px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .buyer-option-stock-field {
+        grid-column: 2 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+        max-width: 64px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .create-option-photo-control {
+        grid-column: 3 !important;
+        grid-row: 1 / 3 !important;
+        align-self: center !important;
+        width: 92px !important;
+        min-height: 72px !important;
+    }
+}
+@media (max-width: 380px) {
+    #addProductModal .single-choice-photo-enabled > .create-option-photo-control {
+        width: 80px !important;
+    }
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled {
+        grid-template-columns: minmax(0,1fr) minmax(0,1fr) 80px !important;
+        column-gap: 5px !important;
+    }
+}
+
+
+/* ========================================================================
+   SHOP EASE — SINGLE-CHOICE RESPONSIVE EDITOR (FIXED vs PRICE VARIES)
+   Final override. Old rules incorrectly forced the fixed-price input visible.
+   Fixed: Choice Name | Stock | Attach | tiny Remove
+   Varies (only one group): Choice Name | Item Price | Stock | Attach | Remove
+   2+ groups: grouped combination table remains the owner of stock/photo.
+   ======================================================================== */
+#addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+> .single-choice-photo-enabled {
+    display: grid !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 91px !important;
+    grid-template-columns: minmax(0,1fr) minmax(0,96px) minmax(0,70px) 90px !important;
+    grid-template-rows: auto !important;
+    column-gap: 8px !important;
+    row-gap: 8px !important;
+    align-items: center !important;
+    padding: 10px 23px 10px 12px !important;
+    position: relative !important;
+}
+#addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+> .single-choice-photo-enabled.buyer-option-fixed-row {
+    grid-template-columns: minmax(0,1fr) minmax(0,76px) 90px !important;
+}
+/* Element order does not matter: explicit grid placement. */
+#addProductModal .single-choice-photo-enabled > .create-variation-identity {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere;
+}
+#addProductModal .single-choice-photo-enabled > .buyer-option-price-field {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+/* Critical: the older stylesheet displayed the price even on Fixed. */
+#addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .buyer-option-price-field,
+#addProductModal .single-choice-photo-enabled.buyer-option-no-master-price > .buyer-option-price-field,
+#addProductModal .single-choice-photo-enabled.buyer-option-awaiting-source > .buyer-option-price-field,
+#addProductModal .single-choice-photo-enabled > .buyer-option-price-field.is-hidden {
+    display: none !important;
+}
+#addProductModal .single-choice-photo-enabled:not(.buyer-option-fixed-row):not(.buyer-option-no-master-price):not(.buyer-option-awaiting-source)
+> .buyer-option-price-field:not(.is-hidden) {
+    display: block !important;
+}
+#addProductModal .single-choice-photo-enabled > .buyer-option-stock-field {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+#addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .buyer-option-stock-field,
+#addProductModal .single-choice-photo-enabled.buyer-option-no-master-price > .buyer-option-stock-field,
+#addProductModal .single-choice-photo-enabled.buyer-option-awaiting-source > .buyer-option-stock-field {
+    grid-column: 2 !important;
+}
+#addProductModal .single-choice-photo-enabled > .create-option-photo-control {
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+    width: 90px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 70px !important;
+    height: 70px !important;
+    margin: 0 !important;
+    justify-self: end !important;
+}
+#addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .create-option-photo-control,
+#addProductModal .single-choice-photo-enabled.buyer-option-no-master-price > .create-option-photo-control,
+#addProductModal .single-choice-photo-enabled.buyer-option-awaiting-source > .create-option-photo-control {
+    grid-column: 3 !important;
+}
+#addProductModal .single-choice-photo-enabled :is(.buyer-option-price-field,.buyer-option-stock-field) input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+#addProductModal .single-choice-photo-enabled > :is(.create-option-remove,.create-variation-chip-remove) {
+    position: absolute !important;
+    right: 4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 14px !important;
+    height: 20px !important;
+    min-width: 14px !important;
+    padding: 0 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    z-index: 3 !important;
+}
+/* Below tablet width: choice name on top, price/stock below, photo at right. */
+@media (max-width: 850px) {
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled,
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled.buyer-option-fixed-row,
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled.buyer-option-no-master-price,
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled.buyer-option-awaiting-source {
+        grid-template-columns: minmax(0,1fr) minmax(0,76px) 88px !important;
+        grid-template-rows: minmax(24px,auto) minmax(34px,auto) !important;
+        gap: 6px 7px !important;
+        padding: 9px 22px 9px 10px !important;
+        min-height: 98px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .create-variation-identity {
+        grid-column: 1 / 3 !important;
+        grid-row: 1 !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .buyer-option-price-field {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .buyer-option-stock-field,
+    #addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .buyer-option-stock-field,
+    #addProductModal .single-choice-photo-enabled.buyer-option-no-master-price > .buyer-option-stock-field,
+    #addProductModal .single-choice-photo-enabled.buyer-option-awaiting-source > .buyer-option-stock-field {
+        grid-column: 2 !important;
+        grid-row: 2 !important;
+    }
+    #addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .buyer-option-stock-field,
+    #addProductModal .single-choice-photo-enabled.buyer-option-no-master-price > .buyer-option-stock-field,
+    #addProductModal .single-choice-photo-enabled.buyer-option-awaiting-source > .buyer-option-stock-field {
+        grid-column: 1 / 3 !important;
+        width: 76px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .create-option-photo-control,
+    #addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .create-option-photo-control,
+    #addProductModal .single-choice-photo-enabled.buyer-option-no-master-price > .create-option-photo-control,
+    #addProductModal .single-choice-photo-enabled.buyer-option-awaiting-source > .create-option-photo-control {
+        grid-column: 3 !important;
+        grid-row: 1 / 3 !important;
+        width: 88px !important;
+        align-self: center !important;
+    }
+}
+@media (max-width: 410px) {
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled,
+    #addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+    > .single-choice-photo-enabled.buyer-option-fixed-row {
+        grid-template-columns: minmax(0,1fr) minmax(0,58px) 75px !important;
+        gap: 5px !important;
+        padding-right: 19px !important;
+    }
+    #addProductModal .single-choice-photo-enabled > .create-option-photo-control,
+    #addProductModal .single-choice-photo-enabled.buyer-option-fixed-row > .create-option-photo-control {
+        width: 75px !important;
+    }
+}
+
+/* FINAL: pricing-mode layout safeguard for single-choice rows.
+   Fixed rows have no per-choice Item Price; Varies rows keep it. */
+#addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+> .single-choice-photo-enabled.buyer-option-fixed-row > .create-option-price-wrap.buyer-option-price-field {
+    display: none !important;
+}
+#addProductModal :is(#productVariationsContainer,#productColorsContainer,#productSizesContainer)
+> .single-choice-photo-enabled.buyer-option-fixed-row > .buyer-option-stock-field {
+    min-width: 0 !important;
+}
