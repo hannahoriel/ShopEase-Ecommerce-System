@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Registration;
 use App\Models\Logistics\Logistics;
+use App\Models\Logistics\LogisticsAccountChangeRequest;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +26,25 @@ class LogisticsManagementController extends Controller
             'rejectedLogisticsArchive' => $data['rejectedArchive'],
             'logisticsTotalEntries' => $data['totalEntries'],
             'logisticsStats' => $data['stats'],
+            'logisticsAccountChangeRequests' => LogisticsAccountChangeRequest::query()
+                ->with(['user:id,name,email', 'user.logisticsProfile:user_id,business_name'])
+                ->where('status', 'pending')
+                ->latest()
+                ->get()
+                ->map(fn (LogisticsAccountChangeRequest $change): array => [
+                    'id' => $change->id,
+                    'section' => $change->section,
+                    'requested_data' => $change->requested_data,
+                    'status' => $change->status,
+                    'review_note' => $change->review_note,
+                    'created_at' => $change->created_at?->toISOString(),
+                    'user' => $change->user ? [
+                        'id' => $change->user->id,
+                        'name' => $change->user->name,
+                        'email' => $change->user->email,
+                    ] : null,
+                    'company_name' => $change->user?->logisticsProfile?->business_name,
+                ])->all(),
         ]);
     }
 

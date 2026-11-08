@@ -226,15 +226,6 @@
 <button type="button" class="hb-archive-fab" id="hbArchiveOpen" title="Archived sorting centers" aria-label="Open sorting center archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 5l1 15h10l1-15M9 5V3h6v2M10 10v6M14 10v6"/></svg><span class="hb-archive-count" id="hbArchiveCount" hidden>0</span></button>
 <div class="hb-modal" id="hbArchiveModal" hidden><section class="hb-dialog" role="dialog" aria-modal="true" aria-labelledby="hbArchiveTitle"><div class="hb-dialog-head"><div><h2 id="hbArchiveTitle">Archived Sorting Centers</h2><p>Deleted sorting centers are kept here until restored, including their delivery hubs.</p></div><button type="button" class="hb-close" id="hbArchiveClose" aria-label="Close archive">×</button></div><div class="hb-archive-list" id="hbArchiveList"></div></section></div>
 
-<!-- Sorting Center / Delivery Hub account edit request review (frontend preview only) -->
-<div class="hb-modal" id="hbRequestModal" hidden><section class="hb-dialog hb-details-dialog" role="dialog" aria-modal="true" aria-labelledby="hbRequestTitle">
- <div class="hb-dialog-head"><div><h2 id="hbRequestTitle">Account Information Change Request</h2><p id="hbRequestSubtitle">Review requested account changes.</p></div><button type="button" class="hb-close" id="hbRequestClose" aria-label="Close request">×</button></div>
- <div style="padding:21px 25px 4px"><div class="hb-request-summary"><span style="font-size:23px">◷</span><span><strong>Pending Account Information Change</strong><br>Changes will not be applied to a facility's registered information during this UI preview.</span></div><div class="hb-request-meta" id="hbRequestMeta"></div><div style="overflow-x:auto"><table class="hb-request-comparison"><thead><tr><th>Field</th><th>Current Information</th><th>Requested Change</th></tr></thead><tbody id="hbRequestChanges"></tbody></table></div></div>
- <p class="hb-request-note">UI preview only: Approve and Reject update the request status in this browser. They do not change the database, account information, or notify the facility.</p>
- <p class="hb-request-result" id="hbRequestError" role="alert" hidden></p>
- <div class="hb-request-actions"><button type="button" class="hb-action" id="hbRequestCancel">Close</button><button type="button" class="hb-action reject" id="hbRequestReject">Reject</button><button type="button" class="hb-action approve" id="hbRequestApprove">Approve</button></div>
- </section></div>
-
 <div id="hbFlashStack" class="hb-flash-stack" role="region" aria-label="Network Hubs notifications" aria-live="polite"></div>
 <script id="networkHubsConfig" type="application/json">{!! json_encode(['apiToken' => $networkHubsApiToken ?? '', 'apiUrl' => url('/api/v1/logistics/network-hubs')]) !!}</script>
 <script>document.addEventListener('DOMContentLoaded',()=>{
@@ -313,7 +304,7 @@ function seedReviewRequests(){
  persistReviewRequests();
 }
 function requestFor(kind,id){return hbReviewRequests.find(r=>r.kind===kind&&String(r.facilityId)===String(id)&&r.status==='pending')}
-function requestBadge(kind,id){const r=requestFor(kind,id);return r?`<button class="hb-request-badge" data-review-kind="${esc(kind)}" data-review-id="${esc(id)}" type="button" title="Review requested account information changes">Pending Account Change</button>`:''}
+function requestBadge(){return ''}
 function openReview(kind,id){const request=requestFor(kind,id);if(!request)return;
  hbReviewActive=request.id;
  hbReviewReturn=['hbHubDetailsModal','hbDetailsModal'].filter(x=>!$(x).hidden);
@@ -328,17 +319,17 @@ function closeReview(){ $('hbRequestModal').hidden=true;hbReviewActive=null;
  (hbReviewReturn||[]).forEach(x=>$(x).hidden=false);hbReviewReturn=null;
  if(!document.querySelector('.hb-modal:not([hidden])'))document.body.classList.remove('lg-modal-open');
 }
-$('hbRequestClose').addEventListener('click',closeReview);$('hbRequestCancel').addEventListener('click',closeReview);
-$('hbRequestModal').addEventListener('click',e=>{if(e.target===$('hbRequestModal'))closeReview()});
+$('hbRequestClose')?.addEventListener('click',closeReview);$('hbRequestCancel')?.addEventListener('click',closeReview);
+$('hbRequestModal')?.addEventListener('click',e=>{if(e.target===$('hbRequestModal'))closeReview()});
 document.addEventListener('click',e=>{const badge=e.target.closest('[data-review-kind][data-review-id]');if(!badge)return;e.preventDefault();e.stopPropagation();openReview(badge.dataset.reviewKind,badge.dataset.reviewId)},true);
 function decideReview(status){const r=hbReviewRequests.find(x=>x.id===hbReviewActive);if(!r||r.status!=='pending')return;
  r.status=status;r.reviewedAt=new Date().toISOString();persistReviewRequests();closeReview();draw();if(selectedCenterId)renderHubRows();
  flash(`Account information change request ${status}. This is a UI-only decision; registered details were not changed.`, 'info', status==='approved'?'Request Approved (Preview)':'Request Rejected (Preview)');
 }
-$('hbRequestApprove').addEventListener('click',()=>decideReview('approved'));
-$('hbRequestReject').addEventListener('click',()=>decideReview('rejected'));
+$('hbRequestApprove')?.addEventListener('click',()=>decideReview('approved'));
+$('hbRequestReject')?.addEventListener('click',()=>decideReview('rejected'));
 
-const loadCenters=async()=>{const result=await networkApi('');records=result.data||[];seedReviewRequests();draw();return records};
+const loadCenters=async()=>{const result=await networkApi('');records=result.data||[];draw();return records};
 const esc=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 let centerEditId=null,hubEditId=null,selectedHubId=null;let activeFilter='all';function draw(){const q=$('hbSearch').value.trim().toLowerCase();const shown=records.filter(r=>(activeFilter==='all'||r.status===activeFilter)&&[r.branch_name,r.province,r.manager_name].some(v=>String(v||'').toLowerCase().includes(q)));
 $('hbCountAll').textContent=records.length;$('hbCountActive').textContent=records.filter(r=>r.status==='active').length;$('hbCountInactive').textContent=records.filter(r=>r.status==='inactive').length;$('hbResultCount').textContent=shown.length+' '+(shown.length===1?'center':'centers');

@@ -1773,7 +1773,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Load and review logistics account change requests through the admin API.
-    let accountChangeRequests = [];
+    let accountChangeRequests = logisticsManagementConfig.accountChangeRequests || [];
     const accountChangeUrl = logisticsManagementConfig.accountChangeRequestsUrl || '/api/v1/admin/logistics/account-change-requests';
     const changeFieldLabels = {
         company_name: 'Company Name', registered_business_name: 'Registered Business Name', company_type: 'Company Type',
@@ -1811,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     async function loadAccountChangeRequests() {
         try {
-            const response = await fetch(accountChangeUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            const response = await fetch(`${accountChangeUrl}?status=pending`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
             const payload = await response.json();
             if (!response.ok) throw new Error(payload.message || 'Unable to load account change requests.');
             accountChangeRequests = Array.isArray(payload.data) ? payload.data : (payload.data?.data || []);
@@ -1820,7 +1820,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Logistics account change requests:', error);
             const strip = document.getElementById('lmChangeStrip');
-            if (strip) { strip.hidden = false; strip.textContent = error.message || 'Unable to load account change requests.'; }
+            // Keep server-rendered pending requests visible if the background refresh fails.
         }
     }
     document.addEventListener('click', async event => {
