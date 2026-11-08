@@ -1,120 +1,11 @@
-{{-- Records and locations are scoped to the authenticated sorting center by its controller. --}}
+{{-- Parcel and return records are loaded from the authenticated hub's parcel-tracking API. --}}
 @php
-    // Delivery Hub tracking: never expose another hub's records, including in the client JSON.
     $deliveryHub = $deliveryHub ?? $hub ?? null;
-    if (!$deliveryHub && auth()->check()) {
-        $deliveryHub = \App\Models\Logistics\LogisticsDeliveryHub::query()
-            ->where('user_id', auth()->id())->first();
-    }
     $dhId = (string) ($deliveryHubId ?? data_get($deliveryHub, 'id') ?? '');
-    $dhId = $dhId !== '' ? $dhId : 'DEMO-HUB'; // Preview fallback only when no hub is resolved.
     $dhName = (string) (data_get($deliveryHub, 'hub_name') ?? data_get($deliveryHub, 'name') ?? 'Assigned Delivery Hub');
-
-    // The controller should supply $deliveryHubParcels and $deliveryHubReturns,
-    // already authorized and scoped. The Blade additionally enforces hub IDs.
-    // UI-only sample records when the page has no backend parcel/return data yet.
-    // Never mix these fictional records with real account records.
-    $dhDemoMode = !isset($deliveryHubParcels, $deliveryHubReturns)
-        && !isset($hubParcels, $hubReturns);
-    $previewHubId = $dhId !== '' ? $dhId : 'DEMO-HUB';
-    if ($dhDemoMode) {
-        $demoBuyerAddress = ['province'=>'Laguna','municipality'=>'Pila','barangay'=>'Poblacion','zip_code'=>'4010','street'=>'Rizal Street','house_no'=>'24','building'=>'','subdivision'=>''];
-        $demoSellerAddress = ['province'=>'Metro Manila','municipality'=>'Quezon City','barangay'=>'Bagumbayan','zip_code'=>'1110','street'=>'Commerce Avenue','house_no'=>'18','building'=>'Unit 3','subdivision'=>''];
-        $names = [
-            ['Mariel Dela Cruz','mariel.demo@example.test','09170000001','Wireless Earbuds','White','Standard',1299.00,'in-transit','Laguna Sorting Center','2026-11-04 16:00:00'],
-            ['Jasper Mendoza','jasper.demo@example.test','09170000002','Cotton Oversized Shirt','Navy Blue','Large',699.00,'out-for-delivery','Pila Delivery Hub - Rider dispatched','2026-11-02 19:00:00'],
-            ['Patricia Reyes','patricia.demo@example.test','09170000003','Stainless Water Bottle','Mint','750 mL',450.00,'delivered','Pila, Laguna - Delivered','2026-11-01 15:00:00'],
-            ['Angela Villanueva','angela.demo@example.test','09170000004','Mechanical Keyboard','Black','Red Switch',2199.00,'in-transit','Incoming to Pila Delivery Hub','2026-11-05 14:00:00'],
-            ['Rafael Santos','rafael.demo@example.test','09170000005','Portable Desk Lamp','Warm White','Rechargeable',899.00,'out-for-delivery','Pila Delivery Hub - Rider dispatched','2026-11-02 20:00:00'],
-            ['Bea Navarro','bea.demo@example.test','09170000006','Canvas Tote Bag','Beige','Medium',350.00,'delivered','Pila, Laguna - Delivered','2026-10-31 17:00:00'],
-            ['Nico Bautista','nico.demo@example.test','09170000007','Phone Case','Lavender','iPhone',299.00,'in-transit','Laguna Sorting Center','2026-11-04 12:00:00'],
-            ['Trisha Lim','trisha.demo@example.test','09170000008','Running Shoes','Gray','EU 39',1899.00,'out-for-delivery','Pila Delivery Hub - Rider dispatched','2026-11-03 18:00:00'],
-            ['Daniel Flores','daniel.demo@example.test','09170000009','Power Bank','Black','10000mAh',1190.00,'delivered','Pila, Laguna - Delivered','2026-10-30 13:30:00'],
-        ];
-        $demoParcels = [];
-        foreach ($names as $i => $entry) {
-            [$buyer, $email, $phone, $product, $color, $variation, $price, $status, $location, $eta] = $entry;
-            $n = $i + 1;
-            $events = [
-                ['status'=>'Order Placed','timestamp'=>'2026-10-29T09:20:00+08:00','location'=>'ShopEase Online'],
-                ['status'=>'Order Prepared','timestamp'=>'2026-10-29T15:15:00+08:00','location'=>'Seller Warehouse'],
-                ['status'=>'Picked Up','timestamp'=>'2026-10-30T08:35:00+08:00','location'=>'Quezon City'],
-                ['status'=>'Arrived at Sorting Center','timestamp'=>'2026-10-31T11:20:00+08:00','location'=>'Laguna Sorting Center'],
-            ];
-            if (in_array($status, ['out-for-delivery', 'delivered'], true)) {
-                $events[] = ['status'=>'Arrived at Delivery Hub','timestamp'=>'2026-11-01T08:10:00+08:00','location'=>'Pila Delivery Hub'];
-                $events[] = ['status'=>'Out for Delivery','timestamp'=>'2026-11-01T10:30:00+08:00','location'=>'Pila, Laguna'];
-            }
-            if ($status === 'delivered') {
-                $events[] = ['status'=>'Delivered','timestamp'=>'2026-11-01T15:45:00+08:00','location'=>'Pila, Laguna'];
-            }
-            $demoParcels[] = [
-                'id'=>99000+$n, 'order_id'=>'DEMO-ORD-'.str_pad((string)$n,4,'0',STR_PAD_LEFT),
-                'order_number'=>'DEMO-ORD-'.str_pad((string)$n,4,'0',STR_PAD_LEFT),
-                'tracking_number'=>'SHP-DH-DEMO-'.str_pad((string)$n,5,'0',STR_PAD_LEFT),
-                'destination_delivery_hub_id'=>$previewHubId,
-                'buyer_name'=>$buyer,'buyer_email'=>$email,'buyer_phone'=>$phone,
-                'buyer_address_details'=>array_merge($demoBuyerAddress,['house_no'=>(string)(24+$n)]),
-                'seller_name'=>'ShopEase Sample Store','seller_email'=>'seller.demo@example.test','seller_phone'=>'09170000100',
-                'seller_address_details'=>$demoSellerAddress,
-                'product_name'=>$product,'items'=>[['product_name'=>$product,'name'=>$product,'variation'=>$variation,'color'=>$color,'size'=>'—','quantity'=>1,'product_price'=>$price]],
-                'shipping_status'=>$status,'current_location'=>$location,
-                'estimated_delivery'=>$eta,'ordered_at'=>'2026-10-29T09:20:00+08:00',
-                'payment_method'=>$n%2?'Cash on Delivery':'GCash','total_amount'=>$price,
-                'notes'=>$n%2?'Please call upon arrival.':'Deliver during daytime if possible.',
-                'tracking_history'=>$events,
-            ];
-        }
-        $returnData = [
-            ['DEMO-RET-001','Mariel Dela Cruz','Wireless Earbuds','pending','Item has charging issues.','Return and refund','2026-11-01T11:00:00+08:00','return-requested'],
-            ['DEMO-RET-002','Bea Navarro','Canvas Tote Bag','returned','Wrong color received.','Replace item','2026-10-31T12:00:00+08:00','returned'],
-            ['DEMO-RET-003','Nico Bautista','Phone Case','pending','Received incorrect size.','Return and refund','2026-11-02T09:15:00+08:00','return-in-transit'],
-            ['DEMO-RET-004','Patricia Reyes','Water Bottle','returned','Damaged cap upon arrival.','Refund after return','2026-10-30T16:30:00+08:00','returned'],
-        ];
-        $demoReturns = [];
-        foreach ($returnData as $i => $entry) {
-            [$order, $buyer, $product, $status, $reason, $solution, $requested, $shipping] = $entry;
-            $demoReturns[] = [
-                'id'=>98000+$i,'order_id'=>$order,'order_number'=>$order,
-                'destination_delivery_hub_id'=>$previewHubId,
-                'buyer_name'=>$buyer,'buyer_email'=>'buyer.demo@example.test','buyer_phone'=>'09170000011',
-                'buyer_address_details'=>$demoBuyerAddress,
-                'seller_name'=>'ShopEase Sample Store','seller_email'=>'seller.demo@example.test','seller_phone'=>'09170000100',
-                'seller_address_details'=>$demoSellerAddress,'product_name'=>$product,
-                'return_items'=>[['product_name'=>$product,'quantity'=>1,'variation'=>'Standard','color'=>'Assorted','size'=>'—','product_price'=>799]],
-                'status'=>$status,'shipping_status'=>$shipping,'return_type'=>'Return',
-                'tracking_number'=>'SHP-RETURN-DEMO-'.($i+1),'courier'=>'Demo Delivery Hub Rider',
-                'requested_at'=>$requested,'returned_at'=>$status==='returned'?'2026-11-01T14:00:00+08:00':null,
-                'reason'=>$reason,'solution'=>$solution,'evidence_description'=>'Demo photo evidence placeholder (no image uploaded).',
-                'tracking_history'=>[
-                    ['status'=>'Return Requested','timestamp'=>$requested,'location'=>'ShopEase App'],
-                    ['status'=>'Return Parcel Processing','timestamp'=>'2026-11-02T08:30:00+08:00','location'=>'Pila Delivery Hub'],
-                ],
-            ];
-        }
-    }
-    $dhParcelInput = collect($dhDemoMode ? $demoParcels : ($deliveryHubParcels ?? $hubParcels ?? []));
-    $dhReturnInput = collect($dhDemoMode ? $demoReturns : ($deliveryHubReturns ?? $hubReturns ?? []));
-    $belongsToHub = static function ($record) use ($dhId) {
-        if ($dhId === '') return false;
-        // The destination hub is authoritative for *incoming* parcels.
-        // Current hub may instead be assigned for already received/out-for-delivery items.
-        $identifiers = [
-            data_get($record, 'destination_delivery_hub_id'),
-            data_get($record, 'assigned_delivery_hub_id'),
-            data_get($record, 'delivery_hub_id'),
-            data_get($record, 'current_delivery_hub_id'),
-            data_get($record, 'next_delivery_hub_id'),
-            data_get($record, 'destination_hub_id'),
-        ];
-        return collect($identifiers)->contains(static fn ($id) => $id !== null && $id !== '' && (string) $id === $dhId);
-    };
-    $dhParcels = $dhParcelInput->filter($belongsToHub)->values();
-    $dhReturns = $dhReturnInput->filter($belongsToHub)->values();
-    $dhLocationData = [
-        'sorting_centers' => [],
-        'delivery_hubs' => $dhId !== '' ? [['id' => $dhId, 'name' => $dhName]] : [],
-    ];
+    $dhParcels = collect();
+    $dhReturns = collect();
+    $dhLocationData = ['sorting_centers' => [], 'delivery_hubs' => $dhId !== '' ? [['id' => $dhId, 'name' => $dhName]] : []];
 @endphp
 <!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Parcel Tracking — ShopEase Delivery Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>
@@ -389,9 +280,6 @@ body.pt-modal-open{overflow:hidden}
 @include('components.logistics.delivery-hub.navbar')
 <main class="lg-main" id="lgMain"><div class="pt-page">
 <header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Delivery Hub Operations</span><h1>Parcel Tracking</h1><p>Monitor incoming, received, and out-for-delivery parcels assigned to this delivery hub.</p></div></header>
-@if ($dhDemoMode)
-<div style="margin:0 0 15px;background:#fff4e4;border:1px solid #f0d6ab;border-radius:10px;padding:12px 16px;font-size:11px;color:#865622;"><strong>DEMO PREVIEW · SAMPLE DATA ONLY</strong> — 9 sample parcels and 4 sample returns. These are fictional records and are not connected to scanner operations or the database.</div>
-@endif
 <section class="pt-panel" aria-label="Parcel tracking records">
 <div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns</button></div>
 <div id="ptParcels" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabParcels">
@@ -423,7 +311,7 @@ const pill=v=>`<span class="pt-status ${escape(clean(v))}">${escape(statusName(v
 const field=(title,value)=>`<div class="pt-field"><label>${escape(title)}</label><strong>${escape(value??'—')}</strong></div>`;
 const card=(title,body)=>`<section class="pt-detail-card"><div class="pt-detail-title">${escape(title)}</div><div class="pt-detail-body">${body}</div></section>`;
 const rowsFrom=id=>{try{let data=JSON.parse($(id)?.textContent||'[]');if(data&& !Array.isArray(data) && Array.isArray(data.data))data=data.data;return Array.isArray(data)?data:[]}catch(e){return []}};
-const parcels=rowsFrom('ptParcelData');const returns=rowsFrom('ptReturnData');let trackingLocations={};try{trackingLocations=JSON.parse($('ptLocationData')?.textContent||'{}')}catch{}
+let parcels=rowsFrom('ptParcelData');let returns=rowsFrom('ptReturnData');let trackingLocations={};try{trackingLocations=JSON.parse($('ptLocationData')?.textContent||'{}')}catch{}
 const states={parcels:{tab:'all',search:'',page:1,data:parcels},returns:{tab:'all',search:'',page:1,data:returns}};
 const perPage=7;let active='parcels';let lastFocus=null;
 function parcelStatus(p){return clean(p.shipping_status||p.status||'processing')}
@@ -437,7 +325,27 @@ function updateLocationOptions(){
   delivery.replaceChildren(new Option(hub?.name||'Delivery Hub not assigned',hub?.id||'unassigned'));
   delivery.disabled=true;
 }
-window.addEventListener('pageshow',()=>{updateLocationOptions();render('parcels');render('returns');});
+window.addEventListener('pageshow',event=>{if(event.persisted)loadTracking();});
+async function loadTracking(){
+  const rows=$('ptParcelsRows');if(rows)rows.innerHTML='<tr><td class="pt-empty" colspan="5">Loading parcel records…</td></tr>';
+  try{
+    const response=await fetch(@json(route('delivery_hub.api.parcel-tracking.index')),{credentials:'same-origin',headers:{Accept:'application/json'}});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.message||'Unable to load parcel tracking records.');
+    const payload=result.data||result;
+    parcels=Array.isArray(payload.parcels)?payload.parcels:[];
+    returns=Array.isArray(payload.returns)?payload.returns:[];
+    trackingLocations=payload.locations||{};
+    states.parcels.data=parcels;states.parcels.page=1;
+    states.returns.data=returns;states.returns.page=1;
+    updateLocationOptions();render('parcels');render('returns');
+  }catch(error){
+    const message=escape(error.message||'Unable to load parcel tracking records.');
+    $('ptParcelsRows').innerHTML=`<tr><td class="pt-empty" colspan="5">${message}</td></tr>`;
+    $('ptReturnsRows').innerHTML=`<tr><td class="pt-empty" colspan="4">${message}</td></tr>`;
+    $('ptParcelsCount').textContent='Could not load records';$('ptReturnsCount').textContent='Could not load records';
+  }
+}
 function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
 function render(section){
   const filtered=filterRecords(section),state=states[section];
@@ -563,7 +471,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.lg-profile-wrap')&&
 $('lgNotifyButton')?.addEventListener('click',()=>window.alert('No live notifications connected yet.'));
 $('lgChangeProfilePhoto')?.addEventListener('click',()=>$('lgProfilePhotoInput')?.click());
 $('lgProfilePhotoInput')?.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){window.alert('Choose a JPG, PNG, or WebP under 5 MB.');e.target.value='';return}const data=new FormData();data.append('profile_photo',file);try{const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:data});const result=await response.json();if(!response.ok)throw Error(result.message||'Unable to update photo');const avatar=document.querySelector('#lgProfileButton .account-avatar');if(avatar){let image=avatar.querySelector('img');if(!image){image=document.createElement('img');avatar.append(image)}image.src=result.profile_photo_url;image.style.cssText='position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover;'}}catch(err){window.alert(err.message||'Could not update profile photo')}finally{e.target.value=''}});
-updateLocationOptions();render('parcels');render('returns');if(window.location.hash==='#returns')switchTab('returns');
+updateLocationOptions();render('parcels');render('returns');if(window.location.hash==='#returns')switchTab('returns');loadTracking();
 });
 
 </script>

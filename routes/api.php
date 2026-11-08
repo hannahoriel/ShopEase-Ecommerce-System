@@ -398,6 +398,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('/scanner/queue', [ParcelRouteScanController::class, 'queue'])
                     ->name("{$facilityRole}.api.scanner.queue");
                 if ($facilityRole === 'delivery_hub') {
+                    Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelTrackingController::class, 'index'])
+                        ->name('delivery_hub.api.parcel-tracking.index');
+                    Route::get('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelDisputesController::class, 'index'])
+                        ->name('delivery_hub.api.parcel-disputes.index');
                     Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
                     Route::get('/finance', [DeliveryHubCodFinanceController::class, 'index'])->name('delivery_hub.api.finance.index');
