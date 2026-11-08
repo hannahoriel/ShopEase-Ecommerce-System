@@ -1248,6 +1248,15 @@ document.addEventListener(
 
 
 
+        // Guest redirects land here, opening the existing login modal rather
+        // than showing the iframe's login form as a standalone page.
+        if (new URLSearchParams(window.location.search).get('auth') === 'login') {
+            openAuthModal('login');
+            const clean = new URL(window.location.href);
+            clean.searchParams.delete('auth');
+            history.replaceState(history.state, '', clean.href);
+        }
+
         /* =====================================================
            LOGIN BUTTON
         ====================================================== */

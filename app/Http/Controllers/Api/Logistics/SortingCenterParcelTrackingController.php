@@ -53,7 +53,7 @@ class SortingCenterParcelTrackingController extends Controller
                     $query->orWhereIn('logistics_delivery_hub_id', $hubIds);
                 }
             })
-            ->with(['buyer.buyerProfile', 'seller.user', 'items', 'shipment.scans', 'shipment.deliveryHub', 'shipment.logisticsBranch', 'statusHistory'])
+            ->with(['buyer.buyerProfile', 'seller.user', 'items.product', 'shipment.scans', 'shipment.deliveryHub', 'shipment.logisticsBranch', 'statusHistory'])
             ->latest('updated_at')
             ->get();
 
@@ -103,7 +103,8 @@ class SortingCenterParcelTrackingController extends Controller
                 'seller_address_details' => $this->addressFromProfile($seller),
                 'product_name' => $order->items->first()?->product_name,
                 'items' => $order->items->map(fn ($item) => [
-                    'product_name' => $item->product_name, 'variation' => $item->variation,
+                    'product_name' => $item->product_name,
+                    'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile), 'variation' => $item->variation,
                     'color' => $item->color, 'size' => $item->size, 'quantity' => $item->quantity,
                     'product_price' => (float) $item->unit_price,
                 ])->values(),

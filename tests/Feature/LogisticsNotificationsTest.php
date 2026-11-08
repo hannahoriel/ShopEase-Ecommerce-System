@@ -26,6 +26,13 @@ class LogisticsNotificationsTest extends TestCase
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
+        foreach (['logistics' => 'business_name', 'logistics_branches' => 'name', 'logistics_delivery_hubs' => 'hub_name'] as $name => $field) {
+            Schema::create($name, function (Blueprint $table) use ($field) {
+                $table->id();
+                $table->unsignedBigInteger('user_id');
+                $table->string($field);
+            });
+        }
     }
 
     private function account(int $id, string $role = 'logistics'): User
@@ -76,5 +83,22 @@ class LogisticsNotificationsTest extends TestCase
     public function test_other_roles_cannot_access_company_notifications(): void
     {
         $this->actingAs($this->account(30, 'buyer'))->get(route('logistics.notifications'))->assertForbidden();
+    }
+
+    public function test_shared_navbars_use_entity_names_and_private_notification_dropdowns(): void
+    {
+        foreach (['logistics' => ['logistics', 'business_name'], 'sorting-center' => ['logistics_branches', 'name'], 'delivery-hub' => ['logistics_delivery_hubs', 'hub_name']] as $area => [$table, $field]) {
+            $user = $this->account(50);
+            DB::table($table)->insert(['user_id' => 50, $field => 'Registered '.$area.' Name']);
+            $this->notification($user, 'My unread update');
+            $this->notification($this->account(60), 'Another private inbox');
+            $this->actingAs($user);
+            $html = view('components.logistics.shared-navbar', ['navbarArea' => $area])->render();
+            $this->assertStringContainsString('Registered '.$area.' Name', $html);
+            $this->assertStringContainsString('id="lgNotifyMenu"', $html);
+            $this->assertStringContainsString('My unread update', $html);
+            $this->assertStringNotContainsString('Another private inbox', $html);
+            $this->assertStringContainsString('M19 9l-7 7-7-7', $html);
+        }
     }
 }

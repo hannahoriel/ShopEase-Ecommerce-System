@@ -9402,6 +9402,8 @@ document.addEventListener(
                                 `${productDescription.scrollHeight}px`;
                         }
 
+                        const fragileBadge = document.getElementById('productDetailsFragile');
+                        if (fragileBadge) fragileBadge.hidden = !Boolean(createdProduct.is_fragile ?? createdProduct.listingSnapshot?.is_fragile);
                         const weightDisplay = document.getElementById('productDetailsWeightDisplay');
                         if (weightDisplay) {
                             const kg = Number(createdProduct.weight_kg ?? createdProduct.listingSnapshot?.weight_kg);
@@ -10494,7 +10496,9 @@ document.addEventListener(
                                     )}`;
                             }
 
-                            const weightDisplay2 = document.getElementById('productDetailsWeightDisplay');
+                            const fragileBadge = document.getElementById('productDetailsFragile');
+                        if (fragileBadge) fragileBadge.hidden = !Boolean(createdProduct.is_fragile ?? createdProduct.listingSnapshot?.is_fragile);
+                        const weightDisplay2 = document.getElementById('productDetailsWeightDisplay');
                             if (weightDisplay2) {
                                 const kg = Number(createdProduct.weight_kg ?? createdProduct.listingSnapshot?.weight_kg);
                                 weightDisplay2.textContent = Number.isFinite(kg) && kg > 0 ? `${kg.toLocaleString('en-PH', {maximumFractionDigits:3})} kg` : 'Not set';
@@ -11399,6 +11403,7 @@ document.addEventListener(
 
                     return {
                         id: String(product.id),
+                        is_fragile: Boolean(product.is_fragile),
                         name: resolvedName,
                         title: resolvedName,
                         category: product.category || '',
@@ -12259,6 +12264,7 @@ document.addEventListener(
                             'all';
                     }
 
+                    inventoryCurrentPage = 1;
                     updateTabView();
                     filterProducts();
 
@@ -13124,6 +13130,11 @@ document.addEventListener(
                         return;
                     }
 
+                    const activeGroups = ['variations', 'colors', 'sizes'].filter(group => getPricingGroupItems(group).length > 0);
+                    createProductStock.readOnly = activeGroups.length > 0;
+                    createProductStock.required = activeGroups.length === 0;
+                    createProductStock.setAttribute('aria-readonly', String(activeGroups.length > 0));
+                    if (!activeGroups.length) return;
                     const matrixInput =
                         document.getElementById('variantCombinationsInput');
 
@@ -13137,7 +13148,7 @@ document.addEventListener(
                         matrixRows = [];
                     }
 
-                    const totalStock = matrixRows.length
+                    const totalStock = activeGroups.length >= 2
                         ? matrixRows.reduce(
                             function (total, row) {
                                 return total + (Number.parseInt(row.stock, 10) || 0);
@@ -13157,7 +13168,7 @@ document.addEventListener(
                         );
 
                     createProductStock.value = String(totalStock);
-                    createProductStock.readOnly = true;
+                    createProductStock.readOnly = ['variations', 'colors', 'sizes'].some(group => getPricingGroupItems(group).length > 0);
                     createProductStock.required = false;
                 }
 
@@ -13259,6 +13270,13 @@ document.addEventListener(
                 }
 
                 function createOptionPriceControl(group, item) {
+                    // Fixed Price has one product-level price. Never render a
+                    // per-choice price control (even a disabled/hidden one).
+                    // This also prevents older layout CSS from showing it.
+                    if (pricingMode !== 'varies') {
+                        return null;
+                    }
+
                     const meta =
                         getOptionPriceMeta(group);
 
@@ -13345,6 +13363,49 @@ document.addEventListener(
                     return wrap;
                 }
 
+                function createOptionPhotoControl(option) {
+                    const picker = document.createElement('label');
+                    picker.className = 'create-option-photo-control';
+                    picker.setAttribute('title', 'Attach a photo for this choice');
+
+                    const body = document.createElement('span');
+                    body.className = 'create-option-photo-body';
+                    const visual = document.createElement('span');
+                    visual.className = 'create-option-photo-visual';
+                    if (option.photoUrl) {
+                        const preview = document.createElement('img');
+                        preview.src = option.photoUrl;
+                        preview.alt = '';
+                        visual.appendChild(preview);
+                    } else {
+                        visual.textContent = '+';
+                    }
+                    const caption = document.createElement('span');
+                    caption.className = 'create-option-photo-caption';
+                    caption.textContent = option.photoUrl ? 'Change' : 'Attach';
+                    body.append(visual, caption);
+
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/jpeg,image/png,image/webp';
+                    input.hidden = true;
+                    input.setAttribute('aria-label', `Attach photo for ${option.name}`);
+                    input.addEventListener('change', () => {
+                        const file = input.files?.[0];
+                        if (!file || !['image/jpeg','image/png','image/webp'].includes(file.type)) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                            window.alert('Choose an image under 5 MB.');
+                            input.value = '';
+                            return;
+                        }
+                        if (option.photoUrl?.startsWith('blob:')) URL.revokeObjectURL(option.photoUrl);
+                        option.photo = file;
+                        option.photoUrl = URL.createObjectURL(file);
+                        renderAllBuyerOptions();
+                    });
+                    picker.append(body, input);
+                    return picker;
+                }
                 function createOptionStockControl(item) {
                     const wrap = document.createElement('div');
                     wrap.className = 'create-option-price-wrap';
@@ -13447,7 +13508,7 @@ document.addEventListener(
                     }
 
                     if (createProductStock) {
-                        createProductStock.readOnly = true;
+                        createProductStock.readOnly = ['variations', 'colors', 'sizes'].some(group => getPricingGroupItems(group).length > 0);
                         createProductStock.disabled = false;
                         createProductStock.required = false;
                     }
@@ -13730,6 +13791,10 @@ document.addEventListener(
                                 createOptionStockControl(variation)
                             );
 
+                            // Single active choice type: photo picker belongs in its own
+                            // right-side column, never inside the name/identity cell.
+                            item.appendChild(createOptionPhotoControl(variation));
+
                             const remove =
                                 document.createElement('button');
 
@@ -13958,6 +14023,8 @@ document.addEventListener(
                             row.appendChild(
                                 createOptionStockControl(item)
                             );
+
+                            row.appendChild(createOptionPhotoControl(item));
 
                             const remove =
                                 document.createElement('button');
@@ -15083,6 +15150,7 @@ document.addEventListener(
                             '';
                     }
 
+                    if (document.getElementById('createProductFragile')) document.getElementById('createProductFragile').checked = Boolean(product.is_fragile ?? product.listingSnapshot?.is_fragile);
                     if (document.getElementById('createProductWeight')) {
                         document.getElementById('createProductWeight').value =
                             product.weight_kg ?? product.listingSnapshot?.weight_kg ?? '';
@@ -16148,6 +16216,7 @@ document.addEventListener(
                             new FormData(
                                 addProductForm
                             );
+                        formData.set('is_fragile', document.getElementById('createProductFragile')?.checked ? '1' : '0');
 
                         // Upload real File objects for every variation and grouped combination.
                         // Dynamically created picker inputs may live outside the form element.
@@ -16171,7 +16240,7 @@ document.addEventListener(
                             ['size_items', productSizes],
                         ].forEach(([field, options]) => {
                             options.forEach((option, index) => {
-                                if (option?.photo instanceof File) {
+                                if ([productVariations, productColors, productSizes].filter(items => items.length > 0).length === 1 && option?.photo instanceof File) {
                                     formData.set(`${field}[${index}][photo]`, option.photo, option.photo.name);
                                 }
                             });
@@ -16283,6 +16352,7 @@ document.addEventListener(
                         );
 
                         const previewPayload = {
+                            is_fragile: formData.get('is_fragile') === '1',
                             title:
                                 formData.get(
                                     'title'
@@ -16713,6 +16783,7 @@ document.addEventListener(
                                     product
                                 );
 
+                            product.is_fragile = previewPayload.is_fragile;
                             product.title =
                                 previewPayload.title ||
                                 product.title;
@@ -17037,6 +17108,7 @@ document.addEventListener(
 
 
                         let persistedProduct;
+                        const finishProductSave = window.ShopEaseLoading?.start(submitButton);
 
                         try {
                             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -17089,11 +17161,14 @@ document.addEventListener(
 
                             window.alert(error.message || 'Product could not be saved.');
                             return;
+                        } finally {
+                            finishProductSave?.();
                         }
 
                         const createdProduct = {
                             id:
                                 persistedProduct.id,
+                            is_fragile: Boolean(persistedProduct.is_fragile),
 
                             title:
                                 previewPayload.title,
@@ -17318,6 +17393,7 @@ document.addEventListener(
                              * even when the backend response omits optional UI fields.
                              */
                             listingSnapshot: {
+                                is_fragile: previewPayload.is_fragile,
                                 title:
                                     previewPayload.title || '',
 
@@ -17383,54 +17459,17 @@ document.addEventListener(
                         );
 
 
-                        console.log(
-                            'Create Product payload:',
-                            previewPayload
-                        );
-
-                        window.setTimeout(
-                            function () {
-
-                                if (submitButton) {
-
-                                    submitButton.disabled =
-                                        false;
-
-                                    submitButton.textContent =
-                                        'Add Product';
-
-                                }
-
-                                closeAddModal(true);
-
-                                window.setTimeout(
-                                    function () {
-
-                                        if (
-                                            typeof showInventoryFlash ===
-                                            'function'
-                                        ) {
-
-                                            showInventoryFlash(
-                                                'Product created and added to your inventory.'
-                                            );
-
-                                        } else {
-
-                                            window.alert(
-                                                'Product created and added to your inventory.'
-                                            );
-
-                                        }
-
-                                    },
-                                    220
-                                );
-
-                            },
-                            550
-                        );
-
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Add Product';
+                        }
+                        closeAddModal(true);
+                        window.setTimeout(() => {
+                            const confirmation = document.getElementById('inventoryProductCreatedModal');
+                            const name = document.getElementById('inventoryCreatedProductName');
+                            if (name) name.textContent = createdProduct.title || createdProduct.name || 'Your new product';
+                            if (confirmation && !confirmation.open) confirmation.showModal();
+                        }, 300);
                     }
                 );
 
@@ -18703,8 +18742,9 @@ document.addEventListener(
                     'base';
 
                 if (label) {
-                    label.textContent =
-                        'Base Price';
+                    label.textContent = getActiveGroups().length === 1
+                        ? 'Item Price'
+                        : 'Base Price';
                 }
 
                 if (prefix) {
@@ -18771,6 +18811,13 @@ document.addEventListener(
                             container.children
                         ).forEach(
                             (row) => {
+                                const photoControl = row.querySelector('.create-option-photo-control');
+                                row.classList.toggle('single-choice-photo-enabled', !matrixOwnsStock);
+                                if (photoControl) {
+                                    photoControl.hidden = matrixOwnsStock;
+                                    const photoInput = photoControl.querySelector('input');
+                                    if (photoInput) photoInput.disabled = matrixOwnsStock;
+                                }
                                 const choiceName =
                                     getChoiceName(
                                         row
@@ -20069,6 +20116,7 @@ document.addEventListener(
                     return;
                 }
 
+                if (activeGroups.length < 2) connectedGroups = [];
                 purgeInvalidGroups(
                     activeGroups
                 );
@@ -20080,10 +20128,10 @@ document.addEventListener(
                     );
 
                 if (productStockInput) {
-                    productStockInput.readOnly = true;
-                    productStockInput.required = false;
+                    productStockInput.readOnly = activeGroups.length > 0;
+                    productStockInput.required = activeGroups.length === 0;
 
-                    const totalStock = groups.length > 0
+                    const totalStock = activeGroups.length >= 2
                         ? groups.reduce(
                             (total, group) =>
                                 total + Math.max(0, Number(group.stock) || 0),
@@ -20106,7 +20154,10 @@ document.addEventListener(
                             0
                         );
 
-                    productStockInput.value = String(totalStock);
+                    if (activeGroups.length) productStockInput.value = String(totalStock);
+                    productStockInput.setAttribute('aria-readonly', String(activeGroups.length > 0));
+                    const help = productStockInput.parentElement?.querySelector('.create-stock-auto-help');
+                    if (help) help.textContent = activeGroups.length >= 2 ? 'Total stock is calculated from the grouped table.' : activeGroups.length === 1 ? 'Total stock is calculated from the stock of each option.' : 'Enter stock here when there are no choices.';
                 }
 
                 if (matrixCount) {
@@ -21104,4 +21155,4 @@ document.addEventListener(
             );
 
             applyRules();
-        });xx
+        });

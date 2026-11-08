@@ -15,6 +15,7 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'product_name',
+        'is_fragile',
         'variation',
         'color',
         'size',
@@ -24,6 +25,7 @@ class OrderItem extends Model
 
     protected $casts = [
         'quantity' => 'integer',
+        'is_fragile' => 'boolean',
         'unit_price' => 'decimal:2',
     ];
 

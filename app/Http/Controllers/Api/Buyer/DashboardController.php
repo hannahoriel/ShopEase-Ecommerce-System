@@ -108,6 +108,7 @@ class DashboardController extends Controller
         $data = [
             'id' => $product->id,
             'name' => $product->name,
+            'is_fragile' => (bool) $product->is_fragile,
             'price' => (float) $product->price,
             'original_price' => (float) $product->price,
             'sale_percentage' => $product->sale_percentage,
