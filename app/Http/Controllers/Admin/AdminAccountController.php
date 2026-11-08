@@ -60,8 +60,30 @@ class AdminAccountController extends Controller
             && (! $profile || $profile->permissions === null);
     }
 
-    private function optionsFor(string $role): array
+    private function optionsFor(string $role, $profile = null): array
     {
+        // Newly created admin accounts are assigned modules in Admin Management.
+        // Derive the visible notification toggles from those same assignments.
+        $permissions = json_decode((string) data_get($profile, 'permissions'), true);
+        if (is_array($permissions)) {
+            $moduleCategories = [
+                'Registrations' => 'registrations',
+                'Seller Compliance' => 'seller_compliance',
+                'Complaints and Disputes' => 'complaints',
+                'Commission' => 'commissions',
+                'Logistics Management' => 'logistics',
+                'Messages' => 'messages',
+                'Platform Settings' => 'platform',
+                'Reports' => 'reports',
+            ];
+            $keys = array_values(array_intersect(
+                array_values($moduleCategories),
+                array_map(fn ($module) => $moduleCategories[$module] ?? null, $permissions),
+            ));
+
+            return array_intersect_key(self::OPTIONS, array_flip($keys));
+        }
+
         $keys = self::ROLE_OPTIONS[$role] ?? ['messages', 'platform'];
         return array_intersect_key(self::OPTIONS, array_flip($keys));
     }
@@ -82,7 +104,7 @@ class AdminAccountController extends Controller
             'adminIdPhoto' => !empty($profile->admin_id_photo_path)
                 ? route('admin.api.account.admins.id-photo', $user)
                 : null,
-            'adminNotificationOptions' => $this->optionsFor($role),
+            'adminNotificationOptions' => $this->optionsFor($role, $profile),
             'adminPreferences' => is_array($prefs) ? $prefs : [],
             'adminManagementUrl' => url('/api/v1/admin/account/admins'),
             'canManageAdmins' => $this->isPrimaryFullAdmin($user, $profile),
@@ -123,7 +145,7 @@ class AdminAccountController extends Controller
             'role' => $role,
             'role_label' => ucwords(str_replace(['_', '-'], ' ', $role)),
             'admin_id' => 'ADM-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
-            'notification_options' => $this->optionsFor($role),
+            'notification_options' => $this->optionsFor($role, $profile),
             'preferences' => is_array($preferences) ? $preferences : [],
         ]);
     }
@@ -189,7 +211,7 @@ class AdminAccountController extends Controller
     {
         $user = $this->admin($request);
         $profile = $this->profile($request);
-        $keys = array_keys($this->optionsFor($this->role($user, $profile)));
+        $keys = array_keys($this->optionsFor($this->role($user, $profile), $profile));
         $selected = $request->input('preferences', []);
         if (!is_array($selected)) $selected = [];
         $current = json_decode($profile->preferences ?? '{}', true);
