@@ -2256,6 +2256,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/account', [SellerAccountController::class, 'index'])->name('account');
     Route::put('/account', [SellerAccountController::class, 'update'])->name('account.update');
+    Route::post('/account/information-change-request', [SellerAccountController::class, 'requestInformationChange'])->name('account.information-change-request');
     Route::get('/account/document/{type}', [SellerAccountController::class, 'document'])->name('account.document');
     Route::post('/account/category-change-request', [SellerAccountController::class, 'requestCategoryChange'])->name('account.categories.request');
 });

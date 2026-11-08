@@ -1102,7 +1102,6 @@
          form.addEventListener('submit', e => {
            e.preventDefault();
            if (!editableFields.some(isModified)) return;
-           const labels = {};
            const changed = editableFields.filter(isModified).map(el => {
              const field = el.closest('.sa-field, .sa-file-field') || el.parentElement;
              const label = field?.querySelector('label:not(.sa-photo-button)')?.textContent?.replace(/\s*\*/g,'').trim()
@@ -1111,6 +1110,7 @@
              const newValue = el.type === 'file' ? (el.files?.[0]?.name || 'New photo') : String(el.value ?? '');
              return { field:label, before:oldValue || 'Not provided', after:newValue || 'Not provided', type:el.type, name:el.name };
            });
+           if(changed.some(change=>change.type==='file')){window.showAccountFlash?.('Photo uploads cannot be submitted as account information changes. Remove the selected photo and submit text fields separately.',true);return;}
            const modal=document.getElementById('saApprovalReview');
            const body=document.getElementById('saApprovalReviewRows');
            body.replaceChildren();
@@ -1459,13 +1459,13 @@
 .sa-approval-table td:last-child{color:#216c41}
 .sa-approval-review-note{font-size:11px;line-height:1.7;color:#8a7b70;margin-top:14px}
 </style>
-<div class="sa-modal-overlay" id="saApprovalReview" hidden>
+<div class="sa-modal-overlay" id="saApprovalReview" data-request-url="{{ route('seller.account.information-change-request') }}" hidden>
   <section class="sa-modal-dialog sa-approval-dialog" role="dialog" aria-modal="true" aria-labelledby="saApprovalTitle">
     <button type="button" class="sa-modal-close" id="saApprovalClose" aria-label="Close">×</button>
     <h2 id="saApprovalTitle">Request Account Information Change</h2>
     <p class="sa-modal-description">Review the information you want to change. The updated values will only take effect after ShopEase Admin approval.</p>
     <div class="sa-approval-table-wrap"><table class="sa-approval-table"><thead><tr><th>Information</th><th>Current</th><th>Requested</th></tr></thead><tbody id="saApprovalReviewRows"></tbody></table></div>
-    <p class="sa-approval-review-note">Preview only: requests are stored in this browser until the Admin approval backend is connected. Existing registration details are not updated.</p>
+    <p class="sa-approval-review-note">Your registered details stay unchanged until an administrator approves this request.</p>
     <div class="sa-modal-buttons"><button type="button" id="saApprovalCancel">Cancel</button><button type="button" class="primary" id="saApprovalConfirm">Submit Request</button></div>
   </section>
 </div>
@@ -1473,17 +1473,27 @@
 document.addEventListener('DOMContentLoaded',()=>{
  const dialog=document.getElementById('saApprovalReview');
  const notice=document.getElementById('saPendingApprovalNotice');
- const key='shopease_seller_profile_approval_preview_{{ auth()->id() }}';
- function showPending(){try{const data=JSON.parse(localStorage.getItem(key)||'null');if(data&&Array.isArray(data.changes)&&data.changes.length){notice.hidden=false;notice.textContent='Pending Admin Approval — '+data.changes.length+' account field change(s) requested on '+new Date(data.date).toLocaleString()+'. Your registered details remain unchanged.';}}catch(e){}}
+ let serverPending=@json($pendingInformationRequest ? ['date'=>$pendingInformationRequest->created_at, 'changes'=>$pendingInformationRequest->requested_data] : null);
+ function showPending(){if(serverPending&&Array.isArray(serverPending.changes)&&serverPending.changes.length){notice.hidden=false;notice.textContent="Pending Admin Approval: "+serverPending.changes.length+" account field change(s) requested on "+new Date(serverPending.date).toLocaleString()+". Your registered details remain unchanged.";}else{notice.hidden=true;}}
  function close(){dialog.hidden=true;document.body.classList.remove('sa-modal-open');}
  document.getElementById('saApprovalClose').addEventListener('click',close);
  document.getElementById('saApprovalCancel').addEventListener('click',close);
  dialog.addEventListener('click',e=>{if(e.target===dialog)close();});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.hidden)close();});
- document.getElementById('saApprovalConfirm').addEventListener('click',()=>{
-   if(!Array.isArray(dialog._pendingChanges)||!dialog._pendingChanges.length)return;
-   try{localStorage.setItem(key,JSON.stringify({date:new Date().toISOString(),changes:dialog._pendingChanges}));}catch(e){window.showAccountFlash?.('Browser storage is unavailable. Request was not saved.',true);return;}
-   close();showPending();window.showAccountFlash?.('Your change request is pending admin approval (UI preview only).',false,'Request Submitted');
+ document.getElementById('saApprovalConfirm').addEventListener('click',async()=>{
+   if(serverPending){window.showAccountFlash?.('You already have an account information request pending approval.',true);return;}
+   const changes=(dialog._pendingChanges||[]).filter(change=>change.type!=='file'&&change.name!=='email').map(change=>({name:change.name,after:change.after==='Not provided'?'':change.after}));
+   if(!changes.length){window.showAccountFlash?.('Select at least one text field to request an account information change.',true);return;}
+   const confirm=document.getElementById('saApprovalConfirm');confirm.disabled=true;
+   try{
+     const response=await fetch(dialog.dataset.requestUrl,{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:JSON.stringify({changes})});
+     const payload=await response.json().catch(()=>({}));
+     if(!response.ok)throw new Error(payload.message||'Unable to submit your change request.');
+     const saved={date:payload.data.created_at,changes:payload.data.changes};
+     serverPending=saved;
+     close();showPending();window.showAccountFlash?.(payload.message||'Your change request is pending admin approval.',false,'Request Submitted');
+   }catch(error){window.showAccountFlash?.(error.message||'Unable to submit your change request.',true);}
+   finally{confirm.disabled=false;}
  });
  showPending();
 });

@@ -304,44 +304,28 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCards();
     }
 
-    // Demo request decisions are browser-local; no user record is modified.
-    const umStoreKey = 'shopease_admin_user_management_change_requests_v1';
-    let umDecisions = {};
-    try { umDecisions = JSON.parse(localStorage.getItem(umStoreKey) || '{}') || {}; } catch (_) {}
+    let umRequests = [];
     let umSelected = null;
     let umFlashTimeout;
     const umEl = id => document.getElementById(id);
     const umChange = umEl('um-change-modal');
     const umReason = umEl('um-reason-modal');
     const umFlash = umEl('um-change-flash');
-    function umDemoRequest(user) {
-        // First three loaded accounts only: obvious UI-only sample requests.
-        const index = users.findIndex(item => String(item.id) === String(user.id));
-        if (index < 0 || index > 2 || umDecisions[String(user.id)]) return null;
-        const phone = String(user.phone || 'Not provided');
-        const email = String(user.email || 'Not provided');
-        const fields = [
-            { label: 'Contact Number', before: phone, after: index === 0 ? '0918 456 2211' : index === 1 ? '0917 555 4820' : '0920 817 6632' }
-        ];
-        if (index === 1) fields.push({label:'Email Address',before:email,after:'updated.' + email});
-        if (index === 2) fields.push({label:'Street Address',before:'Existing registered address',after:'Updated address (demo)'});
-        return {id: String(user.id), name: String(user.name || 'User'), type: String(user.type || 'User'), fields};
-    }
     function umRequestBadge(user) {
-        return umDemoRequest(user) ? `<div><button type="button" class="um-change-badge" data-um-request="${escapeHtml(String(user.id))}" aria-label="Review pending account information change">Pending Information Update</button></div>` : '';
+        const request = umRequests.find(item => String(item.user_id) === String(user.id));
+        return request ? `<div><button type="button" class="um-change-badge" data-um-request="${escapeHtml(String(request.id))}" aria-label="Review pending account information change">Pending Information Update</button></div>` : '';
     }
     function umSetModal(element, visible) {
         if (!element) return;
         element.hidden = !visible;
         document.body.style.overflow = (umChange && !umChange.hidden) || (umReason && !umReason.hidden) ? 'hidden' : '';
     }
-    function umOpenRequest(user) {
-        const request = umDemoRequest(user);
+    function umOpenRequest(request) {
         if (!request) return;
         umSelected = request;
         umEl('um-change-subtitle').textContent = `${request.name} · ${request.type} · Pending Approval`;
         umEl('um-change-fields').innerHTML = request.fields.map(f => `<tr><td>${escapeHtml(f.label)}</td><td>${escapeHtml(f.before)}</td><td>${escapeHtml(f.after)}</td></tr>`).join('');
-        umEl('um-change-meta').textContent = 'Sample account change request · Frontend preview only';
+        umEl('um-change-meta').textContent = `Submitted ${new Date(request.created_at).toLocaleString()}`;
         umSetModal(umChange, true);
     }
     function umNotify(title, message, isError = false) {
@@ -353,23 +337,44 @@ document.addEventListener('DOMContentLoaded', function () {
         clearTimeout(umFlashTimeout);
         umFlashTimeout = setTimeout(() => { umFlash.hidden = true; }, 4600);
     }
-    function umDecide(status, reason = '', details = '') {
+    async function umDecide(status, reason = '', details = '') {
         if (!umSelected) return;
-        umDecisions[umSelected.id] = {status, reason, details, decidedAt: new Date().toISOString()};
-        try { localStorage.setItem(umStoreKey, JSON.stringify(umDecisions)); } catch (_) {}
-        const name = umSelected.name;
-        umSetModal(umReason, false);
-        umSetModal(umChange, false);
-        umSelected = null;
-        render();
-        umNotify(status === 'approved' ? 'Request Approved' : 'Request Disapproved', `${name}'s information change request has been ${status === 'approved' ? 'approved' : 'disapproved'} in the UI preview.` , status !== 'approved');
+        const reviewStatus = status === 'disapproved' ? 'rejected' : status;
+        const decisionButton = status === 'approved' ? umEl('um-change-approve') : umEl('um-reason-confirm');
+        decisionButton.disabled = true;
+        try {
+            const response = await fetch(userManagementConfig.reviewChangeRequestUrl.replace('__REQUEST__', encodeURIComponent(umSelected.id)), {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: {'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrfToken},
+                body: JSON.stringify({status: reviewStatus, review_note: reviewStatus === 'rejected' ? [reason, details].filter(Boolean).join(' — ') : null})
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.message || 'Unable to review this request.');
+            const name = umSelected.name;
+            if (reviewStatus === 'approved') {
+                const user = users.find(item => String(item.id) === String(umSelected.user_id));
+                const phoneChange = umSelected.fields.find(field => field.name === 'contact_no');
+                if (user && phoneChange) user.phone = phoneChange.after;
+            }
+            umRequests = umRequests.filter(item => String(item.id) !== String(umSelected.id));
+            umSetModal(umReason, false);
+            umSetModal(umChange, false);
+            umSelected = null;
+            render();
+            umNotify(status === 'approved' ? 'Request Approved' : 'Request Disapproved', payload.message || `${name}'s account information request has been reviewed.`, status !== 'approved');
+        } catch (error) {
+            umNotify('Unable to review request', error.message || 'Please try again.', true);
+        } finally {
+            decisionButton.disabled = false;
+        }
     }
     tbody.addEventListener('click', event => {
         const badge = event.target.closest('[data-um-request]');
         if (!badge) return;
         event.preventDefault(); event.stopImmediatePropagation();
-        const user = users.find(u => String(u.id) === badge.dataset.umRequest);
-        if (user) umOpenRequest(user);
+        const request = umRequests.find(item => String(item.id) === badge.dataset.umRequest);
+        if (request) umOpenRequest(request);
     }, true);
     umEl('um-change-close').addEventListener('click', () => umSetModal(umChange, false));
     umEl('um-change-cancel').addEventListener('click', () => umSetModal(umChange, false));
@@ -2883,10 +2888,31 @@ document.addEventListener('DOMContentLoaded', function () {
         } while (page <= lastPage);
 
         users = allUsers;
+        await loadChangeRequests();
         state.filtered = [...users];
         state.page = 1;
         render();
         updateCards();
+    }
+
+    async function loadChangeRequests() {
+        const response = await fetch(userManagementConfig.changeRequestsUrl, {
+            credentials: 'same-origin',
+            headers: {Accept: 'application/json'}
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || 'Unable to load account change requests.');
+        umRequests = (payload.data || []).map(request => ({
+            ...request,
+            name: request.user?.name || 'User',
+            type: request.user?.type || 'User',
+            fields: (request.fields || []).map(field => ({
+                name: field.name,
+                label: field.field || field.name || 'Account information',
+                before: field.before ?? 'Not provided',
+                after: field.after ?? 'Not provided'
+            }))
+        }));
     }
 
     loadUsersFromApi().catch(error => {

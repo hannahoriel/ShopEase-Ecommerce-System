@@ -227,6 +227,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('admin.api.registrations.show');
             Route::post('/registrations/{registration}/approve', [RegistrationController::class, 'approve'])->name('admin.api.registrations.approve');
             Route::post('/registrations/{registration}/reject', [RegistrationController::class, 'reject'])->name('admin.api.registrations.reject');
+            Route::get('/users/account-change-requests', [UserManagementController::class, 'changeRequests'])->name('admin.api.users.account-change-requests.index');
+            Route::patch('/users/account-change-requests/{changeRequest}', [UserManagementController::class, 'reviewChangeRequest'])->name('admin.api.users.account-change-requests.review');
             Route::get('/users', [UserManagementController::class, 'list'])->name('admin.api.users.index');
             Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('admin.api.users.show');
             Route::patch('/users/{user}/status', [UserManagementController::class, 'updateStatus'])->name('admin.api.users.status');
