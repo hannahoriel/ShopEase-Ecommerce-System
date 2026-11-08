@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Complaint;
+use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use Illuminate\Http\JsonResponse;
@@ -86,6 +88,7 @@ class ShopController extends Controller
         $page = $products->paginate(min(max((int) $request->query('per_page', 24), 1), 60));
         $seller->load(['user:id,name,profile_photo_path', 'reviews']);
         $allProductCount = $seller->products()->where('status', 'active')->where('is_archived', false)->count();
+        $compliance = $this->complianceSummary($seller);
 
         // Show actual active products from other sellers after this shop's collection.
         // This is independent of the current shop's search/category filters.
@@ -108,7 +111,9 @@ class ShopController extends Controller
                 'owner_name' => $seller->user?->name,
                 'avatar_url' => $seller->profile_photo_path ? Storage::disk('public')->url($seller->profile_photo_path) : ($seller->user?->profile_photo_path ? Storage::disk('public')->url($seller->user->profile_photo_path) : null),
                 'cover_url' => $seller->cover_photo_path ? Storage::disk('public')->url($seller->cover_photo_path) : null,
-                'compliance_score' => null, // UI placeholder until authoritative admin compliance score integration
+                'compliance_score' => $compliance['score'],
+                'compliance_status' => $compliance['status'],
+                'compliance_label' => $compliance['label'],
                 'location' => collect([$seller->municipality, $seller->province])->filter()->implode(', '),
                 'joined_at' => ($seller->approved_at ?? $seller->created_at)?->toISOString(),
                 'product_count' => $allProductCount,
@@ -186,6 +191,40 @@ class ShopController extends Controller
             'photos' => $photos,
             'image_url' => $photos->first(),
         ];
+    }
+
+    /** Keep the public shop score aligned with the records shown in Seller Compliance. */
+    private function complianceSummary(Seller $seller): array
+    {
+        $reviewCount = $seller->products()
+            ->where('is_archived', false)
+            ->whereRaw('LOWER(status) IN (?, ?, ?)', ['pending', 'under_review', 'review'])
+            ->count();
+        $warningCount = $seller->products()
+            ->where('is_archived', false)
+            ->whereRaw('LOWER(status) = ?', ['warning'])
+            ->count();
+        $orderIds = Order::query()->where('seller_id', $seller->id)->pluck('id');
+        $complaintCount = $orderIds->isEmpty()
+            ? 0
+            : Complaint::query()
+                ->whereIn('order_id', $orderIds)
+                ->whereIn('status', ['open', 'in_progress'])
+                ->count();
+
+        $score = max(0, 100 - ($reviewCount * 5) - ($complaintCount * 10));
+
+        if (in_array($seller->registration_status, ['suspended', 'rejected'], true)) {
+            return ['score' => 0, 'status' => 'suspended', 'label' => 'Suspended'];
+        }
+        if ($reviewCount > 0) {
+            return ['score' => $score, 'status' => 'under-review', 'label' => 'Under Review'];
+        }
+        if ($warningCount > 0 || $complaintCount > 0 || $score < 80) {
+            return ['score' => $score, 'status' => 'warning', 'label' => 'Warning'];
+        }
+
+        return ['score' => $score, 'status' => 'compliant', 'label' => 'Compliant'];
     }
 
     private function categoryKey(string $category): string
