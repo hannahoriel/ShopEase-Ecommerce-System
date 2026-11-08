@@ -346,24 +346,22 @@
 
 </aside>
 
-@php($adminModuleAccess = request()->attributes->get('adminModuleAccess', []))
-@if (!empty($adminModuleAccess['readOnly']))
-    <div
-        id="admin-read-only-notice"
-        class="fixed right-6 top-24 z-[60] rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg"
-        role="status"
-    >
-        <strong>Read-only access:</strong>
-        {{ $adminModuleAccess['module'] ?? 'This module' }} can be viewed, but you do not have permission to edit it.
-    </div>
-@endif
-
-
 <style>
 
-    body.admin-module-read-only #admin-content,
-    body.admin-module-read-only .seller-account-page {
-        pointer-events: none;
+    #admin-access-toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 300;
+        max-width: min(420px, calc(100vw - 32px));
+        padding: 13px 17px;
+        border: 1px solid #efc9a8;
+        border-radius: 10px;
+        background: #fffaf3;
+        color: #633a1b;
+        box-shadow: 0 8px 24px rgba(35, 18, 12, .16);
+        font-size: 13px;
+        font-weight: 500;
     }
 
     /* =========================================================
@@ -559,12 +557,65 @@
 #admin-sidebar > .admin-sidebar-scroll .sidebar-link { box-sizing:border-box; max-width:100%; }
 </style>
 
+<div id="admin-access-toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 
-if (document.getElementById('admin-read-only-notice')) {
-    document.body.classList.add('admin-module-read-only');
-}
+(() => {
+    const message = "You don't have access to edit this page.";
+    let toastTimer;
+
+    function showAccessToast() {
+        const toast = document.getElementById('admin-access-toast');
+        if (!toast) return;
+
+        toast.textContent = message;
+        toast.hidden = false;
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3200);
+    }
+
+    document.addEventListener('click', event => {
+        if (!document.body.classList.contains('admin-module-read-only')) return;
+
+        const target = event.target instanceof Element ? event.target : null;
+        const control = target?.closest('#admin-content button, #admin-content [role="button"], .seller-account-page button, .seller-account-page [role="button"]');
+        if (!control) return;
+
+        const label = `${control.textContent || ''} ${control.getAttribute('aria-label') || ''} ${control.title || ''}`;
+        if (!/\b(create|add|save|edit|update|delete|remove|approve|reject|publish|disable|enable|confirm|submit|send|reply|change|upload|archive|restore|cancel)\b/i.test(label)) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        showAccessToast();
+    }, true);
+
+    document.addEventListener('submit', event => {
+        if (!document.body.classList.contains('admin-module-read-only')) return;
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.closest('#admin-content, .seller-account-page')) return;
+        if ((form.method || 'get').toLowerCase() === 'get') return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        showAccessToast();
+    }, true);
+
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+        const response = await originalFetch(...args);
+        if (
+            document.body.classList.contains('admin-module-read-only')
+            && response.status === 403
+            && String(args[0]?.url || args[0] || '').includes('/api/v1/admin/')
+        ) {
+            response.clone().json().then(payload => {
+                if (/permission|access/i.test(payload.message || '')) showAccessToast();
+            }).catch(() => {});
+        }
+        return response;
+    };
+})();
 
 document.addEventListener(
     'DOMContentLoaded',

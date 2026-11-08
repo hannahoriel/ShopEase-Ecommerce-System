@@ -49,6 +49,17 @@ class AdminAccountController extends Controller
         return (string) (data_get($profile, 'access_role') ?: $user->role);
     }
 
+    private function isPrimaryFullAdmin($user, $profile): bool
+    {
+        $primaryAdminId = (int) DB::table('users')
+            ->where('role', 'admin')
+            ->orderBy('id')
+            ->value('id');
+
+        return (int) $user->id === $primaryAdminId
+            && (! $profile || $profile->permissions === null);
+    }
+
     private function optionsFor(string $role): array
     {
         $keys = self::ROLE_OPTIONS[$role] ?? ['messages', 'platform'];
@@ -74,7 +85,7 @@ class AdminAccountController extends Controller
             'adminNotificationOptions' => $this->optionsFor($role),
             'adminPreferences' => is_array($prefs) ? $prefs : [],
             'adminManagementUrl' => url('/api/v1/admin/account/admins'),
-            'canManageAdmins' => ($profile->permissions ?? null) === null,
+            'canManageAdmins' => $this->isPrimaryFullAdmin($user, $profile),
         ];
 
         return view('pages.admin.account', $data);
