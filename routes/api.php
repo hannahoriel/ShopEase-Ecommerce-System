@@ -428,6 +428,7 @@ Route::prefix('v1')->group(function () {
                     Route::patch('/rider-registrations/{registration}/decision', [DeliveryHubRiderRegistrationController::class, 'decide'])->name('delivery_hub.api.rider-registrations.decide');
                 }
                 Route::get('/messages', [LogisticsMessagesController::class, 'index'])->name("{$facilityRole}.api.messages.index");
+                Route::post('/messages/thread', [LogisticsMessagesController::class, 'thread'])->name("{$facilityRole}.api.messages.thread");
                 Route::get('/messages/attachments/{type}/{conversation}/{message}', [LogisticsMessagesController::class, 'attachment'])->name("{$facilityRole}.api.messages.attachments.show");
                 Route::get('/messages/{conversation}', [LogisticsMessagesController::class, 'show'])->name("{$facilityRole}.api.messages.show");
                 Route::post('/messages', [LogisticsMessagesController::class, 'send'])->name("{$facilityRole}.api.messages.send");
