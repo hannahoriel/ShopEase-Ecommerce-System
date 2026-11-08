@@ -1,3 +1,6 @@
+import '../../shared/complaint-layout.js';
+import {renderReturnSummary} from '../../shared/return-summary.js';
+import {renderCategoryPill} from '../../shared/category-pills.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -506,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelectorAll('[data-purchase-row]')
                 );
             let ordersRefreshBound = false;
+            let ordersLoaded = false;
 
             const search =
                 document.getElementById('purchaseSearch');
@@ -569,6 +573,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (emptyState) {
                     emptyState.hidden =
                         visibleCount > 0;
+                    if (ordersLoaded && !visibleCount) {
+                        const label = tabs.find(tab => tab.dataset.purchaseTab === activeTab)?.textContent.trim() || "this tab";
+                        emptyState.querySelector("h3").textContent = query ? "No matching orders" : activeTab === "all" ? "No orders yet" : `No orders in ${label}`;
+                        emptyState.querySelector("p").textContent = query ? "Try another seller, order ID or product name." : "Orders with this status will appear here.";
+                    }
                 }
             };
 
@@ -593,6 +602,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     applyPurchaseFilters();
+                });
+            });
+
 
                     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
                         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -623,15 +635,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     function renderOrders(orders) {
                         if (!purchaseRows) return;
+                        ordersLoaded = true;
                         window.__buyerPurchaseOrders = new Map(orders.map(order => [String(order.order_number), order]));
                         if (!orders.length) {
                             purchaseRows.innerHTML = '';
                             rows = [];
                             applyPurchaseFilters();
-                            if (emptyState) {
-                                emptyState.querySelector('h3').textContent = 'No orders yet';
-                                emptyState.querySelector('p').textContent = 'Your completed checkouts will appear here with their order QR codes.';
-                            }
+
                             return;
                         }
 
@@ -663,19 +673,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="purchase-shop-order-meta">
                                             <strong class="purchase-shop-order-id">Order No: ${escapeHtml(order.order_number)}</strong>
                                             <span class="purchase-shop-placed-at">Placed ${escapeHtml(placedAt)}</span>
-                                            <button type="button" class="purchase-message-seller" data-buyer-chat-order="${escapeHtml(order.id)}">Message seller</button>
-                                            ${order.can_cancel
-                                                ? `<button type="button" class="purchase-message-seller" data-buyer-cancel-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Cancel order</button>`
-                                                : ''}
-                                            ${order.cancellation_request?.status === 'pending'
-                                                ? '<span class="purchase-complaint-submitted" data-cancellation-request-note>Cancellation request pending seller review</span>'
-                                                : ''}
-                                            ${order.cancellation_request?.status === 'rejected'
-                                                ? `<span class="purchase-complaint-submitted" data-cancellation-request-note>Seller declined cancellation: ${escapeHtml(order.cancellation_request.seller_other_reason || order.cancellation_request.seller_reason || 'Please contact the seller.')}</span>`
-                                                : ''}
-                                            ${order.complaint
-                                                ? `<span class="purchase-complaint-submitted">Complaint ${escapeHtml(order.complaint.reference)} · ${escapeHtml(order.complaint.status.replace('-', ' '))}</span>`
-                                                : `<button type="button" class="purchase-message-seller" data-buyer-complaint-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Report a problem</button>`}
                                         </div>
                                     </div>
                                     <div class="purchase-row">
@@ -697,6 +694,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="purchase-estimated-delivery">${deliveryDetails}</div>
                                         <div class="purchase-status-cell"><span class="purchase-status purchase-status--${statusClass}">${escapeHtml(statusLabel)}</span></div>
                                     </div>
+                                    <div class="purchase-card-actions" aria-label="Order actions">
+                                            <button type="button" class="purchase-message-seller" data-buyer-chat-order="${escapeHtml(order.id)}">Message seller</button>
+                                            ${order.can_cancel
+                                                ? `<button type="button" class="purchase-message-seller" data-buyer-cancel-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Cancel order</button>`
+                                                : ''}
+                                            ${order.cancellation_request?.status === 'pending'
+                                                ? '<span class="purchase-complaint-submitted" data-cancellation-request-note>Cancellation request pending seller review</span>'
+                                                : ''}
+                                            ${order.cancellation_request?.status === 'rejected'
+                                                ? `<span class="purchase-complaint-submitted" data-cancellation-request-note>Seller declined cancellation: ${escapeHtml(order.cancellation_request.seller_other_reason || order.cancellation_request.seller_reason || 'Please contact the seller.')}</span>`
+                                                : ''}
+                                            ${order.complaint
+                                                ? `<span class="purchase-complaint-submitted">Complaint ${escapeHtml(order.complaint.reference)} · ${escapeHtml(order.complaint.status.replace('-', ' '))}</span>`
+                                                : `<button type="button" class="purchase-message-seller" data-buyer-complaint-order="${escapeHtml(order.id)}" data-order-number="${escapeHtml(order.order_number)}">Report a problem</button>`}
+                                    </div>
                                 </article>`;
                         }).join('');
                         rows = Array.from(purchaseRows.querySelectorAll('[data-purchase-row]'));
@@ -713,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             return;
                         }
-                        if (emptyState) {
+                        if (emptyState && !ordersLoaded) {
                             emptyState.hidden = false;
                             emptyState.querySelector('h3').textContent = 'Loading orders…';
                             emptyState.querySelector('p').textContent = '';
@@ -755,8 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }, 30000);
                         ordersRefreshBound = true;
                     }
-                });
-            });
 
             search?.addEventListener(
                 'input',
@@ -1112,8 +1122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let cases=[];
     const state={status:'all',search:'',date:'',page:1,size:7,selected:null};
     const filtered=()=>cases.filter(c=>(state.status==='all'||c.status===state.status)&&(!state.date||c.filed_at.slice(0,10)===state.date)&&(!state.search||[c.id,c.order_id,c.type,c.party1,c.party2,c.description].join(' ').toLowerCase().includes(state.search)));
-    const parties=c=>[{name:c.party1,role:'Buyer',email:c.party1Email},{name:c.party2,role:'Seller',email:c.party2Email}];
-    const partyMarkup=p=>`<div class="complaint-party"><span class="complaint-avatar">${safe(p.name.charAt(0))}</span><span class="complaint-party-copy"><span class="complaint-party-name">${safe(p.name)}</span><span class="complaint-party-role">${safe(p.role)}</span></span></div>`;
+    const parties=c=>[{name:c.party1,role:'Buyer',photo:c.party1Photo,email:c.party1Email},{name:c.party2,role:'Seller',photo:c.party2Photo,email:c.party2Email}];
+    root.addEventListener('error',event=>{const image=event.target;if(image.matches?.('.complaint-avatar img'))image.parentElement.textContent=image.closest('.complaint-party')?.querySelector('.complaint-party-name')?.textContent.trim().charAt(0)||'?';},true);
+    const partyMarkup=p=>`<div class="complaint-party"><span class="complaint-avatar">${/^(https?:\/\/|\/)(?!\/)/i.test(p.photo||'')?`<img src="${safe(p.photo)}" alt="" loading="lazy">`:safe(p.name.charAt(0))}</span><span class="complaint-party-copy"><span class="complaint-party-name">${safe(p.name)}</span><span class="complaint-party-role">${safe(p.role)}</span></span></div>`;
     const badge=c=>`<span class="complaint-status ${c.status}">${title(c.status)}</span>`;
     function preview(c){
         get('complaints-workspace').classList.add('has-selection');get('complaints-detail-card').setAttribute('aria-hidden','false');
@@ -1176,14 +1187,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const userIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.3"/><path d="M5.3 20c.1-4.1 2.6-6.3 6.7-6.3s6.6 2.2 6.7 6.3"/></svg>';
     const shopIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 9 5 4h14l2 5v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9zM5 13v7h14v-7"/></svg>';
     function openModal(){
+        document.getElementById('buyerComplaintReturnSummary')?.remove();
         const c=state.selected;if(!c)return;
         setText('modal-complaint-id',c.id);setText('modal-date-filed',timeText(c.filed_at));setText('modal-last-updated',timeText(c.updated_at));setText('modal-complaint-type',c.type);setText('modal-order-id-top',c.order_id);setText('modal-description-copy',c.description);
         const status=get('modal-complaint-status');status.className='complaints-modal-status '+c.status;status.textContent=title(c.status);
-        get('modal-parties-list').innerHTML=parties(c).map(p=>`<div class="complaints-modal-party-row"><span class="complaints-modal-party-avatar">${p.role==='Buyer'?userIcon:shopIcon}</span><span class="complaints-modal-party-copy"><strong>${safe(p.name)}</strong><span>${safe(p.email)}</span></span><span class="complaints-modal-party-role">${p.role==='Buyer'?userIcon:shopIcon}${p.role}</span></div>`).join('');
+        get('modal-parties-list').innerHTML=parties(c).map(p=>`<div class="complaints-modal-party-row"><span class="complaints-modal-party-avatar">${/^(https?:\/\/|\/)(?!\/)/i.test(p.photo||'')?`<img src="${safe(p.photo)}" alt="">`:(p.role==='Buyer'?userIcon:shopIcon)}</span><span class="complaints-modal-party-copy"><strong>${safe(p.name)}</strong><span>${safe(p.email)}</span></span><span class="complaints-modal-party-role">${p.role==='Buyer'?userIcon:shopIcon}${p.role}</span></div>`).join('');
         get('modal-order-information').innerHTML=rows([['Order ID',c.order_id],['Order Date',timeText(c.orderDate)],['Payment Method',c.paymentMethod],['Payment Status',c.paymentStatus],['Shipping Method',c.shippingMethod],['Order Status',c.orderStatus],['Order Total',c.orderTotal]]);
-        get('modal-product-info').innerHTML=`<div class="complaints-modal-item-main">${c.productImage?`<img class="complaints-modal-product-image" src="${safe(c.productImage)}" alt="${safe(c.productName)}">`:'<div class="complaints-modal-product-image"></div>'}<div><div class="complaints-modal-product-name">${safe(c.productName)}${c.is_fragile ? '<span class="se-fragile-pill">Fragile</span>' : ''}</div><div class="complaints-modal-product-variant">${safe(c.productVariant)}</div><div class="complaints-modal-product-price"><strong>${safe(c.productPrice)}</strong><span>Qty: ${safe(c.productQuantity)}</span></div></div></div><div class="complaints-modal-item-extra"><div><span class="complaints-modal-item-extra-label">Category</span><span class="complaints-modal-category-pill">${safe(c.productCategory)}</span></div><div class="complaints-modal-shop-line">Shop: <strong>${safe(c.shopName)}</strong></div></div>`;
+        get('modal-product-info').innerHTML=`<div class="complaints-modal-item-main">${c.productImage?`<img class="complaints-modal-product-image" src="${safe(c.productImage)}" alt="${safe(c.productName)}">`:'<div class="complaints-modal-product-image"></div>'}<div><div class="complaints-modal-product-name">${safe(c.productName)}${c.is_fragile ? '<span class="se-fragile-pill">Fragile</span>' : ''}</div><div class="complaints-modal-product-variant">${safe(c.productVariant)}</div><div class="complaints-modal-product-price"><strong>${safe(c.productPrice)}</strong><span>Qty: ${safe(c.productQuantity)}</span></div></div></div><div class="complaints-modal-item-extra"><div><span class="complaints-modal-item-extra-label">Category</span>${renderCategoryPill(c.productCategory)}</div><div class="complaints-modal-shop-line">Shop: <strong>${safe(c.shopName)}</strong></div></div>`;
         get('modal-evidence-list').innerHTML=evidenceMarkup(c);
-        get('complaints-modal-notes-list').innerHTML=c.updates.slice().reverse().map(update=>`<div class="complaints-modal-note"><span class="complaints-modal-note-avatar">${safe(update.actor[0])}</span><div class="complaints-modal-note-copy"><strong>${safe(update.actor)}</strong><span>${update.status==='open'?'Complaint opened.':`Complaint status changed to ${title(update.status)}.`}</span></div><span class="complaints-modal-note-time">${timeText(update.timestamp)}</span></div>`).join('');
+        get('complaints-modal-notes-list').innerHTML=c.updates.slice().reverse().map(update=>`<div class="complaints-modal-note"><span class="complaints-modal-note-avatar">${safe(update.actor[0])}</span><div class="complaints-modal-note-copy"><strong>${safe(update.actor)}</strong><span>${safe(update.message || (update.status==='open'?'Complaint opened.':`Complaint status changed to ${title(update.status)}.`))}</span></div><span class="complaints-modal-note-time">${timeText(update.timestamp)}</span></div>`).join('');
+        if(c.returnRequest){
+            const request=c.returnRequest,box=document.createElement('section');box.id='buyerComplaintReturnSummary';box.className='se-return-summary';
+            box.innerHTML=renderReturnSummary(request)+`<a class="se-return-progress" href="/buyer/view-order?order=${encodeURIComponent(c.order_id)}">View request progress and pickup schedule</a>`;
+            get('modal-description-copy').after(box);
+        }
         modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.classList.add('sp-modal-open');modal.querySelector('.complaints-modal-dialog').focus();
     }
     function closeModal(){modal.hidden=true;modal.setAttribute('aria-hidden','true');document.body.classList.remove('sp-modal-open');}
