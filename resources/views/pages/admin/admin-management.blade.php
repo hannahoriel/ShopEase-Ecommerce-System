@@ -163,7 +163,7 @@
            <div class="sa-field half"><label for="aamFirst">First Name <span class="sa-required">*</span></label><input class="sa-control" id="aamFirst" name="first_name" autocomplete="off" maxlength="80" required placeholder="Enter first name"></div>
            <div class="sa-field half"><label for="aamLast">Last Name <span class="sa-required">*</span></label><input class="sa-control" id="aamLast" name="last_name" autocomplete="off" maxlength="80" required placeholder="Enter last name"></div>
            <div class="sa-field half"><label for="aamMiddle">Middle Name</label><input class="sa-control" id="aamMiddle" name="middle_name" maxlength="80" placeholder="Optional"></div>
-           
+
            <div class="sa-field half"><label for="aamPhone">Contact Number</label><input type="tel" class="sa-control" id="aamPhone" name="contact_number" inputmode="numeric" maxlength="13" placeholder="09XXXXXXXXX"></div>
            <div class="sa-field half"><label for="aamBirthday">Birthday</label><input type="date" class="sa-control" id="aamBirthday" name="birthday" max="{{ now()->toDateString() }}"></div>
            <div class="sa-field half"><label for="aamSex">Sex</label><select class="sa-control" id="aamSex" name="sex"><option value="">Select sex</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>

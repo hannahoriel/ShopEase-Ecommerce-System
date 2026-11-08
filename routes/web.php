@@ -2054,6 +2054,7 @@ Route::get('/buyer/my-purchases', function () {
             ? \Illuminate\Support\Facades\Storage::disk('public')->url($buyerProfile->upload_id)
             : null,
         'buyerEmail' => $user->email,
+        'buyerNotificationPreferences' => app(\App\Services\BuyerNotificationPreferences::class)->forUser($user),
     ]);
 })->middleware('auth')->name('buyer.my-purchases');
 
@@ -2260,6 +2261,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/account', [SellerAccountController::class, 'index'])->name('account');
     Route::put('/account', [SellerAccountController::class, 'update'])->name('account.update');
+    Route::post('/account/information-change-request', [SellerAccountController::class, 'requestInformationChange'])->name('account.information-change-request');
     Route::get('/account/document/{type}', [SellerAccountController::class, 'document'])->name('account.document');
     Route::post('/account/category-change-request', [SellerAccountController::class, 'requestCategoryChange'])->name('account.categories.request');
 });
@@ -2359,6 +2361,15 @@ Route::get('/logistics/parcel-tracking', [\App\Http\Controllers\Api\Logistics\Pa
 Route::get('/logistics/account', [\App\Http\Controllers\Api\Logistics\AccountController::class, 'page'])
     ->middleware(['auth', 'role:logistics'])
     ->name('logistics.account');
+
+Route::middleware(['auth', 'role:logistics'])->prefix('logistics')->name('logistics.')->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\Logistics\NotificationController::class, 'index'])
+        ->name('notifications');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Logistics\NotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Logistics\NotificationController::class, 'read'])
+        ->name('notifications.read');
+});
 
 /*
 |--------------------------------------------------------------------------

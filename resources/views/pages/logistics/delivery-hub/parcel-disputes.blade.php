@@ -59,58 +59,29 @@
 </style></head><body class="lg-body">
 @include('components.logistics.delivery-hub.sidebar')
 @include('components.logistics.delivery-hub.navbar')
-<main class="lg-main"><section class="pd-panel"><div class="pd-controls"><input id="pdSearch" type="search" placeholder="Search tracking number, lost / damaged, failed pickup…" aria-label="Search parcel disputes"></div><div class="pd-scroll"><table class="pd-table"><thead><tr><th>Report ID</th><th>Tracking Number</th><th>Issue Type</th><th>Reported At</th></tr></thead><tbody id="pdRows"><tr><td colspan="4" class="pd-empty">No parcel reports yet.</td></tr></tbody></table></div><footer class="pd-foot" id="pdCount">0 records</footer><p class="pd-note">When the hub has no scanner reports, fictional sample records appear for modal preview. Lost or damaged parcels show a demo reimbursement record. Failed seller pickups and buyer-return pickups show the reason and rescheduling requirement, without reimbursement. Actual compensation requires a verified backend transaction.</p></section></main>
+<main class="lg-main"><section class="pd-panel"><div class="pd-controls"><input id="pdSearch" type="search" placeholder="Search tracking number, lost / damaged, failed pickup…" aria-label="Search parcel disputes"></div><div class="pd-scroll"><table class="pd-table"><thead><tr><th>Report ID</th><th>Tracking Number</th><th>Issue Type</th><th>Reported At</th></tr></thead><tbody id="pdRows"><tr><td colspan="4" class="pd-empty">No parcel reports yet.</td></tr></tbody></table></div><footer class="pd-foot" id="pdCount">0 records</footer><p class="pd-note">Reports are saved with the Delivery Hub scanner state. Lost or damaged parcel accountability is shown as a record for review; settlement and payment remain subject to verification. Failed pickups show the rescheduling requirement without creating a reimbursement.</p></section></main>
 <div id="pdModal" class="pd-modal" hidden><section class="pd-dialog" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="pdTitle"><header class="pd-modal-head"><h2 id="pdTitle">Parcel Issue Details</h2><button id="pdModalX" class="pd-close" type="button" aria-label="Close">×</button></header><div class="pd-modal-body" id="pdDetails"></div><footer class="pd-actions"><button id="pdModalClose" class="pd-btn" type="button">Close</button></footer></section></div>
 
 <script>
 document.addEventListener('DOMContentLoaded',()=>{'use strict';
 const $=id=>document.getElementById(id), norm=v=>String(v??'').trim().toLowerCase(), esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const configuredId=@json($hubId),accountId=@json($accountId),hubName=@json($hubName);
-const hubId=String(configuredId||'');
-const key='shopease-dh-issues-preview-'+accountId;
-const scannerKey='shopease-dh-scanner-preview-v1:'+accountId;
-const parseJSON=(k,fallback)=>{try{const value=JSON.parse(localStorage.getItem(k)||'null');return value??fallback}catch{return fallback}};
-// Fictional, display-only demo records. They are not saved or sent to the scanner.
-const demoBase={buyer_name:'Mika Villanueva',buyer_email:'mika@example.test',buyer_phone:'09170000001',buyer_province:'Laguna',buyer_city:'Pila',buyer_barangay:'Poblacion',buyer_street:'Rizal Street',buyer_house_no:'24',buyer_postal_code:'4010',seller_name:'Nico Ramos',seller_email:'nico@example.test',seller_phone:'09170000002',seller_province:'Laguna',seller_city:'Santa Cruz',seller_barangay:'Bagumbayan',seller_street:'Quezon Avenue',seller_house_no:'8',seller_postal_code:'4009',payment_method:'Cash on Delivery',ordered_at:'2026-10-28T08:15:00+08:00',estimated_delivery:'2026-11-03T17:00:00+08:00',current_location:'Delivery Hub · Demo',notes:'Contact the recipient before delivery.'};
-const demoItems=[{product_name:'Wireless Earbuds',variation:'Standard',color:'Black',size:'—',quantity:1,product_price:1299}];
-const demoParcels=[
- {tracking:'SHP-DH-ISSUE-101',order_number:'ORD-DH-2101',status:'received',total_amount:1299,items:demoItems,history:[{status:'Order Placed',date:'2026-10-28T08:15:00+08:00',location:'Santa Cruz, Laguna'},{status:'Arrived at Delivery Hub',date:'2026-10-30T09:00:00+08:00',location:'Pila, Laguna'}]},
- {tracking:'SHP-DH-ISSUE-102',order_number:'ORD-DH-2102',status:'received',total_amount:849,items:[{product_name:'Ceramic Mug Set',variation:'Set of 2',color:'Cream',size:'Medium',quantity:1,product_price:849}],history:[{status:'Picked Up',date:'2026-10-29T10:40:00+08:00',location:'Santa Cruz, Laguna'}]},
- {tracking:'SHP-DH-ISSUE-103',order_number:'ORD-DH-2103',status:'voided',kind:'pickup',total_amount:560,items:[{product_name:'Cotton Oversized Shirt',variation:'Regular Fit',color:'White',size:'Large',quantity:1,product_price:560}],history:[{status:'Seller Pickup Scheduled',date:'2026-10-31T08:00:00+08:00',location:'Poblacion, Pila'},{status:'Pickup Attempt Unsuccessful',date:'2026-10-31T10:15:00+08:00',location:'Poblacion, Pila'}]},
- {tracking:'SHP-DH-ISSUE-104',order_number:'ORD-DH-2104',status:'voided',kind:'return',total_amount:1890,items:[{product_name:'Mechanical Keyboard',variation:'Blue Switch',color:'Gray',size:'Full Size',quantity:1,product_price:1890}],history:[{status:'Return Pickup Scheduled',date:'2026-11-01T09:00:00+08:00',location:'Santa Clara Norte, Pila'},{status:'Return Pickup Unsuccessful',date:'2026-11-01T11:35:00+08:00',location:'Santa Clara Norte, Pila'}]},
- {tracking:'SHP-DH-ISSUE-105',order_number:'ORD-DH-2105',status:'received',total_amount:2399,items:[{product_name:'Portable Desk Fan',variation:'Rechargeable',color:'White',size:'Standard',quantity:1,product_price:2399}],history:[{status:'Received at Hub',date:'2026-11-01T07:50:00+08:00',location:'Pila Delivery Hub'}]}
-].map(p=>({...demoBase,...p,tracking_number:p.tracking,receivedAt:'2026-11-01T08:00:00+08:00'}));
-const demoReports=[
- {id:'DH-DEMO-001',tracking:'SHP-DH-ISSUE-101',type:'Lost Parcel',status:'Reported',at:'2026-10-30T10:20:00+08:00',description:'Parcel could not be located during hub inventory verification.',evidenceName:'inventory-check-demo.jpg',parcelAmount:1299},
- {id:'DH-DEMO-002',tracking:'SHP-DH-ISSUE-102',type:'Damaged Parcel',status:'Reported',at:'2026-10-30T15:40:00+08:00',description:'Package arrived with visible damage to the item.',evidenceName:'damage-photo-demo.jpg',parcelAmount:849},
- {id:'DH-DEMO-003',tracking:'SHP-DH-ISSUE-103',type:'Failed Seller Pickup',status:'Awaiting Reschedule',at:'2026-10-31T10:15:00+08:00',description:'Seller was unavailable at the agreed pickup time.',isFailedPickup:true,pickupKind:'pickup',barangay:'Poblacion',scheduledDate:'2026-10-31T08:00:00+08:00',failureReason:'Seller unavailable',assignedRider:'Rico Santos',rescheduleRequired:true},
- {id:'DH-DEMO-004',tracking:'SHP-DH-ISSUE-104',type:'Failed Buyer Return Pickup',status:'Awaiting Reschedule',at:'2026-11-01T11:35:00+08:00',description:'Return package was not ready when the rider arrived.',isFailedPickup:true,pickupKind:'return',barangay:'Santa Clara Norte',scheduledDate:'2026-11-01T09:00:00+08:00',failureReason:'Return item not ready',assignedRider:'Cathy Cruz',rescheduleRequired:true},
- {id:'DH-DEMO-005',tracking:'SHP-DH-ISSUE-105',type:'Damaged Parcel',status:'Reported',at:'2026-11-01T14:05:00+08:00',description:'The parcel was wet and the box seal was broken.',evidenceName:'wet-parcel-demo.jpg',parcelAmount:2399}
-];
+const hubName=@json($hubName);
 let reports=[];
-function loadReports(){
- const explicit=parseJSON(key,[]);
- const scanner=parseJSON(scannerKey,{});
- const parcels=Array.isArray(scanner?.parcels)?scanner.parcels:[];
- const issues=Array.isArray(explicit)?explicit.filter(r=>!r.hubId||!hubId||String(r.hubId)===hubId):[];
- // Failed collection is normally marked voided in the scanner, rather than stored in issueKey.
- // Project it into this disputes list without altering the scanner's original parcel state.
- const failed=parcels.filter(p=>p.status==='voided'&&['pickup','return'].includes(String(p.kind||'').toLowerCase())&&p.rescheduleRequired!==false).map(p=>({
-   id:'DH-FAILED-'+String(p.tracking||p.id),tracking:p.tracking||p.tracking_number,
-   type:p.kind==='return'?'Failed Buyer Return Pickup':'Failed Seller Pickup',
-   description:p.pickupFailureReason||'Pickup unsuccessful; customer must arrange a new pickup date.',
-   evidenceName:'',at:p.voidedAt||p.loadedAt||p.scheduledDate||null,
-   hubId, status:'Awaiting Reschedule',isFailedPickup:true,
-   pickupKind:p.kind,barangay:p.barangay,
-   scheduledDate:p.scheduledDate, failureReason:p.pickupFailureReason,
-   assignedRider:p.courierName,rescheduleRequired:true
- }));
- const unique=new Map();
- [...issues,...failed].forEach(r=>unique.set(String(r.id),r));
- // Only show demo records if the hub has no actual browser-local reports.
- reports=(unique.size?[...unique.values()]:demoReports.map(r=>({...r,isDemo:true}))).sort((a,b)=>Date.parse(b.at||0)-Date.parse(a.at||0));
+async function loadReports(){
+  $('pdRows').innerHTML='<tr><td colspan="4" class="pd-empty">Loading parcel reports…</td></tr>';
+  try{
+    const response=await fetch(@json(route('delivery_hub.api.parcel-disputes.index')),{credentials:'same-origin',headers:{Accept:'application/json'}});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.message||'Unable to load parcel reports.');
+    reports=Array.isArray(result.data?.reports)?result.data.reports:[];
+    render();
+    const openId=new URLSearchParams(location.search).get('report');
+    if(openId&&reports.some(r=>String(r.id)===openId))openReport(openId);
+  }catch(error){
+    $('pdRows').innerHTML=`<tr><td colspan="4" class="pd-empty">${esc(error.message||'Unable to load parcel reports.')}</td></tr>`;
+    $('pdCount').textContent='Could not load reports';
+  }
 }
-loadReports();
 const fmt=v=>{if(!v)return '—';const date=new Date(v);return isNaN(date)?String(v):date.toLocaleString('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'});};
 const initial=new URLSearchParams(location.search).get('tracking');if(initial)$('pdSearch').value=initial;
 // Restore the missing table renderer (removed by an earlier modal/layout edit).
@@ -126,24 +97,7 @@ const section=(title,body)=>`<section class="pt-detail-card"><div class="pt-deta
 const grid=body=>`<div class="pt-fields">${body}</div>`;
 const pair=(label,value)=>`<div class="pt-info-pair"><label>${esc(label)}</label><strong>${esc(value??'—')}</strong></div>`;
 const formatMoney=v=>{if(v===null||v===undefined||v==='')return '—';const n=Number(String(v).replace(/[^0-9.-]/g,''));return Number.isFinite(n)?'₱ '+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'};
-function scannerParcel(tracking){
- try{
-  const state=JSON.parse(localStorage.getItem(scannerKey)||'{}');
-  const p=(state.parcels||[]).find(x=>norm(x.tracking||x.tracking_number)===norm(tracking))||null;
-  if(!p)return demoParcels.find(x=>norm(x.tracking)===norm(tracking))||null;
-  // Keep scanner preview data in sync with the Delivery Hub's account-scoped store.
-  // Demo-only upgrade: the previous scanner seed stored literal '09XX XXX XXXX'.
-  const match=String(p.tracking||'').match(/^SHP-SC-PREVIEW-(10[1-6])$/);
-  if(match && String(p.id||'').startsWith('preview-')){
-   const phones=['09171234561','09181234562','09191234563','09201234564','09211234565','09221234566'];
-   let changed=false;
-   if(/x|\*/i.test(String(p.buyer_phone||''))||!p.buyer_phone){p.buyer_phone=phones[Number(match[1])-101];changed=true;}
-   if(/x|\*/i.test(String(p.seller_phone||''))||!p.seller_phone){p.seller_phone='09175678901';changed=true;}
-   if(changed)localStorage.setItem(scannerKey,JSON.stringify(state));
-  }
-  return p;
- }catch{return null;}
-}
+function scannerParcel(tracking){return reports.find(r=>norm(r.tracking)===norm(tracking))?.parcel||null;}
 function partyInfo(p,label){
  const b=label.toLowerCase();
  const contact=[p[b+'_phone'],p[b+'_contact_number'],p[b+'_contact_no'],p[b+'_mobile_number'],p[b+'_mobile'],p[b+'_phone_number'],p[b+'_contact'],p[b+'Phone'],p[b+'ContactNumber'],p[b]?.phone,p[b]?.contact_number,p[b]?.mobile_number].find(v=>v!==null&&v!==undefined&&String(v).trim()!=='');
@@ -156,7 +110,6 @@ function reportAccountability(r){
  return section('Accountability & Seller Compensation',`<div class="pd-accountability-summary">${grid(field('Responsible Party','Logistics Partner')+field('Resolution','Full Parcel Value Reimbursement to Seller')+field('Parcel Value',formatMoney(a.parcelAmount))+field('Amount Owed to Seller',formatMoney(a.compensation))+field('Settlement Status',a.status||'Reimbursed · UI Simulation')+field('Reimbursed At (Demo)',fmt(a.simulatedReimbursedAt))+field('Accountability Recorded At',fmt(a.at))+field('Notes',a.notes||'Automatically assigned after the parcel issue was reported.',true))}</div><p class="pd-details-note">The reimbursement date/time is simulated for UI preview only. No real money has been transferred or credited to the seller.</p>`);
 }
 function applyAutomaticAccountability(){
- let changed=false;
  for(const r of reports){
   const issue=norm(r.type||r.issueType||r.issue_type).replace(/[-_]/g,' ');
   if(!(issue.includes('lost')||issue.includes('damaged')) || r.accountability?.autoVersion===3)continue;
@@ -164,9 +117,8 @@ function applyAutomaticAccountability(){
   const value=Number(p?.total_amount ?? r.parcelAmount ?? r.total_amount ?? NaN);
   const amount=Number.isFinite(value)&&value>0?value.toFixed(2):'';
   r.accountability={party:'Logistics Partner',resolution:'Full Parcel Value Reimbursement to Seller',parcelAmount:amount,compensation:amount,notes:'Automatically assessed when a '+issue+' report was recorded.',at:r.at||new Date().toISOString(),simulatedReimbursedAt:amount?(r.accountability?.simulatedReimbursedAt||r.at||new Date().toISOString()):null,status:amount?'Reimbursed · UI Simulation':'Amount Verification Required · Demo',autoVersion:3};
-  changed=true;
  }
- if(changed && !reports.some(r=>r.isDemo)){try{localStorage.setItem(key,JSON.stringify(reports.filter(r=>!r.isFailedPickup)));}catch(error){console.warn('Unable to save demo accountability:',error);}}
+ 
 }
 
 function trackingProgress(p){
@@ -175,10 +127,9 @@ function trackingProgress(p){
  const icons=labels.map((_,i)=>i===0?(stage>0?'in-transit-check.png':'processing.png'):i===1?(stage>1?'in-transit-check.png':stage===1?'in-transit-blue.png':'in-transit-gray.png'):i===2?(stage>2?'delivered-check.png':stage===2?'out-for-delivery.png':'out-for-delivery-gray.png'):(stage===3?'delivered-check.png':'delivered-gray.png'));
  return `<div class="pt-shipping-progress" role="img" aria-label="Tracking Progress">${labels.map((label,i)=>`<div class="pt-progress-item"><img src="/icons/seller/shipping-status/${icons[i]}" alt=""><small>${label}</small></div>${i<labels.length-1?`<span class="pt-progress-line ${i<stage?'done':''}"></span>`:''}`).join('')}</div>`;
 }
-let activeReportId=null;
 function openReport(id){
  const r=reports.find(x=>String(x.id)===String(id));if(!r)return;
- applyAutomaticAccountability();activeReportId=r.id;const p=scannerParcel(r.tracking);
+ applyAutomaticAccountability();const p=scannerParcel(r.tracking);
  // Same detail-card order, field grid, paired buyer/seller columns and progress icons as Scanner.
  let html=section('Report Information',grid(field('Report ID',r.id)+field('Tracking Number',r.tracking)+field('Issue Type',r.type)+field('Report Status',r.status)+field('Reported At',fmt(r.at))+field('Description',r.description,true)+field('Evidence Filename',r.evidenceName||'No evidence attached',true)));
  if(p){
@@ -203,6 +154,6 @@ function openReport(id){
 function close(){$('pdModal').hidden=true;document.body.classList.remove('pd-modal-open');}
 $('pdRows').addEventListener('click',e=>{const row=e.target.closest('[data-id]');if(row)openReport(row.dataset.id)});$('pdRows').addEventListener('keydown',e=>{if(!['Enter',' '].includes(e.key))return;const row=e.target.closest('[data-id]');if(row){e.preventDefault();openReport(row.dataset.id)}});
 $('pdSearch').addEventListener('input',render);
-$('pdModalX').addEventListener('click',close);$('pdModalClose').addEventListener('click',close);$('pdModal').addEventListener('click',e=>{if(e.target===$('pdModal'))close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});window.addEventListener('storage',e=>{if(e.key===key||e.key===scannerKey){loadReports();applyAutomaticAccountability();render()}});window.addEventListener('pageshow',()=>{loadReports();applyAutomaticAccountability();render()});applyAutomaticAccountability();render();const openId=new URLSearchParams(location.search).get('report');if(openId&&reports.some(r=>String(r.id)===openId))openReport(openId);
+$('pdModalX').addEventListener('click',close);$('pdModalClose').addEventListener('click',close);$('pdModal').addEventListener('click',e=>{if(e.target===$('pdModal'))close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});window.addEventListener('pageshow',event=>{if(event.persisted)loadReports()});loadReports();
 });
 </script></body></html>

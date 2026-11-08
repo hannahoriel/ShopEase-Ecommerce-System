@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Http\Middleware\ShopEaseLoading::class,
         \App\Http\Middleware\AdminModuleAccess::class,
     ]);
+    $middleware->api(append: [
+        \App\Http\Middleware\AdminModuleAccess::class,
+    ]);
     $middleware->alias([
         'role' => \App\Http\Middleware\EnsureUserHasRole::class,
     ]);

@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\AdminConversation;
 use App\Models\Admin\AdminMessage;
 use App\Models\Admin\Complaint;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Logistics\Logistics;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\LogisticsNotificationService;
+use App\Services\SellerNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -255,6 +258,51 @@ class MessagesController extends Controller
             'attachment_size' => $attachment?->getSize(),
         ]);
         $conversation->touch();
+
+        if ($conversation->category === AdminConversation::CATEGORY_LOGISTICS
+            && $conversation->user?->role === User::ROLE_LOGISTICS
+            && (int) $conversation->user_id !== (int) $request->user()->id) {
+            app(LogisticsNotificationService::class)->send(
+                $conversation->user,
+                'messages',
+                'New admin message',
+                'ShopEase administration sent you a new message.',
+                '/logistics/messages',
+            );
+        }
+
+        if ($conversation->category === AdminConversation::CATEGORY_SELLERS
+            && $conversation->user?->role === User::ROLE_SELLER
+            && (int) $conversation->user_id !== (int) $request->user()->id) {
+            app(SellerNotificationService::class)->send(
+                $conversation->user,
+                'messages',
+                'New admin message',
+                'ShopEase administration sent you a new message.',
+                '/seller/messages',
+            );
+        }
+
+        if ($conversation->user?->role === User::ROLE_BUYER) {
+            if ($conversation->category === AdminConversation::CATEGORY_BUYERS) {
+                BuyerNotification::createForBuyer(
+                    $conversation->user,
+                    'message',
+                    'New ShopEase support message',
+                    'ShopEase administration sent you a new message.',
+                    ['url' => '/buyer/my-purchases?tab=messages'],
+                );
+            } elseif ($conversation->category === AdminConversation::CATEGORY_COMPLAINTS) {
+                BuyerNotification::createForBuyer(
+                    $conversation->user,
+                    'complaint_update',
+                    'Complaint update',
+                    'ShopEase administration sent an update about your complaint.',
+                    ['complaint_id' => $conversation->complaint_id, 'url' => '/buyer/my-purchases?tab=complaints'],
+                    $conversation->complaint?->order,
+                );
+            }
+        }
 
         return response()->json([
             'data' => $this->serializeMessage($message->load('sender:id,name,role'), $request->user()),

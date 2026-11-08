@@ -4,9 +4,12 @@ namespace App\Models\Buyer;
 
 use App\Models\Admin\Order;
 use App\Models\User;
+use App\Services\BuyerNotificationPreferences;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class BuyerNotification extends Model
@@ -34,20 +37,71 @@ class BuyerNotification extends Model
         string $title,
         string $message,
         array $data = []
-    ): self {
-        return self::query()->create([
-            'buyer_id' => $order->buyer_id,
-            'order_id' => $order->id,
+    ): ?self {
+        $buyer = User::query()->find($order->buyer_id);
+        if (! $buyer || $buyer->role !== User::ROLE_BUYER) {
+            return null;
+        }
+
+        return self::persistForBuyer($buyer, $type, $title, $message, $data, $order);
+    }
+
+    public static function createForBuyer(
+        User $buyer,
+        string $type,
+        string $title,
+        string $message,
+        array $data = [],
+        ?Order $order = null,
+    ): ?self {
+        if ($buyer->role !== User::ROLE_BUYER) {
+            return null;
+        }
+
+        return self::persistForBuyer($buyer, $type, $title, $message, $data, $order);
+    }
+
+    private static function persistForBuyer(
+        User $buyer,
+        string $type,
+        string $title,
+        string $message,
+        array $data,
+        ?Order $order = null,
+    ): ?self {
+        $preferences = app(BuyerNotificationPreferences::class);
+        if (! $preferences->allows($buyer, $type, $data)) {
+            return null;
+        }
+
+        $notification = self::query()->create([
+            'buyer_id' => $buyer->id,
+            'order_id' => $order?->id,
             'type' => $type,
             'title' => $title,
             'message' => $message,
-            'data' => array_merge([
-                'order_number' => $order->order_number,
-            ], $data),
+            'data' => array_filter([
+                'order_number' => $order?->order_number,
+                ...$data,
+            ], fn ($value) => $value !== null),
         ]);
+
+        if (($preferences->forUser($buyer)['email_alerts'] ?? false) && filled($buyer->email)) {
+            DB::afterCommit(function () use ($buyer, $title, $message): void {
+                try {
+                    Mail::raw($title."\n\n".$message, function ($mail) use ($buyer): void {
+                        $mail->to($buyer->email)->subject('ShopEase account notification');
+                    });
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            });
+        }
+
+        return $notification;
     }
 
-    public static function createForOrderStatus(Order $order, string $status): self
+    public static function createForOrderStatus(Order $order, string $status): ?self
     {
         $title = match ($status) {
             'pending', 'new' => 'Order received',

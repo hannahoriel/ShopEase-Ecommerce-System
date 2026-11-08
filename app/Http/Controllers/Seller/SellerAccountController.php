@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seller\Seller;
+use App\Models\UserAccountChangeRequest;
 use App\Models\Admin\Registration;
 use App\Models\User;
 use App\Services\SellerNotificationPreferences;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use App\Notifications\SellerCategoryChangeRequested;
 
@@ -71,6 +73,8 @@ class SellerAccountController extends Controller
             'validIdAvailable' => !empty($seller->upload_id),
             'permitAvailable' => !empty($seller->upload_business_permit),
             'pendingCategoryRequest' => $pending,
+            'pendingInformationRequest' => UserAccountChangeRequest::query()
+                ->where('user_id', $request->user()->id)->where('status', 'pending')->latest()->first(),
             'approvedPermits' => DB::table('seller_business_permits')->where('seller_id', $seller->id)->orderBy('id')->get()->all(),
             'pendingDocumentRequests' => DB::table('seller_document_change_requests')->where('seller_id', $seller->id)->where('status','pending')->pluck('id','request_type')->all(),
             'notificationPreferences' => app(SellerNotificationPreferences::class)->forUser($request->user()),
@@ -163,6 +167,81 @@ class SellerAccountController extends Controller
             Storage::disk('public')->delete($oldProfilePhotoPath);
         }
         return redirect()->route('seller.account')->with('success', 'Your profile information has been updated successfully.');
+    }
+
+    public function requestInformationChange(Request $request)
+    {
+        $seller = $this->seller($request);
+        $labels = [
+            'first_name' => 'First Name', 'last_name' => 'Last Name', 'middle_initial' => 'Middle Name',
+            'sex' => 'Sex', 'contact_no' => 'Contact Number', 'birthday' => 'Birthday',
+            'province' => 'Province', 'municipality' => 'Municipality', 'barangay' => 'Barangay',
+            'zip_code' => 'Zip Code', 'street' => 'Street', 'house_number' => 'House Number',
+            'building' => 'Building', 'subdivision' => 'Subdivision',
+        ];
+        $changes = $request->validate([
+            'changes' => ['required', 'array', 'min:1', 'max:14'],
+            'changes.*.name' => ['required', 'distinct', Rule::in(array_keys($labels))],
+            'changes.*.after' => ['present', 'nullable', 'string', 'max:255'],
+        ])['changes'];
+
+        $fieldRules = [
+            'first_name' => ['required', 'string', 'max:150'],
+            'last_name' => ['required', 'string', 'max:150'],
+            'middle_initial' => ['nullable', 'string', 'max:150'],
+            'sex' => ['required', Rule::in(['Male', 'Female', 'Prefer not to say'])],
+            'contact_no' => ['required', 'string', 'max:30'],
+            'birthday' => ['required', 'date', 'before:today'],
+            'province' => ['required', 'string', 'max:150'],
+            'municipality' => ['required', 'string', 'max:150'],
+            'barangay' => ['required', 'string', 'max:150'],
+            'zip_code' => ['required', 'string', 'max:20'],
+            'street' => ['nullable', 'string', 'max:150'],
+            'house_number' => ['nullable', 'string', 'max:80'],
+            'building' => ['nullable', 'string', 'max:150'],
+            'subdivision' => ['nullable', 'string', 'max:150'],
+        ];
+
+        $requested = [];
+        foreach ($changes as $change) {
+            $field = $change['name'];
+            $after = Validator::make(['value' => $change['after']], ['value' => $fieldRules[$field]])->validate()['value'];
+            $before = $field === 'birthday'
+                ? $seller->birthday?->format('Y-m-d')
+                : $seller->{$field};
+            if ((string) ($before ?? '') === (string) ($after ?? '')) continue;
+            $requested[] = [
+                'name' => $field,
+                'field' => $labels[$field],
+                'before' => $before,
+                'after' => $after,
+            ];
+        }
+
+        if ($requested === []) {
+            return response()->json(['message' => 'No account information changes were submitted.'], 422);
+        }
+
+        $pendingExists = UserAccountChangeRequest::query()
+            ->where('user_id', $request->user()->id)->where('status', 'pending')->exists();
+        if ($pendingExists) {
+            return response()->json(['message' => 'You already have an account information request awaiting admin review.'], 422);
+        }
+
+        $changeRequest = UserAccountChangeRequest::query()->create([
+            'user_id' => $request->user()->id,
+            'requested_data' => $requested,
+            'status' => 'pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Your account information change request was submitted for admin approval.',
+            'data' => [
+                'id' => $changeRequest->id,
+                'created_at' => $changeRequest->created_at,
+                'changes' => $changeRequest->requested_data,
+            ],
+        ], 201);
     }
 
     public function requestCategoryChange(Request $request)

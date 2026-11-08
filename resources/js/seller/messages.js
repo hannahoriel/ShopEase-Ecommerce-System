@@ -90,8 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setCounts(payload) {
         Object.assign(counts, payload.counts || {});
         Object.assign(unreadCounts, payload.unread || {});
-        buyerTabCount.textContent = unreadCounts.buyers || counts.buyers;
-        complaintTabCount.textContent = unreadCounts.complaints || counts.complaints;
+        buyerTabCount.textContent = unreadCounts.buyers ?? counts.buyers;
+        complaintTabCount.textContent = unreadCounts.complaints ?? counts.complaints;
     }
 
     function renderThreads() {

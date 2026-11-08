@@ -5,7 +5,6 @@
   const content = document.getElementById('ar-report-content');
   const message = document.getElementById('ar-message');
   const exportLink = document.getElementById('ar-export');
-  const preview = root.dataset.preview === '1';
   const formatMoney = value => '₱' + Number(value).toLocaleString('en-PH', {maximumFractionDigits:0});
   let currentRequest = null;
   let lastChartWidth = 0;
@@ -199,38 +198,16 @@
     if (currentRequest) currentRequest.abort();
     const controller = new AbortController(); currentRequest = controller;
     message.hidden = true; content.classList.add('ar-loading');
-    const params = new URLSearchParams({from,to,preview: preview ? '1' : '0'});
-    if (preview) {
-      // The sample values live in the Blade; no request or controller changes are needed.
-      const caption = content.querySelector('.ar-section-caption span');
-      if (caption) {
-        const pretty = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});
-        caption.textContent = `${pretty(from)} — ${pretty(to)}`;
-      }
-      const chart = document.getElementById('ar-trend-chart');
-      if (chart) {
-        const sales = [54620,68240,71350,59800,95270,110400,73360,98850,120500,101900,86900,96520,113600,133250];
-        const days = Math.max(1, Math.round((new Date(to+'T12:00:00')-new Date(from+'T12:00:00'))/86400000)+1);
-        const n = Math.min(14,days);
-        const trend = Array.from({length:n},(_,i)=>{
-          const day = new Date(from+'T12:00:00');
-          day.setDate(day.getDate()+Math.round(i*(days-1)/Math.max(1,n-1)));
-          return {label:day.toLocaleDateString('en-US',{month:'short',day:'2-digit'}), sales:sales[i]};
-        });
-        chart.dataset.trend = JSON.stringify(trend);
-      }
-      window.history.replaceState(null,'',`${root.dataset.url}?${params.toString()}`);
-      drawChart();
-      content.classList.remove('ar-loading');
-      currentRequest=null;
-      return;
-    }
+    const params = new URLSearchParams({from,to});
     try {
-      const response = await fetch(root.dataset.url + '?' + params, {headers:{'X-Reports-Partial':'1','Accept':'text/html'},credentials:'same-origin',signal:controller.signal});
-      if (!response.ok) throw new Error(response.status === 422 ? 'Invalid range. Maximum 366 days, and no future dates.' : 'Unable to load report data.');
-      const html = await response.text();
+      const response = await fetch(root.dataset.apiUrl + '?' + params, {headers:{'Accept':'application/json'},credentials:'same-origin',signal:controller.signal});
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(response.status === 422 ? (error.message || 'Invalid range. Maximum 366 days, and no future dates.') : (error.message || 'Unable to load report data.'));
+      }
+      const payload = await response.json();
       if (currentRequest !== controller) return;
-      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const doc = new DOMParser().parseFromString(payload.html || '', 'text/html');
       const updatedContent = doc.getElementById('ar-report-content');
       if (!updatedContent) throw new Error('Report content is missing from the response.');
       content.innerHTML = updatedContent.innerHTML;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\ComplaintUpdate;
+use App\Models\Buyer\BuyerNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -90,6 +91,17 @@ class ComplaintController extends Controller
         });
 
         $complaint->refresh();
+
+        if ($update && $complaint->user) {
+            BuyerNotification::createForBuyer(
+                $complaint->user,
+                'complaint_update',
+                'Complaint status updated',
+                $update->message,
+                ['complaint_id' => $complaint->id, 'url' => '/buyer/my-purchases?tab=complaints'],
+                $complaint->order,
+            );
+        }
 
         return response()->json([
             'data' => [
