@@ -53,7 +53,11 @@ Route::post('/parcel/scan/{token}', [ParcelScanController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('parcel.scan.store');
 
-Route::get('/auth/login', function () {
+Route::get('/auth/login', function (Request $request) {
+
+    if (! $request->boolean('modal') && $request->header('Sec-Fetch-Dest') !== 'iframe') {
+        return redirect()->route('landing.page', ['auth' => 'login']);
+    }
 
     return view(
         'auth.login'
@@ -2551,7 +2555,7 @@ Route::middleware(['auth', 'role:delivery_hub'])
         Route::get('/dashboard/data', [\App\Http\Controllers\Api\Logistics\DeliveryHubDashboardController::class, 'index'])->name('dashboard.data');
         Route::get('/rider-registrations', [\App\Http\Controllers\Api\Logistics\DeliveryHubRiderRegistrationController::class, 'page'])->name('rider-registrations');
         Route::get('/scanners', $hubPage('scanners'))->name('scanners');
-        Route::get('/parcel-tracking', $hubPage('parcel-tracking'))->name('parcel-tracking');
+        Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelTrackingController::class, 'page'])->name('parcel-tracking');
         Route::get('/parcel-disputes', $hubPage('parcel-disputes'))->name('parcel-disputes');
         Route::get('/vehicle-drivers', $hubPage('vehicle-drivers'))->name('vehicle-drivers');
         Route::get('/finance', $hubPage('finance'))->name('finance');
@@ -2617,3 +2621,9 @@ Route::get('/seller/wallet', [\App\Http\Controllers\Seller\WalletController::cla
 Route::view('/logistics/reports', 'pages.logistics.reports')
     ->middleware(['auth', 'role:logistics'])
     ->name('logistics.reports');
+
+Route::middleware(['auth', 'role:logistics'])->prefix('logistics/notifications')->name('logistics.notifications')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Logistics\NotificationController::class, 'index']);
+    Route::post('/read-all', [\App\Http\Controllers\Logistics\NotificationController::class, 'readAll'])->name('.read-all');
+    Route::post('/{notification}/read', [\App\Http\Controllers\Logistics\NotificationController::class, 'read'])->name('.read');
+});
