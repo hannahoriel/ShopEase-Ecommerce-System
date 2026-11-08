@@ -12,7 +12,7 @@
         'resources/js/components/dashboard-announcement-carousel.js',
     ])
 </head>
-<body class="bg-cream font-sans antialiased">
+<body class="bg-cream font-sans antialiased {{ data_get(request()->attributes->get('adminModuleAccess', []), 'readOnly') ? 'admin-module-read-only' : '' }}">
     <div class="flex min-h-screen">
         @include('components.admin.sidebar')
         <div class="flex-1 flex flex-col">

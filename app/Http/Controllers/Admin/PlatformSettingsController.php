@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Announcement;
 use App\Models\Admin\PlatformPolicy;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\User;
+use App\Services\LogisticsNotificationService;
+use App\Services\SellerNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,6 +74,12 @@ class PlatformSettingsController extends Controller
                 : null,
         ]);
 
+        if (! $isScheduled) {
+            $this->notifyLogisticsAnnouncement($announcement);
+            $this->notifySellerAnnouncement($announcement);
+            $this->notifyBuyerAnnouncement($announcement);
+        }
+
         return response()->json(['announcement' => $this->announcementData($announcement)], 201);
     }
 
@@ -80,6 +89,7 @@ class PlatformSettingsController extends Controller
         $publishAt = $this->resolvePublishTime($data);
         $this->ensureValidSchedule($data, $publishAt);
         $isScheduled = $publishAt->isFuture();
+        $wasPublished = $announcement->is_active && $announcement->status === 'Published';
 
         if ($request->boolean('remove_banner') && $announcement->banner_path) {
             Storage::disk('public')->delete($announcement->banner_path);
@@ -104,6 +114,12 @@ class PlatformSettingsController extends Controller
             'published_at' => $publishAt,
             'is_active' => ! $isScheduled,
         ])->save();
+
+        if (! $isScheduled && ! $wasPublished) {
+            $this->notifyLogisticsAnnouncement($announcement);
+            $this->notifySellerAnnouncement($announcement);
+            $this->notifyBuyerAnnouncement($announcement);
+        }
 
         return response()->json(['announcement' => $this->announcementData($announcement)]);
     }
@@ -224,13 +240,79 @@ class PlatformSettingsController extends Controller
 
     private function publishDueRecords(): void
     {
-        Announcement::where('status', 'Scheduled')
+        $dueAnnouncements = Announcement::where('status', 'Scheduled')
             ->where('published_at', '<=', now())
-            ->update(['status' => 'Published', 'is_active' => true]);
+            ->get();
+
+        foreach ($dueAnnouncements as $announcement) {
+            $announcement->update(['status' => 'Published', 'is_active' => true]);
+            $this->notifyLogisticsAnnouncement($announcement);
+            $this->notifySellerAnnouncement($announcement);
+            $this->notifyBuyerAnnouncement($announcement);
+        }
 
         PlatformPolicy::where('status', 'Scheduled')
             ->where('published_at', '<=', now())
             ->update(['status' => 'Published']);
+    }
+
+    private function notifyLogisticsAnnouncement(Announcement $announcement): void
+    {
+        if (! in_array($announcement->audience, ['All Users', 'Logistics'], true)) {
+            return;
+        }
+
+        User::query()->where('role', User::ROLE_LOGISTICS)->each(function (User $user) use ($announcement): void {
+            app(LogisticsNotificationService::class)->send(
+                $user,
+                'announcements',
+                $announcement->title,
+                $announcement->body,
+                '/logistics/dashboard',
+            );
+        });
+    }
+
+    private function notifySellerAnnouncement(Announcement $announcement): void
+    {
+        if (! in_array($announcement->audience, ['All Users', 'Sellers'], true)) {
+            return;
+        }
+
+        $preference = str_contains(strtolower((string) $announcement->type), 'promotion')
+            ? 'promotions'
+            : 'announcements';
+
+        User::query()->where('role', User::ROLE_SELLER)->each(function (User $user) use ($announcement, $preference): void {
+            app(SellerNotificationService::class)->send(
+                $user,
+                $preference,
+                $announcement->title,
+                $announcement->body,
+                '/seller/notifications',
+            );
+        });
+    }
+
+    private function notifyBuyerAnnouncement(Announcement $announcement): void
+    {
+        if (! in_array($announcement->audience, ['All Users', 'Buyers'], true)) {
+            return;
+        }
+
+        $type = str_contains(strtolower((string) $announcement->type), 'promotion')
+            ? 'promotion'
+            : 'announcement';
+
+        User::query()->where('role', User::ROLE_BUYER)->each(function (User $user) use ($announcement, $type): void {
+            BuyerNotification::createForBuyer(
+                $user,
+                $type,
+                $announcement->title,
+                $announcement->body,
+                ['url' => '/buyer/dashboard'],
+            );
+        });
     }
 
     private function announcementData(Announcement $announcement): array

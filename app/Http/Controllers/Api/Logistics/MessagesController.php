@@ -10,6 +10,7 @@ use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsConversation;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\User;
+use App\Services\LogisticsNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -78,18 +79,125 @@ class MessagesController extends Controller
             return response()->json(['data' => $contacts->values()]);
         }
 
+        if ($user->role === User::ROLE_SORTING_CENTER) {
+            $branch = LogisticsBranch::query()
+                ->where('user_id', $user->id)
+                ->whereNull('archived_at')
+                ->with(['logistics.user:id,name,email,role', 'deliveryHubs' => fn ($query) => $query
+                    ->whereNull('archived_at')->where('status', 'active')->with('user:id,name,email,role')])
+                ->firstOrFail();
+            $logistics = $branch->logistics;
+            $contacts = collect();
+
+            $admin = User::query()->where('role', User::ROLE_ADMIN)->orderBy('id')->first();
+            if ($admin) {
+                $adminConversation = AdminConversation::query()
+                    ->where('category', AdminConversation::CATEGORY_LOGISTICS)
+                    ->where('user_id', $user->id)
+                    ->with(['messages.sender:id,name,role'])
+                    ->first();
+                $contacts->push([...$this->adminContact($admin, $adminConversation, $user), 'api_type' => 'admin']);
+            }
+
+            if ($logistics && $logistics->user) {
+                $conversation = LogisticsConversation::query()
+                    ->where('logistics_id', $logistics->id)
+                    ->where('contact_user_id', $user->id)
+                    ->with(['messages.sender:id,name,role'])
+                    ->first();
+                $companyContact = $this->facilityContact(
+                    'sorting', $branch->id, $logistics->user,
+                    $logistics->business_name ?: $logistics->user->name,
+                    'Logistics Provider', $logistics->user->email ?? '', $conversation, $user
+                );
+                $companyContact['key'] = 'logistics:'.$logistics->user->id;
+                $companyContact['contact_id'] = $logistics->user->id;
+                $companyContact['api_type'] = 'sorting';
+                $contacts->push($companyContact);
+
+                foreach ($branch->deliveryHubs as $hub) {
+                    if (! $hub->user || $hub->user->role !== User::ROLE_DELIVERY_HUB) {
+                        continue;
+                    }
+                    $hubConversation = LogisticsConversation::query()
+                        ->where('logistics_id', $logistics->id)
+                        ->where('contact_user_id', $hub->user_id)
+                        ->with(['messages.sender:id,name,role'])
+                        ->first();
+                    $hubContact = $this->facilityContact(
+                        'delivery', $hub->id, $hub->user, $hub->hub_name,
+                        $branch->name, collect([$hub->municipality, $hub->province])->filter()->join(' · '),
+                        $hubConversation, $user, $branch->id
+                    );
+                    $hubContact['key'] = 'delivery:'.$hub->user_id;
+                    $hubContact['contact_id'] = $hub->user_id;
+                    $hubContact['api_type'] = 'delivery';
+                    $contacts->push($hubContact);
+                }
+            }
+
+            return response()->json(['data' => $contacts->values()]);
+        }
+
+        if ($user->role === User::ROLE_DELIVERY_HUB) {
+            $hub = LogisticsDeliveryHub::query()
+                ->where('user_id', $user->id)->whereNull('archived_at')->where('status', 'active')
+                ->with(['logisticsBranch.user:id,name,email,role', 'logisticsBranch.logistics.user:id,name,email,role'])
+                ->firstOrFail();
+            $branch = $hub->logisticsBranch;
+            $logistics = $branch?->logistics;
+            abort_unless($branch && $logistics, 404, 'This delivery hub is not linked to a sorting center and logistics provider.');
+
+            $conversation = LogisticsConversation::query()
+                ->where('logistics_id', $logistics->id)->where('contact_user_id', $user->id)
+                ->with(['messages.sender:id,name,role'])->first();
+            $contacts = collect();
+
+            $admin = User::query()->where('role', User::ROLE_ADMIN)->orderBy('id')->first();
+            if ($admin) {
+                $adminConversation = AdminConversation::query()
+                    ->where('category', AdminConversation::CATEGORY_LOGISTICS)
+                    ->where('user_id', $user->id)
+                    ->with(['messages.sender:id,name,role'])
+                    ->first();
+                $contacts->push([...$this->adminContact($admin, $adminConversation, $user), 'api_type' => 'admin']);
+            }
+
+            if ($branch->user) {
+                $contact = $this->facilityContact(
+                    'sorting', $branch->id, $branch->user, $branch->name,
+                    'Assigned Sorting Center', collect([$branch->province, $branch->municipality])->filter()->join(' · '),
+                    $conversation, $user, $branch->id
+                );
+                $contact['key'] = 'sorting:'.$branch->id;
+                $contact['contact_id'] = $branch->user_id;
+                $contact['api_type'] = 'sorting';
+                $contacts->push($contact);
+            }
+
+            if ($logistics->user) {
+                $contact = $this->facilityContact(
+                    'logistics', $logistics->id, $logistics->user,
+                    $logistics->business_name ?: $logistics->user->name,
+                    'Parent Logistics Provider', $logistics->user->email ?? '',
+                    $conversation, $user, $branch->id
+                );
+                $contact['key'] = 'logistics:'.$logistics->id;
+                $contact['contact_id'] = $logistics->user_id;
+                $contact['api_type'] = 'logistics';
+                $contacts->push($contact);
+            }
+
+            return response()->json(['data' => $contacts->values()]);
+        }
+
         $conversationQuery = LogisticsConversation::query()
             ->where('contact_user_id', $user->id)
             ->with(['logistics.user:id,name,email', 'messages.sender:id,name,role'])
             ->withCount(['messages as unread_count' => fn (Builder $messages) => $messages
-                ->whereNull('read_at')->where('sender_id', '!=', $user->id)]);
+                ->whereNull('read_at')->where('sender_id', '!=', $user->id)
+                ->whereDoesntHave('reads', fn (Builder $reads) => $reads->where('user_id', $user->id))]);
         $conversations = $conversationQuery->orderByDesc('updated_at')->get();
-        $conversations->each(function (LogisticsConversation $conversation) use ($user): void {
-            $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
-            $conversation->unsetRelation('messages')->load('messages.sender:id,name,role');
-            $conversation->unread_count = 0;
-        });
-
         return response()->json(['data' => $conversations->map(fn (LogisticsConversation $conversation) => [
             'key' => $conversation->contact_type.':'.$conversation->id,
             'type' => $conversation->contact_type,
@@ -105,13 +213,13 @@ class MessagesController extends Controller
     public function thread(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'type' => ['required', Rule::in(['sorting', 'delivery', 'admin'])],
+            'type' => ['required', Rule::in(['sorting', 'delivery', 'logistics', 'admin'])],
             'contact_id' => ['required', 'integer'],
         ]);
         $user = $request->user();
 
         if ($validated['type'] === 'admin') {
-            abort_unless($user->role === User::ROLE_LOGISTICS, 403);
+            abort_unless(in_array($user->role, [User::ROLE_LOGISTICS, User::ROLE_SORTING_CENTER, User::ROLE_DELIVERY_HUB], true), 403);
             $admin = User::query()->where('role', User::ROLE_ADMIN)->findOrFail($validated['contact_id']);
             $conversation = AdminConversation::query()->firstOrCreate([
                 'category' => AdminConversation::CATEGORY_LOGISTICS,
@@ -128,6 +236,74 @@ class MessagesController extends Controller
             ]]);
         }
 
+        if ($user->role === User::ROLE_SORTING_CENTER) {
+            $branch = LogisticsBranch::query()->where('user_id', $user->id)->whereNull('archived_at')->with('logistics')->firstOrFail();
+            $logistics = $branch->logistics;
+            abort_unless($logistics, 404, 'The logistics provider for this sorting center could not be found.');
+
+            if ($validated['type'] === 'sorting') {
+                abort_unless((int) $validated['contact_id'] === (int) $logistics->user_id, 403);
+                $conversation = LogisticsConversation::query()->firstOrCreate([
+                    'logistics_id' => $logistics->id,
+                    'contact_user_id' => $user->id,
+                ], [
+                    'contact_type' => 'sorting',
+                    'logistics_branch_id' => $branch->id,
+                ]);
+            } else {
+                $hub = LogisticsDeliveryHub::query()
+                    ->where('logistics_branch_id', $branch->id)
+                    ->where('user_id', $validated['contact_id'])
+                    ->whereNull('archived_at')->where('status', 'active')
+                    ->with('user')->firstOrFail();
+                abort_unless($hub->user?->role === User::ROLE_DELIVERY_HUB, 403);
+                $conversation = LogisticsConversation::query()->firstOrCreate([
+                    'logistics_id' => $logistics->id,
+                    'contact_user_id' => $hub->user_id,
+                ], [
+                    'contact_type' => 'delivery',
+                    'logistics_branch_id' => $branch->id,
+                    'logistics_delivery_hub_id' => $hub->id,
+                ]);
+            }
+
+            $this->markFacilityMessagesRead($conversation, $user);
+            $conversation->load('messages.sender:id,name,role');
+            return response()->json(['data' => [
+                'conversation_id' => $conversation->id,
+                'messages' => $conversation->messages->map(fn ($message) => $this->serializeMessage($message, $user))->all(),
+                'contact_id' => $validated['contact_id'],
+            ]]);
+        }
+
+        if ($user->role === User::ROLE_DELIVERY_HUB) {
+            abort_unless(in_array($validated['type'], ['sorting', 'logistics'], true), 403);
+            $hub = LogisticsDeliveryHub::query()
+                ->where('user_id', $user->id)->whereNull('archived_at')->where('status', 'active')
+                ->with(['logisticsBranch.user', 'logisticsBranch.logistics'])->firstOrFail();
+            $branch = $hub->logisticsBranch;
+            $logistics = $branch?->logistics;
+            abort_unless($branch && $logistics, 404);
+            $recipientId = $validated['type'] === 'sorting' ? $branch->user_id : $logistics->user_id;
+            abort_unless($recipientId && (int) $recipientId === (int) $validated['contact_id'], 403);
+
+            $conversation = LogisticsConversation::query()->firstOrCreate([
+                'logistics_id' => $logistics->id,
+                'contact_user_id' => $user->id,
+            ], [
+                'contact_type' => 'delivery',
+                'logistics_branch_id' => $branch->id,
+                'logistics_delivery_hub_id' => $hub->id,
+            ]);
+            $this->markFacilityMessagesRead($conversation, $user);
+            $conversation->load('messages.sender:id,name,role');
+            return response()->json(['data' => [
+                'conversation_id' => $conversation->id,
+                'messages' => $conversation->messages->map(fn ($message) => $this->serializeMessage($message, $user))->all(),
+                'contact_id' => $validated['contact_id'],
+            ]]);
+        }
+
         abort_unless($user->role === User::ROLE_LOGISTICS, 403);
         $logistics = Logistics::query()->where('user_id', $user->id)->firstOrFail();
         $contact = $this->findOwnedFacility($validated['type'], $validated['contact_id'], $logistics->id);
@@ -136,7 +312,7 @@ class MessagesController extends Controller
             ->with(['messages.sender:id,name,role'])->first();
 
         if ($conversation) {
-            $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
+            $this->markFacilityMessagesRead($conversation, $user);
             $conversation->unsetRelation('messages')->load('messages.sender:id,name,role');
         }
 
@@ -163,7 +339,7 @@ class MessagesController extends Controller
         $user = $request->user();
 
         if ($validated['type'] === 'admin') {
-            abort_unless($user->role === User::ROLE_LOGISTICS, 403);
+            abort_unless(in_array($user->role, [User::ROLE_LOGISTICS, User::ROLE_SORTING_CENTER, User::ROLE_DELIVERY_HUB], true), 403);
             User::query()->where('role', User::ROLE_ADMIN)->findOrFail($validated['contact_id']);
             $conversation = AdminConversation::query()->firstOrCreate([
                 'category' => AdminConversation::CATEGORY_LOGISTICS,
@@ -197,9 +373,7 @@ class MessagesController extends Controller
             ]);
         } else {
             $conversation = LogisticsConversation::query()->findOrFail($validated['contact_id']);
-            $expectedType = $user->role === User::ROLE_SORTING_CENTER ? 'sorting' : 'delivery';
-            abort_unless((int) $conversation->contact_user_id === (int) $user->id
-                && $conversation->contact_type === $expectedType, 403);
+            $this->authorizeFacilityConversation($user, $conversation, $validated['type']);
         }
 
         $message = DB::transaction(function () use ($conversation, $user, $body, $file) {
@@ -211,6 +385,20 @@ class MessagesController extends Controller
             $conversation->touch();
             return $message;
         });
+
+        // Facility replies notify their parent Logistics account when the Messages setting is enabled.
+        if ($user->role !== User::ROLE_LOGISTICS) {
+            $recipient = $conversation->logistics()->with('user')->first()?->user;
+            if ($recipient) {
+                app(LogisticsNotificationService::class)->send(
+                    $recipient,
+                    'messages',
+                    'New logistics message',
+                    "{$user->name} sent you a new message.",
+                    '/logistics/messages',
+                );
+            }
+        }
 
         return response()->json(['data' => [
             'conversation_id' => $conversation->id,
@@ -224,11 +412,9 @@ class MessagesController extends Controller
         if ($user->role === User::ROLE_LOGISTICS) {
             abort_unless((int) $conversation->logistics?->user_id === (int) $user->id, 403);
         } else {
-            $expectedType = $user->role === User::ROLE_SORTING_CENTER ? 'sorting' : 'delivery';
-            abort_unless((int) $conversation->contact_user_id === (int) $user->id
-                && $conversation->contact_type === $expectedType, 403);
+            $this->authorizeFacilityConversation($user, $conversation);
         }
-        $conversation->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->update(['read_at' => now()]);
+        $this->markFacilityMessagesRead($conversation, $user);
         $conversation->load('messages.sender:id,name,role');
 
         return response()->json(['data' => [
@@ -241,7 +427,7 @@ class MessagesController extends Controller
     {
         $user = $request->user();
         if ($type === 'admin') {
-            abort_unless($user->role === User::ROLE_LOGISTICS, 403);
+            abort_unless(in_array($user->role, [User::ROLE_LOGISTICS, User::ROLE_SORTING_CENTER, User::ROLE_DELIVERY_HUB], true), 403);
             $thread = AdminConversation::query()->where('category', AdminConversation::CATEGORY_LOGISTICS)
                 ->where('user_id', $user->id)->findOrFail($conversation);
             $item = AdminMessage::query()->where('conversation_id', $thread->id)->findOrFail($message);
@@ -251,9 +437,7 @@ class MessagesController extends Controller
             if ($user->role === User::ROLE_LOGISTICS) {
                 abort_unless((int) $thread->logistics?->user_id === (int) $user->id, 403);
             } else {
-                $expectedType = $user->role === User::ROLE_SORTING_CENTER ? 'sorting' : 'delivery';
-                abort_unless((int) $thread->contact_user_id === (int) $user->id
-                    && $thread->contact_type === $expectedType, 403);
+                $this->authorizeFacilityConversation($user, $thread);
             }
             $item = $thread->messages()->findOrFail($message);
         }
@@ -284,6 +468,39 @@ class MessagesController extends Controller
         return ['user' => $hub->user, 'branch_id' => $hub->logistics_branch_id, 'hub_id' => $hub->id];
     }
 
+    private function authorizeFacilityConversation(User $user, LogisticsConversation $conversation, ?string $requestedType = null): void
+    {
+        if ($user->role === User::ROLE_SORTING_CENTER) {
+            $branch = LogisticsBranch::query()
+                ->where('user_id', $user->id)
+                ->whereNull('archived_at')
+                ->firstOrFail();
+            $isOwnLogisticsThread = $conversation->contact_type === 'sorting'
+                && (int) $conversation->contact_user_id === (int) $user->id
+                && (int) $conversation->logistics_branch_id === (int) $branch->id;
+            $isBranchHubThread = $conversation->contact_type === 'delivery'
+                && (int) $conversation->logistics_branch_id === (int) $branch->id
+                && $conversation->logistics_delivery_hub_id !== null
+                && LogisticsDeliveryHub::query()
+                    ->whereKey($conversation->logistics_delivery_hub_id)
+                    ->where('logistics_branch_id', $branch->id)
+                    ->where('user_id', $conversation->contact_user_id)
+                    ->whereNull('archived_at')->where('status', 'active')
+                    ->exists();
+            abort_unless($isOwnLogisticsThread || $isBranchHubThread, 403);
+            if ($requestedType !== null) {
+                abort_unless($requestedType === $conversation->contact_type, 403);
+            }
+
+            return;
+        }
+
+        abort_unless($user->role === User::ROLE_DELIVERY_HUB
+            && $conversation->contact_type === 'delivery'
+            && (int) $conversation->contact_user_id === (int) $user->id
+            && ($requestedType === null || $requestedType === 'delivery'), 403);
+    }
+
     private function adminContact(User $admin, ?AdminConversation $conversation, User $owner): array
     {
         $messages = $conversation?->messages ?? collect();
@@ -308,7 +525,7 @@ class MessagesController extends Controller
             'conversation_id' => $conversation?->id, 'name' => $name, 'sub' => $sub,
             'detail' => $detail, 'preview' => $latest?->body ?? $latest?->attachment_name ?? $contact->email,
             'last_message_at' => $latest?->created_at?->toISOString(),
-            'unread' => $messages->whereNull('read_at')->where('sender_id', '!=', $owner->id)->count(),
+            'unread' => $conversation ? $this->facilityUnreadCount($conversation, $owner) : 0,
             'messages' => $messages->map(fn ($message) => $this->serializeMessage($message, $owner))->all(),
             'branch_id' => $branchId,
         ];
@@ -339,6 +556,35 @@ class MessagesController extends Controller
             'attachment_mime_type' => $message->attachment_mime_type,
             'attachment_url' => $attachmentUrl,
         ];
+    }
+
+    private function facilityUnreadCount(LogisticsConversation $conversation, User $viewer): int
+    {
+        return $conversation->messages()
+            ->where('sender_id', '!=', $viewer->id)
+            ->whereNull('read_at')
+            ->whereDoesntHave('reads', fn (Builder $reads) => $reads->where('user_id', $viewer->id))
+            ->count();
+    }
+
+    private function markFacilityMessagesRead(LogisticsConversation $conversation, User $viewer): void
+    {
+        $messageIds = $conversation->messages()
+            ->where('sender_id', '!=', $viewer->id)
+            ->whereNull('read_at')
+            ->whereDoesntHave('reads', fn (Builder $reads) => $reads->where('user_id', $viewer->id))
+            ->pluck('id');
+
+        if ($messageIds->isEmpty()) {
+            return;
+        }
+
+        $timestamp = now();
+        DB::table('logistics_message_reads')->insertOrIgnore($messageIds->map(fn ($messageId) => [
+            'logistics_message_id' => $messageId,
+            'user_id' => $viewer->id,
+            'read_at' => $timestamp,
+        ])->all());
     }
 
     private function storeAttachment(?\Illuminate\Http\UploadedFile $file, string $directory): array

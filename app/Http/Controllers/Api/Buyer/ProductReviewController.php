@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductReview;
+use App\Services\SellerNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -86,6 +87,17 @@ class ProductReviewController extends Controller
             'buyer_id' => $buyerId,
         ]);
         $review->load('buyer:id,name,profile_photo_path');
+
+        $sellerUser = $product->seller?->user;
+        if ($sellerUser) {
+            app(SellerNotificationService::class)->send(
+                $sellerUser,
+                'reviews',
+                'New product review',
+                'A buyer left a '.(int) $review->rating.'-star review for '.$product->name.'.',
+                '/seller/performance',
+            );
+        }
 
         return response()->json([
             'message' => 'Your review has been submitted.',

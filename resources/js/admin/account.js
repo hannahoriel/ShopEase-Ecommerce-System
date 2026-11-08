@@ -295,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileSection = form.querySelector('[data-aam-profile]');
   const credentialsSection = form.querySelector('[data-aam-credentials]');
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  let resetAfterCreate = false;
   const flash = (message, error=false, title=undefined) => {
     if (typeof window.showAccountFlash === 'function') window.showAccountFlash(message,error,title);
   };
@@ -354,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const access = document.createElement('small');
         access.textContent = admin.permissions?.length
           ? `Access: ${admin.permissions.join(', ')}${admin.message_permissions?.length ? ` · Messages: ${admin.message_permissions.join(', ')}` : ''}`
-          : 'Full administrator access';
+          : (admin.is_full_admin ? 'Full administrator access' : 'No modules assigned');
         details.append(name, email, access);
         row.append(details);
         const state = document.createElement('span');
@@ -420,16 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!editId && !form.reportValidity())return;
     if(!permissions.some(x=>x.checked)){flash('Select at least one administrator module.',true,'Permissions Required');return;}
     if($('aamMessages').checked&&!messagePermissions.some(x=>x.checked)){flash('Select at least one Messages category.',true,'Messages Access Required');return;}
-    if (!editId) {
-      // UI-only account creation: never send account data until the backend handles secure password provisioning.
-      const notice = $('aamUiNotice');
-      if (notice) {
-        notice.hidden = false;
-        notice.textContent = 'UI preview only. Backend implementation will generate and securely deliver the temporary password. No administrator account was created.';
-      }
-      return;
-    }
-    const fullname=[$('aamFirst').value.trim(),$('aamMiddle').value.trim(),$('aamLast').value.trim()].filter(Boolean).join(' ');
     const chosen=permissions.filter(x=>x.checked).map(x=>x.value);
     const messages=messagePermissions.filter(x=>x.checked).map(x=>x.value);
     const button=$('aamCreate');
@@ -452,6 +443,10 @@ document.addEventListener('DOMContentLoaded', () => {
         messagePermissions.forEach(box => { box.checked = false; });
         updatePermissions();
         flash(result.message,false,'Access Updated');
+      } else {
+        resetAfterCreate = true;
+        form.reset();
+        flash(result.message,false,'Admin Account Created');
        }
       await loadAccounts();
     } catch(error) {
@@ -460,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
       button.disabled=false;
     }
   });
-  form.addEventListener('reset',()=>setTimeout(()=>{setEditMode();$('aamAge').value='';const notice=$('aamUiNotice');if(notice)notice.hidden=true;updatePermissions();flash('The administrator form has been cleared.',false,'Form Cleared');},0));
+  form.addEventListener('reset',()=>setTimeout(()=>{setEditMode();$('aamAge').value='';const notice=$('aamUiNotice');if(notice)notice.hidden=true;updatePermissions();if(resetAfterCreate){resetAfterCreate=false;return;}flash('The administrator form has been cleared.',false,'Form Cleared');},0));
   updatePermissions();
   loadAccounts();
 });

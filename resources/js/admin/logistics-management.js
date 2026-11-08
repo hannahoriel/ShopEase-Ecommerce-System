@@ -1772,39 +1772,86 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    // UI-only account information change requests. No backend mutation.
-    const accountChangeRequests = Array.isArray(logisticsManagementConfig.accountChangePreview) ? logisticsManagementConfig.accountChangePreview : [];
-    const decisionKey = 'shopease-admin-logistics-change-requests-ui-v1';
-    let decisions = {};
-    try { decisions = JSON.parse(localStorage.getItem(decisionKey) || '{}') || {}; } catch (_) {}
-    const pendingAccountChangeRequests = name => accountChangeRequests.filter(r => r.company === name && !decisions[r.id]);
+    // Load and review logistics account change requests through the admin API.
+    let accountChangeRequests = [];
+    const accountChangeUrl = logisticsManagementConfig.accountChangeRequestsUrl || '/api/v1/admin/logistics/account-change-requests';
+    const changeFieldLabels = {
+        company_name: 'Company Name', registered_business_name: 'Registered Business Name', company_type: 'Company Type',
+        sec_registration_number: 'SEC Registration Number', tin: 'TIN', company_email: 'Company Email',
+        company_phone: 'Company Contact Number', website: 'Website', branch_count: 'Sorting Centers',
+        years_in_operation: 'Years in Operation', representative_name: 'Authorized Representative',
+        representative_position: 'Representative Position', representative_email: 'Representative Email',
+        representative_phone: 'Representative Contact Number', province: 'Province', city: 'City / Municipality',
+        barangay: 'Barangay', postal_code: 'Postal Code', street: 'Street', house_no: 'House Number', building: 'Building', subdivision: 'Subdivision'
+    };
+    const requestCompany = request => request.company_name || request.requested_data?.company_name || request.user?.name || request.user?.email || 'Logistics Provider';
+    const currentValue = (company, key) => {
+        const aliases = { company_name: ['company_name', 'company'], company_phone: ['company_phone', 'contact_phone', 'contact_number'], representative_name: ['representative_name', 'contact_person'], city: ['city', 'municipality'], house_no: ['house_no', 'house_number'] };
+        for (const name of aliases[key] || [key]) if (company?.[name] !== undefined && company[name] !== null && String(company[name]).trim()) return company[name];
+        return '—';
+    };
+    const pendingAccountChangeRequests = name => accountChangeRequests.filter(request => request.status === 'pending' && requestCompany(request) === name);
     function showAccountChangeRequest(id) {
-        const r = accountChangeRequests.find(x => x.id === id);
-        if (!r) return;
-        const layer = document.getElementById('lmChangeLayer');
-        document.getElementById('lmChangeDesc').textContent = `${r.company} · ${r.id} · ${r.submitted} · ${String(decisions[id] || 'pending').toUpperCase()} (UI-only)`;
-        document.getElementById('lmChangeBody').innerHTML = `<table class="lm-change-table"><thead><tr><th>Field</th><th>Current Information</th><th>Requested Information</th></tr></thead><tbody>${(r.changes || []).map(c => `<tr><td>${escapeHtml(c.field)}</td><td>${escapeHtml(c.before)}</td><td><strong>${escapeHtml(c.after)}</strong></td></tr>`).join('')}</tbody></table><p>Preview only. No changes are applied to the account or database.</p>`;
-        document.getElementById('lmChangeActions').innerHTML = `<button type="button" data-change-action="close">Close</button>${!decisions[id] ? `<button type="button" class="reject" data-change-action="rejected" data-change-id="${escapeHtml(id)}">Reject</button><button type="button" class="approve" data-change-action="approved" data-change-id="${escapeHtml(id)}">Approve</button>` : ''}`;
-        layer.hidden = false;
+        const request = accountChangeRequests.find(item => String(item.id) === String(id));
+        if (!request) return;
+        const companyName = requestCompany(request);
+        const company = logisticsCompanies.find(item => item.company === companyName) || {};
+        const changes = Object.entries(request.requested_data || {});
+        document.getElementById('lmChangeDesc').textContent = `${companyName} · ${request.id} · ${request.created_at ? new Date(request.created_at).toLocaleString() : ''} · ${String(request.status || 'pending').toUpperCase()}`;
+        document.getElementById('lmChangeBody').innerHTML = `<table class="lm-change-table"><thead><tr><th>Field</th><th>Current Information</th><th>Requested Information</th></tr></thead><tbody>${changes.map(([key, value]) => `<tr><td>${escapeHtml(changeFieldLabels[key] || key.replaceAll('_', ' '))}</td><td>${escapeHtml(currentValue(company, key))}</td><td><strong>${escapeHtml(value ?? '—')}</strong></td></tr>`).join('')}</tbody></table>${request.review_note ? `<p>Review note: ${escapeHtml(request.review_note)}</p>` : ''}`;
+        document.getElementById('lmChangeActions').innerHTML = `<button type="button" data-change-action="close">Close</button>${request.status === 'pending' ? `<button type="button" class="reject" data-change-action="rejected" data-change-id="${escapeHtml(request.id)}">Reject</button><button type="button" class="approve" data-change-action="approved" data-change-id="${escapeHtml(request.id)}">Approve</button>` : ''}`;
+        document.getElementById('lmChangeLayer').hidden = false;
     }
     function refreshAccountChangeStrip() {
         let strip = document.getElementById('lmChangeStrip');
         if (!strip) { strip = document.createElement('div'); strip.id = 'lmChangeStrip'; strip.className = 'lm-change-strip'; document.querySelector('.logistics-main-tabs-card')?.after(strip); }
-        const rows = accountChangeRequests.filter(r => !decisions[r.id]);
-        strip.innerHTML = `<strong>Account Information Change Requests:</strong> ${rows.length} pending (demo) ` + rows.map(r => `<button type="button" data-change-id="${escapeHtml(r.id)}">${escapeHtml(r.company)} · Review ${escapeHtml(r.id)}</button>`).join('');
+        const rows = accountChangeRequests.filter(request => request.status === 'pending');
+        strip.innerHTML = rows.length ? `<strong>Account Information Change Requests:</strong> ${rows.length} pending ` + rows.map(request => `<button type="button" data-change-id="${escapeHtml(request.id)}">${escapeHtml(requestCompany(request))} · Review #${escapeHtml(request.id)}</button>`).join('') : '';
+        strip.hidden = rows.length === 0;
     }
-    document.addEventListener('click', e => { const btn = e.target.closest('[data-change-id]'); if (btn && !btn.hasAttribute('data-change-action')) { e.preventDefault(); e.stopPropagation(); showAccountChangeRequest(btn.dataset.changeId); } });
-    document.getElementById('lmChangeLayer')?.addEventListener('click', e => {
+    async function loadAccountChangeRequests() {
+        try {
+            const response = await fetch(accountChangeUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || 'Unable to load account change requests.');
+            accountChangeRequests = Array.isArray(payload.data) ? payload.data : (payload.data?.data || []);
+            refreshAccountChangeStrip();
+            render();
+        } catch (error) {
+            console.error('Logistics account change requests:', error);
+            const strip = document.getElementById('lmChangeStrip');
+            if (strip) { strip.hidden = false; strip.textContent = error.message || 'Unable to load account change requests.'; }
+        }
+    }
+    document.addEventListener('click', async event => {
+        const reviewLink = event.target.closest('[data-change-id]');
+        if (reviewLink && !reviewLink.hasAttribute('data-change-action')) {
+            event.preventDefault(); event.stopPropagation(); showAccountChangeRequest(reviewLink.dataset.changeId); return;
+        }
+        const action = event.target.closest('[data-change-action]');
         const layer = document.getElementById('lmChangeLayer');
-        const btn = e.target.closest('[data-change-action]');
-        if (!btn && e.target !== layer) return;
-        if (!btn || btn.dataset.changeAction === 'close') { layer.hidden = true; return; }
-        decisions[btn.dataset.changeId] = btn.dataset.changeAction;
-        localStorage.setItem(decisionKey, JSON.stringify(decisions));
-        layer.hidden = true; refreshAccountChangeStrip(); render();
+        if (!layer || (!action && event.target !== layer)) return;
+        if (!action || action.dataset.changeAction === 'close') { layer.hidden = true; return; }
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        action.disabled = true;
+        try {
+            const response = await fetch(`${accountChangeUrl}/${encodeURIComponent(action.dataset.changeId)}`, {
+                method: 'PATCH', credentials: 'same-origin',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ status: action.dataset.changeAction })
+            });
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || 'Unable to review this request.');
+            accountChangeRequests = accountChangeRequests.map(item => String(item.id) === String(payload.data.id) ? payload.data : item);
+            layer.hidden = true; refreshAccountChangeStrip(); render();
+            if (action.dataset.changeAction === 'approved') loadLogisticsData().catch(error => console.error('Unable to refresh logistics company details:', error));
+        } catch (error) {
+            action.disabled = false;
+            window.alert(error.message || 'Unable to review this request. Please try again.');
+        }
     });
     refreshAccountChangeStrip();
-
+    loadAccountChangeRequests();
     function renderRows(filteredRows) {
         const startIndex =
             (currentPage - 1) *

@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\DB;
 
 class AdminNotificationPreferences
 {
+    private const MODULE_CATEGORIES = [
+        'Registrations' => 'registrations',
+        'Seller Compliance' => 'seller_compliance',
+        'Complaints and Disputes' => 'complaints',
+        'Commission' => 'commissions',
+        'Logistics Management' => 'logistics',
+        'Messages' => 'messages',
+        'Platform Settings' => 'platform',
+        'Reports' => 'reports',
+    ];
+
     private const CATEGORIES = [
         'registration' => 'registrations',
         'seller_compliance' => 'seller_compliance',
@@ -46,14 +57,42 @@ class AdminNotificationPreferences
             return true;
         }
 
-        $stored = DB::table('admin_account_profiles')
+        $profile = DB::table('admin_account_profiles')
             ->where('user_id', $user->id)
-            ->value('preferences');
-        $preferences = is_string($stored) ? json_decode($stored, true) : null;
+            ->first(['preferences', 'permissions']);
+        $preferences = is_string($profile?->preferences ?? null)
+            ? json_decode($profile->preferences, true)
+            : null;
+
+        if (! $this->isCategoryAssigned($profile, $preference)) {
+            return false;
+        }
 
         return ! is_array($preferences) || ! array_key_exists($preference, $preferences)
             ? true
             : (bool) $preferences[$preference];
+    }
+
+    private function isCategoryAssigned(?object $profile, string $preference): bool
+    {
+        if (! $profile || $profile->permissions === null) {
+            // Legacy/full admin profiles have no module restriction.
+            return true;
+        }
+
+        $permissions = is_string($profile->permissions)
+            ? json_decode($profile->permissions, true)
+            : null;
+        if (! is_array($permissions)) {
+            return true;
+        }
+
+        $assignedCategories = array_values(array_filter(array_map(
+            fn ($module) => self::MODULE_CATEGORIES[$module] ?? null,
+            $permissions,
+        )));
+
+        return in_array($preference, $assignedCategories, true);
     }
 
     private function preferenceFor(array $data): ?string

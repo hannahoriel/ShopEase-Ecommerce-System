@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\AccountStatusChanged;
+use App\Models\Seller\Seller;
+use App\Models\UserAccountChangeRequest;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,6 +71,80 @@ class UserManagementController extends Controller
         abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER], true), 404);
 
         return response()->json($this->serializeUser($user, true));
+    }
+
+    public function changeRequests(Request $request): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+        $requests = UserAccountChangeRequest::query()
+            ->with(['user.sellerProfile'])
+            ->where('status', 'pending')
+            ->latest()
+            ->get()
+            ->map(fn (UserAccountChangeRequest $changeRequest) => [
+                'id' => $changeRequest->id,
+                'user_id' => $changeRequest->user_id,
+                'user' => [
+                    'name' => $changeRequest->user?->name ?? 'User',
+                    'type' => $changeRequest->user?->role ?? 'user',
+                ],
+                'fields' => $changeRequest->requested_data ?? [],
+                'created_at' => $changeRequest->created_at?->toIso8601String(),
+            ])
+            ->values();
+
+        return response()->json(['data' => $requests]);
+    }
+
+    public function reviewChangeRequest(Request $request, UserAccountChangeRequest $changeRequest): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['approved', 'rejected'])],
+            'review_note' => [Rule::requiredIf(fn () => $request->input('status') === 'rejected'), 'nullable', 'string', 'max:500'],
+        ]);
+
+        $reviewed = DB::transaction(function () use ($request, $changeRequest, $validated): UserAccountChangeRequest {
+            $lockedRequest = UserAccountChangeRequest::query()->lockForUpdate()->findOrFail($changeRequest->id);
+            abort_unless($lockedRequest->status === 'pending', 409, 'This request has already been reviewed.');
+
+            if ($validated['status'] === 'approved') {
+                $user = User::query()->lockForUpdate()->findOrFail($lockedRequest->user_id);
+                abort_unless($user->role === User::ROLE_SELLER, 422, 'This account change request cannot be applied to this user type.');
+                $seller = Seller::query()->where('user_id', $user->id)->lockForUpdate()->firstOrFail();
+                $allowedFields = [
+                    'first_name', 'last_name', 'middle_initial', 'sex', 'contact_no', 'birthday',
+                    'province', 'municipality', 'barangay', 'zip_code', 'street', 'house_number',
+                    'building', 'subdivision',
+                ];
+                $updates = [];
+                foreach ($lockedRequest->requested_data ?? [] as $field) {
+                    if (in_array($field['name'] ?? null, $allowedFields, true)) {
+                        $updates[$field['name']] = $field['after'] ?? null;
+                    }
+                }
+                if (array_key_exists('birthday', $updates)) {
+                    $updates['age'] = Carbon::parse($updates['birthday'])->age;
+                }
+                $seller->fill($updates)->save();
+            }
+
+            $lockedRequest->forceFill([
+                'status' => $validated['status'],
+                'review_note' => $validated['review_note'] ?? null,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ])->save();
+
+            return $lockedRequest->fresh('user');
+        });
+
+        return response()->json([
+            'message' => $reviewed->status === 'approved'
+                ? 'The account information request was approved and applied.'
+                : 'The account information request was disapproved.',
+            'data' => ['id' => $reviewed->id, 'status' => $reviewed->status],
+        ]);
     }
 
     public function updateStatus(Request $request, User $user): JsonResponse

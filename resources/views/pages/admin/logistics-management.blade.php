@@ -1752,16 +1752,6 @@
 
 @php
 
-    // UI-only examples: never apply to production account records.
-    $accountChangeRequestDemos = [
-        ['id'=>'ACR-2026-001','company'=>'J&T Express','submitted'=>'Nov 02, 2026 · 9:10 AM','changes'=>[
-            ['field'=>'Company Contact Number','before'=>'0917-123-4567','after'=>'0918-456-2211'],
-            ['field'=>'Authorized Representative','before'=>'Maria Santos','after'=>'Maria Angela Santos'],
-        ]],
-        ['id'=>'ACR-2026-002','company'=>'J&T Express','submitted'=>'Nov 02, 2026 · 10:35 AM','changes'=>[
-            ['field'=>'Registered Office Street','before'=>'Main Highway','after'=>'National Highway'],
-        ]],
-    ];
     $registrationDetailDemos = [
         'Flash Express' => ['sec_registration_number'=>'CS202012345','tin'=>'234-567-890-000','service_areas'=>['Region IV-A','NCR'],'registered_business_name'=>'Flash Express Philippines Inc.','company_type'=>'Corporation','years_in_operation'=>'6','representative_position'=>'Operations Director','representative_email'=>'andrea.cruz@example.com','representative_sex'=>'female','representative_birthday'=>'1990-07-14','region'=>'Region IV-A (CALABARZON)','province'=>'Laguna','city'=>'Biñan','barangay'=>'San Francisco','postal_code'=>'4024','street'=>'Southwoods Avenue','house_no'=>'Lot 5','building'=>'Bldg. 2','subdivision'=>'Southwoods Business Park'],
         'Ninja Van' => ['sec_registration_number'=>'CS201912456','tin'=>'345-678-901-000','service_areas'=>['NCR','Region IV-A'],'registered_business_name'=>'Ninja Van Philippines Corporation','company_type'=>'Corporation','years_in_operation'=>'7','representative_position'=>'Regional Manager','representative_email'=>'paolo.reyes@example.com','representative_sex'=>'male','representative_birthday'=>'1988-08-09','region'=>'Region IV-A (CALABARZON)','province'=>'Laguna','city'=>'Santa Rosa','barangay'=>'Balibago','postal_code'=>'4026','street'=>'National Highway','house_no'=>'28','building'=>'Operations Center','subdivision'=>'Business District'],
@@ -1775,7 +1765,7 @@
         'totalEntries' => $logisticsTotalEntries,
         'stats' => $logisticsStats,
         'apiUrl' => url('/api/v1/admin/logistics-management'),
-        'accountChangePreview' => $accountChangeRequestDemos,
+        'accountChangeRequestsUrl' => url('/api/v1/admin/logistics/account-change-requests'),
         'registrationPreview' => $registrationDetailDemos,
     ];
 @endphp
@@ -1821,7 +1811,7 @@
 
 .lm-change-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid #e7cf99;background:#fff7e5;color:#8a601f;padding:5px 9px;border-radius:20px;margin-top:7px;font:600 10px Poppins,sans-serif;cursor:pointer}
 .lm-change-badge:hover{background:#ffedc4}
-.lm-change-strip{margin:12px 0 17px;padding:13px 15px;background:#fffbf3;border:1px solid #ecdbb6;border-radius:11px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:#765b2d}
+.lm-change-strip[hidden]{display:none!important}.lm-change-strip{margin:12px 0 17px;padding:13px 15px;background:#fffbf3;border:1px solid #ecdbb6;border-radius:11px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:#765b2d}
 .lm-change-strip button{background:white;border:1px solid #e0c992;color:#73501a;padding:8px 11px;border-radius:8px;font:500 11px Poppins,sans-serif;cursor:pointer}
 .lm-change-layer[hidden]{display:none!important}.lm-change-layer{position:fixed;inset:0;z-index:20000;background:#160c0daa;display:grid;place-items:center;padding:18px}
 .lm-change-dialog{width:min(760px,100%);max-height:90dvh;overflow:auto;background:#fff;border-radius:17px;padding:25px;box-shadow:0 22px 70px #0003;font-family:Poppins,sans-serif}

@@ -1,99 +1,13 @@
 @extends('layouts.admin')
 @section('page-title', 'Reports')
 @section('content')
-@php
-    // Preview values are exclusively for this Blade template; the controller and database remain unchanged.
-    $preview = request()->query('preview', '1') !== '0';
-    if ($preview) {
-        $samples = [54620,68240,71350,59800,95270,110400,73360,98850,120500,101900,86900,96520,113600,133250];
-        $startDay = \Carbon\Carbon::parse($from);
-        $endDay = \Carbon\Carbon::parse($to);
-        $days = max(1, (int)$startDay->diffInDays($endDay) + 1);
-        $trend = [];
-        $bucketCount = min(14, $days);
-        for ($i=0; $i<$bucketCount; $i++) {
-            $day = $startDay->copy()->addDays((int)round($i*($days-1)/max(1,$bucketCount-1)));
-            $trend[] = [
-                'date' => $day->toDateString(),
-                'label' => $day->format('M d'),
-                'orders' => [13,16,19,14,22,25,18,21,26,23,20,24,28,31][$i],
-                'sales' => $samples[$i],
-            ];
-        }
-        $demo = [
-            'kpis' => [
-                'sales' => 1284560.50,
-                'commission' => 128456.05,
-                'refunds' => 37250.00,
-                'completed' => 284,
-            ],
-            'ordersByStatus' => [
-                'new' => 21,
-                'preparing' => 34,
-                'to_ship' => 27,
-                'shipped' => 18,
-                'out_for_delivery' => 16,
-                'completed' => 284,
-                'cancelled' => 12,
-            ],
-            'orderCohort' => 412,
-            'trend' => $trend,
-            'sellers' => collect([
-                (object) ['store_name' => 'Luna Finds PH', 'orders' => 58, 'sales' => 274800.00],
-                (object) ['store_name' => 'Urban Essentials', 'orders' => 46, 'sales' => 216450.50],
-                (object) ['store_name' => 'Everyday Tech', 'orders' => 39, 'sales' => 193700.00],
-                (object) ['store_name' => 'Casa Living', 'orders' => 32, 'sales' => 146250.00],
-                (object) ['store_name' => 'Style Street', 'orders' => 29, 'sales' => 118360.00],
-                (object) ['store_name' => 'Fresh Basket', 'orders' => 22, 'sales' => 83600.00],
-            ]),
-            'registration' => [
-                'total' => 64,
-                'types' => [
-                    'buyer' => 21, 'seller' => 34, 'logistics' => 9,
-                ],
-                'statuses' => [
-                    'pending' => 12, 'approved' => 43, 'rejected' => 9,
-                ],
-            ],
-            'complaints' => [
-                'total' => 28,
-                'statuses' => ['pending' => 6, 'under_review' => 8, 'resolved' => 12, 'rejected' => 2],
-            ],
-            'returns' => [
-                'total' => 41,
-                'types' => ['return_refund' => 25, 'refund' => 16],
-            ],
-            'shipping' => [
-                'delivered' => 267,
-                'average_hours' => 42.6,
-            ],
-            'voucher' => [
-                'orders' => 73,
-                'amount' => 18450.00,
-            ],
-            'accounts' => [
-                'created' => 186,
-                'roles' => [
-                    'buyer' => 143, 'seller' => 34, 'logistics' => 9,
-                ],
-            ],
-            'sellerCompliance' => [
-                'reviewed' => 43,
-                'approved' => 34,
-                'pending' => 8,
-                'rejected' => 9,
-            ],
-        ];
-        foreach ($demo as $key=>$value) { $$key = $value; }
-    }
-@endphp
 @vite(['resources/css/admin/reports.css', 'resources/js/admin/reports.js'])
 <div id="admin-content" class="ar-page ml-60 pt-[110px] pl-5 pb-7 min-h-screen transition-all duration-300">
-    <div class="ar-shell" id="admin-reports" data-url="{{ route('admin.reports') }}" data-preview="{{ $preview ? '1' : '0' }}">
+    <div class="ar-shell" id="admin-reports" data-url="{{ route('admin.reports') }}" data-api-url="{{ route('admin.api.reports.index') }}">
         <form class="ar-period" id="ar-period" action="{{ route('admin.reports') }}" method="get">
             <div class="ar-period-text"><span class="ar-period-icon">▦</span><div><strong>Reporting period</strong><small>Select a date range to update every section</small></div></div>
             <div class="ar-dates"><label>From <input type="date" name="from" value="{{ $from }}" max="{{ now()->toDateString() }}" required></label><span class="ar-date-dash">—</span><label>To <input type="date" name="to" value="{{ $to }}" max="{{ now()->toDateString() }}" required></label></div>
-            <div class="ar-period-actions"><button type="button" class="ar-reset" id="ar-last30">Last 30 days</button><button class="ar-apply" type="submit">Apply dates</button></div>
+            <div class="ar-period-actions"><a class="ar-export" id="ar-export" href="{{ route('admin.reports.export', ['from' => $from, 'to' => $to]) }}" download>Download CSV</a><button type="button" class="ar-reset" id="ar-last30">Last 30 days</button><button class="ar-apply" type="submit">Apply dates</button></div>
         </form>
         <div id="ar-message" class="ar-message" hidden role="alert"></div>
         <div id="ar-report-content" aria-live="polite">
@@ -180,22 +94,16 @@
             </div>
         </section>
         <section class="ar-card">
-            <div class="ar-card-head"><div><h2>Seller compliance</h2><p>Seller verification and document review activity</p></div>
-                @if($preview)<span class="ar-muted-pill">{{ number_format($sellerCompliance['reviewed']) }} reviewed</span>@endif
+            <div class="ar-card-head"><div><h2>Seller compliance</h2><p>New seller verification records in this period</p></div><span class="ar-muted-pill">{{ number_format($sellerCompliance['reviewed']) }} reviewed</span>
             </div>
-            @if($preview)
-                <div class="ar-status-list">
-                    <div><span><i class="ar-dot"></i>Approved seller reviews</span><strong>{{ number_format($sellerCompliance['approved']) }}</strong></div>
-                    <div><span><i class="ar-dot"></i>Pending seller verification</span><strong>{{ number_format($sellerCompliance['pending']) }}</strong></div>
-                    <div><span><i class="ar-dot"></i>Rejected seller reviews</span><strong>{{ number_format($sellerCompliance['rejected']) }}</strong></div>
-                </div>
-                <p class="ar-card-foot">Example seller verification counts for interface preview only.</p>
-            @else
-                <p class="ar-empty">Seller verification breakdown is not connected to the current Reports backend yet.</p>
-            @endif
+            <div class="ar-status-list">
+                <div><span><i class="ar-dot"></i>Approved sellers</span><strong>{{ number_format($sellerCompliance['approved']) }}</strong></div>
+                <div><span><i class="ar-dot"></i>Pending verification</span><strong>{{ number_format($sellerCompliance['pending']) }}</strong></div>
+                <div><span><i class="ar-dot"></i>Rejected sellers</span><strong>{{ number_format($sellerCompliance['rejected']) }}</strong></div>
+            </div>
         </section>
     </div>
-    <p class="ar-data-note">@if($preview)<strong>Sample report:</strong> The sample figures are intentionally illustrative and are not calculated from the selected date range. The date range changes the preview chart labels, not the mock transaction totals. @endif Data notes: Completed orders use their buyer-received date when present (otherwise the order's latest update). Registrations, complaints, and order pipeline are grouped by their creation date and show current statuses. Refunds use the refund completion date; commission uses its earned date. Figures are not duplicated across report sections. Current-state records may change after this report is viewed.</p>
+    <p class="ar-data-note">Data notes: Completed orders use their buyer-received date when present (otherwise the order's latest update). Registrations, complaints, and order pipeline are grouped by their creation date and show current statuses. Refunds use the refund completion date; commission uses its earned date. Figures are not duplicated across report sections. Current-state records may change after this report is viewed.</p>
 </div>
         </div>
     </div>

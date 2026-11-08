@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Order;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Seller\SellerVoucher;
 use App\Models\Seller\Product;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,6 +29,28 @@ class VouchersController extends Controller
     {
         $data = $this->validated($request);
         $voucher = SellerVoucher::create([...$data, 'seller_id' => $this->sellerId($request), 'code' => strtoupper($data['code'])]);
+
+        if ($voucher->enabled && $voucher->starts_at->lte(now()) && $voucher->ends_at->gte(now())) {
+            $buyerIdsWithOrders = Order::query()->whereNotIn('status', ['cancelled', 'refunded'])->select('buyer_id');
+            $buyers = User::query()->where('role', User::ROLE_BUYER);
+            if ($voucher->eligible_buyers === 'first') {
+                $buyers->whereNotIn('id', $buyerIdsWithOrders);
+            } elseif ($voucher->eligible_buyers === 'returning') {
+                $buyers->whereIn('id', $buyerIdsWithOrders);
+            }
+
+            $shopName = $request->user()->sellerProfile?->store_name ?: 'A ShopEase seller';
+            $buyers->each(function (User $buyer) use ($voucher, $shopName): void {
+                BuyerNotification::createForBuyer(
+                    $buyer,
+                    'voucher',
+                    'New voucher from '.$shopName,
+                    $voucher->title.' is available. Use code '.$voucher->code.' to save on an eligible order.',
+                    ['voucher_code' => $voucher->code, 'url' => '/buyer/dashboard'],
+                );
+            });
+        }
+
         return response()->json(['data' => $this->present($voucher), 'message' => 'Voucher created.'], 201);
     }
 

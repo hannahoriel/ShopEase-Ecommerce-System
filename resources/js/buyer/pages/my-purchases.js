@@ -1432,15 +1432,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const preferenceButton=$('buyerSaveNotificationSettings');
   if(preferenceForm&&preferenceButton){
     const inputs=[...preferenceForm.querySelectorAll('input[type="checkbox"]')];
-    const savedKey='shopease-buyer-notification-preferences-demo-v1';
-    try {const saved=JSON.parse(localStorage.getItem(savedKey)||'null');if(saved) inputs.forEach(i=>{if(typeof saved[i.name]==='boolean')i.checked=saved[i.name];});}catch(e){}
+    const preferences=purchasesConfig.notificationPreferences||{};
+    inputs.forEach(input=>{if(typeof preferences[input.name]==='boolean')input.checked=preferences[input.name];});
     let baseline=new Map(inputs.map(i=>[i,i.checked]));
     const refresh=()=>{preferenceButton.disabled=!inputs.some(i=>i.checked!==baseline.get(i));};
     inputs.forEach(i=>i.addEventListener('change',refresh));refresh();
-    preferenceForm.addEventListener('submit',event=>{event.preventDefault();if(preferenceButton.disabled)return;
+    preferenceForm.addEventListener('submit',async event=>{event.preventDefault();if(preferenceButton.disabled)return;
       const data=Object.fromEntries(inputs.map(i=>[i.name,i.checked]));
-      try {localStorage.setItem(savedKey,JSON.stringify(data));}catch(e){}
-      baseline=new Map(inputs.map(i=>[i,i.checked]));refresh();notify('Demo preferences saved in this browser only. No server settings were updated.');
+      preferenceButton.disabled=true;
+      try {
+        const headers={'Accept':'application/json','Content-Type':'application/json','Authorization':`Bearer ${purchasesConfig.apiToken||''}`};
+        const response=await fetch(purchasesConfig.notificationPreferencesUrl||'/api/v1/buyer/account/notification-preferences',{method:'PUT',credentials:'same-origin',headers,body:JSON.stringify({preferences:data})});
+        const payload=await response.json().catch(()=>({}));
+        if(!response.ok)throw new Error(payload.message||Object.values(payload.errors||{}).flat()[0]||'Notification preferences could not be saved.');
+        baseline=new Map(inputs.map(i=>[i,i.checked]));refresh();notify(payload.message||'Notification preferences saved.');
+      } catch(error) {notify(error.message||'Notification preferences could not be saved.');refresh();}
     });
   }
 });

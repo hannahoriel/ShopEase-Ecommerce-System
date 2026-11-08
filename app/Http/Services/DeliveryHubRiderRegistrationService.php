@@ -114,6 +114,9 @@ class DeliveryHubRiderRegistrationService
             'barangay' => $rider?->barangay,
             'assignment_barangay' => $rider?->assignment_barangay ?: $rider?->barangay,
             'logistics_operation' => $rider?->logistics_operation,
+            'assignment_role' => str_contains(mb_strtolower((string) $rider?->logistics_operation), 'pickup')
+                ? 'pickup'
+                : (str_contains(mb_strtolower((string) $rider?->logistics_operation), 'delivery') ? 'delivery' : null),
             'street' => $rider?->street,
             'house_no' => $rider?->house_number,
             'postal_code' => $hub?->postal_code,

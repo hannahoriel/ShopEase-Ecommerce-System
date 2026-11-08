@@ -129,7 +129,6 @@
 
             @endphp
 
-
             @foreach ($menu as $item)
 
                 @php
@@ -346,22 +345,9 @@
 
 </aside>
 
-@php($adminModuleAccess = request()->attributes->get('adminModuleAccess', []))
-@if (!empty($adminModuleAccess['readOnly']))
-    <div
-        id="admin-read-only-notice"
-        class="fixed right-6 top-24 z-[60] rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg"
-        role="status"
-    >
-        <strong>Read-only access:</strong>
-        {{ $adminModuleAccess['module'] ?? 'This module' }} can be viewed, but you do not have permission to edit it.
-    </div>
-@endif
-
-
 <style>
 
-    body.admin-module-read-only #admin-content,
+    body.admin-module-read-only .admin-content-shell,
     body.admin-module-read-only .seller-account-page {
         pointer-events: none;
     }
@@ -561,10 +547,6 @@
 
 
 <script>
-
-if (document.getElementById('admin-read-only-notice')) {
-    document.body.classList.add('admin-module-read-only');
-}
 
 document.addEventListener(
     'DOMContentLoaded',

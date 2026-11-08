@@ -39,6 +39,8 @@
             'complaintsUrl' => '/api/v1/buyer/orders',
             'buyerComplaintsUrl' => '/api/v1/buyer/complaints',
             'notificationsUrl' => '/api/v1/buyer/notifications',
+            'notificationPreferencesUrl' => '/api/v1/buyer/account/notification-preferences',
+            'notificationPreferences' => $buyerNotificationPreferences ?? \App\Services\BuyerNotificationPreferences::DEFAULTS,
             'adminMessagesUrl' => \Illuminate\Support\Facades\Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages'),
             'apiToken' => $apiToken ?? '',
         ]) !!}
