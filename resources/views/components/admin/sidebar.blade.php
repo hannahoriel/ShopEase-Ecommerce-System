@@ -14,7 +14,7 @@
     "
 >
 
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-h-0 overflow-y-auto admin-sidebar-scroll">
 
         <!-- ==================== LOGO ==================== -->
 
@@ -90,7 +90,7 @@
                     [
                         'label' => 'Reports',
                         'icon' => 'reports.png',
-                        'route' => null
+                        'route' => 'admin.reports'
                     ],
 
                     [
@@ -111,6 +111,12 @@
                         'icon_path' => 'icons/seller/notifications.png',
                         'route' => null,
                         'url' => url('/admin/notifications'),
+                    ],
+
+                    [
+                        'label' => 'Admin Management',
+                        'icon' => 'admin-management.png',
+                        'route' => 'admin.management',
                     ],
 
                     [
@@ -281,7 +287,7 @@
     <form
         action="{{ route('logout') }}"
         method="POST"
-        class="w-full"
+        class="w-full shrink-0 admin-sidebar-footer"
         id="logoutForm"
     >
 
@@ -532,6 +538,25 @@
 
     }
 
+
+/* Delivery Hub-style scroll behavior: menu scrolls, footer stays accessible. */
+#admin-sidebar { display:flex!important; flex-direction:column!important; height:100vh!important; height:100dvh!important; overflow:hidden!important; }
+#admin-sidebar > .admin-sidebar-scroll { flex:1 1 0%!important; min-height:0!important; overflow-y:auto!important; overflow-x:hidden!important; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:10px; }
+#admin-sidebar > .admin-sidebar-scroll::-webkit-scrollbar { display:none; }
+#admin-sidebar > .admin-sidebar-footer { position:relative!important; flex:0 0 auto!important; min-height:54px; padding-top:10px; margin-top:0!important; z-index:2; background:transparent; }
+#admin-sidebar > .admin-sidebar-footer .sidebar-logout { position:relative; margin-top:0!important; }
+
+
+/* Prevent hover pills from being cropped by the independent vertical scroller.
+   The right-side inset reserves room for Tailwind's translate-x-1 (4px). */
+#admin-sidebar > .admin-sidebar-scroll {
+    box-sizing:border-box !important;
+    padding-right:12px !important;
+    padding-left:2px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+}
+#admin-sidebar > .admin-sidebar-scroll .sidebar-link { box-sizing:border-box; max-width:100%; }
 </style>
 
 

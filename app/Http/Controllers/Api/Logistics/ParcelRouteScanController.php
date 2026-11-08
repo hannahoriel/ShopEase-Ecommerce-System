@@ -37,6 +37,7 @@ class ParcelRouteScanController extends Controller
             'vehicle_reference' => ['nullable', 'string', 'max:80'],
             'returning_manifest_id' => ['nullable', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
+            'rider_id' => ['nullable', 'integer'],
         ]);
 
         $shipment = DB::transaction(function () use ($request, $facility, $input): Shipment {
@@ -94,7 +95,7 @@ class ParcelRouteScanController extends Controller
                         ->exists();
                     abort_unless($awaitingDropoffScan, 409, 'The rider must confirm drop-off before this parcel can be receive-scanned.');
                 }
-                $this->scanAtHub($shipment, $hub, $input['action'], $sellerProvince, $sellerCity, $seller?->barangay, $buyerProvince, $buyerCity, $buyer?->barangay);
+                $this->scanAtHub($shipment, $hub, $input['action'], $sellerProvince, $sellerCity, $seller?->barangay, $buyerProvince, $buyerCity, $buyer?->barangay, $input['rider_id'] ?? null);
                 $location = $hub->hub_name.' · '.$hub->municipality.', '.$hub->province;
             } else {
                 $center = LogisticsBranch::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail();
@@ -333,6 +334,24 @@ class ParcelRouteScanController extends Controller
             ? LogisticsDeliveryHub::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail()
             : LogisticsBranch::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail();
         $id = $node->id;
+        $deliveryRiders = $facility === 'delivery_hub'
+            ? Rider::query()->where('logistics_branch_id', $node->logistics_branch_id)
+                ->where('registration_status', 'active')
+                ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
+                ->whereRaw("LOWER(REPLACE(REPLACE(logistics_operation, ' ', ''), '-', '')) LIKE ?", ['%delivery%'])
+                ->where(function ($query) use ($node): void {
+                    $query->whereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($node->hub_name)])
+                        ->orWhereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($node->municipality)]);
+                })->orderBy('id')->get()->map(fn (Rider $rider): array => [
+                    'id' => $rider->id,
+                    'name' => trim($rider->first_name.' '.$rider->last_name),
+                    'barangay' => $rider->assignment_barangay ?: $rider->barangay,
+                    'role' => $rider->logistics_operation,
+                    'vehicle' => trim(collect([$rider->vehicle, $rider->plate_number])->filter()->implode(' · ')),
+                    'phone' => $rider->contact_no,
+                    'load' => $rider->shipments()->whereHas('order', fn ($query) => $query->where('status', 'out_for_delivery'))->count(),
+                ])->values()
+            : collect();
         $transfers = LogisticsTransferManifest::query()
             ->where('destination_type', $facility)->where('destination_id', $id)
             ->where(function ($query): void {
@@ -480,12 +499,17 @@ class ParcelRouteScanController extends Controller
                     // manifest write was missed or an older app version sent
                     // the proof through the legacy endpoint.
                     $query->where(function ($scheduled) use ($node): void {
-                        $scheduled->whereNull('logistics_delivery_hub_id')
-                            ->whereHas('order', fn ($order) => $order
-                                ->where('status', 'to_ship')
-                                ->whereHas('seller', fn ($seller) => $seller
-                                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
-                                    ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])));
+                    $scheduled->where(function ($hubScope) use ($node): void {
+                        $hubScope->where('logistics_delivery_hub_id', $node->id)
+                            ->orWhere(function ($unassigned) use ($node): void {
+                                $unassigned->whereNull('logistics_delivery_hub_id')
+                                    ->whereHas('order', fn ($order) => $order
+                                        ->where('logistics_id', $node->logisticsBranch?->logistics_id)
+                                        ->whereHas('seller', fn ($seller) => $seller
+                                            ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $node->province))])
+                                            ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim((string) $node->municipality))])));
+                            });
+                    })->whereHas('order', fn ($order) => $order->where('status', 'to_ship'));
                     })->orWhere(function ($collected) use ($node): void {
                         $collected->where('logistics_delivery_hub_id', $node->id)
                             ->whereHas('order', fn ($order) => $order->where('status', 'in_transit'))
@@ -769,6 +793,7 @@ class ParcelRouteScanController extends Controller
                     ])->values()
                 : [],
             'couriers' => $couriers,
+            'delivery_riders' => $deliveryRiders,
             'vehicles' => $vehicles,
             'active_dispatches' => $activeDispatches,
         ]);
@@ -839,7 +864,7 @@ class ParcelRouteScanController extends Controller
             : (string) (LogisticsBranch::query()->whereKey($id)->value('name') ?? 'Sorting Center');
     }
 
-    private function scanAtHub(Shipment $shipment, LogisticsDeliveryHub $hub, string $action, string $sellerProvince, string $sellerCity, ?string $sellerBarangay, string $buyerProvince, string $buyerCity, ?string $buyerBarangay): void
+    private function scanAtHub(Shipment $shipment, LogisticsDeliveryHub $hub, string $action, string $sellerProvince, string $sellerCity, ?string $sellerBarangay, string $buyerProvince, string $buyerCity, ?string $buyerBarangay, ?int $assignedRiderId = null): void
     {
         if ($action === 'receive' && $shipment->order->status === 'to_ship') {
             abort_unless($this->same($hub->province, $sellerProvince) && $this->same($hub->municipality, $sellerCity), 422, 'Seller pickup parcels must first arrive at the delivery hub for the seller municipality.');
@@ -899,7 +924,9 @@ class ParcelRouteScanController extends Controller
                     ]);
                 }
             } else {
-                $deliveryRider = $this->riderFor($hub, (string) $buyerBarangay, 'delivery');
+                $deliveryRider = $assignedRiderId
+                    ? $this->riderFor($hub, (string) $buyerBarangay, 'delivery', $assignedRiderId)
+                    : $this->balancedDeliveryRider($hub, (string) $buyerBarangay);
                 abort_unless($deliveryRider, 422, 'No active delivery rider is assigned to the buyer barangay.');
                 $shipment->update(['rider_id' => $deliveryRider->id]);
                 $shipment->order->update(['status' => 'out_for_delivery']);
@@ -1037,6 +1064,26 @@ class ParcelRouteScanController extends Controller
             ->whereRaw('LOWER(logistics_operation) LIKE ?', ['%'.mb_strtolower($operation).'%'])
             ->orderBy('id')
             ->first();
+    }
+
+    private function balancedDeliveryRider(LogisticsDeliveryHub $hub, string $barangay): ?Rider
+    {
+        return Rider::query()->where('registration_status', 'active')
+            ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
+            ->where('logistics_branch_id', $hub->logistics_branch_id)
+            ->whereRaw('LOWER(COALESCE(assignment_barangay, barangay)) = ?', [mb_strtolower(trim($barangay))])
+            ->where(function ($query) use ($hub): void {
+                $query->whereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($hub->hub_name)])
+                    ->orWhereRaw('LOWER(municipal_hub) = ?', [mb_strtolower($hub->municipality)]);
+            })
+            ->whereRaw("LOWER(REPLACE(REPLACE(logistics_operation, ' ', ''), '-', '')) LIKE ?", ['%delivery%'])
+            ->orderBy('id')->get()
+            ->map(fn (Rider $rider): array => [
+                'rider' => $rider,
+                'load' => $rider->shipments()->whereHas('order', fn ($query) => $query->where('status', 'out_for_delivery'))->count(),
+            ])
+            ->sort(fn (array $left, array $right): int => [$left['load'], $left['rider']->id] <=> [$right['load'], $right['rider']->id])
+            ->first()['rider'] ?? null;
     }
 
     private function same(?string $left, ?string $right): bool

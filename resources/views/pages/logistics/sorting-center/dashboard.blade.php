@@ -1,6 +1,6 @@
 {{-- Sorting Center Dashboard — frontend-ready; inject $sortingCenter and $sortingCenterStats from controller later. --}}
 @php
-    $center = $sortingCenter ?? null;
+    $center = $center ?? $sortingCenter ?? null;
     $centerName = data_get($center, 'branch_name') ?: data_get($center, 'name') ?: 'Sorting Center';
     $stats = $sortingCenterStats ?? [];
     $number = fn($key) => is_numeric(data_get($stats, $key)) ? number_format((int)data_get($stats, $key)) : '0';
@@ -79,70 +79,53 @@
  <div class="sc-top sc-top-reordered">
   <section class="sc-panel sc-tracker" aria-labelledby="scTrackTitle"><h2 id="scTrackTitle">Track a Parcel</h2><p class="sc-clock" id="scLiveClock">Loading Philippine date and time…</p><form class="sc-track-form" id="scTrackForm"><input type="search" id="scTrackQuery" placeholder="Enter parcel tracking number" aria-label="Parcel tracking number" maxlength="80" required><button class="sc-primary" type="submit">Track Parcel</button></form><p id="scTrackResult" role="status" class="sc-track-result">Enter a tracking number. Live lookup will be available when parcel tracking is connected.</p></section>
   <aside class="sc-panel sc-announcements" aria-label="Platform announcements"><h2>Platform Announcement</h2><p class="sc-announce-desc">Updates from ShopEase administration</p><div class="sc-slides">
-  @forelse($centerAnnouncements as $i => $announcement)
-    <article data-sc-announcement {{ $i > 0 ? 'hidden' : '' }}><small>{{ data_get($announcement,'badge_label','ANNOUNCEMENT') }}</small><h3>{{ data_get($announcement,'title','Update') }}</h3><p>{{ data_get($announcement,'body','') }}</p></article>
-  @empty
-    <article data-sc-announcement><small>WELCOME · PREVIEW</small><h3>Welcome to Your Sorting Center</h3><p>Monitor your local delivery network, parcel movements, and operational updates here.</p></article>
-    <article data-sc-announcement hidden><small>OPERATIONS · PREVIEW</small><h3>Parcel Movement Overview</h3><p>Incoming and departed parcel counts will reflect confirmed shipment records once connected.</p></article>
-    <article data-sc-announcement hidden><small>PLATFORM · PREVIEW</small><h3>Announcements Appear Here</h3><p>Published notices from ShopEase administration will appear in this carousel.</p></article>
-  @endforelse
+    <article data-sc-announcement><small>UPDATES</small><h3>Loading announcements</h3><p>Checking for published ShopEase updates.</p></article>
   </div><div class="sc-ann-controls"><div class="sc-dots" id="scAnnDots"></div><div class="sc-arrows"><button type="button" id="scAnnPrev" aria-label="Previous announcement">‹</button><button type="button" id="scAnnNext" aria-label="Next announcement">›</button></div></div></aside>
 
  </div>
  <section class="sc-section" aria-label="Sorting center overview"><h2>At This Sorting Center</h2><div class="sc-grid4">
-  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4m-9 4v10"/></svg></span><div><span class="sc-kpi-label">Parcels at This Hub</span><strong>{{ $number('parcels_at_center') }}</strong></div></article>
-  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 21V8l9-5 9 5v13M3 12h18M8 16h3m2 0h3M8 21v-5h8v5"/></svg></span><div><span class="sc-kpi-label">Delivery Hubs</span><strong>{{ $number('delivery_hubs') }}</strong></div></article>
-  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 17V7h12v10H3zm12-7h4l3 4v3h-7M5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm14 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></span><div><span class="sc-kpi-label">Vehicles</span><strong>{{ $number('vehicles') }}</strong></div></article>
-  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3zm0 7v5m0 3h.01"/></svg></span><div><span class="sc-kpi-label">Parcel Disputes</span><strong>{{ $number('parcel_disputes') }}</strong></div></article>
+ <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4m-9 4v10"/></svg></span><div><span class="sc-kpi-label">Parcels at This Hub</span><strong id="scStatParcels">0</strong></div></article>
+ <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 21V8l9-5 9 5v13M3 12h18M8 16h3m2 0h3M8 21v-5h8v5"/></svg></span><div><span class="sc-kpi-label">Delivery Hubs</span><strong id="scStatHubs">0</strong></div></article>
+ <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 17V7h12v10H3zm12-7h4l3 4v3h-7M5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm14 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></span><div><span class="sc-kpi-label">Vehicles</span><strong id="scStatVehicles">0</strong></div></article>
+ <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3zm0 7v5m0 3h.01"/></svg></span><div><span class="sc-kpi-label">Parcel Disputes</span><strong id="scStatDisputes">0</strong></div></article>
  </div></section>
  <section class="sc-section sc-movement" aria-labelledby="scMovementsTitle"><h2 id="scMovementsTitle">Parcels Moving Through This Center</h2><p class="sc-section-sub">Overview of incoming and outgoing parcel transfers.</p><div class="sc-grid2">
-  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h14m-5-5 5 5-5 5M3 5h6m-6 14h6"/></svg></span><div><span class="sc-kpi-label">Incoming Transfers</span><strong>{{ $number('incoming_transfers') }}</strong></div></article>
-  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18m-6-6 6 6-6 6M3 6h6m-6 12h6"/></svg></span><div><span class="sc-kpi-label">Departed Parcels</span><strong>{{ $number('departed_parcels') }}</strong></div></article>
+  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h14m-5-5 5 5-5 5M3 5h6m-6 14h6"/></svg></span><div><span class="sc-kpi-label">Incoming Transfers</span><strong id="scStatIncoming">0</strong></div></article>
+  <article class="sc-kpi"><span class="sc-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18m-6-6 6 6-6 6M3 6h6m-6 12h6"/></svg></span><div><span class="sc-kpi-label">Departed Parcels</span><strong id="scStatDeparted">0</strong></div></article>
  </div></section>
  <div class="sc-bottom-panels">
   <section class="sc-panel sc-hubs-panel" aria-labelledby="scHubTitle">
-   <div class="sc-panel-heading"><div><h2 id="scHubTitle">Delivery Hubs</h2><p>Delivery hubs assigned to this sorting center</p></div><span class="sc-hub-tag">{{ count($centerHubs) }} hubs</span></div>
+   <div class="sc-panel-heading"><div><h2 id="scHubTitle">Delivery Hubs</h2><p>Delivery hubs assigned to this sorting center</p></div><span class="sc-hub-tag" id="scHubTag">0 hubs</span></div>
    <div class="sc-table-toolbar"><label class="sc-hub-search"><span aria-hidden="true">⌕</span><input type="search" id="scHubSearch" placeholder="Search delivery hubs, municipality, or manager…" aria-label="Search delivery hubs"></label><select id="scHubStatus" aria-label="Filter delivery hubs by status"><option value="all">All Statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-   <div class="sc-table-scroll"><table class="sc-hub-table"><thead><tr><th>Delivery Hub</th><th>Municipality</th><th>Manager</th><th>Parcels</th><th>Status</th></tr></thead><tbody id="scHubRows">
-   @forelse($centerHubs as $hub)
-     @php
-       $hubName=data_get($hub,'hub_name') ?: data_get($hub,'branch_name') ?: data_get($hub,'name') ?: 'Unnamed Hub';
-       $hubCity=data_get($hub,'city') ?: data_get($hub,'municipality') ?: '—';
-       $hubManager=data_get($hub,'manager_name') ?: '—';
-       $hubParcels=data_get($hub,'parcels_count');
-       $hubStatus=strtolower((string)(data_get($hub,'status') ?: 'active'));
-     @endphp
-     <tr data-sc-hub-status="{{ $hubStatus }}"><td><strong>{{ $hubName }}</strong></td><td>{{ $hubCity }}</td><td>{{ $hubManager }}</td><td>{{ is_numeric($hubParcels) ? number_format((int)$hubParcels) : '—' }}</td><td><span class="sc-status {{ $hubStatus === 'inactive' ? 'inactive' : 'active' }}">{{ ucfirst($hubStatus) }}</span></td></tr>
-   @empty
-     <tr class="sc-hub-empty"><td colspan="5">No delivery hubs are connected yet. Assigned hubs will appear here when data is provided.</td></tr>
-   @endforelse
-   </tbody></table></div><div class="sc-table-footer" id="scHubCount">{{ count($centerHubs) }} delivery hub(s)</div>
+   <div class="sc-table-scroll"><table class="sc-hub-table"><thead><tr><th>Delivery Hub</th><th>Municipality</th><th>Manager</th><th>Parcels</th><th>Status</th></tr></thead><tbody id="scHubRows"><tr class="sc-hub-empty"><td colspan="5">Loading assigned delivery hubs…</td></tr></tbody></table></div><div class="sc-table-footer" id="scHubCount">Loading delivery hubs…</div>
   </section>
-  <section class="sc-panel sc-earnings-panel" aria-labelledby="scEarningsTitle"><div class="sc-panel-heading"><div><h2 id="scEarningsTitle">Network Earnings</h2><p>Sorting center earnings summary</p></div></div>
-   <div class="sc-earnings-total"><span>Available Earnings</span><strong>₱ {{ number_format((float) data_get($stats,'earnings',0),2) }}</strong><small>Figures display provided data only</small></div>
-   <div class="sc-earnings-row"><span>Parcel Handling Fees</span><strong>{{ is_numeric(data_get($stats,'handling_fees')) ? '₱ '.number_format((float)data_get($stats,'handling_fees'),2) : 'Not connected' }}</strong></div>
-   <div class="sc-earnings-row"><span>Transfer Fees</span><strong>{{ is_numeric(data_get($stats,'transfer_fees')) ? '₱ '.number_format((float)data_get($stats,'transfer_fees'),2) : 'Not connected' }}</strong></div>
-   <div class="sc-earnings-row"><span>Settlement Status</span><strong>{{ data_get($stats,'settlement_status','Not connected') }}</strong></div>
-  </section>
+   <section class="sc-panel sc-earnings-panel" aria-labelledby="scOperationsTitle"><div class="sc-panel-heading"><div><h2 id="scOperationsTitle">Center Operations</h2><p>Parcel handling and assigned facilities</p></div></div>
+    <div class="sc-earnings-total"><span>Assigned Delivery Hubs</span><strong id="scOpsHubs">0</strong><small>Facilities operating under this sorting center</small></div>
+    <div class="sc-earnings-row"><span>Parcels at This Center</span><strong id="scOpsParcels">0</strong></div>
+    <div class="sc-earnings-row"><span>Parcel Disputes</span><strong id="scOpsDisputes">0</strong></div>
+    <div class="sc-earnings-row"><span>Financial reporting</span><strong>Managed by Logistics Company</strong></div>
+   </section>
  </div>
- <p class="sc-info">Dashboard counters currently show 0 unless your page receives real values. The sorting center name, activity counts, parcel search, and official announcements can be connected to backend records later.</p>
+ <p class="sc-info" id="scDashboardStatus">Loading sorting center operations from database…</p>
 </div></main>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
  const byId=id=>document.getElementById(id);
  const clock=()=>{const el=byId('scLiveClock');if(el)el.textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date());};clock();setInterval(clock,1000);
- byId('scTrackForm')?.addEventListener('submit',e=>{e.preventDefault();byId('scTrackResult').textContent='Parcel tracking is not connected yet. No shipment record was changed.';});
-
  const scHubSearch=byId('scHubSearch'),scHubStatus=byId('scHubStatus'),scHubRows=byId('scHubRows');
  const updateHubFilter=()=>{if(!scHubRows)return;const q=(scHubSearch?.value||'').trim().toLowerCase(), status=scHubStatus?.value||'all';let count=0;[...scHubRows.querySelectorAll('tr:not(.sc-hub-empty)')].forEach(row=>{const visible=row.textContent.toLowerCase().includes(q)&&(status==='all'||row.dataset.scHubStatus===status);row.hidden=!visible;if(visible)count++;});const noData=scHubRows.querySelector('.sc-hub-empty');if(noData)noData.hidden=!!q||status!=='all';const footer=byId('scHubCount');if(footer)footer.textContent=count+' matching delivery hub(s)';};
  scHubSearch?.addEventListener('input',updateHubFilter);scHubStatus?.addEventListener('change',updateHubFilter);
- const slides=[...document.querySelectorAll('[data-sc-announcement]')],dots=byId('scAnnDots');let index=0,timer;
+ let slides=[...document.querySelectorAll('[data-sc-announcement]')],dots=byId('scAnnDots'),index=0,timer;
  const show=n=>{if(!slides.length)return;index=(n+slides.length)%slides.length;slides.forEach((el,i)=>el.hidden=i!==index);[...dots.children].forEach((dot,i)=>{dot.classList.toggle('active',i===index);dot.setAttribute('aria-current',String(i===index));});};
- slides.forEach((_,i)=>{const dot=document.createElement('button');dot.type='button';dot.setAttribute('aria-label',`Show announcement ${i+1}`);dot.addEventListener('click',()=>{show(i);restart();});dots.append(dot);});
  const restart=()=>{clearInterval(timer);if(slides.length>1&&!document.hidden&&!matchMedia('(prefers-reduced-motion: reduce)').matches)timer=setInterval(()=>show(index+1),6500);};
  byId('scAnnPrev')?.addEventListener('click',()=>{show(index-1);restart();});byId('scAnnNext')?.addEventListener('click',()=>{show(index+1);restart();});
- if(slides.length<=1){const controls=document.querySelector('.sc-ann-controls');if(controls)controls.hidden=true;}
- document.addEventListener('visibilitychange',restart);show(0);restart();
+ const renderAnnouncements=items=>{const container=document.querySelector('.sc-slides');container.replaceChildren();dots.replaceChildren();(items.length?items:[{badge_label:'UPDATES',title:'No current announcements',body:'There are no published updates for sorting centers.'}]).forEach((item,i)=>{const article=document.createElement('article'),badge=document.createElement('small'),title=document.createElement('h3'),body=document.createElement('p');article.dataset.scAnnouncement='';article.hidden=i>0;badge.textContent=item.badge_label||'ANNOUNCEMENT';title.textContent=item.title||'Update';body.textContent=item.body||'';article.append(badge,title,body);container.append(article);const dot=document.createElement('button');dot.type='button';dot.setAttribute('aria-label',`Show announcement ${i+1}`);dot.addEventListener('click',()=>{show(i);restart();});dots.append(dot);});slides=[...container.children];index=0;const controls=document.querySelector('.sc-ann-controls');if(controls)controls.hidden=slides.length<=1;show(0);restart();};
+ document.addEventListener('visibilitychange',restart);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const loadDashboard=async()=>{try{const response=await fetch(`{{ route('sorting-center.dashboard.data') }}`,{headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});if(!response.ok)throw new Error('Could not load sorting center dashboard data.');const {data}=await response.json();const stats=data.stats||{};const num=n=>Number(n||0).toLocaleString('en-PH');[['scStatParcels','parcels_at_center'],['scStatHubs','delivery_hubs'],['scStatVehicles','vehicles'],['scStatDisputes','parcel_disputes'],['scStatIncoming','incoming_transfers'],['scStatDeparted','departed_parcels'],['scOpsHubs','delivery_hubs'],['scOpsParcels','parcels_at_center'],['scOpsDisputes','parcel_disputes']].forEach(([id,key])=>{byId(id).textContent=num(stats[key]);});const hubs=data.hubs||[];byId('scHubTag').textContent=`${num(hubs.length)} hubs`;scHubRows.innerHTML=hubs.length?hubs.map(h=>{const status=String(h.status||'active').toLowerCase();return `<tr data-sc-hub-status="${esc(status)}"><td><strong>${esc(h.name)}</strong></td><td>${esc(h.municipality||'—')}</td><td>${esc(h.manager||'—')}</td><td>${num(h.parcels)}</td><td><span class="sc-status ${status==='inactive'?'inactive':'active'}">${esc(status[0].toUpperCase()+status.slice(1))}</span></td></tr>`;}).join(''):'<tr class="sc-hub-empty"><td colspan="5">No delivery hubs are assigned to this sorting center.</td></tr>';updateHubFilter();renderAnnouncements(data.announcements||[]);byId('scDashboardStatus').textContent='Dashboard activity is loaded from this sorting center’s shipments, transfers, fleet, and published announcements.';}catch(error){byId('scDashboardStatus').textContent=error.message;}};
+ loadDashboard();
+ byId('scTrackForm')?.addEventListener('submit',async e=>{e.preventDefault();const input=byId('scTrackQuery'),result=byId('scTrackResult');result.textContent='Looking up parcel…';try{const url=`{{ route('sorting-center.dashboard.data') }}?tracking=${encodeURIComponent(input.value.trim())}`;const response=await fetch(url,{headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});const body=await response.json();if(!response.ok)throw new Error(body.message||'Parcel not found at this sorting center.');const parcel=body.data;result.textContent=`${parcel.tracking} · ${parcel.status}${parcel.location?' · '+parcel.location:''}${parcel.updated_at?' · Updated '+parcel.updated_at:''}`;}catch(error){result.textContent=error.message;}});
+ show(0);restart();
 });
 </script>
 </body></html>

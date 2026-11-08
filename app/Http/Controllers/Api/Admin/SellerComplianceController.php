@@ -1269,6 +1269,7 @@ class SellerComplianceController extends Controller
             ->all();
 
         $payload['specifications'] = $savedSpecifications;
+        $payload['weight_kg'] = $product->weight_kg; 
         $payload['subcategory'] = $savedSpecifications['subcategory']
             ?? $product->getAttribute('subcategory')
             ?? null;
@@ -1277,7 +1278,20 @@ class SellerComplianceController extends Controller
         $payload['connected_variants'] = collect($product->connectedVariants ?? [])
             ->sortBy(fn ($variant) => data_get($variant, 'sort_order', 0))
             ->values()
-            ->map(fn ($variant) => is_array($variant) ? $variant : $variant->toArray())
+            ->map(function ($variant) use ($product) {
+                $row = is_array($variant) ? $variant : $variant->toArray();
+                // Be compatible with an older Product model while deployments are being updated.
+                // The model method resolves the selected option's saved photo URL.
+                $choices = is_array($row['choices'] ?? null) ? $row['choices'] : array_intersect_key($row, array_flip(['variations', 'colors', 'sizes']));
+                $savedPhoto = data_get($variant, 'photo');
+                $row['image_url'] = (is_string($savedPhoto) && preg_match('~^(https?://|data:)~i', $savedPhoto)
+                    ? $savedPhoto
+                    : $product->publicOptionPhoto($savedPhoto))
+                    ?: (method_exists($product, 'selectedOptionPhoto') ? $product->selectedOptionPhoto($choices) : null)
+                    ?: ($row['image_url'] ?? null);
+                $row['photo'] = $row['image_url'];
+                return $row;
+            })
             ->all();
 
 

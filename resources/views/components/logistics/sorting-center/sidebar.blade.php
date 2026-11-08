@@ -9,7 +9,6 @@
         ['Parcel Disputes', 'complaints-disputes.png', 'parcel-disputes'],
         ['Vehicles and Drivers', 'logistic-management.png', 'vehicles-drivers'],
         ['Notifications', 'notifications.png', 'notifications'],
-        ['Network Earnings', 'commission.png', 'network-earnings'],
         ['Messages', 'messages.png', 'messages'],
         ['Reports', 'reports.png', 'reports'],
         ['Account', 'account-management.png', 'account'],
@@ -99,7 +98,7 @@ html,body.lg-body{overflow-x:hidden}
                 $lgGroups = [
                     ['heading' => 'OVERVIEW', 'labels' => ['Dashboard']],
                     ['heading' => 'OPERATIONS', 'labels' => ['Courier Registrations', 'Delivery Hubs', 'Scanners', 'Parcel Tracking', 'Parcel Disputes', 'Vehicles and Drivers']],
-                    ['heading' => 'FINANCE & ACCOUNT', 'labels' => ['Notifications', 'Network Earnings', 'Messages', 'Reports', 'Account']],
+                    ['heading' => 'FINANCE & ACCOUNT', 'labels' => ['Notifications', 'Messages', 'Reports', 'Account']],
                 ];
             @endphp
             {{-- Plain PHP loops prevent Blade's inline array parsing from generating a stray endforeach. --}}

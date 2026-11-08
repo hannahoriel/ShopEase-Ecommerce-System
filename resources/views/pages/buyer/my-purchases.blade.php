@@ -74,7 +74,7 @@
 
                     $activeSidePanel = in_array(
                         $requestedSidePanel,
-                        ['purchases', 'likes', 'following', 'notifications', 'account', 'complaints', 'vouchers', 'privacy-security', 'notification-settings', 'platform-policies'],
+                        ['purchases', 'wallet', 'likes', 'notifications', 'account', 'complaints', 'vouchers', 'privacy-security', 'notification-settings', 'platform-policies'],
                         true
                     )
                         ? $requestedSidePanel
@@ -147,12 +147,21 @@
                             <span>My Purchases</span>
                         </button>
 
+                        <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'wallet' ? 'is-active' : '' }}" data-side-panel="wallet">
+                            <span class="buyer-account-nav-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2M6 6V4h12"/>
+                                </svg>
+                            </span>
+                            <span>ShopEase Wallet</span>
+                        </button>
+
                         <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'likes' ? 'is-active' : '' }}" data-side-panel="likes">
                             <span class="buyer-account-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 0 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z"/></svg></span>
                             <span>My Likes</span><span id="buyerLikesSidebarCount" class="buyer-likes-sidebar-count" aria-label="Liked products count" hidden></span>
                         </button>
 
-                        <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'following' ? 'is-active' : '' }}" data-side-panel="following"><span class="buyer-account-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6m-3-3h6"/></svg></span><span>Following</span></button>
+
 
                         <button type="button" class="buyer-account-nav-link buyer-side-tab {{ $activeSidePanel === 'notifications' ? 'is-active' : '' }}" data-side-panel="notifications">
                             <span class="buyer-account-nav-icon">
@@ -257,149 +266,8 @@
                 {{-- SHOP-GROUPED PURCHASE LIST --}}
                 <div class="purchase-table-wrap">
                     <div id="purchaseRows" class="purchase-shop-list">
-                        @foreach ($orders ?? [] as $order)
-                            <article
-                                class="purchase-shop-card"
-                                data-purchase-row
-                                data-view-order-id="{{ $order['order_id'] }}"
-                                role="link" tabindex="0" aria-label="View order {{ $order['order_id'] }}"
-                                data-status="{{ $order['status'] }}"
-                                data-search="{{ strtolower($order['shop'] . ' ' . $order['order_id'] . ' ' . $order['product']) }}"
-                                {{ $activePurchaseTab !== 'all' && $order['status'] !== $activePurchaseTab ? 'hidden' : '' }}
-                            >
-                                {{-- SHOP HEADER --}}
-                                <div class="purchase-shop-header">
-                                    <div class="purchase-shop-heading">
-                                        <span class="purchase-shop-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none">
-                                                <path
-                                                    d="M4 9h16l-1.2-5H5.2L4 9Z"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.7"
-                                                    stroke-linejoin="round"
-                                                />
-                                                <path
-                                                    d="M6 9v10h12V9"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.7"
-                                                    stroke-linejoin="round"
-                                                />
-                                                <path
-                                                    d="M9 19v-5h6v5"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.7"
-                                                    stroke-linejoin="round"
-                                                />
-                                            </svg>
-                                        </span>
-
-                                        <strong>{{ $order['shop'] }}</strong>
-                                    </div>
-
-                                    <div class="purchase-shop-order-meta">
-                                        <strong class="purchase-shop-order-id">
-                                            Order ID: {{ $order['order_id'] }}
-                                        </strong>
-                                        <span class="purchase-shop-placed-at">
-                                            Placed {{ $order['created_at'] ?? '' }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {{-- ONE PRODUCT PREVIEW --}}
-                                <div class="purchase-row">
-                                    <div class="purchase-product-cell">
-                                        <div class="purchase-product-image" aria-hidden="true">
-
-                                            @if ($order['art'] === 'earbuds')
-                                                <svg viewBox="0 0 120 100">
-                                                    <rect width="120" height="100" rx="10" fill="#ECEDEA"/>
-                                                    <ellipse cx="61" cy="80" rx="34" ry="7" fill="#838681" opacity=".15"/>
-                                                    <rect x="37" y="48" width="50" height="35" rx="15" fill="#292E30"/>
-                                                    <rect x="41" y="20" width="11" height="43" rx="6" fill="#202426" transform="rotate(-10 41 20)"/>
-                                                    <rect x="74" y="18" width="11" height="44" rx="6" fill="#202426" transform="rotate(12 74 18)"/>
-                                                </svg>
-
-                                            @elseif ($order['art'] === 'watch')
-                                                <svg viewBox="0 0 120 100">
-                                                    <rect width="120" height="100" rx="10" fill="#E4EBEF"/>
-                                                    <rect x="52" y="10" width="17" height="80" rx="9" fill="#262B2F"/>
-                                                    <rect x="34" y="25" width="54" height="51" rx="13" fill="#151B20"/>
-                                                    <rect x="39" y="30" width="44" height="41" rx="10" fill="#14384A"/>
-                                                    <circle cx="61" cy="51" r="13" fill="#1B526A"/>
-                                                </svg>
-
-                                            @elseif ($order['art'] === 'bag')
-                                                <svg viewBox="0 0 120 100">
-                                                    <rect width="120" height="100" rx="10" fill="#F1E9DD"/>
-                                                    <path d="M38 47Q61 12 84 47" fill="none" stroke="#93643A" stroke-width="7" stroke-linecap="round"/>
-                                                    <path d="M30 44Q60 30 91 45L84 82Q61 91 36 82Z" fill="#BF8E54" stroke="#8B623B" stroke-width="3"/>
-                                                </svg>
-
-                                            @elseif ($order['art'] === 'shoes')
-                                                <svg viewBox="0 0 120 100">
-                                                    <rect width="120" height="100" rx="10" fill="#ECE8E2"/>
-                                                    <path d="M23 61 42 42l21 9 14 17 29 6q8 2 8 10H30q-9-1-10-9Z" fill="#FAFAF8" stroke="#AAA59F" stroke-width="3"/>
-                                                    <path d="M45 43l21 10 13 16-36-6Z" fill="#30383E"/>
-                                                </svg>
-
-                                            @elseif ($order['art'] === 'skincare')
-                                                <svg viewBox="0 0 120 100">
-                                                    <rect width="120" height="100" rx="10" fill="#F1DDD6"/>
-                                                    <rect x="27" y="43" width="20" height="42" rx="6" fill="#F7F2EA"/>
-                                                    <rect x="53" y="34" width="23" height="51" rx="7" fill="#E99C8B"/>
-                                                    <rect x="82" y="47" width="25" height="36" rx="8" fill="#F0D7CF"/>
-                                                </svg>
-
-                                            @else
-                                                <svg viewBox="0 0 120 100">
-                                                    <rect width="120" height="100" rx="10" fill="#ECE7DF"/>
-                                                    <ellipse cx="50" cy="65" rx="28" ry="19" fill="#706257"/>
-                                                    <ellipse cx="50" cy="58" rx="24" ry="14" fill="#302A25"/>
-                                                    <path d="M76 61 108 51q8-2 10 4v5L80 71Z" fill="#67594D"/>
-                                                </svg>
-                                            @endif
-                                        </div>
-
-                                        <div class="purchase-product-copy">
-                                            <strong>{{ $order['product'] }}</strong>
-                                            <small>{{ $order['variant'] }}</small>
-
-                                            <div class="purchase-product-price">
-                                                <span>₱{{ number_format($order['price'], 2) }}</span>
-                                            </div>
-
-                                            @if (($order['additional_products'] ?? 0) > 0)
-                                                <div class="purchase-more-products">
-                                                    +{{ $order['additional_products'] }}
-                                                    more
-                                                    {{ $order['additional_products'] === 1 ? 'product' : 'products' }}
-                                                    from this shop
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <div class="purchase-quantity">
-                                        {{ $order['quantity'] }}
-                                    </div>
-
-                                    <div class="purchase-total">
-                                        ₱{{ number_format($order['total'], 2) }}
-                                    </div>
-
-                                    <div class="purchase-estimated-delivery">
-                                        {{ $order['estimated_delivery'] ?? '—' }}
-                                    </div>
-
-                                    <div class="purchase-status-cell">
-                                        <span class="purchase-status purchase-status--{{ $order['status'] }}">
-                                            {{ $order['status_label'] }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </article>
-                        @endforeach
+                        {{-- Real purchase cards are rendered here by my-purchases.js
+                             from GET /api/v1/buyer/orders. Never render demo orders. --}}
                     </div>
 
                     <div id="purchaseEmptyState" class="purchase-empty-state" hidden>
@@ -670,9 +538,51 @@
 </div>
                     </div>
 
-                    <div class="buyer-side-panel {{ $activeSidePanel === 'following' ? 'is-active' : '' }}" data-panel-content="following" {{ $activeSidePanel !== 'following' ? 'hidden' : '' }}">
-                        <section class="purchases-page-heading"><h1>Following</h1><nav class="purchases-breadcrumbs" aria-label="Breadcrumb"><a href="{{ url('/buyer/dashboard') }}">Home</a><span aria-hidden="true">›</span><span aria-current="page">Following</span></nav></section>
-                        <section class="buyer-following-card"><header><div><h2>Shops you follow</h2><p>Keep up with new products and updates from your favorite shops.</p></div><span id="buyerFollowingCount">Loading…</span></header><div id="buyerFollowingList" class="buyer-following-list" aria-live="polite"><p class="buyer-following-state">Loading followed shops…</p></div></section>
+                    {{-- ShopEase Wallet: presentation only; no backend balance/transaction source exists yet. --}}
+                    <div class="buyer-side-panel {{ $activeSidePanel === 'wallet' ? 'is-active' : '' }}" data-panel-content="wallet" {{ $activeSidePanel !== 'wallet' ? 'hidden' : '' }}>
+                        <section class="purchases-page-heading">
+                            <h1>ShopEase Wallet</h1>
+                            <nav class="purchases-breadcrumbs" aria-label="Breadcrumb">
+                                <a href="{{ url('/buyer/dashboard') }}">Home</a>
+                                <span aria-hidden="true">›</span>
+                                <span aria-current="page">ShopEase Wallet</span>
+                            </nav>
+                        </section>
+                        <section class="buyer-wallet-container" aria-labelledby="buyer-wallet-heading">
+                            <div class="buyer-wallet-banner">
+                                <div class="buyer-wallet-banner-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2.5" y="6" width="19" height="14" rx="3"/>
+                                        <path d="M2.5 10h19M16 15h2.5M6 6V4h12"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="buyer-wallet-eyebrow">YOUR SHOP EASE ACCOUNT</p>
+                                    <h2 id="buyer-wallet-heading">ShopEase Wallet</h2>
+                                    <p class="buyer-wallet-banner-desc">Refunds received can be used to pay for future parcel orders. No top-ups or withdrawals.</p>
+                                </div>
+                                <span class="buyer-wallet-status">Refund-only</span>
+                            </div>
+                            <div class="buyer-wallet-summary">
+                                <div class="buyer-wallet-summary-copy">
+                                    <span>Available balance</span>
+                                    <strong id="buyerWalletBalance">Loading…</strong>
+                                    <p>Only completed refunds add funds. Wallet payments deduct funds. No cash-in, transfer, or withdrawal.</p>
+                                </div>
+                            </div>
+                            <div class="buyer-wallet-transactions">
+                                <div class="buyer-wallet-transactions-head">
+                                    <h3>Transaction History</h3>
+                                    <span id="buyerWalletTransactionCount">Loading…</span>
+                                </div>
+                                <div class="buyer-wallet-empty" id="buyerWalletEmpty">
+                                    <span class="buyer-wallet-empty-icon" aria-hidden="true">▤</span>
+                                    <strong>No wallet transactions to display</strong>
+                                    <p>Completed parcel refunds and wallet payments will appear here.</p>
+                                </div>
+                                <div id="buyerWalletTransactions" class="buyer-wallet-history" aria-live="polite"></div>
+                            </div>
+                        </section>
                     </div>
 
                     <div class="buyer-side-panel {{ $activeSidePanel === 'vouchers' ? 'is-active' : '' }}" data-panel-content="vouchers" {{ $activeSidePanel !== 'vouchers' ? 'hidden' : '' }}">
@@ -700,7 +610,7 @@
 
                     <div class="buyer-side-panel {{ $activeSidePanel === 'platform-policies' ? 'is-active' : '' }}" data-panel-content="platform-policies" {{ $activeSidePanel !== 'platform-policies' ? 'hidden' : '' }}">
                         <section class="purchases-page-heading"><h1>Platform Policies</h1><nav class="purchases-breadcrumbs" aria-label="Breadcrumb"><a href="{{ url('/buyer/dashboard') }}">Home</a><span aria-hidden="true">›</span><span aria-current="page">Platform Policies</span></nav></section>
-                        <article class="sa-policy-document"><header class="sa-policy-header"><div class="sa-policy-stamp">ShopEase · BUYER DOCUMENT</div><h2>Buyer Platform Policies</h2><p>Reference guide for buyer account holders</p><div class="sa-policy-rule"></div><p class="sa-policy-note"><strong>Draft / demonstration:</strong> This text is placeholder guidance for UI review, not the official ShopEase terms. Replace with reviewed platform policies before publishing.</p></header><nav class="sa-policy-index" aria-label="Policy contents"><strong>Contents</strong><a href="#buyerPolicy1">01. Buyer responsibilities</a><a href="#buyerPolicy2">02. Ordering & Cash on Delivery</a><a href="#buyerPolicy3">03. Order tracking & delivery</a><a href="#buyerPolicy4">04. Cancellations, returns & refunds</a><a href="#buyerPolicy5">05. Vouchers & promotions</a><a href="#buyerPolicy6">06. Complaints & customer support</a><a href="#buyerPolicy7">07. Privacy & security</a></nav><section id="buyerPolicy1"><h3>01. Buyer responsibilities</h3><p>Use accurate personal and delivery information. Keep your account credentials secure and follow applicable platform rules.</p></section><section id="buyerPolicy2"><h3>02. Ordering & Cash on Delivery</h3><p>ShopEase currently supports Cash on Delivery (COD) only. Review total costs, voucher eligibility, order details and shipping information before placing an order.</p></section><section id="buyerPolicy3"><h3>03. Order tracking & delivery</h3><p>Review your order status and make yourself available to receive parcels. Follow courier and seller instructions when delivery attempts occur.</p></section><section id="buyerPolicy4"><h3>04. Cancellations, returns & refunds</h3><p>Submit requests through the available order channels and provide truthful reasons and supporting evidence when required. Outcomes depend on applicable platform rules.</p></section><section id="buyerPolicy5"><h3>05. Vouchers & promotions</h3><p>Discounts may have expiration dates, minimum spends, category restrictions, redemption limits and COD eligibility requirements. Terms shown on a voucher apply.</p></section><section id="buyerPolicy6"><h3>06. Complaints & customer support</h3><p>Use complaint and ShopEase Admin messaging tools responsibly. Keep supporting evidence accurate and communicate respectfully.</p></section><section id="buyerPolicy7"><h3>07. Privacy & security</h3><p>Protect account details, avoid sharing verification codes and use authorized ShopEase channels for account recovery and support.</p></section><footer class="sa-policy-footer">ShopEase Buyer Guidelines <span>End of draft document</span></footer></article>
+                        <article class="sa-policy-document"><header class="sa-policy-header"><div class="sa-policy-stamp">ShopEase · BUYER DOCUMENT</div><h2>Buyer Platform Policies</h2><p>Reference guide for buyer account holders</p><div class="sa-policy-rule"></div><p class="sa-policy-note"><strong>Draft / demonstration:</strong> This text is placeholder guidance for UI review, not the official ShopEase terms. Replace with reviewed platform policies before publishing.</p></header><nav class="sa-policy-index" aria-label="Policy contents"><strong>Contents</strong><a href="#buyerPolicy1">01. Buyer responsibilities</a><a href="#buyerPolicy2">02. Ordering & Cash on Delivery</a><a href="#buyerPolicy3">03. Order tracking & delivery</a><a href="#buyerPolicy4">04. Cancellations, returns & refunds</a><a href="#buyerPolicy5">05. Vouchers & promotions</a><a href="#buyerPolicy6">06. Complaints & customer support</a><a href="#buyerPolicy7">07. Privacy & security</a></nav><section id="buyerPolicy1"><h3>01. Buyer responsibilities</h3><p>Use accurate personal and delivery information. Keep your account credentials secure and follow applicable platform rules.</p></section><section id="buyerPolicy2"><h3>02. Ordering & Cash on Delivery</h3><p>ShopEase supports Cash on Delivery and ShopEase Wallet when the refund balance covers the entire order. Review total costs, voucher eligibility, order details and shipping information before placing an order.</p></section><section id="buyerPolicy3"><h3>03. Order tracking & delivery</h3><p>Review your order status and make yourself available to receive parcels. Follow courier and seller instructions when delivery attempts occur.</p></section><section id="buyerPolicy4"><h3>04. Cancellations, returns & refunds</h3><p>Submit requests through the available order channels and provide truthful reasons and supporting evidence when required. Outcomes depend on applicable platform rules.</p></section><section id="buyerPolicy5"><h3>05. Vouchers & promotions</h3><p>Discounts may have expiration dates, minimum spends, category restrictions, redemption limits and COD eligibility requirements. Terms shown on a voucher apply.</p></section><section id="buyerPolicy6"><h3>06. Complaints & customer support</h3><p>Use complaint and ShopEase Admin messaging tools responsibly. Keep supporting evidence accurate and communicate respectfully.</p></section><section id="buyerPolicy7"><h3>07. Privacy & security</h3><p>Protect account details, avoid sharing verification codes and use authorized ShopEase channels for account recovery and support.</p></section><footer class="sa-policy-footer">ShopEase Buyer Guidelines <span>End of draft document</span></footer></article>
                     </div>
                 </section>
             </div>
@@ -860,7 +770,7 @@
                 <p id="bvModalDescription" class="bv-modal-description"></p>
                 <div class="bv-modal-details" id="bvModalDetails"></div>
                 <div class="bv-modal-terms"><h3>Terms &amp; conditions</h3><ul id="bvModalTerms"></ul></div>
-                <div class="bv-cod-note"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7h11v10H3V7Zm11 3h4l3 3v4h-7v-7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="18" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/></svg><div><strong>Cash on Delivery (COD) only</strong><span>ShopEase currently accepts COD only. No card, e-wallet or bank payment is available.</span></div></div>
+                <div class="bv-cod-note"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7h11v10H3V7Zm11 3h4l3 3v4h-7v-7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="18" cy="18" r="1.5" stroke="currentColor" stroke-width="1.7"/></svg><div><strong>Cash on Delivery or ShopEase Wallet</strong><span>ShopEase accepts COD or a refund-funded ShopEase Wallet balance sufficient for the full order. No top-up or withdrawal is available.</span></div></div>
             </div>
             <div class="bv-modal-footer"><button type="button" id="bvModalApply">Use Voucher at Checkout</button><button type="button" id="bvModalDone">Close</button></div>
         </section>

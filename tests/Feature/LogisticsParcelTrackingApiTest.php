@@ -21,6 +21,45 @@ class LogisticsParcelTrackingApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_logistics_reports_api_returns_only_real_company_shipments_for_the_requested_period(): void
+    {
+        [$user, $branch, $hub, $order, $shipment] = $this->trackingFixture('report-1001');
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/logistics/reports?from='.now()->toDateString().'&to='.now()->toDateString())
+            ->assertOk()
+            ->assertJsonPath('data.parcels.0.ref', $shipment->tracking_number)
+            ->assertJsonPath('data.parcels.0.center', $branch->name)
+            ->assertJsonPath('data.parcels.0.hub', $hub->hub_name)
+            ->assertJsonPath('data.parcels.0.status', 'at_hub')
+            ->assertJsonPath('data.centers.0.name', $branch->name)
+            ->assertJsonPath('data.centers.0.hubs.0', $hub->hub_name);
+
+        [$otherUser, , , , $otherShipment] = $this->trackingFixture('report-2002');
+        $this->actingAs($otherUser)
+            ->getJson('/api/v1/logistics/reports?from='.now()->toDateString().'&to='.now()->toDateString())
+            ->assertOk()
+            ->assertJsonPath('data.parcels.0.ref', $otherShipment->tracking_number)
+            ->assertJsonMissing(['ref' => $shipment->tracking_number]);
+    }
+
+    public function test_logistics_dashboard_uses_facility_and_shipment_records_from_the_database(): void
+    {
+        [$user, , , $order, $shipment] = $this->trackingFixture('dashboard-1001');
+        $order->update(['status' => 'completed']);
+        $shipment->update(['shipping_fee' => 80]);
+
+        $this->actingAs($user)
+            ->get('/logistics/dashboard')
+            ->assertOk()
+            ->assertSee('Test Logistics Dashboard')
+            ->assertSee('companyName: "Test Logistics"', false)
+            ->assertSee('id="lgStat-sorting">1', false)
+            ->assertSee('id="lgStat-hubs">1', false)
+            ->assertSee('id="lgStat-parcels">1', false)
+            ->assertSee('80.00');
+    }
+
     public function test_logistics_tracking_api_returns_parcels_returns_histories_and_network_locations(): void
     {
         [$user, $branch, $hub, $order, $shipment] = $this->trackingFixture();
@@ -96,7 +135,7 @@ class LogisticsParcelTrackingApiTest extends TestCase
     {
         $this->getJson('/api/v1/logistics/parcel-tracking')->assertUnauthorized();
 
-        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $buyer = $this->makeTestUser(User::ROLE_BUYER);
         $this->actingAs($buyer)
             ->getJson('/api/v1/logistics/parcel-tracking')
             ->assertForbidden();
@@ -123,10 +162,7 @@ class LogisticsParcelTrackingApiTest extends TestCase
 
     private function trackingFixture(string $suffix = '1001'): array
     {
-        $user = User::factory()->create([
-            'role' => User::ROLE_LOGISTICS,
-            'registration_status' => 'active',
-        ]);
+        $user = $this->makeTestUser(User::ROLE_LOGISTICS);
         $logistics = Logistics::query()->create([
             'user_id' => $user->id,
             'last_name' => 'Carrier',
@@ -169,8 +205,8 @@ class LogisticsParcelTrackingApiTest extends TestCase
             'login_email' => "hub-{$suffix}@example.test",
             'status' => 'active',
         ]);
-        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $buyer = $this->makeTestUser(User::ROLE_BUYER);
+        $sellerUser = $this->makeTestUser(User::ROLE_SELLER);
         $seller = Seller::query()->create([
             'user_id' => $sellerUser->id,
             'store_name' => 'Test Store',
@@ -179,6 +215,7 @@ class LogisticsParcelTrackingApiTest extends TestCase
         $order = Order::query()->create([
             'buyer_id' => $buyer->id,
             'seller_id' => $seller->id,
+            'logistics_id' => $logistics->id,
             'order_number' => "SE-TRACK-{$suffix}",
             'total' => 1599,
             'status' => 'in_transit',
@@ -198,5 +235,16 @@ class LogisticsParcelTrackingApiTest extends TestCase
         ]);
 
         return [$user, $branch, $hub, $order, $shipment];
+    }
+
+    private function makeTestUser(string $role): User
+    {
+        return User::query()->create([
+            'name' => ucfirst($role).' Test User',
+            'email' => $role.'+'.uniqid('', true).'@example.test',
+            'password' => 'password',
+            'role' => $role,
+            'registration_status' => 'active',
+        ]);
     }
 }

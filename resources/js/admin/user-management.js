@@ -304,6 +304,109 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCards();
     }
 
+    // Demo request decisions are browser-local; no user record is modified.
+    const umStoreKey = 'shopease_admin_user_management_change_requests_v1';
+    let umDecisions = {};
+    try { umDecisions = JSON.parse(localStorage.getItem(umStoreKey) || '{}') || {}; } catch (_) {}
+    let umSelected = null;
+    let umFlashTimeout;
+    const umEl = id => document.getElementById(id);
+    const umChange = umEl('um-change-modal');
+    const umReason = umEl('um-reason-modal');
+    const umFlash = umEl('um-change-flash');
+    function umDemoRequest(user) {
+        // First three loaded accounts only: obvious UI-only sample requests.
+        const index = users.findIndex(item => String(item.id) === String(user.id));
+        if (index < 0 || index > 2 || umDecisions[String(user.id)]) return null;
+        const phone = String(user.phone || 'Not provided');
+        const email = String(user.email || 'Not provided');
+        const fields = [
+            { label: 'Contact Number', before: phone, after: index === 0 ? '0918 456 2211' : index === 1 ? '0917 555 4820' : '0920 817 6632' }
+        ];
+        if (index === 1) fields.push({label:'Email Address',before:email,after:'updated.' + email});
+        if (index === 2) fields.push({label:'Street Address',before:'Existing registered address',after:'Updated address (demo)'});
+        return {id: String(user.id), name: String(user.name || 'User'), type: String(user.type || 'User'), fields};
+    }
+    function umRequestBadge(user) {
+        return umDemoRequest(user) ? `<div><button type="button" class="um-change-badge" data-um-request="${escapeHtml(String(user.id))}" aria-label="Review pending account information change">Pending Information Update</button></div>` : '';
+    }
+    function umSetModal(element, visible) {
+        if (!element) return;
+        element.hidden = !visible;
+        document.body.style.overflow = (umChange && !umChange.hidden) || (umReason && !umReason.hidden) ? 'hidden' : '';
+    }
+    function umOpenRequest(user) {
+        const request = umDemoRequest(user);
+        if (!request) return;
+        umSelected = request;
+        umEl('um-change-subtitle').textContent = `${request.name} · ${request.type} · Pending Approval`;
+        umEl('um-change-fields').innerHTML = request.fields.map(f => `<tr><td>${escapeHtml(f.label)}</td><td>${escapeHtml(f.before)}</td><td>${escapeHtml(f.after)}</td></tr>`).join('');
+        umEl('um-change-meta').textContent = 'Sample account change request · Frontend preview only';
+        umSetModal(umChange, true);
+    }
+    function umNotify(title, message, isError = false) {
+        umEl('um-change-flash-title').textContent = title;
+        umEl('um-change-flash-text').textContent = message;
+        umEl('um-change-flash-icon').textContent = isError ? '!' : '✓';
+        umFlash.classList.toggle('is-error', isError);
+        umFlash.hidden = false;
+        clearTimeout(umFlashTimeout);
+        umFlashTimeout = setTimeout(() => { umFlash.hidden = true; }, 4600);
+    }
+    function umDecide(status, reason = '', details = '') {
+        if (!umSelected) return;
+        umDecisions[umSelected.id] = {status, reason, details, decidedAt: new Date().toISOString()};
+        try { localStorage.setItem(umStoreKey, JSON.stringify(umDecisions)); } catch (_) {}
+        const name = umSelected.name;
+        umSetModal(umReason, false);
+        umSetModal(umChange, false);
+        umSelected = null;
+        render();
+        umNotify(status === 'approved' ? 'Request Approved' : 'Request Disapproved', `${name}'s information change request has been ${status === 'approved' ? 'approved' : 'disapproved'} in the UI preview.` , status !== 'approved');
+    }
+    tbody.addEventListener('click', event => {
+        const badge = event.target.closest('[data-um-request]');
+        if (!badge) return;
+        event.preventDefault(); event.stopImmediatePropagation();
+        const user = users.find(u => String(u.id) === badge.dataset.umRequest);
+        if (user) umOpenRequest(user);
+    }, true);
+    umEl('um-change-close').addEventListener('click', () => umSetModal(umChange, false));
+    umEl('um-change-cancel').addEventListener('click', () => umSetModal(umChange, false));
+    umEl('um-change-approve').addEventListener('click', () => umDecide('approved'));
+    umEl('um-change-reject').addEventListener('click', () => {
+        umEl('um-reason-options').querySelectorAll('input').forEach(r => r.checked = false);
+        umEl('um-reason-notes').value = '';
+        umEl('um-reason-count').textContent = '0';
+        umEl('um-reason-error').hidden = true;
+        umSetModal(umChange, false);
+        umSetModal(umReason, true);
+    });
+    umEl('um-reason-close').addEventListener('click', () => {umSetModal(umReason, false); umSetModal(umChange, true);});
+    umEl('um-reason-cancel').addEventListener('click', () => {umSetModal(umReason, false); umSetModal(umChange, true);});
+    umEl('um-reason-notes').addEventListener('input', e => umEl('um-reason-count').textContent = e.target.value.length);
+    umEl('um-reason-confirm').addEventListener('click', () => {
+        const checked = document.querySelector('input[name="um_disapprove_reason"]:checked');
+        const details = umEl('um-reason-notes').value.trim();
+        if (!checked || (checked.value === 'Other' && !details)) {
+            umEl('um-reason-error').textContent = !checked ? 'Please select a reason.' : 'Please specify the reason in Additional Details.';
+            umEl('um-reason-error').hidden = false;
+            return;
+        }
+        umDecide('disapproved', checked.value, details);
+    });
+    umEl('um-change-flash-close').addEventListener('click', () => {umFlash.hidden = true;});
+    [umChange, umReason].forEach(layer => layer.addEventListener('click', event => {
+        if (event.target === layer) {
+            if (layer === umReason) {umSetModal(umReason,false);umSetModal(umChange,true);} else umSetModal(umChange,false);
+        }
+    }));
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (!umReason.hidden) {umSetModal(umReason,false);umSetModal(umChange,true);}
+        else if (!umChange.hidden) umSetModal(umChange,false);
+    });
+
     function render() {
         const totalPages =
             Math.max(
@@ -411,6 +514,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             <td class="px-4 py-2.5">
                                 ${statusBadge(user.status)}
+                                ${umRequestBadge(user)}
                             </td>
 
                         </tr>

@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                         ...(checkoutConfig.api.apiToken
                             ? { Authorization: `Bearer ${checkoutConfig.api.apiToken}` }
                             : {}),
@@ -43,12 +44,75 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkoutMessage = document.getElementById('checkoutMessage');
             const placeOrderButton = document.getElementById('placeOrderButton');
             let cartItems = [];
+            // The cart page saves checked row IDs before navigation. If checkout is opened
+            // directly (or from a cached older cart script), use the cart's default checked
+            // state and include all current cart rows.
+            const checkoutSelectionKey = 'shopease_checkout_cart_item_ids';
+            const selectedCartIds = (() => {
+                try {
+                    const stored = sessionStorage.getItem(checkoutSelectionKey);
+                    if (stored === null) return null;
+                    const ids = JSON.parse(stored);
+                    return Array.isArray(ids) ? [...new Set(ids.map(Number).filter(id => Number.isSafeInteger(id) && id > 0))] : null;
+                } catch { return null; }
+            })();
             let appliedVoucherCode = '';
             let appliedVoucherDiscount = 0;
             let appliedVoucherSellerId = null;
             let shippingOptionsBySeller = {};
             let selectedLogisticsBySeller = {};
             let shippingOptionsLoaded = false;
+            let walletBalance = 0;
+            let walletLoaded = false;
+            let walletError = '';
+            const walletOption = document.getElementById('checkoutWalletOption');
+            const walletAvailability = document.getElementById('checkoutWalletAvailability');
+            // Shipping is charged only for an approved, actually selected provider.
+            const selectedShippingFee = sellerId => {
+                const options = shippingOptionsBySeller[String(sellerId)] || [];
+                const selected = selectedLogisticsBySeller[String(sellerId)];
+                return shippingOptionsLoaded && selected && options.some(option => String(option.id) === String(selected)) ? 50 : 0;
+            };
+            const walletTotal = () => cartItems.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0)
+                + [...new Set(cartItems.map(item => String(item.product.seller.id)))].reduce((sum, id) => sum + selectedShippingFee(id), 0)
+                - appliedVoucherDiscount;
+            const refreshWalletOption = () => {
+                const available = walletLoaded && cartItems.length > 0 && walletBalance + 0.001 >= Math.max(0, walletTotal());
+                if (walletOption) { walletOption.disabled = !available; walletOption.setAttribute('aria-disabled', String(!available)); }
+                if (walletAvailability) walletAvailability.textContent = walletLoaded
+                    ? `Available ShopEase Wallet balance: ${money(walletBalance)} · Order total: ${money(Math.max(0,walletTotal()))}`
+                        + (available ? ' · Sufficient balance' : ' · Insufficient balance — Cash on Delivery only')
+                    : walletError
+                        ? `Wallet balance unavailable · Unable to verify the balance. Wallet payment is temporarily disabled.`
+                        : `Wallet balance: ${money(0)} · Checking wallet…`;
+                if (!available && document.querySelector('.payment-option.is-selected') === walletOption) {
+                    walletOption?.classList.remove('is-selected');
+                    const cod = document.querySelector('.payment-option[data-payment-method="Cash on Delivery"]');
+                    cod?.classList.add('is-selected');
+                    const label = document.getElementById('paymentMethodLabel');
+                    if (label) label.textContent = 'Cash on Delivery';
+                }
+            };
+            async function loadWalletBalance() {
+                const controller = new AbortController();
+                const timeout = window.setTimeout(() => controller.abort(), 8000);
+                try {
+                    const result = await checkoutApiFetch('/api/v1/buyer/wallet', { signal: controller.signal });
+                    const parsed = Number(result.balance);
+                    if (!Number.isFinite(parsed) || parsed < 0) throw new Error('Invalid wallet balance response');
+                    walletBalance = parsed;
+                    walletLoaded = true;
+                    walletError = '';
+                } catch (error) {
+                    walletBalance = 0;
+                    walletLoaded = false;
+                    walletError = error.name === 'AbortError' ? 'Wallet request timed out' : (error.message || 'Wallet API unavailable');
+                } finally {
+                    window.clearTimeout(timeout);
+                }
+                refreshWalletOption();
+            }
+            loadWalletBalance();
 
             const escapeCheckoutHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -63,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cartItems = items;
                 if (!checkoutGroupsElement) return;
                 if (!items.length) {
-                    checkoutGroupsElement.innerHTML = '<p class="checkout-empty-cart">Your cart is empty. Add products before placing an order.</p>';
+                    checkoutGroupsElement.innerHTML = '<p class="checkout-empty-cart">No products selected for checkout. Return to Cart and check the items you want to purchase.</p>';
                     placeOrderButton.disabled = true;
                     return;
                 }
@@ -109,24 +173,34 @@ document.addEventListener('DOMContentLoaded', () => {
                             }).join('')}
                             <div class="shop-checkout-options">
                                 <div class="shipping-option">
-                                    <div class="checkout-shipping-choice"><strong>Logistics Company</strong><span>${shippingOptionsLoaded ? 'Choose a company covering both locations' : 'Checking available companies…'}</span><select class="checkout-logistics-select" data-logistics-seller="${escapeCheckoutHtml(group.id)}" aria-label="Logistics company for ${escapeCheckoutHtml(group.shop)}" ${!shippingOptionsLoaded || !(shippingOptionsBySeller[group.id] || []).length ? 'disabled' : ''}><option value="">${shippingOptionsLoaded ? ((shippingOptionsBySeller[group.id] || []).length ? 'Select logistics company' : 'No service in both locations') : 'Loading...'}</option>${(shippingOptionsBySeller[group.id] || []).map(option => `<option value="${escapeCheckoutHtml(option.id)}" ${String(selectedLogisticsBySeller[group.id] || '') === String(option.id) ? 'selected' : ''}>${escapeCheckoutHtml(option.name)}</option>`).join('')}</select>${shippingOptionsLoaded && !(shippingOptionsBySeller[group.id] || []).length ? '<small class="checkout-no-logistics">No approved logistics company has a hub or sorting center at both the delivery and seller locations.</small>' : ''}</div>
-                                    <strong class="shipping-fee">${money(50)}</strong>
+                                    <div class="checkout-shipping-choice">
+                                        <div class="checkout-logistics-heading">
+                                            <strong>Logistics Company</strong>
+                                            <span class="checkout-logistics-status ${!shippingOptionsLoaded ? 'is-loading' : (shippingOptionsBySeller[group.id] || []).length ? 'is-available' : 'is-unavailable'}">${!shippingOptionsLoaded ? 'Checking availability' : (shippingOptionsBySeller[group.id] || []).length ? 'Available' : 'Unavailable'}</span>
+                                        </div>
+                                        ${shippingOptionsLoaded && !(shippingOptionsBySeller[group.id] || []).length
+                                            ? `<div class="checkout-logistics-notice" role="status"><span class="checkout-logistics-notice-icon" aria-hidden="true">!</span><div><strong>No logistics service available</strong><p>No approved logistics company currently covers both the seller and delivery locations. Try another delivery address or check again later.</p></div></div>`
+                                            : `<label class="checkout-logistics-label" for="checkout-logistics-${escapeCheckoutHtml(group.id)}">${shippingOptionsLoaded ? 'Select a logistics company serving both locations' : 'Looking for logistics companies…'}</label>
+                                               <select id="checkout-logistics-${escapeCheckoutHtml(group.id)}" class="checkout-logistics-select" data-logistics-seller="${escapeCheckoutHtml(group.id)}" aria-label="Logistics company for ${escapeCheckoutHtml(group.shop)}" ${!shippingOptionsLoaded ? 'disabled' : ''}><option value="">${shippingOptionsLoaded ? 'Select logistics company' : 'Loading available companies…'}</option>${(shippingOptionsBySeller[group.id] || []).map(option => `<option value="${escapeCheckoutHtml(option.id)}" ${String(selectedLogisticsBySeller[group.id] || '') === String(option.id) ? 'selected' : ''}>${escapeCheckoutHtml(option.name)}</option>`).join('')}</select>`}
+                                    </div>
+                                    <strong class="shipping-fee">${money(selectedShippingFee(group.id))}</strong>
                                 </div>
                             </div>
                             <div class="shop-total-row">
                                 <span>Order Total (${quantity} ${quantity === 1 ? 'item' : 'items'}):</span>
-                                <strong>${money(subtotal + 50)}</strong>
+                                <strong>${money(subtotal + selectedShippingFee(group.id))}</strong>
                             </div>
                         </section>`;
                 }).join('');
 
                 const merchandiseTotal = items.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0);
-                const shippingTotal = groups.size * 50;
+                const shippingTotal = [...groups.keys()].reduce((sum, sellerId) => sum + selectedShippingFee(sellerId), 0);
                 document.getElementById('checkoutMerchandiseSubtotal').textContent = money(merchandiseTotal);
                 document.getElementById('checkoutShippingSubtotal').textContent = money(shippingTotal);
                 document.getElementById('checkoutVoucherDiscount').textContent = `−${money(appliedVoucherDiscount)}`;
                 document.getElementById('checkoutTotalPayment').textContent = money(Math.max(0, merchandiseTotal + shippingTotal - appliedVoucherDiscount));
                 updatePlaceOrderState(groups);
+                refreshWalletOption();
             }
 
             function updatePlaceOrderState(groups = null) {
@@ -173,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const select = event.target.closest('[data-logistics-seller]');
                 if (!select) return;
                 selectedLogisticsBySeller[String(select.dataset.logisticsSeller)] = select.value;
-                updatePlaceOrderState();
+                renderCheckoutCart(cartItems); // Refresh shipping, order and wallet totals immediately.
             });
 
             async function loadCheckoutCart() {
@@ -183,8 +257,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 try {
+                    if (Array.isArray(selectedCartIds) && !selectedCartIds.length) {
+                        renderCheckoutCart([]);
+                        if (checkoutMessage) checkoutMessage.textContent = 'No cart items were selected. Return to your cart and select the products you want to checkout.';
+                        return;
+                    }
                     const payload = await checkoutApiFetch(checkoutConfig.api.cartUrl || '/api/v1/buyer/cart');
-                    renderCheckoutCart(payload.data || []);
+                    const actual = payload.data || [];
+                    const selection = Array.isArray(selectedCartIds) ? new Set(selectedCartIds) : null;
+                    const chosen = selection ? actual.filter(item => selection.has(Number(item.id))) : actual;
+                    renderCheckoutCart(chosen);
+                    if (selection && chosen.length !== selectedCartIds.length && checkoutMessage) {
+                        checkoutMessage.textContent = 'Some selected products are no longer in your cart. Review the items before placing the order.';
+                    }
                 } catch (error) {
                     if (checkoutGroupsElement) checkoutGroupsElement.textContent = error.message;
                     placeOrderButton.disabled = true;
@@ -252,12 +337,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 logistics_id: Number(selectedLogisticsBySeller[sellerId]),
                             })),
                             payment_method: paymentMethodLabel?.textContent || 'Cash on Delivery',
+                            cart_item_ids: cartItems.map(item => Number(item.id)),
                             voucher_code: appliedVoucherCode || null,
                             voucher_seller_id: appliedVoucherSellerId,
                         }),
                     });
                     renderPlacedOrders(response.orders || []);
                     if (!response.orders?.length) throw new Error('The order was not created. Please try again.');
+                    sessionStorage.removeItem(checkoutSelectionKey);
+                    loadWalletBalance();
+                    if (!response.orders?.length) throw new Error('The order was not created. Please try again.');
+                    sessionStorage.removeItem(checkoutSelectionKey);
                     if (checkoutSuccessModal) checkoutSuccessModal.hidden = false;
                     setPageBlurred(true);
                 } catch (error) {
@@ -1133,6 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     );
                                 });
 
+                            if (button.disabled) { refreshWalletOption(); return; }
                             button.classList.add('is-selected');
 
                             if (paymentMethodLabel) {

@@ -48,7 +48,7 @@ class ShowRiderDashboardController extends Controller
                 'attendance' => $rider->attendanceRecords()->whereDate('attendance_date', now('Asia/Manila')->toDateString())->first(),
                 'unremitted_cod' => number_format(
                     (float) $rider->codCollections()->sum('amount')
-                    - (float) $rider->remittances()->where('status', 'verified')->sum('amount'),
+                    - (float) $rider->remittances()->whereIn('status', ['verified', 'cashed_in', 'distributed'])->sum('amount'),
                     2,
                     '.',
                     ''

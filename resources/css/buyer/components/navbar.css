@@ -699,3 +699,64 @@
             animation: none !important;
         }
     }
+
+
+/* SHOP EASE: Search autocomplete dropdown */
+.buyer-navbar-search { position: absolute; z-index: 1100; }
+.buyer-search-suggestions {
+    position: absolute;
+    top: calc(100% + 9px);
+    left: 0;
+    right: 0;
+    z-index: 1200;
+    padding: 8px;
+    border: 1px solid #eadfdd;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 15px 40px rgba(54, 14, 19, .17);
+    max-height: min(360px, 55vh);
+    overflow-y: auto;
+}
+.buyer-search-suggestions[hidden] { display: none !important; }
+.buyer-search-suggestion-heading {
+    padding: 9px 12px 7px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #93797a;
+}
+.buyer-search-suggestion {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 12px;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: 9px;
+    color: #2b2424;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.buyer-search-suggestion:hover,
+.buyer-search-suggestion.is-active {
+    background: #fbf0f0;
+    color: #831f2d;
+}
+.buyer-search-suggestion svg { flex-shrink: 0; }
+.buyer-search-suggestion-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.buyer-search-suggestion-empty {
+    padding: 12px;
+    font-size: 13px;
+    color: #93797a;
+}
+@media (max-width: 640px) {
+    .buyer-search-suggestions { border-radius: 11px; }
+    .buyer-search-suggestion { font-size: 12px; }
+}

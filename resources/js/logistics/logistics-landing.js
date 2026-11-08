@@ -1,3 +1,8 @@
+// Returning to the logistics landing page means the registration was exited.
+// Clear client-only non-sensitive draft extras; server-backed draft is cleared
+// by LogisticsRegistrationController::landingPage().
+try { window.sessionStorage.removeItem('shopease_logistics_ui_extras'); } catch (_) {}
+
 document.addEventListener('DOMContentLoaded', () => {
   const reveals = document.querySelectorAll('.logistics-reveal');
   if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -178,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.startLogisticsDashboardTransition = (url) => {
     if (started) return;
     const destination = new URL(url, location.href);
-    if (destination.origin !== location.origin || !/^\/logistics\/dashboard\/?$/.test(destination.pathname)) return;
+    if (destination.origin !== location.origin || !/^\/(?:logistics|sorting-center|delivery-hub)\/dashboard\/?$/.test(destination.pathname)) return;
     started = true;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let expanded = false;

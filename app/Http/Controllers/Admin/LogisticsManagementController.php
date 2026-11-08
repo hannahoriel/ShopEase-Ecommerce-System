@@ -286,7 +286,10 @@ class LogisticsManagementController extends Controller
         $out = [];
         foreach ($docs as $key => $doc) {
             $path = is_array($doc) ? ($doc['path'] ?? null) : null;
-            $out[$key] = ['url' => $path ? Storage::disk('public')->url($path) : null];
+            $out[$key] = [
+                'url' => $path ? Storage::disk('public')->url($path) : null,
+                'original_name' => is_array($doc) ? ($doc['original_name'] ?? basename((string) $path)) : null,
+            ];
         }
         return $out;
     }

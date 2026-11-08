@@ -433,33 +433,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showAnnouncement(0);
             startAnnouncementAutoPlay();
 
-            /* ─── Category selection ─────────────────────────────── */
-            const categoryCards = document.querySelectorAll('.category-card');
-            let activeCategory = '';
-
-            categoryCards.forEach((card) => {
+            /* ─── Category navigation: dedicated Buyer Categories page ─── */
+            document.querySelectorAll('.category-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    const isAlreadySelected = card.classList.contains('selected');
-
-                    categoryCards.forEach((item) => item.classList.remove('selected'));
-
-                    if (isAlreadySelected) {
-                        activeCategory = '';
-                    } else {
-                        card.classList.add('selected');
-                        activeCategory = card.dataset.category || '';
-                    }
-
-                    loadProducts({ category: activeCategory });
+                    const category = card.dataset.category || '';
+                    window.location.href = '/buyer/categories' + (category ? '?category=' + encodeURIComponent(category) : '');
                 });
             });
-
-            /* ─── View all categories ────────────────────────────── */
             document.getElementById('viewAllCategories')?.addEventListener('click', () => {
-                document.getElementById('buyerCategories')?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
+                window.location.href = '/buyer/categories';
             });
 
             /* ─── Purchase status navigation ─────────────────────── */
@@ -511,10 +493,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${imageHtml}
                         </div>
                         <h3>${escapeHtml(product.name)}</h3>
-                        <p class="product-rating">
-                            <span class="rating-star">★</span>
-                            <span class="sold-count">${escapeHtml(product.seller?.store_name || '')}</span>
-                        </p>
+                        <div class="product-review-meta">
+                            <p class="product-rating"><span class="rating-star" aria-hidden="true">★</span><span class="product-rating-number">${Number(product.rating_average || 0).toFixed(1)}</span></p>
+                            <p class="product-shop-name">${escapeHtml(product.seller?.store_name || 'ShopEase Seller')}</p>
+                        </div>
                         <div class="product-bottom-row">
                             <span class="product-sale-price"><strong>${escapeHtml(formatPrice(salePrice))}</strong>${salePercentage ? `<del>${escapeHtml(formatPrice(originalPrice))}</del><em>-${salePercentage}%</em>` : ''}</span>
                             <button type="button" class="product-cart-button" aria-label="Add ${escapeHtml(product.name)} to cart" data-product-id="${escapeHtml(product.id)}">

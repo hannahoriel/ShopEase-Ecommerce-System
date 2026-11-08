@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\Rider\Homepage\MoneyReport;
 
 use App\Http\Controllers\Controller;
 use App\Http\Services\RiderOperationsService;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -28,11 +30,12 @@ class StoreRemittanceController extends Controller
             ]);
         }
 
-        $collected = (float) $rider->codCollections()->sum('amount');
-        $held = (float) $rider->remittances()->whereIn('status', ['pending', 'verified'])->sum('amount');
-        if ((float) $validated['amount'] > max(0, $collected - $held)) {
+        $hubName = trim((string) $rider->municipal_hub);
+        $hub = LogisticsDeliveryHub::query()->where('logistics_branch_id', $rider->logistics_branch_id)
+            ->where('status', 'active')->where('hub_name', $hubName)->first();
+        if (! $hub) {
             throw ValidationException::withMessages([
-                'amount' => ['The remittance amount exceeds your available COD balance.'],
+                'hub' => ['Your active delivery hub assignment is missing. Contact your logistics manager.'],
             ]);
         }
 
@@ -40,13 +43,43 @@ class StoreRemittanceController extends Controller
             ? $operations->storePrivatePhoto('rider-remittances', $validated['receipt'])
             : null;
         try {
-            $remittance = $rider->remittances()->create([
-                'amount' => $validated['amount'],
-                'method' => $validated['method'],
-                'reference_number' => $validated['reference_number'] ?? null,
-                'receipt_path' => $receiptPath,
-                'status' => 'pending',
-            ]);
+            [$remittance, $reconciled] = DB::transaction(function () use ($rider, $hub, $validated, $receiptPath) {
+                $lockedRider = $rider->newQuery()->lockForUpdate()->findOrFail($rider->id);
+                $collections = $lockedRider->codCollections()->whereDoesntHave('remittances')
+                    ->lockForUpdate()->get();
+                $due = round((float) $collections->sum('amount'), 2);
+                $submitted = round((float) $validated['amount'], 2);
+                if ($due <= 0 || abs($due - $submitted) > 0.009) {
+                    throw ValidationException::withMessages([
+                        'amount' => ['Remit all available COD collections. The current amount due is ₱'.number_format($due, 2).'.'],
+                    ]);
+                }
+
+                // Reconcile an exact-amount legacy row left unlinked by an older app.
+                $legacyPending = $lockedRider->remittances()->where('status', 'pending')
+                    ->whereDoesntHave('collections')->orderBy('id')->lockForUpdate()->get();
+                $remittance = $legacyPending->first(fn ($candidate) => abs((float) $candidate->amount - $due) < 0.009);
+                $reconciled = $remittance !== null;
+                if ($remittance) {
+                    $remittance->update([
+                        'delivery_hub_id' => $hub->id,
+                        'method' => $validated['method'],
+                        'reference_number' => $validated['reference_number'] ?? null,
+                        'receipt_path' => $receiptPath ?: $remittance->receipt_path,
+                    ]);
+                } else {
+                    $remittance = $lockedRider->remittances()->create([
+                        'delivery_hub_id' => $hub->id,
+                        'amount' => number_format($due, 2, '.', ''),
+                        'method' => $validated['method'],
+                        'reference_number' => $validated['reference_number'] ?? null,
+                        'receipt_path' => $receiptPath,
+                        'status' => 'pending',
+                    ]);
+                }
+                $remittance->collections()->sync($collections->modelKeys());
+                return [$remittance, $reconciled];
+            });
         } catch (\Throwable $exception) {
             if ($receiptPath) {
                 Storage::disk('local')->delete($receiptPath);
@@ -54,6 +87,11 @@ class StoreRemittanceController extends Controller
             throw $exception;
         }
 
-        return response()->json(['data' => $remittance], 201);
+        return response()->json([
+            'data' => $remittance,
+            'message' => $reconciled
+                ? 'The existing pending remittance was matched to these COD collections and sent to the hub for review.'
+                : 'COD remittance submitted to the delivery hub for review.',
+        ], $reconciled ? 200 : 201);
     }
 }

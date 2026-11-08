@@ -158,9 +158,13 @@ class LogisticsNetworkHubTest extends TestCase
             'municipality' => 'Calamba',
             'status' => 'active',
         ]);
-        $riderUser = User::factory()->create([
+        $riderUser = User::create([
+            'name' => 'Rider User',
+            'email' => 'rider-'.uniqid().'@example.test',
+            'password' => 'password',
             'role' => User::ROLE_RIDER,
             'registration_status' => 'active',
+            'email_verified_at' => now(),
         ]);
         Rider::create([
             'user_id' => $riderUser->id,
@@ -199,9 +203,23 @@ class LogisticsNetworkHubTest extends TestCase
             ->putJson("/api/v1/logistics/delivery-hubs/{$hubId}", [
                 ...$hubPayload,
                 'hub_name' => 'Updated Pila Delivery Hub',
+                'street' => 'Updated Hub Road',
+                'manager_name' => 'Updated Hub Manager',
+                'manager_email' => 'updated-hub-manager@example.com',
+                'manager_phone' => '09171234569',
+                'login_email' => 'updated-hub@example.com',
             ])
             ->assertOk()
-            ->assertJsonPath('data.hub_name', 'Updated Pila Delivery Hub');
+            ->assertJsonPath('data.hub_name', 'Updated Pila Delivery Hub')
+            ->assertJsonPath('data.street', 'Updated Hub Road')
+            ->assertJsonPath('data.manager_name', 'Updated Hub Manager')
+            ->assertJsonPath('data.manager_email', 'updated-hub-manager@example.com')
+            ->assertJsonPath('data.login_email', 'updated-hub@example.com');
+        $this->assertDatabaseHas('logistics_delivery_hubs', [
+            'id' => $hubId, 'street' => 'Updated Hub Road', 'manager_phone' => '09171234569',
+            'login_email' => 'updated-hub@example.com',
+        ]);
+        $this->assertDatabaseHas('users', ['email' => 'updated-hub@example.com', 'name' => 'Updated Pila Delivery Hub']);
 
         $this->actingAs($otherUser)
             ->postJson("/api/v1/logistics/delivery-hubs/{$hubId}/archive")
@@ -233,9 +251,13 @@ class LogisticsNetworkHubTest extends TestCase
 
     private function logisticsAccount(string $businessName): array
     {
-        $user = User::factory()->create([
+        $user = User::create([
+            'name' => $businessName.' User',
+            'email' => 'logistics-'.uniqid().'@example.test',
+            'password' => 'password',
             'role' => User::ROLE_LOGISTICS,
             'registration_status' => 'active',
+            'email_verified_at' => now(),
         ]);
         $logistics = Logistics::create([
             'user_id' => $user->id,

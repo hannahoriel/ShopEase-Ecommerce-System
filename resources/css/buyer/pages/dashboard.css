@@ -1352,3 +1352,9 @@
 .product-sale-price strong{color:#e34b43!important;font-size:15px!important;font-weight:700!important}
 .product-sale-price del{color:#a49a96;font-size:11px;text-decoration:line-through!important;text-decoration-thickness:1px}
 .product-sale-price em{padding:2px 5px;border-radius:3px;background:#fff0ed;color:#dc5148;font-size:10px;font-style:normal;font-weight:650}
+
+/* Product-specific rating next to the star, shop name below it. */
+.product-card .product-review-meta{min-width:0;margin-top:4px}
+.product-card .product-review-meta .product-rating{display:flex;align-items:center;gap:5px;margin:0;font-size:12px;line-height:1.4}
+.product-card .product-review-meta .product-rating-number{font-weight:600;color:#3a302f;font-variant-numeric:tabular-nums}
+.product-card .product-review-meta .product-shop-name{margin:2px 0 0;color:#938985;font-size:11px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

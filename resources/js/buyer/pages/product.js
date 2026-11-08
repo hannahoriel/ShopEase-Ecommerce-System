@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 ...(apiToken ? { 'Authorization': 'Bearer ' + apiToken } : {}),
                 ...(options.headers || {}),
             },
@@ -124,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     key,
                     field: key === 'variations' ? 'variation' : key.slice(0, -1),
                     label: key[0].toUpperCase() + key.slice(1),
-                    options: values.map(name => ({ name })),
+                    options: values.map(name => ({ name, ...(p[key] || []).find(option => String(option.name) === name) })),
                 };
             }));
             const firstAvailable = activeConnectedVariants.find(variant => variant.available && Number(variant.stock) > 0)
@@ -169,6 +170,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 : optionStocks.length
                     ? Math.min(Number(p.stock ?? Infinity), ...optionStocks)
                     : Number(p.stock || 0);
+            // The selected option has its own saved product_options.photo.
+            const matchPhoto = (group) => (group?.options || []).find(option => String(option.name) === String(selectedProductOptions[group.field]))?.photo
+                || (group?.options || []).find(option => String(option.name) === String(selectedProductOptions[group.field]))?.image_url;
+            const selectedPhoto = selectedVariant?.image_url || selectedVariant?.photo
+                || matchPhoto(variantGroups.find(group => group.field === 'color'))
+                || variantGroups.map(matchPhoto).find(Boolean);
+            const mainPhotos = Array.isArray(p.photos) ? p.photos : (p.image_url ? [p.image_url] : []);
+            const combinationPhotos = activeConnectedVariants
+                .map(variant => variant.image_url || variant.photo)
+                .filter(Boolean);
+            const optionPhotos = variantGroups.flatMap(group => group.options.map(opt => opt.photo || opt.image_url).filter(Boolean));
+            const gallery = [...new Set([selectedPhoto, ...combinationPhotos, ...optionPhotos, ...mainPhotos].filter(Boolean))];
+            if (JSON.stringify(gallery) !== JSON.stringify(galleryPhotos)) renderGallery(gallery);
             if (priceEl) {
                 priceEl.innerHTML = salePriceMarkup(selectedVariant?.final_price ?? p.price, p.sale_percentage);
             }
@@ -445,7 +459,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 <a href="/buyer/product?id=${encodeURIComponent(p.id)}" class="product-card" style="display:block;text-decoration:none;color:inherit;">
                     <div class="product-image-box">${img}</div>
                     <h3>${escapeHtml(p.name)}</h3>
-                    <p class="product-rating"><span class="rating-star">★</span> <span class="sold-count">${escapeHtml(p.seller?.store_name || '')}</span></p>
+                    <div class="product-review-meta">
+                        <p class="product-rating"><span class="rating-star" aria-hidden="true">★</span><span class="product-rating-number">${Number(p.rating_average || 0).toFixed(1)}</span></p>
+                        <p class="product-shop-name">${escapeHtml(p.seller?.store_name || 'ShopEase Seller')}</p>
+                    </div>
                     <div class="product-bottom-row">
                         <span class="product-sale-price">${salePriceMarkup(p.price, p.sale_percentage)}</span>
                         <button type="button" class="product-cart-button" data-product-id="${escapeHtml(String(p.id))}" aria-label="View ${escapeHtml(p.name)}">
@@ -467,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ── Load product from API ──────────────────────────────── */
     function loadProduct() {
-        if (!productId || !apiToken) {
+        if (!productId) {
             document.getElementById('productName').textContent = 'Product not found.';
             return;
         }
@@ -516,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ── Add to Cart ────────────────────────────────────────── */
     document.getElementById('addToCartButton')?.addEventListener('click', function () {
         const pid = this.dataset.productId;
-        if (!pid || !apiToken) return;
+        if (!pid) return;
 
         const qty       = Number(quantityInput?.value || 1);
         const { variation = null, color = null, size = null } = selectedProductOptions;
@@ -527,14 +544,33 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'POST',
             body: JSON.stringify({ product_id: Number(pid), quantity: qty, variation, color, size }),
         })
-            .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
-            .then(() => { window.location.href = '/buyer/cart'; })
-            .catch(() => { this.disabled = false; });
+            .then(async (res) => { if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.message || `Cart request failed (${res.status})`); } return res.json(); })
+            .then(async () => {
+                // Refresh the navbar badge using actual persisted cart quantities.
+                try {
+                    const cartResponse = await apiFetch(cartUrl);
+                    if (cartResponse.ok) {
+                        const payload = await cartResponse.json();
+                        const items = Array.isArray(payload) ? payload : (payload.items || payload.data?.items || payload.data || []);
+                        if (Array.isArray(items)) window.dispatchEvent(new CustomEvent('buyer:cart-updated', {
+                            detail: { count: items.reduce((sum, item) => sum + Number(item.quantity || 0), 0) }
+                        }));
+                    }
+                } catch (error) { console.warn('Cart badge refresh failed', error); }
+                const notice = document.createElement('div');
+                notice.setAttribute('role', 'status');
+                notice.textContent = 'Added to cart successfully';
+                Object.assign(notice.style, {position:'fixed',bottom:'22px',right:'22px',zIndex:'10000',background:'#fff',color:'#6d1520',border:'1px solid #e7bec4',padding:'14px 20px',borderRadius:'12px',boxShadow:'0 8px 25px #0002',fontSize:'13px'});
+                document.body.appendChild(notice);
+                setTimeout(() => notice.remove(), 2800);
+                this.disabled = false;
+            })
+            .catch((error) => { this.disabled = false; console.error('[ShopEase Cart]', error); alert(error.message || 'Could not add product to cart.'); });
     });
 
     document.getElementById('buyNowButton')?.addEventListener('click', function () {
         const pid = document.getElementById('addToCartButton')?.dataset.productId;
-        if (!pid || !apiToken) return;
+        if (!pid) return;
 
         const qty       = Number(quantityInput?.value || 1);
         const { variation = null, color = null, size = null } = selectedProductOptions;
@@ -545,9 +581,9 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'POST',
             body: JSON.stringify({ product_id: Number(pid), quantity: qty, variation, color, size }),
         })
-            .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
+            .then(async (res) => { if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.message || `Cart request failed (${res.status})`); } return res.json(); })
             .then(() => { window.location.href = '/buyer/cart'; })
-            .catch(() => { this.disabled = false; });
+            .catch((error) => { this.disabled = false; console.error('[ShopEase Cart]', error); alert(error.message || 'Could not add product to cart.'); });
     });
 
     /* ── Product feedback ───────────────────────────────────── */

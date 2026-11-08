@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ========================================================== */
     let currentPage = 1;
     let itemsPerPage = Number(items.value);
+    let commissionRequest = 0;
 
     /* =========================================================
        FORMATTERS
@@ -98,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function loadCommissionData() {
+        const requestId = ++commissionRequest;
         const loadedRows = [];
         let page = 1;
         let lastPage = 1;
@@ -107,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const url = new URL(commissionConfig.apiUrl, window.location.origin);
             url.searchParams.set('page', String(page));
             url.searchParams.set('per_page', '100');
+            if (search.value.trim()) url.searchParams.set('search', search.value.trim());
+            if (fromDate.value) url.searchParams.set('from', fromDate.value);
+            if (toDate.value) url.searchParams.set('to', toDate.value);
 
             const response = await fetch(url, {
                 credentials: 'same-origin',
@@ -124,6 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
             page += 1;
         } while (page <= lastPage);
 
+        if (requestId !== commissionRequest) return;
+
         commissionRows = loadedRows;
         if (stats) {
             document.querySelectorAll('[data-commission-stat]').forEach(element => {
@@ -137,6 +144,15 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
         render();
+    }
+
+    function showCommissionError(error) {
+        console.error(error);
+        const errorElement = document.getElementById('commission-api-error');
+        if (errorElement) {
+            errorElement.textContent = error.message || 'Unable to load commission data.';
+            errorElement.hidden = false;
+        }
     }
 
     function formatDateInput(value) {
@@ -262,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentPage = 1;
             render();
+            loadCommissionData().catch(showCommissionError);
         }
     );
 
@@ -293,6 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentPage = 1;
             render();
+            loadCommissionData().catch(showCommissionError);
         }
     );
 
@@ -380,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tbody.innerHTML =
             pageRows.map(row => `
-                <tr>
+                <tr class="commission-order-row" data-commission-id="${Number(row.transaction_id || 0)}" tabindex="0" role="button" aria-label="View order details for ${escapeHtml(row.order_id)}">
                     <td>
                         <div class="commission-date-cell">
                             ${escapeHtml(row.date_label)}<br>
@@ -631,6 +649,11 @@ document.addEventListener('DOMContentLoaded', function () {
         function () {
             currentPage = 1;
             render();
+            window.clearTimeout(search.refreshTimer);
+            search.refreshTimer = window.setTimeout(
+                () => loadCommissionData().catch(showCommissionError),
+                250
+            );
         }
     );
 
@@ -687,6 +710,7 @@ document.addEventListener('DOMContentLoaded', function () {
         function () {
 
             search.value = '';
+            window.clearTimeout(search.refreshTimer);
 
             fromDate.value = '';
 
@@ -722,6 +746,7 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
             render();
+            loadCommissionData().catch(showCommissionError);
         }
     );
 
@@ -741,12 +766,5 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
     render();
-    loadCommissionData().catch(error => {
-        console.error(error);
-        const errorElement = document.getElementById('commission-api-error');
-        if (errorElement) {
-            errorElement.textContent = error.message;
-            errorElement.hidden = false;
-        }
-    });
+    loadCommissionData().catch(showCommissionError);
 });

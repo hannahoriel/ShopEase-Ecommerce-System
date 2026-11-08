@@ -410,7 +410,12 @@
 
             </div>
 
-            <div class="complaints-detail-actions">
+            <div class="cd-decision-card" id="cdDecisionPreview">
+ <div class="cd-decision-head"><strong>Admin Decision — Seller Accountability</strong><span class="cd-outcome" data-cd-outcome>Awaiting decision</span></div>
+ <p>Review the complaint, supporting evidence, and conversations with both parties before deciding.</p>
+ <div class="cd-decision-control"><select aria-label="Seller accountability decision" data-cd-choice><option value="">Select decision</option><option value="guilty">Seller at Fault</option><option value="not-guilty">Seller Not at Fault</option></select><button type="button" data-cd-review>Review Decision</button></div>
+</div>
+<div class="complaints-detail-actions">
                 <button
                     id="complaints-view-details"
                     type="button"
@@ -701,7 +706,13 @@
                 </section>
             </div>
 
-            <!-- NOTES + UPDATE STATUS -->
+            <!-- ADMIN FAULT DECISION -->
+<div class="cd-decision-card" id="cdDecisionModal">
+ <div class="cd-decision-head"><strong>Admin Decision — Seller Accountability</strong><span class="cd-outcome" data-cd-outcome>Awaiting decision</span></div>
+ <p>Make this decision after reviewing the evidence and conversations with the buyer and seller. This is independent of the complaint workflow status.</p>
+ <div class="cd-decision-control"><select aria-label="Seller accountability decision" data-cd-choice><option value="">Select decision</option><option value="guilty">Seller at Fault</option><option value="not-guilty">Seller Not at Fault</option></select><button type="button" data-cd-review>Review Decision</button></div>
+</div>
+<!-- NOTES + UPDATE STATUS -->
             <div class="complaints-modal-footer-grid mt-[10px]">
                 <section class="complaints-modal-card complaints-modal-notes-card">
                     <h4 class="complaints-modal-card-title">Notes/Updates</h4>
@@ -742,7 +753,19 @@
         </div>
     </div>
 
-    <!-- ==================== STATUS FLASH ==================== -->
+    
+<div id="cdDecisionConfirm" class="cd-review-backdrop" hidden aria-hidden="true">
+ <div class="cd-review-dialog" role="dialog" aria-modal="true" aria-labelledby="cdDecisionTitle">
+  <h2 id="cdDecisionTitle" class="cd-review-title">Confirm Seller Accountability Decision</h2>
+  <p class="cd-review-desc">Confirm only after assessing the complaint evidence and both parties' conversations. This is a frontend preview and does not issue penalties.</p>
+  <div id="cdDecisionSummary" class="cd-review-summary"></div>
+  <label for="cdDecisionNotes">Decision explanation (optional)</label><textarea id="cdDecisionNotes" maxlength="800" placeholder="Explain the evidence and conversations supporting the decision..."></textarea>
+  <div class="cd-review-actions"><button id="cdDecisionCancel" type="button" class="cd-cancel">Cancel</button><button id="cdDecisionSave" type="button" class="cd-confirm">Confirm Decision</button></div>
+ </div>
+</div>
+<div id="cdDecisionToast" class="cd-toast" hidden role="status" aria-live="polite"></div>
+
+<!-- ==================== STATUS FLASH ==================== -->
     <div
         id="complaints-flash"
         class="complaints-flash"
@@ -801,6 +824,29 @@
     id="complaintsDisputesConfig"
 >{!! json_encode($complaintsDisputesClientConfig, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 
+
+<style>
+/* Admin seller fault review – UI-only */
+.cd-decision-card{margin-top:13px;padding:16px 18px;background:#fff;border:1px solid #eee3e0;border-radius:13px;font-family:Poppins,sans-serif}
+.cd-decision-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:9px}
+.cd-decision-head strong{font-size:13px;color:#75232a}.cd-decision-card p{font-size:11px;color:#857977;line-height:1.7;margin:0 0 11px}
+.cd-decision-control{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.cd-decision-control select{min-height:38px;flex:1;min-width:170px;background:white;border:1px solid #d9d1ce;border-radius:8px;padding:0 11px;font:12px Poppins,sans-serif;outline:none}
+.cd-decision-control select:focus{border-color:#96908e;box-shadow:0 0 0 3px #77777713}
+.cd-decision-control button,.cd-confirm{min-height:38px;background:#7b1b1b;color:white;border:0;border-radius:8px;padding:9px 16px;font:600 11px Poppins,sans-serif;cursor:pointer}
+.cd-decision-control button:disabled{opacity:.45;cursor:not-allowed}
+.cd-outcome{font-size:11px;display:inline-flex;border-radius:20px;background:#f2efed;color:#766964;padding:5px 10px;font-weight:600}
+.cd-outcome.guilty{background:#fff0e9;color:#a24721}.cd-outcome.not-guilty{background:#e7f5eb;color:#237747}
+.cd-review-backdrop{position:fixed;inset:0;z-index:350;background:#170b0bab;display:flex;align-items:center;justify-content:center;padding:16px}
+.cd-review-backdrop[hidden]{display:none!important}.cd-review-dialog{width:min(510px,100%);max-height:90vh;overflow:auto;background:white;border-radius:18px;box-shadow:0 24px 65px #0003;padding:25px;font-family:Poppins,sans-serif}
+.cd-review-title{font-size:19px;font-weight:650;margin:0;color:#231b1b}.cd-review-desc{font-size:12px;color:#817775;line-height:1.7;margin:10px 0 18px}
+.cd-review-summary{padding:13px 15px;background:#fff8f5;border:1px solid #f0e6e1;border-radius:10px;font-size:12px;line-height:1.8;margin-bottom:17px}
+.cd-review-dialog label{font-size:12px;display:block;margin-bottom:7px;font-weight:600}.cd-review-dialog textarea{border:1px solid #ded6d2;border-radius:9px;min-height:96px;width:100%;padding:12px;font:12px Poppins,sans-serif;resize:vertical;outline:none}
+.cd-review-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.cd-cancel{background:#fff;color:#795e5c;border:1px solid #ddd3cf;border-radius:8px;padding:9px 15px;font:600 11px Poppins,sans-serif;cursor:pointer}
+.cd-toast{position:fixed;bottom:22px;right:22px;z-index:390;max-width:min(390px,calc(100vw - 40px));padding:14px 17px;border:1px solid #cddfcd;border-left:4px solid #338052;border-radius:12px;background:#fff;box-shadow:0 12px 36px #0002;font:12px Poppins,sans-serif;color:#272121}
+.cd-toast[hidden]{display:none!important}
+</style>
+
 @endsection
 
 
@@ -809,5 +855,64 @@
 @push('scripts')
 
 @vite('resources/js/admin/complaints-disputes.js')
+<script>
+
+// Supplemental admin fault decision UI. Does not call complaint status / penalty APIs.
+document.addEventListener('DOMContentLoaded', () => {
+ const root = document.getElementById('cdDecisionConfirm');
+ const preview = document.getElementById('cdDecisionPreview');
+ const detail = document.getElementById('cdDecisionModal');
+ if (!root || !preview || !detail) return;
+ const config = JSON.parse(document.getElementById('complaintsDisputesConfig')?.textContent || '{}');
+ const records = Array.isArray(config.complaints) ? config.complaints : [];
+ const key = 'shopease.admin.complaint.sellerDecision.demo.v1';
+ let saved = {};
+ try {saved = JSON.parse(localStorage.getItem(key) || '{}') || {}} catch (_) {}
+ let selection = null;
+ const getActive = () => {
+   const id = document.getElementById('detail-id')?.textContent?.trim() || document.getElementById('modal-complaint-id')?.textContent?.trim();
+   return records.find(r => String(r.id) === id) || null;
+ };
+ function sync() {
+   const item = getActive();
+   const previous = item ? saved[String(item.id)] : null;
+   [preview, detail].forEach(node => {
+     const pill = node.querySelector('[data-cd-outcome]');
+     const select = node.querySelector('[data-cd-choice]');
+     pill.className = 'cd-outcome' + (previous ? ' ' + previous.decision : '');
+     pill.textContent = previous ? (previous.decision === 'guilty' ? 'Seller at Fault' : 'Seller Not at Fault') : 'Awaiting decision';
+     select.value = previous?.decision || '';
+     select.disabled = !item;
+     node.querySelector('[data-cd-review]').disabled = !item;
+   });
+ }
+ const observer = new MutationObserver(sync);
+ ['detail-id','modal-complaint-id'].forEach(id=>{const el=document.getElementById(id);if(el)observer.observe(el,{childList:true,characterData:true,subtree:true})});
+ document.querySelectorAll('[data-cd-review]').forEach(button=>button.addEventListener('click',()=>{
+   const item = getActive(); if(!item)return;
+   const choice = button.closest('.cd-decision-card').querySelector('[data-cd-choice]').value;
+   if(!choice){button.closest('.cd-decision-card').querySelector('[data-cd-choice]').focus();return;}
+   selection = {id:String(item.id),decision:choice};
+   document.getElementById('cdDecisionSummary').textContent = `${item.id} — ${choice==='guilty'?'Seller at Fault':'Seller Not at Fault'}`;
+   document.getElementById('cdDecisionNotes').value = saved[selection.id]?.notes || '';
+   root.hidden=false;root.setAttribute('aria-hidden','false');
+ }));
+ const close=()=>{root.hidden=true;root.setAttribute('aria-hidden','true');selection=null};
+ document.getElementById('cdDecisionCancel').addEventListener('click',close);
+ root.addEventListener('click',e=>{if(e.target===root)close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!root.hidden)close()});
+ document.getElementById('cdDecisionSave').addEventListener('click',()=>{
+   if(!selection)return;
+   saved[selection.id]={decision:selection.decision,notes:document.getElementById('cdDecisionNotes').value.trim(),reviewedAt:new Date().toISOString()};
+   try{localStorage.setItem(key,JSON.stringify(saved))}catch(_){}
+   const message=`${selection.id}: ${selection.decision==='guilty'?'Seller at Fault':'Seller Not at Fault'} — demo decision recorded.`;
+   close();sync();
+   const toast=document.getElementById('cdDecisionToast');toast.textContent=message;toast.hidden=false;
+   clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>{toast.hidden=true},4200);
+ });
+ sync();
+});
+
+</script>
 
 @endpush

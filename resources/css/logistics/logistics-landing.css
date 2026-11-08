@@ -1891,3 +1891,78 @@ body.shopease-landing-enter.shopease-landing-entered > .landing-page { opacity: 
   body.shopease-landing-leaving > .landing-page,
   body.shopease-landing-enter > .landing-page { opacity: 1; }
 }
+
+
+/* Registration success flash: sits immediately below the fixed landing navbar. */
+.logistics-registration-flash-wrap {
+    position: fixed;
+    top: 82px; /* navbar starts at 13px and is 53px tall */
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(740px, calc(100% - 36px));
+    z-index: 1001;
+    pointer-events: none;
+}
+.logistics-registration-flash {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px 16px;
+    border: 1px solid #e8cbc9;
+    border-left: 4px solid #7b1b1b;
+    border-radius: 13px;
+    background: #fffafa;
+    color: #42252a;
+    box-shadow: 0 12px 30px rgba(82, 7, 11, .14);
+    font-family: 'Poppins', sans-serif;
+    pointer-events: auto;
+}
+.logistics-registration-flash-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: #fff;
+    background: #7b1b1b;
+    font-size: 16px;
+    font-weight: 700;
+}
+.logistics-registration-flash-content { flex: 1; min-width: 0; }
+.logistics-registration-flash-content strong {
+    display: block;
+    color: #67202a;
+    font-size: 12px;
+    font-weight: 600;
+}
+.logistics-registration-flash-content p {
+    margin: 4px 0 0;
+    color: #69565a;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+.logistics-registration-flash-close {
+    flex: 0 0 27px;
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #7b1b1b;
+    cursor: pointer;
+    font-size: 23px;
+    line-height: 1;
+}
+.logistics-registration-flash-close:hover { background: #f7e5e5; }
+@media (max-width: 480px) {
+    .logistics-registration-flash-wrap { top: 85px; width: calc(100% - 24px); }
+    .logistics-registration-flash { padding: 12px; gap: 9px; }
+    .logistics-registration-flash-content strong { font-size: 11px; }
+    .logistics-registration-flash-content p { font-size: 10px; }
+}

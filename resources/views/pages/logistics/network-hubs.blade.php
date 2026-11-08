@@ -148,6 +148,15 @@
 .hb-profile-message:hover{opacity:.72;transform:translateY(-1px);background:transparent!important}
 .hb-profile-message img{display:block;width:19px;height:19px;object-fit:contain}
 .hb-profile-message:focus-visible{outline:2px solid #75171f;outline-offset:2px}
+
+/* Account information change approval — UI-only preview. */
+.hb-request-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #efc58f;border-radius:999px;background:#fff4e2;color:#94601b;font:600 10px Poppins,sans-serif;padding:6px 10px;cursor:pointer;white-space:nowrap;margin-top:7px}
+.hb-request-badge:hover{background:#ffebcb}.hb-request-badge:before{content:"";height:6px;width:6px;border-radius:50%;background:#dc922c}
+.hb-request-summary{display:flex;gap:11px;align-items:center;border:1px solid #f1e2cc;background:#fffaf3;border-radius:11px;padding:13px 16px;margin:0 0 18px;font-size:12px;color:#755028}
+.hb-request-comparison{width:100%;border-collapse:collapse;margin:12px 0 20px}.hb-request-comparison th{text-align:left;font-size:11px;color:#766e69;background:#faf7f5;padding:12px;border-bottom:1px solid #eee4df}.hb-request-comparison td{font-size:12px;vertical-align:top;padding:13px 12px;border-bottom:1px solid #f1e8e3;overflow-wrap:anywhere}.hb-request-comparison .hb-new-value{color:#246e43;font-weight:600}
+.hb-request-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#8c807b}.hb-request-actions{display:flex;gap:10px;justify-content:flex-end;padding:15px 24px 22px;border-top:1px solid #eee6e1}.hb-request-actions .hb-action.approve{background:#287c49;border-color:#287c49;color:white}.hb-request-actions .hb-action.reject{background:#fff0ef;border-color:#edc2c1;color:#ac3434}.hb-request-actions button:disabled{opacity:.5}
+.hb-request-note{margin:16px 25px;font-size:11px;color:#887970;line-height:1.7}.hb-request-result{margin:0 24px 16px;font-size:11px;color:#955c23}
+@media(max-width:640px){.hb-request-comparison{display:block;overflow-x:auto}.hb-request-comparison th,.hb-request-comparison td{min-width:100px}.hb-request-actions{flex-wrap:wrap;padding:14px}}
 </style></head><body class="lg-body">
 @include('components.logistics.sidebar')
 @include('components.logistics.navbar')
@@ -216,6 +225,16 @@
 <!-- Archive is a reversible soft-delete; keeps hubs and center data together. -->
 <button type="button" class="hb-archive-fab" id="hbArchiveOpen" title="Archived sorting centers" aria-label="Open sorting center archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 5l1 15h10l1-15M9 5V3h6v2M10 10v6M14 10v6"/></svg><span class="hb-archive-count" id="hbArchiveCount" hidden>0</span></button>
 <div class="hb-modal" id="hbArchiveModal" hidden><section class="hb-dialog" role="dialog" aria-modal="true" aria-labelledby="hbArchiveTitle"><div class="hb-dialog-head"><div><h2 id="hbArchiveTitle">Archived Sorting Centers</h2><p>Deleted sorting centers are kept here until restored, including their delivery hubs.</p></div><button type="button" class="hb-close" id="hbArchiveClose" aria-label="Close archive">×</button></div><div class="hb-archive-list" id="hbArchiveList"></div></section></div>
+
+<!-- Sorting Center / Delivery Hub account edit request review (frontend preview only) -->
+<div class="hb-modal" id="hbRequestModal" hidden><section class="hb-dialog hb-details-dialog" role="dialog" aria-modal="true" aria-labelledby="hbRequestTitle">
+ <div class="hb-dialog-head"><div><h2 id="hbRequestTitle">Account Information Change Request</h2><p id="hbRequestSubtitle">Review requested account changes.</p></div><button type="button" class="hb-close" id="hbRequestClose" aria-label="Close request">×</button></div>
+ <div style="padding:21px 25px 4px"><div class="hb-request-summary"><span style="font-size:23px">◷</span><span><strong>Pending Account Information Change</strong><br>Changes will not be applied to a facility's registered information during this UI preview.</span></div><div class="hb-request-meta" id="hbRequestMeta"></div><div style="overflow-x:auto"><table class="hb-request-comparison"><thead><tr><th>Field</th><th>Current Information</th><th>Requested Change</th></tr></thead><tbody id="hbRequestChanges"></tbody></table></div></div>
+ <p class="hb-request-note">UI preview only: Approve and Reject update the request status in this browser. They do not change the database, account information, or notify the facility.</p>
+ <p class="hb-request-result" id="hbRequestError" role="alert" hidden></p>
+ <div class="hb-request-actions"><button type="button" class="hb-action" id="hbRequestCancel">Close</button><button type="button" class="hb-action reject" id="hbRequestReject">Reject</button><button type="button" class="hb-action approve" id="hbRequestApprove">Approve</button></div>
+ </section></div>
+
 <div id="hbFlashStack" class="hb-flash-stack" role="region" aria-label="Network Hubs notifications" aria-live="polite"></div>
 <script id="networkHubsConfig" type="application/json">{!! json_encode(['apiToken' => $networkHubsApiToken ?? '', 'apiUrl' => url('/api/v1/logistics/network-hubs')]) !!}</script>
 <script>document.addEventListener('DOMContentLoaded',()=>{
@@ -269,11 +288,61 @@ const networkApiHub=async(path,options={})=>{
  return result;
 };
 let records=[],archived=[],hubArchive=[];
-const loadCenters=async()=>{const result=await networkApi('');records=result.data||[];draw();return records};
+
+// Browser-only approvals. The demo is based on existing facility names and IDs;
+// no new API route, database mutation, or cross-account data transfer occurs.
+const hbReviewStore='shopease-network-account-change-requests-preview-v2';
+let hbReviewRequests=[],hbReviewActive=null,hbReviewReturn=null;
+try{const a=JSON.parse(localStorage.getItem(hbReviewStore)||'[]');if(Array.isArray(a))hbReviewRequests=a;}catch(_){hbReviewRequests=[]}
+function persistReviewRequests(){try{localStorage.setItem(hbReviewStore,JSON.stringify(hbReviewRequests))}catch(_){}}
+function seedReviewRequests(){
+ if(hbReviewRequests.length || !records.length)return;
+ const center=records.find(c=>c.status!=='inactive')||records[0];
+ const hub=records.flatMap(c=>(c.hubs||[]).map(h=>({center:c,hub:h})))[0];
+ const t=new Date().toISOString();
+ const request=(kind,id,name,changes)=>({id:'UI-'+kind+'-'+id,kind,facilityId:String(id),facilityName:name,at:t,status:'pending',changes,demo:true});
+ hbReviewRequests.push(request('sorting_center',center.id,center.branch_name,[
+  {field:'Manager Name',key:'manager_name',before:center.manager_name||'—',after:'Updated '+(center.manager_name||'Center Manager')},
+  {field:'Manager Phone',key:'manager_phone',before:center.manager_phone||'—',after:'09171234567'}
+ ]));
+ if(hub)hbReviewRequests.push(request('delivery_hub',hub.hub.id,hub.hub.hub_name,[
+  {field:'Hub Name',key:'hub_name',before:hub.hub.hub_name||'—',after:(hub.hub.hub_name||'Delivery Hub')+' - Updated'},
+  {field:'Manager Email',key:'manager_email',before:hub.hub.manager_email||'—',after:'hub.manager@example.test'},
+  {field:'Street',key:'street',before:hub.hub.street||'—',after:'Rizal Street'}
+ ]));
+ persistReviewRequests();
+}
+function requestFor(kind,id){return hbReviewRequests.find(r=>r.kind===kind&&String(r.facilityId)===String(id)&&r.status==='pending')}
+function requestBadge(kind,id){const r=requestFor(kind,id);return r?`<button class="hb-request-badge" data-review-kind="${esc(kind)}" data-review-id="${esc(id)}" type="button" title="Review requested account information changes">Pending Account Change</button>`:''}
+function openReview(kind,id){const request=requestFor(kind,id);if(!request)return;
+ hbReviewActive=request.id;
+ hbReviewReturn=['hbHubDetailsModal','hbDetailsModal'].filter(x=>!$(x).hidden);
+ hbReviewReturn.forEach(x=>$(x).hidden=true);
+ $('hbRequestTitle').textContent='Account Information Change Request';
+ $('hbRequestSubtitle').textContent=request.facilityName+' · '+(kind==='sorting_center'?'Sorting Center':'Delivery Hub');
+ $('hbRequestMeta').innerHTML=`<span><b>Request ID:</b> ${esc(request.id)}</span><span><b>Requested:</b> ${esc(new Date(request.at).toLocaleString('en-PH',{timeZone:'Asia/Manila'}))}</span><span><b>Status:</b> Pending Review</span>`;
+ $('hbRequestChanges').innerHTML=(request.changes||[]).map(c=>`<tr><td><strong>${esc(c.field)}</strong></td><td>${esc(c.before)}</td><td class="hb-new-value">${esc(c.after)}</td></tr>`).join('')||'<tr><td colspan="3">No fields supplied.</td></tr>';
+ $('hbRequestError').hidden=true;$('hbRequestModal').hidden=false;document.body.classList.add('lg-modal-open');$('hbRequestClose').focus();
+}
+function closeReview(){ $('hbRequestModal').hidden=true;hbReviewActive=null;
+ (hbReviewReturn||[]).forEach(x=>$(x).hidden=false);hbReviewReturn=null;
+ if(!document.querySelector('.hb-modal:not([hidden])'))document.body.classList.remove('lg-modal-open');
+}
+$('hbRequestClose').addEventListener('click',closeReview);$('hbRequestCancel').addEventListener('click',closeReview);
+$('hbRequestModal').addEventListener('click',e=>{if(e.target===$('hbRequestModal'))closeReview()});
+document.addEventListener('click',e=>{const badge=e.target.closest('[data-review-kind][data-review-id]');if(!badge)return;e.preventDefault();e.stopPropagation();openReview(badge.dataset.reviewKind,badge.dataset.reviewId)},true);
+function decideReview(status){const r=hbReviewRequests.find(x=>x.id===hbReviewActive);if(!r||r.status!=='pending')return;
+ r.status=status;r.reviewedAt=new Date().toISOString();persistReviewRequests();closeReview();draw();if(selectedCenterId)renderHubRows();
+ flash(`Account information change request ${status}. This is a UI-only decision; registered details were not changed.`, 'info', status==='approved'?'Request Approved (Preview)':'Request Rejected (Preview)');
+}
+$('hbRequestApprove').addEventListener('click',()=>decideReview('approved'));
+$('hbRequestReject').addEventListener('click',()=>decideReview('rejected'));
+
+const loadCenters=async()=>{const result=await networkApi('');records=result.data||[];seedReviewRequests();draw();return records};
 const esc=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 let centerEditId=null,hubEditId=null,selectedHubId=null;let activeFilter='all';function draw(){const q=$('hbSearch').value.trim().toLowerCase();const shown=records.filter(r=>(activeFilter==='all'||r.status===activeFilter)&&[r.branch_name,r.province,r.manager_name].some(v=>String(v||'').toLowerCase().includes(q)));
 $('hbCountAll').textContent=records.length;$('hbCountActive').textContent=records.filter(r=>r.status==='active').length;$('hbCountInactive').textContent=records.filter(r=>r.status==='inactive').length;$('hbResultCount').textContent=shown.length+' '+(shown.length===1?'center':'centers');
-$('hbRows').innerHTML=shown.map(r=>`<tr class="hb-open-row" data-center-id="${esc(r.id)}" tabindex="0" role="button" aria-label="View ${esc(r.branch_name)}"><td><strong>${esc(r.branch_name)}</strong><small>${esc([r.street,r.barangay,r.city].filter(Boolean).join(', '))}</small></td><td>${esc(r.province)}</td><td><strong>${esc(r.manager_name)}</strong><small>${esc(r.manager_email)}</small></td><td>${Number(r.delivery_hubs_count||0)}</td><td>${Number(r.drivers_count||0)}</td><td>${Number(r.vehicles_count||0)}</td><td><span class="hb-status ${r.status==='inactive'?'inactive':''}">${r.status==='inactive'?'Inactive':'Active'}</span></td></tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:35px;color:#98918c">${records.length?'No sorting centers match your search.':'No sorting centers yet.'}</td></tr>`;
+$('hbRows').innerHTML=shown.map(r=>`<tr class="hb-open-row" data-center-id="${esc(r.id)}" tabindex="0" role="button" aria-label="View ${esc(r.branch_name)}"><td><strong>${esc(r.branch_name)}</strong><small>${esc([r.street,r.barangay,r.city].filter(Boolean).join(', '))}</small>${requestBadge("sorting_center",r.id)}</td><td>${esc(r.province)}</td><td><strong>${esc(r.manager_name)}</strong><small>${esc(r.manager_email)}</small></td><td>${Number(r.delivery_hubs_count||0)}</td><td>${Number(r.drivers_count||0)}</td><td>${Number(r.vehicles_count||0)}</td><td><span class="hb-status ${r.status==='inactive'?'inactive':''}">${r.status==='inactive'?'Inactive':'Active'}</span></td></tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:35px;color:#98918c">${records.length?'No sorting centers match your search.':'No sorting centers yet.'}</td></tr>`;
 }
 $('hbSearch').addEventListener('input',draw);document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{activeFilter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));draw()}));
 function open(skipLocations=false){centerEditId=null;$('hbDialogTitle').textContent='Create Sorting Center';form.querySelector('[type=submit]').textContent='Create Sorting Center';$('hbProvinceSearch').disabled=false;$('hbPasswordInfo').hidden=false;form.reset();resetLocation('province','Search province...');resetLocation('city','Select province first');resetLocation('barangay','Select city first');$('hbFormMessage').hidden=true;modal.hidden=false;document.body.classList.add('lg-modal-open');if(!skipLocations)initProvinces();$('hbName').focus()}
@@ -339,13 +408,13 @@ function renderCenterVehicles(){
  }).join('');
 }
 function renderHubRows(){const c=selectedCenter();if(!c)return;const hubs=Array.isArray(c.hubs)?c.hubs:[];
- $('hbHubRows').innerHTML=hubs.map(h=>`<tr class="hb-open-row" data-hub-id="${esc(h.id)}" tabindex="0" role="button" aria-label="View ${esc(h.hub_name)}"><td><strong>${esc(h.hub_name)}</strong><small>${esc([h.street,h.barangay].filter(Boolean).join(', '))}</small></td><td>${esc(h.city)}</td><td><strong>${esc(h.manager_name)}</strong><small>${esc(h.manager_email)}</small></td><td>${Number(h.riders_count||0)}</td><td>${Number(h.couriers_count||0)}</td><td>${Number(h.vehicles_count||0)}</td><td>${pill(h.status)}</td></tr>`).join('')||'<tr><td colspan="7" class="hb-empty-row">No delivery hubs yet.</td></tr>';
+ $('hbHubRows').innerHTML=hubs.map(h=>`<tr class="hb-open-row" data-hub-id="${esc(h.id)}" tabindex="0" role="button" aria-label="View ${esc(h.hub_name)}"><td><strong>${esc(h.hub_name)}</strong><small>${esc([h.street,h.barangay].filter(Boolean).join(', '))}</small>${requestBadge("delivery_hub",h.id)}</td><td>${esc(h.city)}</td><td><strong>${esc(h.manager_name)}</strong><small>${esc(h.manager_email)}</small></td><td>${Number(h.riders_count||0)}</td><td>${Number(h.couriers_count||0)}</td><td>${Number(h.vehicles_count||0)}</td><td>${pill(h.status)}</td></tr>`).join('')||'<tr><td colspan="7" class="hb-empty-row">No delivery hubs yet.</td></tr>';
 }
 function openHubDetails(id){selectedHubId=String(id);const c=selectedCenter();const h=(c?.hubs||[]).find(x=>String(x.id)===String(id));if(!h)return;
 
  $('hbHubDetailsTitle').textContent=h.hub_name;
  $('hbHubDetailsSubtitle').textContent=h.city+', '+c.province;
- $('hbHubProfile').innerHTML=`<div class="hb-profile-layout"><aside class="hb-profile-summary"><div class="hb-profile-avatar" aria-hidden="true">DH</div><div class="hb-profile-name-row"><strong>${esc(h.hub_name)}</strong><a class="hb-profile-message" href="${'/logistics/messages' + '?tab=delivery&center=' + encodeURIComponent(String(c.id)) + '&hub=' + encodeURIComponent(String(h.id))}" aria-label="Message ${esc(h.hub_name)}" title="Message this delivery hub"><img src="{{ asset('icons/buyer/send.png') }}" alt=""></a></div><small>${esc(h.city)} · ${esc(c.province)}</small>${pill(h.status)}<div class="hb-profile-contact"><span>Hub login</span><b>${esc(h.login_email||'—')}</b><span>Parent center</span><b>${esc(c.branch_name)}</b></div></aside><div class="hb-profile-content">${profileSection('Delivery Hub Information','▣',[['Hub name',h.hub_name],['Parent sorting center',c.branch_name],['Municipality',h.city],['Riders',String(h.riders_count||0)],['Couriers (Truck Drivers)',String(h.couriers_count||0)],['Login email',h.login_email]])}${profileSection('Office Address','⌖',[['Province',c.province],['Municipality',h.city],['Barangay',h.barangay],['Street',h.street],['House / Unit',h.house_no],['Building',h.building],['Subdivision',h.subdivision],['ZIP Code',h.postal_code]])}${profileSection('Manager Details','♟',[['Manager name',h.manager_name],['Manager email',h.manager_email],['Phone number',h.manager_phone]])}</div></div>`;
+ $('hbHubProfile').innerHTML=`<div class="hb-profile-layout"><aside class="hb-profile-summary"><div class="hb-profile-avatar" aria-hidden="true">DH</div><div class="hb-profile-name-row"><strong>${esc(h.hub_name)}</strong><a class="hb-profile-message" href="${'/logistics/messages' + '?tab=delivery&center=' + encodeURIComponent(String(c.id)) + '&hub=' + encodeURIComponent(String(h.id))}" aria-label="Message ${esc(h.hub_name)}" title="Message this delivery hub"><img src="{{ asset('icons/buyer/send.png') }}" alt=""></a></div><small>${esc(h.city)} · ${esc(c.province)}</small>${pill(h.status)}${requestBadge('delivery_hub',h.id)}<div class="hb-profile-contact"><span>Hub login</span><b>${esc(h.login_email||'—')}</b><span>Parent center</span><b>${esc(c.branch_name)}</b></div></aside><div class="hb-profile-content">${profileSection('Delivery Hub Information','▣',[['Hub name',h.hub_name],['Parent sorting center',c.branch_name],['Municipality',h.city],['Riders',String(h.riders_count||0)],['Couriers (Truck Drivers)',String(h.couriers_count||0)],['Login email',h.login_email]])}${profileSection('Office Address','⌖',[['Province',c.province],['Municipality',h.city],['Barangay',h.barangay],['Street',h.street],['House / Unit',h.house_no],['Building',h.building],['Subdivision',h.subdivision],['ZIP Code',h.postal_code]])}${profileSection('Manager Details','♟',[['Manager name',h.manager_name],['Manager email',h.manager_email],['Phone number',h.manager_phone]])}</div></div>`;
  $('hbHubDetailsModal').hidden=false;detailsModal.hidden=true;document.body.classList.add('lg-modal-open');
 }
 function closeHubDetails(){$('hbHubDetailsModal').hidden=true;detailsModal.hidden=false;showDetailTab('hubs')}
@@ -421,7 +490,7 @@ function closeHubModal(){const edit=hubEditId!==null;hubEditId=null;hubModal.hid
 $('hbAddHubOpen').addEventListener('click',()=>openHubModal());$('hbEditHub').addEventListener('click',()=>{selectedHubId=String(selectedHubId);openHubModal(selectedHubId)});$('hbAddHubClose').addEventListener('click',closeHubModal);$('hubCancel').addEventListener('click',closeHubModal);hubModal.addEventListener('click',e=>{if(e.target===hubModal)closeHubModal()});
 
 $('hbAddHubForm').addEventListener('submit',async e=>{e.preventDefault();$('hbAddHubError').hidden=true;const formHub=$('hbAddHubForm');for(const input of formHub.querySelectorAll('[required]:not(:disabled)')){if(!input.checkValidity()){input.reportValidity();return}}if(!hubSelectedCity||!hubSelectedBarangay||!$('hubCity').value||!$('hubBarangay').value){hubError('Select a valid municipality and barangay from the suggestions.');return}const c=selectedCenter();if(!c)return;const values=Object.fromEntries(new FormData(formHub).entries());const editing=hubEditId!==null,submit=formHub.querySelector('[type=submit]');submit.disabled=true;
-try{const path=editing?'/delivery-hubs/'+encodeURIComponent(hubEditId):'/'+encodeURIComponent(c.id)+'/delivery-hubs';await networkApi(path,{method:editing?'PUT':'POST',body:JSON.stringify(values)});await loadCenters();closeHubModal();showDetailTab('hubs');flash(editing?'Delivery hub updated successfully.':'Delivery hub created successfully.')}
+try{const path=editing?'/delivery-hubs/'+encodeURIComponent(hubEditId):'/'+encodeURIComponent(c.id)+'/delivery-hubs',options={method:editing?'PUT':'POST',body:JSON.stringify(values)};if(editing)await networkApiHub(path,options);else await networkApi(path,options);await loadCenters();closeHubModal();showDetailTab('hubs');flash(editing?'Delivery hub updated successfully.':'Delivery hub created successfully.')}
 catch(error){hubError(error.message)}finally{submit.disabled=false}
 });
 

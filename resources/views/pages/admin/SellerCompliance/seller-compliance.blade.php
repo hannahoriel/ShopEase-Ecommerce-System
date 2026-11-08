@@ -583,6 +583,22 @@
         window.initialSellerComplianceData = @json($data, JSON_HEX_TAG | JSON_HEX_AMP);
     </script>
 
+
+    {{-- Ensure sidebar navigation opens Seller Compliance at the top, not a restored mid-page position. --}}
+    <script>
+      (function () {
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        const resetOnEntry = () => {
+          if (window.location.hash) return;
+          window.scrollTo({top: 0, left: 0, behavior: 'instant'});
+        };
+        window.addEventListener('pageshow', resetOnEntry);
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', resetOnEntry, {once: true});
+        } else { resetOnEntry(); }
+      })();
+    </script>
+
 </body>
 
 </html>

@@ -65,7 +65,7 @@ class UserManagementController extends Controller
     {
         $this->authorizeAdmin(request());
 
-        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_LOGISTICS], true), 404);
+        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER], true), 404);
 
         return response()->json($this->serializeUser($user, true));
     }
@@ -74,7 +74,7 @@ class UserManagementController extends Controller
     {
         $this->authorizeAdmin($request);
 
-        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_LOGISTICS], true), 404);
+        abort_unless(in_array($user->role, [User::ROLE_BUYER, User::ROLE_SELLER], true), 404);
 
         $validated = $request->validate([
             'status' => ['required', Rule::in(['active', 'suspended', 'deactivated'])],
@@ -132,7 +132,7 @@ class UserManagementController extends Controller
     private function userQuery()
     {
         return User::query()
-            ->whereIn('role', [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_LOGISTICS])
+            ->whereIn('role', [User::ROLE_BUYER, User::ROLE_SELLER])
             ->whereIn('registration_status', ['active', 'suspended', 'deactivated']);
     }
 
@@ -149,11 +149,11 @@ class UserManagementController extends Controller
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhereHas('buyerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"))
                     ->orWhereHas('sellerProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"))
-                    ->orWhereHas('logisticsProfile', fn ($profile) => $profile->where('contact_no', 'like', "%{$search}%"));
+;
             });
         }
 
-        if (in_array($type = $request->string('type')->value(), ['buyer', 'seller', 'logistics'], true)) {
+        if (in_array($type = $request->string('type')->value(), ['buyer', 'seller'], true)) {
             $query->where('role', $type);
         }
 

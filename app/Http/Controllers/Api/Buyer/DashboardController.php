@@ -40,6 +40,8 @@ class DashboardController extends Controller
     public function products(Request $request): JsonResponse
     {
         $query = Product::with(['seller' => fn ($seller) => $seller->withAvg('reviews', 'rating')->withCount('reviews'), 'options', 'productSpecifications'])
+            ->withAvg('reviews as product_rating_average', 'rating')
+            ->withCount('reviews as product_rating_count')
             ->withSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
                 'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
             )], 'quantity')
@@ -60,7 +62,18 @@ class DashboardController extends Controller
         }
 
         $perPage = min((int) $request->input('per_page', 24), 100);
-        $products = $query->latest()->paginate($perPage);
+        // Sort the entire matching catalog before pagination, using the discounted price.
+        // Default remains latest to preserve the Buyer Dashboard behavior.
+        $sort = (string) $request->query('sort', 'latest');
+        if (in_array($sort, ['price-low', 'price-high'], true)) {
+            $direction = $sort === 'price-low' ? 'asc' : 'desc';
+            $query->orderByRaw(
+                'ROUND(COALESCE(price, 0) * (100 - COALESCE(sale_percentage, 0)) / 100, 2) ' . $direction
+            )->orderBy('id', 'desc');
+        } else {
+            $query->latest();
+        }
+        $products = $query->paginate($perPage);
 
         return response()->json([
             'data' => $products->map(fn (Product $p) => $this->serializeProduct($p))->values(),
@@ -78,6 +91,8 @@ class DashboardController extends Controller
             404
         );
 
+        $product->loadAvg('reviews as product_rating_average', 'rating');
+        $product->loadCount('reviews as product_rating_count');
         $product->load(['seller' => fn ($seller) => $seller->withAvg('reviews', 'rating')->withCount('reviews'), 'options', 'productSpecifications', 'connectedVariants']);
         $product->loadSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
             'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
@@ -99,6 +114,8 @@ class DashboardController extends Controller
             'sale_price' => $product->sale_price,
             'stock' => $product->stock_quantity,
             'sold_count' => (int) ($product->sold_count ?? 0),
+            'rating_average' => round((float) ($product->product_rating_average ?? 0), 1),
+            'rating_count' => (int) ($product->product_rating_count ?? 0),
             'category' => $product->category,
             'photos' => $photos,
             'image_url' => $photos[0] ?? null,
