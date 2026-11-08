@@ -24,7 +24,11 @@
     $tracking = $read('shipment.tracking_number') ?: 'Not assigned yet';
     $steps = [['Processing','processing.png'],['To Ship','to-ship.png'],['In Transit','in-transit.png'],['Out for Delivery','out-for-delivery.png'],['Delivered','delivered.png']];
     $backUrl = route('buyer.my-purchases', ['section'=>'purchases']);
-    $events = collect($read('tracking_events', []));
+    $eventRank = fn($event) => match($event['status'] ?? '') {'order_placed'=>0, 'processing'=>1, default=>2};
+    $events = collect($read('tracking_events', []))->sort(fn($first, $second) =>
+        ($eventRank($first) <=> $eventRank($second))
+        ?: strcmp($first['sort_at'] ?? $first['created_at'] ?? '', $second['sort_at'] ?? $second['created_at'] ?? '')
+    )->reverse()->values();
 @endphp
 <!DOCTYPE html>
 <html lang="en"><head>
@@ -81,6 +85,81 @@
 .vo-rating-error[hidden]{display:none!important}
 .vo-rating-check{display:flex;align-items:center;gap:7px;font-size:11px;color:#6c6160;margin-top:14px}.vo-rating-check input{accent-color:#7a2630}.vo-rating-error{color:#b42336!important}.vo-rating-demo{text-align:center;font-size:10px!important;margin:12px 0 0!important}
 @media(max-width:650px){.vo-receipt-card{align-items:stretch;flex-direction:column}.vo-receipt-card button{width:100%}.vo-stage-pill{align-self:flex-start}.vo-modal{padding:22px}}
+
+/* Order metadata and tracking share a readable, responsive hierarchy. */
+.vo-section-title h2{font-size:18px;font-weight:600}
+.vo-info-layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:28px;padding:4px 24px 24px;align-items:start}
+.vo-info-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 28px;margin:0;padding:8px 0}
+.vo-info-fields>div{min-width:0}.vo-info-fields dt{font-size:13px;color:#8c807c;margin-bottom:7px}
+.vo-info-fields dd{margin:0;font-size:15px;font-weight:500;line-height:1.65;overflow-wrap:anywhere;color:#382b2d}
+.vo-info-fields dd span{display:block;font-size:14px;font-weight:400;color:#81736f;margin-top:3px}
+.vo-verification{border-left:1px solid var(--vo-line);padding-left:24px;text-align:center}
+.vo-verification h3{font-size:15px;font-weight:600;margin:5px 0 14px}.vo-verification canvas{display:block;max-width:100%;height:auto;margin:auto}
+.vo-verification p{font-size:12px;line-height:1.7;color:#8c807c;margin:12px 0 0}
+.vo-carrier-identity{display:flex;flex-direction:column;gap:5px;align-items:flex-end;min-width:0;overflow-wrap:anywhere}
+.vo-carrier-identity strong{font-size:15px;font-weight:600;color:#4a3035}.vo-carrier-identity span{font-size:13px;color:#8c807c}
+.vo-trackhead{font-size:13px;padding-top:15px;padding-bottom:15px}
+.vo-address h3{font-size:15px;font-weight:600}.vo-address strong{font-size:15px;font-weight:600}.vo-address p{font-size:14px;line-height:1.8}
+.vo-event{grid-template-columns:24px minmax(120px,145px) minmax(0,1fr);gap:14px;min-height:70px}
+.vo-event time{font-size:12px;line-height:1.6;white-space:normal;padding-top:3px}
+.vo-event-copy strong{font-size:15px;font-weight:600}.vo-event-copy p{font-size:14px;line-height:1.7}
+.vo-attention h3{font-size:16px;font-weight:600}.vo-attention p{font-size:14px;line-height:1.75}
+.vo-action-row button,.vo-stage-pill{font-size:13px}.vo-step-title{font-size:13px}.vo-step-time{font-size:11px}
+.vo-product-copy h3{font-size:15px}.vo-product-copy p,.vo-money-row,.vo-payment{font-size:14px}
+@media(max-width:760px){
+ .vo-info-layout{grid-template-columns:1fr;gap:20px;padding:0 18px 20px}
+ .vo-info-fields{gap:20px}.vo-verification{border-left:0;border-top:1px solid var(--vo-line);padding:18px 0 0}
+ .vo-section-title{align-items:flex-start;flex-wrap:wrap}.vo-carrier-identity{align-items:flex-start}
+ .vo-event{grid-template-columns:24px minmax(0,1fr);gap:8px 12px}.vo-event time{grid-column:2;padding-top:0}.vo-event-copy{grid-column:2;padding-top:0}
+ .vo-dot{grid-column:1;grid-row:1/3}.vo-step-title{font-size:11px}.vo-step-time{font-size:10px}
+}
+@media(max-width:480px){.vo-info-fields{grid-template-columns:1fr}}
+
+.vo-solution-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.vo-solution-options label{display:flex;align-items:center;gap:8px;border:1px solid #ddd;border-radius:9px;padding:12px;font-weight:500;cursor:pointer}.vo-solution-options label:has(input:checked){border-color:#7b1b1b;background:#fff1ed;color:#7b1b1b}.vo-return-lock{font-size:12px;color:#8c807c;align-self:center}
+.vo-return-products{border:0;padding:0;margin:0 0 22px;min-width:0}
+.vo-return-products legend{font-size:15px;font-weight:500;margin:0 0 14px;padding:0}
+.vo-return-product{display:grid;grid-template-columns:18px 72px minmax(0,1fr) auto;align-items:center;gap:14px;padding:16px;margin-bottom:10px;border:1px solid #e8ded9;border-radius:12px;background:#fff;cursor:pointer;text-align:left}
+.vo-return-product:has(input:checked){border-color:#7b1b1b;background:#fff7f3;box-shadow:0 0 0 1px #7b1b1b}
+.vo-return-product:has(input:focus-visible){outline:2px solid #9ca3af;outline-offset:3px}
+.vo-return-product>input{margin:0;accent-color:#7b1b1b;width:17px;height:17px}
+.vo-return-product-photo{width:72px;height:72px;border-radius:10px;background:#f8f0ec;border:1px solid #eaded8;display:grid;place-items:center;overflow:hidden;font-size:12px;color:#8c807c}
+.vo-return-product-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.vo-return-product-copy{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.vo-return-product-copy>strong{font-size:14px;font-weight:500;color:#382b2d;line-height:1.5}
+.vo-return-product-copy>span{font-size:12px;color:#8c807c;line-height:1.5}
+.vo-return-product-copy .se-fragile-pill{align-self:flex-start;color:#fff;margin:0}
+.vo-return-product-price{font-size:14px;font-weight:600;color:#7b1b1b;white-space:nowrap}
+@media(max-width:520px){.vo-return-product{grid-template-columns:17px 56px minmax(0,1fr);gap:10px;padding:12px}.vo-return-product-photo{width:56px;height:56px}.vo-return-product-price{grid-column:3;justify-self:start}.vo-return-product-copy>strong{font-size:13px}}
+.vo-shop-name{display:flex;align-items:center;gap:14px}.vo-shop-name svg{width:22px;height:22px;flex-shrink:0;color:#7b1b1b}
+.vo-return-request{max-width:920px!important;width:min(920px,100%)!important;position:relative}
+.vo-event[hidden]{display:none!important}.vo-history-toggle{justify-self:start;margin-top:12px}.vo-timeline:not(.is-expanded) .vo-event:nth-child(5):before{display:none}
+.vo-modal-overlay.vo-return-overlay{display:flex!important;align-items:center;justify-content:center}.vo-modal-overlay.vo-return-overlay[hidden]{display:none!important}
+.vo-return-overlay .vo-return-request{flex:0 1 920px!important;min-width:0;max-width:calc(100vw - 40px)!important;box-sizing:border-box}
+.vo-evidence-label{margin:0 0 10px}.vo-evidence-label small{font-size:12px;color:#8c807c}.vo-evidence-row,.vo-evidence-previews{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.vo-evidence-row{margin-bottom:20px}.vo-evidence-previews{display:contents}
+.vo-attach-tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:76px;height:76px;border:1px solid #dfceca;border-radius:12px;cursor:pointer;flex-shrink:0;overflow:hidden}.vo-attach-tile input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.vo-attach-tile>span{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#fae9e6;color:#9d2525;font-size:27px;font-weight:700}.vo-attach-tile strong{font-size:12px;font-weight:500;color:#7b1b1b}.vo-attach-tile:focus-within{outline:2px solid #9ca3af;outline-offset:2px}
+.vo-evidence-photo{position:relative;width:76px;height:76px;flex-shrink:0}.vo-evidence-photo img{width:100%;height:100%;object-fit:cover;border-radius:10px;border:1px solid #dfceca}.vo-evidence-photo button{position:absolute;right:-5px;top:-5px;border:1px solid #dfceca;border-radius:50%;background:#fff;color:#7b1b1b;width:23px;height:23px;cursor:pointer}
+
+.vo-return-request{padding:30px!important;border:1px solid #eee2dd;border-radius:20px;scrollbar-width:thin;scrollbar-color:#d6c7c2 transparent}
+.vo-return-request #voRequestTitle{font-size:23px;font-weight:600;color:#38272b;padding:0 42px 20px 0;margin-bottom:22px;border-bottom:1px solid #eee4e0}
+.vo-return-request .vo-return-products legend,.vo-return-request [data-product-complaint-fields] label,.vo-return-request .vo-evidence-label,.vo-return-request .vo-field-heading{font-size:14px;font-weight:600;color:#463236;line-height:1.6}
+.vo-return-request [data-product-complaint-fields]>label,.vo-complaint-basics>label{display:block}
+.vo-complaint-basics{display:grid;grid-template-columns:minmax(110px,.45fr) minmax(0,1fr);gap:18px}
+.vo-return-request [data-product-complaint-fields]{padding-top:22px!important;border-top:1px solid #eee4e0!important}
+.vo-return-request [data-product-complaint-fields][hidden]{display:none!important}
+.vo-return-request input:not([type=radio]):not([type=file]),.vo-return-request select,.vo-return-request textarea{box-sizing:border-box;background:#fffdfc;color:#382b2d;transition:border-color .15s,box-shadow .15s}
+.vo-return-request input:focus-visible,.vo-return-request select:focus-visible,.vo-return-request textarea:focus-visible{outline:none;border-color:#a9a2a0!important;box-shadow:0 0 0 3px #e9e7e5}
+.vo-return-request textarea{resize:vertical;min-height:110px}
+.vo-return-request .vo-evidence-label small{font-weight:400}.vo-return-request .vo-field-heading{margin:6px 0 10px}
+.vo-return-request .vo-solution-options{margin-top:0}.vo-return-request .vo-solution-options label{padding:15px;border-radius:11px;transition:background .15s,border-color .15s}.vo-return-request input[type=radio]{accent-color:#7b1b1b;flex-shrink:0}
+.vo-return-request .vo-review-note{background:#faf6f3;border:1px solid #eee4de;border-radius:10px;padding:12px 15px;color:#80706c;line-height:1.7;margin:18px 0 0}
+.vo-return-request .vo-modal-buttons{border-top:1px solid #eee4e0;padding-top:20px;margin-top:24px;justify-content:flex-end}.vo-return-request .vo-modal-buttons button{flex:0 1 190px;min-height:46px;border-radius:10px}
+@media(max-width:600px){.vo-return-request{padding:22px!important}.vo-return-request #voRequestTitle{font-size:20px}.vo-complaint-basics{grid-template-columns:1fr;gap:0}.vo-return-request .vo-solution-options{grid-template-columns:1fr}.vo-return-request .vo-modal-buttons button{flex:1}}
+.vo-return-request [data-product-complaint-fields] label.vo-attach-tile{display:flex;align-items:center;justify-content:center;flex-direction:column;padding:0;gap:4px;box-sizing:border-box;text-align:center;line-height:1;margin:0}
+.vo-return-request .vo-attach-tile>span{display:grid;place-items:center;line-height:1;padding:0;margin:0}.vo-return-request .vo-attach-tile>strong{display:block;line-height:1.3;margin:0;padding:0;font-size:12px}
+.vo-required{color:#8a2027;font-weight:600}
+.vo-return-case .vo-section-title{padding:22px 24px;border-bottom:1px solid #eee4e0}.vo-return-case .vo-section-title h2{font-size:18px;font-weight:600}.vo-return-case .vo-case-investigation{background:#f0f1f3;color:#626773;border:1px solid #e1e3e7;font-size:12px;font-weight:500}
+.vo-case-body{padding:24px;font-size:14px;line-height:1.75}.vo-case-overview{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:28px}.vo-case-details p{margin:0 0 12px;overflow-wrap:anywhere}.vo-case-details strong{font-weight:600}.vo-case-description{padding:14px 16px;background:#faf7f5;border:1px solid #eee4e0;border-radius:10px;margin:14px 0}.vo-case-description p{margin:5px 0 0;white-space:pre-wrap}.vo-case-evidence{border-left:1px solid #eee4e0;padding-left:24px}.vo-case-body h3{font-size:14px;font-weight:600;margin:0 0 14px;color:#463236}.vo-case-photos{display:flex;gap:10px;flex-wrap:wrap}.vo-case-photos img{width:84px!important;height:84px!important;border:1px solid #eee4e0}.vo-case-history{border-top:1px solid #eee4e0;margin-top:22px;padding-top:20px}.vo-case-history p{position:relative;padding:0 0 14px 20px;margin:0;border-left:2px solid #e9e4e1;color:#877975;font-size:13px}.vo-case-history p:before{content:'';position:absolute;left:-5px;top:7px;width:8px;height:8px;border-radius:50%;background:#aba3a0}.vo-case-history strong{color:#514346;font-weight:600}.vo-case-footer{border-top:1px solid #eee4e0;padding-top:18px;display:flex;justify-content:flex-end}.vo-case-footer a{text-decoration:none;display:inline-flex;align-items:center}.vo-outline:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:700px){.vo-case-overview{grid-template-columns:1fr;gap:18px}.vo-case-evidence{border-left:0;border-top:1px solid #eee4e0;padding:18px 0 0}.vo-case-body{padding:20px}.vo-return-case .vo-section-title{flex-wrap:wrap}.vo-case-footer a{width:100%;justify-content:center}}
 </style></head>
 <body class="vo-page">
 {{-- Exactly the same navbar include used by Buyer My Purchases --}}
@@ -103,7 +182,22 @@
     </div>
   </section>
 
-<section class="vo-card" style="padding:20px 22px"><div class="vo-section-title"><h2>Order Information</h2></div><p>Placed: {{ $placedAt->format('M d, Y · h:i A') }}</p><p>Estimated delivery: {{ $read('shipment.estimated_delivery') ?: 'Not available yet' }}</p><p>Current location: {{ $read('shipment.current_location') ?: 'Not available yet' }}</p>@if($read('shipment.rider'))<p>Rider: {{ $read('shipment.rider.name') }} · {{ $read('shipment.rider.contact_no') }}</p>@endif @if($read('buyer_received_at'))<p>Receipt confirmed: {{ \Carbon\Carbon::parse($read('buyer_received_at'))->format('M d, Y · h:i A') }}{{ $read('buyer_received_automatically') ? ' (automatically)' : '' }}</p>@endif @if($read('cancellation_request'))<p>Cancellation request: {{ \Illuminate\Support\Str::headline($read('cancellation_request.status')) }} · {{ \Illuminate\Support\Str::headline($read('cancellation_request.reason')) }}</p>@endif @if($read('complaint'))<p>Complaint: <a href="{{ $backUrl }}&complaint={{ $read('complaint.id') }}">{{ $read('complaint.reference') }}</a> · {{ $read('complaint.status') }}</p>@endif @foreach($read('returns',[]) as $return)<p>{{ ucfirst($return['return_type']) }} request #{{ $return['id'] }} · {{ $return['status'] }} · {{ $return['reason'] }}</p>@endforeach<div style="margin-top:18px"><h3>Order verification</h3><canvas id="voOrderQr" width="160" height="160" aria-label="Order verification QR code"></canvas><p>Show this QR code when your order needs to be verified.</p></div></section>
+<section class="vo-card vo-order-info">
+  <div class="vo-section-title"><h2>Order Information</h2></div>
+  <div class="vo-info-layout">
+    <dl class="vo-info-fields">
+      <div><dt>Order placed</dt><dd>{{ $placedAt->format('M d, Y · h:i A') }}</dd></div>
+      <div><dt>Estimated delivery</dt><dd>{{ $read('shipment.estimated_delivery') ? \Carbon\Carbon::parse($read('shipment.estimated_delivery'))->format('M d, Y') : 'Not available yet' }}</dd></div>
+      <div><dt>Current location</dt><dd>{{ $read('shipment.current_location') ?: 'Not available yet' }}</dd></div>
+      <div><dt>Assigned rider</dt><dd>{{ $read('shipment.rider.name') ?: 'Not assigned yet' }}@if($read('shipment.rider.contact_no'))<span>{{ $read('shipment.rider.contact_no') }}</span>@endif</dd></div>
+      @if($read('buyer_received_at'))<div><dt>Receipt confirmed</dt><dd>{{ \Carbon\Carbon::parse($read('buyer_received_at'))->format('M d, Y · h:i A') }}{{ $read('buyer_received_automatically') ? ' (automatically)' : '' }}</dd></div>@endif
+      @if($read('cancellation_request'))<div><dt>Cancellation request</dt><dd>{{ \Illuminate\Support\Str::headline($read('cancellation_request.status')) }}<span>{{ \Illuminate\Support\Str::headline($read('cancellation_request.reason')) }}</span></dd></div>@endif
+      @if($read('complaint'))<div><dt>Complaint</dt><dd><a href="{{ $backUrl }}&complaint={{ $read('complaint.id') }}">{{ $read('complaint.reference') }}</a><span>{{ $read('complaint.status') }}</span></dd></div>@endif
+      @foreach($read('returns',[]) as $return)<div><dt>{{ ucfirst($return['return_type']) }} request #{{ $return['id'] }}</dt><dd>{{ $return['status'] }}<span>{{ $return['reason'] }}</span></dd></div>@endforeach
+    </dl>
+    <aside class="vo-verification"><h3>Order verification</h3><canvas id="voOrderQr" width="160" height="160" aria-label="Order verification QR code"></canvas><p>Show this QR code when your order needs to be verified.</p></aside>
+  </div>
+</section>
   <section class="vo-card vo-actions-card">
     <div class="vo-attention">
       <div>
@@ -114,17 +208,18 @@
     </div>
     <div class="vo-action-row">
       @if($read('can_cancel'))<button class="vo-outline" type="button" data-vo-action="cancel">Cancel Order</button>@endif
-      @if(in_array($status, ['delivered','completed'], true))<button class="vo-outline" type="button" data-vo-action="return">Request Return / Refund</button>@endif
+      @if(in_array($status, ['delivered','completed'], true))<button class="vo-outline" type="button" data-vo-action="return" @disabled(!$read('can_request_return'))>Request Return / Refund</button>@endif
       <button class="vo-outline" type="button" data-vo-action="seller">Contact Seller</button><button class="vo-outline" type="button" data-vo-action="report">Report a Problem</button>
     </div>
   </section>
-  <section class="vo-card"><div class="vo-section-title"><h2>Delivery & Tracking</h2><span>{{ $courier }} · {{ $tracking }}</span></div><div class="vo-trackhead"><span>Shipment progress and delivery updates</span><strong>{{ $courier }}</strong></div><div class="vo-delivery"><div class="vo-address"><h3>Delivery Address</h3><strong>{{ $buyerName }}</strong><p>{{ $buyerPhone }}</p><p>{{ $address }}</p></div><div class="vo-timeline" id="voTimeline">
+  <section class="vo-card"><div class="vo-section-title"><h2>Delivery & Tracking</h2><div class="vo-carrier-identity"><strong>{{ $courier }}</strong><span>Tracking number: {{ $tracking }}</span></div></div><div class="vo-trackhead"><span>Shipment progress and delivery updates</span></div><div class="vo-delivery"><div class="vo-address"><h3>Delivery Address</h3><strong>{{ $buyerName }}</strong><p>{{ $buyerPhone }}</p><p>{{ $address }}</p></div><div class="vo-timeline" id="voTimeline">
     @forelse($events as $event)
-    <div class="vo-event"><span class="vo-dot">{{ $loop->first ? '✓' : '·' }}</span><time>{{ filled($event['created_at'] ?? null) ? \Carbon\Carbon::parse($event['created_at'])->format('M d, Y · h:i A') : '—' }}</time><div class="vo-event-copy"><strong>{{ $event['description'] ?? $event['status'] }}</strong>@if(filled($event['location'] ?? null))<p>{{ $event['location'] }}</p>@endif</div></div>
+    <div class="vo-event" @if($loop->index >= 5) data-vo-older-event hidden @endif><span class="vo-dot">{{ $loop->first ? '✓' : '·' }}</span><time>{{ filled($event['created_at'] ?? null) ? \Carbon\Carbon::parse($event['created_at'])->format('M d, Y · h:i A') : 'Time not recorded' }}</time><div class="vo-event-copy"><strong>{{ $event['description'] ?? $event['status'] }}</strong>@if(filled($event['actor'] ?? null))<p>{{ $event['actor'] }} update</p>@endif @if(filled($event['notes'] ?? null))<p>{{ $event['notes'] }}</p>@endif @if(filled($event['location'] ?? null))<p>{{ $event['location'] }}</p>@endif</div></div>
     @empty <p>No tracking updates have been recorded yet.</p> @endforelse
+    @if($events->count() > 5)<button type="button" class="vo-outline vo-history-toggle" id="voHistoryToggle" aria-expanded="false" aria-controls="voTimeline">Show all {{ $events->count() }} updates</button>@endif
 
   </div></div></section>
-  <section class="vo-card"><div class="vo-shop-head"><strong>▣ {{ $shop }}</strong><button class="vo-outline" data-vo-action="seller" type="button">Chat with Seller</button></div>@foreach($items as $item)<div class="vo-product"><div class="vo-product-img">@if($item['image_url'])<img src="{{ $item['image_url'] }}" alt="{{ $item['product_name'] }}">@else<span>Product</span>@endif</div><div class="vo-product-copy"><h3>{{ $item['product_name'] }} @if($item['is_fragile'])<span class="se-fragile-pill">Fragile</span>@endif</h3><p>{{ collect([$item['variation'],$item['color'],$item['size']])->filter()->implode(' · ') ?: 'No variant selected' }}</p><p>Quantity: {{ $item['quantity'] }}</p><p>Unit price: ₱{{ number_format($item['unit_price'],2) }}</p></div><span class="vo-product-price">₱{{ number_format($item['unit_price'] * $item['quantity'],2) }}</span></div>@endforeach<div class="vo-breakdown"><div class="vo-money-row"><span>Merchandise Subtotal</span><strong>₱{{ number_format($subtotal,2) }}</strong></div><div class="vo-money-row"><span>Shipping Fee</span><strong>₱{{ number_format($shipping,2) }}</strong></div><div class="vo-money-row"><span>Shipping Discount</span><strong>−₱{{ number_format($shippingDiscount,2) }}</strong></div><div class="vo-money-row"><span>Voucher Discount @if($read('voucher_code'))({{ $read('voucher_code') }})@endif</span><strong>−₱{{ number_format($voucher,2) }}</strong></div><div class="vo-money-row grand"><span>Order Total</span><strong>₱{{ number_format($total,2) }}</strong></div></div><div class="vo-cod">◉ <span>{{ $read('payment_method') === 'ShopEase Wallet' ? 'Paid with ShopEase Wallet.' : 'Cash on Delivery (COD) · Pay ₱'.number_format($total,2).' when you receive your parcel.' }}</span></div><div class="vo-payment"><span>Payment Method</span><strong>{{ $read('payment_method') }}</strong></div></section>
+  <section class="vo-card"><div class="vo-shop-head"><strong class="vo-shop-name"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9h16l-1.2-5H5.2L4 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6 9v10h12V9M9 19v-5h6v5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>{{ $shop }}</strong><button class="vo-outline" data-vo-action="seller" type="button">Chat with Seller</button></div>@foreach($items as $item)<div class="vo-product"><div class="vo-product-img">@if($item['image_url'])<img src="{{ $item['image_url'] }}" alt="{{ $item['product_name'] }}">@else<span>Product</span>@endif</div><div class="vo-product-copy"><h3>{{ $item['product_name'] }} @if($item['is_fragile'])<span class="se-fragile-pill">Fragile</span>@endif</h3><p>{{ collect([$item['variation'],$item['color'],$item['size']])->filter()->implode(' · ') ?: 'No variant selected' }}</p><p>Quantity: {{ $item['quantity'] }}</p><p>Unit price: ₱{{ number_format($item['unit_price'],2) }}</p></div><span class="vo-product-price">₱{{ number_format($item['unit_price'] * $item['quantity'],2) }}</span></div>@endforeach<div class="vo-breakdown"><div class="vo-money-row"><span>Merchandise Subtotal</span><strong>₱{{ number_format($subtotal,2) }}</strong></div><div class="vo-money-row"><span>Shipping Fee</span><strong>₱{{ number_format($shipping,2) }}</strong></div><div class="vo-money-row"><span>Shipping Discount</span><strong>−₱{{ number_format($shippingDiscount,2) }}</strong></div><div class="vo-money-row"><span>Voucher Discount @if($read('voucher_code'))({{ $read('voucher_code') }})@endif</span><strong>−₱{{ number_format($voucher,2) }}</strong></div><div class="vo-money-row grand"><span>Order Total</span><strong>₱{{ number_format($total,2) }}</strong></div></div><div class="vo-cod">◉ <span>{{ $read('payment_method') === 'ShopEase Wallet' ? 'Paid with ShopEase Wallet.' : 'Cash on Delivery (COD) · Pay ₱'.number_format($total,2).' when you receive your parcel.' }}</span></div><div class="vo-payment"><span>Payment Method</span><strong>{{ $read('payment_method') }}</strong></div></section>
   @if(in_array($status, ['delivered','completed'], true))
   <section class="vo-card vo-receipt-card">
     <div><h3>Confirm your delivery</h3><p>Received everything in good condition? Confirm your order after checking your items. Return/refund requests remain a separate action.</p></div>
@@ -134,6 +229,7 @@
     </div>
   </section>
   @endif
+  @include('components.buyer.order-return-progress')
   <div class="vo-footer-help">For help with this order, contact the seller or report a problem.</div>
 </div></main>
 @include('components.buyer.floating-chat')
@@ -179,4 +275,5 @@
 <div class="vo-modal-overlay" id="voModal" hidden role="presentation"><div class="vo-modal" role="dialog" aria-modal="true" aria-labelledby="voModalTitle"><div class="vo-modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5m0 4h.01"/></svg></div><h2 id="voModalTitle">Action unavailable</h2><p id="voModalText">This action requires backend support.</p><div class="vo-modal-buttons"><button class="vo-primary" id="voModalOkay" type="button">Okay, Got it</button></div></div></div>
 <script type="application/json" id="voOrderData">{!! json_encode(['order'=>$order,'apiToken'=>$apiToken], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 @include('components.buyer.floating-chat')
+@include('components.buyer.footer')
 </body></html>
