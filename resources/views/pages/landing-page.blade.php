@@ -39,7 +39,7 @@
 </head>
 
 
-<body data-login-url="{{ route('login') }}" data-register-url="{{ route('register') }}">
+<body data-login-url="{{ route('login', ['modal' => 1]) }}" data-register-url="{{ route('register') }}">
 
 <div class="landing-page">
 

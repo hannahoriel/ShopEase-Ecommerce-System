@@ -107,7 +107,7 @@
     <p class="foot-note">
         Already have an account?
         <a
-            href="{{ route('login') }}"
+            href="{{ route('login', ['modal' => 1]) }}"
             class="link"
         >
             Log in

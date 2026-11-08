@@ -858,6 +858,7 @@ class ParcelRouteScanController extends Controller
             'total_amount' => (float) ($order?->total ?? 0), 'payment_method' => $order?->payment_method,
             'items' => $order?->items?->map(fn ($item) => [
                 'product_name' => $item->product?->name ?: $item->product_name,
+                'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
                 'variation' => $item->variation,
                 'color' => $item->color,
                 'size' => $item->size,

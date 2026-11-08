@@ -29,9 +29,8 @@ class DeliveryHubDashboardController extends Controller
             return response()->json(['data' => ['tracking' => $shipment->tracking_number, 'status' => $shipment->scans->first()?->status ?: $shipment->order?->status ?: 'In transit', 'location' => $shipment->current_location, 'updated_at' => $shipment->location_updated_at?->timezone('Asia/Manila')->format('M d, Y g:i A')]]);
         }
 
-        $dates = $request->validate(['from' => ['required', 'date_format:Y-m-d'], 'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from']]);
         $today = Carbon::now('Asia/Manila')->toDateString();
-        abort_if($dates['to'] > $today, 422, 'Dashboard dates cannot be in the future.');
+        $dates = ['from' => $today, 'to' => $today];
         $inbound = LogisticsTransferManifest::query()->where('destination_type', 'delivery_hub')->where('destination_id', $hub->id)
             ->with(['shipments.order', 'shipments.scans'])->latest('created_at')->get();
         $outbound = LogisticsTransferManifest::query()->where('origin_type', 'delivery_hub')->where('origin_id', $hub->id)

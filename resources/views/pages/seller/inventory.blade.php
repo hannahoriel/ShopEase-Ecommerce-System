@@ -1598,13 +1598,11 @@
                                     min="0"
                                     step="1"
                                     value="0"
-                                    readonly
-                                    aria-readonly="true"
                                     placeholder="0"
                                 >
 
                                 <small class="create-stock-auto-help">
-                                    Automatically calculated from the stock of your grouped choices.
+                                    Enter stock here when the product has no variation, color, or size choices.
                                 </small>
                             </div>
 
@@ -1971,6 +1969,15 @@
                                style="display:block;width:min(280px,100%);height:42px;min-height:42px;max-height:42px;padding:0 12px;border:1px solid #d8dbe1;border-radius:8px;background:#fff;color:#303b4e;font:400 12px Poppins,sans-serif;box-sizing:border-box;outline-offset:2px">
                     </section>
 
+                    <section class="create-product-section">
+                        <label class="se-fragile-toggle" for="createProductFragile">
+                            <span><strong>Fragile product</strong><small>Needs careful handling during packing and delivery.</small></span>
+                            <input type="hidden" name="is_fragile" value="0">
+                            <input id="createProductFragile" type="checkbox" role="switch" aria-label="Fragile product">
+                            <span class="se-fragile-toggle-track" aria-hidden="true"></span>
+                        </label>
+                    </section>
+
                     {{-- =====================================================
                          PRODUCT DESCRIPTION
                     ====================================================== --}}
@@ -2136,6 +2143,7 @@
                     <div class="product-details-inspo-summary">
                         <label class="product-details-edit-label" for="productDetailsName">Product Title</label>
                         <h3 id="productDetailsNameDisplay" class="product-details-view-value product-details-title-display">Product</h3>
+                        <span id="productDetailsFragile" class="se-fragile-pill" hidden>Fragile</span>
                         <input
                             type="text"
                             id="productDetailsName"
@@ -2863,6 +2871,23 @@
     ========================================================== --}}
 
 
+<dialog id="inventoryProductCreatedModal" class="inventory-created-dialog" role="dialog" aria-labelledby="inventoryCreatedTitle" aria-describedby="inventoryCreatedMessage">
+    <div class="inventory-created-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg></div>
+    <h2 id="inventoryCreatedTitle">Product Created</h2>
+    <p id="inventoryCreatedProductName"></p>
+    <span class="inventory-created-status">Waiting for Admin Approval</span>
+    <p id="inventoryCreatedMessage">Your product has been added to your inventory. It will be available to buyers once approved by the administrator.</p>
+    <form method="dialog"><button type="submit" data-loading="off">Got it</button></form>
+</dialog>
+<style>
+.inventory-created-dialog{width:min(420px,calc(100vw - 32px));margin:auto;padding:30px;border:1px solid #f0e4df;border-radius:20px;background:#fff;text-align:center;box-shadow:0 22px 65px #32101526;font-family:Poppins,Arial,sans-serif;color:#302729}
+.inventory-created-dialog::backdrop{background:#27151866;backdrop-filter:blur(3px)}
+.inventory-created-icon{display:grid;place-items:center;margin:0 auto 16px;width:58px;height:58px;border-radius:50%;background:#f9ebe6;color:#7b1b1b}
+.inventory-created-dialog h2{font-size:20px;font-weight:600;margin:0 0 9px}.inventory-created-dialog p{font-size:12px;color:#8b7b77;line-height:1.8;margin:12px 0}
+.inventory-created-dialog #inventoryCreatedProductName{color:#403333;font-weight:600;overflow-wrap:anywhere}
+.inventory-created-status{display:inline-block;border-radius:999px;background:#fff2dc;color:#8a6228;font-size:10px;padding:7px 12px;font-weight:600}
+.inventory-created-dialog button{margin-top:8px;width:100%;padding:11px 18px;border:0;border-radius:9px;background:#7b1b1b;color:#fff;font:600 12px Poppins,Arial,sans-serif;cursor:pointer}
+</style>
 </body>
 
 </html>

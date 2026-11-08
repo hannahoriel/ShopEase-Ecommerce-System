@@ -20,10 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
             return route('logistics.landing.info');
         }
 
-        return route('login');
+        return route('landing.page', ['auth' => 'login']);
     });
     $middleware->statefulApi();
     $middleware->web(append: [
+        \App\Http\Middleware\ShopEaseLoading::class,
         \App\Http\Middleware\AdminModuleAccess::class,
     ]);
     $middleware->api(append: [

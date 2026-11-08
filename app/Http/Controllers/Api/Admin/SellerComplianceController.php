@@ -1299,7 +1299,8 @@ class SellerComplianceController extends Controller
             ->all();
 
         $payload['specifications'] = $savedSpecifications;
-        $payload['weight_kg'] = $product->weight_kg; 
+        $payload['weight_kg'] = $product->weight_kg;
+        $payload['is_fragile'] = (bool) $product->is_fragile;
         $payload['subcategory'] = $savedSpecifications['subcategory']
             ?? $product->getAttribute('subcategory')
             ?? null;

@@ -1608,6 +1608,8 @@ function initSellerCompliance(cfg) {
             categoryBadge.className = 'product-details-category-display category-badge category-' +
                 (knownCategories.has(categorySlug) ? categorySlug : 'default');
         }
+        const fragile = $('#sellerProductFragile');
+        if (fragile) fragile.hidden = !product.is_fragile;
         const badge = $('#sellerProductStatusBadge');
         if (badge) { badge.textContent = PRODUCT_STATUS_LABEL[status] || titleCase(status); badge.className = `sc-product-status ${status}`; }
         const archive = $('#sellerProductArchiveInfo');

@@ -310,6 +310,12 @@ document.addEventListener(
             return;
         }
 
+        // Sidebar navigation retains the resting visual state. Only a fresh
+        // entry or browser reload should replay the entrance animations.
+        if (document.documentElement.classList.contains('se-sidebar-continuation')) {
+            return;
+        }
+
 
         // ==========================================
         // LOGO RELOAD

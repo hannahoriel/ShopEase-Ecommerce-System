@@ -48,7 +48,7 @@ class RegistrationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Registration::pending();
+        $query = Registration::pending()->where('user_type', '!=', 'logistics');
         $this->applyFilters($query, $request);
 
         $registrations = $query->orderByDesc('created_at')
@@ -67,7 +67,7 @@ class RegistrationController extends Controller
      */
     public function list(Request $request): JsonResponse
     {
-        $query = Registration::pending();
+        $query = Registration::pending()->where('user_type', '!=', 'logistics');
         $this->applyFilters($query, $request);
 
         $registrations = $query->orderByDesc('created_at')
@@ -82,7 +82,7 @@ class RegistrationController extends Controller
     public function approvedArchive(Request $request): JsonResponse
     {
         abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
-        $query = Registration::approved();
+        $query = Registration::approved()->where('user_type', '!=', 'logistics');
 
         if ($search = $request->string('search')->trim()->value()) {
             $this->applySearch($query, $search);
@@ -102,7 +102,7 @@ class RegistrationController extends Controller
     public function rejectedArchive(Request $request): JsonResponse
     {
         abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
-        $query = Registration::rejected();
+        $query = Registration::rejected()->where('user_type', '!=', 'logistics');
 
         if ($search = $request->string('search')->trim()->value()) {
             $this->applySearch($query, $search);
@@ -300,10 +300,10 @@ class RegistrationController extends Controller
     private function counts(): array
     {
         return [
-            'pending' => Registration::pending()->count(),
-            'approved' => Registration::approved()->count(),
-            'rejected' => Registration::rejected()->count(),
-            'total' => Registration::count(),
+            'pending' => Registration::pending()->where('user_type', '!=', 'logistics')->count(),
+            'approved' => Registration::approved()->where('user_type', '!=', 'logistics')->count(),
+            'rejected' => Registration::rejected()->where('user_type', '!=', 'logistics')->count(),
+            'total' => Registration::where('user_type', '!=', 'logistics')->count(),
         ];
     }
 }

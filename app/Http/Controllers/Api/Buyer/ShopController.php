@@ -175,6 +175,7 @@ class ShopController extends Controller
         return [
             'id' => $product->id,
             'name' => $product->name,
+            'is_fragile' => (bool) $product->is_fragile,
             'category' => $product->category,
             'price' => (float) $product->price,
             'sale_percentage' => (int) $product->sale_percentage,
