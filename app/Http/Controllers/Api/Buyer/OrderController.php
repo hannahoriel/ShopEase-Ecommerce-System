@@ -51,7 +51,7 @@ class OrderController extends Controller
                 'items.product',
                 'complaints',
                 'latestCancellationRequest',
-                'statusHistory',
+                'statusHistory.changedBy:id,role',
                 'shipment.scans',
                 'shipment.rider.logisticsBranch',
                 'logisticsCompany',
@@ -99,6 +99,9 @@ class OrderController extends Controller
                 'voucher_discount' => (float) $order->voucher_discount,
                 'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
+                'cancellation_reason' => $order->status === 'cancelled'
+                    ? $order->statusHistory->firstWhere('to_status', 'cancelled')?->notes
+                    : null,
                 'pickup_date' => $order->pickup_date?->toDateString(),
                 'pickup_time' => $order->pickup_time,
                 'buyer_received_at' => $order->buyer_received_at?->toISOString(),
@@ -128,7 +131,9 @@ class OrderController extends Controller
                 'tracking_events' => $order->statusHistory
                     ->map(fn ($event): array => [
                         'status' => $event->to_status,
-                        'description' => str_replace('_', ' ', ucfirst($event->to_status)),
+                        'description' => $event->to_status === 'cancelled' && filled($event->notes)
+                            ? 'Order cancelled. Reason: '.$event->notes
+                            : str_replace('_', ' ', ucfirst($event->to_status)),
                         'location' => null,
                         'created_at' => $event->created_at?->toISOString(),
                     ])

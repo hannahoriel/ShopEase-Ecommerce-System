@@ -118,6 +118,7 @@ class SellerWalletService
         $refunds = abs((float) ($totals['refund'] ?? 0));
         $shipping = abs((float) ($totals['return_shipping'] ?? 0));
         $vouchers = abs((float) ($totals['voucher_discount'] ?? 0));
+        $reimbursements = (float) ($totals['logistics_reimbursement'] ?? 0);
 
         $transactions = $this->applyFilters(clone $base, $filters)
             ->orderByDesc('occurred_at')
@@ -131,8 +132,9 @@ class SellerWalletService
             ], fn ($value) => filled($value)));
 
         return [
-            'balance' => round($income - $refunds - $shipping - $vouchers, 2),
+            'balance' => round($income + $reimbursements - $refunds - $shipping - $vouchers, 2),
             'income' => $income,
+            'reimbursements' => $reimbursements,
             'refunds' => $refunds,
             'shipping' => $shipping,
             'vouchers' => $vouchers,
@@ -152,7 +154,7 @@ class SellerWalletService
         }
 
         if (! empty($filters['type']) && $filters['type'] !== 'all') {
-            $allowed = ['order_income', 'refund', 'return_shipping', 'voucher_discount'];
+            $allowed = ['order_income', 'refund', 'return_shipping', 'voucher_discount', 'logistics_reimbursement'];
             if (in_array($filters['type'], $allowed, true)) {
                 $query->where('entry_type', $filters['type']);
             }

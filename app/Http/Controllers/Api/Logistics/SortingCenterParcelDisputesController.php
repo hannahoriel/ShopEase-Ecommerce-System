@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\SortingCenterParcelIssue;
+use App\Services\Logistics\CancelOrderForParcelIssue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class SortingCenterParcelDisputesController extends Controller
@@ -66,20 +68,44 @@ class SortingCenterParcelDisputesController extends Controller
             'autoVersion' => 3,
         ];
 
-        $report = SortingCenterParcelIssue::query()->create([
-            'sorting_center_id' => $center->id,
-            'reported_by' => $request->user()->id,
-            'tracking_number' => trim($data['tracking']),
-            'issue_type' => $data['type'],
-            'description' => trim($data['description']),
-            'evidence_name' => $evidence?->getClientOriginalName(),
-            'evidence_path' => $evidencePath,
-            'status' => 'Open',
-            'accountability' => $accountability,
-        ]);
+        $report = DB::transaction(function () use ($request, $center, $data, $evidence, $evidencePath, $accountability, $shipment, $recordedAt): SortingCenterParcelIssue {
+            $report = SortingCenterParcelIssue::query()->create([
+                'sorting_center_id' => $center->id,
+                'reported_by' => $request->user()->id,
+                'tracking_number' => trim($data['tracking']),
+                'issue_type' => $data['type'],
+                'description' => trim($data['description']),
+                'evidence_name' => $evidence?->getClientOriginalName(),
+                'evidence_path' => $evidencePath,
+                'status' => 'Open',
+                'accountability' => $accountability,
+            ]);
+
+            if ($shipment) {
+                $lockedShipment = Shipment::query()->with('order')->whereKey($shipment->id)->lockForUpdate()->first();
+                if ($lockedShipment) {
+                    $outcome = app(CancelOrderForParcelIssue::class)->handle(
+                        $lockedShipment,
+                        (int) $request->user()->id,
+                        $data['type'],
+                        trim($data['description']),
+                    );
+                    if ($outcome['reimbursed']) {
+                        $report->accountability = array_merge($accountability, [
+                            'status' => 'Credited to Seller Wallet',
+                            'reimbursedAt' => $recordedAt->toIso8601String(),
+                            'simulatedReimbursedAt' => null,
+                        ]);
+                        $report->save();
+                    }
+                }
+            }
+
+            return $report;
+        }, 3);
 
         return response()->json([
-            'message' => 'Parcel issue report saved.',
+            'message' => 'Parcel issue report saved. The buyer order is cancelled, the seller has been notified, and the logistics reimbursement has been credited to the seller wallet.',
             'data' => ['report' => $this->payload($report)],
         ], 201);
     }

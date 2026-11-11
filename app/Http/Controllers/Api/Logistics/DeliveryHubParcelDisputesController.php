@@ -8,6 +8,7 @@ use App\Models\Logistics\DeliveryHubParcelIssue;
 use App\Models\Logistics\DeliveryHubScannerState;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsTransferManifest;
+use App\Services\Logistics\CancelOrderForParcelIssue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,6 +98,8 @@ class DeliveryHubParcelDisputesController extends Controller
             $currentParcel = $current['parcels'][$currentParcelIndex] ?? null;
             abort_unless(is_array($currentParcel) && mb_strtolower(trim((string) ($currentParcel['tracking'] ?? ''))) === $trackingKey, 409, 'The parcel state changed. Refresh and try again.');
             $issue = null;
+            $orderCancelled = false;
+            $sellerReimbursed = false;
             if ($pickupFailure) {
                 abort_unless(($currentParcel['status'] ?? null) === 'incoming', 409, 'This pickup has already been processed.');
             } else {
@@ -121,6 +124,7 @@ class DeliveryHubParcelDisputesController extends Controller
                 $shipment = Shipment::query()->with('order')
                     ->where('tracking_number', $tracking)
                     ->where('logistics_delivery_hub_id', $hub->id)
+                    ->lockForUpdate()
                     ->first();
                 $value = (float) ($shipment?->order?->total ?? $currentParcel['total_amount'] ?? 0);
                 $amount = $value > 0 ? number_format($value, 2, '.', '') : '';
@@ -147,6 +151,24 @@ class DeliveryHubParcelDisputesController extends Controller
                     'status' => 'Open',
                     'accountability' => $accountability,
                 ]);
+                if ($shipment) {
+                    $outcome = app(CancelOrderForParcelIssue::class)->handle(
+                        $shipment,
+                        (int) $request->user()->id,
+                        $data['type'],
+                        trim($data['description']),
+                    );
+                    $orderCancelled = $outcome['cancelled'];
+                    $sellerReimbursed = $outcome['reimbursed'];
+                    if ($sellerReimbursed) {
+                        $issue->accountability = array_merge($accountability, [
+                            'status' => 'Credited to Seller Wallet',
+                            'reimbursedAt' => $at,
+                            'simulatedReimbursedAt' => null,
+                        ]);
+                        $issue->save();
+                    }
+                }
                 $currentParcel['reportedIssue'] = true;
                 $currentParcel['reportedAt'] = $at;
                 $currentParcel['reportId'] = (string) $issue->id;
@@ -174,11 +196,11 @@ class DeliveryHubParcelDisputesController extends Controller
                 ['updated_by' => $request->user()->id, 'state' => $current],
             );
 
-            return ['state' => $current, 'report' => $issue ? $this->payload($issue, $currentParcel) : null, 'parcel' => $currentParcel];
+            return ['state' => $current, 'report' => $issue ? $this->payload($issue, $currentParcel) : null, 'parcel' => $currentParcel, 'orderCancelled' => $orderCancelled, 'sellerReimbursed' => $sellerReimbursed];
         }, 3);
 
         return response()->json([
-            'message' => $pickupFailure ? 'Pickup failure recorded; reschedule is required.' : 'Parcel issue report saved.',
+            'message' => $pickupFailure ? 'Pickup failure recorded; reschedule is required.' : 'Parcel issue report saved.'.($saved['orderCancelled'] ? ' The buyer order was cancelled.' : '').($saved['sellerReimbursed'] ? ' The seller was notified and the logistics reimbursement was credited to their wallet.' : ''),
             'data' => $saved,
         ], 201);
     }
