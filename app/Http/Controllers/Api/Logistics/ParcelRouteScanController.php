@@ -879,6 +879,17 @@ class ParcelRouteScanController extends Controller
 
     private function scanAtHub(Shipment $shipment, LogisticsDeliveryHub $hub, string $action, string $sellerProvince, string $sellerCity, ?string $sellerBarangay, string $buyerProvince, string $buyerCity, ?string $buyerBarangay, ?int $assignedRiderId = null): void
     {
+        $latestScan = $shipment->scans()->orderByDesc('scanned_at')->orderByDesc('id')->first();
+        $hubLocation = $hub->hub_name.' · '.$hub->municipality.', '.$hub->province;
+        if ($latestScan?->location === $hubLocation) {
+            if ($action === 'receive' && $latestScan->status === 'Received at Delivery Hub') {
+                abort(409, 'Already scanned: this parcel has already been received at this delivery hub.');
+            }
+            if ($action === 'depart' && in_array($latestScan->status, ['In Transit to Delivery Hub', 'In Transit to Sorting Center', 'Out for Delivery'], true)) {
+                abort(409, 'Already scanned: this parcel has already been departure-scanned from this delivery hub.');
+            }
+        }
+
         if ($action === 'receive' && $shipment->order->status === 'to_ship') {
             abort_unless($this->same($hub->province, $sellerProvince) && $this->same($hub->municipality, $sellerCity), 422, 'Seller pickup parcels must first arrive at the delivery hub for the seller municipality.');
             $latestScan = $shipment->scans()->orderByDesc('scanned_at')->orderByDesc('id')->first();
@@ -960,6 +971,17 @@ class ParcelRouteScanController extends Controller
     private function scanAtCenter(Shipment $shipment, LogisticsBranch $center, string $action, string $buyerProvince, string $buyerCity): void
     {
         abort_unless($shipment->order->status === 'in_transit', 409, 'Parcel must be in transit between logistics facilities.');
+
+        $latestScan = $shipment->scans()->orderByDesc('scanned_at')->orderByDesc('id')->first();
+        $centerLocation = $center->name.' · '.$center->province;
+        if ($latestScan?->location === $centerLocation) {
+            if ($action === 'receive' && $latestScan->status === 'Received at Sorting Center') {
+                abort(409, 'Already scanned: this parcel has already been received at this sorting center.');
+            }
+            if ($action === 'depart' && in_array($latestScan->status, ['In Transit to Delivery Hub', 'In Transit to Sorting Center', 'Out for Delivery'], true)) {
+                abort(409, 'Already scanned: this parcel has already been departure-scanned from this sorting center.');
+            }
+        }
 
         if ($action === 'receive') {
             abort_unless($shipment->logistics_branch_id === $center->id && $shipment->logistics_delivery_hub_id === null, 409, 'Parcel is not in this sorting center’s incoming transfers.');
