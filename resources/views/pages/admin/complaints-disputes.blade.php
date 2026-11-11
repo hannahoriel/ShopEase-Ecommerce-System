@@ -485,6 +485,25 @@
                         <span id="modal-complaint-status" class="complaints-modal-status open">
                             Open
                         </span>
+<div class="complaints-modal-update-wrap">
+                        <button
+                            id="complaints-modal-update-status"
+                            type="button"
+                            class="complaints-modal-update-status"
+                        >
+                            Update Status
+
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7 9 5 5 5-5"/>
+                            </svg>
+                        </button>
+
+                        <div id="complaints-modal-status-menu" class="complaints-modal-status-menu">
+                            <button type="button" class="complaints-modal-status-option" data-status="open">Open</button>
+                            <button type="button" class="complaints-modal-status-option" data-status="in-progress">In progress</button>
+                            <button type="button" class="complaints-modal-status-option" data-status="resolved">Resolved</button>
+                        </div>
+                    </div>
                     </div>
 
                     <div class="complaints-modal-meta">
@@ -729,25 +748,7 @@
                 </section>
 
                 <div class="complaints-modal-actions-area">
-                    <div class="complaints-modal-update-wrap">
-                        <button
-                            id="complaints-modal-update-status"
-                            type="button"
-                            class="complaints-modal-update-status"
-                        >
-                            Update Status
 
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7 9 5 5 5-5"/>
-                            </svg>
-                        </button>
-
-                        <div id="complaints-modal-status-menu" class="complaints-modal-status-menu">
-                            <button type="button" class="complaints-modal-status-option" data-status="open">Open</button>
-                            <button type="button" class="complaints-modal-status-option" data-status="in-progress">In progress</button>
-                            <button type="button" class="complaints-modal-status-option" data-status="resolved">Resolved</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

@@ -1,3 +1,6 @@
+import '../shared/complaint-layout.js';
+import {renderReturnSummary} from '../shared/return-summary.js';
+import {applyCategoryPill} from '../shared/category-pills.js';
 const complaintsConfigElement =
     document.getElementById('complaintsDisputesConfig');
 
@@ -13,6 +16,7 @@ const complaintsConfig = complaintsConfigElement
 
 document.addEventListener('DOMContentLoaded', function () {
     const complaints = complaintsConfig.complaints || [];
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 
     const statusLabels = {
         open: 'Open',
@@ -834,10 +838,59 @@ document.addEventListener('DOMContentLoaded', function () {
         image.alt = '';
     }
 
+    function renderComplaintEvidence(complaint) {
+        const photos=(complaint.evidence||[]).map(photo=>typeof photo==='string'?photo:photo.url).filter(url=>/^https?:\/\/|^\//i.test(url||''));
+        detailsModal.querySelectorAll('.complaints-modal-evidence-list').forEach(host=>{
+            host.innerHTML=photos.length?photos.map((url,index)=>`<a href="${escapeHtml(url)}" target="_blank" rel="noopener" aria-label="Open evidence photo ${index+1}"><img src="${escapeHtml(url)}" alt="Buyer evidence ${index+1}" style="width:88px;height:88px;object-fit:cover;border-radius:9px;border:1px solid #e5dfdc"></a>`).join(''):'<span>No evidence attached.</span>';
+        });
+        const preview=document.querySelector('.complaints-evidence');
+        if(preview)preview.innerHTML=photos.length?photos.slice(0,4).map((url,index)=>`<a href="${escapeHtml(url)}" target="_blank" rel="noopener"><img src="${escapeHtml(url)}" alt="Buyer evidence ${index+1}" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></a>`).join(''):'<span>No evidence attached.</span>';
+    }
+
+    function syncReturnControls(complaint) {
+        detailsModal.querySelector('[data-admin-return-review]')?.remove();
+        detailsModal.querySelector('[data-admin-return-decisions]')?.remove();
+        const record=complaint.returnRequest;
+        const accountability=document.getElementById('cdDecisionModal');if(accountability)accountability.hidden=!!record;
+        if(!record)return;
+        const panel=document.createElement('section');panel.dataset.adminReturnReview='';
+        panel.className='se-return-summary';
+        const pending=record.status==='pending', returning=record.return_type==='return';
+        const alternate=returning?'Refund Only':'Return & Refund';
+        panel.innerHTML=renderReturnSummary(record)
+            +(record.pickup_date?`<p class="se-return-pickup"><strong>Pickup:</strong> ${escapeHtml(record.pickup_date.slice(0,10))} ${escapeHtml(record.pickup_time)}<br>${escapeHtml(record.pickup_address)}<br>${escapeHtml(record.tracking_number||'')}</p>`:'')
+            +(record.solution?`<p class="se-return-decision"><strong>Decision notes:</strong> ${escapeHtml(record.solution)}</p>`:'')
+            +(pending||record.status==='accepted'?'<label class="se-return-notes">Admin decision notes<textarea data-return-notes maxlength="2000" rows="3" placeholder="Summarize the evidence and discussion with both parties"></textarea></label>':'')
+            +`<div class="se-return-actions">${pending?`<button type="button" data-return-action="change_solution">Change to ${alternate}</button><button type="button" data-return-action="accept">Accept ${returning?'Return & Refund':'Refund Only'}</button><button type="button" data-return-action="decline">Decline Request</button>`:''}${record.status==='accepted'&&returning&&record.pickup_date?'<label><input type="checkbox" data-return-received-confirm> I verified the returned parcel was received.</label><button type="button" data-return-action="received">Confirm Return Received & Refund</button>':''}</div><p data-return-review-error role="alert" style="color:#a32636" hidden></p>`;
+        const decisions=document.createElement('div');decisions.dataset.adminReturnDecisions='';decisions.className='se-return-actions admin-return-decisions';
+        panel.querySelectorAll('[data-return-action=accept],[data-return-action=decline]').forEach(button=>decisions.append(button));
+        const handleDecision=async event=>{
+            const button=event.target.closest('[data-return-action]');if(!button)return;
+            const feedback=panel.querySelector('[data-return-review-error]');feedback.hidden=true;
+            if(button.dataset.returnAction==='received'&&!panel.querySelector('[data-return-received-confirm]')?.checked){feedback.textContent='Confirm that the returned parcel was received first.';feedback.hidden=false;return;}
+            [...panel.querySelectorAll('button'),...decisions.querySelectorAll('button')].forEach(control=>control.disabled=true);
+            const finish=window.ShopEaseLoading?.start(button);
+            try {
+                const response=await fetch(`/api/v1/admin/complaints/${complaint.databaseId}/return-decision`,{method:'PATCH',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify({action:button.dataset.returnAction,notes:panel.querySelector('[data-return-notes]')?.value||''})});
+                const payload=await response.json();if(!response.ok)throw new Error(Object.values(payload.errors||{}).flat()[0]||payload.message||'Could not update this return request.');
+                await loadComplaintsFromApi();
+                const updated=complaints.find(item=>item.databaseId===complaint.databaseId);if(updated)syncComplaintModal(updated);filterRows();
+            }catch(error){feedback.textContent=error.message;feedback.hidden=false;[...panel.querySelectorAll('button'),...decisions.querySelectorAll('button')].forEach(control=>control.disabled=false);}
+            finally{finish?.();}
+        };
+        panel.addEventListener('click',handleDecision);decisions.addEventListener('click',handleDecision);
+        if(pending)detailsModal.querySelector('.complaints-modal-actions-area').append(decisions);
+        const host=detailsModal.querySelector('.complaints-modal-description-card');
+        host.append(panel);
+    }
+
     function syncComplaintModal(complaint) {
         if (!complaint) {
             return;
         }
+
+        syncReturnControls(complaint);
+        renderComplaintEvidence(complaint);
 
         const modalData =
             getComplaintModalData(
@@ -929,6 +982,8 @@ document.addEventListener('DOMContentLoaded', function () {
         modalOrderTotal.textContent =
             modalData.orderTotal;
 
+        const productImage=detailsModal.querySelector('.complaints-modal-product-image');
+        if(productImage){productImage.removeAttribute('src');productImage.hidden=!complaint.productImage;if(complaint.productImage){productImage.src=complaint.productImage;productImage.alt=complaint.productName||'Reported product';}}
         modalProductName.textContent =
             modalData.productName;
         if (modalData.is_fragile) { const fragile = document.createElement('span'); fragile.className = 'se-fragile-pill'; fragile.textContent = 'Fragile'; modalProductName.append(fragile); }
@@ -942,8 +997,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalProductQuantity.textContent =
             modalData.productQuantity;
 
-        modalProductCategory.textContent =
-            modalData.productCategory;
+        applyCategoryPill(modalProductCategory, modalData.productCategory);
 
         modalShopName.textContent =
             modalData.shopName;
@@ -962,6 +1016,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!complaint) {
             return;
         }
+
+        renderComplaintEvidence(complaint);
+        const accountabilityPreview=document.getElementById('cdDecisionPreview');if(accountabilityPreview)accountabilityPreview.hidden=!!complaint.returnRequest;
 
         activeIndex = Number(index);
 

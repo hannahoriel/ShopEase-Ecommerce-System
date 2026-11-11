@@ -217,6 +217,7 @@ Route::prefix('v1')->group(function () {
                 ->name('admin.api.logistics.branches.destroy');
             Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('admin.api.complaints.index');
             Route::patch('/complaints/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])->name('admin.api.complaints.status');
+            Route::patch('/complaints/{complaint}/return-decision', [\App\Http\Controllers\Api\Admin\ReturnComplaintController::class, 'update'])->name('admin.api.complaints.return-decision');
             Route::prefix('platform-settings')->controller(PlatformSettingsController::class)->name('admin.api.platform-settings.')->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/announcements', 'storeAnnouncement')->name('announcements.store');
@@ -289,7 +290,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/orders/{order}/complaints', [BuyerOrderController::class, 'storeComplaint'])->name('buyer.api.orders.complaints.store');
             Route::get('/complaints', [BuyerComplaintController::class, 'index'])->name('buyer.api.complaints.index');
             Route::get('/returns', [BuyerOrderReturnController::class, 'index'])->name('buyer.api.returns.index');
-            Route::post('/orders/{order}/returns', [BuyerOrderReturnController::class, 'store'])->name('buyer.api.orders.returns.store');
+            Route::post('/orders/{order}/returns', [\App\Http\Controllers\Api\Buyer\ReturnComplaintIntakeController::class, 'store'])->name('buyer.api.orders.returns.store');
+            Route::post('/returns/{return}/pickup', [\App\Http\Controllers\Api\Buyer\ReturnComplaintIntakeController::class, 'schedule'])->name('buyer.api.returns.pickup');
             Route::get('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'index'])->name('buyer.api.complaints.messages.index');
             Route::post('/complaints/{complaint}/messages', [BuyerComplaintMessagesController::class, 'store'])->name('buyer.api.complaints.messages.store');
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('buyer.api.orders.rider-messages.index');

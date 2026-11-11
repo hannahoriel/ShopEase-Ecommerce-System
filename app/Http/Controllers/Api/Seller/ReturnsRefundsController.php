@@ -21,6 +21,8 @@ class ReturnsRefundsController extends Controller
         $records = OrderReturn::query()->whereHas('order', fn ($q) => $q->where('seller_id', $seller->id))
             ->with(['order.buyer:id,name,email', 'order.items', 'events'])->latest('requested_at')->get();
         $present = fn (OrderReturn $return) => [
+            'complaint_id' => $return->complaint_id,
+            'admin_managed' => (bool)$return->complaint_id,
             'id' => (string) $return->id,
             'order_id' => $return->order->order_number,
             'buyer_name' => $return->order->buyer?->name ?? 'Buyer',
@@ -89,6 +91,7 @@ class ReturnsRefundsController extends Controller
 
     public function decide(Request $request, OrderReturn $return)
     {
+        abort_if($return->complaint_id,403,'This complaint is reviewed by ShopEase admin.');
         $seller = Seller::query()->where('user_id', $request->user()->id)->firstOrFail();
         abort_unless($return->order()->where('seller_id', $seller->id)->exists(), 404);
 
@@ -133,6 +136,7 @@ class ReturnsRefundsController extends Controller
 
     public function completeRefund(Request $request, OrderReturn $return)
     {
+        abort_if($return->complaint_id,403,'Admin controls refund completion for this complaint.');
         $seller = Seller::query()->where('user_id', $request->user()->id)->firstOrFail();
         abort_unless($return->order()->where('seller_id', $seller->id)->exists(), 404);
         abort_unless($return->return_type === 'refund' || in_array($return->shipping_status, ['delivered', 'returned'], true), 409, 'A return must be received before refund completion.');

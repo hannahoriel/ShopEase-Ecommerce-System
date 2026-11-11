@@ -21,6 +21,7 @@ class ComplaintController extends Controller
                 'order.shipment',
                 'order.logisticsCompany',
                 'updates.user:id,name,profile_photo_path',
+                'returnRequest.events',
             ])
             ->latest()
             ->get()
@@ -43,17 +44,18 @@ class ComplaintController extends Controller
         $buyer = $complaint->user;
         $seller = $order?->seller;
         $sellerUser = $seller?->user;
-        $item = $order?->items->first();
+        $item = $complaint->selectedOrderItem();
 
         return [
             'databaseId' => $complaint->id,
+            'returnRequest' => $complaint->returnRequest?->toArray(),
             'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
             'party1' => $buyer?->name ?? 'Buyer',
             'party1Photo' => $buyer?->profile_photo_path ? Storage::disk('public')->url($buyer->profile_photo_path) : null,
             'party1Email' => $buyer?->email ?? '—',
             'role1' => 'Buyer',
             'party2' => $seller?->store_name ?? 'ShopEase Support',
-            'party2Photo' => $sellerUser?->profile_photo_path ? Storage::disk('public')->url($sellerUser->profile_photo_path) : null,
+            'party2Photo' => ($sellerUser?->profile_photo_path ?: $seller?->profile_photo_path) ? Storage::disk('public')->url($sellerUser?->profile_photo_path ?: $seller?->profile_photo_path) : null,
             'party2Email' => $sellerUser?->email ?? '—',
             'role2' => 'Seller',
             'type' => $complaint->type ?: $complaint->subject,

@@ -19,7 +19,7 @@ class OrderPageController extends Controller
         $record = Order::where('buyer_id', $request->user()->id)
             ->where(fn ($query) => $query->where('order_number', $requested)
                 ->when(ctype_digit($requested), fn ($query) => $query->orWhere('id', (int)$requested)))
-            ->with(['seller', 'items.product', 'complaints', 'latestCancellationRequest', 'statusHistory',
+            ->with(['seller', 'items.product', 'complaints', 'latestCancellationRequest', 'statusHistory.changedBy:id,role',
                 'shipment.scans', 'shipment.rider.logisticsBranch', 'logisticsCompany'])->firstOrFail();
         $reviews = ProductReview::where('buyer_id', $request->user()->id)
             ->whereIn('product_id', $record->items->pluck('product_id'))->get();
@@ -29,7 +29,7 @@ class OrderPageController extends Controller
             'is_anonymous' => $review->is_anonymous,
             'photo_url' => $review->photo_path ? Storage::disk('public')->url($review->photo_path) : null,
         ])->all();
-        $order['returns'] = OrderReturn::where('order_id', $record->id)->latest()->get(['id', 'return_type', 'status', 'reason', 'requested_at'])->toArray();
+        $order['returns'] = OrderReturn::where('order_id', $record->id)->with('events')->latest()->get()->toArray();
         $apiToken = $request->user()->createToken('buyer-order-page')->plainTextToken;
         return view('pages.buyer.view-order', compact('order', 'apiToken'));
     }
