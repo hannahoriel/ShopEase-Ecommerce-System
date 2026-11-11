@@ -9,6 +9,7 @@ use App\Models\Admin\ComplaintUpdate;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderCancellationRequest;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
@@ -97,10 +98,12 @@ class OrderController extends Controller
                 'voucher_discount' => (float) $order->voucher_discount,
                 'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
+                'pickup_date' => $order->pickup_date?->toDateString(),
+                'pickup_time' => $order->pickup_time,
                 'buyer_received_at' => $order->buyer_received_at?->toISOString(),
                 'buyer_received_automatically' => $order->buyer_received_automatically,
                 'can_confirm_received' => $order->status === 'delivered',
-                'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
+                'can_cancel' => $this->buyerCanCancel($order)
                     && $order->latestCancellationRequest?->status !== 'pending',
                 'cancellation_request' => $order->latestCancellationRequest,
                 'created_at' => $order->created_at?->toISOString(),
@@ -705,10 +708,13 @@ class OrderController extends Controller
                 ];
             }
 
+            $lockedShipment = $lockedOrder->shipment()->lockForUpdate()->first();
             abort_unless(
-                in_array($lockedOrder->status, ['pending', 'new', 'preparing', 'to_ship'], true),
+                $this->buyerCanCancel($lockedOrder, $lockedShipment),
                 422,
-                'This order can no longer be cancelled.'
+                $lockedOrder->pickup_date !== null || $lockedShipment?->rider_id !== null || $lockedShipment?->picked_up_at !== null
+                    ? 'This shipment is already scheduled or assigned to a rider and can no longer be cancelled by the buyer.'
+                    : 'This order can no longer be cancelled.'
             );
 
             $pendingRequest = $lockedOrder->cancellationRequests()
@@ -815,6 +821,19 @@ class OrderController extends Controller
             'changed_by' => $cancellationRequest->buyer_id,
             'notes' => 'Cancelled by buyer within five hours of placement. Reason: '.$reason,
         ]);
+    }
+
+    private function buyerCanCancel(Order $order, ?Shipment $shipment = null): bool
+    {
+        if (! in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)) {
+            return false;
+        }
+
+        $shipment ??= $order->shipment;
+
+        return $order->pickup_date === null
+            && $shipment?->rider_id === null
+            && $shipment?->picked_up_at === null;
     }
 
     private function orderNumberFor(Order $order): string

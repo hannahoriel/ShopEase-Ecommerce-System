@@ -22,6 +22,10 @@
     $address = $read('delivery_address', 'Not provided');
     $courier = $read('shipment.courier') ?: 'Not assigned yet';
     $tracking = $read('shipment.tracking_number') ?: 'Not assigned yet';
+    $shipmentScheduled = filled($read('pickup_date'));
+    $pickupSchedule = $shipmentScheduled
+        ? \Carbon\Carbon::parse($read('pickup_date'))->format('M d, Y').(filled($read('pickup_time')) ? ' · '.\Carbon\Carbon::parse($read('pickup_time'))->format('h:i A') : '')
+        : null;
     $steps = [['Processing','processing.png'],['To Ship','to-ship.png'],['In Transit','in-transit.png'],['Out for Delivery','out-for-delivery.png'],['Delivered','delivered.png']];
     $backUrl = route('buyer.my-purchases', ['section'=>'purchases']);
     $events = collect($read('tracking_events', []));
@@ -107,8 +111,8 @@
   <section class="vo-card vo-actions-card">
     <div class="vo-attention">
       <div>
-        <h3>{{ match($status) {'processing'=>'Your order is being processed','to-ship'=>'Your parcel is being prepared','in-transit'=>'Your parcel is on the way','out-for-delivery'=>'Your parcel is out for delivery','delivered'=>'Your order has arrived!','completed'=>'Order completed',default=>'Order update'} }}</h3>
-        <p>{{ match($status) {'processing'=>'We are confirming your order details. You can still cancel before the parcel enters transit.','to-ship'=>'Your seller is preparing your parcel. You can still request cancellation at this stage.','in-transit'=>'Your parcel has been shipped. Order cancellation is no longer available.','out-for-delivery'=>'Your courier is delivering your parcel. Please prepare your COD payment.','delivered'=>'Check your parcel. You can confirm receipt, request a return/refund, or rate your purchase.','completed'=>'Your order is complete. You can rate eligible products or view your submitted reviews below.',''=>'Check your order status.',default=>'Track the progress of your order.'} }}</p>
+        <h3>{{ match($status) {'processing'=>'Your order is being processed','to-ship'=>$shipmentScheduled ? 'Your parcel has been scheduled for shipment' : 'Your parcel is being prepared','in-transit'=>'Your parcel is on the way','out-for-delivery'=>'Your parcel is out for delivery','delivered'=>'Your order has arrived!','completed'=>'Order completed',default=>'Order update'} }}</h3>
+        <p>{{ match($status) {'processing'=>'We are confirming your order details. You can still cancel before the parcel enters transit.','to-ship'=>$shipmentScheduled ? 'Shipment pickup is scheduled'.($pickupSchedule ? ' for '.$pickupSchedule : '').'. You can no longer cancel this order.' : 'Your seller is preparing your parcel. You can still request cancellation at this stage.','in-transit'=>'Your parcel has been shipped. Order cancellation is no longer available.','out-for-delivery'=>'Your courier is delivering your parcel. Please prepare your COD payment.','delivered'=>'Check your parcel. You can confirm receipt, request a return/refund, or rate your purchase.','completed'=>'Your order is complete. You can rate eligible products or view your submitted reviews below.',''=>'Check your order status.',default=>'Track the progress of your order.'} }}</p>
       </div>
       <span class="vo-stage-pill">{{ $statusNames[$status] }}</span>
     </div>
