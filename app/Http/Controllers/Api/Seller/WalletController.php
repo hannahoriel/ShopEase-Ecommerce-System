@@ -16,7 +16,7 @@ class WalletController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
-            'type' => ['nullable', 'string', Rule::in(['all', 'order_income', 'refund', 'return_shipping', 'voucher_discount'])],
+            'type' => ['nullable', 'string', Rule::in(['all', 'order_income', 'refund', 'return_shipping', 'voucher_discount', 'logistics_reimbursement'])],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -39,6 +39,7 @@ class WalletController extends Controller
             'summary' => [
                 'balance' => $summary['balance'],
                 'income' => $summary['income'],
+                'reimbursements' => $summary['reimbursements'],
                 'refunds' => $summary['refunds'],
                 'shipping' => $summary['shipping'],
                 'vouchers' => $summary['vouchers'],

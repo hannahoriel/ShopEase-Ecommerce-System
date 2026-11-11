@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     order_income: 'Completed order earnings',
     refund: 'Buyer refund',
     return_shipping: 'Return shipping',
-    voucher_discount: 'Seller voucher deduction'
+    voucher_discount: 'Seller voucher deduction',
+    logistics_reimbursement: 'Logistics reimbursement'
   };
 
   function makeUrl(page = 1) {

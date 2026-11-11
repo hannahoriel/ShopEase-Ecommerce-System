@@ -24,6 +24,7 @@
             'refund' => 'Refunds',
             'return_shipping' => 'Shipping',
             'voucher_discount' => 'Vouchers',
+            'logistics_reimbursement' => 'Logistics Reimbursements',
         ];
     @endphp
 
@@ -33,7 +34,7 @@
                 <div class="sw-hero-left">
                     <span class="sw-hero-label">Current Wallet Balance</span>
                     <div class="sw-amount">{{ $wallet['balance'] < 0 ? '−' : '' }}₱{{ number_format(abs($wallet['balance']), 2) }}</div>
-                    <p>{{ $wallet['balance'] < 0 ? 'Negative balance means refunds or return-related costs are currently higher than recorded earnings.' : 'Your recorded balance is based on completed orders, refunds, return shipping charges, and redeemed seller vouchers.' }}</p>
+                    <p>{{ $wallet['balance'] < 0 ? 'Negative balance means refunds or return-related costs are currently higher than recorded earnings.' : 'Your recorded balance includes completed orders, logistics reimbursements, refunds, return shipping charges, and redeemed seller vouchers.' }}</p>
                     <span class="sw-store">{{ $seller->store_name ?: ($seller->business_name ?: 'My Shop') }}</span>
                 </div>
                 <div class="sw-hero-mark" aria-hidden="true">
@@ -48,6 +49,7 @@
 
             <div class="sw-stats">
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-green">↗</span> Completed Order Earnings</div><strong>₱{{ number_format($wallet['income'],2) }}</strong><span class="sw-stat-help">Product amounts from completed orders</span></article>
+                <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-green">↗</span> Logistics Reimbursements</div><strong>₱{{ number_format($wallet['reimbursements'],2) }}</strong><span class="sw-stat-help">Lost or damaged parcel compensation</span></article>
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-red">↙</span> Buyer Refunds</div><strong>₱{{ number_format($wallet['refunds'],2) }}</strong><span class="sw-stat-help">Completed refund deductions</span></article>
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-orange">⇄</span> Return Shipping</div><strong>₱{{ number_format($wallet['shipping'],2) }}</strong><span class="sw-stat-help">₱50 per completed physical return</span></article>
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-purple">%</span> Seller Vouchers</div><strong>₱{{ number_format($wallet['vouchers'],2) }}</strong><span class="sw-stat-help">Redeemed seller-funded voucher costs</span></article>
@@ -134,6 +136,7 @@
                                     'refund' => 'Buyer refund',
                                     'return_shipping' => 'Return shipping',
                                     'voucher_discount' => 'Seller voucher deduction',
+                                    'logistics_reimbursement' => 'Logistics reimbursement',
                                 ];
                                 $positive = (float)$transaction->amount >= 0;
                             @endphp

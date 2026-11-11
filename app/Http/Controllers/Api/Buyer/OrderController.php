@@ -9,6 +9,7 @@ use App\Models\Admin\ComplaintUpdate;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderCancellationRequest;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
@@ -30,6 +31,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
@@ -127,8 +129,15 @@ class OrderController extends Controller
                 'voucher_discount' => (float) $order->voucher_discount,
                 'voucher_code' => $order->voucher_code,
                 'status' => $order->status,
+                'cancellation_reason' => $order->status === 'cancelled'
+                    ? $order->statusHistory->firstWhere('to_status', 'cancelled')?->notes
+                    : null,
+                'pickup_date' => $order->pickup_date?->toDateString(),
+                'pickup_time' => $order->pickup_time,
                 'buyer_received_at' => $order->buyer_received_at?->toISOString(),
                 'buyer_received_automatically' => $order->buyer_received_automatically,
+                'can_confirm_received' => $order->status === 'delivered',
+                'can_cancel' => $this->buyerCanCancel($order)
                 'can_confirm_received' => $order->status === 'delivered' || ($order->status === 'completed' && (!$order->buyer_received_at || $order->buyer_received_automatically)),
                 'can_request_return' => $order->status === 'completed' && $order->buyer_received_at && !$order->buyer_received_automatically && !$order->complaints->contains(fn ($complaint) => !in_array($complaint->status, ['resolved','closed','declined','rejected'], true)),
                 'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
@@ -152,6 +161,23 @@ class OrderController extends Controller
                         'contact_no' => $order->shipment->rider->contact_no,
                     ] : null,
                 ] : null,
+                'tracking_events' => $order->statusHistory
+                    ->map(fn ($event): array => [
+                        'status' => $event->to_status,
+                        'description' => $event->to_status === 'cancelled' && filled($event->notes)
+                            ? 'Order cancelled. Reason: '.$event->notes
+                            : str_replace('_', ' ', ucfirst($event->to_status)),
+                        'location' => null,
+                        'created_at' => $event->created_at?->toISOString(),
+                    ])
+                    ->concat($order->shipment?->scans->map(fn ($scan): array => [
+                        'status' => $scan->status,
+                        'location' => $scan->location,
+                        'description' => $scan->status.' · '.$scan->location,
+                        'created_at' => $scan->scanned_at?->toISOString(),
+                    ]) ?? collect())
+                    ->sortByDesc('created_at')
+                    ->values(),
                 'tracking_events' => $trackingEvents,
                 'complaint' => $order->complaints->first() ? [
                     'id' => $order->complaints->first()->id,
@@ -507,9 +533,8 @@ class OrderController extends Controller
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
-                        // Buyers can place the order before a delivery provider is chosen.
-                        // The seller's To Ship flow creates the pickup shipment and assigns
-                        // a rider from the seller's dispatch area.
+                        // Keep the selected provider on the order so its seller-area hub can
+                        // see the incoming parcel as soon as checkout completes.
                         'logistics_id' => $logistics?->id,
                         'order_number' => null,
                         'total' => $total,
@@ -532,6 +557,34 @@ class OrderController extends Controller
                     $order->forceFill([
                         'order_number' => $this->orderNumberFor($order),
                     ])->saveQuietly();
+
+                    $sellerHub = $logistics->branches
+                        ->flatMap(fn (LogisticsBranch $branch) => $branch->deliveryHubs->map(fn (LogisticsDeliveryHub $hub) => [
+                            'branch' => $branch,
+                            'hub' => $hub,
+                        ]))
+                        ->first(fn (array $route): bool => $this->sameLocation(
+                            $route['hub']->province,
+                            $route['hub']->municipality,
+                            ['province' => $seller->province, 'municipality' => $seller->municipality],
+                        ));
+                    $sellerBranch = $sellerHub['branch'] ?? $logistics->branches->first(fn (LogisticsBranch $branch): bool =>
+                        $this->sameLocation($branch->province, $branch->municipality, [
+                            'province' => $seller->province,
+                            'municipality' => $seller->municipality,
+                        ])
+                    );
+                    Shipment::create([
+                        'order_id' => $order->id,
+                        'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
+                        'scan_token' => Str::random(64),
+                        'courier' => $logistics->business_name ?: 'Ease Express',
+                        'estimated_delivery' => now()->addDays(3)->toDateString(),
+                        'shipping_fee' => $shippingFee,
+                        'logistics_branch_id' => $sellerBranch?->id,
+                        'logistics_delivery_hub_id' => $sellerHub['hub']->id ?? null,
+                    ]);
+
                     if ($voucherResult) {
                         $voucher = $voucherResult['voucher'];
                         $claimed = \App\Models\Seller\SellerVoucher::query()
@@ -724,10 +777,13 @@ class OrderController extends Controller
                 ];
             }
 
+            $lockedShipment = $lockedOrder->shipment()->lockForUpdate()->first();
             abort_unless(
-                in_array($lockedOrder->status, ['pending', 'new', 'preparing', 'to_ship'], true),
+                $this->buyerCanCancel($lockedOrder, $lockedShipment),
                 422,
-                'This order can no longer be cancelled.'
+                $lockedOrder->pickup_date !== null || $lockedShipment?->rider_id !== null || $lockedShipment?->picked_up_at !== null
+                    ? 'This shipment is already scheduled or assigned to a rider and can no longer be cancelled by the buyer.'
+                    : 'This order can no longer be cancelled.'
             );
 
             $pendingRequest = $lockedOrder->cancellationRequests()
@@ -834,6 +890,19 @@ class OrderController extends Controller
             'changed_by' => $cancellationRequest->buyer_id,
             'notes' => 'Cancelled by buyer within five hours of placement. Reason: '.$reason,
         ]);
+    }
+
+    private function buyerCanCancel(Order $order, ?Shipment $shipment = null): bool
+    {
+        if (! in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)) {
+            return false;
+        }
+
+        $shipment ??= $order->shipment;
+
+        return $order->pickup_date === null
+            && $shipment?->rider_id === null
+            && $shipment?->picked_up_at === null;
     }
 
     private function orderNumberFor(Order $order): string

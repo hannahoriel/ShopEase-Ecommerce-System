@@ -2420,14 +2420,33 @@ Route::middleware(['auth', 'role:sorting_center'])
         Route::get('/delivery-hubs', [\App\Http\Controllers\Api\Logistics\SortingCenterDeliveryHubController::class, 'page'])
             ->name('delivery-hubs');
 
-        Route::view('/scanners', 'pages.logistics.sorting-center.scanners')
-            ->name('scanners');
+        Route::get('/scanners', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            return view('pages.logistics.sorting-center.scanners', [
+                'sortingCenterId' => (string) $center->id,
+                'sortingCenterName' => (string) $center->branch_name,
+                'scannerAccountId' => (string) Auth::id(),
+                'scannerAccountEmail' => (string) Auth::user()?->email,
+            ]);
+        })->name('scanners');
 
         Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'page'])
             ->name('parcel-tracking');
 
-        Route::view('/parcel-disputes', 'pages.logistics.sorting-center.parcel-disputes')
-            ->name('parcel-disputes');
+        Route::get('/parcel-disputes', function () {
+            $center = \App\Models\Logistics\LogisticsBranch::query()
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            return view('pages.logistics.sorting-center.parcel-disputes', [
+                'centerId' => (string) $center->id,
+                'accountId' => (string) Auth::id(),
+                'accountEmail' => (string) Auth::user()?->email,
+            ]);
+        })->name('parcel-disputes');
 
         Route::get('/vehicles-drivers', function () {
             $center = \App\Models\Logistics\LogisticsBranch::query()

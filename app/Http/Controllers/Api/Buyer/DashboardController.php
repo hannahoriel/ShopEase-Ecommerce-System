@@ -47,6 +47,7 @@ class DashboardController extends Controller
             )], 'quantity')
             ->where('is_archived', false)
             ->where('status', 'active')
+            ->where('stock_quantity', '>', 0)
             ->whereHas('seller', fn ($q) => $q->where('registration_status', 'active'));
 
         if ($request->filled('category')) {
@@ -111,7 +112,10 @@ class DashboardController extends Controller
             'is_fragile' => (bool) $product->is_fragile,
             'price' => (float) $product->price,
             'original_price' => (float) $product->price,
-            'sale_percentage' => $product->sale_percentage,
+            'sale_percentage' => $product->saleIsActive() ? $product->sale_percentage : null,
+            'sale_discount_type' => $product->saleIsActive() ? $product->sale_discount_type : null,
+            'sale_discount_value' => $product->saleIsActive() ? $product->sale_discount_value : null,
+            'sale_discount_label' => $product->saleDiscountLabel(),
             'sale_price' => $product->sale_price,
             'stock' => $product->stock_quantity,
             'sold_count' => (int) ($product->sold_count ?? 0),

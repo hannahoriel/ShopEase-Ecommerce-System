@@ -1,3 +1,5 @@
+import { isCartLimitError, showCartLimitModal } from '../components/cart-limit-modal.js';
+
 document.addEventListener('DOMContentLoaded', function () {
             /* ─── Config ─────────────────────────────────────────── */
             const configEl = document.getElementById('buyerCartConfig');
@@ -177,7 +179,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 apiFetch(`${cartUrl}/${itemId}`, {
                     method: 'PATCH',
                     body: JSON.stringify({ quantity }),
-                }).catch(() => {});
+                }).then(async response => {
+                    if (response.ok) return;
+                    const payload = await response.json().catch(() => ({}));
+                    if (isCartLimitError(payload.message)) showCartLimitModal();
+                    loadCart();
+                }).catch(() => loadCart());
             }
 
             /* ─── API: remove item ───────────────────────────────── */

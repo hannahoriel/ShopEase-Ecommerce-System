@@ -24,12 +24,31 @@ class SalesController extends Controller
         $seller = Seller::query()->where('user_id', $request->user()->id)->firstOrFail();
         abort_unless((int) $product->seller_id === (int) $seller->id, 404);
 
-        $data = $request->validate(['sale_percentage' => ['present', 'nullable', 'integer']]);
-        if (! blank($data['sale_percentage']) && ! in_array((int) $data['sale_percentage'], range(10, 100), true)) {
-            throw ValidationException::withMessages(['sale_percentage' => ['Choose a sale percentage from 10% to 100%.']]);
+        $data = $request->validate([
+            'discount_type' => ['nullable', 'in:percentage,fixed'],
+            'discount_value' => ['nullable', 'numeric', 'gt:0'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+        ]);
+        if (blank($data['discount_type'] ?? null) || blank($data['discount_value'] ?? null)) {
+            $product->sale_discount_type = null;
+            $product->sale_discount_value = null;
+            $product->sale_starts_at = null;
+            $product->sale_ends_at = null;
+            $product->sale_percentage = null;
+        } else {
+            if ($data['discount_type'] === 'percentage' && (float) $data['discount_value'] > 100) {
+                throw ValidationException::withMessages(['discount_value' => ['Percentage discount cannot exceed 100%.']]);
+            }
+            if ($data['discount_type'] === 'fixed' && (float) $data['discount_value'] >= (float) $product->price) {
+                throw ValidationException::withMessages(['discount_value' => ['Fixed discount must be less than the product price.']]);
+            }
+            $product->sale_discount_type = $data['discount_type'];
+            $product->sale_discount_value = $data['discount_value'];
+            $product->sale_starts_at = $data['starts_at'] ?? null;
+            $product->sale_ends_at = $data['ends_at'] ?? null;
+            $product->sale_percentage = $data['discount_type'] === 'percentage' ? (int) $data['discount_value'] : null;
         }
-
-        $product->sale_percentage = blank($data['sale_percentage']) ? null : (int) $data['sale_percentage'];
         $product->save();
 
         return response()->json(['data' => $this->present($product->fresh())]);
@@ -50,7 +69,13 @@ class SalesController extends Controller
             'image_url' => $photos->first(),
             'price' => (float) $product->price,
             'sale_percentage' => $product->sale_percentage,
+            'discount_type' => $product->sale_discount_type,
+            'discount_value' => $product->sale_discount_value,
+            'starts_at' => $product->sale_starts_at,
+            'ends_at' => $product->sale_ends_at,
+            'sale_active' => $product->saleIsActive(),
             'sale_price' => $product->sale_price,
+            'stock' => $product->stock_quantity,
             'status' => $product->status,
         ];
     }

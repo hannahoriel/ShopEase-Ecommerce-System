@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    private const MAX_CART_QUANTITY = 200;
+
     /** GET /api/v1/buyer/cart — list all cart items for the authenticated buyer */
     public function index(Request $request): JsonResponse
     {
@@ -51,6 +53,16 @@ class CartController extends Controller
             ->where('size', $validated['size'] ?? null)
             ->first();
 
+        $cartQuantity = (int) CartItem::where('user_id', $request->user()->id)->sum('quantity');
+        $quantityIncrease = $item
+            ? max(0, min(99, $item->quantity + $qty) - $item->quantity)
+            : $qty;
+        abort_if(
+            $cartQuantity + $quantityIncrease > self::MAX_CART_QUANTITY,
+            422,
+            'Cart limit reached: your cart can hold up to 200 products, including quantities.'
+        );
+
         if ($item) {
             $nextQuantity = min(99, $item->quantity + $qty);
             $this->ensureSelectedStock($product, $validated, $nextQuantity);
@@ -81,6 +93,14 @@ class CartController extends Controller
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1', 'max:99'],
         ]);
+
+        $cartQuantity = (int) CartItem::where('user_id', $request->user()->id)->sum('quantity');
+        $newCartQuantity = $cartQuantity - (int) $item->quantity + (int) $validated['quantity'];
+        abort_if(
+            $newCartQuantity > self::MAX_CART_QUANTITY,
+            422,
+            'Cart limit reached: your cart can hold up to 200 products, including quantities.'
+        );
 
         $item->load(['product.options', 'product.connectedVariants']);
         $this->ensureSelectedStock($item->product, [

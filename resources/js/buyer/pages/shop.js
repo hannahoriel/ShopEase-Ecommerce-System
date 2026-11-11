@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const image=product.image_url || product.photos?.[0] || '';
         const basePrice=Number(product.original_price ?? product.price ?? 0);
         const discount=Number(product.sale_percentage || 0);
+        const outOfStock=Number(product.stock ?? 1)<=0;
         const currentPrice=product.sale_price != null ? Number(product.sale_price)
             : discount > 0 ? Math.round(basePrice * (100-discount))/100 : basePrice;
         const shopName=product.seller?.store_name || product.shop_name || 'ShopEase Seller';
@@ -59,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data-like-seller="${escape(shopName)}" data-like-url="${escape(url)}" aria-pressed="false">♡</button>
                 ${image ? `<img src="${escape(image)}" alt="${escape(product.name)}" class="product-photo" loading="lazy">`
                     : '<div class="product-art-placeholder" aria-hidden="true"></div>'}
+                ${outOfStock?'<span class="bs-out-of-stock">Out of stock</span>':''}
             </div>
             <h3>${escape(product.name)}</h3>
             <div class="product-review-meta">
@@ -66,8 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="product-shop-name">${escape(shopName)}</p>
             </div>
             <div class="product-bottom-row">
-                <span class="product-sale-price"><strong>${money(currentPrice)}</strong>${discount>0?`<del>${money(basePrice)}</del><em>-${discount}%</em>`:''}</span>
-                <button type="button" class="product-cart-button" data-product-id="${escape(product.id)}" aria-label="View ${escape(product.name)} to add to cart">
+                <span class="product-sale-price"><strong>${money(currentPrice)}</strong>${product.sale_discount_label?`<del>${money(basePrice)}</del><em>${escape(product.sale_discount_label)}</em>`:discount>0?`<del>${money(basePrice)}</del><em>-${discount}%</em>`:''}</span>
+                <button type="button" class="product-cart-button" data-product-id="${escape(product.id)}" aria-label="${outOfStock?'Out of stock':'View '+escape(product.name)+' to add to cart'}" ${outOfStock?'disabled':''}>
                     <img src="/icons/buyer/product-cart.png" alt="" class="clean-icon" data-clean-bg="true">
                 </button>
             </div>
