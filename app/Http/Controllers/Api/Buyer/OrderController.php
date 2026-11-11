@@ -76,6 +76,36 @@ class OrderController extends Controller
 
     public function presentOrder(Order $order, array $reviewedProductIds = []): array
     {
+        $labels = ['pending'=>'Processing', 'new'=>'Processing', 'preparing'=>'Processing', 'to_ship'=>'To Ship',
+            'in_transit'=>'In Transit', 'out_for_delivery'=>'Out for Delivery', 'delivered'=>'Delivered',
+            'completed'=>'Completed', 'cancelled'=>'Cancelled', 'refunded'=>'Refunded'];
+        $trackingEvents = $order->statusHistory->map(fn ($event): array => [
+            'status'=>$event->to_status,
+            'description'=>$labels[$event->to_status] ?? str($event->to_status)->replace('_',' ')->title()->toString(),
+            'notes'=>$event->notes,
+            'actor'=>match($event->changedBy?->role) {
+                'seller'=>'Seller', 'buyer'=>'Buyer', 'rider'=>'Rider', 'admin'=>'ShopEase',
+                'logistics'=>'Logistics', 'sorting_center'=>'Sorting Center', 'delivery_hub'=>'Delivery Hub', default=>null,
+            },
+            'location'=>null, 'created_at'=>$event->created_at?->toISOString(),
+        ])->concat($order->shipment?->scans->map(fn ($scan): array => [
+            'status'=>$scan->status, 'description'=>$scan->status, 'location'=>$scan->location,
+            'actor'=>'Delivery update', 'notes'=>null, 'created_at'=>$scan->scanned_at?->toISOString(),
+        ]) ?? collect());
+        // Processing starts when the actual order is created, even before the
+        // seller's first action. Do not invent missing historical transition times.
+        $trackingEvents->push(['status'=>'processing','description'=>'Processing','actor'=>'ShopEase',
+            'notes'=>'Your order has been received and is awaiting seller fulfillment.',
+            'location'=>null,'created_at'=>$order->created_at?->toISOString()]);
+        $trackingEvents->push(['status'=>'order_placed','description'=>'Order Placed','actor'=>'Buyer',
+            'notes'=>null,'location'=>null,'created_at'=>$order->created_at?->toISOString()]);
+        if (!in_array($order->status,['pending','new','processing'],true)
+            && !$trackingEvents->contains(fn ($event) => $event['status'] === $order->status)) {
+            $trackingEvents->push(['status'=>$order->status,'description'=>$labels[$order->status] ?? ucfirst($order->status),
+                'actor'=>null,'notes'=>'Current recorded order status. The transition time was not recorded.',
+                'location'=>null,'created_at'=>null,'sort_at'=>$order->updated_at?->toISOString()]);
+        }
+        $trackingEvents = $trackingEvents->sortByDesc(fn ($event) => $event['sort_at'] ?? $event['created_at'])->values();
                 return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
@@ -108,6 +138,9 @@ class OrderController extends Controller
                 'buyer_received_automatically' => $order->buyer_received_automatically,
                 'can_confirm_received' => $order->status === 'delivered',
                 'can_cancel' => $this->buyerCanCancel($order)
+                'can_confirm_received' => $order->status === 'delivered' || ($order->status === 'completed' && (!$order->buyer_received_at || $order->buyer_received_automatically)),
+                'can_request_return' => $order->status === 'completed' && $order->buyer_received_at && !$order->buyer_received_automatically && !$order->complaints->contains(fn ($complaint) => !in_array($complaint->status, ['resolved','closed','declined','rejected'], true)),
+                'can_cancel' => in_array($order->status, ['pending', 'new', 'preparing', 'to_ship'], true)
                     && $order->latestCancellationRequest?->status !== 'pending',
                 'cancellation_request' => $order->latestCancellationRequest,
                 'created_at' => $order->created_at?->toISOString(),
@@ -145,6 +178,7 @@ class OrderController extends Controller
                     ]) ?? collect())
                     ->sortByDesc('created_at')
                     ->values(),
+                'tracking_events' => $trackingEvents,
                 'complaint' => $order->complaints->first() ? [
                     'id' => $order->complaints->first()->id,
                     'reference' => 'CMP-'.str_pad((string) $order->complaints->first()->id, 4, '0', STR_PAD_LEFT),
@@ -176,7 +210,9 @@ class OrderController extends Controller
         $received = DB::transaction(function () use ($request, $order): Order {
             $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             abort_unless((int) $lockedOrder->buyer_id === (int) $request->user()->id, 404);
-            abort_unless($lockedOrder->status === 'delivered', 422, 'Only delivered orders can be confirmed as received.');
+            abort_unless(in_array($lockedOrder->status,['delivered','completed'],true), 422, 'Only delivered orders can be confirmed as received.');
+            if ($lockedOrder->status==='completed' && $lockedOrder->buyer_received_at && !$lockedOrder->buyer_received_automatically) return $lockedOrder->fresh();
+            $previousStatus=$lockedOrder->status;
 
             $shipment = $lockedOrder->shipment()->first();
             $deliveredAt = $shipment?->delivered_at ?: OrderStatusHistory::query()
@@ -193,7 +229,7 @@ class OrderController extends Controller
             ]);
             OrderStatusHistory::query()->create([
                 'order_id' => $lockedOrder->id,
-                'from_status' => 'delivered',
+                'from_status' => $previousStatus,
                 'to_status' => 'completed',
                 'changed_by' => $request->user()->id,
                 'notes' => 'Buyer confirmed receipt of the order.',

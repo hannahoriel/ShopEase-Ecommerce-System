@@ -37,6 +37,7 @@ class ComplaintController extends Controller
                 'order.items.product',
                 'order.shipment',
                 'updates.user:id,name,profile_photo_path',
+                'returnRequest.events',
             ])
             ->latest()
             ->get()
@@ -60,6 +61,9 @@ class ComplaintController extends Controller
         ]);
 
         $previousStatus = str_replace('_', '-', $complaint->status);
+        if ($data['status']==='resolved' && $complaint->returnRequest && !in_array($complaint->returnRequest->status,['refunded','declined'],true)) {
+            abort(409,'Use the return/refund decision controls to resolve this complaint.');
+        }
         $newStatus = $data['status'];
         $update = null;
 
@@ -125,10 +129,11 @@ class ComplaintController extends Controller
         $buyer = $complaint->user;
         $seller = $order?->seller;
         $sellerUser = $seller?->user;
-        $item = $order?->items->first();
+        $item = $complaint->selectedOrderItem();
 
         return [
             'databaseId' => $complaint->id,
+            'returnRequest' => $complaint->returnRequest?->toArray(),
             'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
             'party1' => $buyer?->name ?? 'Deleted buyer',
             'party1Photo' => $buyer?->profile_photo_path
@@ -160,6 +165,7 @@ class ComplaintController extends Controller
             'shippingMethod' => $order?->shipment?->courier ?? '—',
             'orderStatus' => $order?->status ? str($order->status)->replace('_', ' ')->title()->toString() : '—',
             'orderTotal' => $order ? '₱'.number_format((float) $order->total, 2) : '—',
+            'productImage' => $this->productImage($item?->product?->photos ?? []),
             'productName' => $item?->product_name ?? '—',
             'is_fragile' => (bool) ($item?->is_fragile || $item?->product?->is_fragile),
             'productVariant' => collect([$item?->variation, $item?->color, $item?->size])->filter()->implode(' · ') ?: '—',
@@ -180,4 +186,18 @@ class ComplaintController extends Controller
             ])->values(),
         ];
     }
+    private function productImage(array $photos): ?string
+    {
+        $photo = collect($photos)->first(fn ($value): bool => is_string($value) && trim($value) !== '');
+        if (! $photo) {
+            return null;
+        }
+
+        if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://') || str_starts_with($photo, 'data:')) {
+            return $photo;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url(ltrim(preg_replace('/^storage\//', '', $photo), '/'));
+    }
+
 }

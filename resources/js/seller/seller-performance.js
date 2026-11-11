@@ -1,3 +1,6 @@
+import {renderReturnSummary} from '../shared/return-summary.js';
+import '../shared/complaint-layout.js';
+import {renderCategoryPill} from '../shared/category-pills.js';
 /* resources/js/seller/seller-performance.js */
 document.addEventListener('DOMContentLoaded', () => {
     const $ = (id) => document.getElementById(id);
@@ -112,13 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return '—'; const d = new Date(v); return Number.isNaN(d.valueOf()) ? String(v) : d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); };
     const statusName = status => ({ open: 'Open', 'in-progress': 'In progress', resolved: 'Resolved' })[norm(status)] || 'Open';
     const roleNames = c => [
-        { name: c.party1 || c.complainant || 'Buyer', role: c.role1 || 'Buyer', email: c.party1Email || c.buyer_email || '' },
-        { name: c.party2 || state.data?.compliance?.store_name || 'Your Shop', role: c.role2 || 'Seller', email: c.party2Email || c.seller_email || '' }
+        { name: c.party1 || c.complainant || 'Buyer', role: c.role1 || 'Buyer', photo: c.party1Photo, email: c.party1Email || c.buyer_email || '' },
+        { name: c.party2 || state.data?.compliance?.store_name || 'Your Shop', role: c.role2 || 'Seller', photo: c.party2Photo, email: c.party2Email || c.seller_email || '' }
     ];
     const evidenceList = c => Array.isArray(c.evidence) ? c.evidence : Array.isArray(c.attachments) ? c.attachments : [];
     const imgUrl = item => typeof item === 'string' ? item : item?.url || item?.path || '';
     const trustedImageUrl = v => { const s = String(v || ''); return (/^(https?:\/\/|\/)(?!\/)/i.test(s) || false) ? s : ''; };
-    const partHtml = party => `<div class="complaint-party"><span class="complaint-avatar">${safe((party.name || '?').slice(0, 1).toUpperCase())}</span><span class="complaint-party-copy"><span class="complaint-party-name">${safe(party.name)}</span><span class="complaint-party-role">${safe(party.role)}</span></span></div>`;
+    const partHtml = party => `<div class="complaint-party"><span class="complaint-avatar">${trustedImageUrl(party.photo)?`<img src="${safe(trustedImageUrl(party.photo))}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:safe((party.name || '?').slice(0, 1).toUpperCase())}</span><span class="complaint-party-copy"><span class="complaint-party-name">${safe(party.name)}</span><span class="complaint-party-role">${safe(party.role)}</span></span></div>`;
+    document.addEventListener('error',event=>{const img=event.target;if(img.matches?.('.complaint-avatar img,.complaints-modal-party-avatar img')){img.parentElement.textContent=img.closest('.complaint-party,.complaints-modal-party-row')?.querySelector('.complaint-party-name,strong')?.textContent.trim().charAt(0)||'?';}},true);
     const statusHtml = status => `<span class="complaint-status ${safe(norm(status))}">${safe(statusName(status))}</span>`;
     const complaints = () => Array.isArray(state.data?.complaints) ? state.data.complaints : [];
     function filtered() {
@@ -212,6 +216,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!event || typeof event !== 'object') return null;
             let status = norm(event.status || event.new_status || event.newStatus || '');
             const eventType = norm(event.type || '');
+            if (/^return[-_]/.test(eventType)) return {
+                status: /declined|refunded/.test(eventType)?'resolved':/accepted|scheduled|returned/.test(eventType)?'in-progress':'open',
+                message:event.message || 'Return / refund request updated.',
+                actor:event.actor || 'ShopEase Admin',
+                timestamp:event.timestamp || event.created_at || ''
+            };
             if (status === 'in progress') status = 'in-progress';
             if (!statuses.has(status) && (eventType === 'status' || eventType === 'status-change')) {
                 const match = String(event.message || '').toLowerCase()
@@ -239,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openModal() {
+        document.getElementById('sellerComplaintReturnSummary')?.remove();
         const c = state.selected;
         if (!c)
             return;
@@ -249,13 +260,14 @@ document.addEventListener('DOMContentLoaded', () => {
         text('modal-complaint-type', blank(c.type));
         text('modal-order-id-top', blank(c.order_id || c.orderId));
         text('modal-description-copy', blank(c.description));
+        if(c.returnRequest){const summary=document.createElement('section');summary.id='sellerComplaintReturnSummary';summary.className='se-return-summary';summary.innerHTML=renderReturnSummary(c.returnRequest);$('modal-description-copy').after(summary);}
         $('modal-complaint-status').className = `complaints-modal-status ${norm(c.status)}`;
         $('modal-complaint-status').textContent = statusName(c.status);
         const userIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.3 20c.1-4.1 2.6-6.3 6.7-6.3s6.6 2.2 6.7 6.3"/></svg>`;
         const storeIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9 5 4h14l2 5v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9zM5 13v7h14v-7"/></svg>`;
         $('modal-parties-list').innerHTML = people.map(p => `
             <div class="complaints-modal-party-row">
-                <span class="complaints-modal-party-avatar" aria-hidden="true">${userIcon}</span>
+                <span class="complaints-modal-party-avatar" aria-hidden="true">${trustedImageUrl(p.photo)?`<img src="${safe(trustedImageUrl(p.photo))}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:userIcon}</span>
                 <span class="complaints-modal-party-copy">
                     <strong title="${safe(p.name)}">${safe(p.name)}</strong>
                     <span title="${safe(p.email || '')}">${safe(p.email || 'No email provided')}</span>
@@ -275,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
             <div class="complaints-modal-item-extra">
-                <div><span class="complaints-modal-item-extra-label">Category</span><span class="complaints-modal-category-pill">${safe(blank(c.productCategory || c.product_category))}</span></div>
+                <div><span class="complaints-modal-item-extra-label">Category</span>${renderCategoryPill(c.productCategory || c.product_category)}</div>
                 <div class="complaints-modal-shop-line">Shop: <strong>${safe(blank(c.shopName || c.shop_name || state.data?.compliance?.store_name))}</strong></div>
             </div>`;
         $('modal-evidence-list').innerHTML = evidenceMarkup(c);
@@ -286,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="complaints-modal-note-avatar">${safe(String(u.actor || 'A').charAt(0).toUpperCase())}</span>
                     <div class="complaints-modal-note-copy">
                         <strong>${safe(u.actor || 'Admin')}</strong>
-                        <span>${safe(statusUpdateMessage(u.status))}</span>
+                        <span>${safe(u.message || statusUpdateMessage(u.status))}</span>
                     </div>
                     <span class="complaints-modal-note-time">${safe(dateTime(u.timestamp))}</span>
                 </div>`).join('')

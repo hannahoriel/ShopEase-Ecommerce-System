@@ -1,15 +1,28 @@
 import QRCode from 'qrcode';
 
+export function renderReturnItemChoices(items) {
+    const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const money=value=>'₱'+Number(value||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return `<fieldset class="vo-return-products"><legend>Select the product you want to report <span class="vo-required" aria-hidden="true">*</span></legend>${items.map((item,index)=>`<label class="vo-return-product"><input type="radio" name="selected_item" value="${index}" required aria-label="Select ${safe(item.product_name)}"><span class="vo-return-product-photo">${item.image_url?`<img src="${safe(item.image_url)}" alt="${safe(item.product_name)}">`:'<span>Product</span>'}</span><span class="vo-return-product-copy"><strong>${safe(item.product_name)}</strong>${item.is_fragile?'<span class="se-fragile-pill">Fragile</span>':''}<span>${safe([item.variation,item.color,item.size].filter(Boolean).join(' · ')||'No variant selected')}</span><span>Quantity: ${safe(item.quantity)}</span><span>Unit price: ${money(item.unit_price)}</span></span><strong class="vo-return-product-price">${money(Number(item.quantity)*Number(item.unit_price))}</strong></label>`).join('')}</fieldset>`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
     const config = JSON.parse($('voOrderData').textContent);
+    $('voHistoryToggle')?.addEventListener('click', event => {
+        const button=event.currentTarget, expanded=button.getAttribute('aria-expanded')!=='true';
+        button.setAttribute('aria-expanded',String(expanded));
+        $('voTimeline').classList.toggle('is-expanded',expanded);
+        document.querySelectorAll('[data-vo-older-event]').forEach(row=>{row.hidden=!expanded;});
+        button.textContent=expanded?'Show latest 5 updates':`Show all ${document.querySelectorAll('#voTimeline .vo-event').length} updates`;
+    });
     const order = config.order, endpoint = `/api/v1/buyer/orders/${order.id}`;
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     let previousFocus, refreshOnClose = false, rating = 0, busy = false;
     const openModal = modal => { previousFocus=document.activeElement; modal.hidden=false; document.body.style.overflow='hidden'; modal.querySelector('button,select,input,textarea')?.focus(); };
-    const closeModal = modal => { modal.hidden=true; if(!document.querySelector('.vo-modal-overlay:not([hidden])'))document.body.style.overflow=''; previousFocus?.focus(); };
+    const closeModal = modal => { modal.hidden=true; if(!document.querySelector('.vo-modal-overlay:not([hidden])'))document.body.style.overflow=''; previousFocus?.focus(); if(modal.id==='voModal'&&refreshOnClose){refreshOnClose=false;location.reload();} };
     const notice = (title, text, refresh = false) => { $('voModalTitle').textContent=title; $('voModalText').textContent=text; refreshOnClose=refresh; openModal($('voModal')); };
-    $('voModalOkay').addEventListener('click', () => { closeModal($('voModal')); if(refreshOnClose)location.reload(); });
+    $('voModalOkay').addEventListener('click', () => { closeModal($('voModal')); });
 
     async function request(url, body, method='POST') {
         const multipart=body instanceof FormData;
@@ -82,8 +95,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Returns and complaints use the same order-scoped server actions as purchases.
     const overlay=document.createElement('div');overlay.className='vo-modal-overlay';overlay.hidden=true;
     overlay.innerHTML=`<form class="vo-modal" role="dialog" aria-modal="true" aria-labelledby="voRequestTitle" style="max-height:85dvh;overflow:auto;text-align:left"><button type="button" class="vo-rating-close" data-request-close aria-label="Close">×</button><h2 id="voRequestTitle"></h2><div id="voRequestFields"></div><p class="vo-rating-error" data-request-error hidden role="alert"></p><div class="vo-modal-buttons"><button type="button" class="vo-outline" data-request-close>Cancel</button><button type="submit" class="vo-primary">Submit Request</button></div></form>`;
-    document.body.append(overlay);let requestMode='';
-    function openRequest(mode){
+    document.body.append(overlay);let requestMode='', evidenceFiles=[];
+    function syncEvidencePhotos() {
+        const input=overlay.querySelector('[name="evidence"]'), host=overlay.querySelector('[data-evidence-previews]');
+        const transfer=new DataTransfer();evidenceFiles.forEach(file=>transfer.items.add(file));input.files=transfer.files;
+        host.replaceChildren();
+        evidenceFiles.forEach((file,index)=>{
+            const tile=document.createElement('span');tile.className='vo-evidence-photo';
+            const image=document.createElement('img'), url=URL.createObjectURL(file);image.src=url;image.alt=file.name;image.onload=()=>URL.revokeObjectURL(url);
+            const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',`Remove ${file.name}`);
+            remove.addEventListener('click',()=>{evidenceFiles.splice(index,1);syncEvidencePhotos();});tile.append(image,remove);host.append(tile);
+        });
+    }
+    function openLegacyRequest(mode){
+        overlay.querySelector('form').style.width='min(450px,100%)';
+        overlay.classList.remove('vo-return-overlay');
+        overlay.querySelector('form').classList.remove('vo-return-request');
         requestMode=mode;overlay.querySelector('form').reset();overlay.querySelector('[data-request-error]').hidden=true;
         $('voRequestTitle').textContent=mode==='return'?'Request Return / Refund':'Report a Problem';
         const fieldStyle='width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin:6px 0 14px;font:inherit;font-weight:400';
@@ -92,24 +119,63 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<label>Issue type<select name="type" style="${fieldStyle}">${['Wrong Item','Missing Item','Damaged Item','Late Delivery','Order Not Received','Seller Conduct','Other'].map(type=>`<option>${type}</option>`).join('')}</select></label><label>Description<textarea name="description" required minlength="10" maxlength="2000" rows="5" style="${fieldStyle}"></textarea></label><label>Evidence (up to 5 photos, 5 MB each)<input type="file" name="evidence" multiple accept="image/jpeg,image/png,image/webp" style="${fieldStyle}"></label>`;
         openModal(overlay);
     }
+    let pickupReturn = null;
+    function openRequest(mode) {
+        if (mode === 'report') return openLegacyRequest(mode);
+        if (mode === 'return' && !order.can_request_return) return;
+        requestMode=mode;evidenceFiles=[];
+        overlay.classList.toggle('vo-return-overlay',mode==='return');
+        overlay.querySelector('form').classList.toggle('vo-return-request',mode==='return');
+        overlay.querySelector('form').style.width=mode==='return'?'min(920px,100%)':'min(520px,100%)';
+        overlay.querySelector('form').reset();overlay.querySelector('[data-request-error]').hidden=true;
+        const style='width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;margin:7px 0 16px;font:inherit;font-weight:400';
+        $('voRequestTitle').textContent=mode==='pickup'?'Schedule Return Pickup':'Return / Refund Request';
+        if(mode==='pickup') {
+            const tomorrow=new Date(Date.now()+86400000);const local=new Date(tomorrow.getTime()-tomorrow.getTimezoneOffset()*60000).toISOString().slice(0,10);
+            $('voRequestFields').innerHTML=`<label>Pickup date<input name="pickup_date" type="date" value="${local}" min="${new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}" required style="${style}"></label><label>Pickup time<input name="pickup_time" type="time" required style="${style}"></label><label>Pickup address<textarea name="pickup_address" required maxlength="1000" rows="3" style="${style}">${esc(order.delivery_address)}</textarea></label>`;
+        } else {
+            $('voRequestFields').innerHTML=`${renderReturnItemChoices(order.items)}<fieldset data-product-complaint-fields disabled hidden style="border:0;padding:0;margin:0"><div class="vo-complaint-basics"><label>Quantity <span class="vo-required" aria-hidden="true">*</span><input type="number" name="quantity" value="1" min="1" required style="${style}"></label><label>Common problem <span class="vo-required" aria-hidden="true">*</span><select name="problem_type" required style="${style}"><option value="">Select a problem</option>${['Damaged Item','Defective / Not Working','Wrong Item','Missing Parts / Accessories','Not as Described','Quality Issue','Other'].map(type=>`<option>${esc(type)}</option>`).join('')}</select></label></div><div class="vo-evidence-label">Evidence photos <span class="vo-required" aria-hidden="true">*</span> <small>(required · up to 5, 5 MB each)</small></div><div class="vo-evidence-row"><label class="vo-attach-tile"><input type="file" name="evidence" multiple required accept="image/jpeg,image/png,image/webp" aria-label="Attach evidence photos"><span aria-hidden="true">+</span><strong>Attach</strong></label><div class="vo-evidence-previews" data-evidence-previews></div></div><label>Describe your complaint <span class="vo-required" aria-hidden="true">*</span><textarea name="reason" required minlength="10" maxlength="2000" rows="4" style="${style}" placeholder="Tell admin and the seller what happened"></textarea></label><p class="vo-field-heading">Choose your preferred solution <span class="vo-required" aria-hidden="true">*</span></p><div class="vo-solution-options"><label><input type="radio" name="return_type" value="return" required> Return & Refund</label><label><input type="radio" name="return_type" value="refund" required> Refund Only</label></div><p class="vo-review-note" style="font-size:12px">ShopEase admin will review the evidence and may change the solution after discussing the complaint with both parties.</p></fieldset>`;
+        }
+        openModal(overlay);
+    }
+    overlay.addEventListener('change',event=>{
+        if(event.target.name==='selected_item') {
+            const fields=overlay.querySelector('[data-product-complaint-fields]');const chosen=event.target.value!=='';
+            fields.hidden=!chosen;fields.disabled=!chosen;
+            if(chosen){const input=fields.querySelector('[name="quantity"]');input.max=order.items[Number(event.target.value)].quantity;input.value='1';}
+        }
+        if(event.target.name==='evidence' && requestMode==='return') {
+            const added=[...event.target.files];
+            const message=overlay.querySelector('[data-request-error]');
+            if(evidenceFiles.length+added.length>5 || added.some(file=>!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)) {
+                message.textContent='Attach up to 5 JPG, PNG or WEBP photos, 5 MB each.';message.hidden=false;
+            }else{evidenceFiles.push(...added);message.hidden=true;}
+            syncEvidencePhotos();
+        }
+    });
+    document.querySelectorAll('[data-return-pickup]').forEach(button=>button.addEventListener('click',()=>{pickupReturn=button.dataset.returnPickup;openRequest('pickup');}));
     overlay.querySelectorAll('[data-request-close]').forEach(button=>button.addEventListener('click',()=>closeModal(overlay)));
     overlay.querySelector('form').addEventListener('submit',event=>{
-        event.preventDefault();const form=event.target;if(!form.reportValidity())return;
+        event.preventDefault();const form=event.target;
+        if(requestMode==='return' && form.elements.reason) form.elements.reason.value=form.elements.reason.value.trim();
+        if(!form.reportValidity())return;
         const body=new FormData();
-        if(requestMode==='return'){
-            body.set('return_type',form.elements.return_type.value);body.set('reason',form.elements.reason.value);body.set('evidence_description',form.elements.evidence_description.value);
-            const chosen=[...form.querySelectorAll('[name="selected"]:checked')];
-            if(!chosen.length){const message=overlay.querySelector('[data-request-error]');message.textContent='Select at least one item.';message.hidden=false;return;}
-            chosen.forEach((check,index)=>{const item=order.items[Number(check.value)];body.set(`items[${index}][order_item_id]`,item.id);body.set(`items[${index}][quantity]`,form.querySelector(`[data-quantity="${check.value}"]`).value);});
+        if(requestMode==='pickup') {
+            ['pickup_date','pickup_time','pickup_address'].forEach(name=>body.set(name,form.elements[name].value));
+        }else if(requestMode==='return'){
+            body.set('return_type',form.elements.return_type.value);body.set('reason',form.elements.reason.value);body.set('problem_type',form.elements.problem_type.value);
+            const item=order.items[Number(form.elements.selected_item.value)];
+            body.set('items[0][order_item_id]',item.id);body.set('items[0][quantity]',form.elements.quantity.value);
         }else{body.set('type',form.elements.type.value);body.set('description',form.elements.description.value);}
-        [...form.elements.evidence.files].forEach(file=>body.append('evidence[]',file));
-        perform(event.submitter,async()=>{await request(`${endpoint}/${requestMode==='return'?'returns':'complaints'}`,body);closeModal(overlay);notice('Request submitted','Your request has been saved. You can follow its updates in My Purchases.',true);},text=>{const message=overlay.querySelector('[data-request-error]');message.textContent=text;message.hidden=false;});
+        if(form.elements.evidence)[...form.elements.evidence.files].forEach(file=>body.append('evidence[]',file));
+        const url=requestMode==='pickup'?`/api/v1/buyer/returns/${pickupReturn}/pickup`:`${endpoint}/${requestMode==='return'?'returns':'complaints'}`;
+        perform(event.submitter,async()=>{await request(url,body);closeModal(overlay);notice(requestMode==='return'?"Waiting for Admin’s Action":'Request submitted',requestMode==='return'?'Your product complaint and evidence were submitted. Admin will review the request and discuss it with both parties.':'Your request has been saved. Follow its updates in this order and My Purchases.',true);},text=>{const message=overlay.querySelector('[data-request-error]');message.textContent=text;message.hidden=false;});
     });
     document.querySelectorAll('[data-vo-action]').forEach(button=>button.addEventListener('click',()=>{
         switch(button.dataset.voAction){
             case 'seller':window.openBuyerSellerChat?.(order.id,'order');break;
             case 'cancel':$('voCancelForm').reset();$('voCancelOtherWrap').hidden=true;$('voCancelOther').required=false;error('voCancelError','');openModal($('voCancelModal'));break;
-            case 'received':if(order.can_confirm_received)perform(button,async()=>{await request(`${endpoint}/confirm-received`,{},'PATCH');notice('Order received','Receipt confirmed. You can now rate your products.',true);});break;
+            case 'received':if(order.can_confirm_received)perform(button,async()=>{await request(`${endpoint}/confirm-received`,{},'PATCH');notice('Order received','Receipt confirmed. You can now rate products or request a return / refund.',true);});break;
             case 'rate':if(order.status==='completed'&&$('voRatingProduct').options.length){selectReview();openModal($('voRateModal'));}break;
             case 'return':openRequest('return');break;
             case 'report':if(order.complaint)location.assign(`/buyer/my-purchases?section=purchases&complaint=${order.complaint.id}`);else openRequest('report');break;

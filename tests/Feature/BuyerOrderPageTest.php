@@ -24,7 +24,7 @@ class BuyerOrderPageTest extends TestCase
         $sellerUser=$this->user(User::ROLE_SELLER);
         $seller=Seller::create(['user_id'=>$sellerUser->id,'store_name'=>'Actual Shop','registration_status'=>'active']);
         $order=Order::create(['buyer_id'=>$buyer->id,'seller_id'=>$seller->id,'order_number'=>'REAL-ORDER-ONE',
-            'status'=>'delivered','total'=>350,'shipping_fee'=>50,'voucher_discount'=>20,'voucher_code'=>'REAL20',
+            'status'=>'pending','total'=>350,'shipping_fee'=>50,'voucher_discount'=>20,'voucher_code'=>'REAL20',
             'delivery_name'=>'Actual Recipient','delivery_phone'=>'09171234567','delivery_address'=>'Actual Delivery Address',
             'payment_method'=>'ShopEase Wallet']);
         foreach (['Real Glass','Real Plate'] as $name) {
@@ -32,6 +32,23 @@ class BuyerOrderPageTest extends TestCase
             $order->items()->create(['product_id'=>$product->id,'product_name'=>$name,'quantity'=>1,'unit_price'=>160,
                 'variation'=>'Large','color'=>'Blue','size'=>'M','is_fragile'=>true]);
         }
+        $this->actingAs($buyer)->getJson('/api/v1/buyer/orders')->assertOk()
+            ->assertJsonPath('data.0.tracking_events.0.description','Processing')
+            ->assertJsonPath('data.0.tracking_events.1.description','Order Placed')
+            ->assertJsonPath('data.0.tracking_events.0.created_at',$order->created_at->toISOString());
+        $this->get('/buyer/view-order?order=REAL-ORDER-ONE')->assertOk()->assertSee('Order Placed')
+            ->assertDontSee('No tracking updates have been recorded yet.')->assertSee('Tracking number:');
+        $this->actingAs($sellerUser)->patchJson('/api/v1/seller/orders/'.$order->id.'/status',[
+            'status'=>'preparing','notes'=>'Seller is carefully packing the glass.',
+        ])->assertOk();
+        $this->patchJson('/api/v1/seller/orders/'.$order->id.'/status',[
+            'status'=>'to_ship','notes'=>'Parcel is ready for courier pickup.',
+        ])->assertOk();
+        $this->actingAs($buyer)->get('/buyer/view-order?order=REAL-ORDER-ONE')->assertOk()
+            ->assertSee('Processing')->assertSee('To Ship')->assertSee('Seller update')
+            ->assertSee('Seller is carefully packing the glass.')->assertSee('Parcel is ready for courier pickup.')
+            ->assertSeeInOrder(['id="voTimeline"','To Ship','Parcel is ready for courier pickup.','Processing','Seller is carefully packing the glass.','Order Placed'],false);
+        $order->update(['status'=>'delivered']);
         $order->statusHistory()->create(['from_status'=>'in_transit','to_status'=>'delivered','created_at'=>now()->subHour()]);
         $this->actingAs($buyer)->get('/buyer/view-order?order=REAL-ORDER-ONE')->assertOk()
             ->assertSee('Real Glass')->assertSee('Real Plate')->assertSee('Actual Recipient')->assertSee('Actual Delivery Address')

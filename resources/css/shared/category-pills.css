@@ -1,0 +1,15 @@
+.se-category-pill{display:inline-flex!important;align-items:center!important;min-height:24px!important;padding:4px 11px!important;border:0!important;border-radius:999px!important;font-size:12px!important;font-weight:500!important;line-height:1.4!important;letter-spacing:0!important;text-transform:none!important;background:#F1EFEE!important;color:#6B6663!important;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.se-category-pill.category-pet-supplies{background:#E7F5E9!important;color:#2F6B3A!important}
+.se-category-pill.category-electronics-and-gadgets{background:#DDEBFF!important;color:#185FA3!important}
+.se-category-pill.category-womens-apparel{background:#F9DFEA!important;color:#A12763!important}
+.se-category-pill.category-mens-apparel{background:#E6E2F8!important;color:#5A4A9A!important}
+.se-category-pill.category-kids-and-baby{background:#FFE5B8!important;color:#9A5B00!important}
+.se-category-pill.category-home-and-garden{background:#EEF0D8!important;color:#596126!important}
+.se-category-pill.category-sports-and-outdoors{background:#DDECF2!important;color:#23627A!important}
+.se-category-pill.category-health-and-beauty{background:#FFE0DC!important;color:#A63B2C!important}
+.se-category-pill.category-books-and-media{background:#E6E8F2!important;color:#3F4A68!important}
+.se-category-pill.category-food-and-gourmet{background:#FFF0C7!important;color:#8A5A00!important}
+.se-category-pill.category-automotive-motorcycle{background:#E3E3E3!important;color:#434343!important}
+.se-category-pill.category-furniture-and-office-equipment{background:#EBDCCF!important;color:#795548!important}
+.se-category-pill.category-jewelry-and-watches{background:#F8E2B8!important;color:#946B00!important}
+.se-category-pill.category-office-and-school-supplies{background:#E2F0F7!important;color:#2B617D!important}

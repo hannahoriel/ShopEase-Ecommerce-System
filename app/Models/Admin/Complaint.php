@@ -31,6 +31,17 @@ class Complaint extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function returnRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(OrderReturn::class);
+    }
+
+    public function selectedOrderItem(): ?OrderItem
+    {
+        $id = data_get($this->returnRequest?->return_items, '0.order_item_id');
+        return $id ? $this->order?->items->firstWhere('id', $id) : $this->order?->items->first();
+    }
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

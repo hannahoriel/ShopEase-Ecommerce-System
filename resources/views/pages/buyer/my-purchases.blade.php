@@ -715,11 +715,11 @@
         <div class="complaints-modal-grid complaints-modal-bottom-grid"><section class="complaints-modal-card complaints-modal-evidence-card"><h4 class="complaints-modal-card-title">Supporting Evidence</h4><div id="modal-evidence-list" class="complaints-modal-evidence-list"></div></section><section class="complaints-modal-card sp-contact-admin-card" aria-labelledby="sp-contact-admin-heading">
                     <div class="sp-contact-admin-copy">
                         <h4 class="complaints-modal-card-title" id="sp-contact-admin-heading">Need help with this complaint?</h4>
-                        <p>Contact ShopEase support regarding this complaint.</p>
+                        <p>Contact ShopEase admin regarding this complaint.</p>
                     </div>
                     <button id="sp-contact-admin" class="sp-contact-admin-button" type="button">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 8.7 3.9 8.4 8.4 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/></svg>
-                        Contact Support
+                        Contact Admin
                     </button>
                 </section></div>
         <div class="complaints-modal-footer-grid"><section class="complaints-modal-card complaints-modal-notes-card"><h4 class="complaints-modal-card-title">Status Updates</h4><div id="complaints-modal-notes-list" class="complaints-modal-notes-list"></div></section><div class="sp-modal-bottom-actions"><p>Status updates are managed by ShopEase administration.</p><button id="complaints-modal-done" type="button" class="sp-modal-done">Close</button></div></div>
