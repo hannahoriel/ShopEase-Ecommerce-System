@@ -1,7 +1,4 @@
 @php
-    $centerId = (string) ($sortingCenterId ?? data_get(auth()->user(), 'sorting_center_id', ''));
-    $accountId = (string) (auth()->id() ?? '');
-    $accountEmail = (string) (auth()->user()?->email ?? '');
     $centerName = (string) ($sortingCenterName ?? data_get(auth()->user(), 'sorting_center_name') ?? auth()->user()?->name ?? 'Assigned Sorting Center');
 @endphp
 <!doctype html>
@@ -61,12 +58,9 @@
 <script>
 document.addEventListener('DOMContentLoaded',()=>{'use strict';
 const $=id=>document.getElementById(id), norm=v=>String(v??'').trim().toLowerCase(), esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const networkKey='shopease-logistics-network-hubs-ui-v1';const configuredId=@json($centerId),accountId=@json($accountId),accountEmail=@json($accountEmail);
-let saved=[];try{const data=JSON.parse(localStorage.getItem(networkKey)||'[]');if(Array.isArray(data))saved=data;}catch{}
-const match=saved.find(c=>norm(c.login_email||c.manager_email)===norm(accountEmail));
-const centerId=String(configuredId||match?.id||(accountId?'account-'+accountId:''));
-const key='shopease-sc-issues-preview-'+centerId;const scannerKey='shopease-sc-scanner-transfers-demo-v1';
-let reports=[];try{const data=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(data))reports=data.filter(x=>String(x.centerId)===centerId);}catch{}
+const reportsEndpoint=@json(route('sorting_center.api.parcel-disputes.index'));
+const parcelTrackingEndpoint=@json(route('sorting_center.api.parcel-tracking.index'));
+let reports=[];
 const fmt=v=>{if(!v)return '—';const date=new Date(v);return isNaN(date)?String(v):date.toLocaleString('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'});};
 const initial=new URLSearchParams(location.search).get('tracking');if(initial)$('pdSearch').value=initial;
 // Restore the missing table renderer (removed by an earlier modal/layout edit).
@@ -76,28 +70,31 @@ function render(){
   $('pdCount').textContent=matching.length+' of '+reports.length+' reports';
   $('pdRows').innerHTML=matching.map(r=>`<tr tabindex="0" role="button" data-id="${esc(r.id)}" aria-label="View issue ${esc(r.id)}"><td><strong>${esc(r.id)}</strong></td><td>${esc(r.tracking)}</td><td>${esc(r.type)}</td><td>${esc(fmt(r.at))}</td></tr>`).join('')||'<tr><td colspan="4" class="pd-empty">No parcel issues match your filters.</td></tr>';
 }
+async function loadReports(){
+ try{
+  const response=await fetch(reportsEndpoint,{credentials:'same-origin',headers:{Accept:'application/json'}});
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.message||'Unable to load saved parcel reports.');
+  const serverReports=Array.isArray(result.data?.reports)?result.data.reports:[];
+  reports=serverReports;
+ }catch(error){console.error('Parcel disputes API could not be loaded:',error);$('pdRows').innerHTML=`<tr><td colspan="4" class="pd-empty">Unable to load saved parcel reports: ${esc(error.message||'Please refresh and try again.')}</td></tr>`;$('pdCount').textContent='Could not load reports';return;}
+ render();
+ const openId=new URLSearchParams(location.search).get('report');
+ if(openId&&reports.some(r=>String(r.id)===openId))openReport(openId);
+}
 
 const field=(label,value,wide=false)=>`<div class="pt-field ${wide?'pt-wide':''}"><label>${esc(label)}</label><strong>${esc(value??'—')}</strong></div>`;
 const section=(title,body)=>`<section class="pt-detail-card"><div class="pt-detail-title">${esc(title)}</div><div class="pt-detail-body">${body}</div></section>`;
 const grid=body=>`<div class="pt-fields">${body}</div>`;
 const pair=(label,value)=>`<div class="pt-info-pair"><label>${esc(label)}</label><strong>${esc(value??'—')}</strong></div>`;
 const formatMoney=v=>{if(v===null||v===undefined||v==='')return '—';const n=Number(String(v).replace(/[^0-9.-]/g,''));return Number.isFinite(n)?'₱ '+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'};
-function scannerParcel(tracking){
- try{
-  const state=JSON.parse(localStorage.getItem(scannerKey)||'{}');
-  const p=(state.parcels||[]).find(x=>norm(x.tracking||x.tracking_number)===norm(tracking))||null;
-  if(!p)return null;
-  // Demo-only upgrade: the previous scanner seed stored literal '09XX XXX XXXX'.
-  const match=String(p.tracking||'').match(/^SHP-SC-PREVIEW-(10[1-6])$/);
-  if(match && String(p.id||'').startsWith('preview-')){
-   const phones=['09171234561','09181234562','09191234563','09201234564','09211234565','09221234566'];
-   let changed=false;
-   if(/x|\*/i.test(String(p.buyer_phone||''))||!p.buyer_phone){p.buyer_phone=phones[Number(match[1])-101];changed=true;}
-   if(/x|\*/i.test(String(p.seller_phone||''))||!p.seller_phone){p.seller_phone='09175678901';changed=true;}
-   if(changed)localStorage.setItem(scannerKey,JSON.stringify(state));
-  }
-  return p;
- }catch{return null;}
+async function scannerParcel(tracking){
+ const response=await fetch(parcelTrackingEndpoint,{credentials:'same-origin',headers:{Accept:'application/json'}});
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(result.message||'Could not load parcel details from the database.');
+ const parcels=[...(Array.isArray(result.parcels)?result.parcels:[]),...(Array.isArray(result.returns)?result.returns:[])];
+ const parcel=parcels.find(item=>norm(item.tracking_number||item.tracking)===norm(tracking));
+ return parcel?{...parcel,tracking:parcel.tracking_number||parcel.tracking,history:parcel.tracking_history||parcel.history||[]}:null;
 }
 function partyInfo(p,label){
  const b=label.toLowerCase();
@@ -109,20 +106,6 @@ function reportAccountability(r){
  const a=r.accountability;
  return section('Accountability & Seller Compensation',`<div class="pd-accountability-summary">${grid(field('Responsible Party','Logistics Partner')+field('Resolution','Full Parcel Value Reimbursement to Seller')+field('Parcel Value',formatMoney(a.parcelAmount))+field('Amount Owed to Seller',formatMoney(a.compensation))+field('Settlement Status',a.status||'Reimbursed · UI Simulation')+field('Reimbursed At (Demo)',fmt(a.simulatedReimbursedAt))+field('Accountability Recorded At',fmt(a.at))+field('Notes',a.notes||'Automatically assigned after the parcel issue was reported.',true))}</div><p class="pd-details-note">The reimbursement date/time is simulated for UI preview only. No real money has been transferred or credited to the seller.</p>`);
 }
-function applyAutomaticAccountability(){
- let changed=false;
- for(const r of reports){
-  const issue=norm(r.type||r.issueType||r.issue_type).replace(/[-_]/g,' ');
-  if(!(issue.includes('lost')||issue.includes('damaged')) || r.accountability?.autoVersion===3)continue;
-  const p=scannerParcel(r.tracking);
-  const value=Number(p?.total_amount ?? r.parcelAmount ?? r.total_amount ?? NaN);
-  const amount=Number.isFinite(value)&&value>0?value.toFixed(2):'';
-  r.accountability={party:'Logistics Partner',resolution:'Full Parcel Value Reimbursement to Seller',parcelAmount:amount,compensation:amount,notes:'Automatically assessed when a '+issue+' report was recorded.',at:r.at||new Date().toISOString(),simulatedReimbursedAt:amount?(r.accountability?.simulatedReimbursedAt||r.at||new Date().toISOString()):null,status:amount?'Reimbursed · UI Simulation':'Amount Verification Required · Demo',autoVersion:3};
-  changed=true;
- }
- if(changed){try{localStorage.setItem(key,JSON.stringify(reports));}catch(error){console.warn('Unable to save demo accountability:',error);}}
-}
-
 function trackingProgress(p){
  const stage=p.status==='delivered'?3:p.status==='out-for-delivery'?2:['incoming','received','ready','staged','loaded'].includes(p.status)?1:0;
  const labels=['Processing','In Transit','Out for Delivery','Delivered'];
@@ -130,9 +113,9 @@ function trackingProgress(p){
  return `<div class="pt-shipping-progress" role="img" aria-label="Tracking Progress">${labels.map((label,i)=>`<div class="pt-progress-item"><img src="/icons/seller/shipping-status/${icons[i]}" alt=""><small>${label}</small></div>${i<labels.length-1?`<span class="pt-progress-line ${i<stage?'done':''}"></span>`:''}`).join('')}</div>`;
 }
 let activeReportId=null;
-function openReport(id){
+async function openReport(id){
  const r=reports.find(x=>String(x.id)===String(id));if(!r)return;
- applyAutomaticAccountability();activeReportId=r.id;const p=scannerParcel(r.tracking);
+ activeReportId=r.id;let p=null;try{p=await scannerParcel(r.tracking);}catch(error){console.warn('Parcel details could not be loaded:',error);}
  // Same detail-card order, field grid, paired buyer/seller columns and progress icons as Scanner.
  let html=section('Report Information',grid(field('Report ID',r.id)+field('Tracking Number',r.tracking)+field('Issue Type',r.type)+field('Report Status',r.status)+field('Reported At',fmt(r.at))+field('Description',r.description,true)+field('Evidence Filename',r.evidenceName||'No evidence attached',true)));
  if(p){
@@ -157,6 +140,6 @@ function openReport(id){
 function close(){$('pdModal').hidden=true;document.body.classList.remove('pd-modal-open');}
 $('pdRows').addEventListener('click',e=>{const row=e.target.closest('[data-id]');if(row)openReport(row.dataset.id)});$('pdRows').addEventListener('keydown',e=>{if(!['Enter',' '].includes(e.key))return;const row=e.target.closest('[data-id]');if(row){e.preventDefault();openReport(row.dataset.id)}});
 $('pdSearch').addEventListener('input',render);
-$('pdModalX').addEventListener('click',close);$('pdModalClose').addEventListener('click',close);$('pdModal').addEventListener('click',e=>{if(e.target===$('pdModal'))close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});window.addEventListener('storage',e=>{if(e.key===key){try{reports=JSON.parse(e.newValue||'[]').filter(x=>String(x.centerId)===centerId)}catch{reports=[]}applyAutomaticAccountability();render()}});applyAutomaticAccountability();render();const openId=new URLSearchParams(location.search).get('report');if(openId&&reports.some(r=>String(r.id)===openId))openReport(openId);
+$('pdModalX').addEventListener('click',close);$('pdModalClose').addEventListener('click',close);$('pdModal').addEventListener('click',e=>{if(e.target===$('pdModal'))close()});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});render();loadReports();
 });
 </script></body></html>

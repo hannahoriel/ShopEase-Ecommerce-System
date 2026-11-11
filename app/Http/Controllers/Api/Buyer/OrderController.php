@@ -31,6 +31,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
@@ -491,9 +492,8 @@ class OrderController extends Controller
                     $order = Order::create([
                         'buyer_id' => $request->user()->id,
                         'seller_id' => $seller->id,
-                        // Buyers can place the order before a delivery provider is chosen.
-                        // The seller's To Ship flow creates the pickup shipment and assigns
-                        // a rider from the seller's dispatch area.
+                        // Keep the selected provider on the order so its seller-area hub can
+                        // see the incoming parcel as soon as checkout completes.
                         'logistics_id' => $logistics?->id,
                         'order_number' => null,
                         'total' => $total,
@@ -516,6 +516,34 @@ class OrderController extends Controller
                     $order->forceFill([
                         'order_number' => $this->orderNumberFor($order),
                     ])->saveQuietly();
+
+                    $sellerHub = $logistics->branches
+                        ->flatMap(fn (LogisticsBranch $branch) => $branch->deliveryHubs->map(fn (LogisticsDeliveryHub $hub) => [
+                            'branch' => $branch,
+                            'hub' => $hub,
+                        ]))
+                        ->first(fn (array $route): bool => $this->sameLocation(
+                            $route['hub']->province,
+                            $route['hub']->municipality,
+                            ['province' => $seller->province, 'municipality' => $seller->municipality],
+                        ));
+                    $sellerBranch = $sellerHub['branch'] ?? $logistics->branches->first(fn (LogisticsBranch $branch): bool =>
+                        $this->sameLocation($branch->province, $branch->municipality, [
+                            'province' => $seller->province,
+                            'municipality' => $seller->municipality,
+                        ])
+                    );
+                    Shipment::create([
+                        'order_id' => $order->id,
+                        'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
+                        'scan_token' => Str::random(64),
+                        'courier' => $logistics->business_name ?: 'Ease Express',
+                        'estimated_delivery' => now()->addDays(3)->toDateString(),
+                        'shipping_fee' => $shippingFee,
+                        'logistics_branch_id' => $sellerBranch?->id,
+                        'logistics_delivery_hub_id' => $sellerHub['hub']->id ?? null,
+                    ]);
+
                     if ($voucherResult) {
                         $voucher = $voucherResult['voucher'];
                         $claimed = \App\Models\Seller\SellerVoucher::query()

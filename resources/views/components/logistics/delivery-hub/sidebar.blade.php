@@ -88,6 +88,7 @@ html,body.lg-body{overflow-x:hidden}
     
 </style>
 <aside id="lgSidebar" class="lg-sidebar" aria-label="Delivery Hub navigation">
+    <span id="se-sidebar-ready" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden"></span>
     <div class="lg-sidebar-content">
         <a class="lg-sidebar-logo" href="{{ \Illuminate\Support\Facades\Route::has('delivery-hub.dashboard') ? route('delivery-hub.dashboard') : '#' }}" aria-label="ShopEase Delivery Hub Dashboard">
             <img src="{{ asset('icons/admin/dashboard/sidebar&navbar/shopease.png') }}" alt="ShopEase" onerror="this.style.display='none'">

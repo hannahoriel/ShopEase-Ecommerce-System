@@ -405,6 +405,8 @@ Route::prefix('v1')->group(function () {
                         ->name('delivery_hub.api.parcel-tracking.index');
                     Route::get('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelDisputesController::class, 'index'])
                         ->name('delivery_hub.api.parcel-disputes.index');
+                    Route::post('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelDisputesController::class, 'store'])
+                        ->name('delivery_hub.api.parcel-disputes.store');
                     Route::get('/scanner', [DeliveryHubScannerController::class, 'show'])->name('delivery_hub.api.scanner.show');
                     Route::put('/scanner', [DeliveryHubScannerController::class, 'update'])->name('delivery_hub.api.scanner.update');
                     Route::get('/finance', [DeliveryHubCodFinanceController::class, 'index'])->name('delivery_hub.api.finance.index');
@@ -419,6 +421,10 @@ Route::prefix('v1')->group(function () {
                     Route::post('/rider-remittances/{remittance}/distribute', [DeliveryHubCodFinanceController::class, 'distribute'])->name('delivery_hub.api.finance.remittances.distribute');
                 }
                 if ($facilityRole === 'sorting_center') {
+                    Route::get('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelDisputesController::class, 'index'])
+                        ->name('sorting_center.api.parcel-disputes.index');
+                    Route::post('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelDisputesController::class, 'store'])
+                        ->name('sorting_center.api.parcel-disputes.store');
                     Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\SortingCenterParcelTrackingController::class, 'index'])
                         ->name('sorting_center.api.parcel-tracking.index');
                     Route::get('/delivery-hubs', [SortingCenterDeliveryHubController::class, 'index'])->name('sorting_center.api.delivery-hubs.index');

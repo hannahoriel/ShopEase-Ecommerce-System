@@ -270,7 +270,7 @@ body.pt-modal-open{overflow:hidden}
 <div class="sc-modal" id="scHistoryModal" hidden><section class="sc-dialog sc-dialog-wide" role="dialog" aria-modal="true"><div class="sc-camera-head"><h2>Departure History</h2><button class="sc-btn small" id="scHistoryClose" type="button">Close</button></div><div id="scHistoryDetails"></div></section></div>
 <div class="sc-toast" id="scToast" hidden role="status" aria-live="polite"></div>
 
-<div class="sc-modal" id="scLoadModal" hidden><section class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="scLoadTitle"><h2 id="scLoadTitle">Confirm Truck Loading</h2><p id="scLoadDescription"></p><label for="scCourierSelect" style="font-size:11px;font-weight:600;display:block;margin-bottom:7px">Assigned Courier / Driver *</label><select class="sc-select" id="scCourierSelect" required style="width:100%;margin-bottom:12px"><option value="">Select available courier</option></select><label for="scTruckId" style="font-size:11px;font-weight:600">Assigned Truck / Plate Number</label><input class="sc-input" id="scTruckId" placeholder="Automatically filled from courier" readonly style="width:100%;margin-top:7px;background:#fbf6f3"><p class="sc-help" id="scCourierAvailability">Only approved, unassigned couriers may be dispatched.</p><p class="sc-demo-warning">Confirming Loaded saves the assigned courier, registered vehicle, and parcels to the transfer manifest. The assigned courier will see this trip in the mobile app.</p><div class="sc-dialog-actions"><button class="sc-btn" type="button" id="scLoadCancel">Cancel</button><button class="sc-btn primary" type="button" id="scLoadConfirm">Confirm Loaded</button></div></section></div>
+<div class="sc-modal" id="scLoadModal" hidden><section class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="scLoadTitle"><h2 id="scLoadTitle">Confirm Truck Loading</h2><p id="scLoadDescription"></p><label for="scScheduleAt" style="font-size:11px;font-weight:600;display:block;margin-bottom:7px">Scheduled dispatch date and time *</label><input class="sc-input" id="scScheduleAt" type="datetime-local" required style="width:100%;margin-bottom:12px"><label for="scCourierSelect" style="font-size:11px;font-weight:600;display:block;margin-bottom:7px">Assigned Courier / Driver *</label><select class="sc-select" id="scCourierSelect" required style="width:100%;margin-bottom:12px"><option value="">Select available courier</option></select><label for="scTruckId" style="font-size:11px;font-weight:600">Assigned Truck / Plate Number</label><input class="sc-input" id="scTruckId" placeholder="Automatically filled from courier" readonly style="width:100%;margin-top:7px;background:#fbf6f3"><p class="sc-help" id="scCourierAvailability">Only approved couriers without a conflicting scheduled dispatch may be selected.</p><p class="sc-demo-warning">Confirming Loaded saves the assigned courier, registered vehicle, schedule, and parcels to the transfer manifest. The assigned courier will see this trip in the mobile app.</p><div class="sc-dialog-actions"><button class="sc-btn" type="button" id="scLoadCancel">Cancel</button><button class="sc-btn primary" type="button" id="scLoadConfirm">Confirm Loaded</button></div></section></div>
 
 <div class="sc-modal" id="scCameraModal" hidden><section class="sc-dialog sc-camera-dialog" role="dialog" aria-modal="true" aria-labelledby="scCameraTitle"><div class="sc-camera-head"><h2 id="scCameraTitle">Scan Parcel Barcode</h2><button type="button" class="sc-btn small" id="scCameraClose">Close</button></div><video id="scCameraVideo" autoplay muted playsinline aria-label="Live camera view"></video><div style="margin-top:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap"><label class="sc-btn small" for="scQrImageInput" style="cursor:pointer">Upload QR Image</label><input type="file" id="scQrImageInput" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0" aria-label="Upload QR image"></div><p id="scCameraMessage" class="sc-help" role="status">Allow camera access to scan a tracking barcode or QR code.</p><p class="sc-help">Uses native QR detection when available and a QR decoder fallback. You can also upload an image of the QR code or type the tracking number.</p></section></div>
 
@@ -278,12 +278,12 @@ body.pt-modal-open{overflow:hidden}
 
 <div class="sc-modal" id="scIssueModal" hidden><section class="sc-dialog sc-issue-dialog" role="dialog" aria-modal="true" aria-labelledby="scIssueTitle">
 <h2 id="scIssueTitle">Report Parcel Issue</h2><p>Record an issue involving the selected parcel.</p>
-<form id="scIssueForm" class="sc-issue-form">
+<form id="scIssueForm" class="sc-issue-form" novalidate>
 <div class="sc-issue-note">Tracking Number: <strong id="scIssueTracking">—</strong><br>Lost or damaged parcels automatically generate a full-value Logistics-to-Seller reimbursement record (demo only; no real payment).</div>
-<label class="sc-issue-field">Issue Type *<select id="scIssueType" required><option value="">Select an issue</option><option value="Lost Parcel">Lost Parcel</option><option value="Damaged Parcel">Damaged Parcel</option></select></label>
-<label class="sc-issue-field">Description *<textarea id="scIssueDescription" required minlength="10" maxlength="1500" placeholder="Explain what happened, when it was discovered, and what action is needed..."></textarea></label>
+<label class="sc-issue-field">Issue Type *<select id="scIssueType"><option value="">Select an issue</option><option value="Lost Parcel">Lost Parcel</option><option value="Damaged Parcel">Damaged Parcel</option></select></label>
+<label class="sc-issue-field">Description *<textarea id="scIssueDescription" maxlength="1500" placeholder="Explain what happened, when it was discovered, and what action is needed..."></textarea></label><p class="dh-error" id="scIssueValidation" role="alert" hidden></p>
 <label class="sc-issue-field">Photo Evidence (optional; preview only)<input type="file" id="scIssueEvidence" accept="image/png,image/jpeg,image/webp"></label>
-<div class="sc-dialog-actions"><button class="sc-btn" type="button" id="scIssueCancel">Cancel</button><button class="sc-btn primary" type="submit">Submit Report</button></div></form></section></div>
+<div class="sc-dialog-actions"><button class="sc-btn" type="button" id="scIssueCancel">Cancel</button><button class="sc-btn primary" id="scIssueSubmit" type="submit">Submit Report</button></div></form></section></div>
 <script>
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -301,9 +301,12 @@ const norm=s=>String(s??'').trim().toLocaleLowerCase();const fmt=d=>d?new Intl.D
 const getLocal=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}};
 
 const scanBackend=async(tracking,action,extra={})=>{const response=await fetch('/api/v1/sorting_center/scanner/parcel-scan',{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:JSON.stringify({tracking,action,...extra})});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Parcel scan could not be saved.');return body};
+const submitIssueBackend=async(formData)=>{const response=await fetch(@json(route('sorting_center.api.parcel-disputes.store')),{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:formData});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(Object.values(body.errors||{}).flat()[0]||body.message||'Could not save parcel issue.');return body.data?.report};
+const fetchIssueReports=async()=>{const response=await fetch(@json(route('sorting_center.api.parcel-disputes.index')),{credentials:'same-origin',headers:{Accept:'application/json'}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Could not load parcel issue reports.');return Array.isArray(body.data?.reports)?body.data.reports:[]};
 const fetchQueue=async()=>{const response=await fetch('/api/v1/sorting_center/scanner/queue',{credentials:'same-origin',headers:{Accept:'application/json'}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.message||'Could not load incoming transfers.');return body};
 
 const now=()=>new Date().toISOString();const uid=()=>('id-'+Date.now()+'-'+Math.random().toString(36).slice(2,8));
+const localDateTime=()=>{const d=new Date(Date.now()+60000);d.setSeconds(0,0);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)};
 
 let data=getLocal(storeKey);if(!data||!Array.isArray(data.parcels)||!Array.isArray(data.manifests)){data={parcels:[],manifests:[],events:[]}};data.centerRoutes=Array.isArray(data.centerRoutes)?data.centerRoutes:[];
 
@@ -351,7 +354,8 @@ function courierDirectory(){
    }).filter(c=>c.plate);
 }
 function activeDispatches(){return data.activeDispatches||[];}
-function busyCourier(c){return activeDispatches().find(m=>(m.courierId&&String(m.courierId)===String(c.id))||(!m.courierId&&norm(m.courierName)===norm(c.displayName))||norm(m.truckId)===norm(c.plate));}
+function scheduleMinute(value){const time=Date.parse(value||'');return Number.isFinite(time)?Math.floor(time/60000):null}
+function busyCourier(c){const selectedMinute=scheduleMinute($('scScheduleAt')?.value);return activeDispatches().find(m=>{const sameCourier=(m.courier_registration_id&&String(m.courier_registration_id)===String(c.id))||(!m.courier_registration_id&&norm(m.courier_name)===norm(c.displayName))||norm(m.vehicle_reference)===norm(c.plate);if(!sameCourier)return false;const activeMinute=scheduleMinute(m.scheduled_at);return selectedMinute===null||activeMinute===null||selectedMinute===activeMinute})}
 function fillCourierPicker(returnTrip=null){const all=returnTrip?[{id:returnTrip.courier_registration_id,displayName:returnTrip.courier_name,plate:returnTrip.vehicle_reference,vehicleId:returnTrip.vehicle_id,vehicle:'Returning truck',vehicleAvailability:'Available'}]:courierDirectory();const available=all.filter(c=>returnTrip||(!busyCourier(c)&&!['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability))));
  $('scCourierSelect').innerHTML='<option value="">Select available courier</option>'+all.map(c=>{const busy=busyCourier(c),disabled=busy||['in service','unavailable','maintenance'].includes(norm(c.vehicleAvailability));const account=c.user?.email||c.email||'Email unavailable';return `<option value="${esc(c.id)}" ${disabled?'disabled':''}>${esc(c.displayName)} · ${esc(account)} · ${esc(c.plate)}${disabled?' · Unavailable':''}</option>`}).join('');
  $('scCourierAvailability').textContent=returnTrip?'Round trip required: this inbound truck and courier must carry return cargo to '+returnTrip.origin_name+'.':available.length?`${available.length} courier(s) available. Assigned truck / plate number is automatic.`:'No available approved couriers. Approve a courier with a plate number in Courier Registrations first.';
@@ -368,7 +372,7 @@ const center=()=>options.find(c=>String(c.id)===String(currentId));
 const centerById=id=>options.find(c=>String(c.id)===String(id));
 
 const save=()=>{localStorage.setItem(storeKey,JSON.stringify(data));render()};
-async function refreshQueue(){try{const queue=await fetchQueue();data.parcels=queue.parcels||[];data.manifests=[...(queue.manifests||[]),...(queue.departures||[])];for(const transfer of queue.staged_departures||[]){data.manifests.push({...transfer,sourceType:'transfer-to-sorting'});data.parcels.push(...(transfer.parcels||[]));}data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];data.centerRoutes=queue.center_routes||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}if(queue.facility_type==='sorting_center'&&queue.facility_id){currentId=String(queue.facility_id)}localStorage.setItem(storeKey,JSON.stringify(data));render()}catch(error){say(error.message)}}
+async function refreshQueue(){try{const queue=await fetchQueue();const previouslyReportedReceived=data.parcels.filter(p=>isReported(p)&&String(p.currentCenterId||'')===String(currentId)&&(p.receivedAt||p.receivedManifestId||(p.history||[]).some(h=>String(h.status||'').toLowerCase().includes('received'))));data.parcels=queue.parcels||[];data.manifests=[...(queue.manifests||[]),...(queue.departures||[])];for(const transfer of queue.staged_departures||[]){data.manifests.push({...transfer,sourceType:'transfer-to-sorting'});data.parcels.push(...(transfer.parcels||[]));}const currentTracking=new Set(data.parcels.map(p=>norm(p.tracking)));for(const parcel of previouslyReportedReceived){if(!currentTracking.has(norm(parcel.tracking)))data.parcels.push(parcel);}data.returnTrucks=queue.return_trucks||[];data.couriers=queue.couriers||[];data.vehicles=queue.vehicles||[];data.activeDispatches=queue.active_dispatches||[];data.centerRoutes=queue.center_routes||[];if(Array.isArray(queue.centers)&&queue.centers.length){localStorage.setItem(networkKey,JSON.stringify(queue.centers));initCenter()}if(queue.facility_type==='sorting_center'&&queue.facility_id){currentId=String(queue.facility_id)}localStorage.setItem(storeKey,JSON.stringify(data));render()}catch(error){say(error.message)}}
 
 const status=p=>p.status||'ready';
 
@@ -402,7 +406,14 @@ function nextStop(parcel){const c=center();if(!c)return {error:'No sorting cente
 
 function incoming(){return data.parcels.filter(p=>p.status==='incoming'&&String(p.nextCenterId)===String(currentId)&&!isReported(p));}
 
-function received(){return list().filter(p=>p.status==='received'||p.status==='staged'||p.status==='ready');}
+function received(){
+ return data.parcels.filter(p=>
+  String(p.currentCenterId||'')===String(currentId)&&(
+   p.status==='received'||p.status==='staged'||p.status==='ready'||
+   (isReported(p)&&!!(p.receivedAt||p.receivedManifestId||(p.history||[]).some(h=>String(h.status||'').toLowerCase().includes('received'))))
+  )
+ );
+}
 
 function ready(){return list().filter(p=>['received','ready','staged'].includes(status(p)));}
 
@@ -615,24 +626,35 @@ function seedReturnParcelExample(){
 }
 // Demo issues are scoped by the current center; no backend submission occurs.
 let activeIssueTracking='';
-function issueStorageKey(){return 'shopease-sc-issues-preview-'+currentId;}
-function issueReports(){try{return JSON.parse(localStorage.getItem(issueStorageKey())||'[]')||[]}catch{return []}}
+let serverIssueReports=[];
+function issueReports(){return serverIssueReports;}
 function issuesFor(tracking){return issueReports().filter(r=>norm(r.tracking)===norm(tracking));}
 function isReported(p){return !!p && (p.reportedIssue===true || issuesFor(p.tracking).length>0);}
+async function refreshIssueReports(){try{serverIssueReports=await fetchIssueReports();render();}catch(error){console.error('Parcel issue reports could not be loaded:',error);}}
 function openIssueModal(){
   if(!activeIssueTracking)return;
-  $('scIssueForm').reset();$('scIssueTracking').textContent=activeIssueTracking;
+  $('scIssueForm').reset();$('scIssueValidation').hidden=true;$('scIssueTracking').textContent=activeIssueTracking;
   $('scIssueModal').hidden=false;$('scIssueType').focus();
 }
 function closeIssueModal(){$('scIssueModal').hidden=true;if($('scParcelDetails').classList.contains('open'))$('scReportIssue').focus();}
-$('scReportIssue').addEventListener('click',openIssueModal);
+$('scReportIssue').addEventListener('click',()=>{
+  const parcel=findParcel(activeIssueTracking);
+  if(isReported(parcel)){
+    window.location.assign(@json(route('sorting-center.parcel-disputes'))+'?tracking='+encodeURIComponent(activeIssueTracking));
+    return;
+  }
+  openIssueModal();
+});
 $('scIssueCancel').addEventListener('click',closeIssueModal);
 $('scIssueModal').addEventListener('click',e=>{if(e.target===$('scIssueModal'))closeIssueModal()});
-$('scIssueForm').addEventListener('submit',e=>{
-  e.preventDefault();if(!$('scIssueForm').reportValidity()||!activeIssueTracking)return;
+$('scIssueForm').addEventListener('submit',async e=>{
+  e.preventDefault();if($('scIssueModal').hidden||!activeIssueTracking)return;
+  const issueType=$('scIssueType').value,description=$('scIssueDescription'),cleanDescription=description.value.trim(),validation=$('scIssueValidation');
+  if(!['Lost Parcel','Damaged Parcel'].includes(issueType)||cleanDescription.length<1){validation.textContent=!issueType?'Choose an issue type.':'Enter a description for the parcel issue.';validation.hidden=false;(!issueType?$('scIssueType'):description).focus();return;}
+  validation.hidden=true;
   const f=$('scIssueEvidence').files?.[0];
   if(f&&(f.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(f.type))){say('Evidence must be a JPG, PNG or WebP under 5 MB.');return;}
-  const selectedType=$('scIssueType').value;
+  const selectedType=issueType;
   if(!['Lost Parcel','Damaged Parcel'].includes(selectedType)){say('Please select Lost Parcel or Damaged Parcel.');return;}
   const parcel=findParcel(activeIssueTracking);
   const value=Number(parcel?.total_amount);
@@ -642,13 +664,14 @@ $('scIssueForm').addEventListener('submit',e=>{
     parcelAmount:amount,compensation:amount,
     notes:'Automatically recorded after a '+selectedType.toLowerCase()+' report was submitted.',
     at:recordedAt,simulatedReimbursedAt:amount?recordedAt:null,status:amount?'Reimbursed · UI Simulation':'Amount Verification Required · Demo',autoVersion:3};
-  const all=issueReports();const reportId='ISS-PREVIEW-'+Date.now();all.unshift({id:reportId,tracking:activeIssueTracking,type:selectedType,
-    description:$('scIssueDescription').value.trim(),evidenceName:f?.name||'',status:'Open',at:recordedAt,centerId:currentId,accountability});
-  localStorage.setItem(issueStorageKey(),JSON.stringify(all));
+  const submit=$('scIssueSubmit');submit.disabled=true;submit.textContent='Submitting…';let report;
+  try{const formData=new FormData();formData.append('tracking',activeIssueTracking);formData.append('type',selectedType);formData.append('description',cleanDescription);if(f)formData.append('evidence',f);report=await submitIssueBackend(formData);if(!report?.id)throw new Error('The report was not returned by the server.');report={...report,accountability};}
+  catch(error){say(error.message||'Could not save parcel issue.');return;}
+  finally{submit.disabled=false;submit.textContent='Submit Report';}
+  serverIssueReports=[report,...issueReports().filter(r=>String(r.id)!==String(report.id))];
   // Retain the parcel details for Disputes; exclude it from all scanner lists and dispatch operations.
-  if(parcel){parcel.reportedIssue=true;parcel.reportedAt=recordedAt;parcel.reportId=reportId;parcel.nextStop=null;if(parcel.status==='staged')parcel.status='reported';}
-  save();
-  const tracking=activeIssueTracking;closeIssueModal();closeParcelDetails();window.location.assign(@json(route('sorting-center.parcel-disputes'))+'?tracking='+encodeURIComponent(tracking)+'&report='+encodeURIComponent(reportId));
+  if(parcel){parcel.reportedIssue=true;parcel.reportedAt=recordedAt;parcel.reportId=report.id;parcel.nextStop=null;if(parcel.status==='staged')parcel.status='reported';}
+  const tracking=activeIssueTracking;closeIssueModal();closeParcelDetails();window.location.assign(@json(route('sorting-center.parcel-disputes'))+'?tracking='+encodeURIComponent(tracking)+'&report='+encodeURIComponent(report.id));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('scIssueModal').hidden)closeIssueModal()});
 
@@ -671,7 +694,7 @@ function renderParcelQr(value){const host=$('scParcelQr');if(!host)return;host.r
 
 let detailsPreviousFocus=null;
 
-function showParcelDetails(raw){const p=findParcel(raw);if(!p)return;detailsPreviousFocus=document.activeElement;activeIssueTracking=p.tracking;
+function showParcelDetails(raw){const p=findParcel(raw);if(!p)return;detailsPreviousFocus=document.activeElement;activeIssueTracking=p.tracking;$('scReportIssue').textContent=isReported(p)?'View Disputes':'Report Issue';$('scReportIssue').setAttribute('aria-label',isReported(p)?'View parcel disputes':'Report parcel issue');
 
  const processState=p.status==='incoming'?'In Transit':p.status==='received'?'Arrived at Sorting Center':p.status==='staged'?'Preparing for Departure':p.status==='loaded'?'In Transit':'Processing';
 
@@ -744,7 +767,7 @@ function render(){const inc=incoming(),rec=received(),rdy=ready(),grp=stagedGrou
   return header+rows.map(p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong><small>${kindBadge(p)}</small></td><td>${esc(m?.originName||p.loadedFromName||'—')}</td><td>${esc(finalDestination(p))}</td><td><span class="sc-assignee"><strong>${esc(inboundAssignment(m,p).courier)}</strong><small class="sc-assignee-phone">${esc(inboundAssignment(m,p).phone||'Phone not recorded')}</small></span></td><td>${fmt(p.inTransitSince||p.loadedAt||m?.inTransitSince||m?.loadedAt||m?.createdAt)}</td></tr>`).join('');
  }).join('')||'<tr><td colspan="5" class="sc-empty">No incoming parcels found.</td></tr>';
 
- f(rec,'scReceivedRows','scReceivedSearch',p=>{const from=p.receivedFrom||p.loadedFromName||p.originName||p.transferOriginName||p.history?.findLast?.(x=>String(x.status||'').toLowerCase().includes('received'))?.location||'Origin facility unavailable';return `<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(finalDestination(p))}<small>${kindBadge(p)}</small></td><td>${esc(from)}</td><td>${fmt(p.receivedAt)}</td><td><span class="sc-badge ${p.status==='staged'?'incoming':'received'}">${p.status==='staged'?'Staged for dispatch':'Ready for dispatch'}</span></td></tr>`},5);
+ f(rec,'scReceivedRows','scReceivedSearch',p=>{const from=p.receivedFrom||p.loadedFromName||p.originName||p.transferOriginName||p.history?.findLast?.(x=>String(x.status||'').toLowerCase().includes('received'))?.location||'Origin facility unavailable';const reported=isReported(p);return `<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(finalDestination(p))}<small>${kindBadge(p)}</small></td><td>${esc(from)}</td><td>${fmt(p.receivedAt)}</td><td><span class="sc-badge ${reported?'incoming':p.status==='staged'?'incoming':'received'}">${reported?'Reported · View Disputes':p.status==='staged'?'Staged for dispatch':'Ready for dispatch'}</span></td></tr>`},5);
 
  f(rdy,'scReadyRows','scReadySearch',p=>`<tr class="sc-clickable-row" data-parcel="${esc(p.tracking)}" title="View order details"><td><strong>${esc(p.tracking)}</strong></td><td>${esc(destinationRole(p)==='Seller'?(p.seller_province||p.destProvince):(p.buyer_province||p.destProvince))}</td><td>${esc(finalDestination(p))}<small>${kindBadge(p)}</small></td><td><span class="sc-badge ${p.status==='staged'?'incoming':'received'}">${p.status==='staged'?'Staged':'Ready'}</span></td></tr>`,4);
 
@@ -762,13 +785,14 @@ $('scDepartForm').addEventListener('submit',e=>{e.preventDefault();const code=$(
 
 for(const field of ['scIncomingSearch','scReceivedSearch','scReadySearch'])$(field).addEventListener('input',render);
 
-$('scRouteGroups').addEventListener('click',e=>{const btn=e.target.closest('[data-load]');if(!btn)return;pendingGroup=stagedGroups().find(g=>g.key===btn.dataset.load)||null;if(!pendingGroup)return;const blockReason=explainPending(pendingGroup);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}pendingGroup.batchKey=pendingGroup.batchKey||pendingGroup.parcels[0]?.departureBatchKey;if(!pendingGroup.batchKey){say('Departure group is missing its saved manifest. Scan the parcels again.');return;}pendingGroup.returnTrip=(pendingGroup.dest.type==='sorting'?(data.returnTrucks||[]).find(t=>t.origin_type==='sorting_center'&&String(t.origin_id)===String(pendingGroup.dest.id)):null)||null;fillCourierPicker(pendingGroup.returnTrip);$('scCourierSelect').disabled=!!pendingGroup.returnTrip;if(pendingGroup.returnTrip){$('scCourierSelect').value=String(pendingGroup.returnTrip.courier_registration_id);$('scTruckId').value=pendingGroup.returnTrip.vehicle_reference;$('scLoadConfirm').disabled=false;}$('scLoadDescription').textContent=pendingGroup.returnTrip?`Round trip required: the arriving truck from ${pendingGroup.returnTrip.origin_name} must return with this cargo.`:`Mark ${pendingGroup.parcels.length} parcel(s) as Loaded for ${pendingGroup.dest.name}? Select an available courier to assign their truck.`;$('scLoadModal').hidden=false;$('scCourierSelect').focus()});
+$('scRouteGroups').addEventListener('click',e=>{const btn=e.target.closest('[data-load]');if(!btn)return;pendingGroup=stagedGroups().find(g=>g.key===btn.dataset.load)||null;if(!pendingGroup)return;const blockReason=explainPending(pendingGroup);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}pendingGroup.batchKey=pendingGroup.batchKey||pendingGroup.parcels[0]?.departureBatchKey;if(!pendingGroup.batchKey){say('Departure group is missing its saved manifest. Scan the parcels again.');return;}pendingGroup.returnTrip=(pendingGroup.dest.type==='sorting'?(data.returnTrucks||[]).find(t=>t.origin_type==='sorting_center'&&String(t.origin_id)===String(pendingGroup.dest.id)):null)||null;$('scScheduleAt').value=localDateTime();$('scScheduleAt').min=localDateTime();fillCourierPicker(pendingGroup.returnTrip);$('scCourierSelect').disabled=!!pendingGroup.returnTrip;if(pendingGroup.returnTrip){$('scCourierSelect').value=String(pendingGroup.returnTrip.courier_registration_id);$('scTruckId').value=pendingGroup.returnTrip.vehicle_reference;$('scLoadConfirm').disabled=false;}$('scLoadDescription').textContent=pendingGroup.returnTrip?`Round trip required: the arriving truck from ${pendingGroup.returnTrip.origin_name} must return with this cargo.`:`Mark ${pendingGroup.parcels.length} parcel(s) as Loaded for ${pendingGroup.dest.name}? Select an available courier to assign their truck.`;$('scLoadModal').hidden=false;$('scCourierSelect').focus()});
 
-$('scCourierSelect').addEventListener('change',()=>{const c=courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);$('scTruckId').value=c?.plate||'';$('scLoadConfirm').disabled=!c||!!busyCourier(c);$('scCourierAvailability').textContent=c?`${c.displayName} · ${c.vehicle} · Plate ${c.plate}`:'Select an available approved courier.'});
+$('scScheduleAt').addEventListener('change',()=>fillCourierPicker(pendingGroup?.returnTrip||null));
+$('scCourierSelect').addEventListener('change',()=>{const c=courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);$('scTruckId').value=c?.plate||'';$('scLoadConfirm').disabled=!c||!!busyCourier(c);$('scCourierAvailability').textContent=c?(busyCourier(c)?`${c.displayName} already has a trip at this date and time.`:`${c.displayName} · ${c.vehicle} · Plate ${c.plate}`):'Select an available approved courier.'});
 
 const closeModal=()=>{$('scLoadModal').hidden=true;pendingGroup=null};$('scLoadCancel').addEventListener('click',closeModal);$('scLoadModal').addEventListener('click',e=>{if(e.target===$('scLoadModal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('scLoadModal').hidden)closeModal()});
 
-$('scLoadConfirm').addEventListener('click',async()=>{if(!pendingGroup)return;const g=stagedGroups().find(x=>x.key===pendingGroup.key);if(!g)return closeModal();const blockReason=explainPending(g);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}const trip=pendingGroup.returnTrip;const selected=trip?{id:trip.courier_registration_id,displayName:trip.courier_name,plate:trip.vehicle_reference,vehicleId:trip.vehicle_id,vehicle:'Returning truck'}:courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);if(!selected||(!trip&&(busyCourier(selected)||['in service','unavailable','maintenance'].includes(norm(selected.vehicleAvailability))))){say('Courier is unavailable or already assigned to another active batch.');fillCourierPicker();return;}const transfer={batch_key:pendingGroup.batchKey,courier_registration_id:selected.id,vehicle_id:selected.vehicleId,vehicle_reference:selected.plate,courier_name:selected.displayName,returning_manifest_id:trip?.id||null};try{for(const p of g.parcels)await scanBackend(p.tracking,'depart',transfer)}catch(error){say(error.message);feedback('scDepartFeedback','bad','Dispatch failed',error.message);return;}const c=center();const m={id:pendingGroup.batchKey,originCenterId:currentId,originName:c?.branch_name||'Sorting Center',nextStop:g.dest,truckId:selected.plate,courierId:String(selected.id),courierName:selected.displayName,vehicleName:selected.vehicle,createdAt:now(),status:'loaded',parcelIds:g.parcels.map(p=>p.id)};data.manifests.push(m);
+$('scLoadConfirm').addEventListener('click',async()=>{if(!pendingGroup)return;const g=stagedGroups().find(x=>x.key===pendingGroup.key);if(!g)return closeModal();const blockReason=explainPending(g);if(blockReason){say(blockReason);feedback('scDepartFeedback','warn','Loading blocked: incomplete incoming batch',blockReason);return;}const trip=pendingGroup.returnTrip;const selected=trip?{id:trip.courier_registration_id,displayName:trip.courier_name,plate:trip.vehicle_reference,vehicleId:trip.vehicle_id,vehicle:'Returning truck'}:courierDirectory().find(x=>String(x.id)===$('scCourierSelect').value);if(!$('scScheduleAt').value){say('Select the scheduled dispatch date and time.');return}if(!selected||(!trip&&(busyCourier(selected)||['in service','unavailable','maintenance'].includes(norm(selected.vehicleAvailability))))){say('Courier is unavailable at the selected date and time.');fillCourierPicker();return;}const transfer={batch_key:pendingGroup.batchKey,courier_registration_id:selected.id,vehicle_id:selected.vehicleId,vehicle_reference:selected.plate,courier_name:selected.displayName,scheduled_at:$('scScheduleAt').value.replace('T',' ')+':00',returning_manifest_id:trip?.id||null};try{for(const p of g.parcels)await scanBackend(p.tracking,'depart',transfer)}catch(error){say(error.message);feedback('scDepartFeedback','bad','Dispatch failed',error.message);return;}const c=center();const m={id:pendingGroup.batchKey,originCenterId:currentId,originName:c?.branch_name||'Sorting Center',nextStop:g.dest,truckId:selected.plate,courierId:String(selected.id),courierName:selected.displayName,vehicleName:selected.vehicle,createdAt:now(),status:'loaded',parcelIds:g.parcels.map(p=>p.id)};data.manifests.push(m);
 
  for(const p of g.parcels){p.loadedAt=m.createdAt;p.loadedFromId=currentId;p.loadedFromName=m.originName;p.transferId=m.id;p.truckId=m.truckId;p.courierName=m.courierName;p.courierId=m.courierId;p.nextStop=null;p.status='loaded';p.nextCenterId=null;p.deliveryHubId=g.dest.type==='hub'?g.dest.id:null;if(g.dest.type==='hub')p.loadedToHubName=g.dest.name;event('Loaded',p,`Sent to ${g.dest.name}`);}save();closeModal();feedback('scDepartFeedback','good','Truck loaded · transfer confirmed',g.parcels.length+' parcels dispatched. The transfer manifest is ready for the destination.',g.dest.name);say('Loaded '+g.parcels.length+' parcels for '+g.dest.name)});
 
@@ -975,7 +999,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&cameraStre
 
 window.addEventListener('storage',e=>{if(e.key===networkKey){initCenter();render()}});
 window.addEventListener('focus',refreshQueue);window.setInterval(refreshQueue,30000);
-initCenter();refreshQueue().then(()=>{render();tabs('receive')});
+initCenter();refreshIssueReports();refreshQueue().then(()=>{render();tabs('receive')});
 
 });
 
