@@ -11,6 +11,7 @@ use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsTransferManifest;
 use App\Models\Logistics\LogisticsTransferManifestEvent;
 use App\Models\Logistics\CourierRegistration;
+use App\Models\Logistics\DeliveryHubParcelIssue;
 use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\Logistics\SortingCenterParcelIssue;
@@ -785,12 +786,18 @@ class ParcelRouteScanController extends Controller
                 })->values()
             : collect();
 
-        if ($facility === 'sorting_center' && $parcels !== []) {
-            $reportedIssues = SortingCenterParcelIssue::query()
+        if ($parcels !== []) {
+            $reportedIssues = $facility === 'sorting_center'
+                ? SortingCenterParcelIssue::query()
                 ->where('sorting_center_id', $id)
                 ->latest('created_at')
                 ->get(['id', 'tracking_number', 'created_at'])
-                ->keyBy(fn (SortingCenterParcelIssue $issue): string => mb_strtolower(trim($issue->tracking_number)));
+                ->keyBy(fn (SortingCenterParcelIssue $issue): string => mb_strtolower(trim($issue->tracking_number)))
+                : DeliveryHubParcelIssue::query()
+                    ->where('delivery_hub_id', $id)
+                    ->latest('created_at')
+                    ->get(['id', 'tracking_number', 'created_at'])
+                    ->keyBy(fn (DeliveryHubParcelIssue $issue): string => mb_strtolower(trim($issue->tracking_number)));
 
             foreach ($parcels as &$parcel) {
                 $issue = $reportedIssues->get(mb_strtolower(trim((string) ($parcel['tracking'] ?? ''))));
