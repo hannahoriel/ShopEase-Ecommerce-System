@@ -1,3 +1,5 @@
+import { isCartLimitError, showCartLimitModal } from '../components/cart-limit-modal.js';
+
 document.addEventListener('DOMContentLoaded', function () {
 
     /* ── Config ─────────────────────────────────────────────── */
@@ -569,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 setTimeout(() => notice.remove(), 2800);
                 this.disabled = false;
             })
-            .catch((error) => { this.disabled = false; console.error('[ShopEase Cart]', error); alert(error.message || 'Could not add product to cart.'); });
+            .catch((error) => { this.disabled = false; console.error('[ShopEase Cart]', error); if (isCartLimitError(error.message)) showCartLimitModal(); else alert(error.message || 'Could not add product to cart.'); });
     });
 
     document.getElementById('buyNowButton')?.addEventListener('click', function () {
@@ -587,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
             .then(async (res) => { if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.message || `Cart request failed (${res.status})`); } return res.json(); })
             .then(() => { window.location.href = '/buyer/cart'; })
-            .catch((error) => { this.disabled = false; console.error('[ShopEase Cart]', error); alert(error.message || 'Could not add product to cart.'); });
+            .catch((error) => { this.disabled = false; console.error('[ShopEase Cart]', error); if (isCartLimitError(error.message)) showCartLimitModal(); else alert(error.message || 'Could not add product to cart.'); });
     });
 
     /* ── Product feedback ───────────────────────────────────── */

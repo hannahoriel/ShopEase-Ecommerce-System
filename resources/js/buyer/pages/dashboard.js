@@ -1,3 +1,5 @@
+import { isCartLimitError, showCartLimitModal } from '../components/cart-limit-modal.js';
+
 document.addEventListener('DOMContentLoaded', () => {
             /* ─── Config ─────────────────────────────────────────── */
             const configEl = document.getElementById('buyerDashboardConfig');
@@ -36,16 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     body: JSON.stringify({ product_id: productId, quantity: 1 }),
                 })
-                    .then((res) => {
-                        if (!res.ok) throw new Error('Failed');
-                        return res.json();
+                    .then(async (res) => {
+                        const payload = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(payload.message || 'Failed to add product to cart.');
+                        return payload;
                     })
                     .then(() => {
                         window.location.href = '/buyer/cart';
                     })
-                    .catch(() => {
+                    .catch((error) => {
                         button.disabled = false;
                         button.innerHTML = `<img src="${escapeHtml(cartIconUrl)}" alt="" class="clean-icon" data-clean-bg="true">`;
+                        if (isCartLimitError(error.message)) showCartLimitModal();
                     });
             }
 
@@ -480,7 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hasImage = typeof imageUrl === 'string' && imageUrl.trim() !== '';
                 const originalPrice = Number(product.original_price ?? product.price ?? 0);
                 const salePercentage = Number(product.sale_percentage || 0);
-                const salePrice = salePercentage ? Math.round(originalPrice * (100 - salePercentage)) / 100 : originalPrice;
+                const salePrice = product.sale_price != null ? Number(product.sale_price) : salePercentage ? Math.round(originalPrice * (100 - salePercentage)) / 100 : originalPrice;
+                const saleLabel = product.sale_discount_label || (salePercentage ? `-${salePercentage}%` : '');
 
                 const imageHtml = hasImage
                     ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" class="product-photo" loading="lazy">`
@@ -498,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="product-shop-name">${escapeHtml(product.seller?.store_name || 'ShopEase Seller')}</p>
                         </div>
                         <div class="product-bottom-row">
-                            <span class="product-sale-price"><strong>${escapeHtml(formatPrice(salePrice))}</strong>${salePercentage ? `<del>${escapeHtml(formatPrice(originalPrice))}</del><em>-${salePercentage}%</em>` : ''}</span>
+                            <span class="product-sale-price"><strong>${escapeHtml(formatPrice(salePrice))}</strong>${saleLabel ? `<del>${escapeHtml(formatPrice(originalPrice))}</del><em>${escapeHtml(saleLabel)}</em>` : ''}</span>
                             <button type="button" class="product-cart-button" aria-label="Add ${escapeHtml(product.name)} to cart" data-product-id="${escapeHtml(product.id)}">
                                 <img src="${escapeHtml(cartIconUrl)}" alt="" class="clean-icon" data-clean-bg="true">
                             </button>

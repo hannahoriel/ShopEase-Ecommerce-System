@@ -351,3 +351,4 @@
     .buyer-shop-page .bs-featured-grid > .product-card,
     .buyer-shop-page .bs-recommendation-grid > .product-card { min-height: 238px; }
 }
+.bs-out-of-stock{position:absolute;left:10px;bottom:10px;background:#392d2f;color:#fff;border-radius:5px;padding:5px 8px;font-size:10px;font-weight:600;z-index:2}.buyer-shop-page .product-cart-button:disabled{opacity:.45;cursor:not-allowed}

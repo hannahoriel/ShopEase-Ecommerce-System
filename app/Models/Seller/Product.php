@@ -23,6 +23,10 @@ class Product extends Model
         'sku',
         'price',
         'sale_percentage',
+        'sale_discount_type',
+        'sale_discount_value',
+        'sale_starts_at',
+        'sale_ends_at',
         'pricing_mode',
         'pricing_source',
         'photos',
@@ -40,6 +44,9 @@ class Product extends Model
         'is_fragile' => 'boolean',
         'price' => 'decimal:2',
         'sale_percentage' => 'integer',
+        'sale_discount_value' => 'decimal:2',
+        'sale_starts_at' => 'datetime',
+        'sale_ends_at' => 'datetime',
         'stock_quantity' => 'integer',
         'is_archived' => 'boolean',
         'archived_by_admin' => 'boolean',
@@ -61,10 +68,29 @@ class Product extends Model
 
     public function getSalePriceAttribute(): float
     {
-        $price = (float) $this->price;
-        $percentage = (int) $this->sale_percentage;
+        return $this->salePriceForBase((float) $this->price);
+    }
 
-        return $percentage > 0 ? round($price * (100 - $percentage) / 100, 2) : $price;
+    public function saleIsActive(): bool
+    {
+        $now = now();
+        return ($this->sale_discount_value || $this->sale_percentage)
+            && (! $this->sale_starts_at || $this->sale_starts_at->lte($now))
+            && (! $this->sale_ends_at || $this->sale_ends_at->gte($now));
+    }
+
+    public function salePriceForBase(float $price): float
+    {
+        if (! $this->saleIsActive()) return round($price, 2);
+        $type = $this->sale_discount_type ?: 'percentage';
+        $value = (float) ($this->sale_discount_value ?? $this->sale_percentage ?? 0);
+        return round(max(0, $type === 'fixed' ? $price - $value : $price * (100 - min(100, $value)) / 100), 2);
+    }
+
+    public function saleDiscountLabel(): ?string
+    {
+        if (! $this->saleIsActive()) return null;
+        return ($this->sale_discount_type === 'fixed' ? '₱' . number_format((float) $this->sale_discount_value, 2) : (int) ($this->sale_discount_value ?? $this->sale_percentage) . '%') . ' off';
     }
 
     public function options(): HasMany
@@ -205,9 +231,7 @@ class Product extends Model
     {
         $combination = $this->selectedCombinationForCart($variation, $color, $size);
         $price = $combination ? (float) $combination->final_price : (float) $this->price;
-        $percentage = (int) $this->sale_percentage;
-
-        return $percentage > 0 ? round($price * (100 - $percentage) / 100, 2) : $price;
+        return $this->salePriceForBase($price);
     }
 
     private function optionPayload(string $type): array
