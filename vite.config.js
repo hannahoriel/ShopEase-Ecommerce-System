@@ -127,7 +127,6 @@ const input = [
     // LOGISTICS
     'resources/js/logistics/login.js',
     'resources/js/logistics/logistics-landing.js',
-    'resources/js/logistics/logistics-registration-navigation.js',
     'resources/js/logistics/reports.js',
     'resources/js/logistics/signup-firstpage.js',
     'resources/js/logistics/signup-review.js',

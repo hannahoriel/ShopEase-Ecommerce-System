@@ -141,7 +141,7 @@
                 <button
                     type="button"
                     class="toggle-eye"
-                    id="loginEyeBtn"
+                    data-loading="off" id="loginEyeBtn"
                     onclick="togglePass('loginPass', 'loginEyeBtn')"
                     aria-label="Show password"
                     aria-pressed="false"

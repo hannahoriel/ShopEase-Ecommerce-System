@@ -8,7 +8,7 @@
                 <label for="{{ !empty($passwordRecovery) ? 'recovery' : 'first' }}-{{ $name }}">{{ $label }} <span class="first-password-required" aria-hidden="true">*</span></label>
                 <div class="first-password-input">
                     <input id="{{ !empty($passwordRecovery) ? 'recovery' : 'first' }}-{{ $name }}" name="{{ $name }}" type="password" placeholder="{{ $name === 'password' ? 'Create a password' : 'Confirm your password' }}" autocomplete="new-password" minlength="8" maxlength="72" @if ($name === 'password') aria-describedby="{{ !empty($passwordRecovery) ? 'recovery' : 'first' }}-password-requirements" @else aria-describedby="{{ !empty($passwordRecovery) ? 'recovery' : 'first' }}-password-mismatch" @endif required>
-                    <button type="button" data-first-password-eye aria-label="Show password" aria-pressed="false">
+                    <button type="button" data-loading="off" data-first-password-eye aria-label="Show password" aria-pressed="false">
                         <img src="{{ asset('icons/login/hide-password.png') }}" data-show-icon="{{ asset('icons/login/show-password.png') }}" data-hide-icon="{{ asset('icons/login/hide-password.png') }}" alt="">
                     </button>
                 </div>
