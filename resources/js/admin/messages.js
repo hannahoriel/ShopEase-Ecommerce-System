@@ -513,6 +513,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return thread;
     }
 
+    function complaintNumber(reference) {
+        return String(reference || '').match(/\d+$/)?.[0].replace(/^0+(?=\d)/, '') || '';
+    }
+
     function mergeLocalComplaintIntake() {
         const records = safeReadStorage(COMPLAINT_INBOX_KEY, []);
         if (!Array.isArray(records)) return;
@@ -527,12 +531,11 @@ document.addEventListener('DOMContentLoaded', () => {
         localIntakeIds.clear();
         grouped.forEach((entries, id) => {
             const matchedServer = conversations.complaints.some(t =>
-                String(t.complaintId || '').includes(id) ||
-                String(t.rawComplaintId || '') === id
+                complaintNumber(t.rawComplaintId || t.complaintId) === complaintNumber(id)
             );
             if (!matchedServer) {
                 const thread = createLocalComplaintThread(entries);
-                conversations.complaints.unshift(thread);
+                conversations.complaints.push(thread);
                 localIntakeIds.add(thread.id);
             }
         });
@@ -543,10 +546,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const matching = conversations.complaints.find(thread => {
             const raw = String(thread.rawComplaintId || thread.complaintId || '')
                 .replace(/^Complaint\s*#?\s*/i, '');
-            return requestedComplaintId && raw === requestedComplaintId;
+            return requestedComplaintId && complaintNumber(raw) === complaintNumber(requestedComplaintId);
         });
         const pending = safeReadStorage(PENDING_COMPLAINT_KEY, {});
-        const chosen = matching || conversations.complaints[0] || null;
+        const chosen = matching || null;
         if (chosen) {
             const roleFromRecord = safeReadStorage(COMPLAINT_INBOX_KEY, []).find(r =>
                 r.complaintId === requestedComplaintId &&
@@ -555,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const role = roleFromRecord?.recipientRole || (
                 pending.complaintId === requestedComplaintId ? pending.recipientRole : ''
             );
-            activeComplaintParty = normalizeRole(role);
+            activeComplaintParty = role ? normalizeRole(role) : (chosen.latestParty || (chosen.parties?.buyer ? 'buyer' : 'seller'));
             updateComplaintPartyTabs();
         }
         return chosen;
@@ -607,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getThread(id) {
         return allThreads().find(
-            thread => thread.id === id
+            thread => String(thread.id) === String(id)
         );
     }
 
@@ -666,6 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${thread.id === activeThreadId ? 'is-active' : ''}
                             ${thread.unread ? 'is-unread' : ''}
                         "
+                        aria-current="${thread.id === activeThreadId ? 'true' : 'false'}"
                         data-admin-thread-id="${escapeHtml(thread.id)}"
                         data-type="${escapeHtml(thread.type)}"
                     >
@@ -680,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </strong>
 
                                 <span class="admin-thread-badge">
-                                    ${complaint ? escapeHtml(thread.status) : escapeHtml(thread.role)}
+                                    ${complaint ? escapeHtml(formatCaseStatus(thread.status)) : escapeHtml(thread.role)}
                                 </span>
                             </span>
 
@@ -767,12 +771,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function dateSeparatorLabel(date) {
-        const today = new Date();
-        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const dayDifference = Math.round((todayStart - targetStart) / 86400000);
-        if (dayDifference === 0) return 'Today';
-        if (dayDifference === 1) return 'Yesterday';
         return new Intl.DateTimeFormat('en-US', {
             month: 'long', day: 'numeric', year: 'numeric'
         }).format(date);
@@ -812,11 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     lastDayKey = legacyKey;
                 }
                 pendingLegacyDivider = null;
-            } else if (lastDayKey !== 'undated') {
-                // No calendar date exists for this historical message. Show a
-                // neutral divider instead of inventing Today or hiding all dates.
-                appendDate('Earlier messages');
-                lastDayKey = 'undated';
+
             }
 
             if (message.type === 'system') {
@@ -857,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Complaint-only actions replace Search and More in the chat header.
         if (headerComplaintActions) headerComplaintActions.hidden = !complaint;
         if (complaint && headerComplaintStatus) {
-            const label = String(thread.status || 'Open');
+            const label = formatCaseStatus(thread.status);
             headerComplaintStatus.textContent = label;
             headerComplaintStatus.dataset.status = label.toLowerCase().replace(/\s+/g, '-');
         }
@@ -915,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (complaintCaseStatus) {
                 complaintCaseStatus.textContent =
-                    thread.status;
+                    formatCaseStatus(thread.status);
             }
 
             if (complaintBuyerUnread) {
@@ -1106,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const conversationId = thread.parties?.[activeComplaintParty]?.conversationId;
         if (conversationId) {
             request(`${apiBase}/conversations/${conversationId}`)
-                .then(() => loadConversations(thread.id))
+                .then(() => loadConversations(thread.id, partyName))
                 .catch(error => alert(error.message));
         }
     }
@@ -1188,13 +1182,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const conversationId = thread.type === 'complaints'
-            ? thread.parties?.[activeComplaintParty]?.conversationId
+        const party = activeComplaintParty;
+        let conversationId = thread.type === 'complaints'
+            ? thread.parties?.[party]?.conversationId
             : thread.id;
-        if (!conversationId) {
-            alert('Complaint recorded under Messages → Complaints. To send a real message, the complaint party needs a server-side conversation first.');
-            return;
-        }
 
         const formData = new FormData();
         formData.set('body', text);
@@ -1202,13 +1193,39 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.set('attachment', attachment);
         }
         try {
+            if (!conversationId && thread.type === 'complaints') {
+                const reference = String(thread.rawComplaintId || thread.id);
+                const complaintId = Number(reference.match(/\d+$/)?.[0]);
+                const { data: contacts } = await request(`${apiBase}/contacts?type=complaints`);
+                const contact = contacts.find(entry => Number(entry.complaint_id) === complaintId && entry.complaint_party === party);
+                if (!contact) throw new Error('This complaint party could not be found. Reopen the complaint and try again.');
+
+                const { data: conversation } = await request(`${apiBase}/conversations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'complaints',
+                        user_id: contact.user_id,
+                        complaint_id: contact.complaint_id,
+                        complaint_party: contact.complaint_party,
+                    }),
+                });
+                conversationId = conversation.id;
+                thread.parties[party] = {
+                    ...conversation,
+                    ...thread.parties[party],
+                    conversationId,
+                    messages: conversation.messages || [],
+                };
+            }
+
             const { data } = await request(
                 `${apiBase}/conversations/${conversationId}/messages`,
                 { method: 'POST', body: formData }
             );
             if (thread.type === 'complaints') {
-                thread.parties[activeComplaintParty].messages.push(data);
-                thread.parties[activeComplaintParty].unread = 0;
+                thread.parties[party].messages.push(data);
+                thread.parties[party].unread = 0;
             } else {
                 thread.messages.push(data);
             }
@@ -1216,7 +1233,7 @@ document.addEventListener('DOMContentLoaded', () => {
             thread.time = 'Now';
             if (thread.type === 'complaints') {
                 const complaintId = String(thread.rawComplaintId || thread.complaintId || '').replace(/^Complaint\s*#?\s*/i, '');
-                const recipientName = thread.parties?.[activeComplaintParty]?.name || activeComplaintParty;
+                const recipientName = thread.parties?.[party]?.name || party;
                 try {
                     localStorage.setItem(SENT_COMPLAINT_KEY, JSON.stringify({
                         complaintId, recipientName, sentAt: new Date().toISOString(),
@@ -1227,20 +1244,24 @@ document.addEventListener('DOMContentLoaded', () => {
             composerInput.value = '';
             composerInput.style.height = 'auto';
             if (attachmentInput) attachmentInput.value = '';
-            renderThread(thread);
+            if (activeThreadId === thread.id) {
+                renderThread(thread);
+                const savedId = thread.localIntake ? `complaint-${complaintNumber(thread.rawComplaintId)}` : thread.id;
+                await loadConversations(savedId, activeComplaintParty);
+            }
         } catch (error) {
             alert(error.message);
         }
     }
 
-    async function loadConversations(preferredId = null) {
+    async function loadConversations(preferredId = null, preferredParty = null) {
         try {
             const { data } = await request(apiBase);
             Object.values(conversations).forEach(items => items.splice(0, items.length));
             data.forEach(thread => conversations[thread.type]?.push(thread));
             mergeLocalComplaintIntake();
             const activeItems = conversations[activeTab];
-            const preferred = allThreads().find(thread => thread.id === preferredId);
+            const preferred = getThread(preferredId);
             const urlMatch = selectComplaintFromUrl();
             const next = preferred || urlMatch || activeItems[0] || allThreads()[0] || null;
             if (next) {
@@ -1253,8 +1274,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 if (next.type === 'complaints') {
-                    if (!initialComplaintsTab || !urlMatch) {
-                        activeComplaintParty = next.parties?.buyer ? 'buyer' : 'seller';
+                    if (preferredParty && next.id === preferredId) {
+                        activeComplaintParty = preferredParty;
+                    } else if (next !== urlMatch) {
+                        activeComplaintParty = next.latestParty || (next.parties?.buyer ? 'buyer' : 'seller');
                     }
                     updateComplaintPartyTabs();
                 }
@@ -1349,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
 
             if (thread?.type === 'complaints') {
-                activeComplaintParty = 'buyer';
+                activeComplaintParty = thread.latestParty || (thread.parties?.buyer ? 'buyer' : 'seller');
                 updateComplaintPartyTabs();
             }
 
@@ -1360,7 +1383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     : thread.id;
                 if (conversationId) {
                     request(`${apiBase}/conversations/${conversationId}`)
-                        .then(() => loadConversations(thread.id))
+                        .then(() => loadConversations(thread.id, activeComplaintParty))
                         .catch(error => alert(error.message));
                 }
             }
@@ -1475,5 +1498,8 @@ document.addEventListener('DOMContentLoaded', () => {
         tab.setAttribute('aria-selected', selected ? 'true' : 'false');
     });
     updateCounts();
+    window.addEventListener('focus', () => {
+        loadConversations(activeThreadId, activeComplaintParty);
+    });
     loadConversations();
 });

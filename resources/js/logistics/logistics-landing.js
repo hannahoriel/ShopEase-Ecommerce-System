@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeLogin() {
     if (signupTransitionStarted) return;
     modal.classList.remove('is-open');
+    modal.querySelector('[data-recovery]')?.dispatchEvent(new Event('recovery:close'));
     modal.setAttribute('aria-hidden','true');
     document.body.classList.remove('logistics-modal-open');
     (previousFocus?.isConnected ? previousFocus : openButton).focus({preventScroll:true});

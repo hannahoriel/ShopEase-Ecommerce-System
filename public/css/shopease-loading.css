@@ -33,7 +33,6 @@ html:is(.se-frame-modal,.se-modal-open) :is(#admin-sidebar,#sellerSidebar,#lgSid
 :is(#admin-sidebar,#sellerSidebar,#lgSidebar) [data-se-current="false"]:hover{background-color:rgba(122,31,31,.5)!important}
 html.se-shell-loading #se-page-skeleton{opacity:1!important;visibility:visible!important;pointer-events:auto;transition-delay:0s}
 /* Dialogs may prepare their contents immediately, but become visible after the bag. */
-html.se-action-preparing :is([role="dialog"],[aria-modal="true"],:is(div,section,dialog,aside,form)[id$="-modal"],:is(div,section,dialog,aside,form)[id$="Modal"]){visibility:hidden!important}
 #se-page-skeleton{position:fixed;left:var(--se-skeleton-left,288px);top:var(--se-skeleton-top,88px);right:0;bottom:0;z-index:2147482998;background:#faf8f7;padding:30px;overflow:hidden;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;box-sizing:border-box}
 html.se-loading-boot #se-page-skeleton,html.se-loading-page #se-page-skeleton{opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}
 html.se-public-page #se-page-skeleton{display:none!important}
@@ -69,7 +68,7 @@ html.se-loading-action #se-page-loader::before,html.se-loading-action #se-page-l
 #se-page-loader .se-bag-outline{stroke:#8b2635;stroke-dasharray:19 81;animation:se-bag-orbit 1.2s linear infinite;animation-play-state:paused}
 html.se-loading-action #se-page-loader .se-bag-outline{animation-play-state:running}
 #se-request-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:2147482999;overflow:hidden;background:#f3dfd8;pointer-events:none}
-#se-request-progress[hidden]{display:none!important}
+#se-request-progress[hidden],.se-loading-bag-only #se-request-progress{display:none!important}
 #se-request-progress>span{display:block;width:35%;height:100%;background:linear-gradient(90deg,#52070b,#a33b48);animation:se-loading-slide 1.1s ease-in-out infinite}
 .se-action-busy{position:relative!important;cursor:progress!important}
 .se-action-busy::after{content:"";display:inline-block;width:13px;height:13px;box-sizing:border-box;vertical-align:middle;margin-left:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:se-loading-spin .7s linear infinite;flex:0 0 13px}

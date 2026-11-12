@@ -21,6 +21,7 @@ class ComplaintMessagesController extends Controller
             ->update(['read_at' => now()]);
 
         return response()->json([
+            'status' => $complaint->status,
             'data' => $conversation->messages()->with('sender:id,name')->get()
                 ->map(fn (AdminMessage $message): array => [
                     'id' => $message->id,

@@ -2255,6 +2255,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         selectedOrderRow =
             row;
+        const report = orderDetailsModal.querySelector('[data-seller-order-report]');
+        report.dataset.orderId = row.dataset.orderId || '';
+        report.dataset.buyerName = row.dataset.customer || '';
+        report.disabled = !/^\d+$/.test(report.dataset.orderId);
 
         lastFocusedElement =
             document.activeElement;

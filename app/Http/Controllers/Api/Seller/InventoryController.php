@@ -178,7 +178,7 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate($rules);
-        $validated = $this->applyChoiceStock($validated, $optionGroups);
+        $validated = $this->applyChoiceStock($validated, $optionGroups, $pricingMode);
         $connectedVariants = $this->buildConnectedVariants(
             $validated['variant_combinations'] ?? [],
             $validated,
@@ -305,13 +305,16 @@ class InventoryController extends Controller
     }
 
     /** Stock has one owner: the product, a single option group, or exact combinations. */
-    private function applyChoiceStock(array $validated, array $optionGroups): array
+    private function applyChoiceStock(array $validated, array $optionGroups, string $pricingMode): array
     {
         $active = collect($optionGroups)->filter(fn ($group) => !empty($validated[$group['input']]));
         if ($active->count() === 1) {
             $input = $active->first()['input'];
             $validated['stock_quantity'] = collect($validated[$input])->sum(fn ($option) => (int) $option['stock']);
             $validated['variant_combinations'] = [];
+            if ($pricingMode === 'varies') {
+                $validated['price'] = min(array_column($validated[$input], 'price'));
+            }
         } elseif ($active->count() >= 2) {
             if (empty($validated['variant_combinations'])) {
                 throw ValidationException::withMessages(['variant_combinations' => 'Add grouped choices and enter stock for each exact combination.']);
@@ -598,7 +601,7 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate($rules);
-        $validated = $this->applyChoiceStock($validated, $optionGroups);
+        $validated = $this->applyChoiceStock($validated, $optionGroups, $pricingMode);
         $connectedVariants = [];
         if (array_key_exists('variant_combinations', $validated)) {
             $connectedVariants = $this->buildConnectedVariants(

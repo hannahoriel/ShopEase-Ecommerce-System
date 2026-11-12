@@ -68,7 +68,8 @@ test('logistics signup skips the bag transition while its form actions retain fe
     const registration = setup({publicPage:true,url:'https://shop.test/logistics/register/company'});
     assert.equal(registration.classes.has('se-loading-boot'),false);
     const action = button();
-    registration.documentEvents.click({target:{closest:selector => selector.startsWith('button') ? action : null},button:0});
+    registration.window.ShopEaseLoading.start(action);
+    registration.run(180);
     assert.equal(registration.classes.has('se-loading-action'),true);
 });
 
@@ -138,20 +139,31 @@ test('page skeleton waits for initial data and action bag resets independently',
     assert.equal(s.classes.has('se-loading-page'), false);
     end(); assert.equal(s.classes.has('se-loading-action'), false);
 });
-test('local button actions show bag feedback without a network request', async () => {
-    const s = setup(), b = button(); s.events.load();
-    s.documentEvents.click({ target: { closest: selector => selector.startsWith('button') ? b : null }, button: 0 });
-    // Capture runs before the page's modal-opening handler.
-    assert.equal(s.classes.has('se-action-preparing'), true);
+test('modal opening stays immediate even if the dialog loads details', async () => {
+    const s = setup(), opener = button();
+    s.events.load();
+    s.documentEvents.click({ target: { closest: selector => selector.startsWith('button') ? opener : null }, button: 0 });
+    const request = s.window.fetch('/case/details');
+    s.run(180);
+    assert.equal(s.classes.has('se-loading-action'), false);
+    assert.equal(s.classes.has('se-action-preparing'), false);
+    s.requests[0].resolve({ ok: true });
+    await request;
+});
+test('a decision in an open modal shows the bag until its request ends', async () => {
+    const s = setup(), decision = button();
+    decision.closest = selector => selector.startsWith('dialog,') ? {} : null;
+    s.events.load();
+    s.documentEvents.click({ target: { closest: selector => selector.startsWith('button') ? decision : null }, button: 0 });
+    assert.equal(s.classes.has('se-loading-action'), false);
+    const request = s.window.fetch('/case/decision', { method: 'PATCH' });
     assert.equal(s.classes.has('se-loading-action'), true);
+    s.requests[0].resolve({ ok: true });
     await Promise.resolve();
     assert.equal(s.classes.has('se-loading-action'), true);
-    assert.equal(s.classes.has('se-loading-page'), false);
-    s.run(260);
+    s.run(280);
+    await request;
     assert.equal(s.classes.has('se-loading-action'), false);
-    assert.equal(s.classes.has('se-action-preparing'), true);
-    s.run(240);
-    assert.equal(s.classes.has('se-action-preparing'), false);
 });
 test('in-page tab switching has no loader even when the tab fetches data', async () => {
     for (const className of ['order-status-tab active', 'tab-btn', 'aam-page-tab']) {
@@ -191,7 +203,7 @@ test('opening a calendar has no loader; committing its date does', () => {
     s.documentEvents.change({ target: date });
     assert.equal(s.classes.has('se-loading-action'), true);
 });
-test('navbar dropdown controls have no loader while logout keeps action feedback', () => {
+test('navbar dropdown controls stay quiet while logout submits with feedback', async () => {
     const s = setup(), dropdown = button(); s.events.load();
     dropdown.closest = selector => selector.includes('#seller-navbar') ? {} : null;
     dropdown.matches = () => false;
@@ -201,7 +213,8 @@ test('navbar dropdown controls have no loader while logout keeps action feedback
     const logout = button();
     logout.closest = selector => selector.includes('#seller-navbar') ? {} : null;
     logout.matches = selector => selector.includes('submit');
-    s.documentEvents.click({ target: { closest: selector => selector.startsWith('button') ? logout : null }, button: 0 });
+    s.documentEvents.submit({ target: { closest: () => null, method: 'post' }, submitter: logout });
+    await Promise.resolve();
     assert.equal(s.classes.has('se-loading-action'), true);
 });
 test('Inventory open-modal buttons never blur the sidebar, actual open dialogs do', () => {

@@ -8,6 +8,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderReturn extends Model
 {
+    public const MAX_PICKUP_ATTEMPTS = 3;
+
+    public const PICKUP_TIMES = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'];
+
+    public function canSchedulePickup(bool $assignRider = false): bool
+    {
+        return $this->complaint_id && $this->status === 'accepted' && $this->return_type === 'return'
+            && (int) $this->failed_pickup_attempts < self::MAX_PICKUP_ATTEMPTS
+            && (! $this->pickup_date || $this->shipping_status === 'pickup_failed'
+                || ($assignRider && $this->shipping_status === 'scheduled' && ! $this->pickup_rider_id));
+    }
+
     protected $fillable = [
         'order_id',
         'return_type',

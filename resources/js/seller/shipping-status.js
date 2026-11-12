@@ -354,6 +354,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function openShippingModal(row) {
         if (!modal || !row) return;
+        const report = document.querySelector('[data-seller-order-report]');
+        report.dataset.orderId = row.dataset.orderId || '';
+        report.dataset.buyerName = row.dataset.customer || '';
+        report.disabled = !/^\d+$/.test(report.dataset.orderId);
+
 
         selectedRow = row;
         selectedOrder = null;

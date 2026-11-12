@@ -39,248 +39,253 @@
 
         <!-- ==================== NAVIGATION ==================== -->
 
-        <nav class="space-y-0.5">
+        <nav class="space-y-0.5" aria-label="Admin menu">
 
             @php
 
-                $menu = [
-
-                    [
-                        'label' => 'Dashboard',
-                        'icon' => 'dashboard.png',
-                        'route' => 'admin.dashboard'
+                $menuGroups = [
+                    'Overview' => [
+                        [
+                            'label' => 'Dashboard',
+                            'icon' => 'dashboard.png',
+                            'route' => 'admin.dashboard'
+                        ],
                     ],
-
-                    [
-                        'label' => 'Registrations',
-                        'icon' => 'registrations.png',
-                        'route' => 'admin.registrations'
+                    'Operations' => [
+                        [
+                            'label' => 'Registrations',
+                            'icon' => 'registrations.png',
+                            'route' => 'admin.registrations'
+                        ],
+                        [
+                            'label' => 'User Management',
+                            'icon' => 'user-management.png',
+                            'route' => 'admin.user.management'
+                        ],
+                        [
+                            'label' => 'Seller Compliance',
+                            'icon' => 'seller-compliance.png',
+                            'route' => 'admin.seller.compliance'
+                        ],
+                        [
+                            'label' => 'Logistics Management',
+                            'icon' => 'logistic-management.png',
+                            'route' => 'admin.logistics.management',
+                        ],
+                        [
+                            'label' => 'Complaints and Disputes',
+                            'icon' => 'complaints-disputes.png',
+                            'route' => 'admin.complaints.disputes'
+                        ],
                     ],
-
-                    [
-                        'label' => 'User Management',
-                        'icon' => 'user-management.png',
-                        'route' => 'admin.user.management'
+                    'Finance & Promotions' => [
+                        [
+                            'label' => 'Commission',
+                            'icon' => 'commission.png',
+                            'route' => 'admin.commission',
+                        ],
+                        [
+                            'label' => 'ShopEase Wallet',
+                            'icon_path' => 'icons/seller/sidebar&navbar/wallet.png',
+                            'route' => 'admin.wallet.index',
+                        ],
+                        [
+                            'label' => 'Vouchers',
+                            'icon' => 'vouchers-promotions.png',
+                            'icon_path' => 'icons/seller/sidebar&navbar/vouchers-promotions.png',
+                            'route' => 'admin.vouchers.index',
+                        ],
                     ],
-
-                    [
-                        'label' => 'Seller Compliance',
-                        'icon' => 'seller-compliance.png',
-                        'route' => 'admin.seller.compliance'
+                    'Reports & Communication' => [
+                        [
+                            'label' => 'Reports',
+                            'icon' => 'reports.png',
+                            'route' => 'admin.reports'
+                        ],
+                        [
+                            'label' => 'Messages',
+                            'icon' => 'messages.png',
+                            'route' => 'admin.messages'
+                        ],
+                        [
+                            'label' => 'Notifications',
+                            'icon' => 'notifications.png',
+                            'icon_path' => 'icons/seller/notifications.png',
+                            'route' => null,
+                            'url' => url('/admin/notifications'),
+                        ],
                     ],
-
-                    [
-                        'label' => 'Complaints and Disputes',
-                        'icon' => 'complaints-disputes.png',
-                        'route' => 'admin.complaints.disputes'
+                    'Settings & Account' => [
+                        [
+                            'label' => 'Platform Settings',
+                            'icon' => 'settings.png',
+                            'route' => 'admin.platform.settings',
+                        ],
+                        [
+                            'label' => 'Admin Management',
+                            'icon' => 'admin-management.png',
+                            'route' => 'admin.management',
+                        ],
+                        [
+                            'label' => 'Account Management',
+                            'icon' => 'account-management.png',
+                            'route' => 'admin.account'
+                        ],
                     ],
-
-                    [
-                        'label' => 'Commission',
-                        'icon' => 'commission.png',
-                        'route' => 'admin.commission',
-                    ],
-
-                    [
-                        'label' => 'Logistics Management',
-                        'icon' => 'logistic-management.png',
-                        'route' => 'admin.logistics.management',
-                    ],
-
-                    [
-                        'label' => 'Reports',
-                        'icon' => 'reports.png',
-                        'route' => 'admin.reports'
-                    ],
-
-                    [
-                        'label' => 'Vouchers',
-                        'icon' => 'vouchers-promotions.png',
-                        'icon_path' => 'icons/seller/sidebar&navbar/vouchers-promotions.png',
-                        'route' => 'admin.vouchers.index',
-                    ],
-
-                    [
-                        'label' => 'Platform Settings',
-                        'icon' => 'settings.png',
-                        'route' => 'admin.platform.settings',
-                    ],
-
-                    [
-                        'label' => 'Messages',
-                        'icon' => 'messages.png',
-                        'route' => 'admin.messages'
-                    ],
-
-                    [
-                        'label' => 'Notifications',
-                        'icon' => 'notifications.png',
-                        'icon_path' => 'icons/seller/notifications.png',
-                        'route' => null,
-                        'url' => url('/admin/notifications'),
-                    ],
-
-                    [
-                        'label' => 'Admin Management',
-                        'icon' => 'admin-management.png',
-                        'route' => 'admin.management',
-                    ],
-
-                    [
-                        'label' => 'Account Management',
-                        'icon' => 'account-management.png',
-                        'route' => 'admin.account'
-                    ],
-
                 ];
+                $menuIndex = 0;
 
             @endphp
 
-            @foreach ($menu as $item)
+            @foreach ($menuGroups as $heading => $items)
+                <h2 class="admin-sidebar-group-heading">{{ $heading }}</h2>
 
-                @php
+                @foreach ($items as $item)
 
-                    $isActive = $item['route']
-                        ? request()->routeIs($item['route'])
-                        : (!empty($item['url']) && request()->is($item['label'] === 'Account Management' ? 'admin/account*' : 'admin/notifications*'));
+                    @php
 
-                @endphp
+                        $isActive = $item['route']
+                            ? request()->routeIs($item['route'])
+                            : (!empty($item['url']) && request()->is($item['label'] === 'Account Management' ? 'admin/account*' : 'admin/notifications*'));
+
+                    @endphp
 
 
-                @if ($item['route'] || !empty($item['url']))
+                    @if ($item['route'] || !empty($item['url']))
 
-                    <!-- ==================== AVAILABLE PAGE ==================== -->
+                        <!-- ==================== AVAILABLE PAGE ==================== -->
 
-                    <a
-                        href="{{ $item['route'] ? route($item['route']) : $item['url'] }}"
-                        class="
-                            sidebar-link
-                            sidebar-menu-item
-                            flex items-center
-                            gap-2.5
-                            px-3
-                            py-2.5
-                            rounded-full
-                            transition-all
-                            duration-300
-                            w-full
-
-                            {{
-                                $isActive
-                                    ? 'bg-maroon-700/60'
-                                    : 'hover:bg-maroon-800/50 hover:translate-x-1'
-                            }}
-                        "
-                        style="animation-delay: {{ number_format(0.05 + ($loop->index * 0.05), 2, '.', '') }}s;"
-                    >
-
-                        <!-- ICON -->
-
-                        <span
+                        <a
+                            href="{{ $item['route'] ? route($item['route']) : $item['url'] }}"
                             class="
-                                sidebar-icon-wrapper
-                                flex items-center justify-center
-                                shrink-0
-                                w-[18px] h-[18px]
-                                transition-all duration-300
+                                sidebar-link
+                                sidebar-menu-item
+                                flex items-center
+                                gap-2.5
+                                px-3
+                                py-2.5
+                                rounded-full
+                                transition-all
+                                duration-300
+                                w-full
+
+                                {{
+                                    $isActive
+                                        ? 'bg-maroon-700/60'
+                                        : 'hover:bg-maroon-800/50 hover:translate-x-1'
+                                }}
                             "
+                            style="animation-delay: {{ number_format(0.05 + ($menuIndex++ * 0.05), 2, '.', '') }}s;"
                         >
 
-                            <img
-                                src="{{ asset($item['icon_path'] ?? ('icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}"
+                            <!-- ICON -->
+
+                            <span
                                 class="
-                                    sidebar-icon
-                                    w-[18px] h-[18px]
-                                    object-contain
+                                    sidebar-icon-wrapper
+                                    flex items-center justify-center
                                     shrink-0
+                                    w-[18px] h-[18px]
+                                    transition-all duration-300
                                 "
-                                alt=""
                             >
 
-                        </span>
+                                <img
+                                    src="{{ asset($item['icon_path'] ?? ('icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}"
+                                    class="
+                                        sidebar-icon
+                                        w-[18px] h-[18px]
+                                        object-contain
+                                        shrink-0
+                                    "
+                                    alt=""
+                                >
+
+                            </span>
 
 
-                        <!-- LABEL -->
+                            <!-- LABEL -->
 
-                        <span
-                            class="
-                                sidebar-label
-                                text-[14px]
-                                font-medium
-                                whitespace-nowrap
-                            "
-                        >
-                            {{ $item['label'] }}
-                        </span>
-
-                    </a>
-
-                @else
-
-                    <!-- ==================== NOT YET AVAILABLE ==================== -->
-
-                    <a
-                        href="#"
-                        onclick="return false;"
-                        class="
-                            sidebar-link
-                            sidebar-menu-item
-                            flex items-center
-                            gap-2.5
-                            px-3
-                            py-2.5
-                            rounded-full
-                            transition-all
-                            duration-300
-                            w-full
-                            opacity-100
-                            cursor-default
-                        "
-                        style="animation-delay: {{ number_format(0.05 + ($loop->index * 0.05), 2, '.', '') }}s;"
-                    >
-
-                        <!-- ICON -->
-
-                        <span
-                            class="
-                                sidebar-icon-wrapper
-                                flex items-center justify-center
-                                shrink-0
-                                w-[18px] h-[18px]
-                            "
-                        >
-
-                            <img
-                                src="{{ asset($item['icon_path'] ?? ('icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}"
+                            <span
                                 class="
-                                    sidebar-icon
-                                    w-[18px] h-[18px]
-                                    object-contain
-                                    shrink-0
+                                    sidebar-label
+                                    text-[14px]
+                                    font-medium
+                                    whitespace-nowrap
                                 "
-                                alt=""
+                            >
+                                {{ $item['label'] }}
+                            </span>
+
+                        </a>
+
+                    @else
+
+                        <!-- ==================== NOT YET AVAILABLE ==================== -->
+
+                        <a
+                            href="#"
+                            onclick="return false;"
+                            class="
+                                sidebar-link
+                                sidebar-menu-item
+                                flex items-center
+                                gap-2.5
+                                px-3
+                                py-2.5
+                                rounded-full
+                                transition-all
+                                duration-300
+                                w-full
+                                opacity-100
+                                cursor-default
+                            "
+                            style="animation-delay: {{ number_format(0.05 + ($menuIndex++ * 0.05), 2, '.', '') }}s;"
+                        >
+
+                            <!-- ICON -->
+
+                            <span
+                                class="
+                                    sidebar-icon-wrapper
+                                    flex items-center justify-center
+                                    shrink-0
+                                    w-[18px] h-[18px]
+                                "
                             >
 
-                        </span>
+                                <img
+                                    src="{{ asset($item['icon_path'] ?? ('icons/admin/dashboard/sidebar&navbar/' . $item['icon'])) }}"
+                                    class="
+                                        sidebar-icon
+                                        w-[18px] h-[18px]
+                                        object-contain
+                                        shrink-0
+                                    "
+                                    alt=""
+                                >
+
+                            </span>
 
 
-                        <!-- LABEL -->
+                            <!-- LABEL -->
 
-                        <span
-                            class="
-                                sidebar-label
-                                text-[14px]
-                                font-medium
-                                whitespace-nowrap
-                            "
-                        >
-                            {{ $item['label'] }}
-                        </span>
+                            <span
+                                class="
+                                    sidebar-label
+                                    text-[14px]
+                                    font-medium
+                                    whitespace-nowrap
+                                "
+                            >
+                                {{ $item['label'] }}
+                            </span>
 
-                    </a>
+                        </a>
 
-                @endif
+                    @endif
 
+                @endforeach
             @endforeach
 
         </nav>
@@ -353,6 +358,20 @@
 </aside>
 
 <style>
+    #admin-sidebar .admin-sidebar-group-heading {
+        margin: 17px 12px 8px;
+        color: #f5c8c7;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.4;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    #admin-sidebar .admin-sidebar-group-heading:first-child { margin-top: 5px; }
+    #admin-sidebar.w-20 .admin-sidebar-group-heading,
+    body.sidebar-collapsed #admin-sidebar .admin-sidebar-group-heading { display: none; }
 
     body.admin-module-read-only .admin-content-shell,
     body.admin-module-read-only .seller-account-page {

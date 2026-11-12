@@ -9,6 +9,7 @@ use App\Models\Admin\Complaint;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Logistics\Logistics;
 use App\Models\Seller\Seller;
+use App\Models\Seller\SellerConversation;
 use App\Models\User;
 use App\Services\LogisticsNotificationService;
 use App\Services\SellerNotificationService;
@@ -64,6 +65,8 @@ class MessagesController extends Controller
         }
 
         $conversations = $query
+            ->withMax('messages', 'id')
+            ->orderByDesc('messages_max_id')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
             ->get();
@@ -249,15 +252,46 @@ class MessagesController extends Controller
             throw new RuntimeException('Unable to store the admin message attachment.');
         }
 
-        $message = $conversation->messages()->create([
-            'sender_id' => $request->user()->id,
-            'body' => $body !== '' ? $body : null,
-            'attachment_path' => $attachmentPath,
-            'attachment_name' => $attachment?->getClientOriginalName(),
-            'attachment_mime_type' => $attachment?->getMimeType(),
-            'attachment_size' => $attachment?->getSize(),
-        ]);
-        $conversation->touch();
+        $message = DB::transaction(function () use ($request, $conversation, $body, $attachment, $attachmentPath) {
+            $message = $conversation->messages()->create([
+                'sender_id' => $request->user()->id,
+                'body' => $body !== '' ? $body : null,
+                'attachment_path' => $attachmentPath,
+                'attachment_name' => $attachment?->getClientOriginalName(),
+                'attachment_mime_type' => $attachment?->getMimeType(),
+                'attachment_size' => $attachment?->getSize(),
+            ]);
+            $conversation->touch();
+
+            if ($conversation->category === AdminConversation::CATEGORY_COMPLAINTS && $conversation->complaint_id) {
+                $complaint = Complaint::query()->with('order.seller')->lockForUpdate()->find($conversation->complaint_id);
+                $seller = $complaint?->order?->seller;
+                if ($conversation->complaint_party === 'seller' && $seller && (int) $seller->user_id === (int) $conversation->user_id) {
+                    $sellerThread = SellerConversation::firstOrCreate([
+                        'seller_id' => $seller->id,
+                        'type' => SellerConversation::TYPE_COMPLAINT,
+                        'complaint_id' => $complaint->id,
+                    ], [
+                        'buyer_id' => $complaint->user_id,
+                        'order_id' => $complaint->order_id,
+                    ]);
+                    $sellerThread->messages()->create($message->only([
+                        'sender_id', 'body', 'attachment_path', 'attachment_name', 'attachment_mime_type', 'attachment_size',
+                    ]));
+                    $sellerThread->touch();
+                }
+                if ($complaint?->status === 'open') {
+                    $complaint->update(['status' => 'in_progress']);
+                    $complaint->updates()->create([
+                        'user_id' => $request->user()->id,
+                        'type' => 'status_update',
+                        'message' => 'Complaint moved to In Progress after admin contacted a party.',
+                    ]);
+                }
+            }
+
+            return $message;
+        });
 
         if ($conversation->category === AdminConversation::CATEGORY_LOGISTICS
             && $conversation->user?->role === User::ROLE_LOGISTICS
@@ -354,7 +388,7 @@ class MessagesController extends Controller
 
                 $latest = $partyConversations
                     ->flatMap(fn (AdminConversation $conversation) => $conversation->messages)
-                    ->sortByDesc('created_at')
+                    ->sortByDesc('id')
                     ->first();
                 $orderNumber = $complaint?->order?->order_number ?: 'ORD-'.$complaint?->order_id;
 
@@ -362,6 +396,8 @@ class MessagesController extends Controller
                     'id' => 'complaint-'.$first->complaint_id,
                     'type' => AdminConversation::CATEGORY_COMPLAINTS,
                     'complaintId' => 'Complaint #CMP-'.now()->format('Y').'-'.str_pad((string) $first->complaint_id, 4, '0', STR_PAD_LEFT),
+                    'rawComplaintId' => 'CMP-'.str_pad((string) $first->complaint_id, 4, '0', STR_PAD_LEFT),
+                    'latestParty' => $partyConversations->firstWhere('id', $latest?->conversation_id)?->complaint_party,
                     'initials' => 'C'.$first->complaint_id,
                     'role' => 'Complaint',
                     'subtitle' => $complaint?->status ?? 'Open',
@@ -470,6 +506,7 @@ class MessagesController extends Controller
             'sender' => $message->sender?->role === User::ROLE_ADMIN ? 'admin' : 'party',
             'text' => $message->body ?? '',
             'time' => $message->created_at?->format('g:i A') ?? '',
+            'created_at' => $message->created_at?->toISOString(),
             'seen' => $admin ? $message->sender_id === $admin->id && $message->read_at !== null : $message->read_at !== null,
             'attachment' => $message->attachment_path ? [
                 'name' => $message->attachment_name,

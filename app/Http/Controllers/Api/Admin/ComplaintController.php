@@ -61,7 +61,7 @@ class ComplaintController extends Controller
         ]);
 
         $previousStatus = str_replace('_', '-', $complaint->status);
-        if ($data['status']==='resolved' && $complaint->returnRequest && !in_array($complaint->returnRequest->status,['refunded','declined'],true)) {
+        if ($data['status']==='resolved' && $complaint->returnRequest && !in_array($complaint->returnRequest->status,['refunded','declined','cancelled'],true)) {
             abort(409,'Use the return/refund decision controls to resolve this complaint.');
         }
         $newStatus = $data['status'];
@@ -130,10 +130,15 @@ class ComplaintController extends Controller
         $seller = $order?->seller;
         $sellerUser = $seller?->user;
         $item = $complaint->selectedOrderItem();
+        $return = $complaint->returnRequest;
 
         return [
             'databaseId' => $complaint->id,
-            'returnRequest' => $complaint->returnRequest?->toArray(),
+            'returnRequest' => $return ? [
+                ...$return->toArray(),
+                'can_confirm_receipt' => $return->status === 'accepted' && $return->return_type === 'return'
+                    && $return->pickup_date && (! $order?->shipment?->logistics_delivery_hub_id || $return->shipping_status === 'picked_up'),
+            ] : null,
             'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
             'party1' => $buyer?->name ?? 'Deleted buyer',
             'party1Photo' => $buyer?->profile_photo_path

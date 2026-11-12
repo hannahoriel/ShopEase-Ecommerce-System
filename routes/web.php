@@ -79,6 +79,16 @@ Route::post('/auth/login', [
     ->middleware('guest')
     ->name('login.attempt');
 
+Route::post('/auth/first-password', [AuthController::class, 'setFirstPassword'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('login.first-password');
+
+Route::prefix('/auth/recovery')->name('landing.recovery.')->middleware(['guest', 'throttle:12,1'])->group(function () {
+    Route::post('/send', [\App\Http\Controllers\LandingPasswordResetController::class, 'send'])->block()->name('send');
+    Route::post('/verify', [\App\Http\Controllers\LandingPasswordResetController::class, 'verify'])->block()->name('verify');
+    Route::post('/reset', [\App\Http\Controllers\LandingPasswordResetController::class, 'reset'])->block()->name('reset');
+});
+
 /*
 |--------------------------------------------------------------------------
 | REGISTER PAGE
@@ -1997,6 +2007,10 @@ Route::get('/admin/vouchers', function () {
 })->middleware(['auth', 'role:admin'])->name('admin.vouchers.index');
 Route::get('/admin/reports/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])
     ->middleware(['auth', 'role:admin'])->name('admin.reports.export');
+
+Route::get('/admin/wallet', [\App\Http\Controllers\Admin\WalletController::class, 'index'])
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.wallet.index');
 
 Route::get('/admin/commission', [CommissionController::class, 'page'])
     ->middleware(['auth', 'role:admin'])

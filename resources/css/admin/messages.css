@@ -312,7 +312,7 @@ body.sidebar-closed .admin-messages-page {
     background: #FFF0EC;
 }
 
-.admin-message-thread.is-unread::before {
+.admin-message-thread.is-active::before {
     content: '';
     position: absolute;
     left: 4px;
@@ -1239,7 +1239,10 @@ body.sidebar-closed .admin-messages-page {
 .complaint-party-switch-wrap { padding: 10px 14px; }
 .complaint-party-switch { border-top: 1px solid #ECDDCB; border-radius: 10px; }
 .admin-chat-panel { grid-template-rows: auto auto minmax(0, 1fr) auto; }
-.admin-chat-panel > .admin-chat-body { min-height: 0; }
+.admin-chat-panel > .admin-chat-header { grid-row: 1; }
+.admin-chat-panel > .complaint-party-switch-wrap { grid-row: 2; }
+.admin-chat-panel > .admin-chat-body { grid-row: 3; min-height: 0; }
+.admin-chat-panel > .admin-message-composer { grid-row: 4; }
 /* Reserve the right-hand column for time and unread count. */
 .admin-message-thread { grid-template-columns: 46px minmax(0,1fr) max-content; }
 .admin-thread-copy { display: block; min-width: 0; max-width: 100%; overflow: hidden; }
@@ -1423,9 +1426,6 @@ body.sidebar-closed .admin-messages-page {
 }
 .admin-message-thread[data-type].is-active {
     background: var(--msg-category-selected);
-}
-.admin-message-thread[data-type].is-unread::before {
-    background: var(--msg-category-fg);
 }
 .admin-message-thread[data-type]:hover {
     background: var(--msg-category-selected);

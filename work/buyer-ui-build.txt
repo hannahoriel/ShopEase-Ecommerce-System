@@ -1,0 +1,121 @@
+
+> build
+> vite build
+
+vite v8.2.2 building client environment for production...
+[plugin laravel:fonts] Optimized font fallbacks require the optional "fontaine" package. Install it, or set "optimizedFallbacks: false" on your fonts to disable the feature.
+transforming...
+✓ 123 modules transformed.
+rendering chunks...
+computing gzip size...
+public/build/fonts-manifest.json                                     5.74 kB │ gzip:  0.71 kB
+public/build/assets/instrument-sans-400-normal-DRC__1Mx.woff2       16.86 kB
+public/build/assets/instrument-sans-500-normal-Dk9ku72i.woff2       17.23 kB
+public/build/assets/instrument-sans-600-normal-B7fBEWYG.woff2       17.40 kB
+public/build/assets/instrument-sans-400-normal-D1W7dsQl.woff        21.24 kB
+public/build/assets/instrument-sans-500-normal-Z6ESRlEs.woff        21.65 kB
+public/build/assets/instrument-sans-600-normal-B9e8oLYv.woff        21.67 kB
+public/build/manifest.json                                          21.92 kB │ gzip:  2.88 kB
+public/build/assets/signup-review-x1XGuNl0.css                       0.00 kB │ gzip:  0.02 kB
+public/build/assets/dashboard-announcement-carousel-D9ovMB7q.css     2.30 kB │ gzip:  0.78 kB
+public/build/assets/fonts-C9MNnjVw.css                               2.35 kB │ gzip:  0.38 kB
+public/build/assets/dashboard-BcIGEs7L.css                           2.83 kB │ gzip:  0.75 kB
+public/build/assets/footer-DwCYjUyc.css                              2.98 kB │ gzip:  1.02 kB
+public/build/assets/search-CX4Zj4dF.css                              7.26 kB │ gzip:  2.01 kB
+public/build/assets/notifications-BuEjIyIT.css                       7.66 kB │ gzip:  2.07 kB
+public/build/assets/wallet-l8f_Kl2X.css                              8.58 kB │ gzip:  2.44 kB
+public/build/assets/signup-secpage-DsTMo70c.css                      8.61 kB │ gzip:  2.39 kB
+public/build/assets/auth-HqOTmoGB.css                                8.85 kB │ gzip:  2.35 kB
+public/build/assets/registrations-BGet4-Di.css                       9.05 kB │ gzip:  2.07 kB
+public/build/assets/notifications-CwmSoAsD.css                       9.29 kB │ gzip:  2.30 kB
+public/build/assets/navbar-BUCjao_2.css                              9.63 kB │ gzip:  2.50 kB
+public/build/assets/commission-DiPCojUS.css                          9.91 kB │ gzip:  2.18 kB
+public/build/assets/reports-Dvsh3mgP.css                            10.35 kB │ gzip:  2.78 kB
+public/build/assets/user-management-CXKr98pU.css                    10.76 kB │ gzip:  2.29 kB
+public/build/assets/categories-CMA17BJX.css                         11.36 kB │ gzip:  2.83 kB
+public/build/assets/vouchers-DvhdvO9c.css                           11.51 kB │ gzip:  3.20 kB
+public/build/assets/commission-order-modal-DaJDxV2c.css             14.14 kB │ gzip:  3.34 kB
+public/build/assets/login-DA6QEJEZ.css                              15.51 kB │ gzip:  3.29 kB
+public/build/assets/floating-chat-DincmAeF.css                      15.53 kB │ gzip:  3.21 kB
+public/build/assets/cart-CJTeQ65F.css                               15.72 kB │ gzip:  3.75 kB
+public/build/assets/platform-settings-YNt5TT8S.css                  16.84 kB │ gzip:  3.57 kB
+public/build/assets/dashboard-CBMFjGcM.css                          18.55 kB │ gzip:  3.71 kB
+public/build/assets/reports-DhfZNfm7.css                            19.05 kB │ gzip:  4.57 kB
+public/build/assets/product-CPFzeVDe.css                            19.49 kB │ gzip:  4.85 kB
+public/build/assets/dashboard-DlEUyN-T.css                          19.54 kB │ gzip:  4.87 kB
+public/build/assets/logistics-landing-C8UDbIcK.css                  19.94 kB │ gzip:  4.87 kB
+public/build/assets/signup-firstpage-DquLtvEJ.css                   21.22 kB │ gzip:  4.43 kB
+public/build/assets/checkout-Bfq0_DhX.css                           22.00 kB │ gzip:  5.16 kB
+public/build/assets/shipping-status-BrmL0u2h.css                    23.24 kB │ gzip:  4.53 kB
+public/build/assets/messages-D4OJ2Elt.css                           24.12 kB │ gzip:  4.94 kB
+public/build/assets/shop-BYkeCGEY.css                               25.25 kB │ gzip:  4.79 kB
+public/build/assets/order-status-DKC35dxn.css                       25.51 kB │ gzip:  5.08 kB
+public/build/assets/account-DMmkHwa-.css                            26.35 kB │ gzip:  6.27 kB
+public/build/assets/reports-sDPFhLxh.css                            26.89 kB │ gzip:  4.39 kB
+public/build/assets/messages-7yYVEsG0.css                           27.50 kB │ gzip:  5.31 kB
+public/build/assets/seller-performance-CdhWGOia.css                 28.55 kB │ gzip:  5.32 kB
+public/build/assets/complaints-disputes-CNCGpzur.css                29.99 kB │ gzip:  5.38 kB
+public/build/assets/customer-feedback-BkdP9lLl.css                  32.55 kB │ gzip:  5.61 kB
+public/build/assets/logistics-management-BL1dQj_-.css               34.11 kB │ gzip:  5.87 kB
+public/build/assets/account-C_mKRSjp.css                            44.61 kB │ gzip:  8.83 kB
+public/build/assets/landing-page-DAbh6N7W.css                       64.90 kB │ gzip: 13.49 kB
+public/build/assets/seller-compliance-Cyy4HI8k.css                  66.29 kB │ gzip: 11.61 kB
+public/build/assets/app-BsdNeTFJ.css                                81.11 kB │ gzip: 17.10 kB
+public/build/assets/my-purchases-Bwp7O9wz.css                      102.38 kB │ gzip: 19.09 kB
+public/build/assets/inventory-BD1FGoJN.css                         206.02 kB │ gzip: 26.31 kB
+public/build/assets/signup-review-BvRk9kiK.js                        0.00 kB │ gzip:  0.02 kB
+public/build/assets/notifications-eDj47qoa.js                        0.61 kB │ gzip:  0.35 kB
+public/build/assets/dashboard-announcement-carousel-DcYzkx6O.js      1.20 kB │ gzip:  0.51 kB
+public/build/assets/notifications-TuRm3HEw.js                        1.41 kB │ gzip:  0.71 kB
+public/build/assets/auth-Cw3Um6By.js                                 2.13 kB │ gzip:  0.59 kB
+public/build/assets/login-GKCHCVdn.js                                2.31 kB │ gzip:  1.04 kB
+public/build/assets/logistics-registration-navigation-B_KF4SJc.js    2.35 kB │ gzip:  1.14 kB
+public/build/assets/buyer-likes-DryfUrpr.js                          2.60 kB │ gzip:  1.17 kB
+public/build/assets/signup-secpage-B4LEdzYG.js                       2.88 kB │ gzip:  1.14 kB
+public/build/assets/app-B19tjr03.js                                  3.72 kB │ gzip:  1.07 kB
+public/build/assets/logistics-landing-PkVFOuoL.js                    4.28 kB │ gzip:  1.51 kB
+public/build/assets/dashboard-DCtFVUoY.js                            4.48 kB │ gzip:  1.74 kB
+public/build/assets/dashboard-CTnzC0Sg.js                            4.59 kB │ gzip:  1.83 kB
+public/build/assets/wallet-D-Nf1v5b.js                               5.08 kB │ gzip:  2.19 kB
+public/build/assets/navbar-D3fmQdj0.js                               5.42 kB │ gzip:  1.92 kB
+public/build/assets/reports-CcP1lXEe.js                              5.70 kB │ gzip:  2.51 kB
+public/build/assets/commission-order-modal-DtDIQ0oA.js               7.30 kB │ gzip:  2.73 kB
+public/build/assets/vouchers-DIJjcqWm.js                             7.33 kB │ gzip:  3.15 kB
+public/build/assets/search-D2kii2TF.js                               7.44 kB │ gzip:  2.96 kB
+public/build/assets/shop-C3Gay1mw.js                                 7.45 kB │ gzip:  3.00 kB
+public/build/assets/commission-Dni6F4p7.js                           7.46 kB │ gzip:  2.48 kB
+public/build/assets/categories-aDpbdJAM.js                           7.81 kB │ gzip:  2.98 kB
+public/build/assets/reports-H-OSn6Rn.js                             10.05 kB │ gzip:  3.67 kB
+public/build/assets/floating-chat-CSxT5xLR.js                       10.09 kB │ gzip:  3.58 kB
+public/build/assets/reports-7deS8Kwb.js                             10.37 kB │ gzip:  3.50 kB
+public/build/assets/signup-firstpage-BIyXfqzc.js                    10.94 kB │ gzip:  3.81 kB
+public/build/assets/landing-page-Bv7fZuxr.js                        10.99 kB │ gzip:  3.70 kB
+public/build/assets/customer-feedback-ClqNcF_K.js                   12.86 kB │ gzip:  4.08 kB
+public/build/assets/dashboard-Dsr-1oP6.js                           13.70 kB │ gzip:  4.71 kB
+public/build/assets/account--XXDqfqv.js                             13.75 kB │ gzip:  4.55 kB
+public/build/assets/shipping-status-BocWv-wc.js                     13.91 kB │ gzip:  4.14 kB
+public/build/assets/messages-2hmCuduX.js                            14.10 kB │ gzip:  4.81 kB
+public/build/assets/view-order-XZ7Rkbiq.js                          15.88 kB │ gzip:  5.49 kB
+public/build/assets/account-BmKDmwat.js                             16.01 kB │ gzip:  5.35 kB
+public/build/assets/cart-BvLfccev.js                                16.88 kB │ gzip:  4.09 kB
+public/build/assets/checkout-DGxNI6yw.js                            20.14 kB │ gzip:  6.38 kB
+public/build/assets/seller-performance-DgBnbbbY.js                  20.73 kB │ gzip:  6.64 kB
+public/build/assets/product-CMIkhz1Y.js                             21.30 kB │ gzip:  6.56 kB
+public/build/assets/messages-B6frwtL3.js                            22.96 kB │ gzip:  6.83 kB
+public/build/assets/browser-BDSCkIE8.js                             23.99 kB │ gzip:  9.08 kB
+public/build/assets/complaints-disputes-BeGvMNTg.js                 24.24 kB │ gzip:  7.34 kB
+public/build/assets/platform-settings-Br1AFSyW.js                   27.85 kB │ gzip:  6.50 kB
+public/build/assets/user-management-UttGJYRB.js                     29.12 kB │ gzip:  7.51 kB
+public/build/assets/seller-compliance-C61zeDTo.js                   36.70 kB │ gzip: 11.36 kB
+public/build/assets/registrations-nWpkCCDq.js                       39.15 kB │ gzip:  8.38 kB
+public/build/assets/logistics-management-BjEDOyX0.js                41.17 kB │ gzip: 10.09 kB
+public/build/assets/order-status-DDsDEQWp.js                        48.56 kB │ gzip: 13.05 kB
+public/build/assets/my-purchases-DxxL9-MN.js                        55.95 kB │ gzip: 15.52 kB
+public/build/assets/inventory-DizL0oqF.js                          179.09 kB │ gzip: 44.01 kB
+
+✓ built in 11.88s
+[PLUGIN_TIMINGS] Your build spent 90% of 11.8s inside plugin hooks (10.7s).
+Not measurable — 1 hook whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - @tailwindcss/vite:generate:build transform (46 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+

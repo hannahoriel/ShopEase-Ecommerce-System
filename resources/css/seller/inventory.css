@@ -11950,3 +11950,20 @@
     grid-row: 1 / 3 !important;
     width: 75px !important;
 }
+
+#productDetailsBuyerOptions .product-details-choice-photo {
+    display: inline-flex;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    margin-inline-end: 9px !important;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+#productDetailsBuyerOptions .product-details-choice-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

@@ -50,6 +50,7 @@ class OrderController extends Controller
                 'seller:id,store_name,province,municipality,barangay,street,house_number,building,subdivision',
                 'items.product',
                 'complaints',
+                'returns' => fn ($query) => $query->whereIn('status', ['pending', 'accepted', 'refunded']),
                 'latestCancellationRequest',
                 'statusHistory.changedBy:id,role',
                 'shipment.scans',
@@ -68,7 +69,12 @@ class OrderController extends Controller
             ->pluck('product_id')->map(fn ($id): string => (string) $id)->all();
 
         return response()->json([
-            'data' => $orders->getCollection()->map(fn (Order $order) => $this->presentOrder($order, $reviewedProductIds))->values(),
+            'data' => $orders->getCollection()->map(function (Order $order) use ($reviewedProductIds): array {
+                $returnStatus = $order->returns->firstWhere('status', 'accepted')?->status
+                    ?? $order->returns->firstWhere('status', 'refunded')?->status;
+
+                return $this->presentOrder($order, $reviewedProductIds) + ['approved_return_status' => $returnStatus];
+            })->values(),
             'total' => $orders->total(),
             'status_counts' => $statusCounts,
         ]);
@@ -137,7 +143,9 @@ class OrderController extends Controller
                 'buyer_received_at' => $order->buyer_received_at?->toISOString(),
                 'buyer_received_automatically' => $order->buyer_received_automatically,
                 'can_confirm_received' => $order->status === 'delivered' || ($order->status === 'completed' && (!$order->buyer_received_at || $order->buyer_received_automatically)),
-                'can_request_return' => $order->status === 'completed' && $order->buyer_received_at && !$order->buyer_received_automatically && !$order->complaints->contains(fn ($complaint) => !in_array($complaint->status, ['resolved','closed','declined','rejected'], true)),
+                'return_request_deadline' => $order->returnRequestDeadline()?->toISOString(),
+                'return_pickup_managed_by_hub' => (bool) $order->shipment?->logistics_delivery_hub_id,
+                'can_request_return' => $order->status === 'completed' && $order->buyer_received_at && !$order->buyer_received_automatically && now()->lte($order->returnRequestDeadline()) && !$order->returns->contains(fn ($return) => in_array($return->status, ['pending', 'accepted'], true)) && !$order->complaints->contains(fn ($complaint) => !in_array($complaint->status, ['resolved','closed','declined','rejected'], true)),
                 'can_cancel' => $this->buyerCanCancel($order)
                     && $order->latestCancellationRequest?->status !== 'pending',
                 'cancellation_request' => $order->latestCancellationRequest,
@@ -229,6 +237,7 @@ class OrderController extends Controller
                 'status' => $received->status,
                 'buyer_received_at' => $received->buyer_received_at?->toISOString(),
                 'buyer_received_automatically' => $received->buyer_received_automatically,
+                'return_request_deadline' => $received->returnRequestDeadline()?->toISOString(),
             ],
         ]);
     }

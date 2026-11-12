@@ -274,6 +274,20 @@ body.pt-modal-open{overflow:hidden}
 .pt-detail-card.pt-destination-card{border:2px solid #ae3945;box-shadow:0 0 0 3px #ae394512}
 .pt-destination-card .pt-detail-title{background:#7b1b1b;color:#fff}
 .pt-destination-pill{display:inline-flex;align-items:center;border-radius:999px;background:#fff0e4;color:#9b4b16;border:1px solid #ffead5;padding:4px 10px;font-size:10px;font-weight:700;margin-bottom:9px}
+
+.pt-return-pickup-form { display:grid; gap:12px; margin-top:12px; }
+.pt-return-pickup-form[hidden], .pt-return-pickup-form [hidden], [data-show-return-schedule][hidden] { display:none; }
+.pt-return-pickup-form label { display:grid; gap:5px; }
+.pt-return-pickup-form :is(input, select, textarea) {
+  width:100%; border:1px solid var(--lg-line); border-radius:8px; padding:8px; font:inherit;
+}
+.pt-return-pickup-form button { justify-self:start; }
+.pt-pickup-feedback { margin:10px 0 0; }
+.pt-pickup-buyer-title { margin:0 0 8px; font-size:14px; font-weight:600; }
+.pt-pickup-buyer { margin:0 0 14px; display:grid; gap:7px; font-size:13px; }
+.pt-pickup-buyer>div { display:grid; grid-template-columns:minmax(100px,.8fr) minmax(0,1fr); gap:12px; }
+.pt-pickup-buyer dt { color:var(--lg-muted); }
+.pt-pickup-buyer dd { margin:0; overflow-wrap:anywhere; }
 </style></head>
 <body class="lg-body">
 @include('components.logistics.delivery-hub.sidebar')
@@ -305,12 +319,13 @@ const escape = v => String(v ?? '—').replace(/[&<>"']/g, c => ({'&':'&amp;','<
 const clean = v => String(v ?? '').toLowerCase().replace(/[_\s]+/g,'-').trim();
 const formatDate = v => {if(!v)return '—';const d=new Date(v);return isNaN(d)?escape(v):d.toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
 const money=v=>{const n=Number(String(v??'').replace(/[^\d.-]/g,''));return (v===null||v===undefined||v==='')?'—':Number.isFinite(n)?'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}):escape(v);};
-const statusName=v=>({ 'in-transit':'In Transit','out-for-delivery':'Out for Delivery','delivered':'Delivered','picked-up':'Picked Up','processing':'Processing','pending':'Pending','returned':'Returned','refunded':'Refunded','returned-refunded':'Returned & Refunded','return-requested':'Return Requested','return-in-transit':'Return In Transit','rejected':'Rejected'}[clean(v)]||String(v||'Pending').replace(/[-_]/g,' '));
+const statusName=v=>({ 'in-transit':'In Transit','out-for-delivery':'Out for Delivery','delivered':'Delivered','picked-up':'Picked Up','processing':'Processing','pending':'Pending','returned':'Returned','refunded':'Refunded','returned-refunded':'Returned & Refunded','return-requested':'Return Requested','return-in-transit':'Return In Transit','awaiting-pickup-schedule':'Awaiting Pickup Schedule','scheduled':'Pickup Scheduled','pickup-failed':'Pickup Failed','cancelled':'Cancelled','accepted':'Accepted','rejected':'Rejected'}[clean(v)]||String(v||'Pending').replace(/[-_]/g,' '));
 const returnStatusName=v=>['refunded','returned-refunded','return-completed'].includes(clean(v))?'Returned':statusName(v);
 const pill=v=>`<span class="pt-status ${escape(clean(v))}">${escape(statusName(v))}</span>`;
 const field=(title,value)=>`<div class="pt-field"><label>${escape(title)}</label><strong>${escape(value??'—')}</strong></div>`;
 const card=(title,body)=>`<section class="pt-detail-card"><div class="pt-detail-title">${escape(title)}</div><div class="pt-detail-body">${body}</div></section>`;
 const rowsFrom=id=>{try{let data=JSON.parse($(id)?.textContent||'[]');if(data&& !Array.isArray(data) && Array.isArray(data.data))data=data.data;return Array.isArray(data)?data:[]}catch(e){return []}};
+let pickupRiders=[];
 let parcels=rowsFrom('ptParcelData');let returns=rowsFrom('ptReturnData');let trackingLocations={};try{trackingLocations=JSON.parse($('ptLocationData')?.textContent||'{}')}catch{}
 const states={parcels:{tab:'all',search:'',page:1,data:parcels},returns:{tab:'all',search:'',page:1,data:returns}};
 const perPage=7;let active='parcels';let lastFocus=null;
@@ -336,6 +351,7 @@ async function loadTracking(){
     parcels=Array.isArray(payload.parcels)?payload.parcels:[];
     returns=Array.isArray(payload.returns)?payload.returns:[];
     trackingLocations=payload.locations||{};
+    pickupRiders=Array.isArray(payload.pickup_riders)?payload.pickup_riders:[];
     states.parcels.data=parcels;states.parcels.page=1;
     states.returns.data=returns;states.returns.page=1;
     updateLocationOptions();render('parcels');render('returns');
@@ -346,7 +362,7 @@ async function loadTracking(){
     $('ptParcelsCount').textContent='Could not load records';$('ptReturnsCount').textContent='Could not load records';
   }
 }
-function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
+function filterRecords(section){const s=states[section];return s.data.filter(o=>{if(section==='returns'&&isRefundOnly(o))return false;const status=section==='parcels'?parcelStatus(o):returnsStatus(o);const tab=s.tab;const matches=tab==='all'||(section==='returns'&&tab==='returned'&&['returned','refunded','returned-refunded','return-completed'].includes(status))||(section==='parcels'&&tab==='in-transit'&&['in-transit','picked-up','processing','sorting-center'].includes(status))||(section==='returns'&&tab==='pending'&&status==='accepted')||status===tab;const search=JSON.stringify(o).toLowerCase().includes(s.search);return matches&&search})}
 function render(section){
   const filtered=filterRecords(section),state=states[section];
   const total=Math.max(1,Math.ceil(filtered.length/perPage));
@@ -358,14 +374,17 @@ function render(section){
       return `<tr role="button" tabindex="0" data-id="${id}" aria-label="View parcel ${escape(o.order_number||o.order_id||o.tracking_number)}"><td><strong class="pt-order">${escape(o.order_number||o.order_id||o.id)}</strong><small>${escape(o.buyer_name||o.customer_name||'—')} · ${escape(o.product_name||o.items?.[0]?.name||'Parcel')}</small></td><td>${escape(o.tracking_number||o.tracking_no||'—')}</td><td>${pill(parcelStatus(o))}</td><td>${escape(o.current_location||o.location||'Not scanned yet')}</td><td>${formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta)}</td></tr>`;
     }).join('')||'<tr><td class="pt-empty" colspan="5">No parcel records match your search or filters.</td></tr>';
   }else{
-    $('ptReturnsRows').innerHTML=shown.map(o=>`<tr role="button" tabindex="0" data-id="${returns.indexOf(o)}" aria-label="View return ${escape(o.order_id||o.order_number)}"><td><strong class="pt-order">${escape(o.order_id||o.order_number)}</strong></td><td class="pt-customer"><strong>${escape(o.buyer_name||o.customer_name)}</strong><small>${escape(o.product_name||o.return_items?.[0]?.product_name||'—')}</small></td><td>${pill(returnStatusName(returnsStatus(o)))}</td><td>${formatDate(o.returned_at||o.requested_at||o.date||o.created_at)}</td></tr>`).join('')||'<tr><td class="pt-empty" colspan="4">No return records match your search or filters.</td></tr>';
+    $('ptReturnsRows').innerHTML=shown.map(o=>`<tr role="button" tabindex="0" data-id="${returns.indexOf(o)}" aria-label="View return ${escape(o.order_id||o.order_number)}"><td><strong class="pt-order">${escape(o.order_id||o.order_number)}</strong></td><td class="pt-customer"><strong>${escape(o.buyer_name||o.customer_name)}</strong><small>${escape(o.product_name||o.return_items?.[0]?.product_name||'—')}</small></td><td>${pill(returnStatusName(o.shipping_status||returnsStatus(o)))}</td><td>${formatDate(o.returned_at||o.requested_at||o.date||o.created_at)}</td></tr>`).join('')||'<tr><td class="pt-empty" colspan="4">No return records match your search or filters.</td></tr>';
   }
   $(section==='parcels'?'ptParcelsCount':'ptReturnsCount').textContent=filtered.length?`Showing ${(state.page-1)*perPage+1}–${Math.min(filtered.length,state.page*perPage)} of ${filtered.length} records`:'0 records';
   $(section==='parcels'?'ptParcelsPrev':'ptReturnsPrev').disabled=state.page<=1;
   $(section==='parcels'?'ptParcelsNext':'ptReturnsNext').disabled=state.page>=total;
 }
 function switchTab(tab){active=tab;document.querySelectorAll('[data-main]').forEach(b=>{const selected=b.dataset.main===tab;b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));});$('ptParcels').hidden=tab!=='parcels';$('ptReturns').hidden=tab!=='returns';render(tab)}
-document.querySelectorAll('[data-main]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.main)));
+document.querySelectorAll('[data-main]').forEach(button => button.addEventListener('click', () => {
+  switchTab(button.dataset.main);
+  if (button.dataset.main === 'returns') loadTracking();
+}));
 for(const section of ['parcels','returns']){const prefix=section==='parcels'?'ptParcels':'ptReturns',input=$(section==='parcels'?'ptSearchParcels':'ptSearchReturns'),filters=$(section==='parcels'?'ptShipmentFilters':'ptReturnFilters');input.addEventListener('input',()=>{states[section].search=input.value.toLowerCase().trim();states[section].page=1;render(section)});filters.addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;states[section].tab=b.dataset.filter;states[section].page=1;filters.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));render(section)});$(prefix+'Prev').addEventListener('click',()=>{states[section].page--;render(section)});$(prefix+'Next').addEventListener('click',()=>{states[section].page++;render(section)});const body=$(section==='parcels'?'ptParcelsRows':'ptReturnsRows');function activate(e){const tr=e.target.closest('tr[data-id]');if(!tr)return;if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;if(e.type==='keydown')e.preventDefault();section==='parcels'?openParcel(parcels[Number(tr.dataset.id)]):openReturn(returns[Number(tr.dataset.id)])}body.addEventListener('click',activate);body.addEventListener('keydown',activate)}
 function historyList(o){
   const candidates=[o.tracking_history,o.trackingHistory,o.history,o.events,o.scans,o.status_history];
@@ -440,6 +459,91 @@ function partyCard(title,pairs,o,role,highlight=false){const contents=`<div>${pa
 function returnItemsMarkup(items,record,quantityLabel='Quantity to Return'){const list=(Array.isArray(items)&&items.length?items:[{product_name:record.product_name||'Product',variation:record.variation,color:record.color,size:record.size,quantity:record.quantity||1,product_price:record.product_price||record.price}]);return `<div class="pt-item-stack">${list.map((x,index)=>`<article class="pt-order-item"><div class="pt-order-item-head"><span class="pt-order-item-index">Item ${index+1}</span><div class="pt-order-item-name">${escape(x.product_name||x.name||'Product')}${x.is_fragile ? '<span class="se-fragile-pill">Fragile</span>' : ''}</div></div><div class="pt-order-item-body"><div class="pt-order-item-fields"><div class="pt-order-item-field"><label>Variation</label><strong>${escape(x.variation||'—')}</strong></div><div class="pt-order-item-field"><label>Color</label><strong>${escape(x.color||'—')}</strong></div><div class="pt-order-item-field"><label>Size</label><strong>${escape(x.size||'—')}</strong></div><div class="pt-order-item-field"><label>${escape(quantityLabel)}</label><strong>${escape(x.quantity||1)}</strong></div><div class="pt-order-item-field"><label>Unit Price</label><strong>${money(x.product_price||x.price||x.unit_price||0)}</strong></div></div></div></article>`).join('')}</div>`}
 
 function openParcel(o){if(!o)return;const status=parcelStatus(o),items=Array.isArray(o.items)?o.items:[];const buyerPairs=[['Name',o.buyer_name||o.customer_name],['Email',o.buyer_email||o.customer_email],['Contact',o.buyer_phone||o.customer_phone]];const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];$('ptParcelModalBody').innerHTML=destinationBanner(o)+card('Order Information',`<div class="pt-fields">${field('Order Number',o.order_number||o.order_id||o.id)}${field('Ordered At',formatDate(o.ordered_at||o.created_at))}${field('Estimated Delivery',formatDate(o.estimated_delivery||o.estimated_delivery_at||o.eta))}${field('Tracking Number',o.tracking_number||o.tracking_no)}${field('Current Location',o.current_location||o.location||'Not scanned yet')}${field('Shipping Status',statusName(status))}</div>`)+card('Tracking Progress',progress(status))+`<div class="pt-party-grid">${partyCard('Buyer Information',buyerPairs,o,'buyer',!isReturnDestination(o))}${partyCard('Seller Information',sellerPairs,o,'seller',isReturnDestination(o))}</div>`+card('Payment Information',`<div class="pt-fields">${field('Payment Method',o.payment_method)}${field('Order Total',money(o.total_amount??o.total))}</div>`)+card('Ordered Items',returnItemsMarkup(items,o,'Quantity Ordered'))+card('Tracking History',historyList(o))+card('Customer Notes',`<div class="pt-notes">${escape(o.notes||o.customer_notes||'No customer notes provided.')}</div>`);openModal('ptParcelModal')}
+function returnPickupCard(o) {
+  const failed = Number(o.failed_pickup_attempts || 0);
+  const rider = pickupRiders.find(person => Number(person.id) === Number(o.pickup_rider_id));
+  const summary = `<div class="pt-fields">${field('Failed Attempts', failed + ' / 3')}${field('Pickup Date', o.pickup_date)}${field('Pickup Time', o.pickup_time)}${field('Pickup Rider', rider?.name)}</div>`;
+  const attempt = `<input type="hidden" name="attempt" value="${failed+1}">`;
+  let action = '';
+  if (o.can_schedule_pickup) {
+    const title = failed ? 'Reschedule Pickup' : 'Schedule Pickup';
+    const choices = pickupRiders.map(person => `<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('');
+    action = `<button type="button" class="lg-btn lg-btn-primary" data-show-return-schedule>${title}</button>
+      <form class="pt-return-pickup-form" data-return-pickup-form="POST" data-url="${escape(o.pickup_url)}" hidden>
+        ${attempt}
+        <label>Pickup date <input name="pickup_date" type="date" required></label>
+        <label>Pickup time <select name="pickup_time" required><option value="">Select time</option><option value="08:00">8:00 AM</option><option value="09:00">9:00 AM</option><option value="10:00">10:00 AM</option><option value="11:00">11:00 AM</option><option value="12:00">12:00 PM</option><option value="13:00">1:00 PM</option><option value="14:00">2:00 PM</option><option value="15:00">3:00 PM</option></select></label>
+        <label>Pickup rider <select name="rider_id" required><option value="">Select pickup rider</option>${choices}</select></label>
+        ${!choices ? '<p>No active pickup riders are assigned to this hub.</p>' : ''}
+        <button type="submit" class="lg-btn lg-btn-primary" ${!choices ? 'disabled' : ''}>Schedule Pickup</button>
+      </form>`;
+  } else if (o.can_record_pickup) {
+    action = `<form class="pt-return-pickup-form" data-return-pickup-form="PATCH" data-url="${escape(o.pickup_url)}">
+      ${attempt}
+      <label>Pickup result <select name="outcome" required><option value="">Select result</option><option value="picked_up">Picked Up</option><option value="failed">Failed Pickup</option></select></label>
+      <label data-failure-reason hidden>Reason <textarea name="reason" maxlength="500"></textarea></label>
+      <button type="submit" class="lg-btn lg-btn-primary">Save Pickup Result</button>
+    </form>`;
+  } else if (o.status === 'cancelled' && failed >= 3) {
+    action = '<p>Return request cancelled after three failed pickups.</p>';
+  }
+
+  const buyerDetails = `<h3 class="pt-pickup-buyer-title">Buyer Details</h3><dl class="pt-pickup-buyer">
+    <div><dt>Name</dt><dd>${escape(o.buyer_name || o.customer_name)}</dd></div>
+    <div><dt>Contact Number</dt><dd>${escape(o.buyer_phone || o.customer_phone)}</dd></div>
+    <div><dt>Pickup Address</dt><dd>${escape(o.delivery_address)}</dd></div>
+  </dl>`;
+  return card('Return Pickup', buyerDetails + summary + action + '<p class="pt-pickup-feedback" data-pickup-feedback role="status"></p>');
+}
+
+$('ptReturnModalBody').addEventListener('click', event => {
+  const button = event.target.closest('[data-show-return-schedule]');
+  if (!button) return;
+  const form = button.nextElementSibling;
+  form.hidden = false;
+  button.hidden = true;
+  form.elements.pickup_date.focus();
+});
+$('ptReturnModalBody').addEventListener('change', event => {
+  if (event.target.name !== 'outcome') return;
+  const reason = event.target.form.querySelector('[data-failure-reason]');
+  const failed = event.target.value === 'failed';
+  reason.hidden = !failed;
+  reason.querySelector('textarea').required = failed;
+});
+$('ptReturnModalBody').addEventListener('submit', async event => {
+  const form = event.target;
+  const method = form.dataset.returnPickupForm;
+  if (!method) return;
+  event.preventDefault();
+  const button = event.submitter;
+  const feedback = $('ptReturnModalBody').querySelector('[data-pickup-feedback]');
+  const id = currentReturnId;
+  if (button) button.disabled = true;
+  feedback.textContent = '';
+  try {
+    const response = await fetch(form.dataset.url, {
+      method, credentials: 'same-origin',
+      headers: { Accept:'application/json', 'Content-Type':'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+      body: JSON.stringify(Object.fromEntries(new FormData(form))),
+    });
+    const result = await response.json();
+    if (!response.ok) throw Error(Object.values(result.errors || {}).flat()[0] || result.message || 'Unable to save pickup.');
+    await loadTracking();
+    const updated = returns.find(item => Number(item.return_id) === Number(id));
+    if (updated && $('ptReturnModal').classList.contains('open') && currentReturnId === id) {
+      openReturn(updated);
+      $('ptReturnModalBody').querySelector('[data-pickup-feedback]').textContent =
+        result.data.status === 'cancelled' ? 'Request cancelled after three failed pickups.'
+          : method === 'POST' ? 'Pickup scheduled.' : 'Pickup result saved.';
+    }
+  } catch (error) {
+    feedback.textContent = error.message;
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+let currentReturnId;
 function openReturn(o){
   if(!o)return;
   const items=Array.isArray(o.return_items)?o.return_items:(Array.isArray(o.items)?o.items:[]);
@@ -447,10 +551,12 @@ function openReturn(o){
   const sellerPairs=[['Name',o.seller_name||o.store_name||o.merchant_name],['Email',o.seller_email||o.store_email||o.merchant_email],['Contact',o.seller_phone||o.store_phone||o.merchant_phone]];
   const shipmentStatus=o.shipping_status||o.return_shipping_status||'processing';
   const returnHistoryRecord=o;
+  currentReturnId = o.return_id;
   $('ptReturnModalBody').innerHTML=
     destinationBanner(o,true)+
     card('Return Summary',`<div class="pt-fields">${field('Order ID',o.order_id||o.order_number)}${field('Status',returnStatusName(returnsStatus(o)))}${field('Return Type','Return')}${field('Date & Time',formatDate(o.returned_at||o.requested_at||o.date||o.created_at))}</div>`)+
     card('Tracking Progress',progress(shipmentStatus))+
+    returnPickupCard(o)+
     `<div class="pt-party-grid">${partyCard('Buyer Information',buyerPairs,o,'buyer')}${partyCard('Seller Information',sellerPairs,o,'seller',true)}</div>`+
     card('Return Details',`<div class="pt-notes">${escape(o.reason||o.description||'No return reason supplied.')}</div><div class="pt-fields" style="margin-top:15px">${field('Requested Solution',o.solution||o.resolution||'No return solution supplied.')}${field('Requested At',formatDate(o.requested_at||o.date||o.created_at))}</div>`)+
     card('Shipment Information',`<div class="pt-fields">${field('Tracking Number',o.tracking_number)}${field('Courier',o.courier)}${field('Shipping Status',returnStatusName(o.shipping_status||'—'))}${field('Return Destination',o.seller_name||o.store_name||o.merchant_name)}</div>`)+
@@ -462,7 +568,7 @@ function openReturn(o){
 function openModal(id){lastFocus=document.activeElement;const modal=$(id);modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('pt-modal-open');modal.querySelector('.pt-x').focus()}
 function closeModal(id){const modal=$(id);modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('pt-modal-open');lastFocus?.focus?.()}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
-document.querySelectorAll('.pt-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.pt-modal.open').forEach(m=>closeModal(m.id))}if(e.key==='Tab'){const modal=document.querySelector('.pt-modal.open');if(!modal)return;const focusable=[...modal.querySelectorAll('button:not([disabled]),a[href],input:not([disabled])')];if(!focusable.length)return;const first=focusable[0],last=focusable.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+document.querySelectorAll('.pt-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.pt-modal.open').forEach(m=>closeModal(m.id))}if(e.key==='Tab'){const modal=document.querySelector('.pt-modal.open');if(!modal)return;const focusable=[...modal.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')];if(!focusable.length)return;const first=focusable[0],last=focusable.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
 // Matches the existing Logistics Dashboard behavior with the same shared navbar/sidebar components.
 const body=document.body;
 $('lgSidebarToggle')?.addEventListener('click',()=>{body.classList.toggle('lg-collapsed');$('lgSidebarToggle').setAttribute('aria-expanded',String(!body.classList.contains('lg-collapsed')))});

@@ -18,7 +18,7 @@
   <nav class="landing-nav-quick" aria-label="Page navigation"><a href="{{ url('/') }}">Home</a><a href="#opportunities">Why Partner</a></nav>
   <div class="landing-nav-actions">
     <!-- Logistics login opens the dedicated Blade modal. -->
-    <button class="login-button" type="button" id="logisticsLogin" aria-haspopup="dialog" aria-controls="logisticsLoginModal">Log In</button>
+    <button class="login-button" type="button" id="logisticsLogin" data-loading="off" aria-haspopup="dialog" aria-controls="logisticsLoginModal">Log In</button>
     <button class="signup-button" type="button" id="logisticsSignup" data-loading="off">Sign Up</button>
   </div>
 </header>

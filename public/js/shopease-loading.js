@@ -27,26 +27,32 @@
         || !!el.closest?.('[role="tablist"]')
         || String(el.className || '').split(/\s+/).some(name => /(^|[-_])tabs?([-_]|$)/i.test(name))
     );
-    let revealTimer;
     function finishActionVisual() {
         root.classList.remove('se-loading-action');
-        clearTimeout(revealTimer);
-        // Reveal dialogs only after the bag has finished fading out.
-        revealTimer = setTimeout(() => root.classList.remove('se-action-preparing'), 240);
     }
     const skipped = el => el?.closest('[data-loading="off"], [data-no-loading]');
     const isProductEditorControl = el => !!el?.closest('#addProductForm, #addProductModal, #editProductModal')
         && !el.matches?.('button[type="submit"], input[type="submit"]');
     const isNavbarControl = el => !!el?.closest('.lg-navbar, #seller-navbar, #buyer-navbar, .buyer-navbar, header:has(#sidebar-toggle), header:has(#profile-button), [data-navbar]')
         && !el.matches?.('[type="submit"]') && !el.closest?.('form[action*="logout"]');
+    const modalControl = el => !!el?.closest?.('dialog, [role="dialog"], [aria-modal="true"], .modal, .lg-modal, .acr-overlay, :is(div,section,aside,form)[id$="-modal"], :is(div,section,aside,form)[id$="Modal"]');
+    function isTableFilter(field) {
+        if (!field || isTab(field)) return false;
+        if (field.matches?.('[data-table-filter]')) return true;
+        if (modalControl(field)) return false;
+        const identity = `${field.id || ''} ${field.name || ''} ${field.className || ''}`;
+        if (field.matches?.('select, input')) {
+            return field.matches?.('input[type="search"], input[type="date"], input[type="datetime-local"]')
+                || /filter|search|sort|per[-_]?page|items[-_]?per[-_]?page/i.test(identity)
+                || !!field.closest?.('[class*="toolbar"], [class*="filters"]');
+        }
+        const label = `${field.textContent || ''} ${identity}`;
+        return /(?:apply|clear|reset)[-_\s]*(?:table[-_\s]*)?filters?|(?:search|filter)[-_\s]*(?:button|btn)|^\s*search\s*$/i.test(label)
+            && !field.matches?.('[aria-haspopup], [data-bs-toggle], [data-modal-target]');
+    }
     function filterFeedback(event) {
         const field = event.target;
-        if (skipped(field) || isTab(field) || field.closest?.('[role="dialog"], [aria-modal="true"], [id$="-modal"], [id$="Modal"]')) return;
-        const identity = `${field.id || ''} ${field.name || ''} ${field.className || ''}`;
-        const filter = field.matches?.('[data-table-filter], input[type="search"], input[type="date"], input[type="datetime-local"]')
-            || /filter|search|sort|per[-_]?page|items[-_]?per[-_]?page/i.test(identity)
-            || !!field.closest?.('[class*="toolbar"], [class*="filters"]');
-        if (!filter || !field.matches?.('select, input')) return;
+        if (skipped(field) || !isTableFilter(field)) return;
         trigger = field;
         setTimeout(() => { if (trigger === field) trigger = null; }, 0);
         root.classList.add('se-loading-action');
@@ -66,15 +72,16 @@
         const bar = document.getElementById('se-request-progress');
         if (bar) bar.hidden = pending === 0;
     };
-    function start(button) {
+    let bagOnlyRequests = 0;
+    function start(button, showBag = true, bagOnly = false) {
         // Switching an in-page tab should not show bag, spinner or progress.
         if (isTab(button) || isNavbarControl(button) || isProductEditorControl(button)) return () => {};
         pending++;
-        const action = !!button && !skipped(button);
-        if (action) clearTimeout(revealTimer);
-        if (action && ++actions === 1) actionTimer = setTimeout(() => root.classList.add('se-loading-action'), 180);
+        const action = showBag && !!button && !skipped(button);
+        if (action && bagOnly && ++bagOnlyRequests === 1) root.classList.add('se-loading-bag-only');
+        if (action && ++actions === 1) root.classList.add('se-loading-action');
         if (pending === 1) progressTimer = setTimeout(paintProgress, 180);
-        if (button && document.contains(button) && !skipped(button)) {
+        if (action && document.contains(button)) {
             const state = busy.get(button) || { count: 0, aria: button.getAttribute('aria-busy') };
             state.count++;
             busy.set(button, state);
@@ -86,6 +93,10 @@
             if (ended) return;
             ended = true;
             pending = Math.max(0, pending - 1);
+            if (action && bagOnly) {
+                bagOnlyRequests = Math.max(0, bagOnlyRequests - 1);
+                if (!bagOnlyRequests) root.classList.remove('se-loading-bag-only');
+            }
             if (action) {
                 actions = Math.max(0, actions - 1);
                 if (!actions) { clearTimeout(actionTimer); finishActionVisual(); }
@@ -109,8 +120,7 @@
     }
     function showPage() {
         clearTimeout(feedbackTimer);
-        clearTimeout(revealTimer);
-        root.classList.remove('se-loading-action', 'se-action-preparing');
+        root.classList.remove('se-loading-action');
         clearTimeout(pageTimer);
         pageTimer = setTimeout(() => root.classList.add('se-loading-page'), 150);
         // A cancelled navigation must never leave the user trapped behind a loader.
@@ -121,8 +131,9 @@
         hidePage();
         leavingByAction = false;
         clearTimeout(feedbackTimer);
-        clearTimeout(revealTimer); root.classList.remove('se-action-preparing');
         actions = 0; clearTimeout(actionTimer); root.classList.remove('se-loading-action');
+        bagOnlyRequests = 0;
+        root.classList.remove('se-loading-bag-only');
         pending = 0; clearTimeout(progressTimer); paintProgress();
         for (const [button, state] of busy) {
             button.classList.remove('se-action-busy');
@@ -132,15 +143,35 @@
         busy.clear();
     }
     // Track actual requests, including errors/aborts, without changing response handling.
+    const isWriteRequest = method => !['GET', 'HEAD', 'OPTIONS'].includes(String(method || 'GET').toUpperCase());
+    function trackRequest(method) {
+        return start(trigger, isTableFilter(trigger) || (isWriteRequest(method) && modalControl(trigger)));
+    }
     const originalFetch = window.fetch;
     if (originalFetch) window.fetch = function (...args) {
-        const end = start(trigger);
-        try { return originalFetch.apply(this, args).finally(end); }
+        const method = args[1]?.method ?? args[0]?.method;
+        const decision = isWriteRequest(method) && (modalControl(trigger) || actions > 0);
+        const end = trackRequest(method);
+        const visible = decision && actions > 0
+            ? new Promise(resolve => setTimeout(resolve, 280))
+            : null;
+        try {
+            const request = originalFetch.apply(this, args);
+            return visible
+                ? request.finally(() => visible.then(end))
+                : request.finally(end);
+        }
         catch (error) { end(); throw error; }
+    };
+    const xhrMethods = new WeakMap();
+    const originalOpen = XMLHttpRequest.prototype.open;
+    if (originalOpen) XMLHttpRequest.prototype.open = function (method, ...args) {
+        xhrMethods.set(this, method);
+        return originalOpen.call(this, method, ...args);
     };
     const originalSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function (...args) {
-        const end = start(trigger);
+        const end = trackRequest(xhrMethods.get(this));
         this.addEventListener('loadend', end, { once: true });
         try { return originalSend.apply(this, args); }
         catch (error) { end(); throw error; }
@@ -166,17 +197,7 @@
             if (busy.has(button)) { event.preventDefault(); event.stopImmediatePropagation(); return; }
             trigger = button;
             setTimeout(() => { if (trigger === button) trigger = null; }, 0);
-            // Local UI actions (opening a modal, filtering, etc.) share the bag
-            // feedback too. Do not delay their handlers or their result.
-            if (!event.target.closest?.('a[href]')) {
-                // Apply before target handlers can open a dialog on this click.
-                clearTimeout(revealTimer);
-                root.classList.add('se-action-preparing', 'se-loading-action');
-                clearTimeout(feedbackTimer);
-                feedbackTimer = setTimeout(() => {
-                    if (!actions && !leavingByAction) finishActionVisual();
-                }, 260);
-            }
+            if (isTableFilter(button)) filterFeedback({ target: button });
         }
         const link = event.target.closest?.('a[href]');
         if (link && (skipped(link) || link.hasAttribute('download') || /\/(?:export|download)(?:[/?#]|$)|\.(?:pdf|csv|xlsx?|zip)(?:[?#]|$)/i.test(link.href))) {
@@ -309,6 +330,7 @@
     setTimeout(hidePage, 8000);
     window.ShopEaseLoading = Object.freeze({
         start, showPage, hidePage,
+        startBag(button) { return start(button, true, true); },
         async during(task, button) { const end = start(button); try { return await task(); } finally { end(); } },
     });
 })();

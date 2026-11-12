@@ -254,7 +254,7 @@ class SellerPerformanceController extends Controller
                     'productPrice' => $item?->unit_price,
                     'productQuantity' => $item?->quantity,
                     'productCategory' => $product?->category,
-                    'productImage' => $photos[0] ?? null,
+                    'productImage' => $product?->publicOptionPhoto($photos[0] ?? null),
                     'shopName' => $seller?->store_name,
                     'evidence' => collect($complaint->evidence ?? [])->map(fn ($path) => \Illuminate\Support\Facades\Storage::disk('public')->url($path))->all(),
                     'returnRequest' => $complaint->returnRequest?->toArray(),

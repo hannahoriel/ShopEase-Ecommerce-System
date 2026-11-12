@@ -549,6 +549,12 @@
             grid-column: 4;
         }
 
+        .purchase-estimated-delivery > small {
+            display: block;
+            margin-top: 4px;
+            overflow-wrap: anywhere;
+        }
+
         .purchase-status-cell {
             grid-column: 5;
         }

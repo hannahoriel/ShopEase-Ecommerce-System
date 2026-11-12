@@ -1,5 +1,5 @@
 import '../../shared/complaint-layout.js';
-import {renderReturnSummary} from '../../shared/return-summary.js';
+import {renderReturnSummary, showProposedReturnSolution} from '../../shared/return-summary.js';
 import {renderCategoryPill} from '../../shared/category-pills.js';
 
 
@@ -621,14 +621,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             delivered: ['delivered', 'Delivered'],
                             completed: ['completed', 'Completed'],
                             cancelled: ['cancelled', 'Cancelled'],
-                            refunded: ['return-refund', 'Refunded'],
-                            returned: ['return-refund', 'Returned'],
-                            return_requested: ['return-refund', 'Return Requested'],
-                            refund_requested: ['return-refund', 'Refund Requested'],
-                            return_pending: ['return-refund', 'Return Pending'],
-                            refund_pending: ['return-refund', 'Refund Pending'],
-                            return_approved: ['return-refund', 'Return Approved'],
-                            refund_approved: ['return-refund', 'Refund Approved'],
+                            refunded: ['return-refund', 'Return/Refund'],
+                            returned: ['return-refund', 'Return/Refund'],
+                            return_requested: ['return-refund', 'Return/Refund'],
+                            refund_requested: ['return-refund', 'Return/Refund'],
+                            return_pending: ['return-refund', 'Return/Refund'],
+                            refund_pending: ['return-refund', 'Return/Refund'],
+                            return_approved: ['return-refund', 'Return/Refund'],
+                            refund_approved: ['return-refund', 'Return/Refund'],
                         };
                         return states[status] || ['processing', 'Processing'];
                     };
@@ -647,7 +647,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         purchaseRows.hidden = false;
                         purchaseRows.innerHTML = orders.map(order => {
-                            const [statusClass, statusLabel] = statusData(order.status);
+                            const orderStatus = order.status === 'completed' && order.can_confirm_received
+                                ? 'delivered'
+                                : order.status;
+                            const purchaseStatus = order.approved_return_status ?? orderStatus;
+                            const [statusClass, statusLabel] = statusData(purchaseStatus === 'accepted' ? 'return_approved' : purchaseStatus);
                             const firstItem = order.items[0] || {};
                             const variant = [firstItem.variation, firstItem.color, firstItem.size].filter(Boolean).join(' · ');
                             const placedAt = order.created_at
@@ -1129,6 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function preview(c){
         get('complaints-workspace').classList.add('has-selection');get('complaints-detail-card').setAttribute('aria-hidden','false');
         setText('detail-id',c.id);setText('detail-date',timeText(c.filed_at));setText('detail-type',c.type);setText('detail-description',c.description);
+        showProposedReturnSolution(get('detail-description'), c.returnRequest);
         const status=get('detail-status');status.className='complaint-status '+c.status;status.textContent=title(c.status);
         get('detail-parties').innerHTML=parties(c).map(partyMarkup).join('');get('detail-evidence').innerHTML=evidenceMarkup(c,true);
     }

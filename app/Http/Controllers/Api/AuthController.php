@@ -53,6 +53,10 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->must_change_password) {
+            throw ValidationException::withMessages(['password' => 'Log in on the ShopEase website to replace your emailed password first.']);
+        }
+
         // The mobile client recognizes delivery accounts under the "rider"
         // role and distinguishes linehaul couriers with rider_type.
         $mobileRole = $user->role === User::ROLE_COURIER

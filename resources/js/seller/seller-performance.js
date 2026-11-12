@@ -1,4 +1,4 @@
-import {renderReturnSummary} from '../shared/return-summary.js';
+import {renderReturnSummary, showProposedReturnSolution} from '../shared/return-summary.js';
 import '../shared/complaint-layout.js';
 import {renderCategoryPill} from '../shared/category-pills.js';
 /* resources/js/seller/seller-performance.js */
@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         text('detail-date', dateTime(c.filed_at || c.date));
         text('detail-type', blank(c.type));
         text('detail-description', blank(c.description));
+        showProposedReturnSolution($('detail-description'), c.returnRequest);
         $('detail-status').className = `complaint-status ${norm(c.status)}`;
         $('detail-status').textContent = statusName(c.status);
         $('detail-parties').innerHTML = roleNames(c).map(partHtml).join('');
@@ -276,7 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`).join('');
         $('modal-order-information').innerHTML = sectionRows([['Order ID', c.order_id || c.orderId], ['Order Date', dateTime(c.orderDate || c.order_date)], ['Payment Method', 'Cash on Delivery'], ['Payment Status', c.paymentStatus || c.payment_status], ['Shipping Method', c.shippingMethod || c.shipping_method], ['Order Status', c.orderStatus || c.order_status], ['Order Total', c.orderTotal || c.order_total]]);
         const product = c.product_name || c.productName;
-        const img = trustedImageUrl(c.product_image || c.productImage || '');
+        const photo = String(c.product_image || c.productImage || '').trim();
+        const img = /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(photo) ? photo : trustedImageUrl(photo);
         $('modal-product-info').innerHTML = `
             <div class="complaints-modal-item-main">
                 ${img ? `<img class="complaints-modal-product-image" src="${safe(img)}" alt="Ordered item">` : '<div class="complaints-modal-product-image"></div>'}

@@ -307,7 +307,7 @@ class ReportsController extends Controller
                 ? json_decode($product->photos, true)
                 : [];
             $photo = is_array($photos) ? ($photos[0] ?? null) : null;
-            if (is_string($photo) && ! preg_match('/^https?:\/\//i', $photo)) {
+            if (is_string($photo) && ! preg_match('~^(https?://|data:image/)~i', $photo)) {
                 $photo = Storage::disk('public')->url(preg_replace('/^storage\//', '', ltrim($photo, '/')));
             }
 

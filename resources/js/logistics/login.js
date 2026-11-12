@@ -11,6 +11,9 @@ window.initLogisticsLogin = function(root) {
         const icon = panel.querySelector('#logisticsEyeIcon');
         const feedback = panel.querySelector('[data-login-feedback]');
         const form = panel.querySelector('[data-logistics-form]');
+        const setup = panel.querySelector('[data-logistics-password-setup]');
+        const setupForm = setup.querySelector('[data-first-password-form]');
+        const setupError = setup.querySelector('[data-first-password-error]');
         const toggle = () => {
             const shown = input.type === 'text';
             icon.src = shown ? icon.dataset.showIcon : icon.dataset.hideIcon;
@@ -30,14 +33,19 @@ window.initLogisticsLogin = function(root) {
         });
         toggle();
         // Authenticate first. Only a confirmed successful logistics login starts the opening transition.
-        form.addEventListener('submit', async event => {
-            if (form.dataset.ready !== '1' || !form.reportValidity()) return;
+        const submitLogin = async event => {
+            const form = event.currentTarget;
+            const settingPassword = form === setupForm;
+            const feedback = settingPassword ? setupError : panel.querySelector('[data-login-feedback]');
+            if ((!settingPassword && form.dataset.ready !== '1') || !form.reportValidity()) return;
             event.preventDefault();
             if (form.dataset.submitting === 'true') return;
             form.dataset.submitting = 'true';
             const submit = form.querySelector('[type="submit"]');
-            if (submit) { submit.disabled = true; submit.textContent = 'Logging in...'; }
+            const label = submit?.textContent;
+            if (submit) { submit.disabled = true; submit.textContent = settingPassword ? 'Saving password…' : 'Logging in...'; }
             if (feedback) { feedback.hidden = true; feedback.textContent = ''; }
+            const stopLoading = settingPassword ? window.ShopEaseLoading?.startBag(submit) : null;
             try {
                 const response = await fetch(form.action, {
                     method: 'POST',
@@ -53,6 +61,17 @@ window.initLogisticsLogin = function(root) {
                         message = Object.values(data.errors || {}).flat()[0] || data.message || message;
                     } catch (_) {}
                     throw new Error(message);
+                }
+                if (!settingPassword && !response.redirected) {
+                    const data = await response.json();
+                    if (data.password_setup_required) {
+                        setupForm.elements._token.value = data.csrf_token;
+                        form.reset();
+                        form.closest('.view').hidden = true;
+                        setup.hidden = false;
+                        setupForm.elements.password.focus();
+                        return;
+                    }
                 }
                 // Laravel's authenticated redirect has been followed by fetch. Verify the final route.
                 const destination = new URL(response.url, window.location.href);
@@ -72,10 +91,13 @@ window.initLogisticsLogin = function(root) {
                     feedback.hidden = false;
                 }
             } finally {
+                stopLoading?.();
                 form.dataset.submitting = 'false';
-                if (submit) { submit.disabled = false; submit.textContent = 'Log In'; }
+                if (submit) { submit.disabled = false; submit.textContent = label; }
             }
-        });
+        };
+        form.addEventListener('submit', submitLogin);
+        setupForm.addEventListener('submit', submitLogin);
         form.addEventListener('submit', event => {
             if (form.dataset.ready !== '1') {
                 event.preventDefault();

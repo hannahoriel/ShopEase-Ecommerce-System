@@ -329,6 +329,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
             Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
             Route::get('/order-status', [OrderStatusController::class, 'index']);
+            Route::post('/order-complaints', [\App\Http\Controllers\Api\Seller\OrderComplaintController::class, 'store'])->middleware('throttle:10,1')->name('seller.api.order-complaints.store');
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('seller.api.orders.rider-messages.index');
@@ -405,6 +406,8 @@ Route::prefix('v1')->group(function () {
                 if ($facilityRole === 'delivery_hub') {
                     Route::get('/parcel-tracking', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelTrackingController::class, 'index'])
                         ->name('delivery_hub.api.parcel-tracking.index');
+                    Route::post('/returns/{return}/pickup', [\App\Http\Controllers\Api\Logistics\ReturnPickupController::class, 'schedule'])->name('delivery_hub.api.returns.pickup');
+                    Route::patch('/returns/{return}/pickup', [\App\Http\Controllers\Api\Logistics\ReturnPickupController::class, 'hubOutcome'])->name('delivery_hub.api.returns.pickup.outcome');
                     Route::get('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelDisputesController::class, 'index'])
                         ->name('delivery_hub.api.parcel-disputes.index');
                     Route::post('/parcel-disputes', [\App\Http\Controllers\Api\Logistics\DeliveryHubParcelDisputesController::class, 'store'])
@@ -494,6 +497,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('/verify-orders/{order}/archive', ArchiveVerifyOrderController::class)->name('rider.api.verify-orders.archive');
             Route::delete('/verify-orders/{order}/archive', RestoreVerifyOrderController::class)->name('rider.api.verify-orders.restore');
             Route::delete('/verify-orders/{order}', DeleteArchivedVerifyOrderController::class)->name('rider.api.verify-orders.dismiss');
+            Route::patch('/return-pickups/{return}', [\App\Http\Controllers\Api\Logistics\ReturnPickupController::class, 'riderOutcome'])->name('rider.api.return-pickups.outcome');
             Route::get('/pickup-tasks', ListPickupTasksController::class)->name('rider.api.pickup-tasks.index');
             Route::post('/pickup-tasks/{order}/proof', SubmitPickupProofController::class)->name('rider.api.pickup-tasks.proof');
             Route::post('/pickup-tasks/{order}/hub-dropoff', \App\Http\Controllers\Api\Rider\Homepage\PickupTask\ConfirmPickupHubDropoffController::class)->name('rider.api.pickup-tasks.hub-dropoff');

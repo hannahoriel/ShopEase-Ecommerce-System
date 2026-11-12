@@ -7,6 +7,8 @@ use App\Http\Services\RiderDeliveryService;
 use App\Http\Services\RiderOperationsService;
 use App\Http\Services\AssignScheduledPickups;
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderReturn;
+use App\Models\Logistics\DeliveryHubRiderRegistration;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,7 +47,31 @@ class ListPickupTasksController extends Controller
             ->limit(100)
             ->get();
 
+        $returnPickups = OrderReturn::query()
+            ->where('pickup_rider_id', $rider->id)
+            ->where('status', 'accepted')->where('return_type', 'return')->where('shipping_status', 'scheduled')
+            ->whereHas('order.shipment', fn ($shipment) => $shipment->whereIn(
+                'logistics_delivery_hub_id',
+                DeliveryHubRiderRegistration::where('user_id', $rider->user_id)->where('status', 'approved')
+                    ->select('logistics_delivery_hub_id')
+            ))
+            ->with('order:id,order_number,delivery_name,delivery_phone,delivery_address')
+            ->orderBy('pickup_date')->orderBy('pickup_time')->get()
+            ->map(fn (OrderReturn $return) => [
+                'id' => $return->id,
+                'order_number' => $return->order->order_number,
+                'contact_name' => $return->order->delivery_name,
+                'contact_phone' => $return->order->delivery_phone,
+                'pickup_address' => $return->order->delivery_address,
+                'pickup_date' => $return->pickup_date?->toDateString(),
+                'pickup_time' => $return->pickup_time,
+                'tracking_number' => $return->tracking_number,
+                'attempt' => (int) $return->failed_pickup_attempts + 1,
+                'outcome_url' => route('rider.api.return-pickups.outcome', $return),
+            ]);
+
         return response()->json([
+            'return_pickups' => $returnPickups,
             'task_type' => 'pickup',
             'task_label' => 'For Pickup',
             'data' => $orders->map(
