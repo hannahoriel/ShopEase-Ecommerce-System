@@ -79,6 +79,16 @@ Route::post('/auth/login', [
     ->middleware('guest')
     ->name('login.attempt');
 
+Route::post('/auth/first-password', [AuthController::class, 'setFirstPassword'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('login.first-password');
+
+Route::prefix('/auth/recovery')->name('landing.recovery.')->middleware(['guest', 'throttle:12,1'])->group(function () {
+    Route::post('/send', [\App\Http\Controllers\LandingPasswordResetController::class, 'send'])->block()->name('send');
+    Route::post('/verify', [\App\Http\Controllers\LandingPasswordResetController::class, 'verify'])->block()->name('verify');
+    Route::post('/reset', [\App\Http\Controllers\LandingPasswordResetController::class, 'reset'])->block()->name('reset');
+});
+
 /*
 |--------------------------------------------------------------------------
 | REGISTER PAGE

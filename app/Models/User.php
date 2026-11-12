@@ -29,6 +29,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'must_change_password',
         'role',
         'email_verified_at',
         'registration_status',
@@ -52,6 +53,7 @@ class User extends Authenticatable
             'approved_at' => 'datetime',
             'suspended_until' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 

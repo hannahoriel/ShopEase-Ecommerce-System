@@ -19,6 +19,9 @@
             <div class="subtext">Sign in to your logistics company account and continue your ShopEase partnership journey.</div>
         </div>
         <div class="right">
+            <div class="view active" data-logistics-password-setup hidden>
+                @include('auth.first-password-form', ['logisticsSetup' => true])
+            </div>
             <div class="view active" id="logisticsLoginView">
                 <h1>Welcome!</h1>
                 <p class="subhead">Log In to your logistics company account</p>
@@ -59,11 +62,7 @@
                             </button>
                         </div>
                         <div class="row-between">
-                            @if (Route::has('logistics.password.request'))
-                                <a href="{{ route('logistics.password.request') }}" class="link">Forgot your password?</a>
-                            @else
-                                <a href="#" class="link" data-logistics-forgot>Forgot your password?</a>
-                            @endif
+                            <button type="button" class="link recovery-link" data-open-recovery>Forgot your password?</button>
                         </div>
                     </div>
                     <label for="logisticsRememberLogin" style="display:flex;align-items:center;gap:8px;margin:0 0 18px;font-size:13px;color:#665b57;cursor:pointer;">
@@ -77,6 +76,7 @@
                     <a href="{{ url('/logistics/register/company') }}" class="link" data-logistics-signup data-loading="off">Sign Up</a>
                 </p>
             </div>
+@include('auth.landing-password-reset', ['recoveryPortal' => 'logistics'])
         </div>
     </div>
 </div>

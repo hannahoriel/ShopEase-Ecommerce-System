@@ -3,6 +3,11 @@
 @section('title', 'Log In')
 
 @section('content')
+@if (request()->boolean('setup') && session('first_password'))
+    <div class="view active">
+        @include('auth.first-password-form')
+    </div>
+@else
 <div class="view active" id="loginView">
 
     <h1>Welcome!</h1>
@@ -155,25 +160,7 @@
 
             <div class="row-between">
 
-                @if (Route::has('password.request'))
-
-                    <a
-                        href="{{ route('password.request') }}"
-                        class="link"
-                    >
-                        Forgot your password?
-                    </a>
-
-                @else
-
-                    <a
-                        href="#"
-                        class="link"
-                    >
-                        Forgot your password?
-                    </a>
-
-                @endif
+                <button type="button" class="link recovery-link" data-open-recovery>Forgot your password?</button>
 
             </div>
 
@@ -218,4 +205,6 @@
     </p>
 
 </div>
+@include('auth.landing-password-reset', ['recoveryPortal' => 'main'])
+@endif
 @endsection

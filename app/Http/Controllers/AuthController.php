@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Http\Services\RegistrationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -18,12 +23,12 @@ class AuthController extends Controller
     /**
      * Handle an authentication attempt.
      */
-    public function login(Request $request): RedirectResponse
+    public function login(Request $request): RedirectResponse|JsonResponse
     {
         return $this->authenticate($request, [User::ROLE_BUYER, User::ROLE_SELLER, User::ROLE_ADMIN]);
     }
 
-    public function loginLogistics(Request $request): RedirectResponse
+    public function loginLogistics(Request $request): RedirectResponse|JsonResponse
     {
         return $this->authenticate($request, [
             User::ROLE_LOGISTICS,
@@ -32,23 +37,22 @@ class AuthController extends Controller
         ]);
     }
 
-    private function authenticate(Request $request, array $allowedRoles): RedirectResponse
+    private function authenticate(Request $request, array $allowedRoles): RedirectResponse|JsonResponse
     {
+        $request->session()->forget('first_password');
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember', true))) {
+        $user = User::query()->where('email', $credentials['email'])->first();
+        if (! $user || ! Hash::check($credentials['password'], $user->getAuthPassword())) {
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
         }
 
-        $user = Auth::user();
         if (! in_array($user->role, $allowedRoles, true)) {
-            Auth::logout();
-
             $accountType = in_array(User::ROLE_LOGISTICS, $allowedRoles, true)
                 ? 'a logistics, sorting center, or delivery hub account'
                 : 'a buyer, seller, or administrator account';
@@ -62,8 +66,6 @@ class AuthController extends Controller
 
         if ($user->role !== User::ROLE_ADMIN
             && in_array($registrationStatus, ['pending', 'rejected'], true)) {
-            Auth::logout();
-
             throw ValidationException::withMessages([
                 'email' => $registrationStatus === 'rejected'
                     ? 'Your registration was rejected and this account cannot log in.'
@@ -71,8 +73,70 @@ class AuthController extends Controller
             ]);
         }
 
+        $remember = $request->boolean('remember', true);
+        if ($user->must_change_password) {
+            $request->session()->regenerate();
+            $request->session()->put('first_password', [
+                'user_id' => $user->id,
+                'fingerprint' => hash('sha256', $user->getAuthPassword()),
+                'remember' => $remember,
+                'expires_at' => now()->addMinutes(15)->timestamp,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['password_setup_required' => true, 'csrf_token' => $request->session()->token()]);
+            }
+
+            return redirect()->route('login', ['modal' => 1, 'setup' => 1]);
+        }
+
+        Auth::login($user, $remember);
         $request->session()->regenerate();
 
+        return $this->dashboardRedirect($user);
+    }
+
+    public function setFirstPassword(Request $request): RedirectResponse
+    {
+        $challenge = $request->session()->get('first_password');
+        if (! $challenge || $challenge['expires_at'] <= now()->timestamp) {
+            $request->session()->forget('first_password');
+            throw ValidationException::withMessages(['password' => 'Your session expired. Log in again with your emailed password.']);
+        }
+
+        $data = $request->validate([
+            'password' => ['required', 'string', 'confirmed', 'max:72', Password::min(8)->mixedCase()->numbers()->symbols()],
+        ]);
+
+        $user = DB::transaction(function () use ($challenge, $data): User {
+            $user = User::query()->lockForUpdate()->find($challenge['user_id']);
+            if (! $user?->must_change_password
+                || ! hash_equals($challenge['fingerprint'], hash('sha256', $user->getAuthPassword()))
+                || in_array($user->registration_status, ['pending', 'rejected'], true)) {
+                throw ValidationException::withMessages(['password' => 'Log in again to continue.']);
+            }
+            if (strlen($data['password']) > 72 || Hash::check($data['password'], $user->getAuthPassword())) {
+                throw ValidationException::withMessages(['password' => 'Use a new password of at most 72 bytes, different from the emailed password.']);
+            }
+
+            $user->forceFill([
+                'password' => $data['password'],
+                'must_change_password' => false,
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            return $user;
+        });
+
+        $request->session()->forget('first_password');
+        Auth::login($user, $challenge['remember']);
+        $request->session()->regenerate();
+
+        return $this->dashboardRedirect($user);
+    }
+
+    private function dashboardRedirect(User $user): RedirectResponse
+    {
         return match ($user->role) {
             User::ROLE_ADMIN => redirect()->route('admin.dashboard'),
             User::ROLE_BUYER => redirect()->route('buyer.dashboard'),

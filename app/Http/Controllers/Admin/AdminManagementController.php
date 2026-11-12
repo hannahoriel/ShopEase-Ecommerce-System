@@ -140,6 +140,7 @@ class AdminManagementController extends Controller
                     'name' => $name,
                     'email' => $data['email'],
                     'password' => $temporaryPassword,
+                    'must_change_password' => true,
                     'role' => User::ROLE_ADMIN,
                     'email_verified_at' => now(),
                     'registration_status' => 'active',
