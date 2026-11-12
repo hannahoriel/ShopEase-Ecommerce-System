@@ -136,14 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function formatDateLabel(dateValue) {
         const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(dateValue)) ? `${dateValue}T00:00:00` : dateValue);
-        if (Number.isNaN(date.getTime())) return 'Earlier messages';
-        const today = new Date();
-        const yesterday = new Date();
-        yesterday.setDate(today.getDate() - 1);
-        const asDay = value => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
-
-        if (asDay(date) === asDay(today)) return 'Today';
-        if (asDay(date) === asDay(yesterday)) return 'Yesterday';
+        if (Number.isNaN(date.getTime())) return '';
         return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
@@ -177,9 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let previousDate = null;
         const messageMarkup = (conversation.messages || []).map(message => {
-            const date = message.date || '';
+            const date = formatDateLabel(message.date || '');
             const divider = date && date !== previousDate
-                ? `<div class="messages-date-divider"><span>${escapeHtml(formatDateLabel(date))}</span></div>`
+                ? `<div class="messages-date-divider"><span>${escapeHtml(date)}</span></div>`
                 : '';
             previousDate = date || previousDate;
             const isSeller = message.sender === 'seller';

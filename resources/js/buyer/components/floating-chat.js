@@ -146,14 +146,12 @@
                 statusEl.className = `buyer-chat-complaint-status is-${['open','in-progress','resolved'].includes(norm) ? norm : 'open'}`;
                 statusEl.textContent = ({open:'Open','in-progress':'In Progress',resolved:'Resolved'})[norm] || 'Open';
             };
-            const openComplaintDemo = complaint => {
+            const openComplaintChat = async complaint => {
                 const complaintId = cleanComplaintId(complaint?.complaintId || complaint?.id || '');
                 if (!complaintId) return;
                 const id = `${chatPrefix}${complaintId}`;
                 if (!demoChats[id]) demoChats[id] = {
-                    id, complaintId, type: String(complaint.type || ''), status: String(complaint.status || 'open'), filedAt: complaint.filed_at || new Date().toISOString(), messages: [
-                        {sender:'admin', text:`ShopEase Support · Conversation for complaint ${complaintId}. This is a demo chat; no messages are sent to an administrator.`, time:'', createdAt: complaint.filed_at || new Date().toISOString()}
-                    ]
+                    id, complaintId, type: String(complaint.type || ''), status: String(complaint.status || 'open'), filedAt: complaint.filed_at || new Date().toISOString(), messages: []
                 };
                 if (complaint.type) demoChats[id].type = String(complaint.type);
                 if (complaint.status) demoChats[id].status = String(complaint.status);
@@ -167,15 +165,37 @@
                 if (activeConversation) activeConversation.hidden = false;
                 if (emptyState) emptyState.hidden = true;
                 showComplaintContext(demoChats[id]);
+                demoChats[id].messages = [];
                 renderMessages(demoChats[id]);
                 renderConversationList();
-                messageInput?.focus();
+                try {
+                    const payload = await apiFetch(complaintMessagesPath(complaintId));
+                    demoChats[id].messages = payload.data.map(message => ({
+                        sender: message.is_me ? 'buyer' : 'admin',
+                        text: message.body,
+                        createdAt: message.created_at,
+                        time: message.created_at ? new Date(message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
+                    }));
+                    demoChats[id].status = payload.status || demoChats[id].status;
+                    if (activeConversationId === id) {
+                        showComplaintContext(demoChats[id]);
+                        renderMessages(demoChats[id]);
+                        messageInput?.focus();
+                    }
+                } catch (error) {
+                    if (activeConversationId === id) showStatus(error.message);
+                }
             };
-            window.openBuyerComplaintSupportChat = openComplaintDemo;
-            document.addEventListener('buyer:open-complaint-support', event => openComplaintDemo(event.detail || {}));
+            window.openBuyerComplaintSupportChat = openComplaintChat;
+            document.addEventListener('buyer:open-complaint-support', event => openComplaintChat(event.detail || {}));
+
+            const complaintMessagesPath = reference => {
+                const id = Number(String(reference).match(/\d+$/)?.[0]);
+                return `/api/v1/buyer/complaints/${id}/messages`;
+            };
 
             const apiFetch = async (path, options = {}) => {
-                const response = await fetch(`${config.apiUrl}${path}`, {
+                const response = await fetch(path.startsWith('/api/') ? path : `${config.apiUrl}${path}`, {
                     credentials: 'same-origin',
                     ...options,
                     headers: {
@@ -363,7 +383,7 @@
 
             const openConversation = async conversationId => {
                 if (isComplaintChat(conversationId) && demoChats[conversationId]) {
-                    openComplaintDemo({...demoChats[conversationId], complaintId: demoChats[conversationId].complaintId});
+                    openComplaintChat({...demoChats[conversationId], complaintId: demoChats[conversationId].complaintId});
                     return;
                 }
                 try {
@@ -429,12 +449,16 @@
                     if (isComplaintChat(activeConversationId)) {
                         const chat = demoChats[activeConversationId];
                         if (!chat) return;
-                        chat.messages.push({sender:'buyer', text:value, time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}), createdAt:new Date().toISOString()});
-                        saveDemo();
-                        messageInput.value = '';
-                        renderMessages(chat);
-                        messageInput.focus();
-                        showStatus('Demo only — this message was not sent to an administrator.');
+                        try {
+                            await apiFetch(complaintMessagesPath(chat.complaintId), {
+                                method: 'POST',
+                                body: JSON.stringify({ body: value }),
+                            });
+                            messageInput.value = '';
+                            if (activeConversationId === chat.id) await openComplaintChat(chat);
+                        } catch (error) {
+                            showStatus(error.message);
+                        }
                         return;
                     }
                     showStatus('');
@@ -505,7 +529,7 @@
             const query = new URLSearchParams(window.location.search);
             const complaintFromUrl = query.get('complaint');
             if (complaintFromUrl && (query.get('tab') === 'admin' || query.get('source') === 'buyer-complaints')) {
-                openComplaintDemo({id:complaintFromUrl});
+                openComplaintChat({id:complaintFromUrl});
             }
 
             if (config.productId) {

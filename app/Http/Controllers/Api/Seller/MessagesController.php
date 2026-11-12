@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\AdminConversation;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
 use App\Models\Seller\Seller;
@@ -229,11 +230,24 @@ class MessagesController extends Controller
             ]);
             $conversation->touch();
 
+            if ($conversation->type === SellerConversation::TYPE_COMPLAINT && $conversation->complaint_id) {
+                $adminThread = AdminConversation::firstOrCreate([
+                    'category' => AdminConversation::CATEGORY_COMPLAINTS,
+                    'complaint_id' => $conversation->complaint_id,
+                    'complaint_party' => 'seller',
+                    'user_id' => $request->user()->id,
+                ]);
+                $adminThread->messages()->create($message->only([
+                    'sender_id', 'body', 'attachment_path', 'attachment_name', 'attachment_mime_type', 'attachment_size',
+                ]));
+                $adminThread->touch();
+            }
+
             return $message->load('sender:id,name,role');
         });
 
         $buyer = $conversation->buyer;
-        if ($buyer) {
+        if ($buyer && $conversation->type === SellerConversation::TYPE_BUYER) {
             BuyerNotification::createForBuyer(
                 $buyer,
                 'message',
