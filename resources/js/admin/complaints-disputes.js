@@ -1,5 +1,5 @@
 import '../shared/complaint-layout.js';
-import {renderReturnSummary} from '../shared/return-summary.js';
+import {renderReturnSummary, showProposedReturnSolution} from '../shared/return-summary.js';
 import {applyCategoryPill} from '../shared/category-pills.js';
 const complaintsConfigElement =
     document.getElementById('complaintsDisputesConfig');
@@ -861,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function () {
             +(record.pickup_date?`<p class="se-return-pickup"><strong>Pickup:</strong> ${escapeHtml(record.pickup_date.slice(0,10))} ${escapeHtml(record.pickup_time)}<br>${escapeHtml(record.pickup_address)}<br>${escapeHtml(record.tracking_number||'')}</p>`:'')
             +(record.solution?`<p class="se-return-decision"><strong>Decision notes:</strong> ${escapeHtml(record.solution)}</p>`:'')
             +(pending||record.status==='accepted'?'<label class="se-return-notes">Admin decision notes<textarea data-return-notes maxlength="2000" rows="3" placeholder="Summarize the evidence and discussion with both parties"></textarea></label>':'')
-            +`<div class="se-return-actions">${pending?`<button type="button" data-return-action="change_solution">Change to ${alternate}</button><button type="button" data-return-action="accept">Accept ${returning?'Return & Refund':'Refund Only'}</button><button type="button" data-return-action="decline">Decline Request</button>`:''}${record.status==='accepted'&&returning&&record.pickup_date?'<label><input type="checkbox" data-return-received-confirm> I verified the returned parcel was received.</label><button type="button" data-return-action="received">Confirm Return Received & Refund</button>':''}</div><p data-return-review-error role="alert" style="color:#a32636" hidden></p>`;
+            +`<div class="se-return-actions">${pending?`<button type="button" data-return-action="change_solution">Change to ${alternate}</button><button type="button" data-return-action="accept">Accept ${returning?'Return & Refund':'Refund Only'}</button><button type="button" data-return-action="decline">Decline Request</button>`:''}${(record.can_confirm_receipt ?? (record.status==='accepted'&&returning&&record.pickup_date))?'<label><input type="checkbox" data-return-received-confirm> I verified the returned parcel was received.</label><button type="button" data-return-action="received">Confirm Return Received & Refund</button>':''}</div><p data-return-review-error role="alert" style="color:#a32636" hidden></p>`;
         const decisions=document.createElement('div');decisions.dataset.adminReturnDecisions='';decisions.className='se-return-actions admin-return-decisions';
         panel.querySelectorAll('[data-return-action=accept],[data-return-action=decline]').forEach(button=>decisions.append(button));
         const handleDecision=async event=>{
@@ -1048,6 +1048,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         detailDescription.textContent =
             complaint.description;
+        showProposedReturnSolution(detailDescription, complaint.returnRequest);
 
         detailParty1.textContent =
             complaint.party1;
