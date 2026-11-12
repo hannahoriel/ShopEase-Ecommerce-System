@@ -147,6 +147,11 @@ class Order extends Model
         return $this->hasOne(CommissionTransaction::class);
     }
 
+    public function returnRequestDeadline(): ?\Illuminate\Support\Carbon
+    {
+        return $this->buyer_received_automatically ? null : $this->buyer_received_at?->copy()->addDays(7);
+    }
+
     public function shipment(): HasOne
     {
         return $this->hasOne(Shipment::class);

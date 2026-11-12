@@ -32,7 +32,9 @@ class ReturnComplaintIntakeController extends Controller
             $return=DB::transaction(function () use ($request,$order,$data,$service,&$paths) {
                 $locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
                 abort_unless($locked->status==='completed' && $locked->buyer_received_at && !$locked->buyer_received_automatically,422,'Please click Order Received before requesting a return or refund.');
-                abort_if($locked->complaints()->whereNotIn('status',['resolved','closed','declined','rejected'])->exists(),422,'This order already has an ongoing complaint. Please follow its existing discussion.');
+                abort_if(now()->gt($locked->returnRequestDeadline()),422,'The 7-day return and refund request window has expired.');
+                abort_if($locked->complaints()->whereNotIn('status',['resolved','closed','declined','rejected'])->exists()
+                    || $locked->returns()->whereIn('status', ['pending', 'accepted'])->exists(),422,'This order already has an ongoing complaint. Please follow its existing discussion.');
                 $item=$locked->items()->with('product')->findOrFail($data['items'][0]['order_item_id']);
                 $quantity=(int)$data['items'][0]['quantity'];
                 $reserved=OrderReturn::where('order_id',$locked->id)->whereNotIn('status',['declined','rejected'])->get()
@@ -65,16 +67,18 @@ class ReturnComplaintIntakeController extends Controller
     {
         abort_unless((int)$return->order->buyer_id===(int)$request->user()->id,404);
         $data=$request->validate(['pickup_date'=>['required','date','after_or_equal:today'],
-            'pickup_time'=>['required','date_format:H:i'],'pickup_address'=>['required','string','max:1000']]);
+            'pickup_time'=>['required',Rule::in(OrderReturn::PICKUP_TIMES)]]);
         abort_if(\Illuminate\Support\Carbon::parse($data['pickup_date'].' '.$data['pickup_time'])->lte(now()),422,'Choose a future pickup date and time.');
         return DB::transaction(function () use ($request,$return,$data,$service) {
             Order::whereKey($return->order_id)->lockForUpdate()->firstOrFail();
             $locked=OrderReturn::whereKey($return->id)->lockForUpdate()->firstOrFail();
             abort_unless($locked->complaint_id && $locked->status==='accepted' && $locked->return_type==='return',409,'Admin must accept Return & Refund before pickup can be scheduled.');
-            abort_if($locked->pickup_date,409,'A pickup is already scheduled for this request.');
-            $locked->forceFill([...$data,'shipping_status'=>'scheduled','courier'=>$locked->order->logisticsCompany?->business_name ?: $locked->order->shipment?->courier,
+            abort_if($locked->order->shipment?->logistics_delivery_hub_id,409,'Your delivery hub will schedule this return pickup.');
+            abort_unless($locked->canSchedulePickup(),409,'A pickup is already scheduled or the attempt limit has been reached.');
+            $address = $locked->order->delivery_address;
+            $locked->forceFill([...$data,'pickup_address'=>$address,'shipping_status'=>'scheduled','courier'=>$locked->order->logisticsCompany?->business_name ?: $locked->order->shipment?->courier,
                 'tracking_number'=>'SE-RETURN-'.str_pad((string)$locked->id,8,'0',STR_PAD_LEFT)])->save();
-            $service->log($locked,$request->user(),'scheduled','Buyer scheduled pickup for '.$data['pickup_date'].' '.$data['pickup_time'].' at '.$data['pickup_address'].'.');
+            $service->log($locked,$request->user(),'scheduled','Buyer scheduled pickup for '.$data['pickup_date'].' '.$data['pickup_time'].' at '.$address.'.');
             $service->notify($locked,'Return pickup scheduled','Order '.$locked->order->order_number.': return pickup scheduled for '.$data['pickup_date'].' '.$data['pickup_time'].'.');
             return response()->json(['data'=>$locked->fresh('events')]);
         });

@@ -47,6 +47,9 @@ class ReturnComplaintService
             if ($action==='received') {
                 if ($return->status==='refunded' && $return->shipping_status==='returned') return $return->fresh(['events','complaint']);
                 abort_unless($return->status==='accepted' && $return->return_type==='return' && $return->pickup_date,409,'This return must be accepted and scheduled before receipt can be confirmed.');
+                if ($return->order->shipment?->logistics_delivery_hub_id) {
+                    abort_unless($return->shipping_status === 'picked_up',409,'The rider must collect the return before receipt can be confirmed.');
+                }
                 $return->forceFill(['shipping_status'=>'returned','returned_at'=>now()])->save();
                 $this->log($return,$admin,'returned','Admin confirmed the returned parcel was received.'.($notes?' '.$notes:''));
                 $this->refund($return,$admin);
@@ -58,7 +61,7 @@ class ReturnComplaintService
             $accepted=$action==='accept';
             $return->forceFill(['status'=>$accepted?'accepted':'declined','reviewed_by'=>$admin->id,
                 'reviewed_at'=>now(),'solution'=>$notes,'shipping_status'=>$accepted && $return->return_type==='return'?'awaiting_pickup_schedule':null])->save();
-            $case->update(['status'=>$accepted?'in_progress':'resolved']);
+            $case->update(['status' => 'resolved']);
             $this->log($return,$admin,$accepted?'accepted':'declined',
                 'Admin '.($accepted?'accepted':'declined').' the '.($return->return_type==='refund'?'Refund Only':'Return & Refund').' request.'.($notes?' '.$notes:''));
             if ($accepted && $return->return_type==='refund') $this->refund($return,$admin);

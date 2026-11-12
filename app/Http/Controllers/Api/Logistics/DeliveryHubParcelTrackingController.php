@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Logistics;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\RiderOperationsService;
+use App\Services\ReturnPickupService;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderReturn;
 use App\Models\Logistics\LogisticsDeliveryHub;
@@ -44,10 +46,10 @@ class DeliveryHubParcelTrackingController extends Controller
 
         $returns = OrderReturn::query()
             ->whereIn('order_id', $orders->modelKeys())
-            ->with(['events', 'order'])
+            ->with(['events', 'order.shipment'])
             ->latest('requested_at')
             ->get()
-            ->map(function (OrderReturn $return) use ($parcelByOrder): ?array {
+            ->map(function (OrderReturn $return) use ($parcelByOrder, $hub): ?array {
                 $parcel = $parcelByOrder->get($return->order_id);
                 if (! $parcel || in_array(mb_strtolower(trim((string) $return->return_type)), ['refund', 'refund_only', 'partial_refund'], true)) {
                     return null;
@@ -60,6 +62,16 @@ class DeliveryHubParcelTrackingController extends Controller
                     'status' => $return->status,
                     'return_status' => $return->status,
                     'return_type' => $return->return_type,
+                    'pickup_date' => $return->pickup_date?->toDateString(),
+                    'pickup_time' => $return->pickup_time,
+                    'failed_pickup_attempts' => (int) $return->failed_pickup_attempts,
+                    'can_schedule_pickup' => (int) $return->order->shipment?->logistics_delivery_hub_id === (int) $hub->id
+                        && $return->canSchedulePickup(assignRider: true),
+                    'can_record_pickup' => (int) $return->order->shipment?->logistics_delivery_hub_id === (int) $hub->id
+                        && $return->complaint_id && $return->status === 'accepted'
+                        && $return->shipping_status === 'scheduled' && $return->pickup_rider_id,
+                    'pickup_url' => route('delivery_hub.api.returns.pickup', $return),
+                    'pickup_rider_id' => $return->pickup_rider_id,
                     'reason' => $return->reason,
                     'solution' => $return->solution,
                     'evidence_description' => $return->evidence_description,
@@ -83,6 +95,8 @@ class DeliveryHubParcelTrackingController extends Controller
             'data' => [
                 'parcels' => $parcels,
                 'returns' => $returns,
+                'pickup_riders' => app(ReturnPickupService::class)->riders($hub, app(RiderOperationsService::class))
+                    ->map(fn ($rider) => ['id' => $rider->id, 'name' => $rider->user?->name])->values(),
                 'locations' => [
                     'sorting_centers' => $hub->logistics_branch_id && $hub->logisticsBranch
                         ? [['id' => $hub->logisticsBranch->id, 'name' => $hub->logisticsBranch->name]] : [],

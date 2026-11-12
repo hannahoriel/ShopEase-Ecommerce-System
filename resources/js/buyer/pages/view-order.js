@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.querySelector('form').style.width='min(450px,100%)';
         overlay.classList.remove('vo-return-overlay');
         overlay.querySelector('form').classList.remove('vo-return-request');
-        requestMode=mode;overlay.querySelector('form').reset();overlay.querySelector('[data-request-error]').hidden=true;
+        requestMode=mode;overlay.querySelector('[type=submit]').textContent='Submit Request';overlay.querySelector('form').reset();overlay.querySelector('[data-request-error]').hidden=true;
         $('voRequestTitle').textContent=mode==='return'?'Request Return / Refund':'Report a Problem';
         const fieldStyle='width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin:6px 0 14px;font:inherit;font-weight:400';
         $('voRequestFields').innerHTML=mode==='return'
@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'report') return openLegacyRequest(mode);
         if (mode === 'return' && !order.can_request_return) return;
         requestMode=mode;evidenceFiles=[];
+        overlay.querySelector('[type=submit]').textContent = mode === 'pickup' ? 'Schedule Pickup' : 'Submit Request';
         overlay.classList.toggle('vo-return-overlay',mode==='return');
         overlay.querySelector('form').classList.toggle('vo-return-request',mode==='return');
         overlay.querySelector('form').style.width=mode==='return'?'min(920px,100%)':'min(520px,100%)';
@@ -132,7 +133,14 @@ document.addEventListener('DOMContentLoaded', () => {
         $('voRequestTitle').textContent=mode==='pickup'?'Schedule Return Pickup':'Return / Refund Request';
         if(mode==='pickup') {
             const tomorrow=new Date(Date.now()+86400000);const local=new Date(tomorrow.getTime()-tomorrow.getTimezoneOffset()*60000).toISOString().slice(0,10);
-            $('voRequestFields').innerHTML=`<label>Pickup date<input name="pickup_date" type="date" value="${local}" min="${new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}" required style="${style}"></label><label>Pickup time<input name="pickup_time" type="time" required style="${style}"></label><label>Pickup address<textarea name="pickup_address" required maxlength="1000" rows="3" style="${style}">${esc(order.delivery_address)}</textarea></label>`;
+            $('voRequestFields').innerHTML=`<section class="vo-pickup-buyer">
+                <h3>Buyer Details</h3>
+                <dl>
+                    <div><dt>Name</dt><dd>${esc(order.delivery_name || '—')}</dd></div>
+                    <div><dt>Contact Number</dt><dd>${esc(order.delivery_phone || '—')}</dd></div>
+                    <div><dt>Pickup Address</dt><dd>${esc(order.delivery_address || '—')}</dd></div>
+                </dl>
+            </section><label>Pickup date<input name="pickup_date" type="date" value="${local}" min="${new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}" required style="${style}"></label><label>Pickup time<select name="pickup_time" required style="${style}"><option value="">Select time</option><option value="08:00">8:00 AM</option><option value="09:00">9:00 AM</option><option value="10:00">10:00 AM</option><option value="11:00">11:00 AM</option><option value="12:00">12:00 PM</option><option value="13:00">1:00 PM</option><option value="14:00">2:00 PM</option><option value="15:00">3:00 PM</option></select></label>`;
         } else {
             $('voRequestFields').innerHTML=`${renderReturnItemChoices(order.items)}<fieldset data-product-complaint-fields disabled hidden style="border:0;padding:0;margin:0"><div class="vo-complaint-basics"><label>Quantity <span class="vo-required" aria-hidden="true">*</span><input type="number" name="quantity" value="1" min="1" required style="${style}"></label><label>Common problem <span class="vo-required" aria-hidden="true">*</span><select name="problem_type" required style="${style}"><option value="">Select a problem</option>${['Damaged Item','Defective / Not Working','Wrong Item','Missing Parts / Accessories','Not as Described','Quality Issue','Other'].map(type=>`<option>${esc(type)}</option>`).join('')}</select></label></div><div class="vo-evidence-label">Evidence photos <span class="vo-required" aria-hidden="true">*</span> <small>(required · up to 5, 5 MB each)</small></div><div class="vo-evidence-row"><label class="vo-attach-tile"><input type="file" name="evidence" multiple required accept="image/jpeg,image/png,image/webp" aria-label="Attach evidence photos"><span aria-hidden="true">+</span><strong>Attach</strong></label><div class="vo-evidence-previews" data-evidence-previews></div></div><label>Describe your complaint <span class="vo-required" aria-hidden="true">*</span><textarea name="reason" required minlength="10" maxlength="2000" rows="4" style="${style}" placeholder="Tell admin and the seller what happened"></textarea></label><p class="vo-field-heading">Choose your preferred solution <span class="vo-required" aria-hidden="true">*</span></p><div class="vo-solution-options"><label><input type="radio" name="return_type" value="return" required> Return & Refund</label><label><input type="radio" name="return_type" value="refund" required> Refund Only</label></div><p class="vo-review-note" style="font-size:12px">ShopEase admin will review the evidence and may change the solution after discussing the complaint with both parties.</p></fieldset>`;
         }
@@ -161,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!form.reportValidity())return;
         const body=new FormData();
         if(requestMode==='pickup') {
-            ['pickup_date','pickup_time','pickup_address'].forEach(name=>body.set(name,form.elements[name].value));
+            ['pickup_date','pickup_time'].forEach(name=>body.set(name,form.elements[name].value));
         }else if(requestMode==='return'){
             body.set('return_type',form.elements.return_type.value);body.set('reason',form.elements.reason.value);body.set('problem_type',form.elements.problem_type.value);
             const item=order.items[Number(form.elements.selected_item.value)];
@@ -175,7 +183,18 @@ document.addEventListener('DOMContentLoaded', () => {
         switch(button.dataset.voAction){
             case 'seller':window.openBuyerSellerChat?.(order.id,'order');break;
             case 'cancel':$('voCancelForm').reset();$('voCancelOtherWrap').hidden=true;$('voCancelOther').required=false;error('voCancelError','');openModal($('voCancelModal'));break;
-            case 'received':if(order.can_confirm_received)perform(button,async()=>{await request(`${endpoint}/confirm-received`,{},'PATCH');notice('Order received','Receipt confirmed. You can now rate products or request a return / refund.',true);});break;
+            case 'received':
+                if (order.can_confirm_received) perform(button, async () => {
+                    const result = await request(`${endpoint}/confirm-received`, {}, 'PATCH');
+                    const deadline = result.order?.return_request_deadline;
+                    const formatted = deadline && new Intl.DateTimeFormat('en-PH', {
+                        dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila',
+                    }).format(new Date(deadline));
+                    notice('Order received', formatted
+                        ? `You can request a return or refund until ${formatted} PHT.`
+                        : 'Receipt confirmed. You have 7 days to request a return or refund.', true);
+                });
+                break;
             case 'rate':if(order.status==='completed'&&$('voRatingProduct').options.length){selectReview();openModal($('voRateModal'));}break;
             case 'return':openRequest('return');break;
             case 'report':if(order.complaint)location.assign(`/buyer/my-purchases?section=purchases&complaint=${order.complaint.id}`);else openRequest('report');break;
