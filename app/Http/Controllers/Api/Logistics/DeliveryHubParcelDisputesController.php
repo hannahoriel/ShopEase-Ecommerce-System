@@ -126,19 +126,19 @@ class DeliveryHubParcelDisputesController extends Controller
                     ->where('logistics_delivery_hub_id', $hub->id)
                     ->lockForUpdate()
                     ->first();
-                $value = (float) ($shipment?->order?->total ?? $currentParcel['total_amount'] ?? 0);
+                $value = app(CancelOrderForParcelIssue::class)->reimbursementAmount($shipment?->order);
                 $amount = $value > 0 ? number_format($value, 2, '.', '') : '';
                 $typeLabel = strtolower(str_replace(' Parcel', '', $data['type']));
                 $accountability = [
                     'party' => 'Logistics Partner',
-                    'resolution' => 'Full Parcel Value Reimbursement to Seller',
+                    'resolution' => 'Product Value Reimbursement to Seller (shipping excluded)',
                     'parcelAmount' => $amount,
                     'compensation' => $amount,
                     'notes' => 'Automatically assessed when a '.$typeLabel.' parcel report was recorded.',
                     'at' => $at,
                     'simulatedReimbursedAt' => $amount !== '' ? $at : null,
                     'status' => $amount !== '' ? 'Reimbursed · UI Simulation' : 'Amount Verification Required · Demo',
-                    'autoVersion' => 3,
+                    'autoVersion' => 4,
                 ];
                 $issue = DeliveryHubParcelIssue::query()->create([
                     'delivery_hub_id' => $hub->id,

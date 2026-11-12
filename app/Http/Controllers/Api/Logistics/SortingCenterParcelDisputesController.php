@@ -53,19 +53,19 @@ class SortingCenterParcelDisputesController extends Controller
             ->where('tracking_number', trim($data['tracking']))
             ->where('logistics_branch_id', $center->id)
             ->first();
-        $parcelValue = (float) ($shipment?->order?->total ?? 0);
+        $parcelValue = app(CancelOrderForParcelIssue::class)->reimbursementAmount($shipment?->order);
         $amount = $parcelValue > 0 ? number_format($parcelValue, 2, '.', '') : '';
         $issueLabel = strtolower(str_replace(' Parcel', '', $data['type']));
         $accountability = [
             'party' => 'Logistics Partner',
-            'resolution' => 'Full Parcel Value Reimbursement to Seller',
+            'resolution' => 'Product Value Reimbursement to Seller (shipping excluded)',
             'parcelAmount' => $amount,
             'compensation' => $amount,
             'notes' => 'Automatically assessed when a '.$issueLabel.' parcel report was recorded.',
             'at' => $recordedAt->toIso8601String(),
             'simulatedReimbursedAt' => $amount !== '' ? $recordedAt->toIso8601String() : null,
             'status' => $amount !== '' ? 'Reimbursed · UI Simulation' : 'Amount Verification Required · Demo',
-            'autoVersion' => 3,
+            'autoVersion' => 4,
         ];
 
         $report = DB::transaction(function () use ($request, $center, $data, $evidence, $evidencePath, $accountability, $shipment, $recordedAt): SortingCenterParcelIssue {
