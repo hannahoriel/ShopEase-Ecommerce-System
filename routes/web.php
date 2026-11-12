@@ -1998,6 +1998,10 @@ Route::get('/admin/vouchers', function () {
 Route::get('/admin/reports/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])
     ->middleware(['auth', 'role:admin'])->name('admin.reports.export');
 
+Route::get('/admin/wallet', [\App\Http\Controllers\Admin\WalletController::class, 'index'])
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.wallet.index');
+
 Route::get('/admin/commission', [CommissionController::class, 'page'])
     ->middleware(['auth', 'role:admin'])
     ->name('admin.commission');

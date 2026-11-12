@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     refund: 'Buyer refund',
     return_shipping: 'Return shipping',
     voucher_discount: 'Seller voucher deduction',
-    logistics_reimbursement: 'Logistics reimbursement'
+    logistics_reimbursement: 'Logistics reimbursement',
+    commission_income: 'Order commission',
+    platform_voucher: 'ShopEase voucher deduction',
+    commission_refund: 'Refund commission deduction'
   };
 
   function makeUrl(page = 1) {

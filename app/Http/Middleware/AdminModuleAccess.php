@@ -17,7 +17,7 @@ class AdminModuleAccess
         'User Management' => ['admin/user-management', 'api/v1/admin/users'],
         'Seller Compliance' => ['admin/seller-compliance', 'api/v1/admin/seller-compliance'],
         'Complaints and Disputes' => ['admin/complaints-disputes', 'admin/complaints', 'api/v1/admin/complaints'],
-        'Commission' => ['admin/commission', 'api/v1/admin/commissions'],
+        'Commission' => ['admin/commission', 'admin/wallet', 'api/v1/admin/commissions'],
         'Logistics Management' => ['admin/logistics-management', 'api/v1/admin/logistics-management', 'api/v1/admin/logistics/account-change-requests'],
         'Reports' => ['admin/reports', 'api/v1/admin/reports'],
         'Vouchers' => ['admin/vouchers', 'api/v1/admin/vouchers'],
