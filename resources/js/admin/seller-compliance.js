@@ -1628,7 +1628,7 @@ function initSellerCompliance(cfg) {
         ];
         const readChoices = input => normalizeArray(input).map(item => {
             if(typeof item !== 'object' || item===null) return {name:String(item),additional:0};
-            return {name:String(pick(item,'name','label','value','option_name')??'—'),additional:Number(pick(item,'additional_price','price_adjustment','additional')??0)};
+            return {name:String(pick(item,'name','label','value','option_name')??'—'),additional:Number(pick(item,'additional_price','price_adjustment','additional')??0),photo:safeImage(pick(item,'image_url','photo','photoData'))};
         });
         const normalizedGroups = optionGroups.map(g=>({ ...g, choices:readChoices(product[g.key]) })).filter(g=>g.choices.length);
         const variantRows = normalizeArray(pick(product,'connectedVariants','connected_variants','variant_combinations','combinations'));
@@ -1636,7 +1636,7 @@ function initSellerCompliance(cfg) {
             ? variantRows.reduce((sum,v)=>sum+Math.max(0,Number(pick(v,'stock','stock_quantity')??0)),0)
             : Number(pick(product,'stock_quantity','stock','total_stock')??0);
         const outStock=variantRows.filter(v=>Number(pick(v,'stock','stock_quantity')??0)<=0).length;
-        const chips=normalizedGroups.map(group=>`<div class="product-details-choice-line"><strong>${esc(group.label)}</strong><div class="product-details-choice-pills">${group.choices.map(choice=>`<span class="product-details-choice-view">${esc(choice.name)}</span>`).join('')}</div></div>`).join('');
+        const chips=normalizedGroups.map(group=>`<div class="product-details-choice-line"><strong>${esc(group.label)}</strong><div class="product-details-choice-pills">${group.choices.map(choice=>`<span class="product-details-choice-view">${normalizedGroups.length === 1 && !variantRows.length && choice.photo ? `<span class="product-details-choice-photo"><img src="${esc(choice.photo)}" alt=""></span>` : ''}${esc(choice.name)}</span>`).join('')}</div></div>`).join('');
         const stats=[['Variation types',normalizedGroups.length],['Combinations',variantRows.length],['Total stock',totalStock],['Out of stock',outStock]];
         const statHTML=`<div class="product-details-variation-stats">${stats.map(([label,n])=>`<div class="product-details-stat-card"><span>${esc(label)}</span><strong>${Number(n).toLocaleString('en-PH')}</strong></div>`).join('')}</div>`;
         const choiceName=(variant,group)=>{
@@ -1700,7 +1700,9 @@ function initSellerCompliance(cfg) {
         if(options) options.innerHTML = statHTML+chips+(variantRows.length
             ? `<div style="margin-top:16px;font-size:13px;font-weight:600;color:#342B28">Grouped Variants (${variantRows.length})</div>${groupedVariantHTML}`
             : '<p class="sc-empty">No saved grouped variant combinations found for this product.</p>');
-        const count = $('#sellerProductVariationCount'); if(count) count.textContent=String(variantRows.length);
+        const count = $('#sellerProductVariationCount');
+        const choiceCount = normalizedGroups.reduce((total, group) => total + group.choices.length, 0);
+        if (count) count.textContent = String(choiceCount || variantRows.length);
         renderHistory('#sellerProductStockHistory', pick(product,'stock_history','stockHistory','stock_movements'), 'stock');
         renderHistory('#sellerProductPriceHistory', pick(product,'price_history','priceHistory','price_changes'), 'price');
         const notice=$('#sellerProductComplianceNotice');

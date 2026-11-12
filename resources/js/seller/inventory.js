@@ -5389,10 +5389,11 @@ document.addEventListener(
 
                     }
 
-                    const source =
-                        resolveProductPricingSource(
-                            product
-                        );
+                    const optionGroups = ['variations', 'colors', 'sizes']
+                        .filter(group => product?.[group]?.length);
+                    const source = optionGroups.length === 1
+                        ? optionGroups[0]
+                        : resolveProductPricingSource(product);
 
                     const items =
                         source &&
@@ -6367,6 +6368,19 @@ document.addEventListener(
                                         item?.name ||
                                         '—';
 
+                                    if (activeGroups.length === 1 && !connectedVariants.length) {
+                                        const photo = productDetailsVariantPhoto(item);
+                                        if (photo) {
+                                            const image = document.createElement('img');
+                                            image.src = photo;
+                                            image.alt = '';
+                                            const frame = document.createElement('span');
+                                            frame.className = 'product-details-choice-photo';
+                                            frame.append(image);
+                                            display.prepend(frame);
+                                        }
+                                    }
+
                                     const input =
                                         document.createElement(
                                             'input'
@@ -6409,6 +6423,20 @@ document.addEventListener(
                                         input
                                     );
 
+                                    if (activeGroups.length === 1 && !connectedVariants.length && resolveProductPricingMode(product) === 'varies') {
+                                        const price = document.createElement('input');
+                                        price.type = 'number';
+                                        price.min = '0';
+                                        price.step = '0.01';
+                                        price.value = item.price ?? '';
+                                        price.placeholder = 'Item price';
+                                        price.setAttribute('aria-label', 'Item price for ' + item.name);
+                                        price.className = 'product-details-choice-edit product-details-edit-control';
+                                        price.dataset.productOptionPrice = 'true';
+                                        price.dataset.optionGroup = group.key;
+                                        price.dataset.optionIndex = String(index);
+                                        choices.append(price);
+                                    }
                                     if (group.key === 'variations' && index === 0) {
                                         selectedOptionStock = document.createElement('div');
                                         selectedOptionStock.className = 'product-details-selected-option-stock';
@@ -8982,10 +9010,11 @@ document.addEventListener(
                      * Fallback for older products where only the base-price
                      * option group was preserved.
                      */
-                    const source =
-                        resolveProductPricingSource(
-                            product
-                        );
+                    const optionGroups = ['variations', 'colors', 'sizes']
+                        .filter(group => product?.[group]?.length);
+                    const source = optionGroups.length === 1
+                        ? optionGroups[0]
+                        : resolveProductPricingSource(product);
 
                     const items =
                         source &&
@@ -11541,6 +11570,17 @@ document.addEventListener(
 
                                 // Orders update stock in the database; localStorage
                                 // must not replace the latest inventory values.
+                                pricingMode: serverProduct.pricingMode,
+                                pricingSource: serverProduct.pricingSource,
+                                basePrice: serverProduct.basePrice,
+                                listingSnapshot: localProduct.listingSnapshot && {
+                                    ...localProduct.listingSnapshot,
+                                    pricingMode: serverProduct.pricingMode,
+                                    originalPricingMode: serverProduct.pricingMode,
+                                    pricingSource: serverProduct.pricingSource,
+                                    originalPricingSource: serverProduct.pricingSource,
+                                    basePrice: serverProduct.basePrice,
+                                },
                                 stock: serverProduct.stock,
                                 sale_percentage: serverProduct.sale_percentage,
                                 sale_price: serverProduct.sale_price,
@@ -13239,7 +13279,7 @@ document.addEventListener(
                     );
                 }
 
-                function getOptionPriceMeta(group) {
+                function getOptionPriceMeta(group, pricingMode, pricingSource) {
                     const isPrimary =
                         pricingMode !== 'varies' ||
                         pricingSource === group;
@@ -13272,8 +13312,9 @@ document.addEventListener(
                 function createOptionPriceControl(group, item) {
                     // Keep a dormant price control so switching modes can reveal
                     // it without rebuilding choice rows or losing attached photos.
-                    const meta =
-                        getOptionPriceMeta(group);
+                    const pricingMode = productPricingMode?.value === 'varies' ? 'varies' : 'fixed';
+                    const pricingSource = productPricingSource?.value || '';
+                    const meta = getOptionPriceMeta(group, pricingMode, pricingSource);
 
                     if (!meta) {
                         return null;
@@ -13285,6 +13326,7 @@ document.addEventListener(
                     wrap.className =
                         'create-option-price-wrap';
                     wrap.dataset.choiceField = 'price';
+                    wrap.dataset.optionName = item.name;
                     if (pricingMode === 'fixed') {
                         wrap.style.setProperty('display', 'none', 'important');
                     }
@@ -13347,9 +13389,7 @@ document.addEventListener(
                     input.addEventListener(
                         'input',
                         function () {
-                            if (pricingMode !== 'fixed') {
-                                item.price = input.value;
-                            }
+                            item.price = input.value;
                         }
                     );
 
@@ -16066,6 +16106,10 @@ document.addEventListener(
 
                         event.preventDefault();
 
+                        // The pricing controls synchronize these fields before submit.
+                        const pricingMode = productPricingMode?.value === 'varies' ? 'varies' : 'fixed';
+                        const pricingSource = pricingMode === 'varies' ? productPricingSource?.value || '' : '';
+
                         if (
                             !sellerRegisteredCategories.length
                         ) {
@@ -16157,6 +16201,22 @@ document.addEventListener(
                                 });
 
                                 return;
+                            }
+
+                            const choiceGroups = [
+                                [productVariations, productVariationsContainer],
+                                [productColors, productColorsContainer],
+                                [productSizes, productSizesContainer],
+                            ].filter(([options]) => options.length);
+                            if (choiceGroups.length === 1) {
+                                const [options, container] = choiceGroups[0];
+                                const prices = new Map(
+                                    Array.from(container.querySelectorAll('[data-choice-field="price"]'))
+                                        .map(field => [field.dataset.optionName, field.querySelector('input').value])
+                                );
+                                options.forEach(option => {
+                                    if (prices.has(option.name)) option.price = prices.get(option.name);
+                                });
                             }
 
                             const missingPrimaryPrice =
@@ -17186,10 +17246,10 @@ document.addEventListener(
                                 persistedProduct.status || 'pending',
 
                             pricingMode:
-                                previewPayload.pricingMode,
+                                persistedProduct.pricing_mode ?? previewPayload.pricingMode,
 
                             pricingSource:
-                                previewPayload.pricingSource,
+                                persistedProduct.pricing_source ?? previewPayload.pricingSource,
 
                             basePrice:
                                 persistedProduct.price ??
@@ -17218,10 +17278,10 @@ document.addEventListener(
                                 ),
 
                             colors:
-                                previewPayload.colors,
+                                persistedProduct.colors ?? previewPayload.colors,
 
                             sizes:
-                                previewPayload.sizes,
+                                persistedProduct.sizes ?? previewPayload.sizes,
 
                             connectedVariants:
                                 (
@@ -17401,16 +17461,16 @@ document.addEventListener(
                                     previewPayload.category || '',
 
                                 pricingMode:
-                                    previewPayload.pricingMode || 'fixed',
+                                    persistedProduct.pricing_mode ?? previewPayload.pricingMode,
 
                                 originalPricingMode:
-                                    previewPayload.pricingMode || 'fixed',
+                                    persistedProduct.pricing_mode ?? previewPayload.pricingMode,
 
                                 pricingSource:
-                                    previewPayload.pricingSource || '',
+                                    persistedProduct.pricing_source ?? previewPayload.pricingSource,
 
                                 originalPricingSource:
-                                    previewPayload.pricingSource || '',
+                                    persistedProduct.pricing_source ?? previewPayload.pricingSource,
 
                                 basePrice:
                                     previewPayload.basePrice,
@@ -18767,9 +18827,7 @@ document.addEventListener(
                         );
 
                     if (
-                        basePriceState.has(
-                            key
-                        )
+                        getActiveGroups().length >= 2 && basePriceState.has(key)
                     ) {
                         input.value =
                             basePriceState.get(
@@ -18780,8 +18838,7 @@ document.addEventListener(
                     input.disabled =
                         false;
 
-                    input.required =
-                        false;
+                    input.required = getActiveGroups().length === 1;
 
                     input.placeholder =
                         '0.00';
@@ -21027,6 +21084,8 @@ document.addEventListener(
                                 ),
                                 input.value
                             );
+
+                            if (getActiveGroups().length === 1) return;
 
                             rebuildContextPricing(
                                 getActiveGroups()

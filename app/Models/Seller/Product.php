@@ -66,6 +66,20 @@ class Product extends Model
         return $this->belongsTo(Seller::class);
     }
 
+    public function getPriceAttribute($value): ?string
+    {
+        // Older single-choice listings could be saved with a zero product price.
+        if ($this->exists && $value !== null && (float) $value === 0.0
+            && ($this->attributes['pricing_mode'] ?? null) === 'varies') {
+            $options = $this->relationLoaded('options') ? $this->options : $this->options()->get();
+            if ($options->pluck('type')->unique()->count() === 1) {
+                $value = $options->min('price') ?? $value;
+            }
+        }
+
+        return $this->castAttribute('price', $value);
+    }
+
     public function getSalePriceAttribute(): float
     {
         return $this->salePriceForBase((float) $this->price);

@@ -1008,3 +1008,19 @@ html { scroll-padding-top: 110px; }
   .seller-products-panel .seller-product-card {max-width: none !important;}
   .seller-products-panel .seller-product-image {height: 130px !important;}
 }
+#sellerProductDetailsModal .product-details-choice-photo {
+    display: inline-flex;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    margin-inline-end: 5px;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+#sellerProductDetailsModal .product-details-choice-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
