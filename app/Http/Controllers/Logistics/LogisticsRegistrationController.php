@@ -117,7 +117,7 @@ class LogisticsRegistrationController extends Controller
             ], true)
                 && empty($previous[$key]['path']);
             $rules[$key] = [$required ? 'required' : 'nullable', 'file',
-                'mimes:jpg,jpeg,png,webp,pdf','max:5120'];
+                'mimes:jpg,jpeg,png,webp,pdf','max:10240'];
         }
         $request->validate($rules);
         $documents = $previous;

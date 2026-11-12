@@ -8,7 +8,7 @@
 @endphp
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ShopEase - Logistics Review Information</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-@vite(['resources/css/app.css', 'resources/js/logistics/logistics-registration-navigation.js'])
+@vite(['resources/css/app.css'])
 <style>
 :root{--maroon-dark:#52070B;--maroon:#7B1B1B;--maroon-light:#A52A2A;--background:#FBF5F2;--text:#161616;--muted:#969696;--border:#D8D8D8;--success:#2E7D32}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Poppins,Arial,sans-serif;color:var(--text);background:var(--background)}button,input{font-family:inherit}.registration-page{min-height:100vh;overflow-x:hidden;animation:enter .3s cubic-bezier(.22,1,.36,1) both}@keyframes enter{from{opacity:.72;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

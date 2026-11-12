@@ -54,7 +54,7 @@
                                 <path d="M8 10.5V7.5a4 4 0 018 0v3"/>
                             </svg>
                             <input type="password" id="logisticsLoginPass" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                            <button type="button" class="toggle-eye" id="logisticsEyeBtn" aria-label="Show password" aria-pressed="false">
+                            <button type="button" class="toggle-eye" data-loading="off" id="logisticsEyeBtn" aria-label="Show password" aria-pressed="false">
                                 <img src="{{ asset('icons/login/hide-password.png') }}"
                                      data-show-icon="{{ asset('icons/login/show-password.png') }}"
                                      data-hide-icon="{{ asset('icons/login/hide-password.png') }}"

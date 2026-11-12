@@ -7,7 +7,7 @@
    let msg='';
    if(!file&&!saved)msg='This document is required.';
    if(file&&!['image/jpeg','image/png','application/pdf'].includes(file.type))msg='Please upload a JPG, PNG, or PDF file.';
-   if(file&&file.size>5*1024*1024)msg='The file must be 5 MB or smaller.';
+   if(file&&file.size>10*1024*1024)msg='The file must be 10 MB or smaller.';
    document.getElementById('box_'+input.id)?.classList.toggle('is-invalid',!!msg);
    const error=document.getElementById('error_'+input.id);if(error)error.textContent=msg;
    input.setAttribute('aria-invalid',String(!!msg));
@@ -28,7 +28,7 @@
 
 (() => {
  const form = document.getElementById('logisticsPermitsForm');
- const maxBytes = 5 * 1024 * 1024;
+ const maxBytes = 10 * 1024 * 1024;
  const accepted = ['image/jpeg', 'image/png', 'application/pdf'];
  const objectUrls = [];
  function setError(input, msg) {
@@ -49,7 +49,7 @@
    const saved = document.getElementById('stored_' + input.id);
    if(!file) {text.textContent='Click to upload a document'; box.classList.remove('has-file'); return;}
    if(!accepted.includes(file.type) || file.size > maxBytes) {
-      setError(input, !accepted.includes(file.type) ? 'Please upload a JPG, PNG, or PDF file.' : 'The file must be 5 MB or smaller.');
+      setError(input, !accepted.includes(file.type) ? 'Please upload a JPG, PNG, or PDF file.' : 'The file must be 10 MB or smaller.');
       return;
    }
    box.classList.add('has-file'); text.textContent = file.name;
