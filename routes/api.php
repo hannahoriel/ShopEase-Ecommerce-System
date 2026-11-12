@@ -329,6 +329,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('seller.api.feedback.index');
             Route::get('/feedback/products/{product}', [CustomerFeedbackController::class, 'showProduct'])->name('seller.api.feedback.products.show');
             Route::get('/order-status', [OrderStatusController::class, 'index']);
+            Route::post('/order-complaints', [\App\Http\Controllers\Api\Seller\OrderComplaintController::class, 'store'])->middleware('throttle:10,1')->name('seller.api.order-complaints.store');
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('seller.api.orders.rider-messages.index');

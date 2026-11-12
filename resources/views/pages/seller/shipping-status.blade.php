@@ -2087,9 +2087,9 @@
 
                 <div>
 
-                    <h3>
+                    <div class="seller-order-report-heading"><h3>
                         Customer Information
-                    </h3>
+                    </h3><button type="button" class="seller-order-report-button" data-seller-order-report disabled>Report</button></div>
 
 
                     <div
@@ -2672,5 +2672,6 @@
 
     </div>
 
+@include('components.seller.order-report')
 </body>
 </html>

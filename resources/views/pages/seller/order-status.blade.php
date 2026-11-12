@@ -404,7 +404,7 @@
             {{-- CUSTOMER / PAYMENT --}}
             <div class="modal-section modal-customer-payment grid grid-cols-2 gap-[45px]">
                 <div>
-                    <h3 class="text-[16px] font-semibold text-[#17120F]">Customer Information</h3>
+                    <div class="seller-order-report-heading"><h3 class="text-[16px] font-semibold text-[#17120F]">Customer Information</h3><button type="button" class="seller-order-report-button" data-seller-order-report disabled>Report</button></div>
                     <div class="mt-[13px] space-y-[9px]">
                         <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" fill="#000"></circle><circle cx="16" cy="8" r="3" fill="#000"></circle><path d="M2 19c.8-3 3-5 6-5s5.2 2 6 5H2Z" fill="#000"></path><path d="M12 19c.7-2.5 2.5-4 5-4 2.7 0 4.5 1.5 5 4h-10Z" fill="#000"></path></svg><span id="orderModalCustomerName" class="text-[12px] text-[#17120F]">—</span></div>
                         <div class="flex items-center gap-[10px]"><svg class="w-[19px] h-[19px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M3 7l9 7 9-7"></path></svg><span id="orderModalCustomerEmail" class="text-[12px] text-[#17120F]">—</span></div>
@@ -610,5 +610,6 @@
     </div>
 
 
+@include('components.seller.order-report')
 </body>
 </html>
