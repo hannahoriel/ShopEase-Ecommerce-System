@@ -10,6 +10,14 @@ use App\Services\BuyerWalletService;
 use Illuminate\Support\Facades\DB;
 class CancelOrderForParcelIssue
 {
+    /** Seller compensation covers the ordered merchandise only; shipping is excluded. */
+    public function reimbursementAmount(?\App\Models\Admin\Order $order): float
+    {
+        if (! $order) return 0.0;
+
+        return round((float) $order->items()->sum(DB::raw('quantity * unit_price')), 2);
+    }
+
     /** Cancel an active buyer order and retain the reported issue as its reason. */
     public function handle(
         Shipment $shipment,
@@ -67,7 +75,7 @@ class CancelOrderForParcelIssue
         }
 
         $seller = $order->seller()->with('user')->first();
-        $amount = round((float) $order->total, 2);
+        $amount = $this->reimbursementAmount($order);
         $reimbursed = false;
         if ($seller && $amount > 0) {
             $credited = DB::table('seller_wallet_transactions')->insertOrIgnore([
