@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class DeliveryHubCodFinanceController extends Controller
 {
@@ -238,10 +239,28 @@ class DeliveryHubCodFinanceController extends Controller
         abort_unless($remittance->status === 'verified', 409, 'Only verified remittances can be cashed in.');
         $result = DB::transaction(function () use ($request, $remittance, $hub, $settlements): array {
             $pinVerification = $this->walletPinVerification($request, $hub, true);
+            $otp = DB::table('hub_cash_in_otps')
+                ->where('delivery_hub_id', $hub->id)
+                ->where('remittance_id', $remittance->id)
+                ->where('requested_by', $request->user()->id)
+                ->whereNull('consumed_at')
+                ->where('expires_at', '>', now())
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->first();
+            $submittedCode = trim((string) $request->input('otp_code', ''));
+            if (! $otp || $submittedCode === '' || ! Hash::check($submittedCode, $otp->code_hash)) {
+                throw ValidationException::withMessages([
+                    'otp_code' => ['Enter the latest valid cash-in verification code.'],
+                ]);
+            }
+
             $result = $settlements->cashIn($remittance, $hub->id, (int) $request->user()->id);
             DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)
                 ->where('verification_token_hash', $pinVerification->verification_token_hash)
                 ->update(['token_consumed_at' => now(), 'updated_at' => now()]);
+            DB::table('hub_cash_in_otps')->where('id', $otp->id)
+                ->update(['consumed_at' => now(), 'updated_at' => now()]);
             return ['data' => $result];
         });
         if (isset($result['error'])) {

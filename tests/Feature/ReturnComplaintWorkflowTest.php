@@ -278,7 +278,11 @@ class ReturnComplaintWorkflowTest extends TestCase
         ])->assertOk()->assertJsonPath('return_status', 'returned');
         $this->assertSame('returned', $return->fresh()->shipping_status);
         $this->actingAs($admin)->patchJson($url, ['action'=>'received'])->assertOk()->assertJsonPath('data.status', 'refunded');
-        $this->assertDatabaseHas('buyer_wallets', ['user_id'=>$buyer->id, 'balance'=>180]);
+        $this->assertDatabaseHas('rider_cod_collections', [
+            'order_return_id' => $return->id,
+            'amount' => 180,
+        ]);
+        $this->assertDatabaseMissing('buyer_wallets', ['user_id'=>$buyer->id, 'balance'=>180]);
         $proof = \App\Models\Rider\DeliveryProof::query()->where('order_id', $order->id)->latest('id')->firstOrFail();
         Storage::disk('local')->assertExists($proof->photo_path);
     }

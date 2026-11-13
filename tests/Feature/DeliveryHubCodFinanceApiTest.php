@@ -65,7 +65,7 @@ class DeliveryHubCodFinanceApiTest extends TestCase
         Remittance::create(['rider_id' => $rider->id, 'amount' => 559, 'method' => 'hub_turn_in', 'status' => 'pending']);
         $this->actingAs($riderUser)->postJson('/api/v1/rider/remittances', [
             'amount' => '559.00', 'method' => 'hub_turn_in',
-        ])->assertStatus(409);
+        ])->assertOk()->assertJsonPath('message', 'The existing pending remittance was matched to these COD collections and sent to the hub for review.');
         $rider->remittances()->update(['status' => 'rejected']);
         $remittanceResponse = $this->actingAs($riderUser)->postJson('/api/v1/rider/remittances', [
             'amount' => '559.00', 'method' => 'hub_turn_in',

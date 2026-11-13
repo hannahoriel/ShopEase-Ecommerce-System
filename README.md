@@ -7,6 +7,25 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## ShopEase Ecommerce System
+
+ShopEase is a Laravel and Vite ecommerce platform with buyer, seller, admin, rider, and logistics workflows.
+
+## CI/CD with GitHub Actions and Docker
+
+The `ShopEase CI/CD Pipeline` workflow runs for pushes and pull requests targeting `main` or `master`, version tags beginning with `v`, and manual runs. It installs PHP and Node dependencies, checks PHP and JavaScript syntax, runs the PHP and JavaScript test suites, and builds the Vite assets. Docker image publishing runs only after those checks pass and is skipped for pull requests. It publishes to GitHub Container Registry (`ghcr.io/<owner>/<repository>`) using the workflow's built-in `GITHUB_TOKEN`.
+
+To configure the optional classroom secret check, add a repository Actions secret named `DEMO_API_KEY` and set the repository Actions variable `CHECK_DEMO_API_KEY` to `true`. The workflow checks that the secret exists without printing its value. Leave the variable unset to skip the demonstration check.
+
+Build and run the container locally after configuring the application's runtime environment (including `APP_KEY` and database settings):
+
+```sh
+docker build -t shopease:local .
+docker run --rm -p 8000:8000 -e APP_KEY="$APP_KEY" shopease:local
+```
+
+The app will be available at `http://localhost:8000`. The container does not bundle production credentials or a database; supply the appropriate runtime configuration for your deployment.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

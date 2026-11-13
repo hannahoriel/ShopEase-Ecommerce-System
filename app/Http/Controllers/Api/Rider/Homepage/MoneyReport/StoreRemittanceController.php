@@ -45,7 +45,9 @@ class StoreRemittanceController extends Controller
         try {
             [$remittance, $reconciled] = DB::transaction(function () use ($rider, $hub, $validated, $receiptPath) {
                 $lockedRider = $rider->newQuery()->lockForUpdate()->findOrFail($rider->id);
-                $collections = $lockedRider->codCollections()->whereDoesntHave('remittances')
+                $collections = $lockedRider->codCollections()->whereDoesntHave(
+                    'remittances', fn ($query) => $query->where('status', '<>', 'rejected'),
+                )
                     ->lockForUpdate()->get();
                 $due = round((float) $collections->sum('amount'), 2);
                 $submitted = round((float) $validated['amount'], 2);
@@ -68,14 +70,48 @@ class StoreRemittanceController extends Controller
                         'receipt_path' => $receiptPath ?: $remittance->receipt_path,
                     ]);
                 } else {
-                    $remittance = $lockedRider->remittances()->create([
-                        'delivery_hub_id' => $hub->id,
-                        'amount' => number_format($due, 2, '.', ''),
-                        'method' => $validated['method'],
-                        'reference_number' => $validated['reference_number'] ?? null,
-                        'receipt_path' => $receiptPath,
-                        'status' => 'pending',
-                    ]);
+                    $collectionIds = $collections->modelKeys();
+                    $collectionIds = array_map('intval', $collectionIds);
+                    sort($collectionIds);
+                    $rejected = $lockedRider->remittances()
+                        ->where('status', 'rejected')
+                        ->with('collections')
+                        ->lockForUpdate()
+                        ->get()
+                        ->first(function ($candidate) use ($collectionIds): bool {
+                            $previousCollectionIds = array_map('intval', $candidate->collections->modelKeys());
+                            sort($previousCollectionIds);
+
+                            return $previousCollectionIds === $collectionIds;
+                        });
+
+                    if ($rejected) {
+                        $rejected->update([
+                            'delivery_hub_id' => $hub->id,
+                            'amount' => number_format($due, 2, '.', ''),
+                            'actual_amount' => null,
+                            'discrepancy_amount' => null,
+                            'method' => $validated['method'],
+                            'reference_number' => $validated['reference_number'] ?? null,
+                            'receipt_path' => $receiptPath,
+                            'status' => 'pending',
+                            'reviewed_by' => null,
+                            'reviewed_at' => null,
+                            'review_notes' => null,
+                            'cash_in_at' => null,
+                            'cash_in_by' => null,
+                        ]);
+                        $remittance = $rejected;
+                    } else {
+                        $remittance = $lockedRider->remittances()->create([
+                            'delivery_hub_id' => $hub->id,
+                            'amount' => number_format($due, 2, '.', ''),
+                            'method' => $validated['method'],
+                            'reference_number' => $validated['reference_number'] ?? null,
+                            'receipt_path' => $receiptPath,
+                            'status' => 'pending',
+                        ]);
+                    }
                 }
                 $remittance->collections()->sync($collections->modelKeys());
                 return [$remittance, $reconciled];
