@@ -39,6 +39,8 @@ class RiderDeliveryService
     public function serializeDelivery(Order $order): array
     {
         $rider = $order->shipment?->rider;
+        $orderName = $order->items->pluck('product_name')->filter()->unique()->implode(', ');
+        $orderName = $orderName !== '' ? $orderName : 'Order '.$order->order_number;
         $pickupHandoff = $order->shipment?->transferManifests()
             ->where('origin_type', 'seller_collection')
             ->where('destination_type', 'delivery_hub')
@@ -48,12 +50,22 @@ class RiderDeliveryService
         return [
             'id' => $order->id,
             'order_number' => $order->order_number,
+            'order_name' => $orderName,
+            'name' => $orderName,
+            'title' => $orderName,
             'status' => $order->status,
             'delivery_name' => $order->delivery_name,
             'delivery_phone' => $order->delivery_phone,
             'delivery_address' => $order->delivery_address,
             'total' => $order->total,
             'payment_method' => $order->payment_method,
+            'delivered_at' => $order->shipment?->delivered_at?->toISOString()
+                ?? $order->deliveryProofs->firstWhere('status', 'delivered')?->created_at?->toISOString(),
+            'delivery_date' => $order->shipment?->delivered_at?->toISOString()
+                ?? $order->deliveryProofs->firstWhere('status', 'delivered')?->created_at?->toISOString(),
+            'date' => $order->shipment?->delivered_at?->toISOString()
+                ?? $order->deliveryProofs->firstWhere('status', 'delivered')?->created_at?->toISOString(),
+            'task_type' => 'delivery',
             'pickup_date' => $order->pickup_date?->toDateString(),
             'pickup_time' => $order->pickup_time?->format('H:i'),
             'pickup_hub_dropoff' => $pickupHandoff ? [

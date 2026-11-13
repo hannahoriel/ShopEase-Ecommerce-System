@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Logistics;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Announcement;
+use App\Models\Admin\OrderReturn;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
@@ -93,7 +94,49 @@ class DeliveryHubDashboardController extends Controller
             })
             ->filter(fn ($batch) => $this->inPeriod($batch['arrival_at'], $dates))
             ->values();
-        $incomingBatches = $incomingBatches->concat($scheduledPickups)->sortByDesc('arrival_at')->values();
+
+        // A buyer-scheduled return is incoming work for this hub as soon as
+        // the pickup slot is saved, before the rider physically collects it.
+        $scheduledReturns = OrderReturn::query()
+            ->where('return_type', 'return')->whereIn('status', ['accepted', 'refunded'])
+            ->whereIn('shipping_status', ['scheduled', 'picked_up'])
+            ->where(function ($query) use ($hub): void {
+                $query->where('return_delivery_hub_id', $hub->id)
+                    ->orWhere(fn ($legacy) => $legacy->whereNull('return_delivery_hub_id')
+                        ->whereHas('order.shipment', fn ($shipment) => $shipment->where('logistics_delivery_hub_id', $hub->id)));
+            })
+            ->with(['order', 'pickupRider.user'])
+            ->latest('updated_at')
+            ->get()
+            ->map(function (OrderReturn $return): array {
+                $riderName = trim(($return->pickupRider?->first_name ?? '').' '.($return->pickupRider?->last_name ?? ''));
+
+                return [
+                    'id' => $return->tracking_number ?: $return->order?->order_number ?: 'Return '.$return->id,
+                    'return_id' => $return->id,
+                    'origin' => collect([
+                        'FOR RETURN · Buyer pickup',
+                        $return->order?->order_number,
+                        $return->pickup_address ?: $return->order?->delivery_address,
+                        $return->pickup_date?->format('M d, Y'),
+                        $return->pickup_time,
+                    ])->filter()->implode(' · '),
+                    'total' => 1,
+                    'received' => 0,
+                    'pending' => 1,
+                    'arrival_at' => $return->updated_at?->toIso8601String(),
+                    'courier' => $riderName !== '' ? $riderName : ($return->pickupRider?->user?->name ?: 'Pickup rider pending'),
+                    'truck' => $return->pickupRider?->plate_number ?: 'Not assigned',
+                    'stage' => $return->shipping_status === 'picked_up'
+                        ? 'return_collected_awaiting_hub_scan'
+                        : 'scheduled_return_pickup',
+                    'transfer_type' => 'return',
+                ];
+            })
+            ->filter(fn ($batch) => $this->inPeriod($batch['arrival_at'], $dates))
+            ->values();
+
+        $incomingBatches = $incomingBatches->concat($scheduledPickups)->concat($scheduledReturns)->sortByDesc('arrival_at')->values();
 
         $receivedBatches = $inbound->map(function ($manifest) use ($hub): array {
             $receivedShipments = $manifest->shipments->filter(fn (Shipment $shipment) => $shipment->pivot?->received_at !== null);

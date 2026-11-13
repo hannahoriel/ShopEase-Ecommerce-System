@@ -5,6 +5,7 @@ namespace App\Models\Admin;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Rider\Rider;
 
 class OrderReturn extends Model
 {
@@ -39,6 +40,8 @@ class OrderReturn extends Model
         'refunded_at',
         'evidence',
         'complaint_id', 'problem_type', 'buyer_solution', 'pickup_date', 'pickup_time', 'pickup_address',
+        'return_delivery_hub_id',
+        'delivery_rider_id',
     ];
 
     protected $casts = [
@@ -58,6 +61,21 @@ class OrderReturn extends Model
     }
 
     public function complaint(): BelongsTo { return $this->belongsTo(Complaint::class); }
+
+    public function pickupRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'pickup_rider_id');
+    }
+
+    public function returnDeliveryHub(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Logistics\LogisticsDeliveryHub::class, 'return_delivery_hub_id');
+    }
+
+    public function deliveryRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'delivery_rider_id');
+    }
 
     public function events(): HasMany
     {

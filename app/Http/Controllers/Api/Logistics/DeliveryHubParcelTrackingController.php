@@ -45,29 +45,40 @@ class DeliveryHubParcelTrackingController extends Controller
         $parcelByOrder = $parcels->keyBy('id');
 
         $returns = OrderReturn::query()
-            ->whereIn('order_id', $orders->modelKeys())
-            ->with(['events', 'order.shipment'])
+            ->where(function ($query) use ($orders, $hub): void {
+                $query->where('return_delivery_hub_id', $hub->id)
+                    ->orWhere(fn ($legacy) => $legacy->whereNull('return_delivery_hub_id')
+                        ->whereIn('order_id', $orders->modelKeys()));
+            })
+            ->with([
+                'events', 'order.buyer.buyerProfile', 'order.seller.user', 'order.seller', 'order.items',
+                'order.shipment.scans', 'order.shipment.deliveryHub', 'order.shipment.logisticsBranch', 'order.statusHistory',
+            ])
             ->latest('requested_at')
             ->get()
             ->map(function (OrderReturn $return) use ($parcelByOrder, $hub): ?array {
-                $parcel = $parcelByOrder->get($return->order_id);
+                $parcel = $parcelByOrder->get($return->order_id)
+                    ?? ($return->order ? $this->serializeOrder($return->order, $hub) : null);
                 if (! $parcel || in_array(mb_strtolower(trim((string) $return->return_type)), ['refund', 'refund_only', 'partial_refund'], true)) {
                     return null;
                 }
+                $returnHubId = $return->return_delivery_hub_id ?: $return->order->shipment?->logistics_delivery_hub_id;
 
                 return [
                     ...$parcel,
                     'id' => $return->id,
                     'return_id' => $return->id,
+                    'order_id' => $return->order_id,
                     'status' => $return->status,
                     'return_status' => $return->status,
                     'return_type' => $return->return_type,
+                    'return_delivery_hub_id' => $return->return_delivery_hub_id,
                     'pickup_date' => $return->pickup_date?->toDateString(),
                     'pickup_time' => $return->pickup_time,
                     'failed_pickup_attempts' => (int) $return->failed_pickup_attempts,
-                    'can_schedule_pickup' => (int) $return->order->shipment?->logistics_delivery_hub_id === (int) $hub->id
+                    'can_schedule_pickup' => (int) $returnHubId === (int) $hub->id
                         && $return->canSchedulePickup(assignRider: true),
-                    'can_record_pickup' => (int) $return->order->shipment?->logistics_delivery_hub_id === (int) $hub->id
+                    'can_record_pickup' => (int) $returnHubId === (int) $hub->id
                         && $return->complaint_id && $return->status === 'accepted'
                         && $return->shipping_status === 'scheduled' && $return->pickup_rider_id,
                     'pickup_url' => route('delivery_hub.api.returns.pickup', $return),
@@ -79,6 +90,7 @@ class DeliveryHubParcelTrackingController extends Controller
                     'requested_at' => $return->requested_at?->toISOString(),
                     'returned_at' => $return->returned_at?->toISOString(),
                     'tracking_number' => $return->tracking_number ?: $parcel['tracking_number'],
+                    'parcel_tracking_number' => $parcel['tracking_number'],
                     'courier' => $return->courier ?: $parcel['courier'],
                     'shipping_status' => $return->shipping_status ?: $return->status,
                     'tracking_history' => $return->events->map(fn ($event): array => [
@@ -152,6 +164,9 @@ class DeliveryHubParcelTrackingController extends Controller
             'seller_name' => $seller?->store_name ?: $seller?->business_name,
             'seller_email' => $sellerUser?->email,
             'seller_phone' => $seller?->contact_no,
+            'seller_province' => $seller?->province,
+            'seller_city' => $seller?->municipality,
+            'seller_barangay' => $seller?->barangay,
             'seller_address_details' => $this->address($seller),
             'product_name' => $order->items->first()?->product_name,
             'items' => $order->items->map(fn ($item): array => [

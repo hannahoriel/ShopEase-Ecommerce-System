@@ -33,15 +33,22 @@ class DeliveryHubCodFinanceController extends Controller
             ->orderBy('id')->pluck('order_id')
             ->each(fn ($orderId) => $settlements->releaseSellerEarnings((int) $orderId));
 
-        $remittances = $this->remittanceQuery($hub)->with(['rider.user', 'collections.order.buyer'])->latest()->get();
+        $remittances = $this->remittanceQuery($hub)->with([
+            'rider.user', 'collections.order.buyer', 'collections.orderReturn.order.buyer',
+        ])->latest()->get();
         $today = now()->toDateString();
         $todaySettlements = DB::table('cod_settlements')->where('delivery_hub_id', $hub->id)
             ->whereDate('distributed_at', $today)->get();
+        $todayReturnDistributions = $this->returnDistributionQuery($hub)
+            ->whereDate('remittance.updated_at', $today)->get();
         $todayCollections = DB::table('rider_cod_collections as c')->join('riders as r', 'r.id', '=', 'c.rider_id')
             ->where('r.logistics_branch_id', $hub->logistics_branch_id)->whereDate('c.collected_at', $today)->get(['c.amount']);
         $todayOutstanding = DB::table('rider_cod_collections as c')->join('riders as r', 'r.id', '=', 'c.rider_id')
             ->where('r.logistics_branch_id', $hub->logistics_branch_id)->whereDate('c.collected_at', $today)
             ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('cod_settlements as cs')->whereColumn('cs.order_id', 'c.order_id'))
+            ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('rider_cod_remittance_items as ri')
+                ->join('rider_remittances as rr', 'rr.id', '=', 'ri.remittance_id')
+                ->whereColumn('ri.cod_collection_id', 'c.id')->where('rr.status', 'distributed'))
             ->get(['c.amount']);
         $history = DB::table('cod_settlements as cs')->join('orders as o', 'o.id', '=', 'cs.order_id')
             ->leftJoin('users as u', 'u.id', '=', 'o.buyer_id')->where('cs.delivery_hub_id', $hub->id)
@@ -53,10 +60,18 @@ class DeliveryHubCodFinanceController extends Controller
             })->orderByDesc('cs.distributed_at')->get([
                 'cs.id', 'cs.order_id', 'cs.cod_amount', 'cs.shipping_fee', 'cs.platform_shipping_margin', 'cs.commission_amount', 'cs.seller_amount',
                 'cs.status', 'cs.distributed_at', 'cs.seller_released_at', 'o.order_number', 'u.name as buyer_name',
-            ]);
+            ])->map(function ($row): object { $row->type = 'cod_order'; return $row; });
+        $returnHistory = $this->returnDistributionQuery($hub)
+            ->when(! empty($filters['from']), fn ($q) => $q->whereDate('remittance.updated_at', '>=', $filters['from']))
+            ->when(! empty($filters['to']), fn ($q) => $q->whereDate('remittance.updated_at', '<=', $filters['to']))
+            ->when(! empty($filters['search']), function ($q) use ($filters): void {
+                $term = '%'.$filters['search'].'%';
+                $q->where(fn ($nested) => $nested->where('orders.order_number', 'like', $term)->orWhere('users.name', 'like', $term));
+            })->get();
+        $history = $history->concat($returnHistory)->sortByDesc('distributed_at')->values();
         $wallet = $settlements->walletBalance('delivery_hub', $hub->id, 'available');
         $todayTotal = (float) $todayCollections->sum('amount');
-        $todayDistributed = (float) $todaySettlements->sum('cod_amount');
+        $todayDistributed = (float) $todaySettlements->sum('cod_amount') + (float) $todayReturnDistributions->sum('cod_amount');
 
         return response()->json(['data' => [
             'hub' => ['id' => $hub->id, 'name' => $hub->hub_name],
@@ -76,14 +91,22 @@ class DeliveryHubCodFinanceController extends Controller
                 $order = Order::query()->with('buyer')->find($row->order_id);
                 return ['id' => $row->id, 'ref' => $order?->order_number, 'buyer' => $order?->buyer?->name,
                     'amount' => (float) $row->cod_amount,
+                    'type' => 'cod_order', 'seller_amount' => (float) $row->seller_amount,
                     'status' => $row->seller_released_at ? 'released' : 'held', 'time' => $row->distributed_at];
-            })->values(),
+            })->concat($todayReturnDistributions->map(fn ($row): array => [
+                'id' => 'return-'.$row->return_id, 'ref' => $row->order_number, 'buyer' => $row->buyer_name,
+                'amount' => (float) $row->cod_amount, 'type' => 'return_refund', 'seller_amount' => 0,
+                'status' => $row->return_status === 'refunded' ? 'refund_to_buyer' : 'refund_held', 'time' => $row->distributed_at,
+            ]))->sortByDesc('time')->values(),
             'history' => $history->map(fn ($row): array => [
                 'id' => $row->id, 'ref' => $row->order_number, 'buyer' => $row->buyer_name,
                 'amount' => (float) $row->cod_amount, 'shipping_fee' => (float) $row->shipping_fee,
                 'platform_shipping_margin' => (float) $row->platform_shipping_margin,
                 'seller_amount' => (float) $row->seller_amount,
-                'status' => $row->seller_released_at ? 'released' : 'held',
+                'type' => $row->type,
+                'status' => $row->type === 'return_refund'
+                    ? ($row->return_status === 'refunded' ? 'refund_to_buyer' : 'refund_held')
+                    : ($row->seller_released_at ? 'released' : 'held'),
                 'distributed_at' => $row->distributed_at, 'seller_released_at' => $row->seller_released_at,
             ])->values(),
             'cash_ins' => DB::table('hub_cod_cash_ins')->where('delivery_hub_id', $hub->id)->latest('received_at')->get(),
@@ -203,7 +226,9 @@ class DeliveryHubCodFinanceController extends Controller
             }
         });
 
-        return response()->json(['data' => $this->presentRemittance($remittance->fresh(['rider.user', 'collections.order']))]);
+        return response()->json(['data' => $this->presentRemittance($remittance->fresh([
+            'rider.user', 'collections.order', 'collections.orderReturn.order.buyer',
+        ]))]);
     }
 
     public function cashIn(Request $request, Remittance $remittance, CodSettlementService $settlements): JsonResponse
@@ -340,6 +365,25 @@ class DeliveryHubCodFinanceController extends Controller
             'created_at' => $remittance->created_at?->toIso8601String(), 'cash_in_at' => $remittance->cash_in_at?->toIso8601String(),
             'orders' => $remittance->collections->map(function ($collection): array {
                 $amount = (float) $collection->amount;
+                if ($collection->order_return_id) {
+                    $return = $collection->orderReturn;
+                    $order = $return?->order;
+                    return [
+                        'id' => $order?->id,
+                        'return_id' => $return?->id,
+                        'type' => 'return_refund',
+                        'ref' => $order?->order_number,
+                        'buyer' => $order?->buyer?->name,
+                        'amount' => $amount,
+                        'status' => $return?->status,
+                        'shipping_status' => $return?->shipping_status,
+                        'returned_at' => $return?->returned_at?->toIso8601String(),
+                        'shipping_fee' => 0,
+                        'platform_shipping_margin' => 0,
+                        'commission_amount' => 0,
+                        'seller_amount' => 0,
+                    ];
+                }
                 $order = $collection->order;
                 $shippingVoucher = $order?->voucher_type === 'shipping' ? max(0, (float) $order->voucher_discount) : 0;
                 $buyerShipping = min($amount, max(0, (float) ($order?->shipping_fee ?? 0) - $shippingVoucher));
@@ -348,14 +392,33 @@ class DeliveryHubCodFinanceController extends Controller
                 $shippingMargin = max(0, round($buyerShipping - $agreedShipping, 2));
                 $collectedProductAmount = max(0, $amount - $buyerShipping);
                 $base = round($collectedProductAmount + ($order?->voucher_type === 'shipping' ? 0 : (float) ($order?->voucher_discount ?? 0)), 2);
-                $commission = min($collectedProductAmount, round($base * CodSettlementService::COMMISSION_RATE / 100, 2));
+                $commission = round($base * CodSettlementService::COMMISSION_RATE / 100, 2);
                 return [
                     'id' => $collection->order_id, 'ref' => $collection->order?->order_number,
                     'buyer' => $collection->order?->buyer?->name, 'amount' => $amount, 'shipping_fee' => $shipping,
                     'platform_shipping_margin' => $shippingMargin,
-                    'commission_amount' => $commission, 'seller_amount' => round($collectedProductAmount - $commission - ($order?->voucher_type === 'shipping' && $order?->voucher_funding_source === 'seller' ? $shippingVoucher : 0), 2),
+                    'commission_amount' => $commission, 'seller_amount' => CodSettlementService::sellerAmount($order, $collectedProductAmount, $commission, $shippingVoucher),
                 ];
             })->values(),
         ];
+    }
+
+    private function returnDistributionQuery(LogisticsDeliveryHub $hub)
+    {
+        return DB::table('rider_cod_remittance_items as items')
+            ->join('rider_cod_collections as collections', 'collections.id', '=', 'items.cod_collection_id')
+            ->join('rider_remittances as remittance', 'remittance.id', '=', 'items.remittance_id')
+            ->join('order_returns as returns', 'returns.id', '=', 'collections.order_return_id')
+            ->join('orders', 'orders.id', '=', 'returns.order_id')
+            ->leftJoin('users', 'users.id', '=', 'orders.buyer_id')
+            ->where('remittance.delivery_hub_id', $hub->id)
+            ->where('remittance.status', 'distributed')
+            ->select([
+                'returns.id as id', 'returns.id as return_id', 'orders.id as order_id', 'orders.order_number',
+                'users.name as buyer_name', 'collections.amount as cod_amount',
+                'returns.status as return_status', 'returns.shipping_status', 'returns.returned_at',
+                'remittance.updated_at as distributed_at',
+            ])
+            ->selectRaw('? as type, 0 as shipping_fee, 0 as platform_shipping_margin, 0 as commission_amount, 0 as seller_amount, null as seller_released_at', ['return_refund']);
     }
 }

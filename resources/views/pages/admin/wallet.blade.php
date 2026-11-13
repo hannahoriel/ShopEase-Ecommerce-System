@@ -61,7 +61,7 @@
             </article>
         </div>
 
-        @include('components.shared.wallet-history', ['walletRoute' => 'admin.wallet.index', 'walletApiUrl' => route('admin.wallet.index')])
+        @include('components.shared.wallet-history', ['walletRoute' => 'admin.wallet.index', 'walletApiUrl' => route('admin.api.wallet.index')])
     </div>
 </div>
 @endsection

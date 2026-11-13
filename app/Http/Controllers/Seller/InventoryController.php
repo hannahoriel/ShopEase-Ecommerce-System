@@ -123,12 +123,14 @@ class InventoryController extends Controller
 
                 'inventoryProducts' =>
                     $seller?->products()
+                        ->withSum(['orderItems as sold_quantity' => fn ($items) => $items->whereHas('order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded']))], 'quantity')
                         ->where('is_archived', false)
                         ->latest()
                         ->get(),
 
                 'archivedProducts' =>
                     $seller?->products()
+                        ->withSum(['orderItems as sold_quantity' => fn ($items) => $items->whereHas('order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded']))], 'quantity')
                         ->where('is_archived', true)
                         ->latest()
                         ->get(),
