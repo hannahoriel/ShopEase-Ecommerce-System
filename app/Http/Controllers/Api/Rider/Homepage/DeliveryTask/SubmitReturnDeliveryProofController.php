@@ -51,7 +51,7 @@ class SubmitReturnDeliveryProofController extends Controller
                     'scanned_code' => $scan, 'photo_path' => $photoPath,
                     'delivery_method' => $data['delivery_method'] ?? null, 'notes' => $data['notes'] ?? 'Return parcel delivered to seller.',
                 ]);
-                $locked->forceFill(['shipping_status' => 'delivered'])->save();
+                $locked->forceFill(['shipping_status' => 'returned'])->save();
                 if ((float) $locked->refund_amount > 0) {
                     CodCollection::query()->firstOrCreate(
                         ['order_return_id' => $locked->id],

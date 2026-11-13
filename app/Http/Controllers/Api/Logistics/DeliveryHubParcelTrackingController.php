@@ -10,9 +10,24 @@ use App\Models\Admin\OrderReturn;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class DeliveryHubParcelTrackingController extends Controller
 {
+    public function page(Request $request): View
+    {
+        $hub = LogisticsDeliveryHub::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('archived_at')
+            ->firstOrFail();
+
+        return view('pages.logistics.delivery-hub.parcel-tracking', [
+            'hub' => $hub,
+            'deliveryHub' => $hub,
+            'deliveryHubId' => $hub->id,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $hub = LogisticsDeliveryHub::query()
