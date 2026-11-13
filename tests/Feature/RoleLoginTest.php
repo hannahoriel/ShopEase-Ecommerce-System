@@ -43,7 +43,7 @@ class RoleLoginTest extends TestCase
 
     public function test_login_page_renders_with_auth_layout(): void
     {
-        $this->get(route('login'))
+        $this->get(route('login', ['modal' => 1]))
             ->assertOk()
             ->assertSee('Log In')
             ->assertSee('ShopEase');
