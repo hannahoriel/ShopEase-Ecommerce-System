@@ -90,20 +90,27 @@ class AuthController extends Controller
         if ($isCourier) {
             $centerData = $request->validate([
                 'sorting_center_id' => ['required', 'integer', 'exists:logistics_branches,id'],
+                'logistics_id' => ['required', 'integer', 'exists:logistics,id'],
                 'assignment_province' => ['required', 'string', 'max:255'],
             ]);
             $center = LogisticsBranch::query()->whereKey($centerData['sorting_center_id'])
+                ->where('logistics_id', $centerData['logistics_id'])
                 ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($centerData['assignment_province']))])
                 ->where('status', 'active')->whereNull('archived_at')
+                ->whereHas('logistics', fn ($query) => $query
+                    ->where('registration_status', 'active')
+                    ->whereHas('user', fn ($user) => $user->where('role', User::ROLE_LOGISTICS)->where('registration_status', 'active')))
                 ->whereHas('user', fn ($query) => $query
                     ->where('role', User::ROLE_SORTING_CENTER)
                     ->where('registration_status', 'active'))
+                ->with('logistics')
                 ->first();
             if (! $center) {
                 throw ValidationException::withMessages([
                     'sorting_center_id' => 'Choose an active sorting center for your assignment province.',
                 ]);
             }
+            $request->merge(['courier_company' => $center->logistics?->business_name]);
         }
         if ($role === User::ROLE_RIDER && ! $isCourier) {
             $deliveryHub = $hubRegistrations->resolveHub($request);

@@ -7,6 +7,7 @@ use App\Models\Admin\Order;
 use App\Models\Admin\OrderReturn;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\User;
+use App\Notifications\RiderEventNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -26,6 +27,23 @@ class ReturnComplaintService
         if ($order->buyer) BuyerNotification::createForBuyer($order->buyer,'return_update',$title,$message,
             ['complaint_id'=>$return->complaint_id,'return_id'=>$return->id,'url'=>'/buyer/view-order?order='.rawurlencode($order->order_number)],$order);
         if ($order->seller?->user) app(SellerNotificationService::class)->send($order->seller->user,'order_updates',$title,$message,'/seller/performance');
+    }
+
+    public function notifyAssignedRiderOfRequest(OrderReturn $return): void
+    {
+        $return->loadMissing('order.shipment.rider.user');
+        $order = $return->order;
+        $riderUser = $order?->shipment?->rider?->user;
+        if (! $riderUser) {
+            return;
+        }
+
+        $riderUser->notify(new RiderEventNotification(
+            'Buyer return/refund request',
+            "The buyer submitted a {$return->return_type} request for order {$order->order_number}. It is awaiting review; you will be notified if a pickup is assigned.",
+            'return_request',
+            (int) $order->id,
+        ));
     }
 
     public function decide(Complaint $complaint, User $admin, string $action, ?string $notes = null): OrderReturn

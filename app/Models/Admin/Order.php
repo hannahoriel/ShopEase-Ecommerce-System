@@ -3,6 +3,7 @@
 namespace App\Models\Admin;
 
 use App\Models\Rider\DeliveryProof;
+use App\Models\Rider\DeliveryAttempt;
 use App\Models\Seller\Seller;
 use App\Models\Logistics\Logistics;
 use App\Models\User;
@@ -160,6 +161,11 @@ class Order extends Model
     public function deliveryProofs(): HasMany
     {
         return $this->hasMany(DeliveryProof::class);
+    }
+
+    public function deliveryAttempts(): HasMany
+    {
+        return $this->hasMany(DeliveryAttempt::class);
     }
 
     public function scopeCompleted($query)

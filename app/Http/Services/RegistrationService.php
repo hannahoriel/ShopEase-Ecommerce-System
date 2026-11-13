@@ -90,19 +90,23 @@ class RegistrationService
         }
 
         if ($role === User::ROLE_RIDER) {
+            $isCourier = $request->input('registration_type') === 'courier';
             $rules['middle_initial'] = ['nullable', 'string', 'max:150'];
-            $rules['vehicle'] = ['required', 'string', 'max:255'];
+            $rules['vehicle'] = [$isCourier ? 'nullable' : 'required', 'string', 'max:255'];
             $rules['registration_type'] = ['nullable', 'in:rider,courier'];
             $rules['assignment_region'] = ['nullable', 'string', 'max:255'];
             $rules['assignment_province'] = ['nullable', 'string', 'max:255'];
             $rules['assignment_barangay'] = ['nullable', 'string', 'max:255'];
-            $rules['plate_number'] = ['required', 'string', 'max:50'];
+            $rules['plate_number'] = [$isCourier ? 'nullable' : 'required', 'string', 'max:50'];
             $rules['courier_company'] = ['nullable', 'string', 'max:100'];
             $rules['logistics_operation'] = ['nullable', 'string', 'max:100'];
             $rules['municipal_hub'] = ['nullable', 'string', 'max:150'];
-            $rules['upload_or_cr'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
-            if ($request->input('registration_type') === 'courier') {
+            $rules['upload_or_cr'] = $isCourier
+                ? ['prohibited']
+                : ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
+            if ($isCourier) {
                 $rules['sorting_center_id'] = ['required', 'integer', 'exists:logistics_branches,id'];
+                $rules['upload_id_license'] = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
             }
         }
 
@@ -141,7 +145,7 @@ class RegistrationService
         }
 
         if ($role === User::ROLE_RIDER) {
-            $profile['vehicle'] = $validated['vehicle'];
+            $profile['vehicle'] = $validated['vehicle'] ?? null;
             $profile['registration_type'] = $validated['registration_type'] ?? 'rider';
             if ($profile['registration_type'] === 'courier') {
                 $profile['logistics_branch_id'] = (int) $validated['sorting_center_id'];
@@ -149,7 +153,7 @@ class RegistrationService
             $profile['assignment_region'] = $validated['assignment_region'] ?? null;
             $profile['assignment_province'] = $validated['assignment_province'] ?? null;
             $profile['assignment_barangay'] = $validated['assignment_barangay'] ?? null;
-            $profile['plate_number'] = $validated['plate_number'];
+            $profile['plate_number'] = $validated['plate_number'] ?? null;
             $profile['courier_company'] = $validated['courier_company'] ?? null;
             $profile['logistics_operation'] = $validated['logistics_operation'] ?? null;
             $profile['municipal_hub'] = $validated['municipal_hub'] ?? null;
@@ -167,7 +171,9 @@ class RegistrationService
         }
 
         if ($role === User::ROLE_RIDER) {
-            $profile['upload_or_cr'] = $this->storeRegistrationFile($request, 'upload_or_cr');
+            $profile['upload_or_cr'] = ($validated['registration_type'] ?? 'rider') === 'courier'
+                ? null
+                : $this->storeRegistrationFile($request, 'upload_or_cr');
         }
 
         return DB::transaction(function () use ($profile, $role) {

@@ -19,6 +19,9 @@ class Shipment extends Model
     protected $fillable = [
         'order_id',
         'rider_id',
+        'return_to_seller_status',
+        'returned_to_seller_at',
+        'return_to_seller_proof_path',
         'logistics_branch_id',
         'logistics_delivery_hub_id',
         'tracking_number',
@@ -42,6 +45,7 @@ class Shipment extends Model
         'current_latitude' => 'float',
         'current_longitude' => 'float',
         'location_updated_at' => 'datetime',
+        'returned_to_seller_at' => 'datetime',
     ];
 
     public function order(): BelongsTo
