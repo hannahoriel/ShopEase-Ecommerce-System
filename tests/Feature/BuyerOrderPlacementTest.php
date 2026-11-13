@@ -82,9 +82,9 @@ class BuyerOrderPlacementTest extends TestCase
             'quantity' => 1,
         ]);
 
-        $response = $this->actingAs($buyer)->postJson('/api/v1/buyer/orders', array_merge(
-            $this->checkoutPayload([$firstSeller->id, $secondSeller->id]),
-            [
+        $response = $this->actingAs($buyer)->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
+                ...$this->selectedCartRows($buyer),
             'delivery_name' => 'Buyer Example',
             'delivery_phone' => '09171234567',
             'delivery_address' => '1 Main Street, Manila',
@@ -167,14 +167,16 @@ class BuyerOrderPlacementTest extends TestCase
         [$seller] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
+                ...$this->selectedCartRows($buyer),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
             ]))
             ->assertUnprocessable()
-                ->assertJsonPath('message', 'Your cart is empty. Add items before placing an order.');
+            ->assertJsonPath('message', 'Your cart is empty. Add items before placing an order.');
 
         $this->assertDatabaseCount('orders', 0);
     }
@@ -191,7 +193,8 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -232,7 +235,8 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$selectedSeller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails([$selectedProduct->seller_id]),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -260,7 +264,9 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
+                ...$this->selectedCartRows($buyer),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -268,7 +274,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'cart_item_ids' => [$cartItem->id],
             ]))
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'There is not enough stock for Limited Item. Refresh your cart and try again.');
+            ->assertJsonPath('message', "There is not enough stock for {$product->name}. Refresh your cart and try again.");
 
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('order_items', 0);
@@ -287,7 +293,9 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $orderId = $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
+                ...$this->selectedCartRows($buyer),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -605,7 +613,9 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
+                ...$this->selectedCartRows($buyer),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -665,7 +675,9 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $orderId = $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
+            ->postJson('/api/v1/buyer/orders', [
+                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
+                ...$this->selectedCartRows($buyer),
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -805,44 +817,34 @@ class BuyerOrderPlacementTest extends TestCase
         return [$seller, $product];
     }
 
-    private function checkoutPayload(array $sellerIds): array
+    private function shippingDetails(array $sellerIds): array
     {
-        $logisticsUser = User::factory()->create([
-            'role' => User::ROLE_LOGISTICS,
+        $user = User::factory()->create(['role' => User::ROLE_LOGISTICS]);
+        $logistics = \App\Models\Logistics\Logistics::create([
+            'user_id' => $user->id, 'first_name' => 'Test', 'last_name' => 'Carrier', 'sex' => 'other',
+            'contact_no' => '09170000001', 'birthday' => '1990-01-01', 'age' => 36,
+            'province' => 'Laguna', 'municipality' => 'Calamba', 'barangay' => 'Real',
+            'street' => 'Main', 'house_number' => '1', 'business_name' => 'Test Logistics',
             'registration_status' => 'active',
         ]);
-        $logistics = Logistics::query()->create([
-            'user_id' => $logisticsUser->id,
-            'last_name' => 'Carrier',
-            'first_name' => 'Demo',
-            'sex' => 'other',
-            'contact_no' => '09171234567',
-            'birthday' => '1990-01-01',
-            'age' => 36,
-            'province' => 'Laguna',
-            'municipality' => 'Calamba',
-            'barangay' => 'Real',
-            'street' => 'Main Street',
-            'house_number' => '1',
-            'business_name' => 'Checkout Logistics',
-            'registration_status' => 'active',
-        ]);
-        LogisticsBranch::query()->create([
-            'logistics_id' => $logistics->id,
-            'name' => 'Calamba Sorting Center',
-            'address' => 'Calamba, Laguna',
-            'province' => 'Laguna',
-            'municipality' => 'Calamba',
-            'status' => 'active',
+        \App\Models\Logistics\LogisticsBranch::create([
+            'logistics_id' => $logistics->id, 'name' => 'Calamba', 'address' => 'Calamba',
+            'province' => 'Laguna', 'municipality' => 'Calamba', 'status' => 'active',
         ]);
 
         return [
             'delivery_province' => 'Laguna',
             'delivery_municipality' => 'Calamba',
-            'logistics_selections' => collect($sellerIds)->map(fn (int $sellerId): array => [
-                'seller_id' => $sellerId,
-                'logistics_id' => $logistics->id,
-            ])->all(),
+            'logistics_selections' => array_map(
+                fn ($id) => ['seller_id' => $id, 'logistics_id' => $logistics->id],
+                $sellerIds ?: [$this->sellerWithProduct('Empty Cart Store', 'Unselected Item', 100)[0]->id],
+            ),
         ];
+    }
+    private function selectedCartRows(User $buyer): array
+    {
+        $ids = CartItem::query()->where('user_id', $buyer->id)->pluck('id')->all();
+
+        return $ids ? ['cart_item_ids' => $ids] : [];
     }
 }

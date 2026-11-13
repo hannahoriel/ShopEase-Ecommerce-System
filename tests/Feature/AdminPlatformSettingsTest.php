@@ -28,7 +28,7 @@ class AdminPlatformSettingsTest extends TestCase
 
     public function test_admin_can_create_schedule_and_delete_announcements(): void
     {
-        $admin = $this->primaryAdmin();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->travelTo(now()->startOfDay());
 
@@ -76,7 +76,7 @@ class AdminPlatformSettingsTest extends TestCase
     public function test_admin_can_upload_an_announcement_banner(): void
     {
         Storage::fake('public');
-        $admin = $this->primaryAdmin();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $response = $this->actingAs($admin)->post('/api/v1/admin/platform-settings/announcements', [
             'title' => 'Banner announcement',
@@ -96,7 +96,7 @@ class AdminPlatformSettingsTest extends TestCase
 
     public function test_due_scheduled_announcements_are_published_and_visible_in_settings(): void
     {
-        $admin = $this->primaryAdmin();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $announcement = Announcement::create([
             'title' => 'Past scheduled notice',
             'type' => 'Announcement',
@@ -127,7 +127,7 @@ class AdminPlatformSettingsTest extends TestCase
 
     public function test_admin_can_create_edit_and_delete_platform_policies(): void
     {
-        $admin = $this->primaryAdmin();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $payload = [
             'title' => 'Seller Policy',
             'category' => 'Seller Policy',
@@ -173,7 +173,7 @@ class AdminPlatformSettingsTest extends TestCase
 
     public function test_announcement_and_policy_validation_matches_the_ui_limits(): void
     {
-        $admin = $this->primaryAdmin();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->actingAs($admin)
             ->postJson('/api/v1/admin/platform-settings/announcements', [

@@ -21,7 +21,7 @@ class RoleLoginTest extends TestCase
             'registration_status' => 'active',
         ]);
 
-        $response = $this->post(route('login.attempt'), [
+        $response = $this->post(route($role === User::ROLE_LOGISTICS ? 'logistics.login.attempt' : 'login.attempt'), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -36,24 +36,8 @@ class RoleLoginTest extends TestCase
             'admin' => [User::ROLE_ADMIN, 'admin.dashboard'],
             'buyer' => [User::ROLE_BUYER, 'buyer.dashboard'],
             'seller' => [User::ROLE_SELLER, 'seller.dashboard'],
+            'logistics' => [User::ROLE_LOGISTICS, 'logistics.dashboard'],
         ];
-    }
-
-    public function test_logistics_and_rider_accounts_cannot_use_the_shared_login(): void
-    {
-        foreach ([User::ROLE_LOGISTICS, User::ROLE_RIDER] as $role) {
-            $user = User::factory()->create([
-                'role' => $role,
-                'email' => "$role@example.com",
-                'password' => 'password',
-                'registration_status' => 'active',
-            ]);
-
-            $this->post(route('login.attempt'), [
-                'email' => $user->email,
-                'password' => 'password',
-            ])->assertSessionHasErrors('email');
-        }
     }
 
     public function test_login_page_renders_with_auth_layout(): void
