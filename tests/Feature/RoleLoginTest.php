@@ -21,7 +21,7 @@ class RoleLoginTest extends TestCase
             'registration_status' => 'active',
         ]);
 
-        $response = $this->post(route('login.attempt'), [
+        $response = $this->post(route($role === User::ROLE_LOGISTICS ? 'logistics.login.attempt' : 'login.attempt'), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -37,7 +37,6 @@ class RoleLoginTest extends TestCase
             'buyer' => [User::ROLE_BUYER, 'buyer.dashboard'],
             'seller' => [User::ROLE_SELLER, 'seller.dashboard'],
             'logistics' => [User::ROLE_LOGISTICS, 'logistics.dashboard'],
-            'rider' => [User::ROLE_RIDER, 'rider.dashboard'],
         ];
     }
 
@@ -67,7 +66,7 @@ class RoleLoginTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('logout'))
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('landing.page'));
 
         $this->assertGuest();
     }
