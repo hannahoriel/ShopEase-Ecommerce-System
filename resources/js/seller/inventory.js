@@ -10284,7 +10284,6 @@ document.addEventListener(
                         category: product.category || '',
                         pricing_mode: product.pricingMode || 'fixed',
                         pricing_source: product.pricingSource || null,
-                        status: 'pending',
                         photos: Array.isArray(product.photos) ? product.photos : [],
                         category_specifications: specifications,
                         variation_items: optionPayload.variations,
@@ -10663,13 +10662,6 @@ document.addEventListener(
                                 return;
                             }
 
-                            createdProduct.status = 'pending';
-                            createdProduct.approvalStatus = 'pending';
-
-                            if (createdProduct.listingSnapshot) {
-                                createdProduct.listingSnapshot.approvalStatus = 'pending';
-                            }
-
                             const rowName =
                                 currentProductRow?.querySelector('.product-name');
                             if (rowName) {
@@ -10685,19 +10677,8 @@ document.addEventListener(
 
                             currentProductRow.dataset.name = createdProduct.title || '';
                             currentProductRow.dataset.category = createdProduct.category || '';
-                            currentProductRow.dataset.status = 'pending';
-
-                            const rowStatusBadge =
-                                currentProductRow.querySelector('.status-badge');
-                            if (rowStatusBadge) {
-                                rowStatusBadge.textContent = 'Pending Approval';
-                                rowStatusBadge.className = 'status-badge status-pending';
-                            }
-
-                            if (productDetailsStatus) {
-                                productDetailsStatus.textContent = 'Pending Approval';
-                                productDetailsStatus.className = 'status-badge status-pending';
-                            }
+                            const savedStatus = String(createdProduct.approvalStatus || createdProduct.status || '').toLowerCase();
+                            if (currentProductRow && savedStatus) currentProductRow.dataset.status = savedStatus;
 
                             saveCreatedProducts();
 

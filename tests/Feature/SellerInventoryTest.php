@@ -156,6 +156,29 @@ class SellerInventoryTest extends TestCase
         ]);
     }
 
+    public function test_editing_an_approved_product_does_not_send_it_back_for_approval(): void
+    {
+        $sellerUser = User::create([
+            'name' => 'Approved Seller', 'email' => 'approved-edit@example.com',
+            'password' => 'Password123!', 'role' => User::ROLE_SELLER,
+        ]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id, 'store_name' => 'Approved Shop', 'registration_status' => 'active',
+        ]);
+        $product = Product::create([
+            'seller_id' => $seller->id, 'name' => 'Approved product', 'price' => 200,
+            'stock_quantity' => 10, 'status' => 'active',
+        ]);
+
+        $this->actingAs($sellerUser)->patchJson("/api/v1/seller/inventory/{$product->id}", [
+            'name' => 'Updated approved product', 'status' => 'pending',
+        ])->assertOk()->assertJsonPath('name', 'Updated approved product')->assertJsonPath('status', 'active');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id, 'name' => 'Updated approved product', 'status' => 'active',
+        ]);
+    }
+
     public function test_seller_form_payload_with_title_and_stock_is_accepted(): void
     {
         [$sellerUser, $seller] = $this->createSeller('form-payload@example.com');
