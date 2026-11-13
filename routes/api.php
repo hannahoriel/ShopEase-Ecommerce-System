@@ -513,6 +513,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/deliveries', ListDeliveriesController::class)->name('rider.api.deliveries.index');
             Route::get('/deliveries/{order}', ShowDeliveryController::class)->name('rider.api.deliveries.show');
             Route::post('/deliveries/{order}/actions', CreateDeliveryActionController::class)->name('rider.api.deliveries.actions.store');
+            Route::post('/deliveries/{order}/failed-attempts', [\App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\RecordFailedDeliveryAttemptController::class, 'store'])->name('rider.api.deliveries.failed-attempts.store');
+            Route::post('/deliveries/{order}/return-to-seller', [\App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\RecordFailedDeliveryAttemptController::class, 'completeReturn'])->name('rider.api.deliveries.return-to-seller');
             Route::patch('/deliveries/{order}/status', UpdateDeliveryStatusController::class)->name('rider.api.deliveries.status');
             Route::post('/deliveries/{order}/proof', SubmitDeliveryProofController::class)->name('rider.api.deliveries.proof');
             Route::post('/return-deliveries/{return}/proof', SubmitReturnDeliveryProofController::class)->name('rider.api.return-deliveries.proof');

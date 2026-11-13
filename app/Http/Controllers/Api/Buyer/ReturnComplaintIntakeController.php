@@ -57,6 +57,7 @@ class ReturnComplaintIntakeController extends Controller
                 $return->setRelation('complaint',$case);$return->setRelation('order',$locked);
                 $service->log($return,$request->user(),'pending','Buyer requested '.($return->return_type==='refund'?'Refund Only':'Return & Refund').'. Waiting for admin review.');
                 $service->notify($return,'New return/refund complaint','Order '.$locked->order_number.': a product complaint is waiting for admin review.');
+                $service->notifyAssignedRiderOfRequest($return);
                 return $return;
             });
         } catch (\Throwable $exception) { foreach ($paths as $path) Storage::disk('public')->delete($path); throw $exception; }

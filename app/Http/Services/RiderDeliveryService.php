@@ -122,6 +122,9 @@ class RiderDeliveryService
                     'proof' => $proof->id,
                 ]),
             ])->values(),
+            'delivery_attempts' => (int) ($order->delivery_attempts_count ?? $order->deliveryAttempts()->count()),
+            'return_to_seller' => $order->shipment?->return_to_seller_status,
+            'returned_to_seller_at' => $order->shipment?->returned_to_seller_at?->toISOString(),
         ];
     }
 }

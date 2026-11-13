@@ -28,9 +28,14 @@ class ListDeliveriesController extends Controller
             ->when($isPickup, fn ($query) => $query->whereDoesntHave('shipment.transferManifests', fn ($manifest) => $manifest
                 ->where('origin_type', 'seller_collection')
                 ->where('batch_key', 'like', 'pickup-dropoff-%')))
-            ->whereIn('status', $isPickup
-                ? ['to_ship', 'in_transit']
-                : ['in_transit', 'out_for_delivery', 'delivered'])
+            ->where(function ($query) use ($isPickup): void {
+                $query->whereIn('status', $isPickup
+                    ? ['to_ship', 'in_transit']
+                    : ['in_transit', 'out_for_delivery', 'delivered']);
+                $query->orWhere(fn ($returned) => $returned->where('status', 'cancelled')
+                    ->whereHas('shipment', fn ($shipment) => $shipment->where('return_to_seller_status', 'pending')));
+            })
+            ->withCount('deliveryAttempts')
             ->with($deliveries->deliveryRelations())
             ->latest('updated_at')
             ->limit(100)

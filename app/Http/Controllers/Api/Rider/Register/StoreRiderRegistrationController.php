@@ -32,11 +32,17 @@ class StoreRiderRegistrationController extends Controller
         $sortingCenter = null;
         if ($isCourier) {
             $centerId = $request->input('sorting_center_id');
+            $logisticsId = $request->input('logistics_id');
             $sortingCenter = is_numeric($centerId)
                 ? LogisticsBranch::query()
                     ->whereKey((int) $centerId)
+                    ->where('logistics_id', $logisticsId)
+                    ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim((string) $request->input('assignment_province')))])
                     ->where('status', 'active')
                     ->whereNull('archived_at')
+                    ->whereHas('logistics', fn ($query) => $query
+                        ->where('registration_status', 'active')
+                        ->whereHas('user', fn ($user) => $user->where('role', User::ROLE_LOGISTICS)->where('registration_status', 'active')))
                     ->whereHas('user', fn ($query) => $query
                         ->where('role', User::ROLE_SORTING_CENTER)
                         ->where('registration_status', 'active'))

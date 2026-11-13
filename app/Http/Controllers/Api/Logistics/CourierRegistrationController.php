@@ -29,6 +29,9 @@ class CourierRegistrationController extends Controller
             ->whereRaw('LOWER(province) = ?', [$province])
             ->where('status', 'active')
             ->whereNull('archived_at')
+            ->whereHas('logistics', fn ($query) => $query
+                ->where('registration_status', 'active')
+                ->whereHas('user', fn ($user) => $user->where('role', User::ROLE_LOGISTICS)->where('registration_status', 'active')))
             ->whereHas('user', fn ($query) => $query
                 ->where('role', User::ROLE_SORTING_CENTER)
                 ->where('registration_status', 'active'))
@@ -37,6 +40,7 @@ class CourierRegistrationController extends Controller
             ->get(['id', 'name', 'province', 'municipality', 'logistics_id'])
             ->map(fn (LogisticsBranch $center): array => [
                 'id' => $center->id,
+                'logistics_id' => $center->logistics_id,
                 'name' => $center->name,
                 'province' => $center->province,
                 'city' => $center->municipality,
@@ -64,10 +68,10 @@ class CourierRegistrationController extends Controller
             'street' => ['nullable', 'string', 'max:255'],
             'house_no' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:20'],
-            'vehicle' => ['required', 'string', 'max:80'],
-            'plate_number' => ['required', 'string', 'max:50'],
-            'or_cr' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-            'drivers_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'vehicle' => ['nullable', 'string', 'max:80'],
+            'plate_number' => ['nullable', 'string', 'max:50'],
+            'or_cr' => ['prohibited'],
+            'drivers_license' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
         $center = LogisticsBranch::query()->whereKey($data['sorting_center_id'])
             ->whereHas('user', fn ($query) => $query->where('role', User::ROLE_SORTING_CENTER))->first();
@@ -172,7 +176,7 @@ class CourierRegistrationController extends Controller
                 'barangay' => $rider->barangay,
                 'street' => $rider->street,
                 'house_no' => $rider->house_number,
-                'vehicle' => mb_substr($rider->vehicle, 0, 80),
+                'vehicle' => $rider->vehicle ? mb_substr($rider->vehicle, 0, 80) : null,
                 'plate_number' => $rider->plate_number,
                 'or_cr_path' => $rider->upload_or_cr,
                 'drivers_license_path' => $rider->upload_id_license,
@@ -291,7 +295,7 @@ class CourierRegistrationController extends Controller
                     'assignment_region' => $locked->region,
                     'assignment_province' => $locked->province,
                     'plate_number' => $locked->plate_number,
-                    'courier_company' => $locked->sortingCenter?->name,
+                    'courier_company' => $locked->sortingCenter?->logistics?->business_name,
                     'upload_or_cr' => $locked->or_cr_path,
                     'upload_id_license' => $locked->drivers_license_path,
                     'registration_status' => 'active',
