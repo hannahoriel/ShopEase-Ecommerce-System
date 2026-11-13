@@ -17,6 +17,7 @@ use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\Logistics\SortingCenterParcelIssue;
 use App\Models\Rider\Rider;
+use App\Notifications\RiderEventNotification;
 use App\Services\LogisticsNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -470,6 +471,12 @@ class ParcelRouteScanController extends Controller
                     $shipment->update(['rider_id' => $rider->id, 'current_location' => $location, 'location_updated_at' => now()]);
                     $shipment->scans()->create(['status' => 'Out for Delivery to Seller', 'location' => $location, 'scanned_at' => now()]);
                     $locked->events()->create(['status' => 'out_for_delivery_to_seller', 'location' => $location.' · '.$rider->first_name.' '.$rider->last_name, 'scanned_at' => now()]);
+                    $rider->user?->notify(new RiderEventNotification(
+                        'Return delivery task assigned',
+                        'Return parcel for order '.$order->order_number.' has been assigned to you for delivery to the seller.',
+                        'delivery_task',
+                        (int) $order->id,
+                    ));
                     return ['tracking' => $locked->tracking_number, 'status' => $locked->shipping_status, 'rider_id' => $rider->id];
                 }
 
@@ -1555,6 +1562,12 @@ class ParcelRouteScanController extends Controller
                 abort_unless($deliveryRider, 422, 'No active delivery rider is assigned to the buyer barangay.');
                 $shipment->update(['rider_id' => $deliveryRider->id]);
                 $shipment->order->update(['status' => 'out_for_delivery']);
+                $deliveryRider->user?->notify(new RiderEventNotification(
+                    'Delivery task assigned',
+                    'Order '.$shipment->order->order_number.' has been assigned to you for delivery.',
+                    'delivery_task',
+                    (int) $shipment->order_id,
+                ));
                 OrderStatusHistory::query()->create([
                     'order_id' => $shipment->order_id,
                     'from_status' => 'in_transit',

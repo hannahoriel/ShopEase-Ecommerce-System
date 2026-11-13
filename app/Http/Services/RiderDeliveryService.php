@@ -59,6 +59,13 @@ class RiderDeliveryService
             'delivery_address' => $order->delivery_address,
             'total' => $order->total,
             'payment_method' => $order->payment_method,
+            'delivered_at' => $order->shipment?->delivered_at?->toISOString()
+                ?? $order->deliveryProofs->firstWhere('status', 'delivered')?->created_at?->toISOString(),
+            'delivery_date' => $order->shipment?->delivered_at?->toISOString()
+                ?? $order->deliveryProofs->firstWhere('status', 'delivered')?->created_at?->toISOString(),
+            'date' => $order->shipment?->delivered_at?->toISOString()
+                ?? $order->deliveryProofs->firstWhere('status', 'delivered')?->created_at?->toISOString(),
+            'task_type' => 'delivery',
             'pickup_date' => $order->pickup_date?->toDateString(),
             'pickup_time' => $order->pickup_time?->format('H:i'),
             'pickup_hub_dropoff' => $pickupHandoff ? [

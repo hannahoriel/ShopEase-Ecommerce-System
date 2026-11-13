@@ -18,23 +18,36 @@ class ListPickupDeliveryRecordsController extends Controller
         RiderOperationsService $operations,
         RiderDeliveryService $deliveries
     ): JsonResponse {
+        $requestedType = mb_strtolower(trim((string) $request->query('type', 'delivery')));
+        $requestedType = str_replace([' ', '-', '_'], '', $requestedType);
+        $requestedType = match ($requestedType) {
+            'pickup', 'pickups', 'pickuprecord' => 'pickup',
+            'delivery', 'deliveries', 'delivered', 'deliveryrecord' => 'delivery',
+            default => $request->query('type'),
+        };
+        $request->merge(['type' => $requestedType ?: 'delivery']);
         $validated = $request->validate([
             'type' => ['required', Rule::in(['pickup', 'delivery'])],
         ]);
         $rider = $operations->rider($request->user());
-        if (! $operations->supportsOperation($rider, $validated['type'])) {
-            return response()->json(['data' => []]);
+        // History belongs to the rider who handled the task, even if their
+        // currently configured operation type later changes.
+        $ordersQuery = Order::query()->with($deliveries->deliveryRelations());
+        if ($validated['type'] === 'pickup') {
+            $ordersQuery->whereHas('shipment', fn ($query) => $query->where('rider_id', $rider->id))
+                ->whereIn('status', ['in_transit', 'out_for_delivery', 'delivered']);
+        } else {
+            // Use the completed proof as the historical owner of a delivery.
+            // The shipment assignment can later change, but the rider who
+            // completed the delivery must still see it in their record.
+            $ordersQuery->where(function ($query) use ($rider): void {
+                $query->whereHas('deliveryProofs', fn ($proofs) => $proofs
+                    ->where('rider_id', $rider->id)->where('status', 'delivered'))
+                    ->orWhere(fn ($legacy) => $legacy->where('status', 'delivered')
+                        ->whereHas('shipment', fn ($shipment) => $shipment->where('rider_id', $rider->id)));
+            });
         }
-        $statuses = $validated['type'] === 'pickup'
-            ? ['in_transit', 'out_for_delivery', 'delivered']
-            : ['delivered'];
-        $orders = Order::query()
-            ->whereHas('shipment', fn ($query) => $query->where('rider_id', $rider->id))
-            ->whereIn('status', $statuses)
-            ->with($deliveries->deliveryRelations())
-            ->latest('updated_at')
-            ->limit(100)
-            ->get();
+        $orders = $ordersQuery->latest('updated_at')->limit(100)->get();
         $returnDeliveries = $validated['type'] === 'delivery'
             ? OrderReturn::query()
                 ->where('delivery_rider_id', $rider->id)
@@ -82,10 +95,14 @@ class ListPickupDeliveryRecordsController extends Controller
                 })
             : collect();
 
-        return response()->json([
-            'data' => $orders->map(
+        $records = $orders->map(
                 fn (Order $order): array => $deliveries->serializeDelivery($order)
-            )->concat($returnDeliveries)->values(),
+            )->concat($returnDeliveries)->values();
+
+        return response()->json([
+            'data' => $records,
+            'records' => $records,
+            'total' => $records->count(),
         ]);
     }
 }
