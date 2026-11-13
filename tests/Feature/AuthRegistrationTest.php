@@ -403,7 +403,7 @@ class AuthRegistrationTest extends TestCase
     public function test_approved_buyer_can_login_with_submitted_password_and_reaches_buyer_dashboard(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $password = 'Password123!';
         $user = User::factory()->create([
             'role' => User::ROLE_BUYER,
@@ -447,7 +447,7 @@ class AuthRegistrationTest extends TestCase
     public function test_approved_seller_can_login_with_submitted_password_and_reaches_seller_dashboard(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $password = 'Password123!';
         $user = User::factory()->create([
             'role' => User::ROLE_SELLER,

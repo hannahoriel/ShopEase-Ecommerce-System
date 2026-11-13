@@ -38,7 +38,7 @@ class LogisticsAccountApiTest extends TestCase
     public function test_profile_changes_are_reviewed_by_admin_before_becoming_account_data(): void
     {
         [$user, $logistics] = $this->fixture();
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $request = $this->actingAs($user)->postJson('/api/v1/logistics/account/profile-requests', [
             'company_name' => 'Updated Cargo Company', 'company_phone' => '09179998888', 'website' => 'https://cargo.example.test',
