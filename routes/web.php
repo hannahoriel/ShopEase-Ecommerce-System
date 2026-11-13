@@ -2022,6 +2022,7 @@ Route::get('/admin/commission/transactions/{commissionTransaction}', [Commission
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin/logistics-management')->group(function () {
     Route::get('/', [LogisticsManagementController::class, 'page'])->name('admin.logistics.management');
+    Route::get('/{logistics}/documents/{key}', [LogisticsManagementController::class, 'document'])->name('admin.logistics.documents.show');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin/platform-settings')->group(function () {

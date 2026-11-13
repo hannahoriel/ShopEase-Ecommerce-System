@@ -192,7 +192,7 @@ class LogisticsManagementController extends Controller
             'office_address' => $this->address($profile, $registration),
             'description' => data_get($profile?->registration_details, 'company.company_description') ?: '',
             ...((array) ($profile?->registration_details['company'] ?? [])),
-            'documents' => $this->documentUrls($documents),
+            'documents' => $this->documentUrls($documents, $profile),
             'logo' => $registration->user?->profile_photo_path
                 ? Storage::disk('public')->url($registration->user->profile_photo_path)
                 : '',
@@ -222,7 +222,7 @@ class LogisticsManagementController extends Controller
             'contact_person' => data_get($logistics->registration_details, 'company.representative_name') ?: data_get($logistics->registration_details,'representative_name') ?: $logistics->user?->name,
             'contact_phone' => data_get($logistics->registration_details, 'company.representative_phone') ?: data_get($logistics->registration_details,'representative_phone') ?: $logistics->contact_no,
             ...((array) ($logistics->registration_details['company'] ?? [])),
-            'documents' => $this->documentUrls($documents),
+            'documents' => $this->documentUrls($documents, $logistics),
             'riders' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->riders->count()),
             'active_deliveries' => $branches->sum(fn (LogisticsBranch $branch): int => $branch->active_deliveries_count),
             'contact_number' => $logistics->contact_no ?: '—',
@@ -301,17 +301,40 @@ class LogisticsManagementController extends Controller
         ];
     }
 
-    private function documentUrls(array $docs): array
+    private function documentUrls(array $docs, ?Logistics $profile): array
     {
         $out = [];
         foreach ($docs as $key => $doc) {
             $path = is_array($doc) ? ($doc['path'] ?? null) : null;
             $out[$key] = [
-                'url' => $path ? Storage::disk('public')->url($path) : null,
+                'url' => $path && $profile ? route('admin.logistics.documents.show', [$profile, $key], false) : null,
+                'mime' => $path && strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'pdf' ? 'application/pdf' : null,
                 'original_name' => is_array($doc) ? ($doc['original_name'] ?? basename((string) $path)) : null,
             ];
         }
         return $out;
+    }
+
+    public function document(Logistics $logistics, string $key): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $documents = $logistics->registration_details['documents'] ?? [];
+        $path = $documents[$key]['path'] ?? null;
+        $disk = Storage::disk('public');
+        abort_unless(is_string($path) && preg_match('~^registrations/logistics/[a-z0-9-]+\.(?:pdf|jpe?g|png|webp)$~iD', $path) && $disk->exists($path), 404);
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = match ($extension) {
+            'pdf' => 'application/pdf',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            default => 'image/jpeg',
+        };
+
+        return $disk->response($path, basename($path), [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     private function branchCounts(): array
