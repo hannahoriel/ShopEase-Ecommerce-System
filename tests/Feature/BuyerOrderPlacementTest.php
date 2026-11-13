@@ -83,15 +83,13 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $response = $this->actingAs($buyer)->postJson('/api/v1/buyer/orders', [
-                ...$this->shippingDetails(Seller::query()->pluck('id')->all()),
-                ...$this->selectedCartRows($buyer),
+            ...$this->shippingDetails([$firstSeller->id, $secondSeller->id]),
+            ...$this->selectedCartRows($buyer),
             'delivery_name' => 'Buyer Example',
             'delivery_phone' => '09171234567',
             'delivery_address' => '1 Main Street, Manila',
             'payment_method' => 'Cash on Delivery',
-            'cart_item_ids' => [$firstCartItem->id, $secondCartItem->id],
-            ]
-        ));
+        ]);
 
         $response->assertCreated()
             ->assertJsonCount(2, 'orders')
@@ -174,7 +172,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
-            ]))
+            ])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'Your cart is empty. Add items before placing an order.');
 
@@ -204,7 +202,7 @@ class BuyerOrderPlacementTest extends TestCase
                     'quantity' => 2,
                     'color' => 'Black',
                 ]],
-            ]))
+            ])
             ->assertCreated()
             ->assertJsonPath('orders.0.items.0.product_name', 'Wireless Earbuds');
 
@@ -242,7 +240,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
                 'cart_item_ids' => [$selectedItem->id],
-            ]))
+            ])
             ->assertCreated()
             ->assertJsonCount(1, 'orders');
 
@@ -272,7 +270,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
                 'cart_item_ids' => [$cartItem->id],
-            ]))
+            ])
             ->assertUnprocessable()
             ->assertJsonPath('message', "There is not enough stock for {$product->name}. Refresh your cart and try again.");
 
@@ -301,7 +299,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
                 'cart_item_ids' => [$cartItem->id],
-            ]))
+            ])
             ->assertCreated()
             ->json('orders.0.id');
 
@@ -621,7 +619,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
                 'cart_item_ids' => [$cartItem->id],
-            ]))
+            ])
             ->assertCreated();
 
         $this->assertSame(1, $product->fresh()->stock_quantity);
@@ -683,7 +681,7 @@ class BuyerOrderPlacementTest extends TestCase
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
                 'cart_item_ids' => [$cartItem->id],
-            ]))
+            ])
             ->assertCreated()
             ->json('orders.0.id');
 
