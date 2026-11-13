@@ -39,14 +39,18 @@
                 deliveries.innerHTML = orders.map(order => {
                     const nextStatus = order.status === 'in_transit' ? 'out_for_delivery' : null;
                     const requiresProof = order.status === 'to_ship' || order.status === 'out_for_delivery';
+                    const isReturn = order.task_type === 'return_delivery';
                     const action = nextStatus
                         ? `<button type="button" data-order="${order.id}" data-status="${nextStatus}">Mark ${escapeHtml(nextStatus.replaceAll('_', ' '))}</button>`
                         : order.status === 'delivered'
                             ? '<p class="muted">Delivery completed.</p>'
                             : requiresProof
-                                ? '<p class="muted">Use the rider mobile app to submit the required photo proof before advancing this delivery.</p>'
+                            ? `<p class="muted">Use the rider mobile app to submit the required photo proof before advancing this ${isReturn ? 'return delivery' : 'delivery'}.</p>`
                                 : '<p class="muted">No web status update is available for this delivery.</p>';
-                    return `<article class="card"><div class="card-top"><div><h2>${escapeHtml(order.order_number)}</h2><span class="muted">${escapeHtml(order.seller?.store_name || 'ShopEase seller')}</span></div><span class="tag">${escapeHtml(order.status.replaceAll('_', ' '))}</span></div><p class="details"><strong>Deliver to:</strong> ${escapeHtml(order.delivery_name)} · ${escapeHtml(order.delivery_phone)}\n${escapeHtml(order.delivery_address)}\n<strong>Items:</strong> ${order.items.map(item => `${escapeHtml(item.product_name)} × ${Number(item.quantity)}`).join(', ')}\n<strong>Tracking:</strong> ${escapeHtml(order.shipment?.tracking_number || 'Not available')}</p>${action}</article>`;
+                    const recipient = isReturn ? order.contact_name : order.delivery_name;
+                    const phone = isReturn ? order.contact_phone : order.delivery_phone;
+                    const tracking = order.tracking_number || order.shipment?.tracking_number;
+                    return `<article class="card"><div class="card-top"><div><h2>${escapeHtml(order.order_name || order.order_number || order.task_label)}</h2><span class="muted">${escapeHtml(isReturn ? 'Return to seller' : order.seller?.store_name || 'ShopEase seller')}</span></div><span class="tag">${escapeHtml(order.status.replaceAll('_', ' '))}</span></div><p class="details"><strong>Deliver to:</strong> ${escapeHtml(recipient)} · ${escapeHtml(phone)}\n${escapeHtml(order.delivery_address)}\n<strong>Items:</strong> ${order.items.map(item => `${escapeHtml(item.product_name)} × ${Number(item.quantity)}`).join(', ')}\n<strong>Tracking:</strong> ${escapeHtml(tracking || 'Not available')}</p>${action}</article>`;
                 }).join('');
                 deliveries.querySelectorAll('[data-order]').forEach(button => button.addEventListener('click', async () => {
                     button.disabled = true;

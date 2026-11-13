@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderReturn;
+use App\Models\Buyer\BuyerNotification;
 use App\Models\Rider\Remittance;
 use App\Models\Seller\Seller;
 use Illuminate\Support\Facades\DB;
@@ -61,14 +62,82 @@ class CodSettlementService
 
             $cashIn = DB::table('hub_cod_cash_ins')->where('remittance_id', $locked->id)->lockForUpdate()->first();
             abort_unless($cashIn, 409, 'The verified cash-in record is missing.');
-            $collections = $locked->collections()->with('order.logisticsCompany')->get();
+            $collections = $locked->collections()->with(['order.logisticsCompany', 'orderReturn.order.buyer'])->get();
             abort_if($collections->isEmpty(), 409, 'This remittance has no COD orders attached.');
 
             $expected = round((float) $collections->sum('amount'), 2);
             abort_if(abs($expected - (float) $cashIn->amount) > 0.009, 409, 'The cash-in total does not match the COD order total.');
 
             $distributed = 0.0;
+            $refundsToBuyers = 0;
+            $refundsHeld = 0;
+            $refundsToBuyersAmount = 0.0;
+            $refundsHeldAmount = 0.0;
             foreach ($collections as $collection) {
+                if ($collection->order_return_id) {
+                    $return = OrderReturn::query()->whereKey($collection->order_return_id)->lockForUpdate()->firstOrFail();
+                    abort_unless($return->return_type === 'return'
+                        && in_array($return->status, ['accepted', 'refunded'], true)
+                        && in_array($return->shipping_status, ['delivered', 'returned'], true), 409,
+                        'The return parcel must be delivered to the seller before the hub can distribute its funds.');
+                    abort_unless(abs((float) $collection->amount - (float) $return->refund_amount) < 0.009, 409,
+                        'The collected return amount does not match the approved refund.');
+                    $order = $return->order;
+                    abort_unless($order?->buyer, 409, 'The buyer account for this return could not be found.');
+
+                    $this->post('delivery_hub', $hubId, 'available', 'return_distribution', 'cod_return_collection',
+                        (int) $collection->id, -(float) $collection->amount, (int) $order->id, $locked->id,
+                        'Return refund distributed for '.$order->order_number);
+                    if (! $return->returned_at && $return->shipping_status !== 'returned') {
+                        $this->post('delivery_hub', $hubId, 'held', 'return_refund_hold', 'cod_return_collection',
+                            (int) $collection->id, (float) $collection->amount, (int) $order->id, $locked->id,
+                            'Return refund held until seller confirms receipt for '.$order->order_number);
+                        $return->events()->create([
+                            'status' => 'refund_held_for_seller_receipt',
+                            'location' => 'Delivery hub distribution held pending seller receipt confirmation',
+                            'scanned_at' => now(),
+                        ]);
+                        BuyerNotification::createForOrder(
+                            $order,
+                            'return_update',
+                            'Return refund is on hold',
+                            'The delivery hub received and distributed the return funds. Your refund will be credited after the seller confirms receipt of the returned parcel.',
+                            ['return_id' => $return->id, 'status' => $return->status, 'shipping_status' => $return->shipping_status],
+                        );
+                        $distributed += (float) $collection->amount;
+                        $refundsHeld++;
+                        $refundsHeldAmount += (float) $collection->amount;
+                        continue;
+                    }
+                    app(BuyerWalletService::class)->move(
+                        (int) $order->buyer_id,
+                        'refund_credit',
+                        $collection->amount,
+                        'order_return',
+                        (int) $return->id,
+                        'Return & Refund payout for '.$order->order_number,
+                    );
+                    $return->forceFill(['status' => 'refunded', 'refunded_at' => $return->refunded_at ?? now()])->save();
+                    app(CodSettlementService::class)->reverseSellerEarningsForRefund($return);
+                    if ($order->seller) app(SellerWalletService::class)->recordRefund($order->seller, $return);
+                    $return->events()->create([
+                        'status' => 'refunded',
+                        'location' => 'Delivery hub distributed refund to buyer wallet',
+                        'scanned_at' => now(),
+                    ]);
+                    BuyerNotification::createForOrder(
+                        $order,
+                        'refund_update',
+                        'Return refund sent to your wallet',
+                        'The delivery hub distributed ₱'.number_format((float) $return->refund_amount, 2).' for your return to your ShopEase Wallet.',
+                        ['return_id' => $return->id, 'status' => 'refunded', 'shipping_status' => $return->shipping_status],
+                    );
+                    $distributed += (float) $collection->amount;
+                    $refundsToBuyers++;
+                    $refundsToBuyersAmount += (float) $collection->amount;
+                    continue;
+                }
+
                 $order = Order::query()->whereKey($collection->order_id)->lockForUpdate()->firstOrFail();
                 abort_if(DB::table('cod_settlements')->where('order_id', $order->id)->exists(), 409,
                     'An order in this remittance has already been settled.');
@@ -135,7 +204,15 @@ class CodSettlementService
 
             $locked->update(['status' => 'distributed']);
 
-            return ['remittance_id' => $locked->id, 'orders' => $collections->count(), 'amount' => round($distributed, 2)];
+            return [
+                'remittance_id' => $locked->id,
+                'orders' => $collections->count(),
+                'refunds_to_buyers' => $refundsToBuyers,
+                'refunds_held' => $refundsHeld,
+                'refunds_to_buyers_amount' => round($refundsToBuyersAmount, 2),
+                'refunds_held_amount' => round($refundsHeldAmount, 2),
+                'amount' => round($distributed, 2),
+            ];
         });
     }
 
@@ -143,6 +220,54 @@ class CodSettlementService
     {
         $key = $this->ownerKey($ownerType, $ownerId, $accountType);
         return (float) (DB::table('cod_wallet_accounts')->where('owner_key', $key)->value('balance') ?? 0);
+    }
+
+    public function releaseHeldReturnRefund(OrderReturn $return): bool
+    {
+        return DB::transaction(function () use ($return): bool {
+            $lockedReturn = OrderReturn::query()->with('order.seller')->whereKey($return->id)->lockForUpdate()->firstOrFail();
+            if (! $lockedReturn->returned_at && $lockedReturn->shipping_status !== 'returned') return false;
+            if ($lockedReturn->status === 'refunded') return true;
+
+            $collection = DB::table('rider_cod_collections as collections')
+                ->join('rider_cod_remittance_items as items', 'items.cod_collection_id', '=', 'collections.id')
+                ->join('rider_remittances as remittance', 'remittance.id', '=', 'items.remittance_id')
+                ->where('collections.order_return_id', $lockedReturn->id)
+                ->where('remittance.status', 'distributed')
+                ->orderByDesc('remittance.id')
+                ->first(['collections.id', 'collections.amount', 'remittance.id as remittance_id', 'remittance.delivery_hub_id']);
+            if (! $collection || ! $lockedReturn->order?->buyer_id) return false;
+
+            $this->post('delivery_hub', (int) $collection->delivery_hub_id, 'held', 'return_refund_release',
+                'cod_return_collection', (int) $collection->id, -(float) $collection->amount,
+                (int) $lockedReturn->order_id, (int) $collection->remittance_id,
+                'Seller confirmed receipt; released return refund for '.$lockedReturn->order->order_number);
+            app(BuyerWalletService::class)->move(
+                (int) $lockedReturn->order->buyer_id,
+                'refund_credit',
+                $lockedReturn->refund_amount,
+                'order_return',
+                (int) $lockedReturn->id,
+                'Return & Refund payout for '.$lockedReturn->order->order_number,
+            );
+            $lockedReturn->forceFill(['status' => 'refunded', 'refunded_at' => $lockedReturn->refunded_at ?? now()])->save();
+            $this->reverseSellerEarningsForRefund($lockedReturn);
+            if ($lockedReturn->order->seller) app(SellerWalletService::class)->recordRefund($lockedReturn->order->seller, $lockedReturn);
+            $lockedReturn->events()->create([
+                'status' => 'refunded',
+                'location' => 'Seller confirmed receipt; held return refund released to buyer wallet',
+                'scanned_at' => now(),
+            ]);
+            BuyerNotification::createForOrder(
+                $lockedReturn->order,
+                'refund_update',
+                'Return refund sent to your wallet',
+                'The seller confirmed receipt of your return and the held refund was credited to your ShopEase Wallet.',
+                ['return_id' => $lockedReturn->id, 'status' => 'refunded', 'shipping_status' => $lockedReturn->shipping_status],
+            );
+
+            return true;
+        });
     }
 
     public function releaseSellerEarnings(int $orderId): bool

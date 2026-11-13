@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Rider\Homepage\DeliveryTask;
 use App\Http\Controllers\Controller;
 use App\Http\Services\RiderDeliveryService;
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderReturn;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
@@ -35,6 +36,39 @@ class SubmitDeliveryProofController extends Controller
         bool $pickupFlow = false
     ): JsonResponse {
         $rider = $deliveries->activeRiderFor($request->user());
+
+        // The rider app may submit buyer-return proof through the order
+        // delivery endpoint using either the order id or the return task id.
+        // Resolve only a return assigned to this rider whose QR matches the
+        // scanned parcel, then process it against its OrderReturn row.
+        $scannedCode = trim((string) $request->input('scanned_code'));
+        $scannedPath = parse_url($scannedCode, PHP_URL_PATH);
+        $scannedIdentifier = is_string($scannedPath) && $scannedPath !== ''
+            ? rawurldecode(basename($scannedPath))
+            : $scannedCode;
+        $assignedReturn = OrderReturn::query()
+            ->where(function ($query) use ($order): void {
+                $query->where('order_id', $order->id)->orWhere('id', $order->id);
+            })
+            ->where('return_type', 'return')
+            ->where('delivery_rider_id', $rider->id)
+            ->where('shipping_status', 'out_for_delivery_to_seller')
+            ->whereIn('status', ['accepted', 'refunded'])
+            ->with('order')
+            ->latest('updated_at')
+            ->get()
+            ->first(fn (OrderReturn $candidate): bool => in_array($scannedIdentifier, [
+                $candidate->order?->order_number,
+                $candidate->tracking_number,
+            ], true));
+        if (! $pickupFlow && $assignedReturn) {
+            return app(SubmitReturnDeliveryProofController::class)(
+                $request,
+                $assignedReturn,
+                $deliveries,
+            );
+        }
+
         $validated = $request->validate([
             'status' => ['required', Rule::in(array_values(self::TRANSITIONS))],
             'scanned_code' => ['required', 'string', 'max:2048'],
@@ -43,7 +77,13 @@ class SubmitDeliveryProofController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $shipment = $order->shipment()->where('rider_id', $rider->id)->firstOrFail();
+        $shipment = Shipment::query()->where('order_id', $order->id)->first();
+        abort_unless($shipment, 404, 'No shipment is linked to this order.');
+        abort_unless(
+            (int) $shipment->rider_id === (int) $rider->id,
+            409,
+            'This order is no longer assigned to your rider account. Refresh your delivery tasks and try again.'
+        );
         $this->validateScannedCode($validated['scanned_code'], $order, $shipment);
         $this->validateTransition($order, $validated['status']);
 
@@ -60,7 +100,11 @@ class SubmitDeliveryProofController extends Controller
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                abort_unless($lockedShipment->rider_id === $rider->id, 404);
+                abort_unless(
+                    (int) $lockedShipment->rider_id === (int) $rider->id,
+                    409,
+                    'This order is no longer assigned to your rider account. Refresh your delivery tasks and try again.'
+                );
                 abort_unless(
                     (self::TRANSITIONS[$lockedOrder->status] ?? null) === $validated['status'],
                     422,

@@ -371,6 +371,7 @@ class OrderController extends Controller
             'delivery_name' => ['required', 'string', 'max:255'],
             'delivery_phone' => ['required', 'string', 'max:30'],
             'delivery_address' => ['required', 'string', 'max:1000'],
+            'delivery_barangay' => ['nullable', 'string', 'max:150'],
             'delivery_province' => ['required', 'string', 'max:150'],
             'delivery_municipality' => ['required', 'string', 'max:150'],
             'payment_method' => ['required', 'in:Cash on Delivery,ShopEase Wallet'],
@@ -538,6 +539,9 @@ class OrderController extends Controller
                         'delivery_name' => $validated['delivery_name'],
                         'delivery_phone' => $validated['delivery_phone'],
                         'delivery_address' => $validated['delivery_address'],
+                        'delivery_barangay' => $validated['delivery_barangay'] ?? $request->user()->buyerProfile?->barangay,
+                        'delivery_province' => $validated['delivery_province'],
+                        'delivery_municipality' => $validated['delivery_municipality'],
                         'payment_method' => $validated['payment_method'],
                     ]);
                     if ($validated['payment_method'] === 'ShopEase Wallet') {

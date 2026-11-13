@@ -70,6 +70,7 @@ use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\ListDeliveriesControlle
 use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\ShowDeliveryController;
 use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\ShowDeliveryProofPhotoController;
 use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\SubmitDeliveryProofController;
+use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\SubmitReturnDeliveryProofController;
 use App\Http\Controllers\Api\Rider\Homepage\DeliveryTask\UpdateDeliveryStatusController;
 use App\Http\Controllers\Api\Rider\Homepage\MoneyReport\ListEarningsController;
 use App\Http\Controllers\Api\Rider\Homepage\MoneyReport\ShowRiderFinanceController;
@@ -322,6 +323,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('/sales/products/{product}', [SellerSalesController::class, 'update'])->name('seller.api.sales.products.update');
             Route::get('/returns-refunds', [SellerReturnsRefundsController::class, 'index'])->name('seller.api.returns.index');
             Route::patch('/returns-refunds/{return}/decision', [SellerReturnsRefundsController::class, 'decide'])->name('seller.api.returns.decision');
+            Route::patch('/returns-refunds/{return}/received', [SellerReturnsRefundsController::class, 'confirmReceipt'])->name('seller.api.returns.received');
             Route::post('/returns-refunds/{return}/refund', [SellerReturnsRefundsController::class, 'completeRefund'])->name('seller.api.returns.refund');
             Route::get('/vouchers', [SellerVouchersController::class, 'index'])->name('seller.api.vouchers.index');
             Route::post('/vouchers', [SellerVouchersController::class, 'store'])->name('seller.api.vouchers.store');
@@ -513,6 +515,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/deliveries/{order}/actions', CreateDeliveryActionController::class)->name('rider.api.deliveries.actions.store');
             Route::patch('/deliveries/{order}/status', UpdateDeliveryStatusController::class)->name('rider.api.deliveries.status');
             Route::post('/deliveries/{order}/proof', SubmitDeliveryProofController::class)->name('rider.api.deliveries.proof');
+            Route::post('/return-deliveries/{return}/proof', SubmitReturnDeliveryProofController::class)->name('rider.api.return-deliveries.proof');
             Route::get('/deliveries/{order}/proofs/{proof}/photo', ShowDeliveryProofPhotoController::class)->name('rider.api.deliveries.proofs.photo');
         });
 

@@ -16,7 +16,6 @@ class SellerReturnsRefundsTest extends TestCase
     public function test_buyer_can_submit_return_request_and_seller_can_review_it(): void
     {
         [$buyer, $sellerUser, $order, $itemId] = $this->marketplace('completed');
-
         $created = $this->actingAs($buyer, 'sanctum')->postJson("/api/v1/buyer/orders/{$order->id}/returns", [
             'return_type' => 'return',
             'reason' => 'Item arrived damaged',
@@ -48,8 +47,17 @@ class SellerReturnsRefundsTest extends TestCase
         $this->actingAs($sellerUser, 'sanctum')->postJson("/api/v1/seller/returns-refunds/{$return->id}/refund")
             ->assertOk()->assertJsonPath('data.status', 'refunded');
         $this->assertNotNull($return->fresh()->refunded_at);
+        $this->assertDatabaseHas('buyer_wallets', ['user_id' => $buyer->id, 'balance' => 125]);
+        $this->assertDatabaseHas('seller_wallet_transactions', [
+            'seller_id' => $order->seller_id, 'entry_type' => 'refund', 'source_id' => $return->id, 'amount' => -125,
+        ]);
+        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('buyer_wallet_transactions')
+            ->where('type', 'refund_credit')->where('reference_type', 'order_return')->where('reference_id', $return->id)->count());
 
-        $otherUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $otherUser = User::create([
+            'name' => 'Other Seller', 'email' => 'other-seller-'.uniqid().'@example.test',
+            'password' => 'Password123!', 'role' => User::ROLE_SELLER,
+        ]);
         Seller::create(['user_id' => $otherUser->id, 'registration_status' => 'active']);
         $this->actingAs($otherUser, 'sanctum')->getJson('/api/v1/seller/returns-refunds')
             ->assertOk()->assertJsonMissing(['id' => $return->id]);
@@ -68,8 +76,14 @@ class SellerReturnsRefundsTest extends TestCase
 
     private function marketplace(string $status): array
     {
-        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
+        $buyer = User::create([
+            'name' => 'Return Buyer', 'email' => 'buyer-'.uniqid().'@example.test',
+            'password' => 'Password123!', 'role' => User::ROLE_BUYER,
+        ]);
+        $sellerUser = User::create([
+            'name' => 'Return Seller', 'email' => 'seller-'.uniqid().'@example.test',
+            'password' => 'Password123!', 'role' => User::ROLE_SELLER,
+        ]);
         $seller = Seller::create(['user_id' => $sellerUser->id, 'registration_status' => 'active']);
         $order = Order::create([
             'buyer_id' => $buyer->id, 'seller_id' => $seller->id, 'order_number' => 'RET-' . uniqid(),

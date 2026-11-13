@@ -47,8 +47,8 @@ class ReturnComplaintService
             if ($action==='received') {
                 if ($return->status==='refunded' && $return->shipping_status==='returned') return $return->fresh(['events','complaint']);
                 abort_unless($return->status==='accepted' && $return->return_type==='return' && $return->pickup_date,409,'This return must be accepted and scheduled before receipt can be confirmed.');
-                if ($return->order->shipment?->logistics_delivery_hub_id) {
-                    abort_unless($return->shipping_status === 'picked_up',409,'The rider must collect the return before receipt can be confirmed.');
+                if ($return->return_delivery_hub_id || $return->order->shipment?->logistics_delivery_hub_id) {
+                    abort_unless(in_array($return->shipping_status, ['delivered', 'received_at_sorting_center', 'returned'], true),409,'The return must be delivered to the seller before receipt can be confirmed.');
                 }
                 $return->forceFill(['shipping_status'=>'returned','returned_at'=>now()])->save();
                 $this->log($return,$admin,'returned','Admin confirmed the returned parcel was received.'.($notes?' '.$notes:''));
@@ -81,11 +81,19 @@ class ReturnComplaintService
             throw ValidationException::withMessages(['refund'=>'Refund exceeds the remaining paid merchandise amount.']);
         }
         $return->forceFill(['status'=>'refunded','refunded_at'=>now()])->save();
-        app(BuyerWalletService::class)->move((int)$order->buyer_id,'refund_credit',$return->refund_amount,'order_return',$return->id,'Admin-approved refund for '.$order->order_number);
+        $refundIsRiderCollected = DB::table('rider_cod_collections')->where('order_return_id', $return->id)->exists();
+        if (! $refundIsRiderCollected) {
+            app(BuyerWalletService::class)->move((int)$order->buyer_id,'refund_credit',$return->refund_amount,'order_return',$return->id,'Admin-approved refund for '.$order->order_number);
+        }
         app(CodSettlementService::class)->reverseSellerEarningsForRefund($return);
         app(SellerWalletService::class)->recordRefund($order->seller,$return);
         $return->complaint->update(['status'=>'resolved']);
-        $this->log($return,$admin,'refunded','Refund of ₱'.number_format((float)$return->refund_amount,2).' transferred from seller wallet to buyer ShopEase Wallet.');
-        $this->notify($return,'Refund completed','Order '.$order->order_number.': ₱'.number_format((float)$return->refund_amount,2).' was refunded to the buyer wallet.');
+        $this->log($return,$admin,'refunded',$refundIsRiderCollected
+            ? 'Refund approved; buyer payout is waiting for the delivery hub to distribute the rider remittance.'
+            : 'Refund of ₱'.number_format((float)$return->refund_amount,2).' transferred from seller wallet to buyer ShopEase Wallet.');
+        $this->notify($return,$refundIsRiderCollected ? 'Refund awaiting hub distribution' : 'Refund completed',
+            $refundIsRiderCollected
+                ? 'Order '.$order->order_number.': the refund will reach the buyer wallet after the delivery hub distributes the rider remittance.'
+                : 'Order '.$order->order_number.': ₱'.number_format((float)$return->refund_amount,2).' was refunded to the buyer wallet.');
     }
 }

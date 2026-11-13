@@ -63,24 +63,11 @@ class ReturnComplaintIntakeController extends Controller
         return response()->json(['data'=>$return->load('events'),'message'=>'Request submitted. Waiting for admin action.'],201);
     }
 
-    public function schedule(Request $request, OrderReturn $return, ReturnComplaintService $service)
+    public function schedule(Request $request, OrderReturn $return)
     {
-        abort_unless((int)$return->order->buyer_id===(int)$request->user()->id,404);
         $data=$request->validate(['pickup_date'=>['required','date','after_or_equal:today'],
             'pickup_time'=>['required',Rule::in(OrderReturn::PICKUP_TIMES)]]);
-        abort_if(\Illuminate\Support\Carbon::parse($data['pickup_date'].' '.$data['pickup_time'])->lte(now()),422,'Choose a future pickup date and time.');
-        return DB::transaction(function () use ($request,$return,$data,$service) {
-            Order::whereKey($return->order_id)->lockForUpdate()->firstOrFail();
-            $locked=OrderReturn::whereKey($return->id)->lockForUpdate()->firstOrFail();
-            abort_unless($locked->complaint_id && $locked->status==='accepted' && $locked->return_type==='return',409,'Admin must accept Return & Refund before pickup can be scheduled.');
-            abort_if($locked->order->shipment?->logistics_delivery_hub_id,409,'Your delivery hub will schedule this return pickup.');
-            abort_unless($locked->canSchedulePickup(),409,'A pickup is already scheduled or the attempt limit has been reached.');
-            $address = $locked->order->delivery_address;
-            $locked->forceFill([...$data,'pickup_address'=>$address,'shipping_status'=>'scheduled','courier'=>$locked->order->logisticsCompany?->business_name ?: $locked->order->shipment?->courier,
-                'tracking_number'=>'SE-RETURN-'.str_pad((string)$locked->id,8,'0',STR_PAD_LEFT)])->save();
-            $service->log($locked,$request->user(),'scheduled','Buyer scheduled pickup for '.$data['pickup_date'].' '.$data['pickup_time'].' at '.$address.'.');
-            $service->notify($locked,'Return pickup scheduled','Order '.$locked->order->order_number.': return pickup scheduled for '.$data['pickup_date'].' '.$data['pickup_time'].'.');
-            return response()->json(['data'=>$locked->fresh('events')]);
-        });
+        $scheduled = app(\App\Services\ReturnPickupService::class)->scheduleByBuyer($return, $request->user(), $data);
+        return response()->json(['data'=>$scheduled]);
     }
 }

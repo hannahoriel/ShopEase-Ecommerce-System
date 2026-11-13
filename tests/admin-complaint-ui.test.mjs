@@ -26,6 +26,7 @@ test('complaint evidence and return review render without interrupting details',
     assert.match(evidence.innerHTML,/evidence.jpg/);
     assert.match(panel.innerHTML,/Glass &lt;set&gt;/);
     assert.match(panel.innerHTML,/data-return-action="accept"/);
+    assert.match(panel.innerHTML,/Resolve this case here/);
     assert.equal(accountability.hidden,true);
     assert.equal(panel.className,'se-return-summary');
     assert.match(panel.innerHTML,/<dt>Current solution<\/dt>/);

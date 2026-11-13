@@ -39,6 +39,8 @@ class RiderDeliveryService
     public function serializeDelivery(Order $order): array
     {
         $rider = $order->shipment?->rider;
+        $orderName = $order->items->pluck('product_name')->filter()->unique()->implode(', ');
+        $orderName = $orderName !== '' ? $orderName : 'Order '.$order->order_number;
         $pickupHandoff = $order->shipment?->transferManifests()
             ->where('origin_type', 'seller_collection')
             ->where('destination_type', 'delivery_hub')
@@ -48,6 +50,9 @@ class RiderDeliveryService
         return [
             'id' => $order->id,
             'order_number' => $order->order_number,
+            'order_name' => $orderName,
+            'name' => $orderName,
+            'title' => $orderName,
             'status' => $order->status,
             'delivery_name' => $order->delivery_name,
             'delivery_phone' => $order->delivery_phone,

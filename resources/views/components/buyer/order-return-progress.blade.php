@@ -10,16 +10,13 @@
         @if(($return['buyer_solution'] ?? $return['return_type']) !== $return['return_type'])<p>Admin changed your original {{ $return['buyer_solution']==='refund'?'Refund Only':'Return & Refund' }} request.</p>@endif
         @if($return['status']==='pending')<p>Waiting for admin’s review and discussion with you and the seller.</p>@endif
         @if($return['solution'])<p><strong>Admin’s note:</strong> {{ $return['solution'] }}</p>@endif
-        @if($return['status']==='accepted' && $return['return_type']==='return' && !$return['pickup_date'])
-            @if($read('return_pickup_managed_by_hub'))
-                <p>Your return was approved. Your delivery hub will schedule pickup.</p>
-            @else
-                <p>Your return was approved. Schedule pickup. The refund will complete after the returned parcel is received.</p>
-                <button type="button" class="vo-primary" data-return-pickup="{{ $return['id'] }}">Schedule Return Pickup</button>
-            @endif
+        @if($return['status']==='accepted' && $return['return_type']==='return' && (empty($return['pickup_date']) || ($return['shipping_status'] ?? null)==='pickup_failed') && (int)($return['failed_pickup_attempts'] ?? 0) < 3)
+            <p>Your return was approved. Choose a pickup date and time. A pickup rider assigned to your barangay will be assigned automatically. The refund will be credited after the returned parcel is received.</p>
+            <button type="button" class="vo-primary" data-return-pickup="{{ $return['id'] }}">{{ (int)($return['failed_pickup_attempts'] ?? 0) ? 'Reschedule Return Pickup (Attempt '.((int)$return['failed_pickup_attempts']+1).' of 3)' : 'Schedule Return Pickup (Attempt 1 of 3)' }}</button>
         @endif
+        @if((int)($return['failed_pickup_attempts'] ?? 0) > 0)<p>Pickup attempts used: {{ $return['failed_pickup_attempts'] }} of 3.</p>@endif
         @if($return['status']==='cancelled')<p>Request cancelled after three failed pickup attempts.</p>@endif
-        @if($return['pickup_date'])<p><strong>Pickup:</strong> {{ \Carbon\Carbon::parse($return['pickup_date'])->format('M d, Y') }} · {{ $return['pickup_time'] }}<br>{{ $return['pickup_address'] }}<br>{{ $return['courier'] }} · {{ $return['tracking_number'] }}<br>Return status: {{ \Illuminate\Support\Str::headline($return['shipping_status']) }}</p>@endif
+        @if($return['pickup_date'])<p><strong>Pickup:</strong> {{ \Carbon\Carbon::parse($return['pickup_date'])->format('M d, Y') }} · {{ $return['pickup_time'] }}<br>{{ $return['pickup_address'] }}<br><strong>Pickup rider:</strong> {{ data_get($return, 'pickup_rider.user.name', 'Not assigned') }}<br><strong>Contact number:</strong> {{ data_get($return, 'pickup_rider.contact_no', 'Not available') }}<br>{{ $return['courier'] }} · {{ $return['tracking_number'] }}<br>Return status: {{ \Illuminate\Support\Str::headline($return['shipping_status']) }}</p>@endif
         @if($return['status']==='refunded')<p class="vo-success-note">₱{{ number_format((float)$return['refund_amount'],2) }} has been credited to your ShopEase Wallet.</p>@endif
         </div><aside class="vo-case-evidence"><h3>Evidence photos</h3><div class="vo-case-photos">@foreach($return['evidence'] ?? [] as $photo)<a href="{{ $photo['url'] }}" target="_blank" rel="noopener"><img src="{{ $photo['url'] }}" alt="Complaint evidence" style="width:72px;height:72px;border-radius:8px;object-fit:cover"></a>@endforeach</div></aside></div>
         <div class="vo-case-history"><h3>Request history</h3>
