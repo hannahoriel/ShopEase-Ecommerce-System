@@ -103,6 +103,7 @@ class SellerInventoryTest extends TestCase
             'name' => 'Wireless keyboard',
             'sku' => 'KEYBOARD-1',
             'price' => 1499.50,
+            'weight_kg' => 0.5,
             'stock_quantity' => 12,
             'category' => 'electronics',
             'photos' => ['https://example.test/keyboard.jpg'],
@@ -143,6 +144,7 @@ class SellerInventoryTest extends TestCase
             'name' => 'Pending review product',
             'sku' => 'PENDING-1',
             'price' => 599.00,
+            'weight_kg' => 0.5,
             'stock_quantity' => 9,
             'category' => 'electronics',
             'photos' => ['https://example.test/pending-product.jpg'],
@@ -188,6 +190,7 @@ class SellerInventoryTest extends TestCase
             'sku' => 'FORM-1',
             'description' => 'A valid product added from the form payload.',
             'price' => 199.50,
+            'weight_kg' => 0.5,
             'stock' => 8,
             'category' => 'electronics',
             'photos' => ['https://example.test/form-product.jpg'],
@@ -257,7 +260,7 @@ class SellerInventoryTest extends TestCase
             ->assertJsonPath('description', 'Updated description')
             ->assertJsonPath('price', '27.00')
             ->assertJsonPath('stock_quantity', 4)
-            ->assertJsonPath('status', 'pending')
+            ->assertJsonPath('status', 'active')
             ->assertJsonPath('photos.0', 'data:image/jpeg;base64,ZmFrZQ==')
             ->assertJsonPath('variations.0.name', 'Large')
             ->assertJsonPath('colors.0.name', 'Blue')
@@ -267,7 +270,7 @@ class SellerInventoryTest extends TestCase
         $this->assertDatabaseHas('products', [
             'id' => $product->id,
             'name' => 'After edit',
-            'status' => 'pending',
+            'status' => 'active',
             'stock_quantity' => 4,
         ]);
         $this->assertDatabaseHas('product_options', [
@@ -333,6 +336,7 @@ class SellerInventoryTest extends TestCase
             'sku' => 'VARIABLE-1',
             'pricing_mode' => 'varies',
             'pricing_source' => 'variations',
+            'weight_kg' => 0.5,
             'category' => 'electronics',
             'photos' => ['https://example.test/variable-product.jpg'],
             'variation_items' => [
@@ -381,6 +385,7 @@ class SellerInventoryTest extends TestCase
             'sku' => 'WIRELESS-KEYBOARD-1',
             'description' => 'A wireless keyboard with multiple choices.',
             'category' => 'electronics-and-gadgets',
+            'weight_kg' => 0.5,
             'pricing_mode' => 'varies',
             'pricing_source' => 'colors',
             'color_items' => [
@@ -392,12 +397,40 @@ class SellerInventoryTest extends TestCase
                     'name' => 'Classic',
                     'price' => '5.00',
                     'price_type' => 'addon',
-                    'stock' => '1',
+                    'stock' => '5',
                     'photo' => UploadedFile::fake()->image('classic.png'),
                 ],
             ],
             'size_items' => [
-                ['name' => 'Compact', 'price' => '0.00', 'price_type' => 'addon', 'stock' => '7'],
+                ['name' => 'Compact', 'price' => '0.00', 'price_type' => 'addon', 'stock' => '5'],
+            ],
+            'variant_combinations' => [
+                [
+                    'variations' => 'Classic',
+                    'colors' => 'Black',
+                    'sizes' => 'Compact',
+                    'pricing_mode' => 'varies',
+                    'pricing_source' => 'colors',
+                    'base_price' => 49.50,
+                    'additions' => ['variations' => 5, 'sizes' => 0],
+                    'additional_price' => 5,
+                    'final_price' => 54.50,
+                    'stock' => 2,
+                    'available' => true,
+                ],
+                [
+                    'variations' => 'Classic',
+                    'colors' => 'White',
+                    'sizes' => 'Compact',
+                    'pricing_mode' => 'varies',
+                    'pricing_source' => 'colors',
+                    'base_price' => 59,
+                    'additions' => ['variations' => 5, 'sizes' => 0],
+                    'additional_price' => 5,
+                    'final_price' => 64,
+                    'stock' => 3,
+                    'available' => true,
+                ],
             ],
             'category_specifications' => [
                 'brand' => 'ShopEase',
@@ -417,14 +450,14 @@ class SellerInventoryTest extends TestCase
             ->assertJsonPath('category', 'electronics-and-gadgets')
             ->assertJsonPath('pricing_mode', 'varies')
             ->assertJsonPath('pricing_source', 'colors')
-            ->assertJsonPath('price', '49.50')
+            ->assertJsonPath('price', '54.50')
             ->assertJsonPath('stock_quantity', 5)
             ->assertJsonPath('status', 'pending')
             ->assertJsonPath('photos', $photos)
             ->assertJsonPath('colors.0.price_type', 'base')
             ->assertJsonPath('colors.1.price', 59)
             ->assertJsonPath('variations.0.price_type', 'addon')
-            ->assertJsonPath('variations.0.stock', 1)
+            ->assertJsonPath('variations.0.stock', 5)
             ->assertJsonPath('sizes.0.name', 'Compact')
             ->assertJsonPath('specifications.brand', 'ShopEase')
             ->assertJsonPath('specifications.keyboard-layout', 'US')
@@ -461,6 +494,7 @@ class SellerInventoryTest extends TestCase
         $response = $this->actingAs($sellerUser)->post('/seller/inventory/products', [
             'title' => 'Fixed price product',
             'price' => '125.00',
+            'weight_kg' => 0.5,
             'stock' => '9',
             'category' => 'electronics',
             'variation_items' => [
@@ -525,6 +559,7 @@ class SellerInventoryTest extends TestCase
         $this->actingAs($sellerUser)->postJson('/api/v1/seller/inventory', [
             'name' => 'Incomplete product',
             'price' => 10,
+            'weight_kg' => 0.5,
             'stock_quantity' => 1,
             'status' => 'active',
         ])->assertUnprocessable()
@@ -533,6 +568,7 @@ class SellerInventoryTest extends TestCase
         $response = $this->actingAs($sellerUser)->postJson('/api/v1/seller/inventory', [
             'name' => 'Pending product',
             'price' => 10,
+            'weight_kg' => 0.5,
             'stock_quantity' => 1,
             'category' => 'electronics',
             'photos' => ['https://example.test/pending.jpg'],
@@ -549,6 +585,7 @@ class SellerInventoryTest extends TestCase
         $response = $this->actingAs($sellerUser)->post('/seller/inventory/products', [
             'title' => 'Connected choice product',
             'category' => 'electronics-and-gadgets',
+            'weight_kg' => 0.5,
             'photos' => ['data:image/jpeg;base64,ZmFrZQ=='],
             'pricing_mode' => 'varies',
             'pricing_source' => 'variations',
@@ -616,6 +653,7 @@ class SellerInventoryTest extends TestCase
         $payload = [
             'title' => 'Fixed connected choice product',
             'category' => 'electronics-and-gadgets',
+            'weight_kg' => 0.5,
             'photos' => ['data:image/jpeg;base64,ZmFrZQ=='],
             'pricing_mode' => 'fixed',
             'price' => 0,
@@ -694,6 +732,7 @@ class SellerInventoryTest extends TestCase
             'sku' => 'PHOTO-1',
             'description' => 'A product with persisted photos.',
             'price' => 499.00,
+            'weight_kg' => 0.5,
             'stock_quantity' => 3,
             'category' => 'electronics',
             'photos' => $photos,

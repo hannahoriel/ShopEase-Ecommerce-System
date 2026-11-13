@@ -44,7 +44,7 @@ class RiderDeliveryApiTest extends TestCase
         $rider->update(['municipal_hub' => $deliveryHub->hub_name]);
         [$sellerUser, $seller] = $this->seller('Seller One');
         $buyer = $this->buyer();
-        $order = $this->order($seller, $buyer, 'to_ship');
+        $order = $this->order($seller, $buyer, 'to_ship', null, $logistics);
 
         $this->actingAs($logisticsUser)
             ->getJson('/api/v1/logistics/branches')
@@ -62,6 +62,12 @@ class RiderDeliveryApiTest extends TestCase
             ])
             ->assertOk();
 
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'logistics_id' => $logistics->id,
+            'status' => 'to_ship',
+        ]);
+        $this->assertDatabaseHas('shipments', ['order_id' => $order->id, 'rider_id' => null]);
         $this->actingAs($logisticsUser)
             ->getJson('/api/v1/logistics/available-deliveries')
             ->assertOk()
@@ -89,7 +95,7 @@ class RiderDeliveryApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.id', $order->id);
 
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $this->actingAs($admin)
             ->getJson('/api/v1/admin/logistics-management')
             ->assertOk()
@@ -484,7 +490,8 @@ class RiderDeliveryApiTest extends TestCase
     public function test_rider_page_data_uses_persistent_and_grouped_endpoints(): void
     {
         Storage::fake('local');
-        [$riderUser, $rider] = $this->rider();
+        [, , $branch] = $this->logistics('Rider Chat Logistics');
+        [$riderUser, $rider] = $this->rider($branch);
         [$sellerUser, $seller] = $this->seller('Rider Chat Seller');
         $buyer = $this->buyer();
         $order = $this->order($seller, $buyer, 'to_ship', $rider);
@@ -679,9 +686,28 @@ class RiderDeliveryApiTest extends TestCase
             'role' => User::ROLE_RIDER,
             'registration_status' => 'active',
         ]);
+        $deliveryHub = $branch
+            ? LogisticsDeliveryHub::query()->firstOrCreate(
+                ['logistics_branch_id' => $branch->id, 'hub_name' => 'Calamba Delivery Hub'],
+                [
+                    'province' => 'Laguna',
+                    'municipality' => 'Calamba',
+                    'barangay' => 'Real',
+                    'postal_code' => '4027',
+                    'street' => 'Main Street',
+                    'manager_name' => 'Hub Manager',
+                    'manager_email' => 'hub.manager@example.test',
+                    'manager_phone' => '09171112222',
+                    'login_email' => 'calamba.hub@example.test',
+                    'status' => 'active',
+                ]
+            )
+            : null;
         $rider = Rider::create([
             'user_id' => $user->id,
             'logistics_branch_id' => $branch?->id,
+            'municipal_hub' => $deliveryHub?->hub_name,
+            'logistics_operation' => 'pickup and delivery',
             'last_name' => 'Rider',
             'first_name' => 'Alex',
             'sex' => 'other',
@@ -748,11 +774,18 @@ class RiderDeliveryApiTest extends TestCase
         return $user;
     }
 
-    private function order(Seller $seller, User $buyer, string $status, ?Rider $rider = null): Order
+    private function order(
+        Seller $seller,
+        User $buyer,
+        string $status,
+        ?Rider $rider = null,
+        ?Logistics $logistics = null,
+    ): Order
     {
         $order = Order::create([
             'buyer_id' => $buyer->id,
             'seller_id' => $seller->id,
+            'logistics_id' => $logistics?->id ?? $rider?->logisticsBranch?->logistics_id,
             'order_number' => 'SE-TEST-'.uniqid(),
             'total' => 559,
             'status' => $status,

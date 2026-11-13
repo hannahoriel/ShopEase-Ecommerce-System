@@ -47,7 +47,6 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-          touch database/database.sqlite
 
       - name: Lint PHP syntax
         run: find app routes database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
@@ -60,9 +59,6 @@ jobs:
 
       - name: Run automated tests
         run: php artisan test
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
 
       - name: Build frontend assets
         run: npm run build

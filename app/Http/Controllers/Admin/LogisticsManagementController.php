@@ -57,14 +57,18 @@ class LogisticsManagementController extends Controller
     {
         abort_unless($registration->user_type === User::ROLE_LOGISTICS, 404);
 
-        return app(RegistrationController::class)->approve($request, $registration);
+        $response = app(RegistrationController::class)->approve($request, $registration);
+
+        return $this->withLogisticsCounts($response);
     }
 
     public function reject(Request $request, Registration $registration): JsonResponse|RedirectResponse
     {
         abort_unless($registration->user_type === User::ROLE_LOGISTICS, 404);
 
-        return app(RegistrationController::class)->reject($request, $registration);
+        $response = app(RegistrationController::class)->reject($request, $registration);
+
+        return $this->withLogisticsCounts($response);
     }
 
     public function branches(Logistics $logistics): JsonResponse
@@ -170,6 +174,23 @@ class LogisticsManagementController extends Controller
                 'total_companies' => $companies->count(),
             ],
         ];
+    }
+
+    private function withLogisticsCounts(JsonResponse|RedirectResponse $response): JsonResponse|RedirectResponse
+    {
+        if (! $response instanceof JsonResponse) {
+            return $response;
+        }
+
+        $data = $response->getData(true);
+        $data['counts'] = [
+            'pending' => Registration::query()->where('user_type', User::ROLE_LOGISTICS)->where('status', 'pending')->count(),
+            'approved' => Registration::query()->where('user_type', User::ROLE_LOGISTICS)->where('status', 'approved')->count(),
+            'rejected' => Registration::query()->where('user_type', User::ROLE_LOGISTICS)->where('status', 'rejected')->count(),
+            'total' => Registration::query()->where('user_type', User::ROLE_LOGISTICS)->count(),
+        ];
+
+        return response()->json($data, $response->getStatusCode());
     }
 
     private function serializeRegistration(Registration $registration): array
