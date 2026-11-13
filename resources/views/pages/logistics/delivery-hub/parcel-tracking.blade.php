@@ -293,7 +293,6 @@ body.pt-modal-open{overflow:hidden}
 @include('components.logistics.delivery-hub.sidebar')
 @include('components.logistics.delivery-hub.navbar')
 <main class="lg-main" id="lgMain"><div class="pt-page">
-<header class="pt-heading"><div><span class="pt-eyebrow">ShopEase · Delivery Hub Operations</span><h1>Parcel Tracking</h1><p>Monitor incoming, received, and out-for-delivery parcels assigned to this delivery hub.</p></div></header>
 <section class="pt-panel" aria-label="Parcel tracking records">
 <div class="pt-top-tabs" role="tablist" aria-label="Parcel tracking sections"><button class="pt-tab active" id="ptTabParcels" data-main="parcels" role="tab" aria-selected="true" aria-controls="ptParcels">Parcels</button><button class="pt-tab" id="ptTabReturns" data-main="returns" role="tab" aria-selected="false" aria-controls="ptReturns">Returns</button></div>
 <div id="ptParcels" class="pt-tabpanel" role="tabpanel" aria-labelledby="ptTabParcels">
