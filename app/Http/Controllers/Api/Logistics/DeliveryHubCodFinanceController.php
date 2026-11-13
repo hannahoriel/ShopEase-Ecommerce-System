@@ -348,12 +348,12 @@ class DeliveryHubCodFinanceController extends Controller
                 $shippingMargin = max(0, round($buyerShipping - $agreedShipping, 2));
                 $collectedProductAmount = max(0, $amount - $buyerShipping);
                 $base = round($collectedProductAmount + ($order?->voucher_type === 'shipping' ? 0 : (float) ($order?->voucher_discount ?? 0)), 2);
-                $commission = min($collectedProductAmount, round($base * CodSettlementService::COMMISSION_RATE / 100, 2));
+                $commission = round($base * CodSettlementService::COMMISSION_RATE / 100, 2);
                 return [
                     'id' => $collection->order_id, 'ref' => $collection->order?->order_number,
                     'buyer' => $collection->order?->buyer?->name, 'amount' => $amount, 'shipping_fee' => $shipping,
                     'platform_shipping_margin' => $shippingMargin,
-                    'commission_amount' => $commission, 'seller_amount' => round($collectedProductAmount - $commission - ($order?->voucher_type === 'shipping' && $order?->voucher_funding_source === 'seller' ? $shippingVoucher : 0), 2),
+                    'commission_amount' => $commission, 'seller_amount' => CodSettlementService::sellerAmount($order, $collectedProductAmount, $commission, $shippingVoucher),
                 ];
             })->values(),
         ];

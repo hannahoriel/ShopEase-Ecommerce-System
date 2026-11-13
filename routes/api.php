@@ -357,6 +357,11 @@ Route::prefix('v1')->group(function () {
             Route::delete('/inventory/products/{product}', [SellerInventoryController::class, 'destroy'])->name('seller.api.inventory.products.destroy.alias');
         });
 
+        Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/wallet', [\App\Http\Controllers\Admin\WalletController::class, 'index'])
+                ->name('admin.api.wallet.index');
+        });
+
         Route::middleware('role:logistics')->prefix('logistics')->group(function () {
             Route::get('/reports', [LogisticsReportsController::class, 'index'])->name('logistics.api.reports.index');
             Route::get('/account', [LogisticsAccountController::class, 'show'])->name('logistics.api.account.show');
@@ -533,3 +538,4 @@ Route::prefix('v1')->group(function () {
     });
 
 });
+

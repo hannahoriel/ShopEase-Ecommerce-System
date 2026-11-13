@@ -14,6 +14,18 @@ class CodSettlementService
     public const COMMISSION_RATE = 10.00;
     public const LOGISTICS_SHIPPING_FEE = 50.00;
 
+    public static function sellerAmount(?Order $order, float $collectedProductAmount, float $commission, float $shippingVoucher): float
+    {
+        if (! $order) return 0;
+        $platformMerchandiseVoucher = $order->voucher_type !== 'shipping'
+            && $order->voucher_funding_source === 'platform'
+            ? max(0, round((float) $order->voucher_discount, 2)) : 0;
+        $sellerShippingVoucher = $order->voucher_type === 'shipping'
+            && $order->voucher_funding_source === 'seller' ? $shippingVoucher : 0;
+
+        return round($collectedProductAmount - $commission + $platformMerchandiseVoucher - $sellerShippingVoucher, 2);
+    }
+
     public function cashIn(Remittance $remittance, int $hubId, int $userId): array
     {
         return DB::transaction(function () use ($remittance, $hubId, $userId): array {
@@ -70,8 +82,10 @@ class CodSettlementService
                 $shippingMargin = round(max(0, $buyerShipping - $agreedShipping), 2);
                 $collectedProductAmount = max(0, round($cod - $buyerShipping, 2));
                 $commissionBase = max(0, round($collectedProductAmount + ($order->voucher_type === 'shipping' ? 0 : (float) $order->voucher_discount), 2));
-                $commission = min($collectedProductAmount, round($commissionBase * self::COMMISSION_RATE / 100, 2));
-                $sellerShare = round($collectedProductAmount - $commission - ($order->voucher_type === 'shipping' && $order->voucher_funding_source === 'seller' ? $shippingVoucher : 0), 2);
+                $commission = round($commissionBase * self::COMMISSION_RATE / 100, 2);
+                // ShopEase reimburses platform-funded merchandise discounts so the seller
+                // receives the undiscounted product proceeds (less the normal commission).
+                $sellerShare = self::sellerAmount($order, $collectedProductAmount, $commission, $shippingVoucher);
                 $logisticsId = $order->logistics_id ?: $order->logisticsCompany?->id;
                 abort_if($shipping > 0 && ! $logisticsId, 409, 'The shipment has no logistics company assigned, so its shipping fee cannot be settled.');
                 $settlementId = DB::table('cod_settlements')->insertGetId([

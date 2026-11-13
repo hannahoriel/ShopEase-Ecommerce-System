@@ -103,6 +103,32 @@ class AdminCommissionTest extends TestCase
             ->assertJsonPath('stats.total_commission', 100);
     }
 
+    public function test_admin_wallet_api_returns_balances_and_supports_ui_filters(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        [$seller, $order] = $this->createOrder('completed', 1000, 100);
+        $order->update([
+            'voucher_discount' => 25,
+            'voucher_funding_source' => 'platform',
+            'voucher_code' => 'SHOP25',
+        ]);
+        CommissionTransaction::where('order_id', $order->id)->update(['earned_at' => '2026-10-10 12:00:00']);
+
+        $this->actingAs($admin)->getJson('/api/v1/admin/wallet')
+            ->assertOk()
+            ->assertJsonPath('balance', 75)
+            ->assertJsonPath('income', 100)
+            ->assertJsonPath('vouchers', 25)
+            ->assertJsonPath('transactions.total', 2);
+
+        $this->actingAs($admin)->getJson('/api/v1/admin/wallet?type=platform_voucher&search=SHOP25&from=2026-10-10T00:00&to=2026-10-10T23:59')
+            ->assertOk()->assertJsonPath('transactions.total', 1)
+            ->assertJsonPath('transactions.data.0.entry_type', 'platform_voucher');
+
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $this->actingAs($buyer)->getJson('/api/v1/admin/wallet')->assertForbidden();
+    }
+
     public function test_commission_page_and_api_are_restricted_to_admins(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
