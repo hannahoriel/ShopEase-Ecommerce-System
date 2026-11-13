@@ -3,6 +3,7 @@
 namespace App\Models\Logistics;
 
 use App\Models\Admin\Shipment;
+use App\Models\Admin\OrderReturn;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,7 @@ class LogisticsTransferManifest extends Model
     protected $fillable = [
         'batch_key', 'origin_type', 'origin_id', 'destination_type', 'destination_id',
         'courier_registration_id', 'vehicle_id', 'courier_name', 'vehicle_reference',
-        'returning_manifest_id', 'status', 'scheduled_at', 'loaded_at', 'departed_at',
+        'returning_manifest_id', 'order_return_id', 'status', 'scheduled_at', 'loaded_at', 'departed_at',
         'arrival_confirmed_at', 'arrived_at',
     ];
 
@@ -41,6 +42,11 @@ class LogisticsTransferManifest extends Model
     public function returnTrip(): BelongsTo
     {
         return $this->belongsTo(self::class, 'returning_manifest_id');
+    }
+
+    public function orderReturn(): BelongsTo
+    {
+        return $this->belongsTo(OrderReturn::class);
     }
 
     public function courierRegistration(): BelongsTo

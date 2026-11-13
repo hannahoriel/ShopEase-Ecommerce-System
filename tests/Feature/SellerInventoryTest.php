@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
+use App\Models\Admin\Order;
+use App\Models\Admin\OrderItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -13,6 +15,33 @@ use Tests\TestCase;
 class SellerInventoryTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_inventory_api_reports_product_units_sold_from_non_cancelled_orders(): void
+    {
+        [$sellerUser, $seller] = $this->createSeller('sold-count@example.com');
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $product = Product::create([
+            'seller_id' => $seller->id, 'name' => 'Sold count product', 'price' => 200,
+            'stock_quantity' => 8, 'status' => 'active',
+        ]);
+
+        foreach ([['pending', 2], ['completed', 3], ['cancelled', 9], ['refunded', 4]] as [$status, $quantity]) {
+            $order = Order::create([
+                'buyer_id' => $buyer->id, 'seller_id' => $seller->id,
+                'order_number' => 'SE-SOLD-'.strtoupper($status), 'total' => 200, 'status' => $status,
+            ]);
+            OrderItem::create([
+                'order_id' => $order->id, 'product_id' => $product->id,
+                'product_name' => $product->name, 'quantity' => $quantity, 'unit_price' => 200,
+            ]);
+        }
+
+        $this->actingAs($sellerUser)->getJson('/api/v1/seller/inventory')
+            ->assertOk()->assertJsonPath('data.0.sold_quantity', 5);
+
+        $this->actingAs($sellerUser)->get(route('seller.inventory'))
+            ->assertOk()->assertSee('"sold_quantity":5', false);
+    }
 
     public function test_stock_and_photos_follow_zero_single_and_grouped_choice_modes(): void
     {
@@ -124,6 +153,29 @@ class SellerInventoryTest extends TestCase
             'seller_id' => $seller->id,
             'sku' => 'PENDING-1',
             'status' => 'pending',
+        ]);
+    }
+
+    public function test_editing_an_approved_product_does_not_send_it_back_for_approval(): void
+    {
+        $sellerUser = User::create([
+            'name' => 'Approved Seller', 'email' => 'approved-edit@example.com',
+            'password' => 'Password123!', 'role' => User::ROLE_SELLER,
+        ]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id, 'store_name' => 'Approved Shop', 'registration_status' => 'active',
+        ]);
+        $product = Product::create([
+            'seller_id' => $seller->id, 'name' => 'Approved product', 'price' => 200,
+            'stock_quantity' => 10, 'status' => 'active',
+        ]);
+
+        $this->actingAs($sellerUser)->patchJson("/api/v1/seller/inventory/{$product->id}", [
+            'name' => 'Updated approved product', 'status' => 'pending',
+        ])->assertOk()->assertJsonPath('name', 'Updated approved product')->assertJsonPath('status', 'active');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id, 'name' => 'Updated approved product', 'status' => 'active',
         ]);
     }
 

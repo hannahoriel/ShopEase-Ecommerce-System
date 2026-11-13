@@ -335,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             delivery_name: address.name,
                             delivery_phone: address.phone,
                             delivery_address: address.address,
+                            delivery_barangay: address.barangay,
                             delivery_province: address.province,
                             delivery_municipality: address.municipality,
                             logistics_selections: [...new Set(cartItems.map(item => String(item.product.seller.id)))].map(sellerId => ({

@@ -10284,7 +10284,6 @@ document.addEventListener(
                         category: product.category || '',
                         pricing_mode: product.pricingMode || 'fixed',
                         pricing_source: product.pricingSource || null,
-                        status: 'pending',
                         photos: Array.isArray(product.photos) ? product.photos : [],
                         category_specifications: specifications,
                         variation_items: optionPayload.variations,
@@ -10663,13 +10662,6 @@ document.addEventListener(
                                 return;
                             }
 
-                            createdProduct.status = 'pending';
-                            createdProduct.approvalStatus = 'pending';
-
-                            if (createdProduct.listingSnapshot) {
-                                createdProduct.listingSnapshot.approvalStatus = 'pending';
-                            }
-
                             const rowName =
                                 currentProductRow?.querySelector('.product-name');
                             if (rowName) {
@@ -10685,19 +10677,8 @@ document.addEventListener(
 
                             currentProductRow.dataset.name = createdProduct.title || '';
                             currentProductRow.dataset.category = createdProduct.category || '';
-                            currentProductRow.dataset.status = 'pending';
-
-                            const rowStatusBadge =
-                                currentProductRow.querySelector('.status-badge');
-                            if (rowStatusBadge) {
-                                rowStatusBadge.textContent = 'Pending Approval';
-                                rowStatusBadge.className = 'status-badge status-pending';
-                            }
-
-                            if (productDetailsStatus) {
-                                productDetailsStatus.textContent = 'Pending Approval';
-                                productDetailsStatus.className = 'status-badge status-pending';
-                            }
+                            const savedStatus = String(createdProduct.approvalStatus || createdProduct.status || '').toLowerCase();
+                            if (currentProductRow && savedStatus) currentProductRow.dataset.status = savedStatus;
 
                             saveCreatedProducts();
 
@@ -11465,6 +11446,7 @@ document.addEventListener(
                         sale_percentage: product.sale_percentage ?? product.salePercentage ?? null,
                         sale_price: product.sale_price ?? null,
                         stock: product.stock ?? product.stock_quantity ?? 0,
+                        sold: Number(product.sold_quantity ?? product.sold ?? 0) || 0,
                         variations: Array.isArray(product.variations) ? product.variations : [],
                         colors: Array.isArray(product.colors) ? product.colors : [],
                         sizes: Array.isArray(product.sizes) ? product.sizes : [],
@@ -11582,6 +11564,7 @@ document.addEventListener(
                                     basePrice: serverProduct.basePrice,
                                 },
                                 stock: serverProduct.stock,
+                                sold: serverProduct.sold,
                                 sale_percentage: serverProduct.sale_percentage,
                                 sale_price: serverProduct.sale_price,
                                 variations: serverProduct.variations,
@@ -12076,7 +12059,7 @@ document.addEventListener(
                                 </h3>
 
                                 <p class="product-sold">
-                                    0 sold
+                                    ${Number(product.sold || 0)} sold
                                 </p>
 
                             </div>
@@ -12183,7 +12166,7 @@ document.addEventListener(
                             </div>
                             <div class="min-w-0">
                                 <h3 class="product-name">${escapeHtml(product.title || 'New Product')}</h3>
-                                <p class="product-sold">0 sold</p>
+                                <p class="product-sold">${Number(product.sold || 0)} sold</p>
                             </div>
                         </div>
                         <div>

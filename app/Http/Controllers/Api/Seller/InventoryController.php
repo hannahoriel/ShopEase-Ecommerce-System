@@ -23,6 +23,7 @@ class InventoryController extends Controller
         $archived = $request->boolean('archived');
 
         $query = $seller->products()
+            ->withSum(['orderItems as sold_quantity' => fn ($items) => $items->whereHas('order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded']))], 'quantity')
             ->when(
                 $archived,
                 fn ($query) => $query->where('is_archived', true),
@@ -563,7 +564,6 @@ class InventoryController extends Controller
             'is_fragile' => ['sometimes', 'boolean'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'stock_quantity' => ['sometimes', 'integer', 'min:0'],
-            'status' => ['sometimes', 'string', 'max:50'],
             'category' => ['sometimes', 'string', 'max:255'],
             'pricing_mode' => ['sometimes', Rule::in(['fixed', 'varies'])],
             'pricing_source' => ['sometimes', 'nullable', Rule::in(['variations', 'colors', 'sizes'])],
@@ -680,7 +680,6 @@ class InventoryController extends Controller
                     'is_fragile',
                     'price',
                     'stock_quantity',
-                    'status',
                     'category',
                     'pricing_mode',
                     'pricing_source',
@@ -872,6 +871,11 @@ class InventoryController extends Controller
     protected function serializeProduct(Product $product): array
     {
         $data = $product->toArray();
+        $data['sold_quantity'] = array_key_exists('sold_quantity', $product->getAttributes())
+            ? (int) ($product->getAttributes()['sold_quantity'] ?? 0)
+            : (int) $product->orderItems()
+                ->whereHas('order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded']))
+                ->sum('quantity');
         $data['sale_percentage'] = $product->sale_percentage;
         $data['sale_price'] = $product->sale_price;
 

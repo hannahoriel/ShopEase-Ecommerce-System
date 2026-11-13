@@ -483,6 +483,19 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const returnRequest = complaint.returnRequest;
+        const returnIsFinal = returnRequest && ['refunded', 'declined', 'cancelled'].includes(returnRequest.status);
+        if (newStatus === 'resolved' && returnRequest && !returnIsFinal) {
+            statusMenu.classList.remove('show');
+            modalStatusMenu.classList.remove('show');
+            syncComplaintModal(complaint);
+            detailsModal.classList.remove('hidden');
+            detailsModal.classList.add('flex', 'is-open');
+            detailsModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('overflow-hidden');
+            return;
+        }
+
         const previousStatus =
             complaint.status;
 
@@ -857,7 +870,12 @@ document.addEventListener('DOMContentLoaded', function () {
         panel.className='se-return-summary';
         const pending=record.status==='pending', returning=record.return_type==='return';
         const alternate=returning?'Refund Only':'Return & Refund';
-        panel.innerHTML=renderReturnSummary(record)
+        const resolutionHelp = !['refunded','declined','cancelled'].includes(record.status)
+            ? `<p class="se-return-decision"><strong>Resolve this case here:</strong> ${returning
+                ? 'Accept or decline the return request below. An accepted return is resolved after pickup, receipt confirmation, and refund.'
+                : 'Accept or decline the refund request below. Accepting it completes the refund and resolves this complaint.'}</p>`
+            : '';
+        panel.innerHTML=resolutionHelp+renderReturnSummary(record)
             +(record.pickup_date?`<p class="se-return-pickup"><strong>Pickup:</strong> ${escapeHtml(record.pickup_date.slice(0,10))} ${escapeHtml(record.pickup_time)}<br>${escapeHtml(record.pickup_address)}<br>${escapeHtml(record.tracking_number||'')}</p>`:'')
             +(record.solution?`<p class="se-return-decision"><strong>Decision notes:</strong> ${escapeHtml(record.solution)}</p>`:'')
             +(pending||record.status==='accepted'?'<label class="se-return-notes">Admin decision notes<textarea data-return-notes maxlength="2000" rows="3" placeholder="Summarize the evidence and discussion with both parties"></textarea></label>':'')

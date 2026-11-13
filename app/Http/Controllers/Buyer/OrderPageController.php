@@ -29,7 +29,9 @@ class OrderPageController extends Controller
             'is_anonymous' => $review->is_anonymous,
             'photo_url' => $review->photo_path ? Storage::disk('public')->url($review->photo_path) : null,
         ])->all();
-        $order['returns'] = OrderReturn::where('order_id', $record->id)->with('events')->latest()->get()->toArray();
+        $order['returns'] = OrderReturn::where('order_id', $record->id)
+            ->with(['events', 'pickupRider.user:id,name'])
+            ->latest()->get()->toArray();
         $apiToken = $request->user()->createToken('buyer-order-page')->plainTextToken;
         return view('pages.buyer.view-order', compact('order', 'apiToken'));
     }
