@@ -16,7 +16,7 @@ class UserManagementTest extends TestCase
     public function test_only_admins_can_access_user_management(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
 
         $this->actingAs($buyer)->get(route('admin.user.management'))->assertForbidden();
         $this->actingAs($admin)->get(route('admin.user.management'))->assertOk();
@@ -24,7 +24,7 @@ class UserManagementTest extends TestCase
 
     public function test_admin_can_list_filter_and_view_user_details(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $buyer = User::factory()->create([
             'name' => 'Maria Santos',
             'role' => User::ROLE_BUYER,
@@ -62,7 +62,7 @@ class UserManagementTest extends TestCase
 
     public function test_user_management_list_and_details_include_the_profile_photo_url(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $buyer = User::factory()->create([
             'name' => 'Photo Buyer',
             'role' => User::ROLE_BUYER,
@@ -86,7 +86,7 @@ class UserManagementTest extends TestCase
     {
         Mail::fake();
         Carbon::setTestNow('2026-09-04 12:00:00');
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $user = User::factory()->create([
             'role' => User::ROLE_BUYER,
             'registration_status' => 'active',
@@ -144,7 +144,7 @@ class UserManagementTest extends TestCase
     public function test_admin_can_manage_logistics_accounts_and_each_status_change_sends_an_email(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $logistics = User::factory()->create([
             'role' => User::ROLE_LOGISTICS,
             'registration_status' => 'active',
@@ -188,7 +188,7 @@ class UserManagementTest extends TestCase
 
     public function test_status_changes_require_valid_action_data(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $user = User::factory()->create(['role' => User::ROLE_BUYER]);
 
         $this->actingAs($admin)

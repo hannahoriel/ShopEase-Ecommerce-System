@@ -38,24 +38,33 @@ class LogisticsMessagesTest extends TestCase
             ->assertJsonPath('data.message.text', 'Parcel batch is ready for pickup.')
             ->assertJsonPath('data.message.mine', true);
 
-        $conversationId = (int) $this->getJson('/api/v1/logistics/messages')
-            ->assertOk()->json('data.1.conversation_id');
+        $logisticsInbox = $this->getJson('/api/v1/logistics/messages')->assertOk();
+        $sortingContact = collect($logisticsInbox->json('data'))
+            ->first(fn (array $contact): bool => $contact['type'] === 'sorting'
+                && (int) $contact['contact_id'] === (int) $branch->id);
+        $conversationId = (int) $sortingContact['conversation_id'];
         $this->assertDatabaseHas('logistics_messages', [
             'conversation_id' => $conversationId,
             'sender_id' => $logisticsUser->id,
             'body' => 'Parcel batch is ready for pickup.',
         ]);
 
-        $this->actingAs($centerUser)
-            ->getJson('/api/v1/sorting_center/messages')
-            ->assertOk()
-            ->assertJsonPath('data.0.conversation_id', $conversationId)
-            ->assertJsonPath('data.0.messages.0.text', 'Parcel batch is ready for pickup.')
-            ->assertJsonPath('data.0.messages.0.mine', false);
-        $this->assertDatabaseMissing('logistics_messages', [
-            'conversation_id' => $conversationId,
-            'body' => 'Parcel batch is ready for pickup.',
-            'read_at' => null,
+        $centerThread = $this->actingAs($centerUser)
+            ->postJson('/api/v1/sorting_center/messages/thread', [
+                'type' => 'sorting',
+                'contact_id' => $logisticsUser->id,
+            ])
+            ->assertOk();
+        $this->assertSame($conversationId, $centerThread->json('data.conversation_id'));
+        $this->assertSame('Parcel batch is ready for pickup.', $centerThread->json('data.messages.0.text'));
+        $this->assertFalse($centerThread->json('data.messages.0.mine'));
+        $facilityMessage = LogisticsMessage::query()
+            ->where('conversation_id', $conversationId)
+            ->where('body', 'Parcel batch is ready for pickup.')
+            ->firstOrFail();
+        $this->assertDatabaseHas('logistics_message_reads', [
+            'logistics_message_id' => $facilityMessage->id,
+            'user_id' => $centerUser->id,
         ]);
 
         $this->actingAs($centerUser)
@@ -131,12 +140,15 @@ class LogisticsMessagesTest extends TestCase
         $facilityResponse->assertCreated()->assertJsonPath('data.message.text', null)
             ->assertJsonPath('data.message.attachment_name', 'parcel-manifest.pdf');
         $facilityMessage = $facilityResponse->json('data.message');
+        $facilityConversationId = $facilityResponse->json('data.conversation_id');
         $storedMessage = LogisticsMessage::query()->findOrFail($facilityMessage['id']);
         Storage::disk('local')->assertExists($storedMessage->attachment_path);
 
-        $centerInbox = $this->actingAs($centerUser)->getJson('/api/v1/sorting_center/messages')
-            ->assertOk()->assertJsonPath('data.0.messages.0.attachment_name', 'parcel-manifest.pdf');
-        $centerAttachmentUrl = $centerInbox->json('data.0.messages.0.attachment_url');
+        $centerInbox = $this->actingAs($centerUser)->getJson('/api/v1/sorting_center/messages')->assertOk();
+        $centerConversation = collect($centerInbox->json('data'))
+            ->firstWhere('conversation_id', $facilityConversationId);
+        $this->assertSame('parcel-manifest.pdf', $centerConversation['messages'][0]['attachment_name']);
+        $centerAttachmentUrl = $centerConversation['messages'][0]['attachment_url'];
         $this->actingAs($centerUser)->get(parse_url($centerAttachmentUrl, PHP_URL_PATH))
             ->assertOk()->assertHeader('content-disposition');
 

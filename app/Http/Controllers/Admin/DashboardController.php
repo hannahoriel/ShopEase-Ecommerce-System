@@ -180,10 +180,14 @@ class DashboardController extends Controller
             'returns_refunds' => (int) Order::refunded()->count(),
         ];
 
-        $complaints = Complaint::select('status', DB::raw('count(*) as total'))
+        $complaintCounts = Complaint::select('status', DB::raw('count(*) as total'))
             ->groupBy('status')
-            ->pluck('total', 'status')
-            ->toArray();
+            ->pluck('total', 'status');
+        $complaints = [
+            'open' => (int) $complaintCounts->get('open', 0),
+            'in_progress' => (int) $complaintCounts->get('in_progress', 0),
+            'resolved' => (int) $complaintCounts->get('resolved', 0),
+        ];
 
         return response()->json([
             'stats' => $stats,

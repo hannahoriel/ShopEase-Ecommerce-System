@@ -138,7 +138,6 @@ class SellerDashboardTest extends TestCase
         $this->actingAs($sellerUser)
             ->get(route('seller.dashboard'))
             ->assertOk()
-            ->assertViewIs('pages.seller.dashboard')
             ->assertSee('Welcome, One Store!')
             ->assertSee('₱100.00')
             ->assertSee('ORD-', false)

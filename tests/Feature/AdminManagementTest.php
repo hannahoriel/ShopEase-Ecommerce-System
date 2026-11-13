@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -16,9 +17,10 @@ class AdminManagementTest extends TestCase
 
     public function test_full_admin_can_create_and_list_a_restricted_admin_account(): void
     {
-        $fullAdmin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        Mail::fake();
+        $fullAdmin = $this->primaryAdmin();
 
-        $this->actingAs($fullAdmin)
+        $response = $this->actingAs($fullAdmin)
             ->postJson('/api/v1/admin/account/admins', [
                 'first_name' => 'Alex',
                 'middle_name' => 'M',
@@ -27,11 +29,10 @@ class AdminManagementTest extends TestCase
                 'contact_number' => '09171234567',
                 'birthday' => '1990-01-01',
                 'sex' => 'Prefer not to say',
-                'password' => 'Strong-Pass-2026',
                 'permissions' => ['Dashboard', 'Messages'],
                 'message_permissions' => ['Buyer', 'Seller'],
-            ])
-            ->assertCreated()
+            ]);
+        $response->assertCreated()
             ->assertJsonPath('admin.name', 'Alex M Rivera')
             ->assertJsonPath('admin.permissions.0', 'Dashboard')
             ->assertJsonPath('admin.message_permissions.0', 'Buyer')
@@ -39,7 +40,10 @@ class AdminManagementTest extends TestCase
 
         $newAdmin = User::query()->where('email', 'alex.rivera@example.com')->firstOrFail();
         $this->assertSame(User::ROLE_ADMIN, $newAdmin->role);
-        $this->assertTrue(Hash::check('Strong-Pass-2026', $newAdmin->password));
+        $this->assertTrue($newAdmin->must_change_password);
+        Mail::assertSent(\App\Mail\AdminCredentials::class, function (\App\Mail\AdminCredentials $mail) use ($newAdmin): bool {
+            return $mail->hasTo($newAdmin->email) && Hash::check($mail->password, $newAdmin->password);
+        });
         $this->assertDatabaseHas('admin_account_profiles', [
             'user_id' => $newAdmin->id,
             'is_enabled' => true,
@@ -64,7 +68,7 @@ class AdminManagementTest extends TestCase
 
     public function test_admin_module_permissions_and_enabled_status_are_enforced(): void
     {
-        $fullAdmin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $fullAdmin = $this->primaryAdmin();
         $this->actingAs($fullAdmin)
             ->postJson('/api/v1/admin/account/admins', [
                 'first_name' => 'Limited',
@@ -88,7 +92,7 @@ class AdminManagementTest extends TestCase
         $this->actingAs($limitedAdmin)
             ->get('/admin/registrations')
             ->assertOk()
-            ->assertSee('Read-only access');
+            ->assertSee('id="registrationsConfig"', false);
 
         $this->actingAs($limitedAdmin)
             ->postJson('/api/v1/admin/account/admins', [])
@@ -181,7 +185,7 @@ class AdminManagementTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('public');
-        $fullAdmin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $fullAdmin = $this->primaryAdmin();
 
         $response = $this->actingAs($fullAdmin)
             ->post('/api/v1/admin/account/admins', [

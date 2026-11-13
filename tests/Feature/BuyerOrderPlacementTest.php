@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Admin\Order;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Buyer\CartItem;
+use App\Models\Logistics\Logistics;
+use App\Models\Logistics\LogisticsBranch;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductOption;
 use App\Models\Seller\ProductVariantCombination;
@@ -21,8 +23,8 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_buyer_cart_badge_displays_the_total_cart_quantity(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
-        CartItem::create([
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        $cartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $product->id,
             'quantity' => 3,
@@ -55,7 +57,7 @@ class BuyerOrderPlacementTest extends TestCase
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         [$firstSeller, $firstProduct] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
-        [, $secondProduct] = $this->sellerWithProduct('Second Store', 'Watch', 2400);
+        [$secondSeller, $secondProduct] = $this->sellerWithProduct('Second Store', 'Watch', 2400);
         ProductOption::create([
             'product_id' => $firstProduct->id,
             'type' => 'color',
@@ -68,24 +70,28 @@ class BuyerOrderPlacementTest extends TestCase
             ->assertSee('buyerCheckoutConfig')
             ->assertSee('checkoutOrderResults');
 
-        CartItem::create([
+        $firstCartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $firstProduct->id,
             'quantity' => 2,
             'color' => 'Black',
         ]);
-        CartItem::create([
+        $secondCartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $secondProduct->id,
             'quantity' => 1,
         ]);
 
-        $response = $this->actingAs($buyer)->postJson('/api/v1/buyer/orders', [
+        $response = $this->actingAs($buyer)->postJson('/api/v1/buyer/orders', array_merge(
+            $this->checkoutPayload([$firstSeller->id, $secondSeller->id]),
+            [
             'delivery_name' => 'Buyer Example',
             'delivery_phone' => '09171234567',
             'delivery_address' => '1 Main Street, Manila',
             'payment_method' => 'Cash on Delivery',
-        ]);
+            'cart_item_ids' => [$firstCartItem->id, $secondCartItem->id],
+            ]
+        ));
 
         $response->assertCreated()
             ->assertJsonCount(2, 'orders')
@@ -158,16 +164,17 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_buyer_cannot_place_an_order_with_an_empty_cart(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
-            ])
+            ]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('cart');
+                ->assertJsonPath('message', 'Your cart is empty. Add items before placing an order.');
 
         $this->assertDatabaseCount('orders', 0);
     }
@@ -175,7 +182,7 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_buyer_can_place_a_direct_buy_order_without_a_saved_cart_item(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
         ProductOption::create([
             'product_id' => $product->id,
             'type' => 'color',
@@ -184,7 +191,7 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
@@ -194,7 +201,7 @@ class BuyerOrderPlacementTest extends TestCase
                     'quantity' => 2,
                     'color' => 'Black',
                 ]],
-            ])
+            ]))
             ->assertCreated()
             ->assertJsonPath('orders.0.items.0.product_name', 'Wireless Earbuds');
 
@@ -211,7 +218,7 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_checkout_places_only_selected_cart_items_and_preserves_the_rest(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        [, $selectedProduct] = $this->sellerWithProduct('First Store', 'Selected Item', 100);
+        [$selectedSeller, $selectedProduct] = $this->sellerWithProduct('First Store', 'Selected Item', 100);
         [, $otherProduct] = $this->sellerWithProduct('Second Store', 'Other Item', 200);
         $selectedItem = CartItem::create([
             'user_id' => $buyer->id,
@@ -225,13 +232,13 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$selectedSeller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
                 'cart_item_ids' => [$selectedItem->id],
-            ])
+            ]))
             ->assertCreated()
             ->assertJsonCount(1, 'orders');
 
@@ -244,23 +251,24 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_insufficient_stock_prevents_order_and_preserves_the_cart(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        [, $product] = $this->sellerWithProduct('First Store', 'Limited Item', 100);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Limited Item', 100);
         $product->update(['stock_quantity' => 1]);
-        CartItem::create([
+        $cartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $product->id,
             'quantity' => 2,
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
-            ])
+                'cart_item_ids' => [$cartItem->id],
+            ]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('cart');
+            ->assertJsonPath('message', 'There is not enough stock for Limited Item. Refresh your cart and try again.');
 
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('order_items', 0);
@@ -272,19 +280,20 @@ class BuyerOrderPlacementTest extends TestCase
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
-        CartItem::create([
+        $cartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $product->id,
             'quantity' => 3,
         ]);
 
         $orderId = $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
-            ])
+                'cart_item_ids' => [$cartItem->id],
+            ]))
             ->assertCreated()
             ->json('orders.0.id');
 
@@ -573,7 +582,7 @@ class BuyerOrderPlacementTest extends TestCase
     public function test_order_reserves_the_exact_connected_variant_stock(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        [, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
+        [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
         ProductOption::create([
             'product_id' => $product->id,
             'type' => 'color',
@@ -588,7 +597,7 @@ class BuyerOrderPlacementTest extends TestCase
             'stock' => 3,
             'available' => true,
         ]);
-        CartItem::create([
+        $cartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $product->id,
             'quantity' => 2,
@@ -596,12 +605,13 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
-            ])
+                'cart_item_ids' => [$cartItem->id],
+            ]))
             ->assertCreated();
 
         $this->assertSame(1, $product->fresh()->stock_quantity);
@@ -648,19 +658,20 @@ class BuyerOrderPlacementTest extends TestCase
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         [$seller, $product] = $this->sellerWithProduct('First Store', 'Wireless Earbuds', 1200);
-        CartItem::create([
+        $cartItem = CartItem::create([
             'user_id' => $buyer->id,
             'product_id' => $product->id,
             'quantity' => 3,
         ]);
 
         $orderId = $this->actingAs($buyer)
-            ->postJson('/api/v1/buyer/orders', [
+            ->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload([$seller->id]), [
                 'delivery_name' => 'Buyer Example',
                 'delivery_phone' => '09171234567',
                 'delivery_address' => '1 Main Street, Manila',
                 'payment_method' => 'Cash on Delivery',
-            ])
+                'cart_item_ids' => [$cartItem->id],
+            ]))
             ->assertCreated()
             ->json('orders.0.id');
 
@@ -778,6 +789,8 @@ class BuyerOrderPlacementTest extends TestCase
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
             'store_name' => $storeName,
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
             'registration_status' => 'active',
         ]);
         $product = Product::create([
@@ -790,5 +803,46 @@ class BuyerOrderPlacementTest extends TestCase
         ]);
 
         return [$seller, $product];
+    }
+
+    private function checkoutPayload(array $sellerIds): array
+    {
+        $logisticsUser = User::factory()->create([
+            'role' => User::ROLE_LOGISTICS,
+            'registration_status' => 'active',
+        ]);
+        $logistics = Logistics::query()->create([
+            'user_id' => $logisticsUser->id,
+            'last_name' => 'Carrier',
+            'first_name' => 'Demo',
+            'sex' => 'other',
+            'contact_no' => '09171234567',
+            'birthday' => '1990-01-01',
+            'age' => 36,
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'business_name' => 'Checkout Logistics',
+            'registration_status' => 'active',
+        ]);
+        LogisticsBranch::query()->create([
+            'logistics_id' => $logistics->id,
+            'name' => 'Calamba Sorting Center',
+            'address' => 'Calamba, Laguna',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'status' => 'active',
+        ]);
+
+        return [
+            'delivery_province' => 'Laguna',
+            'delivery_municipality' => 'Calamba',
+            'logistics_selections' => collect($sellerIds)->map(fn (int $sellerId): array => [
+                'seller_id' => $sellerId,
+                'logistics_id' => $logistics->id,
+            ])->all(),
+        ];
     }
 }

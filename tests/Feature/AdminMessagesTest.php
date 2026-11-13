@@ -20,7 +20,7 @@ class AdminMessagesTest extends TestCase
     public function test_admin_can_create_and_reply_to_a_buyer_conversation(): void
     {
         Storage::fake('local');
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
 
         $conversationId = $this->actingAs($admin)
@@ -56,7 +56,7 @@ class AdminMessagesTest extends TestCase
 
     public function test_admin_complaint_threads_keep_buyer_and_seller_messages_separate(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create(['user_id' => $sellerUser->id, 'business_name' => 'Demo Store']);

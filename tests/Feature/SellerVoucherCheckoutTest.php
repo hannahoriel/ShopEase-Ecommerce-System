@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Admin\Order;
 use App\Models\Buyer\CartItem;
+use App\Models\Logistics\Logistics;
+use App\Models\Logistics\LogisticsBranch;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\Seller\SellerVoucher;
@@ -34,7 +36,7 @@ class SellerVoucherCheckoutTest extends TestCase
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
         [$sellerUser, $seller, $product] = $this->sellerWithProduct();
-        CartItem::create(['user_id' => $buyer->id, 'product_id' => $product->id, 'quantity' => 1]);
+        $cartItem = CartItem::create(['user_id' => $buyer->id, 'product_id' => $product->id, 'quantity' => 1]);
         $voucher = SellerVoucher::create([
             'seller_id' => $seller->id, 'code' => 'SAVE10', 'title' => 'Ten Percent Off',
             'discount_type' => 'percent', 'discount_value' => 10, 'minimum_spend' => 500,
@@ -46,11 +48,11 @@ class SellerVoucherCheckoutTest extends TestCase
         $this->actingAs($buyer)->postJson('/api/v1/buyer/vouchers/preview', ['code' => 'save10'])
             ->assertOk()->assertJsonPath('data.discount', 100);
         $this->getJson('/api/v1/buyer/vouchers')->assertOk()->assertJsonPath('data.0.id', 'SAVE10');
-        $response = $this->postJson('/api/v1/buyer/orders', [
+        $response = $this->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload($seller->id), [
             'delivery_name' => 'Test Buyer', 'delivery_phone' => '09171234567',
             'delivery_address' => '1 Test Street, Manila', 'payment_method' => 'Cash on Delivery',
-            'voucher_code' => 'SAVE10',
-        ])->assertCreated()->assertJsonPath('orders.0.total', 950);
+            'voucher_code' => 'SAVE10', 'cart_item_ids' => [$cartItem->id],
+        ]))->assertCreated()->assertJsonPath('orders.0.total', 950);
 
         $order = Order::findOrFail($response->json('orders.0.id'));
         $this->assertSame('50.00', $order->shipping_fee);
@@ -59,12 +61,12 @@ class SellerVoucherCheckoutTest extends TestCase
         $this->assertSame(1, $voucher->fresh()->claimed);
         $this->assertDatabaseHas('seller_voucher_redemptions', ['seller_voucher_id' => $voucher->id, 'buyer_id' => $buyer->id, 'order_id' => $order->id]);
 
-        CartItem::create(['user_id' => $buyer->id, 'product_id' => $product->id, 'quantity' => 1]);
-        $this->postJson('/api/v1/buyer/orders', [
+        $cartItem = CartItem::create(['user_id' => $buyer->id, 'product_id' => $product->id, 'quantity' => 1]);
+        $this->postJson('/api/v1/buyer/orders', array_merge($this->checkoutPayload($seller->id), [
             'delivery_name' => 'Test Buyer', 'delivery_phone' => '09171234567',
             'delivery_address' => '1 Test Street, Manila', 'payment_method' => 'Cash on Delivery',
-            'voucher_code' => 'SAVE10',
-        ])->assertUnprocessable();
+            'voucher_code' => 'SAVE10', 'cart_item_ids' => [$cartItem->id],
+        ]))->assertUnprocessable();
     }
 
     public function test_buyer_cannot_apply_a_voucher_below_its_minimum_spend(): void
@@ -104,23 +106,25 @@ class SellerVoucherCheckoutTest extends TestCase
             'quantity' => 1, 'claimed' => 0, 'per_buyer' => 1,
             'starts_at' => now()->subDay(), 'ends_at' => now()->addDay(), 'enabled' => true,
         ]);
-        $placeOrder = fn () => [
+        $checkout = $this->checkoutPayload($seller->id);
+        $placeOrder = fn (int $cartItemId): array => array_merge($checkout, [
             'delivery_name' => 'Test Buyer', 'delivery_phone' => '09171234567',
             'delivery_address' => '1 Test Street, Manila', 'payment_method' => 'Cash on Delivery',
             'voucher_code' => 'ONLYONE', 'voucher_seller_id' => $seller->id,
-        ];
+            'cart_item_ids' => [$cartItemId],
+        ]);
 
         $firstBuyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        CartItem::create(['user_id' => $firstBuyer->id, 'product_id' => $product->id, 'quantity' => 1]);
-        $this->actingAs($firstBuyer)->postJson('/api/v1/buyer/orders', $placeOrder())->assertCreated();
+        $firstCartItem = CartItem::create(['user_id' => $firstBuyer->id, 'product_id' => $product->id, 'quantity' => 1]);
+        $this->actingAs($firstBuyer)->postJson('/api/v1/buyer/orders', $placeOrder($firstCartItem->id))->assertCreated();
         $this->assertSame(1, $voucher->fresh()->claimed);
         $this->assertSame(0, $voucher->fresh()->quantity - $voucher->fresh()->claimed);
 
         $secondBuyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        CartItem::create(['user_id' => $secondBuyer->id, 'product_id' => $product->id, 'quantity' => 1]);
+        $secondCartItem = CartItem::create(['user_id' => $secondBuyer->id, 'product_id' => $product->id, 'quantity' => 1]);
         $this->actingAs($secondBuyer)->postJson('/api/v1/buyer/vouchers/preview', ['code' => 'ONLYONE'])
             ->assertUnprocessable()->assertJsonValidationErrors('voucher_code');
-        $this->postJson('/api/v1/buyer/orders', $placeOrder())->assertUnprocessable();
+        $this->postJson('/api/v1/buyer/orders', $placeOrder($secondCartItem->id))->assertUnprocessable();
 
         $this->assertSame(1, $voucher->fresh()->claimed);
         $this->assertDatabaseCount('seller_voucher_redemptions', 1);
@@ -130,7 +134,13 @@ class SellerVoucherCheckoutTest extends TestCase
     private function seller(): array
     {
         $user = User::factory()->create(['role' => User::ROLE_SELLER]);
-        $seller = Seller::create(['user_id' => $user->id, 'store_name' => 'Voucher Shop', 'registration_status' => 'active']);
+        $seller = Seller::create([
+            'user_id' => $user->id,
+            'store_name' => 'Voucher Shop',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'registration_status' => 'active',
+        ]);
         return [$user, $seller];
     }
 
@@ -153,6 +163,47 @@ class SellerVoucherCheckoutTest extends TestCase
             'eligibleItems' => 'all', 'eligibleBuyers' => 'all', 'stacking' => 'none',
             'quantity' => 5, 'perBuyer' => 1, 'starts' => now()->addMinute()->toDateTimeString(),
             'ends' => now()->addMonth()->toDateTimeString(), 'enabled' => true,
+        ];
+    }
+
+    private function checkoutPayload(int $sellerId): array
+    {
+        $logisticsUser = User::factory()->create([
+            'role' => User::ROLE_LOGISTICS,
+            'registration_status' => 'active',
+        ]);
+        $logistics = Logistics::query()->create([
+            'user_id' => $logisticsUser->id,
+            'last_name' => 'Carrier',
+            'first_name' => 'Demo',
+            'sex' => 'other',
+            'contact_no' => '09171234567',
+            'birthday' => '1990-01-01',
+            'age' => 36,
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'business_name' => 'Checkout Logistics',
+            'registration_status' => 'active',
+        ]);
+        LogisticsBranch::query()->create([
+            'logistics_id' => $logistics->id,
+            'name' => 'Calamba Sorting Center',
+            'address' => 'Calamba, Laguna',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'status' => 'active',
+        ]);
+
+        return [
+            'delivery_province' => 'Laguna',
+            'delivery_municipality' => 'Calamba',
+            'logistics_selections' => [[
+                'seller_id' => $sellerId,
+                'logistics_id' => $logistics->id,
+            ]],
         ];
     }
 }

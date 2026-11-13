@@ -775,8 +775,8 @@ class OrderController extends Controller
             abort_unless(
                 $this->buyerCanCancel($lockedOrder, $lockedShipment),
                 422,
-                $lockedOrder->pickup_date !== null || $lockedShipment?->rider_id !== null || $lockedShipment?->picked_up_at !== null
-                    ? 'This shipment is already scheduled or assigned to a rider and can no longer be cancelled by the buyer.'
+                $lockedShipment?->rider_id !== null || $lockedShipment?->picked_up_at !== null
+                    ? 'This shipment is already assigned to a rider or has been picked up and can no longer be cancelled by the buyer.'
                     : 'This order can no longer be cancelled.'
             );
 
@@ -894,8 +894,7 @@ class OrderController extends Controller
 
         $shipment ??= $order->shipment;
 
-        return $order->pickup_date === null
-            && $shipment?->rider_id === null
+        return $shipment?->rider_id === null
             && $shipment?->picked_up_at === null;
     }
 
