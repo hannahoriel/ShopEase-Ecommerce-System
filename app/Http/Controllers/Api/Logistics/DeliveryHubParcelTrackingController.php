@@ -49,7 +49,7 @@ class DeliveryHubParcelTrackingController extends Controller
                     });
             })
             ->with([
-                'buyer.buyerProfile', 'seller.user', 'seller', 'items',
+                'buyer.buyerProfile', 'seller.user', 'seller', 'items.product',
                 'shipment.scans', 'shipment.deliveryHub', 'shipment.logisticsBranch',
                 'statusHistory',
             ])
@@ -191,6 +191,7 @@ class DeliveryHubParcelTrackingController extends Controller
                 'size' => $item->size,
                 'quantity' => $item->quantity,
                 'product_price' => (float) $item->unit_price,
+                'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
             ])->values(),
             'tracking_history' => $history->values(),
             'sorting_center_id' => $hub->logistics_branch_id,

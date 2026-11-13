@@ -36,14 +36,29 @@ class RoleLoginTest extends TestCase
             'admin' => [User::ROLE_ADMIN, 'admin.dashboard'],
             'buyer' => [User::ROLE_BUYER, 'buyer.dashboard'],
             'seller' => [User::ROLE_SELLER, 'seller.dashboard'],
-            'logistics' => [User::ROLE_LOGISTICS, 'logistics.dashboard'],
-            'rider' => [User::ROLE_RIDER, 'rider.dashboard'],
         ];
+    }
+
+    public function test_logistics_and_rider_accounts_cannot_use_the_shared_login(): void
+    {
+        foreach ([User::ROLE_LOGISTICS, User::ROLE_RIDER] as $role) {
+            $user = User::factory()->create([
+                'role' => $role,
+                'email' => "$role@example.com",
+                'password' => 'password',
+                'registration_status' => 'active',
+            ]);
+
+            $this->post(route('login.attempt'), [
+                'email' => $user->email,
+                'password' => 'password',
+            ])->assertSessionHasErrors('email');
+        }
     }
 
     public function test_login_page_renders_with_auth_layout(): void
     {
-        $this->get(route('login'))
+        $this->get(route('login', ['modal' => 1]))
             ->assertOk()
             ->assertSee('Log In')
             ->assertSee('ShopEase');
@@ -67,7 +82,7 @@ class RoleLoginTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('logout'))
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('landing.page'));
 
         $this->assertGuest();
     }

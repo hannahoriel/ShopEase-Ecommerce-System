@@ -21,10 +21,10 @@ Build and run the container locally after configuring the application's runtime 
 
 ```sh
 docker build -t shopease:local .
-docker run --rm -p 8000:8000 -e APP_KEY="$APP_KEY" shopease:local
+docker run --rm -p 8000:8000 --env-file .env -e DB_HOST=host.docker.internal shopease:local
 ```
 
-The app will be available at `http://localhost:8000`. The container does not bundle production credentials or a database; supply the appropriate runtime configuration for your deployment.
+The app will be available at `http://localhost:8000`. `host.docker.internal` lets the container connect to a MySQL server running on the host; change `DB_HOST` if your database is elsewhere. The container does not bundle production credentials or a database.
 
 ## About Laravel
 
