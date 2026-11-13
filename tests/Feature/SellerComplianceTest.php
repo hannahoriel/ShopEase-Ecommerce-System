@@ -19,7 +19,7 @@ class SellerComplianceTest extends TestCase
     public function test_admin_seller_compliance_page_requires_admin_access(): void
     {
         $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->actingAs($buyer)
             ->get(route('admin.seller.compliance'))
@@ -32,7 +32,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_seller_compliance_page_renders_real_seller_data(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
 
         Seller::create([
@@ -52,7 +52,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_seller_compliance_api_includes_seller_profile_photo_url(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create([
             'role' => User::ROLE_SELLER,
             'profile_photo_path' => 'profile-photos/seller/profile.png',
@@ -73,7 +73,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_can_suspend_a_seller_from_seller_compliance(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create([
             'role' => User::ROLE_SELLER,
             'registration_status' => 'active',
@@ -112,7 +112,7 @@ class SellerComplianceTest extends TestCase
     {
         Mail::fake();
 
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create([
             'role' => User::ROLE_SELLER,
             'registration_status' => 'suspended',
@@ -153,7 +153,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_can_fetch_live_seller_compliance_data_from_session_auth_routes(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $buyerUser = User::factory()->create(['role' => User::ROLE_BUYER]);
 
@@ -194,7 +194,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_can_fetch_live_seller_compliance_data(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $buyerUser = User::factory()->create(['role' => User::ROLE_BUYER]);
 
@@ -271,7 +271,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_can_approve_a_pending_product(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
@@ -299,7 +299,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_can_issue_warning_to_a_pending_product(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
@@ -336,7 +336,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_warning_issued_count_reflects_product_warnings(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
@@ -363,7 +363,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_under_review_count_reflects_pending_products_and_filter_value(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
@@ -389,7 +389,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_seller_with_warning_and_under_review_products_still_appears_in_under_review_filter(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
@@ -451,7 +451,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_admin_can_remove_a_product_and_persist_reason_for_vendor_archive_view(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
@@ -487,7 +487,7 @@ class SellerComplianceTest extends TestCase
 
     public function test_archived_products_are_hidden_from_seller_compliance(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $sellerUser = User::factory()->create(['role' => User::ROLE_SELLER]);
         $seller = Seller::create([
             'user_id' => $sellerUser->id,
