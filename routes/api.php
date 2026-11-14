@@ -155,6 +155,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/cities/{code}/barangays', [LocationController::class, 'barangays']);
     });
 
+    Route::get('/public/profile-photos/{user}', [ProfilePhotoController::class, 'show'])
+        ->whereNumber('user')
+        ->name('profile.photo.show');
+
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/auth/me', fn (Request $request) => response()->json($request->user()));

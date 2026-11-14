@@ -24,7 +24,7 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_path
-                    ? Storage::disk('public')->url($user->profile_photo_path)
+                    ? route('profile.photo.show', ['user' => $user->id])
                     : null,
             ],
             'profile' => [
@@ -132,7 +132,7 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_path
-                    ? Storage::disk('public')->url($user->profile_photo_path)
+                    ? route('profile.photo.show', ['user' => $user->id])
                     : null,
             ],
             'profile' => [
