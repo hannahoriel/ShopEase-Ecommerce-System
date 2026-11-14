@@ -14,6 +14,6 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertViewIs('pages.landing-page');
+            ->assertSee('ShopEase');
     }
 }

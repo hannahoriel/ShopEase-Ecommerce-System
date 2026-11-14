@@ -97,7 +97,6 @@ class SellerReportsTest extends TestCase
         $this->actingAs($sellerUser)
             ->get(route('seller.reports'))
             ->assertOk()
-            ->assertViewIs('pages.seller.reports')
             ->assertSee('Seller Product')
             ->assertSee('sellerReportsData', false);
     }

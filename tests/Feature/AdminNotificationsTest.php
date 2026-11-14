@@ -14,7 +14,7 @@ class AdminNotificationsTest extends TestCase
 
     public function test_admin_navbar_shows_only_real_unread_notifications_and_links_to_all_notifications(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->actingAs($admin)
             ->get(route('admin.notifications.index'))
@@ -36,7 +36,7 @@ class AdminNotificationsTest extends TestCase
 
     public function test_admin_can_mark_notifications_read_and_unread_badge_disappears(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $admin->notify(new SellerCategoryChangeRequested(42, 'North Store'));
         $notification = $admin->unreadNotifications()->firstOrFail();
 
@@ -58,7 +58,7 @@ class AdminNotificationsTest extends TestCase
 
     public function test_admin_notifications_api_lists_and_marks_items_read(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $admin->notify(new SellerCategoryChangeRequested(42, 'North Store'));
         $notification = $admin->unreadNotifications()->firstOrFail();
 
@@ -88,7 +88,7 @@ class AdminNotificationsTest extends TestCase
 
     public function test_admin_notification_preferences_control_database_notification_delivery(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
         $this->actingAs($admin);
 
         $this->postJson('/api/v1/admin/account/notifications', [

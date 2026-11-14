@@ -65,6 +65,10 @@ class CodSettlementService
             $collections = $locked->collections()->with(['order.logisticsCompany', 'orderReturn.order.buyer'])->get();
             abort_if($collections->isEmpty(), 409, 'This remittance has no COD orders attached.');
 
+            $hubLogisticsId = DB::table('logistics_delivery_hubs as hubs')
+                ->join('logistics_branches as branches', 'branches.id', '=', 'hubs.logistics_branch_id')
+                ->where('hubs.id', $hubId)
+                ->value('branches.logistics_id');
             $expected = round((float) $collections->sum('amount'), 2);
             abort_if(abs($expected - (float) $cashIn->amount) > 0.009, 409, 'The cash-in total does not match the COD order total.');
 
@@ -155,8 +159,12 @@ class CodSettlementService
                 // ShopEase reimburses platform-funded merchandise discounts so the seller
                 // receives the undiscounted product proceeds (less the normal commission).
                 $sellerShare = self::sellerAmount($order, $collectedProductAmount, $commission, $shippingVoucher);
-                $logisticsId = $order->logistics_id ?: $order->logisticsCompany?->id;
+                $logisticsId = $order->logistics_id ?: $hubLogisticsId;
                 abort_if($shipping > 0 && ! $logisticsId, 409, 'The shipment has no logistics company assigned, so its shipping fee cannot be settled.');
+                if (! $order->logistics_id && $logisticsId) {
+                    DB::table('orders')->where('id', $order->id)->whereNull('logistics_id')
+                        ->update(['logistics_id' => $logisticsId, 'updated_at' => now()]);
+                }
                 $settlementId = DB::table('cod_settlements')->insertGetId([
                     'order_id' => $order->id, 'remittance_id' => $locked->id,
                     'delivery_hub_id' => $hubId, 'logistics_id' => $logisticsId,

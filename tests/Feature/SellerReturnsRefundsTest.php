@@ -7,19 +7,26 @@ use App\Models\Admin\OrderReturn;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class SellerReturnsRefundsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_buyer_can_submit_return_request_and_seller_can_review_it(): void
+    public function test_buyer_can_submit_a_return_request_but_seller_cannot_decide_it(): void
     {
         [$buyer, $sellerUser, $order, $itemId] = $this->marketplace('completed');
+        $order->forceFill([
+            'buyer_received_at' => now(),
+            'buyer_received_automatically' => false,
+        ])->save();
         $created = $this->actingAs($buyer, 'sanctum')->postJson("/api/v1/buyer/orders/{$order->id}/returns", [
             'return_type' => 'return',
-            'reason' => 'Item arrived damaged',
+            'problem_type' => 'Damaged Item',
+            'reason' => 'The item arrived damaged.',
             'evidence_description' => 'Photo of damaged packaging attached.',
+            'evidence' => [UploadedFile::fake()->image('damage.jpg')],
             'items' => [['order_item_id' => $itemId, 'quantity' => 1]],
         ])->assertCreated()->assertJsonPath('data.status', 'pending');
 
@@ -27,10 +34,10 @@ class SellerReturnsRefundsTest extends TestCase
         $this->actingAs($sellerUser, 'sanctum')
             ->patchJson("/api/v1/seller/returns-refunds/{$returnId}/decision", [
                 'decision' => 'accepted', 'solution' => 'Return approved.',
-            ])->assertOk()->assertJsonPath('data.status', 'accepted');
+            ])->assertForbidden();
 
-        $this->assertDatabaseHas('order_return_events', ['order_return_id' => $returnId, 'status' => 'accepted']);
-        $this->assertDatabaseHas('order_returns', ['id' => $returnId, 'reviewed_by' => $sellerUser->id]);
+        $this->assertDatabaseHas('order_return_events', ['order_return_id' => $returnId, 'status' => 'pending']);
+        $this->assertDatabaseHas('order_returns', ['id' => $returnId, 'status' => 'pending']);
     }
 
     public function test_seller_can_complete_refund_only_request_and_other_sellers_cannot_see_it(): void

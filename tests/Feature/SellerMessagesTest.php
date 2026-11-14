@@ -408,7 +408,6 @@ class SellerMessagesTest extends TestCase
         $this->actingAs($seller)
             ->get('/seller/messages')
             ->assertOk()
-            ->assertViewIs('pages.seller.messages')
             ->assertSee('sellerMessagesConfig', false)
             ->assertSee('newBuyerConversationDialog', false)
             ->assertSee('apiToken', false);

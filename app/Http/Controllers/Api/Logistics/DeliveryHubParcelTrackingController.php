@@ -10,9 +10,24 @@ use App\Models\Admin\OrderReturn;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class DeliveryHubParcelTrackingController extends Controller
 {
+    public function page(Request $request): View
+    {
+        $hub = LogisticsDeliveryHub::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('archived_at')
+            ->firstOrFail();
+
+        return view('pages.logistics.delivery-hub.parcel-tracking', [
+            'hub' => $hub,
+            'deliveryHub' => $hub,
+            'deliveryHubId' => $hub->id,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $hub = LogisticsDeliveryHub::query()
@@ -34,7 +49,7 @@ class DeliveryHubParcelTrackingController extends Controller
                     });
             })
             ->with([
-                'buyer.buyerProfile', 'seller.user', 'seller', 'items',
+                'buyer.buyerProfile', 'seller.user', 'seller', 'items.product',
                 'shipment.scans', 'shipment.deliveryHub', 'shipment.logisticsBranch',
                 'statusHistory',
             ])
@@ -176,6 +191,7 @@ class DeliveryHubParcelTrackingController extends Controller
                 'size' => $item->size,
                 'quantity' => $item->quantity,
                 'product_price' => (float) $item->unit_price,
+                'is_fragile' => (bool) ($item->is_fragile || $item->product?->is_fragile),
             ])->values(),
             'tracking_history' => $history->values(),
             'sorting_center_id' => $hub->logistics_branch_id,

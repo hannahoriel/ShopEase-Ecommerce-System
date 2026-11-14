@@ -705,12 +705,7 @@ class ParcelRouteScanController extends Controller
             : collect();
         $transfers = LogisticsTransferManifest::query()
             ->where('destination_type', $facility)->where('destination_id', $id)
-            ->where(function ($query): void {
-                $query->whereIn('status', ['loaded', 'arrived'])
-                    ->orWhere(fn ($pickup) => $pickup
-                        ->where('origin_type', 'seller_collection')
-                        ->where('status', 'preparing'));
-            })
+            ->whereIn('status', ['preparing', 'loaded', 'arrived'])
             ->with(['shipments.order.seller.user', 'shipments.order.buyer.buyerProfile', 'shipments.order.items.product', 'shipments.rider.user', 'returnTrip', 'orderReturn.order.seller.user', 'orderReturn.order.buyer.buyerProfile', 'orderReturn.order.items.product', 'courierRegistration'])
             ->latest('loaded_at')->get();
 
@@ -719,8 +714,9 @@ class ParcelRouteScanController extends Controller
         foreach ($transfers as $transfer) {
             $members = [];
             foreach ($transfer->shipments as $shipment) {
-                // Facility ownership is updated when the courier confirms
-                // departure, so the destination only lists dispatched parcels.
+                // Departure scans assign the parcel to its destination before
+                // the courier confirms departure, so include staged manifests
+                // in the incoming queue without allowing receive scans yet.
                 $isAtFacility = $facility === 'delivery_hub'
                     ? (int) $shipment->logistics_delivery_hub_id === (int) $id
                     : (int) $shipment->logistics_branch_id === (int) $id && $shipment->logistics_delivery_hub_id === null;
@@ -754,7 +750,9 @@ class ParcelRouteScanController extends Controller
                     $payload['currentCenterId'] = $received ? $id : null;
                     $payload['nextCenterId'] = $received ? null : $id;
                 }
-                $payload['routeStatus'] = $received ? 'received' : 'in_transit';
+                $payload['routeStatus'] = $received
+                    ? 'received'
+                    : ($transfer->status === 'preparing' ? 'preparing' : 'in_transit');
                 $payload['inTransitSince'] = ($transfer->departed_at ?? $transfer->loaded_at ?? $transfer->created_at)?->toISOString();
                 if ($transfer->origin_type === 'seller_collection') {
                     $pickupRider = $shipment->rider;
@@ -850,7 +848,9 @@ class ParcelRouteScanController extends Controller
                     'courierRegistrationId' => $transfer->courier_registration_id,
                     'vehicleId' => $transfer->vehicle_id,
                     'status' => $transfer->status,
-                    'routeStatus' => $transfer->status === 'arrived' ? 'received' : 'in_transit',
+                    'routeStatus' => $transfer->status === 'arrived'
+                        ? 'received'
+                        : ($transfer->status === 'preparing' ? 'preparing' : 'in_transit'),
                     'inTransitSince' => ($transfer->departed_at ?? $transfer->loaded_at ?? $transfer->created_at)?->toISOString(),
                     'arrivedAt' => $transfer->arrived_at?->toISOString(),
                     'originCenterId' => $transfer->origin_type === 'sorting_center' ? $transfer->origin_id : null,

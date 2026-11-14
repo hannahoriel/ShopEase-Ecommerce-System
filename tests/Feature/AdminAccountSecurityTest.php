@@ -23,7 +23,7 @@ class AdminAccountSecurityTest extends TestCase
             ->assertOk()
             ->assertSee('Resend Code')
             ->assertSee('admin\\/account\\/security')
-            ->assertSee('resources/js/admin/account.js', false)
+            ->assertSee('id="adminAccountConfig"', false)
             ->assertDontSee('Email delivery has not been configured.')
             ->assertDontSee('Password reset is not yet configured.');
     }

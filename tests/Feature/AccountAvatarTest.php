@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Buyer\Buyer;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Models\Logistics\Logistics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -75,6 +76,22 @@ class AccountAvatarTest extends TestCase
         $logistics = User::factory()->create([
             'role' => User::ROLE_LOGISTICS,
             'name' => 'Morgan Logistics',
+        ]);
+        Logistics::query()->create([
+            'user_id' => $logistics->id,
+            'last_name' => 'Logistics',
+            'first_name' => 'Morgan',
+            'sex' => 'other',
+            'contact_no' => '09171234567',
+            'birthday' => '1990-01-01',
+            'age' => 36,
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'business_name' => 'Morgan Logistics',
+            'registration_status' => 'active',
         ]);
 
         $this->actingAs($logistics)

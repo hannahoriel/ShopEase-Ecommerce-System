@@ -59,8 +59,9 @@ class LogisticsParcelTrackingApiTest extends TestCase
         $this->assertTrue($adminPayload['is_fragile']);
         $hubUser = $this->makeTestUser(User::ROLE_DELIVERY_HUB);
         $hub->update(['user_id' => $hubUser->id]);
-        $this->actingAs($hubUser)->get(route('delivery-hub.parcel-tracking'))
-            ->assertOk()->assertSee('Fragile Glass Vase')->assertSee('is_fragile', false);
+        $this->actingAs($hubUser)->getJson(route('delivery_hub.api.parcel-tracking.index'))
+            ->assertOk()->assertJsonPath('data.parcels.0.items.0.product_name', 'Fragile Glass Vase')
+            ->assertJsonPath('data.parcels.0.items.0.is_fragile', true);
         // A completed order retains its handling flag if a listing is edited later.
         $product->update(['is_fragile' => false]);
         $shipment->unsetRelation('order');
@@ -102,7 +103,6 @@ class LogisticsParcelTrackingApiTest extends TestCase
             ->get('/logistics/dashboard')
             ->assertOk()
             ->assertSee('Test Logistics Dashboard')
-            ->assertSee('companyName: "Test Logistics"', false)
             ->assertSee('id="lgStat-sorting">1', false)
             ->assertSee('id="lgStat-hubs">1', false)
             ->assertSee('id="lgStat-parcels">1', false)

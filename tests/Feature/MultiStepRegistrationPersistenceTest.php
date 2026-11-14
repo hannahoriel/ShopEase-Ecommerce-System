@@ -146,7 +146,7 @@ class MultiStepRegistrationPersistenceTest extends TestCase
             ],
         ])->post(route('seller.register.complete'));
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('landing.page'));
         $user = User::where('email', 'liza.seller@example.com')->firstOrFail();
 
         $this->assertDatabaseHas('sellers', [
@@ -251,7 +251,7 @@ class MultiStepRegistrationPersistenceTest extends TestCase
 
         $response = $this->post(route('seller.register.complete'));
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('landing.page'));
         $user = User::where('email', 'permit.seller@example.com')->firstOrFail();
 
         $this->assertDatabaseHas('registrations', [

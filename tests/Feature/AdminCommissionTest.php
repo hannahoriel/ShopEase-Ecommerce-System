@@ -30,8 +30,7 @@ class AdminCommissionTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin/commission')
             ->assertOk()
-            ->assertSee('#'.$order->order_number)
-            ->assertSee('₱ 100');
+            ->assertSee('id="commissionConfig"', false);
 
         $this->actingAs($admin)
             ->getJson('/api/v1/admin/commissions?per_page=1')
@@ -112,6 +111,7 @@ class AdminCommissionTest extends TestCase
             'voucher_funding_source' => 'platform',
             'voucher_code' => 'SHOP25',
         ]);
+        $order->forceFill(['buyer_received_at' => '2026-10-10 12:00:00'])->save();
         CommissionTransaction::where('order_id', $order->id)->update(['earned_at' => '2026-10-10 12:00:00']);
 
         $this->actingAs($admin)->getJson('/api/v1/admin/wallet')

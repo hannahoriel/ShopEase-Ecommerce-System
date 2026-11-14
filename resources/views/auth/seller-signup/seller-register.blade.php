@@ -2183,7 +2183,7 @@
                             for="middle_name"
                         >
 
-                            Middle Name
+                            Middle Name (Optional)
 
                         </label>
 

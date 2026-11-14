@@ -999,7 +999,7 @@ $('scCameraModal').addEventListener('click',e=>{if(e.target===$('scCameraModal')
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&cameraStream)stopCamera()});
 
 window.addEventListener('storage',e=>{if(e.key===networkKey){initCenter();render()}});
-window.addEventListener('focus',refreshQueue);window.setInterval(refreshQueue,30000);
+window.addEventListener('focus',refreshQueue);window.setInterval(refreshQueue,10000);
 initCenter();refreshIssueReports();refreshQueue().then(()=>{render();tabs('receive')});
 
 });

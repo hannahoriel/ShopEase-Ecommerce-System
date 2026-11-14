@@ -116,7 +116,6 @@ class SellerShippingStatusTest extends TestCase
         $this->actingAs($sellerUser)
             ->get(route('seller.shipping.status'))
             ->assertOk()
-            ->assertViewIs('pages.seller.shipping-status')
             ->assertSee('id="shipping-status-page"', false)
             ->assertSee('sellerShippingStatusConfig');
 

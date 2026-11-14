@@ -466,6 +466,9 @@ class CourierTransportController extends Controller
             ]))),
             'email' => $courier->email,
             'phone' => $courier->phone,
+            'profile_photo_url' => $courier->user?->profile_photo_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($courier->user->profile_photo_path)
+                : null,
             'courier_company' => $center->logistics?->business_name,
             'sorting_center_id' => $center->id,
             'sorting_center_name' => $center->name,

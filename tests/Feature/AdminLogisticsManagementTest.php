@@ -19,7 +19,7 @@ class AdminLogisticsManagementTest extends TestCase
 
     public function test_admin_page_and_api_load_real_logistics_requests_companies_and_archive(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $this->createLogisticsApplication('pending');
         $active = $this->createLogisticsApplication('approved', 'Active Carrier');
         $active['user']->forceFill(['profile_photo_path' => 'profile-photos/logistics/company.png'])->save();
@@ -55,7 +55,7 @@ class AdminLogisticsManagementTest extends TestCase
     public function test_admin_can_approve_or_reject_logistics_applications_from_the_ui_endpoints(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $pending = $this->createLogisticsApplication('pending', 'Approve Carrier');
 
         $this->actingAs($admin)
@@ -101,7 +101,7 @@ class AdminLogisticsManagementTest extends TestCase
 
     public function test_admin_can_manage_company_branches_and_branch_rider_counts(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $application = $this->createLogisticsApplication('approved', 'Branch Carrier');
         $branch = $this->actingAs($admin)
             ->postJson("/api/v1/admin/logistics-management/companies/{$application['profile']->id}/branches", [
@@ -177,7 +177,7 @@ class AdminLogisticsManagementTest extends TestCase
         $this->assertDatabaseCount('logistics_branches', 4);
         $this->assertDatabaseCount('riders', 1);
 
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
 
         $this->actingAs($admin)
             ->getJson('/api/v1/admin/logistics-management')

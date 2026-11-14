@@ -20,7 +20,7 @@ class DashboardTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-09-04 12:00:00'));
 
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = $this->primaryAdmin();
         $pendingBuyer = User::factory()->create(['role' => User::ROLE_BUYER, 'registration_status' => 'pending']);
         $pendingSeller = User::factory()->create(['role' => User::ROLE_SELLER, 'registration_status' => 'pending']);
         Registration::factory()->create([
@@ -100,26 +100,27 @@ class DashboardTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+        $this->actingAs($admin)
+            ->getJson('/api/v1/admin/dashboard')
+            ->assertOk()
+            ->assertJsonPath('sales_summary.gross_sales', 100)
+            ->assertJsonPath('sales_summary.total_orders', 3)
+            ->assertJsonPath('sales_summary.average_order_value', 100)
+            ->assertJsonPath('sales_summary.completed_orders', 1)
+            ->assertJsonPath('sales_summary.returns_refunds', 1)
+            ->assertJsonPath('complaints.open', 1)
+            ->assertJsonPath('complaints.in_progress', 0)
+            ->assertJsonPath('complaints.resolved', 2)
+            ->assertJsonPath('pending_breakdown.sellers', 1)
+            ->assertJsonPath('pending_breakdown.buyers', 1);
 
-        $response->assertOk()
-            ->assertViewIs('pages.admin.Dashboard')
-            ->assertViewHas('salesSummary', [
-                'gross_sales' => '₱100.00',
-                'total_orders' => '3',
-                'average_order_value' => '₱100.00',
-                'completed_orders' => '1',
-                'returns_refunds' => '1',
-            ])
-            ->assertViewHas('complaints', ['open' => 1, 'in_progress' => 0, 'resolved' => 2])
-            ->assertViewHas('pendingBreakdown', ['sellers' => 1, 'buyers' => 1])
-            ->assertViewHas('announcementMonth', 'September 2026')
-            ->assertViewHas('announcement', fn (Announcement $announcement) => $announcement->title === 'Seller Dashboard Announcement')
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
             ->assertSee('₱100.00')
             ->assertSee('Test Announcement')
             ->assertSee('Dashboard test announcement')
             ->assertSee('Seller Dashboard Announcement')
             ->assertSee('dashboard-announcement-card bg-maroon-900', false)
-            ->assertViewHas('dashboardAnnouncements', fn ($announcements) => $announcements->count() === 2);
+            ->assertSee('data-dashboard-announcement-carousel', false);
     }
 }

@@ -48,7 +48,7 @@ class ComplaintWorkflowTest extends TestCase
             ->assertJsonPath('data.0.complaint.reference', 'CMP-0001')
             ->assertJsonPath('data.0.complaint.status', 'open');
 
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->actingAs($admin)
             ->getJson('/api/v1/admin/complaints')
@@ -80,7 +80,7 @@ class ComplaintWorkflowTest extends TestCase
             'description' => 'The package has not arrived.',
             'status' => 'open',
         ]);
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->actingAs($admin)
             ->patchJson("/api/v1/admin/complaints/{$complaint->id}/status", [
@@ -106,7 +106,7 @@ class ComplaintWorkflowTest extends TestCase
     {
         [$owner, $order] = $this->createBuyerOrder();
         $otherBuyer = User::factory()->create(['role' => User::ROLE_BUYER]);
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
 
         $this->actingAs($otherBuyer)
             ->postJson("/api/v1/buyer/orders/{$order->id}/complaints", [

@@ -59,7 +59,7 @@ class LogisticsRegistrationFlowTest extends TestCase
 
         $this->assertGuest();
 
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->orderBy('id')->firstOrFail();
         $this->actingAs($admin)
             ->getJson('/api/v1/admin/logistics-management')
             ->assertOk()
@@ -100,6 +100,22 @@ class LogisticsRegistrationFlowTest extends TestCase
             'role' => User::ROLE_LOGISTICS,
             'email' => 'approved-company@example.com',
             'password' => 'Password123!',
+            'registration_status' => 'active',
+        ]);
+        Logistics::query()->create([
+            'user_id' => $user->id,
+            'last_name' => 'Carrier',
+            'first_name' => 'Approved',
+            'sex' => 'other',
+            'contact_no' => '09171234567',
+            'birthday' => '1990-01-01',
+            'age' => 36,
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'business_name' => 'Approved Logistics',
             'registration_status' => 'active',
         ]);
 
@@ -231,6 +247,9 @@ class LogisticsRegistrationFlowTest extends TestCase
     private function saveRegistrationSteps(): void
     {
         $this->post(route('logistics.register.company.submit'), [
+            'sec_registration_number' => 'AB123456789',
+            'tin' => '123-456-789-012',
+            'service_areas' => ['Luzon'],
             'company_name' => 'Fast Freight',
             'registered_business_name' => 'Fast Freight Incorporated',
             'company_type' => 'Corporation',

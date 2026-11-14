@@ -128,9 +128,11 @@ class AdminVouchersTest extends TestCase
             'address' => 'Calamba','province' => 'Laguna','municipality' => 'Calamba','status' => 'active']);
         $buyer = $this->user(User::ROLE_BUYER);
         foreach ([$first,$second] as $product) CartItem::create(['user_id' => $buyer->id,'product_id' => $product->id,'quantity' => 1]);
+        $cartItemIds = CartItem::query()->where('user_id', $buyer->id)->pluck('id')->all();
         $this->actingAs($buyer)->postJson('/api/v1/buyer/orders',[
             'delivery_name' => 'Buyer','delivery_phone' => '09170000002','delivery_address' => '1 Main Street',
             'delivery_province' => 'Laguna','delivery_municipality' => 'Calamba','payment_method' => 'Cash on Delivery',
+            'cart_item_ids' => $cartItemIds,
             'voucher_code' => 'PLATFORM10','voucher_seller_id' => $secondShop->id,
             'logistics_selections' => [
                 ['seller_id' => $firstShop->id,'logistics_id' => $logistics->id],

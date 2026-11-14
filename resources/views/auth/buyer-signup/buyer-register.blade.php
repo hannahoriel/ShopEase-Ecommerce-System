@@ -2230,9 +2230,6 @@
 
                             Last Name
 
-                            <span class="required">
-                                *
-                            </span>
 
                         </label>
 
@@ -2249,7 +2246,6 @@
                             maxlength="50"
                             pattern="[A-Za-z .'-]{2,50}"
                             title="Use 2–50 characters: letters, spaces, hyphens, apostrophes, or periods."
-                            required
                         >
 
 
@@ -2318,11 +2314,7 @@
                             class="field-label"
                         >
 
-                            Middle Name
-
-                            <span class="required">
-                                *
-                            </span>
+                            Middle Name (Optional)
 
                         </label>
 
@@ -2334,7 +2326,6 @@
                             class="form-input"
                             placeholder="Enter your middle name"
                             value="{{ old('middle_name', $buyerData['middle_name'] ?? '') }}"
-                            required
                         >
 
 
@@ -2342,7 +2333,7 @@
                             class="field-error"
                             id="middleNameError"
                         >
-                            Please enter your middle name.
+                            Middle name is optional.
                         </div>
 
                     </div>
@@ -5462,27 +5453,7 @@ document.addEventListener(
                 );
 
 
-            if (
-                !middleName.value.trim()
-            ) {
-
-                showError(
-                    middleName,
-                    middleNameError
-                );
-
-
-                isValid =
-                    false;
-
-            } else {
-
-                clearError(
-                    middleName,
-                    middleNameError
-                );
-
-            }
+            clearError(middleName, middleNameError);
 
 
             /* SEX */

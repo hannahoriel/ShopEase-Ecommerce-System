@@ -72,14 +72,14 @@ class CourierRegistrationApiTest extends TestCase
             'region' => 'CALABARZON', 'province' => 'Laguna', 'city' => 'Calamba',
             'barangay' => 'Poblacion', 'street' => 'Rizal Street', 'house_no' => '12',
             'postal_code' => '4027', 'vehicle' => 'Truck', 'plate_number' => 'ABC 1234',
-            'or_cr' => UploadedFile::fake()->image('or-cr.jpg'),
+            'drivers_license' => UploadedFile::fake()->image('drivers-license.jpg'),
         ])->assertCreated()->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.email', 'alex.garcia@example.test');
 
         $this->assertDatabaseHas('courier_registrations', [
             'sorting_center_id' => $branch->id, 'email' => 'alex.garcia@example.test', 'status' => 'pending',
         ]);
-        $this->assertCount(1, Storage::disk('public')->allFiles('courier-registrations/or-cr'));
+        $this->assertCount(1, Storage::disk('public')->allFiles('courier-registrations/drivers-license'));
     }
 
     private function makeCenter(string $email): array

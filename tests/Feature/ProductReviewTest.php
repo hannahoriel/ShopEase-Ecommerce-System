@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin\Order;
+use App\Models\Admin\OrderItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductReview;
 use App\Models\Seller\Seller;
@@ -30,6 +32,22 @@ class ProductReviewTest extends TestCase
             'stock_quantity' => 8,
             'status' => 'active',
             'is_archived' => false,
+        ]);
+        $order = Order::create([
+            'buyer_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'order_number' => 'SE-REVIEW-TEST',
+            'total' => 500,
+            'status' => 'completed',
+            'buyer_received_at' => now(),
+            'buyer_received_automatically' => false,
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => $product->price,
         ]);
 
         $this->actingAs($buyer)
@@ -74,7 +92,7 @@ class ProductReviewTest extends TestCase
         $this->actingAs($buyer)
             ->get('/buyer/product?id=' . $product->id)
             ->assertOk()
-            ->assertSee('productReviewForm');
+            ->assertSee('id="buyerProductConfig"', false);
 
         $this->actingAs($buyer)
             ->getJson("/api/v1/buyer/products/{$product->id}/reviews")

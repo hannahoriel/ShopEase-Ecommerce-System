@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeliveryAttempt extends Model
 {
+    protected $table = 'rider_delivery_attempts';
+
     protected $fillable = ['order_id', 'rider_id', 'attempt_number', 'reason', 'notes', 'evidence_path'];
 
     public function order(): BelongsTo

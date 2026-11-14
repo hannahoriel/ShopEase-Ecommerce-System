@@ -22,7 +22,6 @@ class ShippingStatusController extends Controller
         'in_transit' => ['out_for_delivery'],
         'out_for_delivery' => ['delivered'],
         'delivered' => [],
-        'completed' => [], // Buyer receipt confirmation follows successful delivery.
     ];
 
     public function index(Request $request): JsonResponse
