@@ -41,7 +41,10 @@ class ProfilePhotoController extends Controller
 
         return response()->json([
             'message' => 'Profile photo updated successfully.',
-            'profile_photo_url' => route('profile.photo.show', ['user' => $user->id]),
+            'profile_photo_url' => route('profile.photo.show', [
+                'user' => $user->id,
+                'v' => basename($newPath),
+            ]),
         ]);
     }
 }
