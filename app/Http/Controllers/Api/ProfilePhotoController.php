@@ -9,6 +9,17 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfilePhotoController extends Controller
 {
+    public function show(int $user)
+    {
+        $profilePhotoPath = User::query()->whereKey($user)->value('profile_photo_path');
+        abort_unless(
+            $profilePhotoPath && Storage::disk('public')->exists($profilePhotoPath),
+            404,
+        );
+
+        return Storage::disk('public')->response($profilePhotoPath);
+    }
+
     public function update(Request $request)
     {
         $user = $request->user();
@@ -30,7 +41,7 @@ class ProfilePhotoController extends Controller
 
         return response()->json([
             'message' => 'Profile photo updated successfully.',
-            'profile_photo_url' => Storage::disk('public')->url($newPath),
+            'profile_photo_url' => route('profile.photo.show', ['user' => $user->id]),
         ]);
     }
 }

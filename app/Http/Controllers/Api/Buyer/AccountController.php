@@ -24,7 +24,7 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_path
-                    ? Storage::disk('public')->url($user->profile_photo_path)
+                    ? route('profile.photo.show', ['user' => $user->id])
                     : null,
             ],
             'profile' => [
@@ -57,7 +57,7 @@ class AccountController extends Controller
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'middle_name' => ['nullable', 'string', 'max:10'],
+            'middle_name' => ['nullable', 'string', 'max:150'],
             'sex' => ['required', Rule::in(['Male', 'Female', 'Prefer not to say'])],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'contact_no' => ['required', 'string', 'max:20'],
@@ -132,7 +132,7 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_path
-                    ? Storage::disk('public')->url($user->profile_photo_path)
+                    ? route('profile.photo.show', ['user' => $user->id])
                     : null,
             ],
             'profile' => [
