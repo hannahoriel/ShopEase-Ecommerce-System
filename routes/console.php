@@ -9,6 +9,7 @@ use App\Models\Admin\PlatformPolicy;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\DeliveryHubParcelIssue;
 use App\Models\Logistics\SortingCenterParcelIssue;
+use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\CodSettlementService;
 use App\Services\Logistics\CancelOrderForParcelIssue;
@@ -38,6 +39,13 @@ Artisan::command('users:reactivate-expired', function () {
             'account_action_reason' => null,
             'account_action_details' => null,
         ]);
+
+        if ($user->role === User::ROLE_SELLER) {
+            Seller::query()
+                ->where('user_id', $user->id)
+                ->where('registration_status', 'suspended')
+                ->update(['registration_status' => 'active']);
+        }
 
         $user->email && Mail::to($user->email)->send(new AccountStatusChanged(
             user: $user,

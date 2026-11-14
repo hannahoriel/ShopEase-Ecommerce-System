@@ -20,10 +20,13 @@ class Complaint extends Model
         'description',
         'status',
         'evidence',
+        'seller_at_fault',
+        'seller_fault_notes',
     ];
 
     protected $casts = [
         'evidence' => 'array',
+        'seller_at_fault' => 'boolean',
     ];
 
     public function user(): BelongsTo

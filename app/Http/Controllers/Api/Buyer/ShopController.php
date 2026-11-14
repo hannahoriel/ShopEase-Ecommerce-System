@@ -7,6 +7,7 @@ use App\Models\Admin\Complaint;
 use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
+use App\Services\SellerComplianceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +21,9 @@ class ShopController extends Controller
             ->join('sellers', 'sellers.id', '=', 'follows.seller_id')
             ->leftJoin('users', 'users.id', '=', 'sellers.user_id')
             ->where('follows.buyer_id', $request->user()->id)
-            ->where('sellers.registration_status', 'active')
+            ->whereIn('sellers.registration_status', ['active', 'suspended'])
             ->orderByDesc('follows.created_at')
-            ->select(['sellers.id', 'sellers.store_name', 'sellers.business_name', 'sellers.province', 'sellers.municipality', 'sellers.user_id', 'users.name as owner_name', 'users.profile_photo_path', 'follows.created_at as followed_at'])
+            ->select(['sellers.id', 'sellers.store_name', 'sellers.business_name', 'sellers.province', 'sellers.municipality', 'sellers.user_id', 'sellers.registration_status', 'users.name as owner_name', 'users.profile_photo_path', 'follows.created_at as followed_at'])
             ->get()
             ->map(function ($shop): array {
                 return [
@@ -31,7 +32,9 @@ class ShopController extends Controller
                     'owner_name' => $shop->owner_name,
                     'avatar_url' => $shop->profile_photo_path ? Storage::disk('public')->url($shop->profile_photo_path) : null,
                     'location' => collect([$shop->municipality, $shop->province])->filter()->implode(', '),
-                    'product_count' => DB::table('products')->where('seller_id', $shop->id)->where('status', 'active')->where('is_archived', false)->count(),
+                    'product_count' => $shop->registration_status === 'active'
+                        ? DB::table('products')->where('seller_id', $shop->id)->where('status', 'active')->where('is_archived', false)->count()
+                        : 0,
                     'rating_average' => round((float) DB::table('product_reviews')->where('seller_id', $shop->id)->avg('rating'), 1),
                     'rating_count' => DB::table('product_reviews')->where('seller_id', $shop->id)->count(),
                     'followers' => DB::table('buyer_shop_follows')->where('seller_id', $shop->id)->count(),
@@ -44,7 +47,8 @@ class ShopController extends Controller
 
     public function show(Request $request, Seller $seller): JsonResponse
     {
-        abort_unless($seller->registration_status === 'active', 404);
+        abort_unless(in_array($seller->registration_status, ['active', 'suspended'], true), 404);
+        $isSuspended = $seller->registration_status === 'suspended';
 
         $products = $seller->products()
             ->where('status', 'active')
@@ -55,7 +59,11 @@ class ShopController extends Controller
                 'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
             )], 'quantity');
 
-        $shopCategories = $seller->products()
+        if ($isSuspended) {
+            $products->whereRaw('1 = 0');
+        }
+
+        $shopCategories = $isSuspended ? collect() : $seller->products()
             ->where('status', 'active')
             ->where('is_archived', false)
             ->whereNotNull('category')
@@ -87,7 +95,9 @@ class ShopController extends Controller
 
         $page = $products->paginate(min(max((int) $request->query('per_page', 24), 1), 60));
         $seller->load(['user:id,name,profile_photo_path', 'reviews']);
-        $allProductCount = $seller->products()->where('status', 'active')->where('is_archived', false)->count();
+        $allProductCount = $isSuspended
+            ? 0
+            : $seller->products()->where('status', 'active')->where('is_archived', false)->count();
         $compliance = $this->complianceSummary($seller);
 
         // Show actual active products from other sellers after this shop's collection.
@@ -209,6 +219,12 @@ class ShopController extends Controller
             ->whereRaw('LOWER(status) = ?', ['warning'])
             ->count();
         $orderIds = Order::query()->where('seller_id', $seller->id)->pluck('id');
+        $atFaultComplaintCount = $orderIds->isEmpty()
+            ? 0
+            : Complaint::query()
+                ->whereIn('order_id', $orderIds)
+                ->where('seller_at_fault', true)
+                ->count();
         $complaintCount = $orderIds->isEmpty()
             ? 0
             : Complaint::query()
@@ -216,10 +232,10 @@ class ShopController extends Controller
                 ->whereIn('status', ['open', 'in_progress'])
                 ->count();
 
-        $score = max(0, 100 - ($reviewCount * 5) - ($complaintCount * 10));
+        $score = SellerComplianceService::scoreFromCounts($reviewCount, $atFaultComplaintCount);
 
         if (in_array($seller->registration_status, ['suspended', 'rejected'], true)) {
-            return ['score' => 0, 'status' => 'suspended', 'label' => 'Suspended'];
+            return ['score' => $score, 'status' => 'suspended', 'label' => 'Suspended'];
         }
         if ($reviewCount > 0) {
             return ['score' => $score, 'status' => 'under-review', 'label' => 'Under Review'];

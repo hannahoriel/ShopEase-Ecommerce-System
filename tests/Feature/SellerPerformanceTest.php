@@ -135,7 +135,7 @@ class SellerPerformanceTest extends TestCase
         $payload = $this->actingAs($sellerUser)
             ->getJson(route('seller.performance.data'))
             ->assertOk()
-            ->assertJsonPath('compliance.score', 85)
+            ->assertJsonPath('compliance.score', 95)
             ->assertJsonPath('compliance.status', 'warning')
             ->assertJsonPath('notices.0.status', 'removed')
             ->assertJsonPath('notices.0.product_name', 'Removed Product')

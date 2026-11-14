@@ -222,6 +222,7 @@ Route::prefix('v1')->group(function () {
                 ->name('admin.api.logistics.branches.destroy');
             Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('admin.api.complaints.index');
             Route::patch('/complaints/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])->name('admin.api.complaints.status');
+            Route::patch('/complaints/{complaint}/seller-fault', [AdminComplaintController::class, 'updateSellerFaultDecision'])->name('admin.api.complaints.seller-fault');
             Route::patch('/complaints/{complaint}/return-decision', [\App\Http\Controllers\Api\Admin\ReturnComplaintController::class, 'update'])->name('admin.api.complaints.return-decision');
             Route::prefix('platform-settings')->controller(PlatformSettingsController::class)->name('admin.api.platform-settings.')->group(function () {
                 Route::get('/', 'index')->name('index');
