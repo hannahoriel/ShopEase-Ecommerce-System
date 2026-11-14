@@ -62,6 +62,12 @@ class AssignScheduledPickups
                         'logistics_branch_id' => $rider->logistics_branch_id,
                         'logistics_delivery_hub_id' => $hubIds->first(),
                     ]);
+                    $candidate->sellerPickupAttempts()
+                        ->where('status', 'scheduled')
+                        ->whereNull('rider_id')
+                        ->reorder('attempt_number', 'desc')
+                        ->first()
+                        ?->update(['rider_id' => $rider->id]);
                 }
             });
         }

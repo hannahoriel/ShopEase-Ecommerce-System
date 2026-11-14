@@ -14,6 +14,7 @@ use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\User;
 use App\Services\OrderInventoryService;
+use App\Services\SellerPickupAttemptService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,7 @@ class OrderStatusController extends Controller
                 'latestCancellationRequest.buyer:id,name',
                 'latestCancellationRequest.decidedBy:id,name',
                 'statusHistory.changedBy:id,role',
+                'sellerPickupAttempts',
             ]);
 
         if ($request->filled('status')) {
@@ -89,6 +91,7 @@ class OrderStatusController extends Controller
             'statusHistory.changedBy:id,name,role',
             'latestCancellationRequest.buyer:id,name',
             'latestCancellationRequest.decidedBy:id,name',
+            'sellerPickupAttempts',
         ]);
 
         return response()->json($order);
@@ -115,7 +118,7 @@ class OrderStatusController extends Controller
         return response()->json($order->fresh(['statusHistory.changedBy:id,role', 'latestCancellationRequest']));
     }
 
-    public function schedule(Request $request, Order $order): JsonResponse
+    public function schedule(Request $request, Order $order, SellerPickupAttemptService $pickupAttempts): JsonResponse
     {
         $order = $this->ownedOrder($request->user(), $order);
         $validated = $request->validate([
@@ -123,20 +126,54 @@ class OrderStatusController extends Controller
             'pickup_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        abort_unless(
+            $validated['pickup_time'] < SellerPickupAttemptService::CUTOFF_TIME,
+            422,
+            'Seller pickup must be scheduled before 6:00 PM.',
+        );
+        if ($validated['pickup_date'] === now('Asia/Manila')->toDateString()) {
+            abort_unless(
+                $validated['pickup_time'] > now('Asia/Manila')->format('H:i'),
+                422,
+                'Choose a future pickup time for today.',
+            );
+        }
 
-        DB::transaction(function () use ($order, $validated, $request): void {
+        DB::transaction(function () use ($order, $validated, $request, $pickupAttempts): void {
             $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
             abort_unless($lockedOrder->seller_id === $this->sellerFor($request->user())->id, 404);
-            abort_unless($lockedOrder->status === 'preparing', 422, 'Prepare the order before scheduling pickup.');
+            abort_if(
+                $lockedOrder->latestCancellationRequest()->where('status', 'pending')->exists(),
+                422,
+                'Review the pending buyer cancellation request before scheduling pickup.',
+            );
+            $attemptCount = (int) $lockedOrder->sellerPickupAttempts()->max('attempt_number');
+            if ($lockedOrder->status === 'preparing') {
+                abort_unless($attemptCount === 0, 409, 'This order already has a pickup schedule.');
+            } else {
+                $lastAttempt = $lockedOrder->sellerPickupAttempts()->reorder('attempt_number', 'desc')->first();
+                abort_unless(
+                    $lockedOrder->status === 'to_ship'
+                        && $lastAttempt?->status === 'missed'
+                        && $attemptCount < SellerPickupAttemptService::MAX_ATTEMPTS,
+                    422,
+                    'You can reschedule pickup only after a missed attempt, up to three attempts.',
+                );
+            }
 
             $lockedOrder->update([
                 'pickup_date' => $validated['pickup_date'],
                 'pickup_time' => $validated['pickup_time'],
             ]);
-            $this->changeStatus($lockedOrder, 'to_ship', $request->user(), $validated['notes'] ?? null);
+            if ($lockedOrder->status === 'preparing') {
+                $this->changeStatus($lockedOrder, 'to_ship', $request->user(), $validated['notes'] ?? null);
+            }
+
+            $shipment = Shipment::query()->where('order_id', $lockedOrder->id)->lockForUpdate()->firstOrFail();
+            $pickupAttempts->schedule($lockedOrder, $shipment);
         });
 
-        return response()->json($order->fresh(['statusHistory']));
+        return response()->json($order->fresh(['statusHistory', 'sellerPickupAttempts']));
     }
 
     public function cancelScheduledShipment(Request $request, Order $order): JsonResponse
@@ -163,6 +200,7 @@ class OrderStatusController extends Controller
                 : $validated['reason'];
 
             $this->inventory->restoreOrder($lockedOrder);
+            $lockedOrder->sellerPickupAttempts()->where('status', 'scheduled')->update(['status' => 'cancelled']);
 
             $lockedOrder->update([
                 'status' => 'cancelled',
@@ -200,6 +238,7 @@ class OrderStatusController extends Controller
             );
 
             $this->inventory->restoreOrder($lockedOrder);
+            $lockedOrder->sellerPickupAttempts()->where('status', 'scheduled')->update(['status' => 'cancelled']);
             $previousStatus = $lockedOrder->status;
             $lockedOrder->update([
                 'status' => 'cancelled',
@@ -355,6 +394,7 @@ class OrderStatusController extends Controller
 
         if ($newStatus === 'cancelled') {
             $this->inventory->restoreOrder($order);
+            $order->sellerPickupAttempts()->where('status', 'scheduled')->update(['status' => 'cancelled']);
         }
 
         $fromStatus = $order->status;

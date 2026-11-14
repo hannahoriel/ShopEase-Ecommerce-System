@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Admin\SellerPickupAttempt;
 use App\Models\Admin\Shipment;
+use App\Models\Rider\EarningEntry;
+use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Carbon\Carbon;
@@ -179,6 +182,114 @@ class SellerOrderStatusTest extends TestCase
 
         $this->assertNull($order->fresh()->pickup_date);
         $this->assertNull($order->fresh()->pickup_time);
+    }
+
+    public function test_three_missed_seller_pickups_cancel_the_order_and_post_one_rider_deduction(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-16 17:00:00', 'Asia/Manila'));
+        [$sellerUser, $seller] = $this->seller('Seller One');
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $riderUser = User::factory()->create([
+            'role' => User::ROLE_RIDER,
+            'registration_status' => 'active',
+        ]);
+        $rider = Rider::create([
+            'user_id' => $riderUser->id,
+            'municipal_hub' => 'Calamba',
+            'logistics_operation' => 'pickup',
+            'last_name' => 'Rider',
+            'first_name' => 'Test',
+            'sex' => 'other',
+            'contact_no' => '09170000000',
+            'birthday' => '1990-01-01',
+            'age' => 36,
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'barangay' => 'Real',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'vehicle' => 'Motorcycle',
+            'plate_number' => 'ABC 1234',
+            'registration_status' => 'active',
+        ]);
+        $order = $this->order($seller, $buyer, 'preparing', 559);
+
+        $this->actingAs($sellerUser)
+            ->postJson("/api/v1/seller/orders/{$order->id}/schedule", [
+                'pickup_date' => '2026-09-16',
+                'pickup_time' => '17:30',
+            ])
+            ->assertOk()
+            ->assertJsonPath('seller_pickup_attempts.0.attempt_number', 1);
+        $shipment = $order->shipment()->firstOrFail();
+        $shipment->update(['rider_id' => $rider->id]);
+        SellerPickupAttempt::query()->where('order_id', $order->id)->update(['rider_id' => $rider->id]);
+
+        foreach ([
+            ['date' => '2026-09-16', 'time' => '18:00', 'reschedule' => '2026-09-17'],
+            ['date' => '2026-09-17', 'time' => '18:00', 'reschedule' => '2026-09-18'],
+        ] as $attempt) {
+            Carbon::setTestNow(Carbon::parse($attempt['date'].' '.$attempt['time'], 'Asia/Manila'));
+            $this->artisan('orders:process-missed-seller-pickups')->assertSuccessful();
+            $this->assertDatabaseHas('seller_pickup_attempts', [
+                'order_id' => $order->id,
+                'attempt_number' => SellerPickupAttempt::query()->where('order_id', $order->id)->count(),
+                'status' => 'missed',
+            ]);
+            $this->assertSame('to_ship', $order->fresh()->status);
+            $this->assertNull($order->fresh()->pickup_date);
+            $this->assertSame(0, EarningEntry::query()->where('order_id', $order->id)->count());
+
+            Carbon::setTestNow(Carbon::parse($attempt['date'].' 18:15', 'Asia/Manila'));
+            $this->actingAs($sellerUser)
+                ->postJson("/api/v1/seller/orders/{$order->id}/schedule", [
+                    'pickup_date' => $attempt['reschedule'],
+                    'pickup_time' => '10:00',
+                ])
+                ->assertOk()
+                ->assertJsonPath('seller_pickup_attempts.'.(SellerPickupAttempt::query()->where('order_id', $order->id)->count() - 1).'.status', 'scheduled');
+        }
+
+        Carbon::setTestNow(Carbon::parse('2026-09-18 17:59', 'Asia/Manila'));
+        $this->artisan('orders:process-missed-seller-pickups')->assertSuccessful();
+        $this->assertSame('to_ship', $order->fresh()->status);
+
+        Carbon::setTestNow(Carbon::parse('2026-09-18 18:00', 'Asia/Manila'));
+        $this->artisan('orders:process-missed-seller-pickups')->assertSuccessful();
+
+        $this->assertSame('cancelled', $order->fresh()->status);
+        $this->assertDatabaseHas('seller_pickup_attempts', [
+            'order_id' => $order->id,
+            'attempt_number' => 3,
+            'status' => 'missed',
+        ]);
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'to_status' => 'cancelled',
+            'changed_by' => null,
+        ]);
+        $deduction = EarningEntry::query()->where('order_id', $order->id)->firstOrFail();
+        $this->assertSame($rider->id, $deduction->rider_id);
+        $this->assertSame('pickup_no_show_deduction', $deduction->type);
+        $this->assertSame('-20.00', $deduction->amount);
+        $this->assertDatabaseHas('buyer_notifications', [
+            'order_id' => $order->id,
+            'title' => 'Order cancelled: pickup rider did not collect it',
+        ]);
+        $this->actingAs($riderUser)
+            ->getJson('/api/v1/rider/finance')
+            ->assertOk()
+            ->assertJsonPath('data.earnings.0.type', 'pickup_no_show_deduction')
+            ->assertJsonPath('data.earnings.0.amount', '-20.00')
+            ->assertJsonPath('data.earnings_total', -20);
+        $this->actingAs($riderUser)
+            ->getJson('/api/v1/rider/earnings')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.type', 'pickup_no_show_deduction')
+            ->assertJsonPath('data.data.0.amount', '-20.00');
+
+        $this->artisan('orders:process-missed-seller-pickups')->assertSuccessful();
+        $this->assertSame(1, EarningEntry::query()->where('order_id', $order->id)->count());
     }
 
     public function test_seller_can_print_a_waybill_and_qr_scans_record_location_and_status(): void

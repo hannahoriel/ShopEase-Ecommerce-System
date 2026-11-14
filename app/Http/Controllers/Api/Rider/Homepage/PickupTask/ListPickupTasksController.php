@@ -42,10 +42,11 @@ class ListPickupTasksController extends Controller
                 // is complete only after its manifest leaves preparing.
                 ->whereIn('status', ['loaded', 'arrived']))
             ->whereIn('status', ['to_ship', 'in_transit'])
-            ->with($deliveries->deliveryRelations())
+            ->with([...$deliveries->deliveryRelations(), 'sellerPickupAttempts'])
             ->latest('updated_at')
             ->limit(100)
-            ->get();
+            ->get()
+            ->reject(fn (Order $order): bool => $order->sellerPickupAttempts->last()?->status === 'missed');
 
         $returnPickups = OrderReturn::query()
             ->where('pickup_rider_id', $rider->id)

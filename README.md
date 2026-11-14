@@ -60,7 +60,7 @@ Admin data and actions are available under `/api/v1/admin`. Requests require Lar
 
 ## Rider and logistics delivery API
 
-The Flutter rider app and the web logistics portal use the same Laravel database and Sanctum API. Run `php artisan migrate` after updating the backend to create rider assignment, delivery-proof, attendance, recipient, support-ticket, calculator-history, Verify Order archive, order-message, COD, remittance, earnings, and delivery-action records.
+The Flutter rider app and the web logistics portal use the same Laravel database and Sanctum API. Run `php artisan migrate` after updating the backend to create rider assignment, delivery-proof, attendance, recipient, support-ticket, calculator-history, Verify Order archive, order-message, seller pickup-attempt, COD, remittance, earnings, and delivery-action records.
 
 | Role | Endpoint | Purpose |
 | --- | --- | --- |
@@ -79,10 +79,10 @@ The Flutter rider app and the web logistics portal use the same Laravel database
 | Rider and Logistics | Delivery-hub and Sorting Center parcel scanners; `POST /api/v1/rider/deliveries/{order}/proof` for the assigned seller-return task | Complete hub-to-hub routing and confirm the final seller handoff. Inventory and the seller-paid RTO shipping fee are applied only after seller handoff. |
 | Rider | `GET/PATCH /api/v1/rider/profile`, `GET/POST /api/v1/rider/attendance` | Read/update profile and clock in/out with a photo. |
 | Rider | `GET/POST /api/v1/rider/recipients`, `GET/POST /api/v1/rider/support-tickets` | Manage saved recipients and submit support tickets. |
-| Rider | `GET /api/v1/rider/finance`, `GET /api/v1/rider/earnings`, `POST /api/v1/rider/remittances` | View posted earnings and COD balances and submit remittances for review. |
+| Rider | `GET /api/v1/rider/finance`, `GET /api/v1/rider/earnings`, `POST /api/v1/rider/remittances` | View posted earnings (including automatic seller-pickup deductions) and COD balances and submit remittances for review. |
 | Rider | `GET /api/v1/rider/star-courier?period=month&year=2026&month=10` | Return completed delivery counts and explicitly posted earnings for the selected month or year. Star points/tiers are not fabricated or calculated. |
 | Rider | `GET/POST/DELETE /api/v1/rider/calculations`, `GET /api/v1/rider/verify-orders`, and verify-order archive/restore/dismiss actions | Persist calculator history and rider-specific Verify Order archive state. |
-| Rider | `GET /api/v1/rider/pickup-tasks`, pickup proof routes, and `GET /api/v1/rider/pickup-delivery-records` | Read assigned pickup tasks, submit pickup proof, and view pickup/delivery records. |
+| Rider | `GET /api/v1/rider/pickup-tasks`, pickup proof routes, and `GET /api/v1/rider/pickup-delivery-records` | Read assigned pickup tasks, submit pickup proof, and view pickup/delivery records. Seller pickups are counted as missed at 6:00 PM Asia/Manila when not collected; the seller may schedule up to three attempts. |
 | Rider | `GET/POST /api/v1/rider/deliveries/{order}/messages` | Persist rider messages associated with an assigned order. |
 | Logistics | `GET /api/v1/logistics/rider-remittances`, `PATCH /rider-remittances/{id}/review` | Review pending rider remittances as verified or rejected. |
 | Logistics | `POST /api/v1/logistics/rider-earnings` | Post an explicit rider earnings ledger entry. |
@@ -95,6 +95,8 @@ Except for public rider registration and location lookup, endpoints require a Sa
 Rider controllers are grouped under `app/Http/Controllers/Api/Rider` by the mobile app’s `Register`, `Homepage` (including `Attendance`, `Calculator`, `Contact`, `DeliveryTask`, `MoneyReport`, `Notifications`, `PickupTask`, `PickupDeliveryRecord`, `StarCourier`, and `VerifyOrder`), `Content`, and `User` sections. About, Knowledgebase, Star Courier Guidelines, and navigation configuration are provided by the rider content endpoint; Live Support is an asynchronous, persisted ticket conversation—not a real-time chat service. Camera, map-arrival, and confirmation screens are workflow steps whose backend actions are performed by their parent attendance or delivery flows.
 
 For local/testing only, run `php artisan db:seed --class=RiderSecondDeliveryAttemptSeeder` to create a COD parcel assigned to `rider@gmail.com` with its first failed attempt already recorded. The next failed-attempt submission is attempt two. The seeder is standalone and does not run as part of the default database seed; the rider password is controlled by `RIDER_SEED_PASSWORD` (default `Rider@123`).
+
+Seller pickups that remain uncollected are marked missed at 6:00 PM Asia/Manila. Sellers can reschedule after the first two misses; a third missed schedule automatically cancels the order, informs the buyer, and posts one ₱20 earning deduction to the assigned rider. The scheduler runs `orders:process-missed-seller-pickups` daily at 6:00 PM.
 
 For local Flutter testing, pass the backend API URL with `--dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1` when using the Android emulator. For a physical device, use the development computer’s reachable LAN address instead and start Laravel with `php artisan serve --host=0.0.0.0`. The app keeps its production/emulator defaults when the override is omitted.
 

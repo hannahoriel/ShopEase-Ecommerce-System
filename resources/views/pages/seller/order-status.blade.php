@@ -398,6 +398,7 @@
                         <p id="orderModalShipmentDate" class="order-modal-schedule-value">—</p>
                         <p id="orderModalShipmentTime" class="order-modal-schedule-value">—</p>
                     </div>
+                    <p id="orderModalPickupAttempt" class="mt-2 text-[11px] text-[#8C4B44]" hidden></p>
                 </div>
             </div>
 
@@ -584,6 +585,7 @@
                         <div><p class="text-[11px] text-[#8A8582]">Order</p><p id="scheduleOrderId" class="mt-[3px] text-[15px] font-semibold text-[#17120F]">#ORD-2025</p></div>
                         <div class="text-right"><p class="text-[11px] text-[#8A8582]">Status</p><p class="mt-[3px] inline-flex items-center gap-[7px] text-[12px] font-medium text-[#D98C00]"><span class="w-[8px] h-[8px] rounded-full bg-[#F2A100]"></span>Preparing</p></div>
                     </div>
+                    <p id="schedulePickupAttempt" class="mt-3 text-[12px] font-medium text-[#8C4B44]"></p>
                 </div>
 
                 <div class="mt-[20px]">
