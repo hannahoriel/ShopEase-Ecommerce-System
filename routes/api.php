@@ -155,6 +155,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/cities/{code}/barangays', [LocationController::class, 'barangays']);
     });
 
+    Route::get('/public/profile-photos/{user}', [ProfilePhotoController::class, 'show'])
+        ->whereNumber('user')
+        ->name('profile.photo.show');
+
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/auth/me', fn (Request $request) => response()->json($request->user()));
@@ -523,6 +527,9 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:rider,courier')->prefix('courier')->group(function () {
             Route::get('/dashboard', [CourierTransportController::class, 'dashboard'])->name('courier.api.dashboard');
+            Route::get('/notifications', \App\Http\Controllers\Api\Rider\Homepage\Notifications\ListNotificationsController::class)->name('courier.api.notifications.index');
+            Route::patch('/notifications/read-all', \App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkAllNotificationsReadController::class)->name('courier.api.notifications.read-all');
+            Route::patch('/notifications/{notification}/read', \App\Http\Controllers\Api\Rider\Homepage\Notifications\MarkNotificationReadController::class)->name('courier.api.notifications.read');
             Route::get('/trips', [CourierTransportController::class, 'trips'])->name('courier.api.trips.index');
             Route::get('/manifests', [CourierTransportController::class, 'manifests'])->name('courier.api.manifests.index');
             Route::get('/manifests/{manifestId}', [CourierTransportController::class, 'showManifest'])
