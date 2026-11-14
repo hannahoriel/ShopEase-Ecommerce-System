@@ -27,6 +27,17 @@ use Illuminate\Validation\Rule;
 /** Applies QR scans to the parcel's real shipment and order records. */
 class ParcelRouteScanController extends Controller
 {
+    private const FAILED_DELIVERY_RETURN_STATUSES = [
+        'return_to_hub',
+        'at_delivery_hub',
+        'staged_for_return_dispatch',
+        'in_transit_to_sorting_center',
+        'at_sorting_center',
+        'at_intermediate_sorting_center',
+        'in_transit_to_seller_hub',
+        'at_seller_hub',
+    ];
+
     public function scan(Request $request): JsonResponse
     {
         $facility = $request->user()->role;
@@ -48,6 +59,11 @@ class ParcelRouteScanController extends Controller
         $return = $this->returnForScan($input['tracking']);
         if ($return) {
             return $this->scanReturn($request, $facility, $input, $return);
+        }
+
+        $failedDeliveryReturn = $this->failedDeliveryReturnForScan($input['tracking']);
+        if ($failedDeliveryReturn) {
+            return $this->scanFailedDeliveryReturn($request, $facility, $input, $failedDeliveryReturn);
         }
 
         $shipment = DB::transaction(function () use ($request, $facility, $input): Shipment {
@@ -377,6 +393,490 @@ class ParcelRouteScanController extends Controller
                 'history' => $shipment->scans->map(fn ($scan) => ['status' => $scan->status, 'location' => $scan->location, 'scanned_at' => $scan->scanned_at?->toISOString()]),
             ],
         ]);
+    }
+
+    private function failedDeliveryReturnForScan(string $code): ?Shipment
+    {
+        $raw = trim($code);
+        $path = parse_url($raw, PHP_URL_PATH);
+        $identifier = is_string($path) && $path !== '' ? rawurldecode(basename($path)) : $raw;
+
+        return Shipment::query()
+            ->whereIn('return_to_seller_status', self::FAILED_DELIVERY_RETURN_STATUSES)
+            ->whereHas('order', fn ($query) => $query->where('status', 'cancelled'))
+            ->where(fn ($query) => $query
+                ->where('tracking_number', $raw)
+                ->orWhere('tracking_number', $identifier)
+                ->orWhere('scan_token', $raw)
+                ->orWhere('scan_token', $identifier)
+                ->orWhereHas('order', fn ($order) => $order->where('order_number', $identifier)))
+            ->with(['order.seller.user', 'order.buyer.buyerProfile', 'order.items.product'])
+            ->first();
+    }
+
+    private function scanFailedDeliveryReturn(Request $request, string $facility, array $input, Shipment $candidate): JsonResponse
+    {
+        $result = DB::transaction(function () use ($request, $facility, $input, $candidate): array {
+            $shipment = Shipment::query()->whereKey($candidate->id)->lockForUpdate()->firstOrFail();
+            $order = $shipment->order()->with(['seller.user', 'buyer.buyerProfile', 'items.product'])->firstOrFail();
+            $seller = $order->seller;
+            $sellerProvince = trim((string) $seller?->province);
+            $sellerMunicipality = trim((string) $seller?->municipality);
+            abort_unless($order->status === 'cancelled'
+                && in_array($shipment->return_to_seller_status, self::FAILED_DELIVERY_RETURN_STATUSES, true),
+                409, 'This failed-delivery return is no longer active.');
+            abort_unless($sellerProvince !== '' && $sellerMunicipality !== '', 422,
+                'Seller province and municipality are required for return routing.');
+
+            if ($facility === 'delivery_hub') {
+                $hub = LogisticsDeliveryHub::query()
+                    ->where('user_id', $request->user()->id)
+                    ->whereNull('archived_at')
+                    ->firstOrFail();
+                abort_unless((int) $shipment->logistics_delivery_hub_id === (int) $hub->id,
+                    409, 'This parcel is not assigned to this delivery hub.');
+                $location = $hub->hub_name.' · '.$hub->municipality.', '.$hub->province;
+
+                if ($input['action'] === 'receive') {
+                    abort_unless(in_array($shipment->return_to_seller_status, ['return_to_hub', 'in_transit_to_seller_hub'], true),
+                        409, 'This failed-delivery return is not arriving at a delivery hub.');
+                    $manifest = $this->receiveFailedDeliveryReturnManifest($request, $shipment, 'delivery_hub', $hub->id);
+                    $atSellerHub = $this->same($hub->province, $sellerProvince)
+                        && $this->same($hub->municipality, $sellerMunicipality);
+                    $nextStatus = $atSellerHub ? 'at_seller_hub' : 'at_delivery_hub';
+                    $shipment->forceFill([
+                        'return_to_seller_status' => $nextStatus,
+                        'current_location' => $location,
+                        'location_updated_at' => now(),
+                    ])->save();
+                    $shipment->scans()->create([
+                        'status' => $atSellerHub ? 'Received at Seller Delivery Hub' : 'Received at Delivery Hub for Seller Return',
+                        'location' => $location,
+                        'scanned_at' => now(),
+                    ]);
+
+                    return [
+                        'tracking' => $shipment->tracking_number,
+                        'status' => $nextStatus,
+                        'manifest_id' => $manifest->id,
+                        'current_location' => $location,
+                    ];
+                }
+
+                if ($shipment->return_to_seller_status === 'at_seller_hub') {
+                    abort_unless($this->same($hub->province, $sellerProvince)
+                        && $this->same($hub->municipality, $sellerMunicipality),
+                        409, 'This is not the delivery hub serving the seller address.');
+                    $sellerInbound = LogisticsTransferManifest::query()
+                        ->where('destination_type', 'delivery_hub')
+                        ->where('destination_id', $hub->id)
+                        ->where('status', 'arrived')
+                        ->whereHas('shipments', fn ($query) => $query
+                            ->whereKey($shipment->id)
+                            ->whereNotNull('logistics_transfer_manifest_shipments.received_at'))
+                        ->latest('id')
+                        ->first();
+                    abort_unless($sellerInbound, 409, 'The seller-hub transfer must be fully received before rider dispatch.');
+                    $rider = $this->riderFor(
+                        $hub,
+                        (string) $seller?->barangay,
+                        'delivery',
+                        isset($input['rider_id']) ? (int) $input['rider_id'] : null,
+                    );
+                    abort_unless($rider, 422, 'No active delivery rider is assigned to the seller barangay.');
+                    $sellerInbound->update(['status' => 'out_for_delivery']);
+                    LogisticsTransferManifestEvent::query()->create([
+                        'transfer_manifest_id' => $sellerInbound->id,
+                        'shipment_id' => $shipment->id,
+                        'actor_user_id' => $request->user()->id,
+                        'event_type' => 'failed_delivery_return_out_for_delivery',
+                        'occurred_at' => now(),
+                    ]);
+                    $shipment->forceFill([
+                        'rider_id' => $rider->id,
+                        'return_to_seller_status' => 'out_for_delivery_to_seller',
+                        'current_location' => $location,
+                        'location_updated_at' => now(),
+                    ])->save();
+                    $shipment->scans()->create([
+                        'status' => 'Out for Delivery to Seller',
+                        'location' => $location,
+                        'scanned_at' => now(),
+                    ]);
+                    $rider->user?->notify(new RiderEventNotification(
+                        'Failed-delivery return assigned',
+                        'Order '.$order->order_number.' is assigned to you for delivery to the seller. No cash collection is required.',
+                        'delivery_task',
+                        (int) $order->id,
+                    ));
+
+                    return [
+                        'tracking' => $shipment->tracking_number,
+                        'status' => 'out_for_delivery_to_seller',
+                        'rider_id' => $rider->id,
+                        'current_location' => $location,
+                    ];
+                }
+
+                abort_unless($shipment->return_to_seller_status === 'at_delivery_hub',
+                    409, 'Receive-scan this failed-delivery return before dispatch.');
+                $center = LogisticsBranch::query()->whereKey($hub->logistics_branch_id)
+                    ->where('status', 'active')->whereNull('archived_at')->first();
+                abort_unless($center, 422, 'No active Sorting Center is assigned to this Delivery Hub.');
+                abort_unless(! empty($input['scheduled_at']), 422, 'Choose a scheduled dispatch date and time.');
+                $courierId = (int) ($input['courier_registration_id'] ?? 0);
+                $vehicleId = (int) ($input['vehicle_id'] ?? 0);
+                abort_unless($courierId && $vehicleId, 422, 'Select an available Sorting Center courier and registered vehicle.');
+                [$courier, $vehicle] = $this->validatedReturnTransport($center->id, $courierId, $vehicleId);
+                $this->assertReturnTransportAvailable($courierId, $vehicleId, $input['scheduled_at']);
+
+                $batchKey = trim((string) ($input['batch_key'] ?? ''))
+                    ?: 'failed-delivery-return-hub-'.$shipment->id;
+                $manifest = LogisticsTransferManifest::query()->firstOrCreate(
+                    ['batch_key' => substr($batchKey, 0, 100)],
+                    [
+                        'origin_type' => 'delivery_hub',
+                        'origin_id' => $hub->id,
+                        'destination_type' => 'sorting_center',
+                        'destination_id' => $center->id,
+                        'courier_registration_id' => $courier->id,
+                        'vehicle_id' => $vehicle->id,
+                        'courier_name' => trim(implode(' ', array_filter([$courier->first_name, $courier->last_name]))),
+                        'vehicle_reference' => $vehicle->plate_number,
+                        'status' => 'loaded',
+                        'scheduled_at' => $input['scheduled_at'],
+                        'loaded_at' => now(),
+                        'departed_at' => now(),
+                    ],
+                );
+                abort_unless($manifest->origin_type === 'delivery_hub'
+                    && (int) $manifest->origin_id === (int) $hub->id
+                    && $manifest->destination_type === 'sorting_center'
+                    && (int) $manifest->destination_id === (int) $center->id,
+                    409, 'This batch is already assigned to another route.');
+                $manifest->shipments()->syncWithoutDetaching([$shipment->id => [
+                    'load_status' => 'loaded',
+                    'loaded_at' => now(),
+                    'loaded_by' => $request->user()->id,
+                    'received_at' => null,
+                    'received_by' => null,
+                ]]);
+                $shipment->forceFill([
+                    'logistics_branch_id' => $center->id,
+                    'logistics_delivery_hub_id' => null,
+                    'return_to_seller_status' => 'in_transit_to_sorting_center',
+                    'current_location' => $location,
+                    'location_updated_at' => now(),
+                ])->save();
+                $shipment->scans()->create([
+                    'status' => 'In Transit to Sorting Center for Seller Return',
+                    'location' => $location,
+                    'scanned_at' => now(),
+                ]);
+                LogisticsTransferManifestEvent::query()->create([
+                    'transfer_manifest_id' => $manifest->id,
+                    'shipment_id' => $shipment->id,
+                    'actor_user_id' => $request->user()->id,
+                    'event_type' => 'failed_delivery_return_dispatched',
+                    'occurred_at' => now(),
+                ]);
+
+                return [
+                    'tracking' => $shipment->tracking_number,
+                    'status' => 'in_transit_to_sorting_center',
+                    'manifest_id' => $manifest->id,
+                    'destination' => $center->name,
+                    'current_location' => $location,
+                ];
+            }
+
+            $center = LogisticsBranch::query()
+                ->where('user_id', $request->user()->id)
+                ->whereNull('archived_at')
+                ->firstOrFail();
+            $location = $center->name.' · '.$center->province;
+
+            if ($input['action'] === 'receive') {
+                abort_unless($shipment->return_to_seller_status === 'in_transit_to_sorting_center'
+                    && (int) $shipment->logistics_branch_id === (int) $center->id
+                    && $shipment->logistics_delivery_hub_id === null,
+                    409, 'This failed-delivery return is not arriving at this Sorting Center.');
+                $manifest = $this->receiveFailedDeliveryReturnManifest($request, $shipment, 'sorting_center', $center->id);
+                $nextStatus = $this->same($center->province, $sellerProvince)
+                    ? 'at_sorting_center'
+                    : 'at_intermediate_sorting_center';
+                $shipment->forceFill([
+                    'return_to_seller_status' => $nextStatus,
+                    'current_location' => $location,
+                    'location_updated_at' => now(),
+                ])->save();
+                $shipment->scans()->create([
+                    'status' => 'Received at Sorting Center for Seller Return',
+                    'location' => $location,
+                    'scanned_at' => now(),
+                ]);
+
+                return [
+                    'tracking' => $shipment->tracking_number,
+                    'status' => $nextStatus,
+                    'manifest_id' => $manifest->id,
+                    'current_location' => $location,
+                ];
+            }
+
+            abort_unless(in_array($shipment->return_to_seller_status, [
+                'at_sorting_center',
+                'at_intermediate_sorting_center',
+                'staged_for_return_dispatch',
+            ], true)
+                && (int) $shipment->logistics_branch_id === (int) $center->id,
+                409, 'Receive-scan this failed-delivery return at the current Sorting Center before departure.');
+            $inbound = LogisticsTransferManifest::query()
+                ->where('destination_type', 'sorting_center')
+                ->where('destination_id', $center->id)
+                ->where('status', 'arrived')
+                ->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id))
+                ->latest('id')
+                ->first();
+            abort_unless($inbound, 409, 'This return has not been received at this Sorting Center.');
+
+            if ($this->same($center->province, $sellerProvince)) {
+                $hub = LogisticsDeliveryHub::query()->where('status', 'active')->whereNull('archived_at')
+                    ->where('logistics_branch_id', $center->id)
+                    ->whereRaw('LOWER(municipality) = ?', [mb_strtolower($sellerMunicipality)])->first();
+                abort_unless($hub, 422, 'No active seller delivery hub is configured for this municipality.');
+                $destinationType = 'delivery_hub';
+                $destinationId = $hub->id;
+                $destinationName = $hub->hub_name;
+            } else {
+                $nextCenter = $this->nextBranchToward($center, $sellerProvince);
+                abort_unless($nextCenter && $nextCenter->id !== $center->id, 422,
+                    'No next Sorting Center is configured toward the seller province.');
+                $destinationType = 'sorting_center';
+                $destinationId = $nextCenter->id;
+                $destinationName = $nextCenter->name;
+            }
+
+            $batchKey = trim((string) ($input['batch_key'] ?? ''))
+                ?: 'failed-delivery-return-sc-'.$center->id.'-'.$shipment->id;
+            $outbound = LogisticsTransferManifest::query()->where('batch_key', $batchKey)->lockForUpdate()->first();
+            if (empty($input['courier_registration_id']) || empty($input['vehicle_id'])) {
+                if (! $outbound) {
+                    $outbound = LogisticsTransferManifest::query()->create([
+                        'batch_key' => substr($batchKey, 0, 100),
+                        'origin_type' => 'sorting_center',
+                        'origin_id' => $center->id,
+                        'destination_type' => $destinationType,
+                        'destination_id' => $destinationId,
+                        'status' => 'preparing',
+                    ]);
+                }
+                abort_unless($outbound->origin_type === 'sorting_center'
+                    && (int) $outbound->origin_id === (int) $center->id
+                    && $outbound->destination_type === $destinationType
+                    && (int) $outbound->destination_id === (int) $destinationId,
+                    409, 'This return is staged for a different route.');
+                $outbound->shipments()->syncWithoutDetaching([$shipment->id => ['load_status' => 'pending']]);
+                $shipment->update(['return_to_seller_status' => 'staged_for_return_dispatch']);
+                $shipment->scans()->create([
+                    'status' => 'Seller Return Departure Staged',
+                    'location' => $location,
+                    'scanned_at' => now(),
+                ]);
+
+                return [
+                    'tracking' => $shipment->tracking_number,
+                    'status' => 'staged_for_return_dispatch',
+                    'manifest_id' => $outbound->id,
+                    'destination' => $destinationName,
+                    'current_location' => $location,
+                ];
+            }
+
+            abort_unless(! empty($input['scheduled_at']), 422, 'Choose a scheduled dispatch date and time.');
+            $returningTrip = null;
+            $courier = null;
+            $vehicle = null;
+            if (! empty($input['returning_manifest_id'])) {
+                $returningTrip = LogisticsTransferManifest::query()->lockForUpdate()->findOrFail($input['returning_manifest_id']);
+                abort_unless($returningTrip->status === 'arrived'
+                    && $returningTrip->destination_type === 'sorting_center'
+                    && (int) $returningTrip->destination_id === (int) $center->id,
+                    422, 'The selected inbound truck has not arrived at this Sorting Center.');
+                abort_unless($returningTrip->origin_type === $destinationType
+                    && (int) $returningTrip->origin_id === (int) $destinationId,
+                    422, 'Return cargo must be routed back to the inbound truck’s originating facility.');
+                abort_if(LogisticsTransferManifest::query()
+                    ->where('returning_manifest_id', $returningTrip->id)
+                    ->where('batch_key', '!=', $batchKey)
+                    ->exists(), 409, 'This truck already has a return cargo assignment.');
+            } else {
+                $courierId = (int) $input['courier_registration_id'];
+                $vehicleId = (int) $input['vehicle_id'];
+                [$courier, $vehicle] = $this->validatedReturnTransport($center->id, $courierId, $vehicleId);
+                $this->assertReturnTransportAvailable($courierId, $vehicleId, $input['scheduled_at'], $batchKey);
+            }
+
+            $outbound ??= LogisticsTransferManifest::query()->create([
+                'batch_key' => substr($batchKey, 0, 100),
+                'origin_type' => 'sorting_center',
+                'origin_id' => $center->id,
+                'destination_type' => $destinationType,
+                'destination_id' => $destinationId,
+                'status' => 'preparing',
+            ]);
+            abort_unless($outbound->origin_type === 'sorting_center'
+                && (int) $outbound->origin_id === (int) $center->id
+                && $outbound->destination_type === $destinationType
+                && (int) $outbound->destination_id === (int) $destinationId,
+                409, 'This return is staged for a different route.');
+            $outbound->update([
+                'courier_registration_id' => $returningTrip?->courier_registration_id ?? $courier?->id,
+                'vehicle_id' => $returningTrip?->vehicle_id ?? $vehicle?->id,
+                'courier_name' => $returningTrip?->courier_name
+                    ?? trim(implode(' ', array_filter([$courier?->first_name, $courier?->last_name]))),
+                'vehicle_reference' => $returningTrip?->vehicle_reference ?? $vehicle?->plate_number,
+                'returning_manifest_id' => $returningTrip?->id,
+                'scheduled_at' => $input['scheduled_at'],
+                'status' => 'loaded',
+                'loaded_at' => now(),
+                'departed_at' => now(),
+            ]);
+            $outbound->shipments()->syncWithoutDetaching([$shipment->id => [
+                'load_status' => 'loaded',
+                'loaded_at' => now(),
+                'loaded_by' => $request->user()->id,
+                'received_at' => null,
+                'received_by' => null,
+            ]]);
+            $nextStatus = $destinationType === 'delivery_hub'
+                ? 'in_transit_to_seller_hub'
+                : 'in_transit_to_sorting_center';
+            $shipment->forceFill([
+                'logistics_branch_id' => $destinationType === 'sorting_center' ? $destinationId : $center->id,
+                'logistics_delivery_hub_id' => $destinationType === 'delivery_hub' ? $destinationId : null,
+                'return_to_seller_status' => $nextStatus,
+                'current_location' => $location,
+                'location_updated_at' => now(),
+            ])->save();
+            $shipment->scans()->create([
+                'status' => $destinationType === 'delivery_hub'
+                    ? 'In Transit to Seller Delivery Hub'
+                    : 'In Transit to Sorting Center for Seller Return',
+                'location' => $location,
+                'scanned_at' => now(),
+            ]);
+            LogisticsTransferManifestEvent::query()->create([
+                'transfer_manifest_id' => $outbound->id,
+                'shipment_id' => $shipment->id,
+                'actor_user_id' => $request->user()->id,
+                'event_type' => 'failed_delivery_return_dispatched',
+                'occurred_at' => now(),
+            ]);
+
+            return [
+                'tracking' => $shipment->tracking_number,
+                'status' => $nextStatus,
+                'manifest_id' => $outbound->id,
+                'destination' => $destinationName,
+                'current_location' => $location,
+            ];
+        });
+
+        return response()->json([
+            'message' => $input['action'] === 'receive'
+                ? 'Failed-delivery return received at the facility.'
+                : match ($result['status']) {
+                    'at_seller_hub' => 'Return parcel is ready for delivery to the seller.',
+                    'out_for_delivery_to_seller' => 'Return parcel is out for delivery to the seller. No cash collection is required.',
+                    'staged_for_return_dispatch' => 'Return parcel staged for Loading.',
+                    default => 'Failed-delivery return routed to '.$result['destination'].'.',
+                },
+            'return' => $result,
+            'shipment' => [
+                'id' => $candidate->id,
+                'tracking' => $candidate->tracking_number,
+                'order_status' => 'cancelled',
+                'current_location' => $result['current_location'] ?? null,
+            ],
+        ]);
+    }
+
+    private function receiveFailedDeliveryReturnManifest(
+        Request $request,
+        Shipment $shipment,
+        string $facility,
+        int $facilityId,
+    ): LogisticsTransferManifest {
+        $manifest = LogisticsTransferManifest::query()
+            ->where('destination_type', $facility)
+            ->where('destination_id', $facilityId)
+            ->where('status', 'loaded')
+            ->whereHas('shipments', fn ($query) => $query
+                ->whereKey($shipment->id)
+                ->where('logistics_transfer_manifest_shipments.load_status', 'loaded')
+                ->whereNull('logistics_transfer_manifest_shipments.received_at'))
+            ->latest('id')
+            ->lockForUpdate()
+            ->firstOrFail();
+        $manifest->shipments()->updateExistingPivot($shipment->id, [
+            'load_status' => 'loaded',
+            'loaded_at' => $manifest->loaded_at ?? now(),
+            'received_at' => now(),
+            'received_by' => $request->user()->id,
+        ]);
+        LogisticsTransferManifestEvent::query()->create([
+            'transfer_manifest_id' => $manifest->id,
+            'shipment_id' => $shipment->id,
+            'actor_user_id' => $request->user()->id,
+            'event_type' => 'failed_delivery_return_received',
+            'occurred_at' => now(),
+        ]);
+        if (! $manifest->shipments()
+            ->wherePivot('load_status', 'loaded')
+            ->wherePivotNull('received_at')
+            ->exists()) {
+            $manifest->update(['status' => 'arrived', 'arrived_at' => now()]);
+        }
+
+        return $manifest;
+    }
+
+    private function validatedReturnTransport(int $centerId, int $courierId, int $vehicleId): array
+    {
+        $courier = CourierRegistration::query()
+            ->where('sorting_center_id', $centerId)
+            ->where('status', 'approved')
+            ->lockForUpdate()
+            ->find($courierId);
+        $vehicle = SortingCenterVehicle::query()
+            ->where('sorting_center_id', $centerId)
+            ->lockForUpdate()
+            ->find($vehicleId);
+        abort_unless($courier && $vehicle
+            && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number),
+            422, 'Select an approved Sorting Center courier and their registered vehicle.');
+        abort_unless(mb_strtolower((string) $vehicle->availability) === 'available',
+            422, 'The assigned truck is not available.');
+
+        return [$courier, $vehicle];
+    }
+
+    private function assertReturnTransportAvailable(
+        int $courierId,
+        int $vehicleId,
+        string $scheduledAt,
+        ?string $batchKey = null,
+    ): void {
+        abort_if(LogisticsTransferManifest::query()
+            ->whereIn('status', ['preparing', 'loaded'])
+            ->when($batchKey !== null, fn ($query) => $query->where(fn ($notThisBatch) =>
+                $notThisBatch->whereNull('batch_key')->orWhere('batch_key', '!=', $batchKey)))
+            ->where(fn ($query) => $query
+                ->where('courier_registration_id', $courierId)
+                ->orWhere('vehicle_id', $vehicleId))
+            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhere('scheduled_at', $scheduledAt))
+            ->exists(), 409, 'This courier or vehicle is already on another active trip.');
     }
 
     private function returnForScan(string $code): ?OrderReturn
@@ -722,10 +1222,16 @@ class ParcelRouteScanController extends Controller
                     : (int) $shipment->logistics_branch_id === (int) $id && $shipment->logistics_delivery_hub_id === null;
                 if (! $isAtFacility) continue;
                 $received = $shipment->pivot->received_at !== null;
-                $parcelId = $transfer->order_return_id ? 'return-'.$transfer->order_return_id : 'shipment-'.$shipment->id;
+                $isFailedDeliveryReturn = ! $transfer->order_return_id
+                    && in_array($shipment->return_to_seller_status, self::FAILED_DELIVERY_RETURN_STATUSES, true);
+                $parcelId = $transfer->order_return_id
+                    ? 'return-'.$transfer->order_return_id
+                    : ($isFailedDeliveryReturn ? 'failed-delivery-return-'.$shipment->order_id : 'shipment-'.$shipment->id);
                 $members[] = $parcelId;
                 $parcelStatus = $shipment->order?->status === 'out_for_delivery' ? 'out-for-delivery' : ($received ? 'received' : 'incoming');
-                $payload = $this->parcelPayload($shipment, $parcelId, $parcelStatus, $facility === 'sorting_center' ? $id : null, $transfer->id);
+                $payload = $isFailedDeliveryReturn
+                    ? $this->failedDeliveryReturnPayload($shipment, $parcelId, $parcelStatus, $facility === 'sorting_center' ? $id : null, $transfer->id)
+                    : $this->parcelPayload($shipment, $parcelId, $parcelStatus, $facility === 'sorting_center' ? $id : null, $transfer->id);
                 $payload['receivedAt'] = $shipment->pivot->received_at
                     ? \Illuminate\Support\Carbon::parse($shipment->pivot->received_at)->toISOString()
                     : null;
@@ -802,12 +1308,20 @@ class ParcelRouteScanController extends Controller
                     $payload['returnAtSellerHub'] = $facility === 'delivery_hub'
                         && $transfer->destination_type === 'delivery_hub';
                 }
+                if ($isFailedDeliveryReturn) {
+                    $payload['returnAtSellerHub'] = $facility === 'delivery_hub'
+                        && $shipment->return_to_seller_status === 'at_seller_hub';
+                }
                 $parcels[] = $payload;
             }
             if ($members) {
                 $manifests[] = [
                     'id' => (string) $transfer->id,
-                    'sourceType' => $transfer->origin_type === 'sorting_center' ? 'sorting' : 'collection',
+                    'sourceType' => match ($transfer->origin_type) {
+                        'sorting_center' => 'sorting',
+                        'rider_return' => 'return',
+                        default => 'collection',
+                    },
                     'originName' => $transfer->origin_type === 'seller_collection'
                         ? (collect([
                             $transfer->shipments->first()?->order?->seller?->store_name
@@ -1158,40 +1672,50 @@ class ParcelRouteScanController extends Controller
         // assignment until the buyer confirms delivery.
         $lastMileDepartures = $facility === 'delivery_hub'
             ? Shipment::query()
-                ->with(['order.buyer.buyerProfile', 'rider'])
+                ->with(['order.buyer.buyerProfile', 'order.seller', 'rider'])
                 ->where('logistics_delivery_hub_id', $id)
-                ->whereHas('order', fn ($query) => $query->where('status', 'out_for_delivery'))
+                ->where(function ($query): void {
+                    $query->whereHas('order', fn ($order) => $order->where('status', 'out_for_delivery'))
+                        ->orWhere(fn ($return) => $return->where('return_to_seller_status', 'out_for_delivery_to_seller')
+                            ->whereHas('order', fn ($order) => $order->where('status', 'cancelled')));
+                })
                 ->whereHas('scans', fn ($query) => $query
-                    ->where('status', 'Out for Delivery')
+                    ->whereIn('status', ['Out for Delivery', 'Out for Delivery to Seller'])
                     ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province))
                 ->get()
                 ->map(function (Shipment $shipment) use ($node, $id): array {
                     $order = $shipment->order;
+                    $isReturn = $shipment->return_to_seller_status === 'out_for_delivery_to_seller';
+                    $seller = $order?->seller;
                     $buyer = $order?->buyer?->buyerProfile;
-                    $recipient = trim((string) $order?->delivery_name)
-                        ?: trim(implode(' ', array_filter([$buyer?->first_name, $buyer?->last_name])))
-                        ?: 'Buyer';
-                    $rider = $shipment->rider;
+                    $recipient = $isReturn
+                        ? ($seller?->store_name ?: trim(($seller?->first_name ?? '').' '.($seller?->last_name ?? '')))
+                        : (trim((string) $order?->delivery_name)
+                            ?: trim(implode(' ', array_filter([$buyer?->first_name, $buyer?->last_name])))
+                            ?: 'Buyer');
+                    $address = $isReturn
+                        ? collect([$seller?->house_number, $seller?->street, $seller?->barangay, $seller?->municipality, $seller?->province])->filter()->implode(', ')
+                        : $order?->delivery_address;
                     $departureScan = $shipment->scans()
-                        ->where('status', 'Out for Delivery')
+                        ->where('status', $isReturn ? 'Out for Delivery to Seller' : 'Out for Delivery')
                         ->where('location', $node->hub_name.' · '.$node->municipality.', '.$node->province)
                         ->latest('scanned_at')->first();
 
                     return [
-                        'id' => 'last-mile-'.$shipment->id,
+                        'id' => $isReturn ? 'failed-delivery-return-'.$shipment->order_id : 'last-mile-'.$shipment->id,
                         'manifestId' => null,
-                        'sourceType' => 'out-for-delivery',
+                        'sourceType' => $isReturn ? 'return-delivery' : 'out-for-delivery',
                         'originCenterId' => (string) $id,
                         'originName' => $node->hub_name,
-                        'destination' => $recipient.' · '.($order?->delivery_address ?: 'Buyer address unavailable'),
-                        'destinationType' => 'buyer',
+                        'destination' => $recipient.' · '.($address ?: 'Destination address unavailable'),
+                        'destinationType' => $isReturn ? 'seller' : 'buyer',
                         'destinationId' => (string) $order?->id,
-                        'courierName' => trim(implode(' ', array_filter([$rider?->first_name, $rider?->last_name]))) ?: $rider?->user?->name,
-                        'truckId' => collect([$rider?->vehicle, $rider?->plate_number])->filter()->implode(' · '),
+                        'courierName' => trim(implode(' ', array_filter([$shipment->rider?->first_name, $shipment->rider?->last_name]))) ?: $shipment->rider?->user?->name,
+                        'truckId' => collect([$shipment->rider?->vehicle, $shipment->rider?->plate_number])->filter()->implode(' · '),
                         'createdAt' => $departureScan?->scanned_at?->toISOString() ?? $shipment->location_updated_at?->toISOString(),
                         'status' => 'out_for_delivery',
                         'arrivedAt' => null,
-                        'parcelIds' => ['shipment-'.$shipment->id],
+                        'parcelIds' => [$isReturn ? 'failed-delivery-return-'.$shipment->order_id : 'shipment-'.$shipment->id],
                         'trackingNumbers' => [(string) $shipment->tracking_number],
                     ];
                 })->values()
@@ -1232,7 +1756,11 @@ class ParcelRouteScanController extends Controller
                         'truckId' => $transfer->vehicle_reference,
                         'createdAt' => $transfer->created_at?->toISOString(),
                         'status' => $transfer->courier_registration_id ? 'loaded' : 'preparing',
-                        'parcelIds' => $transfer->shipments->map(fn (Shipment $shipment): string => 'shipment-'.$shipment->id)->values(),
+                        'parcelIds' => $transfer->shipments->map(fn (Shipment $shipment): string => $transfer->order_return_id
+                            ? 'return-'.$transfer->order_return_id
+                            : (in_array($shipment->return_to_seller_status, self::FAILED_DELIVERY_RETURN_STATUSES, true)
+                                ? 'failed-delivery-return-'.$shipment->order_id
+                                : 'shipment-'.$shipment->id))->values(),
                         'parcels' => $transfer->shipments->map(function (Shipment $shipment) use ($id, $transfer, $nextStop): array {
                             $inboundId = $shipment->transferManifests()
                                 ->where('destination_type', 'sorting_center')
@@ -1240,9 +1768,16 @@ class ParcelRouteScanController extends Controller
                                 ->wherePivotNotNull('received_at')
                                 ->latest('logistics_transfer_manifests.id')
                                 ->value('logistics_transfer_manifests.id');
+                            $isFailedDeliveryReturn = ! $transfer->order_return_id
+                                && in_array($shipment->return_to_seller_status, self::FAILED_DELIVERY_RETURN_STATUSES, true);
+                            $parcelId = $transfer->order_return_id
+                                ? 'return-'.$transfer->order_return_id
+                                : ($isFailedDeliveryReturn ? 'failed-delivery-return-'.$shipment->order_id : 'shipment-'.$shipment->id);
                             $payload = $transfer->order_return_id && $transfer->orderReturn
                                 ? $this->returnTransferPayload($transfer->orderReturn, $shipment, $transfer, true)
-                                : $this->parcelPayload($shipment, 'shipment-'.$shipment->id, $transfer->courier_registration_id ? 'loaded' : 'staged', $id, $transfer->id);
+                                : ($isFailedDeliveryReturn
+                                    ? $this->failedDeliveryReturnPayload($shipment, $parcelId, $transfer->courier_registration_id ? 'loaded' : 'staged', $id, $transfer->id)
+                                    : $this->parcelPayload($shipment, $parcelId, $transfer->courier_registration_id ? 'loaded' : 'staged', $id, $transfer->id));
                             $payload['currentCenterId'] = (string) $id;
                             $payload['status'] = $transfer->courier_registration_id ? 'loaded' : 'staged';
                             $payload['nextCenterId'] = $transfer->destination_type === 'sorting_center' && ! $transfer->courier_registration_id
@@ -1415,6 +1950,44 @@ class ParcelRouteScanController extends Controller
         ];
     }
 
+    private function failedDeliveryReturnPayload(
+        Shipment $shipment,
+        string $id,
+        string $status,
+        ?int $centerId,
+        int|string $transferId,
+    ): array {
+        $payload = $this->parcelPayload($shipment, $id, $status, $centerId, $transferId);
+        $seller = $shipment->order?->seller;
+
+        return array_replace($payload, [
+            'kind' => 'return',
+            'isReturn' => true,
+            'parcelType' => 'failed_delivery_return',
+            'return_type' => 'failed_delivery',
+            'failed_delivery_return' => true,
+            'return_to_seller_status' => $shipment->return_to_seller_status,
+            'returnAtSellerHub' => $shipment->return_to_seller_status === 'at_seller_hub',
+            'delivery_rider_id' => $shipment->return_to_seller_status === 'out_for_delivery_to_seller'
+                ? $shipment->rider_id
+                : null,
+            'destProvince' => $seller?->province,
+            'destCity' => $seller?->municipality,
+            'destBarangay' => $seller?->barangay,
+            'barangay' => $seller?->barangay ?: 'Seller barangay unavailable',
+            'total_amount' => 0,
+            'payment_method' => 'No cash collection',
+            'notes' => 'Failed delivery return to seller. No refund and no cash collection.',
+            'loadedFromName' => 'Failed-delivery return to seller',
+            'history' => $shipment->scans()->oldest('scanned_at')->get()
+                ->map(fn ($scan): array => [
+                    'status' => $scan->status,
+                    'date' => $scan->scanned_at?->toISOString(),
+                    'location' => $scan->location,
+                ])->values(),
+        ]);
+    }
+
     private function parcelPayload(Shipment $shipment, string $id, string $status, ?int $centerId, int|string $transferId): array
     {
         $shipment->loadMissing('rider.user');
@@ -1476,6 +2049,14 @@ class ParcelRouteScanController extends Controller
     private function facilityName(string $type, int $id): string
     {
         if ($type === 'seller_collection') return 'Seller Barangay Collection';
+        if ($type === 'rider_return') {
+            $rider = Rider::query()->with('user')->find($id);
+
+            return $rider
+                ? 'Rider '.(trim($rider->first_name.' '.$rider->last_name) ?: $rider->user?->name)
+                : 'Returning Rider';
+        }
+
         return $type === 'delivery_hub'
             ? (string) (LogisticsDeliveryHub::query()->whereKey($id)->value('hub_name') ?? 'Delivery Hub')
             : (string) (LogisticsBranch::query()->whereKey($id)->value('name') ?? 'Sorting Center');

@@ -32,6 +32,7 @@ class RiderDeliveryService
             'seller:id,store_name,contact_no,province,municipality,barangay,street,house_number,building,subdivision',
             'items:id,order_id,product_name,quantity',
             'shipment.rider.user:id,name',
+            'shipment.deliveryHub',
             'deliveryProofs' => fn ($query) => $query->latest()->limit(10),
         ];
     }

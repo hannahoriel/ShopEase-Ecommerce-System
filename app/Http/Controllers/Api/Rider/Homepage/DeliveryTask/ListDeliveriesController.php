@@ -32,8 +32,11 @@ class ListDeliveriesController extends Controller
                 $query->whereIn('status', $isPickup
                     ? ['to_ship', 'in_transit']
                     : ['in_transit', 'out_for_delivery', 'delivered']);
-                $query->orWhere(fn ($returned) => $returned->where('status', 'cancelled')
-                    ->whereHas('shipment', fn ($shipment) => $shipment->where('return_to_seller_status', 'pending')));
+                if (! $isPickup) {
+                    $query->orWhere(fn ($returned) => $returned->where('status', 'cancelled')
+                        ->whereHas('shipment', fn ($shipment) => $shipment
+                            ->whereIn('return_to_seller_status', ['pending', 'out_for_delivery_to_seller'])));
+                }
             })
             ->withCount('deliveryAttempts')
             ->with($deliveries->deliveryRelations())
@@ -74,10 +77,55 @@ class ListDeliveriesController extends Controller
             'task_type' => $isPickup ? 'pickup' : 'delivery',
             'task_label' => $isPickup ? 'For Pickup' : 'Delivery',
             'data' => $orders->map(function (Order $order) use ($deliveries, $isPickup): array {
-                return [...$deliveries->serializeDelivery($order),
+                $serialized = $deliveries->serializeDelivery($order);
+                $returnStatus = $order->shipment?->return_to_seller_status;
+                if (! $isPickup && in_array($returnStatus, ['pending', 'out_for_delivery_to_seller'], true)) {
+                    $seller = $order->seller;
+                    $address = collect([
+                        $seller?->house_number,
+                        $seller?->street,
+                        $seller?->building,
+                        $seller?->subdivision,
+                        $seller?->barangay,
+                        $seller?->municipality,
+                        $seller?->province,
+                    ])->filter()->implode(', ');
+                    $sellerName = $seller?->store_name
+                        ?: trim(($seller?->first_name ?? '').' '.($seller?->last_name ?? ''));
+                    $isOutForDelivery = $returnStatus === 'out_for_delivery_to_seller';
+                    $returnHub = $order->shipment?->deliveryHub;
+                    $hubAddress = collect([
+                        $returnHub?->street,
+                        $returnHub?->barangay,
+                        $returnHub?->municipality,
+                        $returnHub?->province,
+                    ])->filter()->implode(', ');
+
+                    return array_replace($serialized, [
+                        'status' => $isOutForDelivery ? 'out_for_delivery' : 'cancelled',
+                        'task_type' => 'seller_return',
+                        'task_label' => $isOutForDelivery ? 'Return to Seller' : 'Return to Delivery Hub',
+                        'delivery_name' => $isOutForDelivery ? $sellerName : $returnHub?->hub_name,
+                        'delivery_phone' => $isOutForDelivery ? $seller?->contact_no : $returnHub?->manager_phone,
+                        'delivery_address' => $isOutForDelivery ? $address : $hubAddress,
+                        'contact_name' => $isOutForDelivery ? $sellerName : $returnHub?->hub_name,
+                        'contact_phone' => $isOutForDelivery ? $seller?->contact_no : $returnHub?->manager_phone,
+                        'total' => 0,
+                        'payment_method' => 'No cash collection',
+                        'cod_collection_required' => false,
+                        'amount_to_collect' => 0,
+                        'return_to_seller' => $returnStatus,
+                        'return_to_hub_url' => route('rider.api.deliveries.return-to-seller', $order),
+                        'proof_url' => route('rider.api.deliveries.proof', $order),
+                        'scanned_code' => $order->order_number,
+                        'seller' => ['store_name' => $seller?->store_name],
+                    ]);
+                }
+
+                return array_replace($serialized, [
                     'task_type' => $isPickup ? 'pickup' : 'delivery',
                     'task_label' => $isPickup ? 'For Pickup' : 'Delivery',
-                ];
+                ]);
             })->concat($returnDeliveries)->values(),
         ]);
     }

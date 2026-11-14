@@ -46,6 +46,19 @@ class SubmitDeliveryProofController extends Controller
         $scannedIdentifier = is_string($scannedPath) && $scannedPath !== ''
             ? rawurldecode(basename($scannedPath))
             : $scannedCode;
+        if (! $pickupFlow) {
+            $failedDeliveryShipment = Shipment::query()->where('order_id', $order->id)->first();
+            if ($failedDeliveryShipment?->return_to_seller_status === 'out_for_delivery_to_seller'
+                && (int) $failedDeliveryShipment->rider_id === (int) $rider->id) {
+                return app(SubmitFailedDeliveryReturnProofController::class)(
+                    $request,
+                    $order,
+                    $rider,
+                    $deliveries,
+                );
+            }
+        }
+
         $assignedReturn = OrderReturn::query()
             ->where(function ($query) use ($order): void {
                 $query->where('order_id', $order->id)->orWhere('id', $order->id);

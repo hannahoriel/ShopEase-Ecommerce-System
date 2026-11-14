@@ -9,11 +9,12 @@ use App\Models\Admin\OrderStatusHistory;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Rider\DeliveryAttempt;
+use App\Models\Logistics\LogisticsDeliveryHub;
+use App\Models\Logistics\LogisticsTransferManifest;
+use App\Models\Logistics\LogisticsTransferManifestEvent;
 use App\Services\BuyerWalletService;
 use App\Services\CodSettlementService;
-use App\Services\OrderInventoryService;
 use App\Services\SellerNotificationService;
-use App\Services\SellerWalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -104,7 +105,7 @@ class RecordFailedDeliveryAttemptController extends Controller
         return response()->json(['data' => $result], $result['cancelled'] ? 200 : 201);
     }
 
-    public function completeReturn(Request $request, Order $order, RiderDeliveryService $deliveries, OrderInventoryService $inventory): JsonResponse
+    public function completeReturn(Request $request, Order $order, RiderDeliveryService $deliveries): JsonResponse
     {
         $rider = $deliveries->activeRiderFor($request->user());
         $validated = $request->validate([
@@ -119,7 +120,7 @@ class RecordFailedDeliveryAttemptController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($order, $rider, $code, $photoPath, $request, $inventory): void {
+            DB::transaction(function () use ($order, $rider, $code, $photoPath, $request): void {
                 $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
                 $shipment = Shipment::query()->where('order_id', $lockedOrder->id)->lockForUpdate()->firstOrFail();
                 abort_unless($shipment->rider_id === $rider->id, 404);
@@ -127,39 +128,88 @@ class RecordFailedDeliveryAttemptController extends Controller
                     409, 'This parcel is not awaiting seller return.');
                 abort_unless(in_array($code, [$lockedOrder->order_number, $shipment->tracking_number], true),
                     422, 'The scanned code does not match this parcel.');
+                abort_unless($rider->logistics_branch_id, 422,
+                    'This rider is not assigned to a logistics branch with a delivery hub.');
 
+                $hubQuery = LogisticsDeliveryHub::query()
+                    ->where('status', 'active')
+                    ->whereNull('archived_at')
+                    ->where('logistics_branch_id', $rider->logistics_branch_id);
+                if ($shipment->logistics_delivery_hub_id) {
+                    $hubQuery->whereKey($shipment->logistics_delivery_hub_id);
+                } else {
+                    $municipalHub = mb_strtolower(trim((string) $rider->municipal_hub));
+                    $municipality = mb_strtolower(trim((string) $rider->municipality));
+                    $hubQuery->where(function ($query) use ($municipalHub, $municipality): void {
+                        if ($municipalHub !== '') {
+                            $query->whereRaw('LOWER(hub_name) = ?', [$municipalHub])
+                                ->orWhereRaw('LOWER(municipality) = ?', [$municipalHub]);
+                        }
+                        if ($municipality !== '') {
+                            $query->orWhereRaw('LOWER(municipality) = ?', [$municipality]);
+                        }
+                    });
+                }
+                $hub = $hubQuery->first();
+                abort_unless($hub, 422, 'No active delivery hub is assigned for this rider return drop-off.');
+                abort_unless(! $rider->logistics_branch_id
+                    || (int) $hub->logistics_branch_id === (int) $rider->logistics_branch_id,
+                    409, 'This return parcel is assigned to a different logistics branch.');
+
+                $hubLocation = $hub->hub_name.' · '.$hub->municipality.', '.$hub->province;
+                $manifest = LogisticsTransferManifest::query()->create([
+                    'batch_key' => 'failed-delivery-return-'.$lockedOrder->id,
+                    'origin_type' => 'rider_return',
+                    'origin_id' => $rider->id,
+                    'destination_type' => 'delivery_hub',
+                    'destination_id' => $hub->id,
+                    'courier_name' => trim($rider->first_name.' '.$rider->last_name),
+                    'vehicle_reference' => trim(collect([$rider->vehicle, $rider->plate_number])->filter()->implode(' · ')),
+                    'status' => 'loaded',
+                    'loaded_at' => now(),
+                    'departed_at' => now(),
+                ]);
+                $manifest->shipments()->attach($shipment->id, [
+                    'load_status' => 'loaded',
+                    'loaded_at' => now(),
+                    'loaded_by' => $request->user()->id,
+                ]);
                 $shipment->forceFill([
-                    'return_to_seller_status' => 'completed',
-                    'returned_to_seller_at' => now(),
+                    'logistics_branch_id' => $hub->logistics_branch_id,
+                    'logistics_delivery_hub_id' => $hub->id,
+                    'return_to_seller_status' => 'return_to_hub',
                     'return_to_seller_proof_path' => $photoPath,
-                    'current_location' => 'Returned to seller',
+                    'current_location' => 'Rider drop-off · '.$hubLocation,
                     'location_updated_at' => now(),
                 ])->save();
-                $inventory->restoreOrder($lockedOrder);
+                $shipment->scans()->create([
+                    'status' => 'Rider Returned Parcel to Delivery Hub',
+                    'location' => $hubLocation,
+                    'scanned_at' => now(),
+                ]);
+                LogisticsTransferManifestEvent::query()->create([
+                    'transfer_manifest_id' => $manifest->id,
+                    'shipment_id' => $shipment->id,
+                    'actor_user_id' => $request->user()->id,
+                    'event_type' => 'failed_delivery_return_dropped_at_hub',
+                    'occurred_at' => now(),
+                ]);
                 OrderStatusHistory::query()->create([
                     'order_id' => $lockedOrder->id,
                     'from_status' => 'cancelled',
                     'to_status' => 'cancelled',
                     'changed_by' => $request->user()->id,
-                    'notes' => 'Parcel returned to seller after three unsuccessful delivery attempts.',
+                    'notes' => 'Rider dropped off the parcel at '.$hub->hub_name.' for hub-to-hub return routing to the seller.',
                 ]);
-                $seller = $lockedOrder->seller()->with('user')->first();
-                if ($seller) {
-                    app(SellerWalletService::class)->recordFailedDeliveryShipping($seller, $lockedOrder, $shipment);
-                }
-                if ($seller?->user) {
-                    app(SellerNotificationService::class)->send(
-                        $seller->user, 'order_updates', 'Returned parcel received',
-                        'The parcel for order '.$lockedOrder->order_number.' has been returned to your store. The product stock is restored, and the ₱'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2).' failed-delivery return shipping fee was recorded in your wallet.',
-                        '/seller/order-status',
-                    );
-                }
             });
         } catch (\Throwable $exception) {
             Storage::disk('local')->delete($photoPath);
             throw $exception;
         }
 
-        return response()->json(['message' => 'Parcel return to seller confirmed.']);
+        return response()->json([
+            'message' => 'Rider drop-off at the delivery hub is confirmed. The parcel will be routed to the seller; no cash is collected.',
+            'data' => ['return_to_seller' => 'return_to_hub'],
+        ]);
     }
 }

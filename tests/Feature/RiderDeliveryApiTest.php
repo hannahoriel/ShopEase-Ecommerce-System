@@ -3,14 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderItem;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\Buyer;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
+use App\Models\Logistics\CourierRegistration;
+use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\Rider\DeliveryProof;
 use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
+use App\Models\Seller\Product;
 use App\Models\User;
 use App\Services\SellerWalletService;
 use Illuminate\Support\Carbon;
@@ -27,12 +31,84 @@ class RiderDeliveryApiTest extends TestCase
     {
         Storage::fake('local');
         [$logisticsUser, $logistics, $branch] = $this->logistics('RTO Logistics');
+        $branch->update(['province' => 'Laguna']);
         [$riderUser, $rider] = $this->rider($branch);
         [$sellerUser, $seller] = $this->seller('RTO Seller');
+        $seller->update(['province' => 'Laguna', 'municipality' => 'Santa Cruz', 'barangay' => 'Bubukal']);
         $buyer = $this->buyer();
         $order = $this->order($seller, $buyer, 'out_for_delivery', $rider, $logistics);
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Returned product',
+            'price' => 100,
+            'stock_quantity' => 8,
+            'status' => 'active',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 2,
+            'unit_price' => 100,
+        ]);
         $shipment = $order->shipment()->firstOrFail();
-        $shipment->update(['logistics_branch_id' => $branch->id]);
+        $initialHub = LogisticsDeliveryHub::query()
+            ->where('logistics_branch_id', $branch->id)
+            ->where('hub_name', 'Calamba Delivery Hub')
+            ->firstOrFail();
+        $initialHubUser = User::factory()->create([
+            'role' => User::ROLE_DELIVERY_HUB,
+            'registration_status' => 'active',
+        ]);
+        $initialHub->update(['user_id' => $initialHubUser->id]);
+        $sellerHubUser = User::factory()->create([
+            'role' => User::ROLE_DELIVERY_HUB,
+            'registration_status' => 'active',
+        ]);
+        $sellerHub = LogisticsDeliveryHub::create([
+            'logistics_branch_id' => $branch->id,
+            'user_id' => $sellerHubUser->id,
+            'hub_name' => 'Santa Cruz Delivery Hub',
+            'province' => 'Laguna',
+            'municipality' => 'Santa Cruz',
+            'barangay' => 'Bubukal',
+            'postal_code' => '4009',
+            'street' => 'Main Street',
+            'manager_name' => 'Seller Hub Manager',
+            'manager_email' => 'santa-cruz.hub@example.test',
+            'manager_phone' => '09171112223',
+            'login_email' => 'santa-cruz.hub@example.test',
+            'status' => 'active',
+        ]);
+        $sellerRiderUser = User::factory()->create([
+            'role' => User::ROLE_RIDER,
+            'registration_status' => 'active',
+        ]);
+        $sellerRider = Rider::create([
+            'user_id' => $sellerRiderUser->id,
+            'logistics_branch_id' => $branch->id,
+            'municipal_hub' => $sellerHub->hub_name,
+            'logistics_operation' => 'delivery',
+            'last_name' => 'Return',
+            'first_name' => 'Rider',
+            'sex' => 'other',
+            'contact_no' => '09170000002',
+            'birthday' => '1990-01-01',
+            'age' => 36,
+            'province' => 'Laguna',
+            'municipality' => 'Santa Cruz',
+            'barangay' => 'Bubukal',
+            'assignment_barangay' => 'Bubukal',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'vehicle' => 'Motorcycle',
+            'plate_number' => 'RTO 1001',
+            'registration_status' => 'active',
+        ]);
+        $shipment->update([
+            'logistics_branch_id' => $branch->id,
+            'logistics_delivery_hub_id' => $initialHub->id,
+        ]);
 
         for ($attempt = 1; $attempt <= 3; $attempt++) {
             $response = $this->actingAs($riderUser)
@@ -52,20 +128,158 @@ class RiderDeliveryApiTest extends TestCase
         ]);
         $this->assertDatabaseMissing('rider_cod_collections', ['order_id' => $order->id]);
         $this->assertDatabaseMissing('cod_settlements', ['order_id' => $order->id]);
+        $this->assertDatabaseMissing('order_returns', ['order_id' => $order->id]);
         $this->assertDatabaseMissing('seller_wallet_transactions', [
             'seller_id' => $seller->id,
             'source_type' => 'failed_delivery',
             'source_id' => $order->id,
         ]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock_quantity' => 8]);
 
         $this->actingAs($riderUser)
             ->post('/api/v1/rider/deliveries/'.$order->id.'/return-to-seller', [
                 'scanned_code' => $order->order_number,
                 'proof_photo' => UploadedFile::fake()->image('seller-return.jpg'),
             ], ['Accept' => 'application/json'])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('data.return_to_seller', 'return_to_hub');
+
+        $this->assertDatabaseHas('shipments', ['id' => $shipment->id, 'return_to_seller_status' => 'return_to_hub']);
+        $this->assertDatabaseHas('logistics_transfer_manifests', [
+            'origin_type' => 'rider_return',
+            'destination_type' => 'delivery_hub',
+            'destination_id' => $initialHub->id,
+            'status' => 'loaded',
+        ]);
+        $this->assertDatabaseMissing('seller_wallet_transactions', [
+            'seller_id' => $seller->id,
+            'source_type' => 'failed_delivery',
+            'source_id' => $order->id,
+        ]);
+
+        $this->actingAs($initialHubUser)
+            ->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'receive',
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'at_delivery_hub');
+
+        $courier = CourierRegistration::create([
+            'sorting_center_id' => $branch->id,
+            'first_name' => 'Return',
+            'last_name' => 'Courier',
+            'email' => 'return-courier@example.test',
+            'phone' => '09170000003',
+            'vehicle' => 'Truck',
+            'plate_number' => 'RTO 2001',
+            'status' => 'approved',
+        ]);
+        $vehicle = SortingCenterVehicle::create([
+            'sorting_center_id' => $branch->id,
+            'name' => 'Return Truck',
+            'type' => 'Truck',
+            'plate_number' => 'RTO 2001',
+            'availability' => 'Available',
+            'driver_name' => 'Return Courier',
+        ]);
+        $dispatchTime = now()->addHour()->format('Y-m-d H:i:s');
+        $this->actingAs($initialHubUser)
+            ->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'depart',
+                'batch_key' => 'failed-delivery-return-hub-test',
+                'courier_registration_id' => $courier->id,
+                'vehicle_id' => $vehicle->id,
+                'courier_name' => 'Return Courier',
+                'vehicle_reference' => 'RTO 2001',
+                'scheduled_at' => $dispatchTime,
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'in_transit_to_sorting_center');
+
+        $centerUser = User::factory()->create([
+            'role' => User::ROLE_SORTING_CENTER,
+            'registration_status' => 'active',
+        ]);
+        $branch->update(['user_id' => $centerUser->id]);
+        $this->actingAs($centerUser)
+            ->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'receive',
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'at_sorting_center');
+
+        $this->actingAs($centerUser)
+            ->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'depart',
+                'batch_key' => 'failed-delivery-return-center-test',
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'staged_for_return_dispatch');
+        $this->actingAs($centerUser)
+            ->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'depart',
+                'batch_key' => 'failed-delivery-return-center-test',
+                'courier_registration_id' => $courier->id,
+                'vehicle_id' => $vehicle->id,
+                'scheduled_at' => now()->addHours(2)->format('Y-m-d H:i:s'),
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'in_transit_to_seller_hub');
+
+        $this->actingAs($sellerHubUser)
+            ->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'receive',
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'at_seller_hub');
+        $this->actingAs($sellerHubUser)
+            ->getJson('/api/v1/delivery_hub/scanner/queue')
+            ->assertOk()
+            ->assertJsonPath('parcels.0.failed_delivery_return', true)
+            ->assertJsonPath('parcels.0.total_amount', 0);
+        $this->actingAs($sellerHubUser)
+            ->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
+                'tracking' => $shipment->tracking_number,
+                'action' => 'depart',
+                'rider_id' => $sellerRider->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('return.status', 'out_for_delivery_to_seller');
+        $this->assertDatabaseMissing('seller_wallet_transactions', [
+            'seller_id' => $seller->id,
+            'source_type' => 'failed_delivery',
+            'source_id' => $order->id,
+        ]);
+
+        $this->actingAs($sellerRiderUser)
+            ->getJson('/api/v1/rider/deliveries')
+            ->assertOk()
+            ->assertJsonPath('data.0.task_type', 'seller_return')
+            ->assertJsonPath('data.0.task_label', 'Return to Seller')
+            ->assertJsonPath('data.0.total', 0)
+            ->assertJsonPath('data.0.cod_collection_required', false)
+            ->assertJsonPath('data.0.amount_to_collect', 0);
+        $this->actingAs($sellerRiderUser)
+            ->post('/api/v1/rider/deliveries/'.$order->id.'/proof', [
+                'status' => 'delivered',
+                'scanned_code' => $order->order_number,
+                'proof_photo' => UploadedFile::fake()->image('seller-handoff.jpg'),
+                'delivery_method' => 'handed_to_buyer',
+            ], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonPath('return_to_seller', 'completed')
+            ->assertJsonPath('cod_collection_required', false);
 
         $this->assertDatabaseHas('shipments', ['id' => $shipment->id, 'return_to_seller_status' => 'completed']);
+        $this->assertDatabaseMissing('rider_cod_collections', ['order_id' => $order->id]);
+        $this->assertDatabaseMissing('cod_settlements', ['order_id' => $order->id]);
+        $this->assertDatabaseMissing('order_returns', ['order_id' => $order->id]);
         $this->assertDatabaseHas('seller_wallet_transactions', [
             'seller_id' => $seller->id,
             'entry_type' => 'return_shipping',
@@ -73,6 +287,7 @@ class RiderDeliveryApiTest extends TestCase
             'source_id' => $order->id,
             'amount' => '-50.00',
         ]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock_quantity' => 10]);
 
         $wallet = app(SellerWalletService::class)->summary($seller);
         $this->assertEquals(-50, $wallet['balance']);

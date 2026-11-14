@@ -75,7 +75,8 @@ The Flutter rider app and the web logistics portal use the same Laravel database
 | Rider | `POST /api/v1/rider/deliveries/{order}/proof` | Submit required pickup or delivery proof; pickup and completion transitions are proof-gated. |
 | Rider | `PATCH /api/v1/rider/deliveries/{order}/status` | Advance only the supported no-proof transition (`in_transit` → `out_for_delivery`). |
 | Rider | `POST /api/v1/rider/deliveries/{order}/failed-attempts` | Record a failed attempt with a reason and proof photo; the third failure cancels the order and starts its return to the seller. |
-| Rider | `POST /api/v1/rider/deliveries/{order}/return-to-seller` | Confirm return handoff to the seller with the parcel code and proof photo. |
+| Rider | `POST /api/v1/rider/deliveries/{order}/return-to-seller` | Confirm rider drop-off at the delivery hub; the parcel is routed through sorting centers to the seller without a refund or cash collection. |
+| Rider and Logistics | Delivery-hub and Sorting Center parcel scanners; `POST /api/v1/rider/deliveries/{order}/proof` for the assigned seller-return task | Complete hub-to-hub routing and confirm the final seller handoff. Inventory and the seller-paid RTO shipping fee are applied only after seller handoff. |
 | Rider | `GET/PATCH /api/v1/rider/profile`, `GET/POST /api/v1/rider/attendance` | Read/update profile and clock in/out with a photo. |
 | Rider | `GET/POST /api/v1/rider/recipients`, `GET/POST /api/v1/rider/support-tickets` | Manage saved recipients and submit support tickets. |
 | Rider | `GET /api/v1/rider/finance`, `GET /api/v1/rider/earnings`, `POST /api/v1/rider/remittances` | View posted earnings and COD balances and submit remittances for review. |
