@@ -24,7 +24,10 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_path
-                    ? route('profile.photo.show', ['user' => $user->id])
+                    ? route('profile.photo.show', [
+                        'user' => $user->id,
+                        'v' => basename($user->profile_photo_path),
+                    ])
                     : null,
             ],
             'profile' => [
@@ -132,7 +135,10 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_path
-                    ? route('profile.photo.show', ['user' => $user->id])
+                    ? route('profile.photo.show', [
+                        'user' => $user->id,
+                        'v' => basename($user->profile_photo_path),
+                    ])
                     : null,
             ],
             'profile' => [
