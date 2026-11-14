@@ -90,6 +90,17 @@ class ParcelRouteFlowTest extends TestCase
             'courier_name' => 'Luzon Courier', 'vehicle_reference' => 'SC-LAG-001',
             'scheduled_at' => now()->addDay()->toDateTimeString(),
         ])->assertOk();
+        $this->actingAs($network['cebu_user'])->getJson('/api/v1/sorting_center/scanner/queue')
+            ->assertOk()
+            ->assertJsonPath('parcels.0.tracking', 'SHP-FLOW-0001')
+            ->assertJsonPath('parcels.0.status', 'incoming')
+            ->assertJsonPath('parcels.0.routeStatus', 'preparing')
+            ->assertJsonPath('manifests.0.status', 'preparing');
+        $this->actingAs($network['cebu_user'])->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
+            'tracking' => $shipment->tracking_number,
+            'action' => 'receive',
+        ])->assertStatus(409);
+
         $transfer = LogisticsTransferManifest::query()->where('batch_key', 'laguna-to-cebu')->firstOrFail();
         $this->actingAs($lagunaCourierUser)->postJson("/api/v1/courier/manifests/{$transfer->id}/departure")
             ->assertOk();
@@ -189,6 +200,13 @@ class ParcelRouteFlowTest extends TestCase
             'courier_name' => 'Visayas Courier', 'vehicle_reference' => 'SC-CEB-001',
             'scheduled_at' => now()->addDay()->toDateTimeString(),
         ])->assertOk();
+        $this->actingAs($network['buyer_hub_user'])->getJson('/api/v1/delivery_hub/scanner/queue')
+            ->assertOk()
+            ->assertJsonPath('parcels.0.tracking', 'SHP-FLOW-0001')
+            ->assertJsonPath('parcels.0.status', 'incoming')
+            ->assertJsonPath('parcels.0.routeStatus', 'preparing')
+            ->assertJsonPath('manifests.0.status', 'preparing');
+
         $buyerTrip = LogisticsTransferManifest::query()->where('batch_key', 'cebu-to-buyer-hub')->firstOrFail();
         $this->actingAs($cebuCourierUser)->postJson("/api/v1/courier/manifests/{$buyerTrip->id}/departure")
             ->assertOk();

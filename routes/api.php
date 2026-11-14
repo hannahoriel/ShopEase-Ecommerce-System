@@ -431,8 +431,6 @@ Route::prefix('v1')->group(function () {
                     Route::post('/finance/wallet-pin/verify', [DeliveryHubCodFinanceController::class, 'verifyWalletPin'])
                         ->middleware('throttle:10,15')->name('delivery_hub.api.finance.wallet-pin.verify');
                     Route::patch('/rider-remittances/{remittance}/review', [DeliveryHubCodFinanceController::class, 'review'])->name('delivery_hub.api.finance.remittances.review');
-                    Route::post('/rider-remittances/{remittance}/cash-in/otp', [DeliveryHubCodFinanceController::class, 'requestCashInOtp'])
-                        ->middleware('throttle:3,10')->name('delivery_hub.api.finance.remittances.cash-in.otp');
                     Route::post('/rider-remittances/{remittance}/cash-in', [DeliveryHubCodFinanceController::class, 'cashIn'])->name('delivery_hub.api.finance.remittances.cash-in');
                     Route::post('/rider-remittances/{remittance}/distribute', [DeliveryHubCodFinanceController::class, 'distribute'])->name('delivery_hub.api.finance.remittances.distribute');
                 }

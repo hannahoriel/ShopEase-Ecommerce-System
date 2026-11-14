@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\Logistics;
 
 use App\Http\Controllers\Controller;
-use App\Mail\DeliveryHubCashInOtp;
 use App\Models\Admin\Order;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Rider\Remittance;
@@ -13,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class DeliveryHubCodFinanceController extends Controller
@@ -239,28 +237,10 @@ class DeliveryHubCodFinanceController extends Controller
         abort_unless($remittance->status === 'verified', 409, 'Only verified remittances can be cashed in.');
         $result = DB::transaction(function () use ($request, $remittance, $hub, $settlements): array {
             $pinVerification = $this->walletPinVerification($request, $hub, true);
-            $otp = DB::table('hub_cash_in_otps')
-                ->where('delivery_hub_id', $hub->id)
-                ->where('remittance_id', $remittance->id)
-                ->where('requested_by', $request->user()->id)
-                ->whereNull('consumed_at')
-                ->where('expires_at', '>', now())
-                ->orderByDesc('id')
-                ->lockForUpdate()
-                ->first();
-            $submittedCode = trim((string) $request->input('otp_code', ''));
-            if (! $otp || $submittedCode === '' || ! Hash::check($submittedCode, $otp->code_hash)) {
-                throw ValidationException::withMessages([
-                    'otp_code' => ['Enter the latest valid cash-in verification code.'],
-                ]);
-            }
-
             $result = $settlements->cashIn($remittance, $hub->id, (int) $request->user()->id);
             DB::table('hub_wallet_pins')->where('delivery_hub_id', $hub->id)
                 ->where('verification_token_hash', $pinVerification->verification_token_hash)
                 ->update(['token_consumed_at' => now(), 'updated_at' => now()]);
-            DB::table('hub_cash_in_otps')->where('id', $otp->id)
-                ->update(['consumed_at' => now(), 'updated_at' => now()]);
             return ['data' => $result];
         });
         if (isset($result['error'])) {
@@ -268,50 +248,6 @@ class DeliveryHubCodFinanceController extends Controller
         }
         $result = $result['data'];
         return response()->json(['data' => $result, 'message' => 'Verified remittance cashed in.']);
-    }
-
-    public function requestCashInOtp(Request $request, Remittance $remittance): JsonResponse
-    {
-        $hub = $this->hub($request);
-        $this->walletPinVerification($request, $hub);
-        abort_unless($this->belongsToHub($remittance, $hub), 404);
-        abort_unless($remittance->status === 'verified' && abs((float) $remittance->discrepancy_amount) < 0.009, 409,
-            'Only verified remittances without discrepancies can be cashed in.');
-        $recipient = trim((string) $hub->manager_email);
-        abort_if($recipient === '' || ! filter_var($recipient, FILTER_VALIDATE_EMAIL), 422,
-            'Set a valid manager email on this delivery hub before requesting a cash-in code.');
-        $recent = DB::table('hub_cash_in_otps')->where('delivery_hub_id', $hub->id)
-            ->where('remittance_id', $remittance->id)->where('requested_by', $request->user()->id)
-            ->where('created_at', '>=', now()->subMinute())->exists();
-        abort_if($recent, 429, 'Wait one minute before requesting another code for this remittance.');
-
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $otpId = DB::table('hub_cash_in_otps')->insertGetId([
-            'delivery_hub_id' => $hub->id, 'remittance_id' => $remittance->id,
-            'requested_by' => $request->user()->id, 'recipient_email' => $recipient,
-            'code_hash' => Hash::make($code), 'expires_at' => now()->addMinutes(10),
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
-        DB::table('hub_cash_in_otps')->where('delivery_hub_id', $hub->id)
-            ->where('remittance_id', $remittance->id)->where('requested_by', $request->user()->id)
-            ->whereNull('consumed_at')->where('id', '!=', $otpId)
-            ->update(['consumed_at' => now(), 'updated_at' => now()]);
-
-        try {
-            Mail::to($recipient)->send(new DeliveryHubCashInOtp(
-                $hub->hub_name,
-                'HUB-REM-'.str_pad((string) $remittance->id, 8, '0', STR_PAD_LEFT),
-                number_format((float) $remittance->amount, 2),
-                $code,
-            ));
-        } catch (\Throwable $exception) {
-            DB::table('hub_cash_in_otps')->where('id', $otpId)->update(['consumed_at' => now(), 'updated_at' => now()]);
-            report($exception);
-            return response()->json(['message' => 'The verification email could not be sent. Check mail configuration and try again.'], 503);
-        }
-
-        return response()->json(['message' => 'A cash-in verification code was sent to the delivery hub manager email.',
-            'expires_in_seconds' => 600, 'resend_after_seconds' => 60]);
     }
 
     public function distribute(Request $request, Remittance $remittance, CodSettlementService $settlements): JsonResponse
