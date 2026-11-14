@@ -22,7 +22,7 @@
             'all' => 'All Transactions',
             'order_income' => 'Earnings',
             'refund' => 'Refunds',
-            'return_shipping' => 'Shipping',
+            'return_shipping' => 'Return & RTO Shipping',
             'voucher_discount' => 'Vouchers',
             'logistics_reimbursement' => 'Logistics Reimbursements',
         ];
@@ -51,7 +51,7 @@
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-green">↗</span> Completed Order Earnings</div><strong>₱{{ number_format($wallet['income'],2) }}</strong><span class="sw-stat-help">Product amounts from completed orders</span></article>
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-green">↗</span> Logistics Reimbursements</div><strong>₱{{ number_format($wallet['reimbursements'],2) }}</strong><span class="sw-stat-help">Lost or damaged parcel compensation</span></article>
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-red">↙</span> Buyer Refunds</div><strong>₱{{ number_format($wallet['refunds'],2) }}</strong><span class="sw-stat-help">Completed refund deductions</span></article>
-                <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-orange">⇄</span> Return Shipping</div><strong>₱{{ number_format($wallet['shipping'],2) }}</strong><span class="sw-stat-help">₱50 per completed physical return</span></article>
+                <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-orange">⇄</span> Return &amp; RTO Shipping</div><strong>₱{{ number_format($wallet['shipping'],2) }}</strong><span class="sw-stat-help">₱50 per completed physical return or failed-delivery RTO</span></article>
                 <article class="sw-stat"><div class="sw-stat-label"><span class="sw-symbol sw-purple">%</span> Seller Vouchers</div><strong>₱{{ number_format($wallet['vouchers'],2) }}</strong><span class="sw-stat-help">Redeemed seller-funded voucher costs</span></article>
             </div>
 

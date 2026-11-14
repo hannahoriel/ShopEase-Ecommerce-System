@@ -10,8 +10,10 @@ use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Rider\DeliveryAttempt;
 use App\Services\BuyerWalletService;
+use App\Services\CodSettlementService;
 use App\Services\OrderInventoryService;
 use App\Services\SellerNotificationService;
+use App\Services\SellerWalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +88,7 @@ class RecordFailedDeliveryAttemptController extends Controller
                     if ($seller?->user) {
                         app(SellerNotificationService::class)->send(
                             $seller->user, 'order_updates', 'Parcel returning to your store',
-                            'Order '.$lockedOrder->order_number.' was cancelled after three unsuccessful delivery attempts. The parcel is being returned to you.',
+                            'Order '.$lockedOrder->order_number.' was cancelled after three unsuccessful delivery attempts. The parcel is being returned to you. A ₱'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2).' failed-delivery return shipping fee will be recorded in your wallet once you receive the parcel.',
                             '/seller/order-status',
                         );
                     }
@@ -142,10 +144,13 @@ class RecordFailedDeliveryAttemptController extends Controller
                     'notes' => 'Parcel returned to seller after three unsuccessful delivery attempts.',
                 ]);
                 $seller = $lockedOrder->seller()->with('user')->first();
+                if ($seller) {
+                    app(SellerWalletService::class)->recordFailedDeliveryShipping($seller, $lockedOrder, $shipment);
+                }
                 if ($seller?->user) {
                     app(SellerNotificationService::class)->send(
                         $seller->user, 'order_updates', 'Returned parcel received',
-                        'The parcel for order '.$lockedOrder->order_number.' has been returned to your store. The product stock is restored.',
+                        'The parcel for order '.$lockedOrder->order_number.' has been returned to your store. The product stock is restored, and the ₱'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2).' failed-delivery return shipping fee was recorded in your wallet.',
                         '/seller/order-status',
                     );
                 }

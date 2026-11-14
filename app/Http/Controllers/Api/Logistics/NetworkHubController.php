@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class NetworkHubController extends Controller
 {
@@ -182,35 +183,43 @@ class NetworkHubController extends Controller
         $logistics = $this->logisticsFor($request->user());
         $branch = $this->ownedCenter($logistics, $center, archived: false);
         $validated = $this->validateHub($request, $branch);
-        $hub = DB::transaction(function () use ($request, $center, $validated): LogisticsDeliveryHub {
-            $logistics = $this->lockLogistics($request->user());
-            $branch = $this->ownedCenter($logistics, $center, archived: false);
-            $this->ensureHubIsUnique($logistics, $branch, $validated);
+        try {
+            $hub = DB::transaction(function () use ($request, $center, $validated): LogisticsDeliveryHub {
+                $logistics = $this->lockLogistics($request->user());
+                $branch = $this->ownedCenter($logistics, $center, archived: false);
+                $this->ensureHubIsUnique($logistics, $branch, $validated);
 
-            $password = $this->generateLoginPassword();
-            $hubUser = User::query()->create([
-                'name' => $validated['hub_name'],
-                'email' => mb_strtolower($validated['login_email']),
-                'password' => $password,
-                'must_change_password' => true,
-                'role' => User::ROLE_DELIVERY_HUB,
-                'email_verified_at' => now(),
-                'registration_status' => 'active',
-            ]);
+                $password = $this->generateLoginPassword();
+                $hubUser = User::query()->create([
+                    'name' => $validated['hub_name'],
+                    'email' => mb_strtolower($validated['login_email']),
+                    'password' => $password,
+                    'must_change_password' => true,
+                    'role' => User::ROLE_DELIVERY_HUB,
+                    'email_verified_at' => now(),
+                    'registration_status' => 'active',
+                ]);
 
-            $hub = $branch->deliveryHubs()->create([
-                ...$this->hubAttributes($validated, $branch),
-                'user_id' => $hubUser->id,
-            ]);
+                $hub = $branch->deliveryHubs()->create([
+                    ...$this->hubAttributes($validated, $branch),
+                    'user_id' => $hubUser->id,
+                ]);
 
-            Mail::to($hubUser->email)->send(new DeliveryHubCredentials(
-                hubName: $hub->hub_name,
-                email: $hubUser->email,
-                password: $password,
-            ));
+                Mail::to($hubUser->email)->send(new DeliveryHubCredentials(
+                    hubName: $hub->hub_name,
+                    email: $hubUser->email,
+                    password: $password,
+                ));
 
-            return $hub;
-        });
+                return $hub;
+            });
+        } catch (TransportExceptionInterface $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'Unable to send the delivery hub login credentials email. The delivery hub was not created. Check the SMTP configuration and retry.',
+            ], 503);
+        }
 
         return response()->json([
             'message' => 'Delivery hub created successfully.',

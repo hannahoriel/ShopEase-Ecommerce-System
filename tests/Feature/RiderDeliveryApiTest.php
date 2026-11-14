@@ -12,6 +12,7 @@ use App\Models\Rider\DeliveryProof;
 use App\Models\Rider\Rider;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\SellerWalletService;
 use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -21,6 +22,69 @@ use Tests\TestCase;
 class RiderDeliveryApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_failed_cod_delivery_returns_to_seller_and_charges_rto_shipping_without_commission(): void
+    {
+        Storage::fake('local');
+        [$logisticsUser, $logistics, $branch] = $this->logistics('RTO Logistics');
+        [$riderUser, $rider] = $this->rider($branch);
+        [$sellerUser, $seller] = $this->seller('RTO Seller');
+        $buyer = $this->buyer();
+        $order = $this->order($seller, $buyer, 'out_for_delivery', $rider, $logistics);
+        $shipment = $order->shipment()->firstOrFail();
+        $shipment->update(['logistics_branch_id' => $branch->id]);
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $response = $this->actingAs($riderUser)
+                ->post('/api/v1/rider/deliveries/'.$order->id.'/failed-attempts', [
+                    'reason' => 'Buyer unavailable',
+                    'proof_photo' => UploadedFile::fake()->image("failed-{$attempt}.jpg"),
+                ], ['Accept' => 'application/json']);
+            $response->assertStatus($attempt === 3 ? 200 : 201);
+        }
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'cancelled']);
+        $this->assertDatabaseHas('shipments', ['id' => $shipment->id, 'return_to_seller_status' => 'pending']);
+        $this->assertDatabaseHas('commission_transactions', [
+            'order_id' => $order->id,
+            'commission_amount' => '55.90',
+            'status' => 'reversed',
+        ]);
+        $this->assertDatabaseMissing('rider_cod_collections', ['order_id' => $order->id]);
+        $this->assertDatabaseMissing('cod_settlements', ['order_id' => $order->id]);
+        $this->assertDatabaseMissing('seller_wallet_transactions', [
+            'seller_id' => $seller->id,
+            'source_type' => 'failed_delivery',
+            'source_id' => $order->id,
+        ]);
+
+        $this->actingAs($riderUser)
+            ->post('/api/v1/rider/deliveries/'.$order->id.'/return-to-seller', [
+                'scanned_code' => $order->order_number,
+                'proof_photo' => UploadedFile::fake()->image('seller-return.jpg'),
+            ], ['Accept' => 'application/json'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('shipments', ['id' => $shipment->id, 'return_to_seller_status' => 'completed']);
+        $this->assertDatabaseHas('seller_wallet_transactions', [
+            'seller_id' => $seller->id,
+            'entry_type' => 'return_shipping',
+            'source_type' => 'failed_delivery',
+            'source_id' => $order->id,
+            'amount' => '-50.00',
+        ]);
+
+        $wallet = app(SellerWalletService::class)->summary($seller);
+        $this->assertEquals(-50, $wallet['balance']);
+        $this->assertEquals(50, $wallet['shipping']);
+
+        $this->actingAs($logisticsUser)
+            ->getJson('/logistics/api/earnings?from='.now()->toDateString().'&to='.now()->toDateString())
+            ->assertOk()
+            ->assertJsonPath('summary.gross', 50)
+            ->assertJsonPath('transactions.0.status', 'Seller-paid RTO')
+            ->assertJsonPath('transactions.0.amount', 50);
+    }
 
     public function test_logistics_assigns_a_delivery_and_rider_status_updates_reach_the_buyer_and_seller(): void
     {
