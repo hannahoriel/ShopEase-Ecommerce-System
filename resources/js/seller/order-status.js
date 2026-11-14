@@ -188,7 +188,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const createdAt = order.created_at ? new Date(order.created_at) : null;
             const pickupDate = order.pickup_date_display || order.pickup_date || '';
             const pickupTime = order.pickup_time_display || order.pickup_time || '';
+            const pickupAttempts = Array.isArray(order.seller_pickup_attempts)
+                ? order.seller_pickup_attempts
+                : [];
+            const lastPickupAttempt = pickupAttempts[pickupAttempts.length - 1];
             const cancellationActor = normalizedStatus === 'cancelled' ? order.cancellation_actor : '';
+            const canReschedulePickup = normalizedStatus === 'to-ship'
+                && lastPickupAttempt?.status === 'missed'
+                && pickupAttempts.length < 3;
             const pickupWasScheduled = (order.status_history || []).some((record) =>
                 ['to_ship', 'ready_to_ship', 'shipment_scheduled'].includes(String(record.to_status || '').toLowerCase())
             );
@@ -221,6 +228,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     data-tab="${escapeHtml(normalizedStatus)}"
                     data-pickup-date="${escapeHtml(pickupDate)}"
                     data-pickup-time="${escapeHtml(pickupTime)}"
+                    data-pickup-attempt-count="${pickupAttempts.length}"
+                    data-pickup-attempt-status="${escapeHtml(lastPickupAttempt?.status || '')}"
+                    data-pickup-reschedule-ready="${canReschedulePickup ? 'true' : 'false'}"
                     data-cancellation-actor="${escapeHtml(cancellationActor)}"
                     data-cancellation-request-id="${escapeHtml(order.latest_cancellation_request?.id || '')}"
                     data-pickup-was-scheduled="${pickupWasScheduled ? 'true' : 'false'}"
@@ -1477,6 +1487,11 @@ document.addEventListener('DOMContentLoaded', function () {
             'scheduleOrderId'
         );
 
+    const schedulePickupAttempt =
+        document.getElementById(
+            'schedulePickupAttempt'
+        );
+
     let selectedOrderRow = null;
     let lastFocusedElement = null;
     let bodyLockCount = 0;
@@ -1925,6 +1940,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const status =
             row.dataset.status ||
             'new';
+        const pickupAttemptCount = Number(row.dataset.pickupAttemptCount || 0);
+        const pickupAttemptStatus = row.dataset.pickupAttemptStatus || '';
+        const canReschedulePickup = row.dataset.pickupRescheduleReady === 'true';
 
         const isPreparing =
             status ===
@@ -2010,6 +2028,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         updateModalShipmentSchedule(row);
+        const pickupAttemptInfo = document.getElementById('orderModalPickupAttempt');
+        if (pickupAttemptInfo) {
+            pickupAttemptInfo.hidden = pickupAttemptCount === 0;
+            pickupAttemptInfo.textContent = pickupAttemptCount > 0
+                ? `Pickup attempt ${pickupAttemptCount} of 3 · ${pickupAttemptStatus.replaceAll('_', ' ')}`
+                : '';
+        }
 
         let label =
             'New Order';
@@ -2217,11 +2242,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         'ready-action'
                     );
 
-                orderModalActionLabel.textContent =
-                    'Ready to Ship';
-
-                orderModalActionButton.disabled =
-                    true;
+                orderModalActionLabel.textContent = canReschedulePickup
+                    ? `Schedule Pickup Attempt ${pickupAttemptCount + 1} of 3`
+                    : 'Ready to Ship';
+                orderModalActionButton.disabled = !canReschedulePickup;
             } else {
                 orderModalActionButton
                     .classList
@@ -2824,6 +2848,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     ?.trim() ||
                 '#ORD-2025';
         }
+        if (schedulePickupAttempt && selectedOrderRow) {
+            schedulePickupAttempt.textContent =
+                `Scheduling pickup attempt ${Number(selectedOrderRow.dataset.pickupAttemptCount || 0) + 1} of 3. If the rider does not collect it by 6:00 PM, it counts as missed; the third miss cancels the order.`;
+        }
 
         const tomorrow =
             new Date();
@@ -3110,8 +3138,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (
-                currentStatus ===
-                'preparing'
+                currentStatus === 'preparing'
+                || (
+                    currentStatus === 'to-ship'
+                    && selectedOrderRow.dataset.pickupRescheduleReady === 'true'
+                )
             ) {
                 closeOrderDetailsModal(
                     true
@@ -3189,7 +3220,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Scheduling...';
 
             try {
-                    await saveOrderStatus(
+                    const scheduledOrder = await saveOrderStatus(
                         selectedOrderRow.dataset.orderId,
                         {
                             pickup_date: pickupDate,
@@ -3225,6 +3256,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     row.dataset.pickupTime =
                         pickupTime;
+                    const pickupAttempts = Array.isArray(scheduledOrder.seller_pickup_attempts)
+                        ? scheduledOrder.seller_pickup_attempts
+                        : [];
+                    row.dataset.pickupAttemptCount = String(
+                        pickupAttempts.length || Number(row.dataset.pickupAttemptCount || 0) + 1
+                    );
+                    row.dataset.pickupAttemptStatus = 'scheduled';
+                    row.dataset.pickupRescheduleReady = 'false';
 
                     updateModalShipmentSchedule(row);
 

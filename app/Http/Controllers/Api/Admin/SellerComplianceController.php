@@ -10,6 +10,7 @@ use App\Models\Admin\Order;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\SellerComplianceService;
 use App\Services\SellerNotificationPreferences;
 use App\Services\SellerNotificationService;
 use Illuminate\Http\Request;
@@ -308,6 +309,17 @@ class SellerComplianceController extends Controller
 
             ->groupBy('order_id');
 
+        $atFaultComplaintsByOrder = Complaint::query()
+            ->whereIn(
+                'order_id',
+                $orderIdsBySeller
+                    ->flatten()
+                    ->pluck('id')
+            )
+            ->where('seller_at_fault', true)
+            ->get(['order_id'])
+            ->groupBy('order_id');
+
 
         /*
         |--------------------------------------------------------------------------
@@ -318,7 +330,8 @@ class SellerComplianceController extends Controller
         $rows = $sellers->map(
             function (Seller $seller) use (
                 $orderIdsBySeller,
-                $complaintsByOrder
+                $complaintsByOrder,
+                $atFaultComplaintsByOrder
             ): array {
 
                 $reviewProducts =
@@ -365,13 +378,19 @@ class SellerComplianceController extends Controller
                                 ->count()
                     );
 
+                $atFaultComplaintCount = $orderIds->sum(
+                    fn ($orderId): int => $atFaultComplaintsByOrder
+                        ->get($orderId, collect())
+                        ->count()
+                );
 
                 $compliance =
                     $this->complianceFor(
                         $seller,
                         $reviewProducts->count(),
-                        $complaintCount,
-                        $warningProducts->count()
+                        $atFaultComplaintCount,
+                        $warningProducts->count(),
+                        $complaintCount
                     );
 
                 $warningProductCount =
@@ -735,6 +754,11 @@ class SellerComplianceController extends Controller
 
             ->count();
 
+        $atFaultComplaintCount = Complaint::query()
+            ->whereIn('order_id', $orderIds)
+            ->where('seller_at_fault', true)
+            ->count();
+
 
         $reviewCount =
             $seller->products
@@ -761,7 +785,8 @@ class SellerComplianceController extends Controller
                 $this->sellerPayload(
                     $seller,
                     $reviewCount,
-                    $complaintCount
+                    $complaintCount,
+                    $atFaultComplaintCount
                 ),
 
         ]);
@@ -987,14 +1012,15 @@ class SellerComplianceController extends Controller
     private function sellerPayload(
         Seller $seller,
         int $reviewCount,
-        int $complaintCount
+        int $complaintCount,
+        int $atFaultComplaintCount
     ): array {
 
         $compliance =
             $this->complianceFor(
                 $seller,
                 $reviewCount,
-                $complaintCount,
+                $atFaultComplaintCount,
                 $seller->products
                     ->filter(
                         fn ($product): bool =>
@@ -1002,7 +1028,8 @@ class SellerComplianceController extends Controller
                                 (string) $product->status
                             ) === 'warning'
                     )
-                    ->count()
+                    ->count(),
+                $complaintCount
             );
 
 
@@ -1153,43 +1180,16 @@ class SellerComplianceController extends Controller
     private function complianceFor(
         Seller $seller,
         int $reviewCount,
-        int $complaintCount,
-        int $warningCount = 0
+        int $atFaultComplaintCount,
+        int $warningCount = 0,
+        int $openComplaintCount = 0
     ): array {
 
-        if (
-            in_array(
-                $seller->registration_status,
-                [
-                    'suspended',
-                    'rejected',
-                ],
-                true
-            )
-        ) {
+        $score = SellerComplianceService::scoreFromCounts($reviewCount, $atFaultComplaintCount);
 
-            return [
-
-                'status' =>
-                    'suspended',
-
-                'label' =>
-                    'Suspended',
-
-                'score' =>
-                    0,
-
-            ];
+        if (in_array($seller->registration_status, ['suspended', 'rejected'], true)) {
+            return ['status' => 'suspended', 'label' => 'Suspended', 'score' => $score];
         }
-
-
-        $score =
-            max(
-                0,
-                100
-                - ($reviewCount * 5)
-                - ($complaintCount * 10)
-            );
 
 
         if ($reviewCount > 0) {
@@ -1220,7 +1220,7 @@ class SellerComplianceController extends Controller
 
 
         if (
-            $complaintCount > 0
+            $openComplaintCount > 0
             || $score < 80
         ) {
 

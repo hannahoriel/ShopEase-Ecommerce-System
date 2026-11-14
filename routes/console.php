@@ -9,9 +9,11 @@ use App\Models\Admin\PlatformPolicy;
 use App\Models\Admin\Shipment;
 use App\Models\Logistics\DeliveryHubParcelIssue;
 use App\Models\Logistics\SortingCenterParcelIssue;
+use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\CodSettlementService;
 use App\Services\Logistics\CancelOrderForParcelIssue;
+use App\Services\SellerPickupAttemptService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +40,13 @@ Artisan::command('users:reactivate-expired', function () {
             'account_action_reason' => null,
             'account_action_details' => null,
         ]);
+
+        if ($user->role === User::ROLE_SELLER) {
+            Seller::query()
+                ->where('user_id', $user->id)
+                ->where('registration_status', 'suspended')
+                ->update(['registration_status' => 'active']);
+        }
 
         $user->email && Mail::to($user->email)->send(new AccountStatusChanged(
             user: $user,
@@ -132,6 +141,19 @@ Artisan::command('cod:settle-eligible-seller-earnings', function (): void {
 })->purpose('Release held COD seller earnings after delivery confirmation and case resolution');
 
 Schedule::command('cod:settle-eligible-seller-earnings')->everyMinute()->withoutOverlapping();
+
+Artisan::command('orders:process-missed-seller-pickups', function (SellerPickupAttemptService $pickups): void {
+    $result = $pickups->processMissedPickups();
+    $this->info(
+        "Processed {$result['missed']} missed seller pickup(s); "
+        ."cancelled {$result['cancelled']} order(s) and posted {$result['deducted']} rider deduction(s).",
+    );
+})->purpose('Record seller pickup no-shows at 6 PM and cancel orders after three failed attempts');
+
+Schedule::command('orders:process-missed-seller-pickups')
+    ->dailyAt('18:00')
+    ->timezone('Asia/Manila')
+    ->withoutOverlapping();
 
 Artisan::command('logistics:reconcile-parcel-issues', function (CancelOrderForParcelIssue $canceller): void {
     $cancelled = 0;

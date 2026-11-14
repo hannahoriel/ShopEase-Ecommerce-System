@@ -17,6 +17,10 @@ class CartController extends Controller
     {
         $items = CartItem::with(['product.seller', 'product.options', 'product.connectedVariants', 'product.productSpecifications'])
             ->where('user_id', $request->user()->id)
+            ->whereHas('product', fn ($query) => $query
+                ->where('status', 'active')
+                ->where('is_archived', false)
+                ->whereHas('seller', fn ($seller) => $seller->where('registration_status', 'active')))
             ->latest()
             ->get();
 
@@ -102,7 +106,15 @@ class CartController extends Controller
             'Cart limit reached: your cart can hold up to 200 products, including quantities.'
         );
 
-        $item->load(['product.options', 'product.connectedVariants']);
+        $item->load(['product.options', 'product.connectedVariants', 'product.seller']);
+        abort_unless(
+            $item->product
+                && $item->product->status === 'active'
+                && ! $item->product->is_archived
+                && $item->product->seller?->registration_status === 'active',
+            404,
+            'This product is no longer available.'
+        );
         $this->ensureSelectedStock($item->product, [
             'variation' => $item->variation,
             'color' => $item->color,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Complaint;
 use App\Models\Seller\Product;
+use App\Services\SellerComplianceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -59,12 +60,12 @@ class SellerPerformanceController extends Controller
             $activeComplaintCount = collect($complaints)
                 ->filter(fn (array $complaint): bool => in_array($complaint['status'], ['open', 'in-progress'], true))
                 ->count();
+            $atFaultComplaintCount = collect($complaints)
+                ->filter(fn (array $complaint): bool => $complaint['seller_at_fault'] === true)
+                ->count();
 
             if ($score === null) {
-                $registrationStatus = strtolower((string) $seller->registration_status);
-                $score = in_array($registrationStatus, ['suspended', 'rejected'], true)
-                    ? 0
-                    : max(0, 100 - ($reviewCount * 5) - ($activeComplaintCount * 10));
+                $score = SellerComplianceService::scoreFromCounts($reviewCount, $atFaultComplaintCount);
             }
 
             if ($status === null && $score !== null) {
@@ -228,6 +229,7 @@ class SellerPerformanceController extends Controller
                     'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
                     'type' => $complaint->type ?: $complaint->subject,
                     'status' => $status,
+                    'seller_at_fault' => $complaint->seller_at_fault,
                     'filed_at' => $complaint->created_at?->toISOString(),
                     'updated_at' => $complaint->updated_at?->toISOString(),
                     'order_id' => $order?->order_number ?: ($order ? 'ORD-'.$order->id : null),

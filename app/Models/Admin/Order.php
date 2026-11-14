@@ -171,6 +171,11 @@ class Order extends Model
         return $this->hasMany(DeliveryAttempt::class);
     }
 
+    public function sellerPickupAttempts(): HasMany
+    {
+        return $this->hasMany(SellerPickupAttempt::class)->orderBy('attempt_number');
+    }
+
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');

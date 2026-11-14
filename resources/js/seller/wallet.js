@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const labels = {
     order_income: 'Completed order earnings',
     refund: 'Buyer refund',
-    return_shipping: 'Return shipping',
+    return_shipping: 'Return & RTO shipping',
     voucher_discount: 'Seller voucher deduction',
     logistics_reimbursement: 'Logistics reimbursement',
     commission_income: 'Order commission',

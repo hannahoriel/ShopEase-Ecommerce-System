@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Complaint;
 use App\Models\Admin\ComplaintUpdate;
 use App\Models\Buyer\BuyerNotification;
+use App\Models\Seller\Seller;
+use App\Services\SellerComplianceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -123,6 +125,79 @@ class ComplaintController extends Controller
         ]);
     }
 
+    public function updateSellerFaultDecision(
+        Request $request,
+        Complaint $complaint,
+        SellerComplianceService $compliance
+    ): JsonResponse {
+        $data = $request->validate([
+            'seller_at_fault' => ['required', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:800'],
+        ]);
+        $sellerId = $complaint->order?->seller_id;
+        abort_unless($sellerId, 422, 'This complaint is not linked to a seller order.');
+
+        $sellerFault = (bool) $data['seller_at_fault'];
+        $notes = trim((string) ($data['notes'] ?? ''));
+        $result = DB::transaction(function () use ($request, $complaint, $compliance, $sellerFault, $notes): array {
+            $lockedComplaint = Complaint::query()
+                ->with('order')
+                ->lockForUpdate()
+                ->findOrFail($complaint->id);
+            $seller = Seller::query()
+                ->whereKey($lockedComplaint->order?->seller_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $lockedComplaint->forceFill([
+                'seller_at_fault' => $sellerFault,
+                'seller_fault_notes' => $notes !== '' ? $notes : null,
+            ])->save();
+
+            $message = 'Admin decision: '.($sellerFault ? 'Seller at Fault.' : 'Seller Not at Fault.');
+            if ($notes !== '') {
+                $message .= ' '.$notes;
+            }
+            $update = ComplaintUpdate::create([
+                'complaint_id' => $lockedComplaint->id,
+                'user_id' => $request->user()->id,
+                'type' => 'seller_fault_decision',
+                'message' => $message,
+            ]);
+
+            $score = $compliance->scoreFor($seller);
+            $suspension = $compliance->applyAutomaticSuspension($seller, $score);
+
+            return [
+                'complaint' => $lockedComplaint->fresh(),
+                'update' => $update,
+                'seller' => $seller->fresh(['user']),
+                'score' => $score,
+                'suspension' => $suspension,
+            ];
+        }, 3);
+
+        return response()->json([
+            'data' => [
+                'id' => $result['complaint']->id,
+                'seller_at_fault' => $result['complaint']->seller_at_fault,
+                'seller_fault_notes' => $result['complaint']->seller_fault_notes,
+                'update' => [
+                    'id' => (string) $result['update']->id,
+                    'type' => $result['update']->type,
+                    'message' => $result['update']->message,
+                    'actor' => $request->user()->name,
+                    'timestamp' => $result['update']->created_at?->toISOString(),
+                ],
+                'compliance_score' => $result['score'],
+                'registration_status' => $result['seller']->registration_status,
+                'suspended_until' => $result['seller']->user?->suspended_until?->toISOString(),
+                'auto_suspended' => $result['suspension']['suspended'],
+                'auto_reactivated' => $result['suspension']['reactivated'],
+            ],
+        ]);
+    }
+
     private function serialize(Complaint $complaint): array
     {
         $order = $complaint->order;
@@ -156,6 +231,8 @@ class ComplaintController extends Controller
             'role2' => 'Seller',
             'type' => $complaint->type ?: 'Other',
             'status' => str_replace('_', '-', $complaint->status),
+            'sellerAtFault' => $complaint->seller_at_fault,
+            'sellerFaultNotes' => $complaint->seller_fault_notes,
             'date' => $complaint->created_at?->format('M d, Y') ?? '',
             'time' => $complaint->created_at?->format('g:i A') ?? '',
             'lastUpdated' => $complaint->updated_at?->format('M d, Y g:i A') ?? '',

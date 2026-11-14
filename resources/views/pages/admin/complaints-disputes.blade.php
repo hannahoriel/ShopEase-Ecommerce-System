@@ -758,7 +758,7 @@
 <div id="cdDecisionConfirm" class="cd-review-backdrop" hidden aria-hidden="true">
  <div class="cd-review-dialog" role="dialog" aria-modal="true" aria-labelledby="cdDecisionTitle">
   <h2 id="cdDecisionTitle" class="cd-review-title">Confirm Seller Accountability Decision</h2>
-  <p class="cd-review-desc">Confirm only after assessing the complaint evidence and both parties' conversations. This is a frontend preview and does not issue penalties.</p>
+  <p class="cd-review-desc">A Seller at Fault decision lowers the seller's compliance score by 0.5 points. Scores below 75% trigger a three-day suspension.</p>
   <div id="cdDecisionSummary" class="cd-review-summary"></div>
   <label for="cdDecisionNotes">Decision explanation (optional)</label><textarea id="cdDecisionNotes" maxlength="800" placeholder="Explain the evidence and conversations supporting the decision..."></textarea>
   <div class="cd-review-actions"><button id="cdDecisionCancel" type="button" class="cd-cancel">Cancel</button><button id="cdDecisionSave" type="button" class="cd-confirm">Confirm Decision</button></div>
@@ -827,7 +827,7 @@
 
 
 <style>
-/* Admin seller fault review – UI-only */
+/* Admin seller fault review */
 .cd-decision-card{margin-top:13px;padding:16px 18px;background:#fff;border:1px solid #eee3e0;border-radius:13px;font-family:Poppins,sans-serif}
 .cd-decision-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:9px}
 .cd-decision-head strong{font-size:13px;color:#75232a}.cd-decision-card p{font-size:11px;color:#857977;line-height:1.7;margin:0 0 11px}
@@ -858,7 +858,7 @@
 @vite('resources/js/admin/complaints-disputes.js')
 <script>
 
-// Supplemental admin fault decision UI. Does not call complaint status / penalty APIs.
+// Persist admin fault decisions and keep both complaint panels synchronized.
 document.addEventListener('DOMContentLoaded', () => {
  const root = document.getElementById('cdDecisionConfirm');
  const preview = document.getElementById('cdDecisionPreview');
@@ -866,9 +866,8 @@ document.addEventListener('DOMContentLoaded', () => {
  if (!root || !preview || !detail) return;
  const config = JSON.parse(document.getElementById('complaintsDisputesConfig')?.textContent || '{}');
  const records = Array.isArray(config.complaints) ? config.complaints : [];
- const key = 'shopease.admin.complaint.sellerDecision.demo.v1';
- let saved = {};
- try {saved = JSON.parse(localStorage.getItem(key) || '{}') || {}} catch (_) {}
+ const apiUrl = config.apiUrl || '/api/v1/admin/complaints';
+ const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
  let selection = null;
  const getActive = () => {
    const id = document.getElementById('detail-id')?.textContent?.trim() || document.getElementById('modal-complaint-id')?.textContent?.trim();
@@ -876,13 +875,13 @@ document.addEventListener('DOMContentLoaded', () => {
  };
  function sync() {
    const item = getActive();
-   const previous = item ? saved[String(item.id)] : null;
+   const decision = item?.sellerAtFault === true ? 'guilty' : item?.sellerAtFault === false ? 'not-guilty' : '';
    [preview, detail].forEach(node => {
      const pill = node.querySelector('[data-cd-outcome]');
      const select = node.querySelector('[data-cd-choice]');
-     pill.className = 'cd-outcome' + (previous ? ' ' + previous.decision : '');
-     pill.textContent = previous ? (previous.decision === 'guilty' ? 'Seller at Fault' : 'Seller Not at Fault') : 'Awaiting decision';
-     select.value = previous?.decision || '';
+     pill.className = 'cd-outcome' + (decision ? ' ' + decision : '');
+     pill.textContent = decision === 'guilty' ? 'Seller at Fault' : decision === 'not-guilty' ? 'Seller Not at Fault' : 'Awaiting decision';
+     select.value = decision;
      select.disabled = !item;
      node.querySelector('[data-cd-review]').disabled = !item;
    });
@@ -893,23 +892,42 @@ document.addEventListener('DOMContentLoaded', () => {
    const item = getActive(); if(!item)return;
    const choice = button.closest('.cd-decision-card').querySelector('[data-cd-choice]').value;
    if(!choice){button.closest('.cd-decision-card').querySelector('[data-cd-choice]').focus();return;}
-   selection = {id:String(item.id),decision:choice};
+   selection = {id:String(item.id),databaseId:item.databaseId,decision:choice};
    document.getElementById('cdDecisionSummary').textContent = `${item.id} — ${choice==='guilty'?'Seller at Fault':'Seller Not at Fault'}`;
-   document.getElementById('cdDecisionNotes').value = saved[selection.id]?.notes || '';
+   document.getElementById('cdDecisionNotes').value = item.sellerFaultNotes || '';
    root.hidden=false;root.setAttribute('aria-hidden','false');
  }));
  const close=()=>{root.hidden=true;root.setAttribute('aria-hidden','true');selection=null};
  document.getElementById('cdDecisionCancel').addEventListener('click',close);
  root.addEventListener('click',e=>{if(e.target===root)close()});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!root.hidden)close()});
- document.getElementById('cdDecisionSave').addEventListener('click',()=>{
+ document.getElementById('cdDecisionSave').addEventListener('click',async()=>{
    if(!selection)return;
-   saved[selection.id]={decision:selection.decision,notes:document.getElementById('cdDecisionNotes').value.trim(),reviewedAt:new Date().toISOString()};
-   try{localStorage.setItem(key,JSON.stringify(saved))}catch(_){}
-   const message=`${selection.id}: ${selection.decision==='guilty'?'Seller at Fault':'Seller Not at Fault'} — demo decision recorded.`;
-   close();sync();
-   const toast=document.getElementById('cdDecisionToast');toast.textContent=message;toast.hidden=false;
-   clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>{toast.hidden=true},4200);
+   const save=document.getElementById('cdDecisionSave');
+   save.disabled=true;
+   try {
+     const response=await fetch(`${apiUrl}/${selection.databaseId}/seller-fault`,{
+       method:'PATCH',
+       credentials:'same-origin',
+       headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+       body:JSON.stringify({seller_at_fault:selection.decision==='guilty',notes:document.getElementById('cdDecisionNotes').value.trim()})
+     });
+     const payload=await response.json();
+     if(!response.ok)throw new Error(payload.message||'Unable to save the seller accountability decision.');
+     const item=records.find(record=>String(record.id)===selection.id);
+     if(item){item.sellerAtFault=payload.data.seller_at_fault;item.sellerFaultNotes=payload.data.seller_fault_notes}
+     let message=`${selection.id}: ${payload.data.seller_at_fault?'Seller at Fault':'Seller Not at Fault'}. Compliance score: ${Number(payload.data.compliance_score).toFixed(1)}%.`;
+     if(payload.data.auto_suspended)message+=' Seller suspended for 3 days.';
+     if(payload.data.auto_reactivated)message+=' Automatic suspension lifted.';
+     close();sync();
+     const toast=document.getElementById('cdDecisionToast');toast.textContent=message;toast.hidden=false;
+     clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>{toast.hidden=true},6000);
+   } catch(error) {
+     const toast=document.getElementById('cdDecisionToast');toast.textContent=error.message;toast.hidden=false;
+     clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>{toast.hidden=true},6000);
+   } finally {
+     save.disabled=false;
+   }
  });
  sync();
 });

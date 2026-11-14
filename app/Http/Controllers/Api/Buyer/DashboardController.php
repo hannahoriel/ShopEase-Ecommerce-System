@@ -88,7 +88,9 @@ class DashboardController extends Controller
     public function show(Product $product): JsonResponse
     {
         abort_unless(
-            ! $product->is_archived && $product->status === 'active',
+            ! $product->is_archived
+                && $product->status === 'active'
+                && $product->seller()->where('registration_status', 'active')->exists(),
             404
         );
 

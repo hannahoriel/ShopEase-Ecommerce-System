@@ -26,7 +26,7 @@ class EarningsController
             ->whereHas('shipment', fn ($query) => $query->whereDate('delivered_at', '>=', $validated['from'])->whereDate('delivered_at', '<=', $validated['to']))
             ->get();
 
-        $rows = $orders->map(function (Order $order): array {
+        $deliveredRows = $orders->map(function (Order $order): array {
             $shipment = $order->shipment;
             // Some existing shipments only have the destination hub saved. The
             // hub already belongs to a sorting center, so use that relationship
@@ -52,6 +52,39 @@ class EarningsController
             ];
         })->sortByDesc('date')->values();
 
+        $returnedOrders = Order::query()
+            ->with(['shipment.logisticsBranch', 'shipment.deliveryHub.logisticsBranch'])
+            ->where('status', 'cancelled')
+            ->where(function ($query) use ($company): void {
+                $query->where('logistics_id', $company->id)
+                    ->orWhereHas('shipment.logisticsBranch', fn ($branch) => $branch->where('logistics_id', $company->id))
+                    ->orWhereHas('shipment.deliveryHub.logisticsBranch', fn ($branch) => $branch->where('logistics_id', $company->id));
+            })
+            ->whereHas('shipment', fn ($query) => $query
+                ->where('return_to_seller_status', 'completed')
+                ->whereDate('returned_to_seller_at', '>=', $validated['from'])
+                ->whereDate('returned_to_seller_at', '<=', $validated['to']))
+            ->whereHas('deliveryAttempts', fn ($query) => $query->where('attempt_number', 3))
+            ->get();
+
+        $rtoRows = $returnedOrders->map(function (Order $order): array {
+            $shipment = $order->shipment;
+            $branch = $shipment->logisticsBranch ?: $shipment->deliveryHub?->logisticsBranch;
+
+            return [
+                'date' => $shipment->returned_to_seller_at->timezone('Asia/Manila')->format('Y-m-d H:i'),
+                'reference' => $order->order_number ?: 'ORDER-'.$order->id,
+                'route' => ($branch?->name ?: 'Unassigned sorting center').' → '.($shipment->deliveryHub?->hub_name ?: 'Unassigned delivery hub'),
+                'center' => $branch?->name ?: 'Unassigned sorting center',
+                'hub' => $shipment->deliveryHub?->hub_name ?: 'Unassigned delivery hub',
+                'center_id' => $branch?->id,
+                'hub_id' => $shipment->logistics_delivery_hub_id,
+                'status' => 'Seller-paid RTO',
+                'amount' => CodSettlementService::LOGISTICS_SHIPPING_FEE,
+            ];
+        })->sortByDesc('date')->values();
+
+        $rows = $deliveredRows->concat($rtoRows)->sortByDesc('date')->values();
         $daily = $rows->groupBy(fn ($row) => substr($row['date'], 0, 10))
             ->map(fn ($dayRows, $date) => ['date' => $date, 'amount' => round($dayRows->sum('amount'), 2), 'parcels' => $dayRows->count()])
             ->values();

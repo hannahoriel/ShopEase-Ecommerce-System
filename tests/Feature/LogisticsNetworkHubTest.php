@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
+use App\Mail\DeliveryHubCredentials;
 use App\Models\Rider\Rider;
 use App\Models\User;
 use App\Mail\SortingCenterCredentials;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Tests\TestCase;
 
 class LogisticsNetworkHubTest extends TestCase
@@ -112,6 +114,78 @@ class LogisticsNetworkHubTest extends TestCase
                 && preg_match('/[^A-Za-z0-9]/', $password) === 1
                 && Hash::check($password, $branchUser->password);
         });
+    }
+
+    public function test_creating_a_delivery_hub_emails_generated_credentials_to_its_login_email(): void
+    {
+        Mail::fake();
+        [$user, $logistics] = $this->logisticsAccount('Delivery Hub Credential Test Logistics');
+        $center = LogisticsBranch::create([
+            'logistics_id' => $logistics->id,
+            'name' => 'Laguna Main Sorting Center',
+            'address' => 'Calamba, Laguna',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'status' => 'active',
+        ]);
+        $payload = [
+            ...$this->hubPayload(),
+            'manager_email' => 'hub.manager.test@example.com',
+            'login_email' => 'delivery.hub.test@example.com',
+        ];
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/logistics/network-hubs/{$center->id}/delivery-hubs", $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.manager_email', 'hub.manager.test@example.com')
+            ->assertJsonPath('data.login_email', 'delivery.hub.test@example.com');
+
+        $hubUser = User::query()->where('email', 'delivery.hub.test@example.com')->firstOrFail();
+        $this->assertSame(User::ROLE_DELIVERY_HUB, $hubUser->role);
+        Mail::assertSent(DeliveryHubCredentials::class, function (DeliveryHubCredentials $mail) use ($hubUser): bool {
+            $password = $mail->password;
+
+            return $mail->hasTo($hubUser->email)
+                && strlen($password) === 8
+                && preg_match('/[a-z]/', $password) === 1
+                && preg_match('/[A-Z]/', $password) === 1
+                && preg_match('/[0-9]/', $password) === 1
+                && preg_match('/[^A-Za-z0-9]/', $password) === 1
+                && Hash::check($password, $hubUser->password);
+        });
+    }
+
+    public function test_delivery_hub_creation_rolls_back_when_credentials_email_cannot_be_sent(): void
+    {
+        [$user, $logistics] = $this->logisticsAccount('Delivery Hub SMTP Failure Test Logistics');
+        $center = LogisticsBranch::create([
+            'logistics_id' => $logistics->id,
+            'name' => 'Laguna Main Sorting Center',
+            'address' => 'Calamba, Laguna',
+            'province' => 'Laguna',
+            'municipality' => 'Calamba',
+            'status' => 'active',
+        ]);
+        $payload = [
+            ...$this->hubPayload(),
+            'login_email' => 'delivery.hub.smtp-failure@example.com',
+        ];
+
+        Mail::shouldReceive('to')
+            ->once()
+            ->with('delivery.hub.smtp-failure@example.com')
+            ->andThrow(new TransportException('SMTP connection unavailable.'));
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/logistics/network-hubs/{$center->id}/delivery-hubs", $payload)
+            ->assertStatus(503)
+            ->assertJsonPath(
+                'message',
+                'Unable to send the delivery hub login credentials email. The delivery hub was not created. Check the SMTP configuration and retry.',
+            );
+
+        $this->assertDatabaseMissing('users', ['email' => 'delivery.hub.smtp-failure@example.com']);
+        $this->assertDatabaseCount('logistics_delivery_hubs', 0);
     }
 
     public function test_network_hubs_enforce_scoped_unique_provinces_and_login_emails(): void

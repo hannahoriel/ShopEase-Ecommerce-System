@@ -9,6 +9,7 @@ use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -252,6 +253,8 @@ class SellerComplianceTest extends TestCase
             ->assertJsonPath('summary.under_review', 1)
             ->assertJsonPath('data.0.store_name', 'AnaCart')
             ->assertJsonPath('data.0.compliance', 'under-review')
+            ->assertJsonPath('data.0.compliance_score', 95)
+            ->assertJsonPath('data.0.complaints_open', 1)
             ->assertJsonPath('data.0.products.0.name', 'Sample Product')
             ->assertJsonPath('data.0.products.0.status', 'pending')
             ->assertJsonPath('data.0.products.0.sold_count', 0)
@@ -507,5 +510,81 @@ class SellerComplianceTest extends TestCase
             ->getJson("/api/v1/admin/seller-compliance/{$seller->id}")
             ->assertOk()
             ->assertJsonCount(0, 'data.products');
+    }
+
+    public function test_suspended_seller_remains_visible_but_products_are_hidden_from_buyer_catalog(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'registration_status' => 'suspended',
+        ]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Temporarily Suspended Shop',
+            'registration_status' => 'suspended',
+        ]);
+        $product = Product::create([
+            'seller_id' => $seller->id,
+            'name' => 'Hidden during suspension',
+            'category' => 'home',
+            'price' => 100,
+            'stock_quantity' => 5,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($buyer)
+            ->getJson("/api/v1/buyer/shops/{$seller->id}")
+            ->assertOk()
+            ->assertJsonPath('shop.name', 'Temporarily Suspended Shop')
+            ->assertJsonPath('shop.product_count', 0)
+            ->assertJsonPath('shop.categories', [])
+            ->assertJsonPath('total', 0)
+            ->assertJsonCount(0, 'data');
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/dashboard/products')
+            ->assertOk()
+            ->assertJsonPath('total', 0)
+            ->assertJsonCount(0, 'data');
+
+        $this->actingAs($buyer)
+            ->getJson('/api/v1/buyer/search?q=Hidden')
+            ->assertOk()
+            ->assertJsonPath('total', 0)
+            ->assertJsonCount(0, 'data');
+
+        $this->actingAs($buyer)
+            ->getJson("/api/v1/buyer/products/{$product->id}")
+            ->assertNotFound();
+    }
+
+    public function test_expired_seller_suspension_reactivates_the_seller_account(): void
+    {
+        Mail::fake();
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'registration_status' => 'suspended',
+            'suspended_until' => now()->subMinute(),
+            'account_action_reason' => 'seller_compliance_score',
+        ]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Expired Suspension Shop',
+            'registration_status' => 'suspended',
+        ]);
+
+        Artisan::call('users:reactivate-expired');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $sellerUser->id,
+            'registration_status' => 'active',
+            'suspended_until' => null,
+        ]);
+        $this->assertDatabaseHas('sellers', [
+            'id' => $seller->id,
+            'registration_status' => 'active',
+        ]);
+        Mail::assertSent(AccountStatusChanged::class, fn ($mail) => $mail->hasTo($sellerUser->email));
     }
 }

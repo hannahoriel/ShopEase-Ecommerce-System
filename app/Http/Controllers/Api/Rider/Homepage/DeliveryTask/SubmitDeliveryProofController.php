@@ -7,6 +7,7 @@ use App\Http\Services\RiderDeliveryService;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderReturn;
 use App\Models\Admin\OrderStatusHistory;
+use App\Models\Admin\SellerPickupAttempt;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Logistics\LogisticsDeliveryHub;
@@ -46,6 +47,19 @@ class SubmitDeliveryProofController extends Controller
         $scannedIdentifier = is_string($scannedPath) && $scannedPath !== ''
             ? rawurldecode(basename($scannedPath))
             : $scannedCode;
+        if (! $pickupFlow) {
+            $failedDeliveryShipment = Shipment::query()->where('order_id', $order->id)->first();
+            if ($failedDeliveryShipment?->return_to_seller_status === 'out_for_delivery_to_seller'
+                && (int) $failedDeliveryShipment->rider_id === (int) $rider->id) {
+                return app(SubmitFailedDeliveryReturnProofController::class)(
+                    $request,
+                    $order,
+                    $rider,
+                    $deliveries,
+                );
+            }
+        }
+
         $assignedReturn = OrderReturn::query()
             ->where(function ($query) use ($order): void {
                 $query->where('order_id', $order->id)->orWhere('id', $order->id);
@@ -132,6 +146,17 @@ class SubmitDeliveryProofController extends Controller
                 $lockedShipment->save();
 
                 if ($pickupFlow) {
+                    SellerPickupAttempt::query()
+                        ->where('order_id', $lockedOrder->id)
+                        ->where('status', 'scheduled')
+                        ->whereDate('pickup_date', $lockedOrder->pickup_date?->toDateString())
+                        ->latest('attempt_number')
+                        ->first()
+                        ?->update([
+                            'rider_id' => $rider->id,
+                            'status' => 'picked_up',
+                            'picked_up_at' => $lockedShipment->picked_up_at,
+                        ]);
                     $this->registerPickupAsHubInbound($lockedOrder, $lockedShipment, $rider);
                 }
 

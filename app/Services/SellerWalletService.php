@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderReturn;
+use App\Models\Admin\Shipment;
 use App\Models\Seller\Seller;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 class SellerWalletService
 {
-    private const RETURN_SHIPPING_CHARGE = 50.00;
+    private const RETURN_SHIPPING_CHARGE = CodSettlementService::LOGISTICS_SHIPPING_FEE;
 
     public function sync(Seller $seller): void
     {
@@ -87,6 +88,31 @@ class SellerWalletService
                 $this->entry($seller->id, 'return_shipping', 'order_return', $return->id, -self::RETURN_SHIPPING_CHARGE, $ref, 'Seller-paid return shipping (₱50)', $return->refunded_at);
             }
         });
+    }
+
+    public function recordFailedDeliveryShipping(Seller $seller, Order $order, Shipment $shipment): void
+    {
+        if ((int) $order->seller_id !== (int) $seller->id
+            || $order->status !== 'cancelled'
+            || $shipment->return_to_seller_status !== 'completed'
+            || ! $shipment->returned_to_seller_at
+            || ! $order->deliveryAttempts()->where('attempt_number', 3)->exists()) {
+            return;
+        }
+
+        $fee = self::RETURN_SHIPPING_CHARGE;
+        $reference = $order->order_number ?: '#'.$order->id;
+
+        $this->entry(
+            $seller->id,
+            'return_shipping',
+            'failed_delivery',
+            $order->id,
+            -$fee,
+            $reference,
+            'Seller-paid failed-delivery return shipping (RTO · ₱'.number_format($fee, 2).')',
+            $shipment->returned_to_seller_at
+        );
     }
 
     private function entry(int $sellerId, string $type, string $source, int $sourceId, float $amount, string $ref, string $description, $at): void

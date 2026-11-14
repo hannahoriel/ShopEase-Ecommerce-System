@@ -322,7 +322,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <article class="lg-balance-card lg-card">
                     <span class="lg-balance-label">Total Network Shipping Earnings</span>
                     <div class="lg-balance-amount" id="lgHeroGross">₱0.00</div>
-                    <p class="lg-balance-sub">Shipping income from delivered, completed parcels for the selected period, using the fee recorded for each shipment.</p>
+                    <p class="lg-balance-sub">Shipping income from completed deliveries and seller-paid RTO returns for the selected period.</p>
                     <div class="lg-balance-tags"><span class="lg-balance-tag">Completed parcel fees</span><span class="lg-balance-tag">Live database ledger</span></div>
                 </article>
                 <aside class="lg-side-summary lg-card">
@@ -339,8 +339,8 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
             <section class="lg-stats">
                 <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Total Network Earnings</span><span class="lg-stat-pill maroon">Network</span></div><strong id="lgGrossStat">₱0.00</strong><p>Combined shipping fees for the selected period.</p></article>
                 <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Company Shipping Income</span><span class="lg-stat-pill green">100% fees</span></div><strong id="lgShareStat">₱0.00</strong><p>Company-held shipping fees from the selected parcel records.</p></article>
-                <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Total Parcels</span><span class="lg-stat-pill orange">Completed</span></div><strong id="lgParcelStat">0</strong><p>Completed parcels credited in this period.</p></article>
-                <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Average Shipping Fee</span><span class="lg-stat-pill maroon">Per parcel</span></div><strong id="lgAverageFee">₱0.00</strong><p>Average recorded fee for completed parcels.</p></article>
+                <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Total Parcels</span><span class="lg-stat-pill orange">Settled</span></div><strong id="lgParcelStat">0</strong><p>Completed deliveries and seller-paid RTO returns.</p></article>
+                <article class="lg-stat lg-card"><div class="lg-stat-top"><span class="lg-stat-kicker">Average Shipping Fee</span><span class="lg-stat-pill maroon">Per parcel</span></div><strong id="lgAverageFee">₱0.00</strong><p>Average fee for completed deliveries and RTO returns.</p></article>
             </section>
 
             <section class="lg-grid">
@@ -364,7 +364,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                         </div>
                     </div>
                     <div class="lg-allocation">
-                        <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Logistics Company</h3><span>Receives fees</span></div><strong id="lgAllocationLogistics">₱0.00</strong><p>All shipping-fee credits recorded for completed parcels.</p></article>
+                        <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Logistics Company</h3><span>Receives fees</span></div><strong id="lgAllocationLogistics">₱0.00</strong><p>Shipping fees for completed deliveries and seller-paid RTO returns.</p></article>
                         <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Sorting Centers</h3><span>No share</span></div><strong id="lgAllocationSorting">₱0.00</strong><p>Parcel handling and inter-center transfers only.</p></article>
                         <article class="lg-allocation-card"><div class="lg-allocation-top"><h3>Delivery Hubs</h3><span>No share</span></div><strong id="lgAllocationHubs">₱0.00</strong><p>Cash collections and COD distribution only.</p></article>
                     </div>
@@ -375,7 +375,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <div class="lg-panel-head">
                     <div>
                         <h2>Shipping Fee Ledger</h2>
-                        <p>Recorded shipping fee for each completed parcel.</p>
+                        <p>Recorded shipping fee for each completed delivery or RTO return.</p>
                     </div>
                     <span class="lg-pill" id="lgLedgerCount">0 entries</span>
                 </div>
@@ -410,7 +410,7 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 <div class="lg-panel-head">
                     <div>
                         <h2>Network Unit Snapshot</h2>
-                        <p>Registered delivery hubs are grouped beneath their parent sorting center. Amounts reflect completed parcel fees in the selected period.</p>
+                        <p>Registered delivery hubs are grouped beneath their parent sorting center. Amounts reflect completed delivery and RTO fees in the selected period.</p>
                     </div>
                     <span class="lg-pill">Live data</span>
                 </div>
@@ -509,12 +509,12 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                 page = Math.max(1,Math.min(page,totalPages));
                 const current = rows.slice((page-1)*pageSize,page*pageSize);
                 ledgerRows.innerHTML = current.length ? current.map(row=>`<tr>
-                    <td><strong>${escapeHtml(prettyDate(row.date))}</strong><small>Completed parcel</small></td>
+                    <td><strong>${escapeHtml(prettyDate(row.date))}</strong><small>${row.status==='Seller-paid RTO'?'Returned parcel · seller-paid RTO':'Completed parcel'}</small></td>
                     <td><strong>${escapeHtml(row.reference)}</strong><small>ShopEase order</small></td>
                     <td><strong>${escapeHtml(row.route)}</strong><small>${escapeHtml(row.center)}</small></td>
-                    <td><span class="lg-status credited">Credited</span></td>
+                    <td><span class="lg-status credited">${row.status==='Seller-paid RTO'?'RTO fee credited':'Credited'}</span></td>
                     <td style="text-align:right" class="lg-amount pos">+${peso(row.amount)}</td>
-                </tr>`).join('') : '<tr><td colspan="5" class="lg-empty">No completed parcels match this search or period.</td></tr>';
+                </tr>`).join('') : '<tr><td colspan="5" class="lg-empty">No logistics earnings match this search or period.</td></tr>';
                 ledgerCount.textContent = `${number(rows.length)} entries`;
                 ledgerSummary.textContent = rows.length ? `Showing ${(page-1)*pageSize+1}–${Math.min(page*pageSize,rows.length)} of ${number(rows.length)}` : 'Showing 0 entries';
                 const pages = new Set([1,totalPages,page-1,page,page+1]);
@@ -541,13 +541,13 @@ body.lg-collapsed .lg-nav-link{justify-content:center;padding:0}
                     const hubs = center.hubs.map(hub=>{
                         return `<div class="lg-child-unit"><div class="lg-child-identity"><span class="lg-tree-line"></span><div><small>DELIVERY HUB · UNDER ${escapeHtml(center.name)}</small><strong>${escapeHtml(hub.name)}</strong></div></div><div class="lg-child-figures"><span>${number(hub.parcels)} parcels</span><strong>${peso(hub.amount)}</strong></div></div>`;
                     }).join('');
-                    return `<article class="lg-unit-card lg-parent-unit"><div class="lg-unit-top"><div><span class="lg-parent-caption">SORTING CENTER</span><h3>${escapeHtml(center.name)}</h3></div><span>${center.hubs.length} delivery hubs</span></div><div class="lg-unit-metrics lg-parent-metrics"><div><small>Completed parcels</small><strong>${number(center.parcels)}</strong></div><div><small>Shipping fee volume</small><strong>${peso(center.amount)}</strong></div></div><div class="lg-child-list">${hubs}</div></article>`;
+                    return `<article class="lg-unit-card lg-parent-unit"><div class="lg-unit-top"><div><span class="lg-parent-caption">SORTING CENTER</span><h3>${escapeHtml(center.name)}</h3></div><span>${center.hubs.length} delivery hubs</span></div><div class="lg-unit-metrics lg-parent-metrics"><div><small>Settled parcels</small><strong>${number(center.parcels)}</strong></div><div><small>Shipping fee volume</small><strong>${peso(center.amount)}</strong></div></div><div class="lg-child-list">${hubs}</div></article>`;
                 }).join('') : '<div class="lg-empty">No sorting center or hub earnings in this period.</div>';
             }
             function renderChart(daily) {
                 const days = daily.map(row=>[row.date,Number(row.amount)]).sort((a,b)=>a[0].localeCompare(b[0]));
                 const data = days.length > 15 ? days.filter((_,i)=>i % Math.ceil(days.length/15)===0 || i===days.length-1) : days;
-                if (!data.length) {chartElement.innerHTML='<div class="lg-empty">No completed parcels in the selected period.</div>';return;}
+                if (!data.length) {chartElement.innerHTML='<div class="lg-empty">No logistics earnings in the selected period.</div>';return;}
                 const maxValue=Math.max(50,...data.map(x=>x[1]));
                 const grid=document.createElement('div');grid.className='lg-chart-grid';
                 for(let i=0;i<4;i++){

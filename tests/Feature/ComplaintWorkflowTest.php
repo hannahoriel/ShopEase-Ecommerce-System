@@ -102,6 +102,88 @@ class ComplaintWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_admin_fault_decisions_deduct_half_a_point_and_suspend_below_75_percent(): void
+    {
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        $sellerUser = User::factory()->create([
+            'role' => User::ROLE_SELLER,
+            'registration_status' => 'active',
+        ]);
+        $seller = Seller::create([
+            'user_id' => $sellerUser->id,
+            'store_name' => 'Compliance Decision Shop',
+            'registration_status' => 'active',
+        ]);
+
+        for ($index = 1; $index <= 51; $index++) {
+            $order = Order::create([
+                'buyer_id' => $buyer->id,
+                'seller_id' => $seller->id,
+                'order_number' => 'SE-COMPLIANCE-'.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+                'total' => 100,
+                'status' => 'completed',
+            ]);
+            $complaint = Complaint::create([
+                'user_id' => $buyer->id,
+                'order_id' => $order->id,
+                'subject' => 'Complaint '.$index,
+                'description' => 'Complaint description.',
+                'status' => 'open',
+                'seller_at_fault' => $index <= 49,
+            ]);
+
+            if ($index === 50) {
+                $thresholdComplaint = $complaint;
+            } elseif ($index === 51) {
+                $suspensionComplaint = $complaint;
+            }
+        }
+
+        $this->actingAs($admin)
+            ->patchJson("/api/v1/admin/complaints/{$thresholdComplaint->id}/seller-fault", [
+                'seller_at_fault' => true,
+                'notes' => 'Evidence confirms seller fault.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.compliance_score', 75)
+            ->assertJsonPath('data.registration_status', 'active')
+            ->assertJsonPath('data.auto_suspended', false);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/v1/admin/complaints/{$suspensionComplaint->id}/seller-fault", [
+                'seller_at_fault' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.compliance_score', 74.5)
+            ->assertJsonPath('data.registration_status', 'suspended')
+            ->assertJsonPath('data.auto_suspended', true);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $sellerUser->id,
+            'registration_status' => 'suspended',
+            'account_action_reason' => 'seller_compliance_score',
+        ]);
+        $this->assertDatabaseHas('sellers', [
+            'id' => $seller->id,
+            'registration_status' => 'suspended',
+        ]);
+        $this->assertDatabaseHas('complaint_updates', [
+            'complaint_id' => $suspensionComplaint->id,
+            'type' => 'seller_fault_decision',
+        ]);
+
+        $this->actingAs($admin)
+            ->patchJson("/api/v1/admin/complaints/{$suspensionComplaint->id}/seller-fault", [
+                'seller_at_fault' => false,
+                'notes' => 'Decision reversed after appeal.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.compliance_score', 75)
+            ->assertJsonPath('data.registration_status', 'active')
+            ->assertJsonPath('data.auto_reactivated', true);
+    }
+
     public function test_buyers_cannot_submit_complaints_for_another_users_order(): void
     {
         [$owner, $order] = $this->createBuyerOrder();
