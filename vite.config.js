@@ -71,6 +71,7 @@ const input = [
 
     // APP
     'resources/js/app.js',
+    'resources/js/legal-consent.js',
     'resources/js/buyer/pages/view-order.js',
 
     // COMPONENTS
