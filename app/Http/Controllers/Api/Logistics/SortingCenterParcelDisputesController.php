@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api\Logistics;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin\Shipment;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\SortingCenterParcelIssue;
-use App\Services\Logistics\CancelOrderForParcelIssue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,29 +45,8 @@ class SortingCenterParcelDisputesController extends Controller
         $center = $this->center($request);
         $evidence = $request->file('evidence');
         $evidencePath = $evidence?->store('sorting-center/issues');
-        $recordedAt = now();
-        $shipment = Shipment::query()
-            ->with('order')
-            ->where('tracking_number', trim($data['tracking']))
-            ->where('logistics_branch_id', $center->id)
-            ->first();
-        $parcelValue = app(CancelOrderForParcelIssue::class)->reimbursementAmount($shipment?->order);
-        $amount = $parcelValue > 0 ? number_format($parcelValue, 2, '.', '') : '';
-        $issueLabel = strtolower(str_replace(' Parcel', '', $data['type']));
-        $accountability = [
-            'party' => 'Logistics Partner',
-            'resolution' => 'Product Value Reimbursement to Seller (shipping excluded)',
-            'parcelAmount' => $amount,
-            'compensation' => $amount,
-            'notes' => 'Automatically assessed when a '.$issueLabel.' parcel report was recorded.',
-            'at' => $recordedAt->toIso8601String(),
-            'simulatedReimbursedAt' => $amount !== '' ? $recordedAt->toIso8601String() : null,
-            'status' => $amount !== '' ? 'Reimbursed · UI Simulation' : 'Amount Verification Required · Demo',
-            'autoVersion' => 4,
-        ];
-
-        $report = DB::transaction(function () use ($request, $center, $data, $evidence, $evidencePath, $accountability, $shipment, $recordedAt): SortingCenterParcelIssue {
-            $report = SortingCenterParcelIssue::query()->create([
+        $report = DB::transaction(function () use ($request, $center, $data, $evidence, $evidencePath): SortingCenterParcelIssue {
+            return SortingCenterParcelIssue::query()->create([
                 'sorting_center_id' => $center->id,
                 'reported_by' => $request->user()->id,
                 'tracking_number' => trim($data['tracking']),
@@ -77,35 +54,13 @@ class SortingCenterParcelDisputesController extends Controller
                 'description' => trim($data['description']),
                 'evidence_name' => $evidence?->getClientOriginalName(),
                 'evidence_path' => $evidencePath,
-                'status' => 'Open',
-                'accountability' => $accountability,
+                'status' => 'Under Review',
+                'accountability' => ['status' => 'Under Review'],
             ]);
-
-            if ($shipment) {
-                $lockedShipment = Shipment::query()->with('order')->whereKey($shipment->id)->lockForUpdate()->first();
-                if ($lockedShipment) {
-                    $outcome = app(CancelOrderForParcelIssue::class)->handle(
-                        $lockedShipment,
-                        (int) $request->user()->id,
-                        $data['type'],
-                        trim($data['description']),
-                    );
-                    if ($outcome['reimbursed']) {
-                        $report->accountability = array_merge($accountability, [
-                            'status' => 'Credited to Seller Wallet',
-                            'reimbursedAt' => $recordedAt->toIso8601String(),
-                            'simulatedReimbursedAt' => null,
-                        ]);
-                        $report->save();
-                    }
-                }
-            }
-
-            return $report;
         }, 3);
 
         return response()->json([
-            'message' => 'Parcel issue report saved. The buyer order is cancelled, the seller has been notified, and the logistics reimbursement has been credited to the seller wallet.',
+            'message' => 'Parcel issue report submitted for admin review. No order cancellation or wallet adjustment was made.',
             'data' => ['report' => $this->payload($report)],
         ], 201);
     }

@@ -415,6 +415,11 @@
  <p>Review the complaint, supporting evidence, and conversations with both parties before deciding.</p>
  <div class="cd-decision-control"><select aria-label="Seller accountability decision" data-cd-choice><option value="">Select decision</option><option value="guilty">Seller at Fault</option><option value="not-guilty">Seller Not at Fault</option></select><button type="button" data-cd-review>Review Decision</button></div>
 </div>
+<div class="cd-decision-card" id="cdParcelDecisionPreview" hidden>
+ <div class="cd-decision-head"><strong>Admin Decision — Parcel Accountability</strong><span class="cd-outcome" data-parcel-outcome>Awaiting decision</span></div>
+ <p>Review the logistics evidence and contact the seller for their explanation before deciding.</p>
+ <div class="cd-decision-control"><select aria-label="Parcel accountability decision" data-parcel-choice><option value="">Select decision</option><option value="logistics_fault">Logistics at Fault</option><option value="seller_fault">Seller at Fault</option><option value="shared">Shared Responsibility</option></select><button type="button" data-parcel-review>Review Decision</button></div>
+</div>
 <div class="complaints-detail-actions">
                 <button
                     id="complaints-view-details"
@@ -731,6 +736,11 @@
  <p>Make this decision after reviewing the evidence and conversations with the buyer and seller. This is independent of the complaint workflow status.</p>
  <div class="cd-decision-control"><select aria-label="Seller accountability decision" data-cd-choice><option value="">Select decision</option><option value="guilty">Seller at Fault</option><option value="not-guilty">Seller Not at Fault</option></select><button type="button" data-cd-review>Review Decision</button></div>
 </div>
+<div class="cd-decision-card" id="cdParcelDecisionModal" hidden>
+ <div class="cd-decision-head"><strong>Admin Decision — Parcel Accountability</strong><span class="cd-outcome" data-parcel-outcome>Awaiting decision</span></div>
+ <p>Review the logistics evidence and contact the seller for their explanation before deciding.</p>
+ <div class="cd-decision-control"><select aria-label="Parcel accountability decision" data-parcel-choice><option value="">Select decision</option><option value="logistics_fault">Logistics at Fault</option><option value="seller_fault">Seller at Fault</option><option value="shared">Shared Responsibility</option></select><button type="button" data-parcel-review>Review Decision</button></div>
+</div>
 <!-- NOTES + UPDATE STATUS -->
             <div class="complaints-modal-footer-grid mt-[10px]">
                 <section class="complaints-modal-card complaints-modal-notes-card">
@@ -762,6 +772,15 @@
   <div id="cdDecisionSummary" class="cd-review-summary"></div>
   <label for="cdDecisionNotes">Decision explanation (optional)</label><textarea id="cdDecisionNotes" maxlength="800" placeholder="Explain the evidence and conversations supporting the decision..."></textarea>
   <div class="cd-review-actions"><button id="cdDecisionCancel" type="button" class="cd-cancel">Cancel</button><button id="cdDecisionSave" type="button" class="cd-confirm">Confirm Decision</button></div>
+ </div>
+</div>
+<div id="cdParcelDecisionConfirm" class="cd-review-backdrop" hidden aria-hidden="true">
+ <div class="cd-review-dialog" role="dialog" aria-modal="true" aria-labelledby="cdParcelDecisionTitle">
+  <h2 id="cdParcelDecisionTitle" class="cd-review-title">Confirm Parcel Accountability Decision</h2>
+  <p class="cd-review-desc">Logistics fault credits verified product value only. Seller fault deducts 0.5 compliance points and charges ₱50 shipping.</p>
+  <div id="cdParcelDecisionSummary" class="cd-review-summary"></div>
+  <label for="cdParcelDecisionNotes">Decision explanation</label><textarea id="cdParcelDecisionNotes" maxlength="2000" required placeholder="Summarize evidence and the seller's response..."></textarea>
+  <div class="cd-review-actions"><button id="cdParcelDecisionCancel" type="button" class="cd-cancel">Cancel</button><button id="cdParcelDecisionSave" type="button" class="cd-confirm">Confirm Decision</button></div>
  </div>
 </div>
 <div id="cdDecisionToast" class="cd-toast" hidden role="status" aria-live="polite"></div>
@@ -812,6 +831,7 @@
     $complaintsDisputesClientConfig = [
         'complaints' => $complaintRows,
         'apiUrl' => url('/api/v1/admin/complaints'),
+        'parcelIssuesUrl' => url('/api/v1/admin/parcel-issues'),
         'messagesUrl' => route('admin.messages'),
         'icons' => [
             'buyer' => asset('icons/admin/dashboard/body/buyer.png'),
@@ -876,14 +896,15 @@ document.addEventListener('DOMContentLoaded', () => {
  function sync() {
    const item = getActive();
    const decision = item?.sellerAtFault === true ? 'guilty' : item?.sellerAtFault === false ? 'not-guilty' : '';
+   const decided = item?.sellerAtFault === true || item?.sellerAtFault === false;
    [preview, detail].forEach(node => {
      const pill = node.querySelector('[data-cd-outcome]');
      const select = node.querySelector('[data-cd-choice]');
      pill.className = 'cd-outcome' + (decision ? ' ' + decision : '');
      pill.textContent = decision === 'guilty' ? 'Seller at Fault' : decision === 'not-guilty' ? 'Seller Not at Fault' : 'Awaiting decision';
      select.value = decision;
-     select.disabled = !item;
-     node.querySelector('[data-cd-review]').disabled = !item;
+     select.disabled = !item || decided;
+     node.querySelector('[data-cd-review]').disabled = !item || decided;
    });
  }
  const observer = new MutationObserver(sync);
@@ -929,6 +950,23 @@ document.addEventListener('DOMContentLoaded', () => {
      save.disabled=false;
    }
  });
+ sync();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+ const backdrop=document.getElementById('cdParcelDecisionConfirm');
+ const preview=document.getElementById('cdParcelDecisionPreview');
+ const modal=document.getElementById('cdParcelDecisionModal');
+ const records=()=>window.__adminParcelIssues||[];
+ let selection=null;
+ const current=()=>{const id=document.getElementById('detail-id')?.textContent?.trim();return records().find(item=>item.id===id)||null};
+ const label=value=>({logistics_fault:'Logistics at Fault',seller_fault:'Seller at Fault',shared:'Shared Responsibility'})[value]||'Awaiting decision';
+ const sync=()=>{const item=current();[preview,modal].forEach(card=>{if(!card)return;const select=card.querySelector('[data-parcel-choice]');const pill=card.querySelector('[data-parcel-outcome]');if(select){select.value=item?.decision||'';select.disabled=!item||!!item.decision}if(pill){pill.textContent=label(item?.decision);pill.className='cd-outcome'+(item?.decision==='seller_fault'?' guilty':item?.decision==='logistics_fault'?' not-guilty':'')}const button=card.querySelector('[data-parcel-review]');if(button)button.disabled=!item||!!item.decision;});};
+ const observer=new MutationObserver(sync);['detail-id','modal-complaint-id'].forEach(id=>{const element=document.getElementById(id);if(element)observer.observe(element,{childList:true,characterData:true,subtree:true})});
+ document.querySelectorAll('[data-parcel-review]').forEach(button=>button.addEventListener('click',()=>{const item=current();if(!item)return;const decision=button.closest('.cd-decision-card').querySelector('[data-parcel-choice]').value;if(!decision)return;selection={item,decision};document.getElementById('cdParcelDecisionSummary').textContent=`${item.id} · ${label(decision)} · Order ${item.orderId||'—'} · Tracking ${item.tracking||'—'}`;document.getElementById('cdParcelDecisionNotes').value='';backdrop.hidden=false;backdrop.setAttribute('aria-hidden','false')}));
+ const close=()=>{backdrop.hidden=true;backdrop.setAttribute('aria-hidden','true');selection=null};
+ document.getElementById('cdParcelDecisionCancel').addEventListener('click',close);backdrop.addEventListener('click',event=>{if(event.target===backdrop)close()});
+ document.getElementById('cdParcelDecisionSave').addEventListener('click',async()=>{if(!selection)return;const notes=document.getElementById('cdParcelDecisionNotes').value.trim();if(notes.length<3){document.getElementById('cdParcelDecisionNotes').focus();return}const save=document.getElementById('cdParcelDecisionSave');save.disabled=true;try{const item=selection.item;const response=await fetch(`/api/v1/admin/parcel-issues/${item.facility}/${item.databaseId}/decision`,{method:'PATCH',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:JSON.stringify({decision:selection.decision,notes})});const payload=await response.json();if(!response.ok)throw new Error(Object.values(payload.errors||{}).flat()[0]||payload.message||'Unable to save the parcel decision.');close();window.location.reload()}catch(error){const toast=document.getElementById('cdDecisionToast');toast.textContent=error.message;toast.hidden=false;clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>toast.hidden=true,6000)}finally{save.disabled=false}});
  sync();
 });
 

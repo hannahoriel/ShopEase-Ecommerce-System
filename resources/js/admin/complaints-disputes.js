@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const statusLabels = {
         open: 'Open',
         'in-progress': 'In progress',
-        resolved: 'Resolved'
+        resolved: 'Resolved',
+        'under-review': 'Under Review'
     };
 
     const rows = Array.from(document.querySelectorAll('.complaint-row'));
@@ -864,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function () {
         detailsModal.querySelector('[data-admin-return-review]')?.remove();
         detailsModal.querySelector('[data-admin-return-decisions]')?.remove();
         const record=complaint.returnRequest;
-        const accountability=document.getElementById('cdDecisionModal');if(accountability)accountability.hidden=!!record;
+        const accountability=document.getElementById('cdDecisionModal');if(accountability)accountability.hidden=!!record||!!complaint.parcelIssue;
         if(!record)return;
         const panel=document.createElement('section');panel.dataset.adminReturnReview='';
         panel.className='se-return-summary';
@@ -1037,6 +1038,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         renderComplaintEvidence(complaint);
         const accountabilityPreview=document.getElementById('cdDecisionPreview');if(accountabilityPreview)accountabilityPreview.hidden=!!complaint.returnRequest;
+        if(accountabilityPreview)accountabilityPreview.hidden=!!complaint.returnRequest||!!complaint.parcelIssue;
+        const parcelPreview=document.getElementById('cdParcelDecisionPreview');if(parcelPreview)parcelPreview.hidden=!complaint.parcelIssue;
+        const parcelModal=document.getElementById('cdParcelDecisionModal');if(parcelModal)parcelModal.hidden=!complaint.parcelIssue;
+        const sellerModal=document.getElementById('cdDecisionModal');if(sellerModal)sellerModal.hidden=!!complaint.parcelIssue;
+        document.querySelectorAll('.complaints-update-wrap, .complaints-modal-update-wrap').forEach(control=>{control.hidden=!!complaint.parcelIssue});
 
         activeIndex = Number(index);
 
@@ -1269,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(closeFlash, 3800);
     }
 
-    rows.forEach(row => {
+    function bindComplaintRow(row) {
         row.addEventListener('click', function () {
             updateDetails(
                 Number(row.dataset.index)
@@ -1290,7 +1296,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 Number(row.dataset.index)
             );
         });
-    });
+    }
+    rows.forEach(bindComplaintRow);
 
     detailClose.addEventListener('click', function (event) {
         event.stopPropagation();
@@ -1557,12 +1564,54 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         complaints.splice(0, complaints.length, ...(payload.data || []));
+        const parcelResponse = await fetch(complaintsConfig.parcelIssuesUrl || '/api/v1/admin/parcel-issues', {
+            credentials: 'same-origin', headers: { Accept: 'application/json' }
+        });
+        const parcelPayload = await parcelResponse.json();
+        if (!parcelResponse.ok) throw new Error(parcelPayload.message || 'Unable to load parcel disputes.');
+        window.__adminParcelIssues = parcelPayload.data || [];
+        (parcelPayload.data || []).forEach(issue => {
+            const index = complaints.length;
+            complaints.push({
+                ...issue, updates: [], evidence: issue.evidence || [], party1Photo: null, party2Photo: null,
+                shippingMethod: issue.tracking || issue.shippingMethod || '—', shopName: issue.party2, returnRequest: null
+            });
+            const row = document.createElement('tr');
+            row.className = 'complaint-row';
+            row.dataset.index = String(index);
+            row.dataset.databaseId = String(issue.databaseId);
+            row.dataset.id = issue.id.toLowerCase();
+            row.dataset.name = `${issue.party1} ${issue.party2}`.toLowerCase();
+            row.dataset.type = issue.type;
+            row.dataset.status = issue.status;
+            row.tabIndex = 0;
+            row.setAttribute('role', 'button');
+            row.innerHTML = `<td><span class="complaint-id">${escapeHtml(issue.id)}</span></td><td><div class="complaint-parties"><div class="complaint-party"><span class="complaint-avatar"></span><span class="complaint-party-copy"><span class="complaint-party-name">${escapeHtml(issue.party1)}</span><span class="complaint-party-role">Logistics</span></span></div><div class="complaint-party"><span class="complaint-avatar"></span><span class="complaint-party-copy"><span class="complaint-party-name">${escapeHtml(issue.party2)}</span><span class="complaint-party-role">Seller</span></span></div></div></td><td><span class="complaint-type">${escapeHtml(issue.type)}</span></td><td><span class="complaint-status ${escapeHtml(issue.status)}">${escapeHtml(statusLabels[issue.status] || issue.status)}</span></td><td><div class="complaint-date-cell"><span>${escapeHtml(issue.date || '')}<br>${escapeHtml(issue.time || '')}</span></div></td>`;
+            document.getElementById('complaints-table-body')?.append(row);
+            rows.push(row);
+            bindComplaintRow(row);
+        });
+        const ordered = complaints.map((item, index) => ({ item, row: rows[index] }))
+            .sort((left, right) => {
+                const timestamp = item => new Date(item.createdAt || item.at || `${item.date || ''} ${item.time || ''}`).getTime() || 0;
+                return timestamp(right.item) - timestamp(left.item);
+            });
+        const orderedComplaints = ordered.map(entry => entry.item);
+        const orderedRows = ordered.map(entry => entry.row);
+        complaints.splice(0, complaints.length, ...orderedComplaints);
+        rows.splice(0, rows.length, ...orderedRows);
+        const tableBody = document.getElementById('complaints-table-body');
+        orderedRows.forEach((row, index) => {
+            row.dataset.index = String(index);
+            tableBody?.append(row);
+        });
         syncComplaintAvatars();
         const counts = payload.counts || {};
-        statOpen.textContent = counts.open || 0;
+        statOpen.textContent = (counts.open || 0) + (parcelPayload.data || []).filter(issue => issue.status === 'under-review').length;
         statInProgress.textContent = counts.in_progress || 0;
         statResolved.textContent = counts.resolved || 0;
-        statTotal.textContent = counts.total || 0;
+        statTotal.textContent = (counts.total || 0) + (parcelPayload.data || []).length;
+        filterRows();
     }
 
     loadComplaintsFromApi().catch(error => {

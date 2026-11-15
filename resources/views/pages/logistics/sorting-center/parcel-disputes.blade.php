@@ -102,9 +102,9 @@ function partyInfo(p,label){
  return section(label+' Information',pair('Name',p[b+'_name'])+pair('Email',p[b+'_email'])+pair('Contact Number',contact??'Not provided')+pair('Province',p[b+'_province'])+pair('Municipality',p[b+'_city'])+pair('Barangay',p[b+'_barangay'])+pair('Street',p[b+'_street'])+pair('House No.',p[b+'_house_no'])+pair('ZIP',p[b+'_postal_code']));
 }
 function reportAccountability(r){
- if(!r.accountability)return section('Accountability & Seller Compensation','<p class="pd-details-note">Automatic reimbursement applies to lost and damaged parcel reports.</p>');
+ if(!r.accountability)return section('Admin Review & Seller Compensation','<p class="pd-details-note">No wallet adjustment is made until an admin decision is recorded.</p>');
  const a=r.accountability;
- return section('Accountability & Seller Compensation',`<div class="pd-accountability-summary">${grid(field('Responsible Party','Logistics Partner')+field('Resolution','Full Parcel Value Reimbursement to Seller')+field('Parcel Value',formatMoney(a.parcelAmount))+field('Amount Owed to Seller',formatMoney(a.compensation))+field('Settlement Status',a.status||'Reimbursed · UI Simulation')+field('Reimbursed At (Demo)',fmt(a.simulatedReimbursedAt))+field('Accountability Recorded At',fmt(a.at))+field('Notes',a.notes||'Automatically assigned after the parcel issue was reported.',true))}</div><p class="pd-details-note">The reimbursement date/time is simulated for UI preview only. No real money has been transferred or credited to the seller.</p>`);
+ return section('Admin Review & Seller Compensation',`<div class="pd-accountability-summary">${grid(field('Review Status',r.status||'Under Review')+field('Admin Decision',a.status||'Awaiting admin decision')+field('Product Value',formatMoney(a.parcelAmount))+field('Seller Compensation',formatMoney(a.compensation))+field('Decision Notes',a.notes||'No wallet adjustment is made until an admin decision is recorded.',true))}</div><p class="pd-details-note">The admin reviews the report, evidence, and seller response before deciding responsibility or posting a wallet adjustment.</p>`);
 }
 function trackingProgress(p){
  const stage=p.status==='delivered'?3:p.status==='out-for-delivery'?2:['incoming','received','ready','staged','loaded'].includes(p.status)?1:0;
