@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ReportsController as AdminReportsController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ComplaintController as AdminComplaintController;
 use App\Http\Controllers\Api\Admin\MessagesController as AdminMessagesController;
+use App\Http\Controllers\Api\Admin\ParcelIssueReviewController;
 use App\Http\Controllers\Api\Admin\SellerComplianceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MobilePasswordSecurityController;
@@ -221,6 +222,8 @@ Route::prefix('v1')->group(function () {
             Route::delete('/logistics-management/branches/{branch}', [LogisticsManagementController::class, 'destroyBranch'])
                 ->name('admin.api.logistics.branches.destroy');
             Route::get('/complaints', [AdminComplaintController::class, 'index'])->name('admin.api.complaints.index');
+            Route::get('/parcel-issues', [ParcelIssueReviewController::class, 'index'])->name('admin.api.parcel-issues.index');
+            Route::patch('/parcel-issues/{facility}/{reportId}/decision', [ParcelIssueReviewController::class, 'decide'])->name('admin.api.parcel-issues.decision');
             Route::patch('/complaints/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])->name('admin.api.complaints.status');
             Route::patch('/complaints/{complaint}/seller-fault', [AdminComplaintController::class, 'updateSellerFaultDecision'])->name('admin.api.complaints.seller-fault');
             Route::patch('/complaints/{complaint}/return-decision', [\App\Http\Controllers\Api\Admin\ReturnComplaintController::class, 'update'])->name('admin.api.complaints.return-decision');

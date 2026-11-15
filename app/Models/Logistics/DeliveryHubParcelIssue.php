@@ -16,10 +16,14 @@ class DeliveryHubParcelIssue extends Model
         'evidence_path',
         'status',
         'accountability',
+        'admin_decision',
+        'decision_notes',
+        'decided_by',
+        'decided_at',
     ];
 
     protected function casts(): array
     {
-        return ['accountability' => 'array'];
+        return ['accountability' => 'array', 'decided_at' => 'datetime'];
     }
 }

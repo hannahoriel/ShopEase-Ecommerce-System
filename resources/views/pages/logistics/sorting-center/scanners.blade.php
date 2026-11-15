@@ -658,20 +658,13 @@ $('scIssueForm').addEventListener('submit',async e=>{
   const selectedType=issueType;
   if(!['Lost Parcel','Damaged Parcel'].includes(selectedType)){say('Please select Lost Parcel or Damaged Parcel.');return;}
   const parcel=findParcel(activeIssueTracking);
-  const value=Number(parcel?.total_amount);
-  const amount=Number.isFinite(value)&&value>0?value.toFixed(2):'';
-  const recordedAt=now();
-  const accountability={party:'Logistics Partner',resolution:'Full Parcel Value Reimbursement to Seller',
-    parcelAmount:amount,compensation:amount,
-    notes:'Automatically recorded after a '+selectedType.toLowerCase()+' report was submitted.',
-    at:recordedAt,simulatedReimbursedAt:amount?recordedAt:null,status:amount?'Reimbursed · UI Simulation':'Amount Verification Required · Demo',autoVersion:3};
   const submit=$('scIssueSubmit');submit.disabled=true;submit.textContent='Submitting…';let report;
-  try{const formData=new FormData();formData.append('tracking',activeIssueTracking);formData.append('type',selectedType);formData.append('description',cleanDescription);if(f)formData.append('evidence',f);report=await submitIssueBackend(formData);if(!report?.id)throw new Error('The report was not returned by the server.');report={...report,accountability};}
+  try{const formData=new FormData();formData.append('tracking',activeIssueTracking);formData.append('type',selectedType);formData.append('description',cleanDescription);if(f)formData.append('evidence',f);report=await submitIssueBackend(formData);if(!report?.id)throw new Error('The report was not returned by the server.');}
   catch(error){say(error.message||'Could not save parcel issue.');return;}
   finally{submit.disabled=false;submit.textContent='Submit Report';}
   serverIssueReports=[report,...issueReports().filter(r=>String(r.id)!==String(report.id))];
   // Retain the parcel details for Disputes; exclude it from all scanner lists and dispatch operations.
-  if(parcel){parcel.reportedIssue=true;parcel.reportedAt=recordedAt;parcel.reportId=report.id;parcel.nextStop=null;if(parcel.status==='staged')parcel.status='reported';}
+  if(parcel){parcel.reportedIssue=true;parcel.reportedAt=report.at||now();parcel.reportId=report.id;parcel.nextStop=null;if(parcel.status==='staged')parcel.status='reported';}
   const tracking=activeIssueTracking;closeIssueModal();closeParcelDetails();window.location.assign(@json(route('sorting-center.parcel-disputes'))+'?tracking='+encodeURIComponent(tracking)+'&report='+encodeURIComponent(report.id));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('scIssueModal').hidden)closeIssueModal()});

@@ -105,14 +105,14 @@ function partyInfo(p,label){
 }
 function reportAccountability(r){
  if(r.isFailedPickup||/pickup unsuccessful|failed.*pickup/i.test(String(r.type||'')))return section('Pickup Failure & Next Steps',grid(field('Failure Reason',r.failureReason||r.description)+field('Pickup Type',r.pickupKind==='return'?'Buyer Return':'Seller Pickup')+field('Barangay',r.barangay)+field('Scheduled Pickup',r.scheduledDate)+field('Assigned Pickup Rider',r.assignedRider)+field('Next Action','Reschedule pickup with buyer / seller',true))+'<p class="pd-details-note">No parcel-loss reimbursement is triggered by a failed pickup. Reschedule it through the Delivery Hub scanner.</p>');
-  if(!r.accountability)return section('Accountability & Seller Compensation','<p class="pd-details-note">Automatic reimbursement applies only to lost and damaged parcel reports.</p>');
+  if(!r.accountability)return section('Admin Review & Seller Compensation','<p class="pd-details-note">No wallet adjustment is made until an admin decision is recorded.</p>');
  const a=r.accountability;
- return section('Accountability & Seller Compensation',`<div class="pd-accountability-summary">${grid(field('Responsible Party','Logistics Partner')+field('Resolution','Full Parcel Value Reimbursement to Seller')+field('Parcel Value',formatMoney(a.parcelAmount))+field('Amount Owed to Seller',formatMoney(a.compensation))+field('Settlement Status',a.status||'Reimbursed · UI Simulation')+field('Reimbursed At (Demo)',fmt(a.simulatedReimbursedAt))+field('Accountability Recorded At',fmt(a.at))+field('Notes',a.notes||'Automatically assigned after the parcel issue was reported.',true))}</div><p class="pd-details-note">The reimbursement date/time is simulated for UI preview only. No real money has been transferred or credited to the seller.</p>`);
+ return section('Admin Review & Seller Compensation',`<div class="pd-accountability-summary">${grid(field('Review Status',r.status||'Under Review')+field('Admin Decision',a.status||'Awaiting admin decision')+field('Product Value',formatMoney(a.parcelAmount))+field('Seller Compensation',formatMoney(a.compensation))+field('Decision Notes',a.notes||'No wallet adjustment is made until an admin decision is recorded.',true))}</div><p class="pd-details-note">The admin reviews the report, evidence, and seller response before deciding responsibility or posting a wallet adjustment.</p>`);
 }
 function applyAutomaticAccountability(){
  for(const r of reports){
   const issue=norm(r.type||r.issueType||r.issue_type).replace(/[-_]/g,' ');
-  if(!(issue.includes('lost')||issue.includes('damaged')) || r.accountability?.autoVersion===3)continue;
+  if(!(issue.includes('lost')||issue.includes('damaged')) || r.status==='Under Review' || r.accountability?.status==='Under Review' || r.accountability?.autoVersion===3)continue;
   const p=scannerParcel(r.tracking);
   const value=Number(p?.total_amount ?? r.parcelAmount ?? r.total_amount ?? NaN);
   const amount=Number.isFinite(value)&&value>0?value.toFixed(2):'';
@@ -129,7 +129,7 @@ function trackingProgress(p){
 }
 function openReport(id){
  const r=reports.find(x=>String(x.id)===String(id));if(!r)return;
- applyAutomaticAccountability();const p=scannerParcel(r.tracking);
+ const p=scannerParcel(r.tracking);
  // Same detail-card order, field grid, paired buyer/seller columns and progress icons as Scanner.
  let html=section('Report Information',grid(field('Report ID',r.id)+field('Tracking Number',r.tracking)+field('Issue Type',r.type)+field('Report Status',r.status)+field('Reported At',fmt(r.at))+field('Description',r.description,true)+field('Evidence Filename',r.evidenceName||'No evidence attached',true)));
  if(p){

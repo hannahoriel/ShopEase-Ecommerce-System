@@ -6,13 +6,11 @@ use App\Models\Admin\Order;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\BuyerNotification;
 use App\Models\Admin\PlatformPolicy;
-use App\Models\Admin\Shipment;
 use App\Models\Logistics\DeliveryHubParcelIssue;
 use App\Models\Logistics\SortingCenterParcelIssue;
 use App\Models\Seller\Seller;
 use App\Models\User;
 use App\Services\CodSettlementService;
-use App\Services\Logistics\CancelOrderForParcelIssue;
 use App\Services\SellerPickupAttemptService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -155,51 +153,8 @@ Schedule::command('orders:process-missed-seller-pickups')
     ->timezone('Asia/Manila')
     ->withoutOverlapping();
 
-Artisan::command('logistics:reconcile-parcel-issues', function (CancelOrderForParcelIssue $canceller): void {
-    $cancelled = 0;
-    $reimbursed = 0;
-
-    SortingCenterParcelIssue::query()->whereIn('issue_type', ['Lost Parcel', 'Damaged Parcel'])
-        ->orderBy('id')->chunkById(100, function ($reports) use ($canceller, &$cancelled, &$reimbursed): void {
-            foreach ($reports as $report) {
-                DB::transaction(function () use ($report, $canceller, &$cancelled, &$reimbursed): void {
-                    $shipment = Shipment::query()->with('order')
-                        ->where('tracking_number', $report->tracking_number)
-                        ->where('logistics_branch_id', $report->sorting_center_id)
-                        ->lockForUpdate()->first();
-                    if (! $shipment) return;
-                    $outcome = $canceller->handle($shipment, (int) $report->reported_by, $report->issue_type, $report->description);
-                    $cancelled += (int) $outcome['cancelled'];
-                    $reimbursed += (int) $outcome['reimbursed'];
-                    if ($outcome['reimbursed']) {
-                        $accountability = $report->accountability ?? [];
-                        $report->accountability = array_merge($accountability, ['status' => 'Credited to Seller Wallet', 'reimbursedAt' => now()->toIso8601String(), 'simulatedReimbursedAt' => null]);
-                        $report->save();
-                    }
-                }, 3);
-            }
-        });
-
-    DeliveryHubParcelIssue::query()->whereIn('issue_type', ['Lost Parcel', 'Damaged Parcel'])
-        ->orderBy('id')->chunkById(100, function ($reports) use ($canceller, &$cancelled, &$reimbursed): void {
-            foreach ($reports as $report) {
-                DB::transaction(function () use ($report, $canceller, &$cancelled, &$reimbursed): void {
-                    $shipment = Shipment::query()->with('order')
-                        ->where('tracking_number', $report->tracking_number)
-                        ->where('logistics_delivery_hub_id', $report->delivery_hub_id)
-                        ->lockForUpdate()->first();
-                    if (! $shipment) return;
-                    $outcome = $canceller->handle($shipment, (int) $report->reported_by, $report->issue_type, $report->description);
-                    $cancelled += (int) $outcome['cancelled'];
-                    $reimbursed += (int) $outcome['reimbursed'];
-                    if ($outcome['reimbursed']) {
-                        $accountability = $report->accountability ?? [];
-                        $report->accountability = array_merge($accountability, ['status' => 'Credited to Seller Wallet', 'reimbursedAt' => now()->toIso8601String(), 'simulatedReimbursedAt' => null]);
-                        $report->save();
-                    }
-                }, 3);
-            }
-        });
-
-    $this->info("Reconciled parcel issues: {$cancelled} order(s) cancelled, {$reimbursed} seller reimbursement(s) credited.");
-})->purpose('Apply cancellation and seller reimbursement to existing Lost or Damaged parcel reports');
+Artisan::command('logistics:reconcile-parcel-issues', function (): void {
+    $sorting = SortingCenterParcelIssue::query()->whereIn('issue_type', ['Lost Parcel', 'Damaged Parcel'])->whereNull('decision')->count();
+    $hubs = DeliveryHubParcelIssue::query()->whereIn('issue_type', ['Lost Parcel', 'Damaged Parcel'])->whereNull('decision')->count();
+    $this->info("Pending admin review: {$sorting} sorting-center report(s), {$hubs} delivery-hub report(s). No wallet or order changes were made.");
+})->purpose('List unresolved parcel issue reports awaiting an admin decision');

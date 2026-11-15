@@ -6,6 +6,7 @@ use App\Models\Admin\Complaint;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class SellerComplianceService
 {
@@ -31,7 +32,25 @@ class SellerComplianceService
             ->whereHas('order', fn ($query) => $query->where('seller_id', $seller->id))
             ->count();
 
-        return self::scoreFromCounts($reviewCount, $atFaultComplaintCount);
+        $atFaultParcelReports = 0;
+        if (DB::getSchemaBuilder()->hasTable('sorting_center_parcel_issues')) {
+            $atFaultParcelReports += DB::table('sorting_center_parcel_issues as issues')
+                ->join('shipments', function ($join): void {
+                    $join->on('shipments.tracking_number', '=', 'issues.tracking_number')
+                        ->on('shipments.logistics_branch_id', '=', 'issues.sorting_center_id');
+                })->join('orders', 'orders.id', '=', 'shipments.order_id')
+                ->where('orders.seller_id', $seller->id)->where('issues.admin_decision', 'seller_fault')->count();
+        }
+        if (DB::getSchemaBuilder()->hasTable('delivery_hub_parcel_issues')) {
+            $atFaultParcelReports += DB::table('delivery_hub_parcel_issues as issues')
+                ->join('shipments', function ($join): void {
+                    $join->on('shipments.tracking_number', '=', 'issues.tracking_number')
+                        ->on('shipments.logistics_delivery_hub_id', '=', 'issues.delivery_hub_id');
+                })->join('orders', 'orders.id', '=', 'shipments.order_id')
+                ->where('orders.seller_id', $seller->id)->where('issues.admin_decision', 'seller_fault')->count();
+        }
+
+        return self::scoreFromCounts($reviewCount, $atFaultComplaintCount + $atFaultParcelReports);
     }
 
     public function applyAutomaticSuspension(Seller $seller, float $score): array
