@@ -40,9 +40,34 @@ use App\Http\Controllers\Admin\AdminAccountController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/terms-and-conditions', function (Request $request) {
+$resolveLegalReturnUrl = static function (Request $request): ?string {
+    $returnUrl = $request->query('return_to');
+
+    if (!is_string($returnUrl)
+        || !str_starts_with($returnUrl, '/')
+        || str_starts_with($returnUrl, '//')
+        || str_contains($returnUrl, '\\')
+        || preg_match('/[\x00-\x20\x7f]/', $returnUrl) === 1) {
+        return null;
+    }
+
+    $parsedUrl = parse_url($returnUrl);
+
+    if ($parsedUrl === false
+        || isset($parsedUrl['scheme'])
+        || isset($parsedUrl['host'])
+        || isset($parsedUrl['user'])
+        || isset($parsedUrl['pass'])) {
+        return null;
+    }
+
+    return $returnUrl;
+};
+
+Route::get('/terms-and-conditions', function (Request $request) use ($resolveLegalReturnUrl) {
     $role = $request->query('role', 'buyer');
     abort_unless(in_array($role, ['buyer', 'seller', 'logistics', 'rider', 'courier'], true), 404);
+    $legalReturnUrl = $resolveLegalReturnUrl($request);
 
     return view('legal.terms-and-conditions', [
         'termsRole' => $role,
@@ -54,12 +79,24 @@ Route::get('/terms-and-conditions', function (Request $request) {
             'courier' => 'Courier',
         ][$role],
         'termsVersion' => \App\Http\Services\RegistrationService::TERMS_VERSION,
+        'privacyVersion' => \App\Http\Services\RegistrationService::PRIVACY_VERSION,
+        'legalRole' => $role,
+        'legalReturnUrl' => $legalReturnUrl ?? route('landing.page'),
+        'hasRegistrationReturn' => $legalReturnUrl !== null,
     ]);
 })->name('terms-and-conditions');
 
-Route::get('/privacy-policy', function () {
+Route::get('/privacy-policy', function (Request $request) use ($resolveLegalReturnUrl) {
+    $role = $request->query('role', 'buyer');
+    abort_unless(in_array($role, ['buyer', 'seller', 'logistics', 'rider', 'courier'], true), 404);
+    $legalReturnUrl = $resolveLegalReturnUrl($request);
+
     return view('legal.privacy-policy', [
         'privacyVersion' => \App\Http\Services\RegistrationService::PRIVACY_VERSION,
+        'termsVersion' => \App\Http\Services\RegistrationService::TERMS_VERSION,
+        'legalRole' => $role,
+        'legalReturnUrl' => $legalReturnUrl ?? route('landing.page'),
+        'hasRegistrationReturn' => $legalReturnUrl !== null,
     ]);
 })->name('privacy-policy');
 

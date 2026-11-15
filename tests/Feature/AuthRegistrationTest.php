@@ -361,6 +361,7 @@ class AuthRegistrationTest extends TestCase
         $this->get(route('terms-and-conditions', ['role' => 'buyer']))
             ->assertOk()
             ->assertSee('Buyer-specific terms')
+            ->assertSee('href="#terms-buyer"', false)
             ->assertSee('ShopEase Wallet refunds')
             ->assertDontSee('Compliance Score')
             ->assertDontSee('third missed attempt');
@@ -368,6 +369,7 @@ class AuthRegistrationTest extends TestCase
         $this->get(route('terms-and-conditions', ['role' => 'seller']))
             ->assertOk()
             ->assertSee('Seller-specific terms')
+            ->assertSee('href="#terms-seller"', false)
             ->assertSee('seller-at-fault')
             ->assertSee('suspended for 3 days')
             ->assertDontSee('ShopEase Wallet refunds')
@@ -376,27 +378,87 @@ class AuthRegistrationTest extends TestCase
         $this->get(route('terms-and-conditions', ['role' => 'logistics']))
             ->assertOk()
             ->assertSee('Logistics-specific terms')
+            ->assertSee('href="#terms-logistics"', false)
             ->assertDontSee('Compliance Score')
             ->assertDontSee('third missed attempt');
 
         $this->get(route('terms-and-conditions', ['role' => 'rider']))
             ->assertOk()
             ->assertSee('Rider-specific terms')
+            ->assertSee('href="#terms-rider"', false)
             ->assertSee('₱20.00')
             ->assertDontSee('Courier-specific terms');
 
         $this->get(route('terms-and-conditions', ['role' => 'courier']))
             ->assertOk()
             ->assertSee('Courier-specific terms')
+            ->assertSee('href="#terms-courier"', false)
             ->assertDontSee('third missed attempt')
             ->assertDontSee('ShopEase Wallet refunds');
 
         $this->get(route('privacy-policy'))
             ->assertOk()
+            ->assertSee('href="#privacy-scope"', false)
             ->assertSee('Republic Act No. 10173')
             ->assertSee('Implementing Rules and Regulations of RA 10173')
             ->assertSee('Republic Act No. 11967')
             ->assertSee('location coordinates');
+    }
+
+    public function test_legal_section_acknowledgments_return_to_the_registration_in_progress(): void
+    {
+        $sellerTerms = $this->get(route('terms-and-conditions', [
+            'role' => 'seller',
+            'return_to' => '/seller/register',
+        ]));
+
+        $sellerTerms->assertOk()
+            ->assertSee('Back to registration')
+            ->assertSee('href="/seller/register"', false)
+            ->assertSee('data-legal-document="terms"', false)
+            ->assertSee('data-legal-role="seller"', false);
+        $this->assertSame(5, substr_count($sellerTerms->getContent(), 'data-legal-section="'));
+
+        $sellerPrivacy = $this->get(route('privacy-policy', [
+            'role' => 'seller',
+            'return_to' => '/seller/register',
+        ]));
+
+        $sellerPrivacy->assertOk()
+            ->assertSee('Back to registration')
+            ->assertSee('href="/seller/register"', false)
+            ->assertSee('data-legal-document="privacy"', false)
+            ->assertSee('data-legal-role="seller"', false);
+        $this->assertSame(11, substr_count($sellerPrivacy->getContent(), 'data-legal-section="'));
+
+        $this->get(route('terms-and-conditions', [
+            'role' => 'seller',
+            'return_to' => '//outside.example',
+        ]))
+            ->assertOk()
+            ->assertSee('Back to ShopEase')
+            ->assertDontSee('href="//outside.example"', false);
+    }
+
+    public function test_buyer_and_seller_signup_pages_include_role_scoped_legal_consent_controls(): void
+    {
+        $this->get(route('buyer.register'))
+            ->assertOk()
+            ->assertSee('data-legal-consent-form', false)
+            ->assertSee('data-master-consent="terms"', false)
+            ->assertSee(route('terms-and-conditions', [
+                'role' => 'buyer',
+                'return_to' => '/buyer/register',
+            ]));
+
+        $this->get(route('seller.register'))
+            ->assertOk()
+            ->assertSee('data-legal-consent-form', false)
+            ->assertSee('data-master-consent="privacy"', false)
+            ->assertSee(route('privacy-policy', [
+                'role' => 'seller',
+                'return_to' => '/seller/register',
+            ]));
     }
 
     public function test_rider_and_courier_dashboards_show_mobile_policy_links_for_their_roles(): void

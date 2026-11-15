@@ -16,6 +16,14 @@
     --color-peach-dark: #f3a98c;
 }
 
+.legal-consent-status {
+    display: block;
+    margin-top: 8px;
+    color: #66565a;
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
 /* ==========================================
    SIDEBAR RELOAD UX
    ========================================== */
