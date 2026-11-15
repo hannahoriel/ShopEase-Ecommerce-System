@@ -3,12 +3,13 @@
 namespace App\Models\Logistics;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 class SortingCenterVehicle extends Model
 {
     protected $fillable = [
-        'sorting_center_id', 'name', 'type', 'plate_number', 'make', 'model', 'year', 'capacity',
+        'sorting_center_id', 'courier_registration_id', 'name', 'type', 'plate_number', 'make', 'model', 'year', 'capacity',
         'driver_name', 'registration_date', 'availability', 'color', 'or_cr_path', 'notes',
     ];
 
@@ -22,5 +23,10 @@ class SortingCenterVehicle extends Model
     public function getOrCrUrlAttribute(): ?string
     {
         return $this->or_cr_path ? Storage::disk('public')->url($this->or_cr_path) : null;
+    }
+
+    public function courierRegistration(): BelongsTo
+    {
+        return $this->belongsTo(CourierRegistration::class);
     }
 }

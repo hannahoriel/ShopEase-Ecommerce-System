@@ -206,6 +206,8 @@ class ParcelRouteScanController extends Controller
                 }
                 $batchKey = $input['batch_key'] ?: 'scan-'.$shipment->id.'-'.now()->format('YmdHisv');
                 $trip = null;
+                $courier = null;
+                $vehicle = null;
                 $requiresCourierDeparture = $facility === 'sorting_center';
                 if (! empty($input['returning_manifest_id'])) {
                     $trip = LogisticsTransferManifest::query()->lockForUpdate()->findOrFail($input['returning_manifest_id']);
@@ -229,7 +231,8 @@ class ParcelRouteScanController extends Controller
                             $centerId = $facilityId;
                             $courier = CourierRegistration::query()->where('sorting_center_id', $centerId)->where('status', 'approved')->lockForUpdate()->find($courierId);
                             $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $centerId)->lockForUpdate()->find($vehicleId);
-                            abort_unless($courier && $vehicle && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number), 422, 'Select an approved courier and the vehicle registered to that courier.');
+                            abort_unless($courier && $vehicle, 422, 'Select an approved courier and a Sorting Center vehicle.');
+                            $this->assertCourierVehicleAssignment($courier, $vehicle);
                             abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
                             abort_if(LogisticsTransferManifest::query()
                                 ->whereIn('status', ['preparing', 'loaded'])
@@ -255,11 +258,11 @@ class ParcelRouteScanController extends Controller
                             ->lockForUpdate()
                             ->find($vehicleId);
                         abort_unless(
-                            $courier && $vehicle
-                            && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number),
+                            $courier && $vehicle,
                             422,
-                            'Select an approved Sorting Center courier and their registered vehicle.',
+                            'Select an approved Sorting Center courier and a Sorting Center vehicle.',
                         );
+                        $this->assertCourierVehicleAssignment($courier, $vehicle);
                         abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
                         abort_if(LogisticsTransferManifest::query()
                             ->whereIn('status', ['preparing', 'loaded'])
@@ -281,8 +284,11 @@ class ParcelRouteScanController extends Controller
                         'destination_type' => $destinationType, 'destination_id' => $destinationId,
                         'courier_registration_id' => $trip?->courier_registration_id ?? $input['courier_registration_id'] ?? null,
                         'vehicle_id' => $trip?->vehicle_id ?? $input['vehicle_id'] ?? null,
-                        'courier_name' => $trip?->courier_name ?? $input['courier_name'] ?? null,
-                        'vehicle_reference' => $trip?->vehicle_reference ?? $input['vehicle_reference'] ?? null,
+                        'courier_name' => $trip?->courier_name ?? ($courier ? trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name]))) : null),
+                        'vehicle_reference' => $trip?->vehicle_reference ?? $vehicle?->plate_number,
+                        'vehicle_type' => $trip?->vehicle_type ?? $vehicle?->type,
+                        'assigned_by' => ($courier || $trip) ? $request->user()->id : null,
+                        'assigned_at' => ($courier || $trip) ? now() : null,
                         'returning_manifest_id' => $trip?->id,
                         'status' => $requiresCourierDeparture ? 'preparing' : 'loaded',
                         'loaded_at' => $requiresCourierDeparture ? null : now(),
@@ -313,8 +319,11 @@ class ParcelRouteScanController extends Controller
                     $outbound->update([
                         'courier_registration_id' => $input['courier_registration_id'],
                         'vehicle_id' => $input['vehicle_id'],
-                        'courier_name' => $input['courier_name'],
-                        'vehicle_reference' => $input['vehicle_reference'],
+                        'courier_name' => trim(implode(' ', array_filter([$courier?->first_name, $courier?->middle_name, $courier?->last_name]))),
+                        'vehicle_reference' => $vehicle?->plate_number,
+                        'vehicle_type' => $vehicle?->type,
+                        'assigned_by' => $outbound->assigned_by ?: $request->user()->id,
+                        'assigned_at' => $outbound->assigned_at ?: now(),
                         'scheduled_at' => $input['scheduled_at'],
                         'status' => 'preparing',
                         'loaded_at' => now(),
@@ -736,6 +745,9 @@ class ParcelRouteScanController extends Controller
                 'courier_name' => $returningTrip?->courier_name
                     ?? trim(implode(' ', array_filter([$courier?->first_name, $courier?->last_name]))),
                 'vehicle_reference' => $returningTrip?->vehicle_reference ?? $vehicle?->plate_number,
+                'vehicle_type' => $returningTrip?->vehicle_type ?? $vehicle?->type,
+                'assigned_by' => $request->user()->id,
+                'assigned_at' => now(),
                 'returning_manifest_id' => $returningTrip?->id,
                 'scheduled_at' => $input['scheduled_at'],
                 'status' => 'loaded',
@@ -853,13 +865,27 @@ class ParcelRouteScanController extends Controller
             ->where('sorting_center_id', $centerId)
             ->lockForUpdate()
             ->find($vehicleId);
-        abort_unless($courier && $vehicle
-            && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number),
-            422, 'Select an approved Sorting Center courier and their registered vehicle.');
+        abort_unless($courier && $vehicle,
+            422, 'Select an approved Sorting Center courier and a Sorting Center vehicle.');
         abort_unless(mb_strtolower((string) $vehicle->availability) === 'available',
             422, 'The assigned truck is not available.');
+        $this->assertCourierVehicleAssignment($courier, $vehicle);
 
         return [$courier, $vehicle];
+    }
+
+    private function assertCourierVehicleAssignment(CourierRegistration $courier, SortingCenterVehicle $vehicle): void
+    {
+        $courierName = mb_strtolower(trim(implode(' ', array_filter([
+            $courier->first_name,
+            $courier->middle_name,
+            $courier->last_name,
+        ]))));
+        $isAssigned = (int) $vehicle->courier_registration_id === (int) $courier->id
+            || ($vehicle->courier_registration_id === null
+                && mb_strtolower(trim((string) $vehicle->driver_name)) === $courierName);
+
+        abort_unless($isAssigned, 422, 'This vehicle is not assigned to the selected courier. Assign it in Vehicles and Drivers first.');
     }
 
     private function assertReturnTransportAvailable(
@@ -1123,8 +1149,8 @@ class ParcelRouteScanController extends Controller
                 $courier = CourierRegistration::query()->where('sorting_center_id', $center->id)->where('status', 'approved')
                     ->lockForUpdate()->find((int) $input['courier_registration_id']);
                 $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $center->id)->lockForUpdate()->find((int) $input['vehicle_id']);
-                abort_unless($courier && $vehicle && mb_strtolower($courier->plate_number) === mb_strtolower($vehicle->plate_number), 422,
-                    'Select an approved Sorting Center courier and their registered vehicle.');
+                abort_unless($courier && $vehicle, 422,
+                    'Select an approved Sorting Center courier and a Sorting Center vehicle.');
                 abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
             }
             $outbound ??= LogisticsTransferManifest::query()->create([
@@ -1145,7 +1171,10 @@ class ParcelRouteScanController extends Controller
                 'courier_registration_id' => $returningTrip?->courier_registration_id ?? $courier?->id,
                 'vehicle_id' => $returningTrip?->vehicle_id ?? $vehicle?->id,
                 'courier_name' => $returningTrip?->courier_name ?? $input['courier_name'] ?? $courier?->name,
-                'vehicle_reference' => $returningTrip?->vehicle_reference ?? $input['vehicle_reference'] ?? $vehicle?->plate_number,
+                'vehicle_reference' => $returningTrip?->vehicle_reference ?? $vehicle?->plate_number,
+                'vehicle_type' => $returningTrip?->vehicle_type ?? $vehicle?->type,
+                'assigned_by' => $request->user()->id,
+                'assigned_at' => now(),
                 'scheduled_at' => $input['scheduled_at'], 'status' => 'loaded', 'loaded_at' => now(), 'departed_at' => now(),
             ]);
             $outbound->shipments()->syncWithoutDetaching([$shipment->id => [
@@ -1585,21 +1614,21 @@ class ParcelRouteScanController extends Controller
         if ($facility === 'sorting_center') {
             $archivedCourierIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $id)->where('record_type', 'couriers')->pluck('record_id');
             $archivedVehicleIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $id)->where('record_type', 'vehicles')->pluck('record_id');
-            $couriers = CourierRegistration::query()->with('user:id,email')->where('sorting_center_id', $id)->where('status', 'approved')->whereNotIn('id', $archivedCourierIds)->get(['id', 'user_id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])->values();
-            $vehicles = SortingCenterVehicle::query()->where('sorting_center_id', $id)->whereNotIn('id', $archivedVehicleIds)->get(['id', 'name', 'type', 'plate_number', 'availability'])->values();
+            $couriers = CourierRegistration::query()->with('user:id,email')->where('sorting_center_id', $id)->where('status', 'approved')->whereNotIn('id', $archivedCourierIds)->get(['id', 'user_id', 'first_name', 'middle_name', 'last_name', 'phone'])->values();
+            $vehicles = SortingCenterVehicle::query()->where('sorting_center_id', $id)->whereNotIn('id', $archivedVehicleIds)->get(['id', 'courier_registration_id', 'driver_name', 'name', 'type', 'plate_number', 'availability'])->values();
         } elseif ($facility === 'delivery_hub') {
             $sortingCenterId = (int) $node->logistics_branch_id;
             $couriers = CourierRegistration::query()
                 ->where('sorting_center_id', $sortingCenterId)
                 ->where('status', 'approved')
                 ->with('user:id,email')
-                ->get(['id', 'user_id', 'first_name', 'middle_name', 'last_name', 'phone', 'plate_number', 'vehicle'])
+                ->get(['id', 'user_id', 'first_name', 'middle_name', 'last_name', 'phone'])
                 ->map(function (CourierRegistration $courier) use ($sortingCenterId): ?array {
                     $vehicle = SortingCenterVehicle::query()
                         ->where('sorting_center_id', $sortingCenterId)
-                        ->whereRaw('LOWER(plate_number) = ?', [mb_strtolower(trim((string) $courier->plate_number))])
+                        ->where('courier_registration_id', $courier->id)
                         ->whereRaw('LOWER(availability) = ?', ['available'])
-                        ->first(['id', 'name', 'type', 'plate_number']);
+                        ->first(['id', 'courier_registration_id', 'name', 'type', 'plate_number']);
                     if (! $vehicle) return null;
 
                     return [
@@ -1608,10 +1637,11 @@ class ParcelRouteScanController extends Controller
                         'name' => trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name]))),
                         'email' => $courier->user?->email,
                         'phone' => $courier->phone,
-                        'vehicle' => $courier->vehicle,
-                        'plate_number' => $courier->plate_number,
+                        'vehicle' => $vehicle->name,
+                        'plate_number' => $vehicle->plate_number,
                         'vehicle_id' => $vehicle->id,
                         'vehicle_reference' => $vehicle->plate_number,
+                        'vehicle_type' => $vehicle->type,
                     ];
                 })->filter()->values();
         }
@@ -1842,6 +1872,7 @@ class ParcelRouteScanController extends Controller
                 'courier_registration_id' => $transfer->courier_registration_id,
                 'vehicle_id' => $transfer->vehicle_id,
                 'vehicle_reference' => $transfer->vehicle_reference,
+                'vehicle_type' => $transfer->vehicle_type,
                 'origin_name' => $this->facilityName($transfer->origin_type, $transfer->origin_id),
             ])->values(),
             'centers' => $facility === 'sorting_center'

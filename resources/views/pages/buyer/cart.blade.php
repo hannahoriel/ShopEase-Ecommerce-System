@@ -34,6 +34,12 @@
         {!! json_encode([
             'cartUrl'  => '/api/v1/buyer/cart',
             'apiToken' => $apiToken ?? '',
+            'shippingRates' => [
+                'weightBrackets' => config('shipping.weight_brackets'),
+                'additionalBracketWeightKg' => config('shipping.additional_bracket_weight_kg'),
+                'additionalBracketFee' => config('shipping.additional_bracket_fee'),
+                'volumetricDivisor' => config('shipping.volumetric_divisor'),
+            ],
         ]) !!}
     </script>
 </head>
@@ -152,7 +158,7 @@
 
                         <div class="summary-row">
                             <span>Shipping Fee</span>
-                            <strong id="shippingValue">₱80.00</strong>
+                            <strong id="shippingValue">₱0.00</strong>
                         </div>
 
                         <div class="summary-spacer"></div>

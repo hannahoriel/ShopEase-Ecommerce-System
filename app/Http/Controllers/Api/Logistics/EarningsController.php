@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Logistics;
 use App\Models\Admin\Order;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
-use App\Services\CodSettlementService;
 use Illuminate\Http\Request;
 
 class EarningsController
@@ -34,10 +33,7 @@ class EarningsController
             $branch = $shipment->logisticsBranch ?: $shipment->deliveryHub?->logisticsBranch;
             $center = $branch?->name ?: 'Unassigned sorting center';
             $hub = $shipment->deliveryHub?->hub_name ?: 'Unassigned delivery hub';
-            // Shipping is a flat ₱50 fee across the logistics network. Some older
-            // orders and shipment rows have a null/zero fee, so do not let those
-            // legacy values erase the logistics company's recorded earnings.
-            $fee = CodSettlementService::LOGISTICS_SHIPPING_FEE;
+            $fee = max(0, (float) ($order->shipping_fee ?: $shipment?->shipping_fee ?: 0));
 
             return [
                 'date' => $shipment->delivered_at->timezone('Asia/Manila')->format('Y-m-d H:i'),
@@ -80,7 +76,7 @@ class EarningsController
                 'center_id' => $branch?->id,
                 'hub_id' => $shipment->logistics_delivery_hub_id,
                 'status' => 'Seller-paid RTO',
-                'amount' => CodSettlementService::LOGISTICS_SHIPPING_FEE,
+                'amount' => max(0, (float) ($order->shipping_fee ?: $shipment?->shipping_fee ?: 0)),
             ];
         })->sortByDesc('date')->values();
 

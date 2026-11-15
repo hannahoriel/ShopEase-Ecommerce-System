@@ -342,9 +342,9 @@ class DeliveryHubCodFinanceController extends Controller
                 $order = $collection->order;
                 $shippingVoucher = $order?->voucher_type === 'shipping' ? max(0, (float) $order->voucher_discount) : 0;
                 $buyerShipping = min($amount, max(0, (float) ($order?->shipping_fee ?? 0) - $shippingVoucher));
-                $agreedShipping = min(max(0, (float) ($order?->shipping_fee ?? 0)), CodSettlementService::LOGISTICS_SHIPPING_FEE);
-                $shipping = $order?->voucher_type === 'shipping' && $order?->voucher_funding_source === 'logistics' ? max(0, $agreedShipping - $shippingVoucher) : $agreedShipping;
-                $shippingMargin = max(0, round($buyerShipping - $agreedShipping, 2));
+                $shipping = max(0, round((float) ($order?->shipping_fee ?? 0)
+                    - ($order?->voucher_type === 'shipping' && $order?->voucher_funding_source === 'logistics' ? $shippingVoucher : 0), 2));
+                $shippingMargin = 0;
                 $collectedProductAmount = max(0, $amount - $buyerShipping);
                 $base = round($collectedProductAmount + ($order?->voucher_type === 'shipping' ? 0 : (float) ($order?->voucher_discount ?? 0)), 2);
                 $commission = round($base * CodSettlementService::COMMISSION_RATE / 100, 2);

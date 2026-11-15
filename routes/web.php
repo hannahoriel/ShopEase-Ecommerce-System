@@ -2482,9 +2482,13 @@ Route::middleware(['auth', 'role:sorting_center'])
             app(\App\Http\Controllers\Api\Logistics\CourierRegistrationController::class)
                 ->syncLegacyMobileApplications($center);
             $registrations = \App\Models\Logistics\CourierRegistration::query()
-                ->where('sorting_center_id', $center->id)
+                ->with('assignedVehicle')->where('sorting_center_id', $center->id)
                 ->latest('created_at')
                 ->get();
+            $registrations->each(function ($registration): void {
+                $registration->setAttribute('vehicle', $registration->assignedVehicle?->type);
+                $registration->setAttribute('plate_number', $registration->assignedVehicle?->plate_number);
+            });
 
             return view('pages.logistics.sorting-center.courier-registrations', [
                 'courierRegistrations' => $registrations,
@@ -2527,10 +2531,20 @@ Route::middleware(['auth', 'role:sorting_center'])
             $center = \App\Models\Logistics\LogisticsBranch::query()
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
+            $couriers = \App\Models\Logistics\CourierRegistration::query()
+                ->with('assignedVehicle')
+                ->where('sorting_center_id', $center->id)->where('status', 'approved')->latest('reviewed_at')->get();
+            $archivedVehicleIds = \App\Models\Logistics\SortingCenterFleetArchive::query()
+                ->where('sorting_center_id', $center->id)->where('record_type', 'vehicles')->pluck('record_id');
+            $couriers->each(function ($courier) use ($archivedVehicleIds): void {
+                $vehicle = $courier->assignedVehicle && ! $archivedVehicleIds->contains($courier->assignedVehicle->id)
+                    ? $courier->assignedVehicle
+                    : null;
+                $courier->setAttribute('vehicle', $vehicle?->type);
+                $courier->setAttribute('plate_number', $vehicle?->plate_number);
+            });
             $vehicles = \App\Models\Logistics\SortingCenterVehicle::query()
                 ->where('sorting_center_id', $center->id)->latest('created_at')->get();
-            $couriers = \App\Models\Logistics\CourierRegistration::query()
-                ->where('sorting_center_id', $center->id)->where('status', 'approved')->latest('reviewed_at')->get();
             $archives = \App\Models\Logistics\SortingCenterFleetArchive::query()
                 ->where('sorting_center_id', $center->id)->latest('archived_at')->get()
                 ->map(fn ($archive) => [

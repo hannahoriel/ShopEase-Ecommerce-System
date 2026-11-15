@@ -13,7 +13,6 @@ use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsTransferManifest;
 use App\Models\Logistics\LogisticsTransferManifestEvent;
 use App\Services\BuyerWalletService;
-use App\Services\CodSettlementService;
 use App\Services\SellerNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -89,7 +88,7 @@ class RecordFailedDeliveryAttemptController extends Controller
                     if ($seller?->user) {
                         app(SellerNotificationService::class)->send(
                             $seller->user, 'order_updates', 'Parcel returning to your store',
-                            'Order '.$lockedOrder->order_number.' was cancelled after three unsuccessful delivery attempts. The parcel is being returned to you. A ₱'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2).' failed-delivery return shipping fee will be recorded in your wallet once you receive the parcel.',
+                            'Order '.$lockedOrder->order_number.' was cancelled after three unsuccessful delivery attempts. The parcel is being returned to you. A ₱'.number_format((float) $lockedOrder->shipping_fee, 2).' failed-delivery return shipping fee will be recorded in your wallet once you receive the parcel.',
                             '/seller/order-status',
                         );
                     }

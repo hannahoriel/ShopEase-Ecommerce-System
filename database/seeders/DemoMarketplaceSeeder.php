@@ -27,6 +27,7 @@ use App\Models\Seller\ProductReview;
 use App\Models\Seller\ProductVariantCombination;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\ShippingFeeCalculator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -179,6 +180,7 @@ class DemoMarketplaceSeeder extends Seeder
                 'name' => 'Classic Everyday Backpack',
                 'category' => 'Bags',
                 'price' => 1250,
+                'weight_kg' => 1.5,
                 'stock' => 24,
                 'photos' => [
                     'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85',
@@ -189,6 +191,7 @@ class DemoMarketplaceSeeder extends Seeder
                 'name' => 'Wireless Earbuds Pro',
                 'category' => 'Gadgets',
                 'price' => 1899,
+                'weight_kg' => 0.4,
                 'stock' => 12,
                 'photos' => [
                     'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=900&q=85',
@@ -199,6 +202,7 @@ class DemoMarketplaceSeeder extends Seeder
                 'name' => 'Insulated Water Bottle',
                 'category' => 'Home & Living',
                 'price' => 499,
+                'weight_kg' => 0.8,
                 'stock' => 3,
                 'photos' => [
                     'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=85',
@@ -209,6 +213,7 @@ class DemoMarketplaceSeeder extends Seeder
                 'name' => 'Archived Demo Listing',
                 'category' => 'Accessories',
                 'price' => 299,
+                'weight_kg' => 0.5,
                 'stock' => 0,
                 'photos' => [],
             ],
@@ -223,6 +228,7 @@ class DemoMarketplaceSeeder extends Seeder
                     'description' => 'Demo listing for testing ShopEase product, inventory, and checkout flows.',
                     'category' => $fixture['category'],
                     'price' => $fixture['price'],
+                    'weight_kg' => $fixture['weight_kg'],
                     'pricing_mode' => 'fixed',
                     'pricing_source' => 'base',
                     'photos' => $fixture['photos'],
@@ -325,12 +331,14 @@ class DemoMarketplaceSeeder extends Seeder
             $createdAt = now()->subHours($fixture['age']);
             $orderNumber = 'SE-DEMO-BUYER-'.$fixture['key'];
             $pickupRequired = in_array($fixture['status'], ['to_ship', 'in_transit', 'out_for_delivery', 'delivered', 'completed'], true);
+            $shippingFee = ShippingFeeCalculator::forItems([(object) ['product' => $product, 'quantity' => (int) $fixture['quantity']]]);
             $order = Order::updateOrCreate(
                 ['order_number' => $orderNumber],
                 [
                     'buyer_id' => $buyer->id,
                     'seller_id' => $seller->id,
-                    'total' => (float) $product->price * $fixture['quantity'],
+                    'total' => (float) $product->price * $fixture['quantity'] + $shippingFee,
+                    'shipping_fee' => $shippingFee,
                     'status' => $fixture['status'],
                     'pickup_date' => $pickupRequired ? $createdAt->copy()->addDay()->toDateString() : null,
                     'pickup_time' => $pickupRequired ? '14:00' : null,
@@ -482,7 +490,7 @@ class DemoMarketplaceSeeder extends Seeder
                 'scan_token' => $scanToken,
                 'courier' => 'Ease Express',
                 'estimated_delivery' => $createdAt->copy()->addDays(3)->toDateString(),
-                'shipping_fee' => 80,
+                'shipping_fee' => (float) $order->shipping_fee,
                 'picked_up_at' => in_array($status, ['in_transit', 'out_for_delivery', 'delivered', 'completed'], true)
                     ? $createdAt->copy()->addHours(2)
                     : null,

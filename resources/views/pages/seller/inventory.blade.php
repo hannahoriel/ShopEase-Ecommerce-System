@@ -1967,6 +1967,12 @@
                                min="0.001" max="999999" step="0.001" required
                                placeholder="e.g. 0.500"
                                style="display:block;width:min(280px,100%);height:42px;min-height:42px;max-height:42px;padding:0 12px;border:1px solid #d8dbe1;border-radius:8px;background:#fff;color:#303b4e;font:400 12px Poppins,sans-serif;box-sizing:border-box;outline-offset:2px">
+                        <p>Optional package dimensions for volumetric shipping (cm). Enter all three to use volumetric weight.</p>
+                        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:440px;margin-top:10px">
+                            <input name="length_cm" type="number" min="0.01" step="0.01" placeholder="Length (cm)" aria-label="Package length in centimeters">
+                            <input name="width_cm" type="number" min="0.01" step="0.01" placeholder="Width (cm)" aria-label="Package width in centimeters">
+                            <input name="height_cm" type="number" min="0.01" step="0.01" placeholder="Height (cm)" aria-label="Package height in centimeters">
+                        </div>
                     </section>
 
                     <section class="create-product-section">

@@ -16,6 +16,8 @@ use App\Models\Rider\Rider;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Http\Services\RegistrationService;
+use App\Services\ShippingFeeCalculator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -35,6 +37,36 @@ class EcommerceRouteDemoSeeder extends Seeder
         $network = $this->existingNetwork($password);
         $manilaCenter = $this->activeCenter($network, 'Metro Manila')
             ?? $this->center($network, 'Manila Sorting Center', 'Metro Manila', 'Manila', 'Intramuros', '1002', 'center.manila.route@shopease.test', $password);
+        CourierRegistration::query()->updateOrCreate(
+            ['sorting_center_id' => $manilaCenter->id, 'email' => 'andrea.santos.courier@shopease.test'],
+            [
+                'first_name' => 'Andrea',
+                'middle_name' => 'Mae',
+                'last_name' => 'Santos',
+                'sex' => 'Female',
+                'birthday' => '1997-05-18',
+                'phone' => '09170002031',
+                'region' => 'National Capital Region',
+                'province' => 'Metro Manila',
+                'city' => 'Manila',
+                'barangay' => 'Intramuros',
+                'street' => 'Demo Courier Street',
+                'house_no' => '31',
+                'postal_code' => '1002',
+                'vehicle' => null,
+                'plate_number' => null,
+                'terms_accepted_at' => now()->subDay(),
+                'terms_version' => RegistrationService::TERMS_VERSION,
+                'terms_accepted_role' => 'courier',
+                'privacy_acknowledged_at' => now()->subDay(),
+                'privacy_version' => RegistrationService::PRIVACY_VERSION,
+                'privacy_acknowledged_role' => 'courier',
+                'status' => 'pending',
+                'rejection_reason' => null,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+            ],
+        );
         $lagunaCenter = $this->activeCenter($network, 'Laguna')
             ?? $this->center($network, 'Calamba Sorting Center', 'Laguna', 'Calamba City', 'Real', '4027', 'center.laguna.route@shopease.test', $password);
         $manilaHub = $this->hub($manilaCenter, 'Manila Delivery Hub', 'Metro Manila', 'Manila', 'Intramuros', '1002', 'hub.manila.route@shopease.test', $password);
@@ -62,7 +94,7 @@ class EcommerceRouteDemoSeeder extends Seeder
             ['seller_id' => $seller->id, 'sku' => 'SE-ROUTE-WOMENS-APPAREL-001'],
             ['name' => 'Linen Everyday Blouse', 'description' => 'Lightweight everyday blouse from Manila Home Goods.',
                 'category' => "Women's Apparel", 'price' => 1299, 'pricing_mode' => 'fixed',
-                'pricing_source' => 'base', 'photos' => [], 'stock_quantity' => 20, 'status' => 'active',
+                'pricing_source' => 'base', 'photos' => [], 'stock_quantity' => 20, 'weight_kg' => 1, 'status' => 'active',
                 'is_archived' => false, 'archived_by_admin' => false],
         );
 
@@ -75,12 +107,13 @@ class EcommerceRouteDemoSeeder extends Seeder
         $manilaCourier = $this->courier($manilaCenter, 'courier.manila.route@shopease.test', 'Carlo', 'Reyes', 'TRUCK-MNL-001', $password);
         $lagunaCourier = $this->courier($lagunaCenter, 'courier.laguna.route@shopease.test', 'Bea', 'Lim', 'TRUCK-LAG-001', $password);
 
+        $shippingFee = ShippingFeeCalculator::forItems([(object) ['product' => $product, 'quantity' => 1]]);
         $order = Order::query()->updateOrCreate(['order_number' => 'SE-ROUTE-MNL-LAG-1001'], [
-            'buyer_id' => $buyerUser->id, 'seller_id' => $seller->id, 'total' => 1299,
+            'buyer_id' => $buyerUser->id, 'seller_id' => $seller->id, 'total' => 1299 + $shippingFee,
+            'shipping_fee' => $shippingFee,
             'status' => 'to_ship', 'pickup_date' => now()->addDay()->toDateString(), 'pickup_time' => '10:00',
             'delivery_name' => 'Alex Rivera', 'delivery_phone' => '09170001002',
             'delivery_address' => '24 Market Road, Bonifacio, Calamba City, Laguna', 'payment_method' => 'Cash on Delivery',
-            'shipping_fee' => 80,
         ]);
         OrderItem::query()->updateOrCreate(
             ['order_id' => $order->id],
@@ -90,7 +123,7 @@ class EcommerceRouteDemoSeeder extends Seeder
         Shipment::query()->updateOrCreate(['order_id' => $order->id], [
             'tracking_number' => 'SE-ROUTE-1001', 'scan_token' => hash('sha256', 'SE-ROUTE-1001'),
             'courier' => 'ShopEase Route Logistics', 'estimated_delivery' => now()->addDays(3)->toDateString(),
-            'shipping_fee' => 80, 'current_location' => 'Seller pickup · Intramuros, Manila',
+            'shipping_fee' => $shippingFee, 'current_location' => 'Seller pickup · Intramuros, Manila',
             // Keep the hub unset until rider drop-off is confirmed. This makes
             // the scheduled pickup appear in the seller municipality's incoming queue.
             'logistics_branch_id' => $manilaCenter->id, 'logistics_delivery_hub_id' => null,
@@ -200,12 +233,12 @@ class EcommerceRouteDemoSeeder extends Seeder
                 'sex' => 'other', 'birthday' => '1992-01-01', 'phone' => '09170001013', 'region' => 'Calabarzon',
                 'province' => $center->province, 'city' => $center->municipality, 'barangay' => $center->barangay,
                 'street' => 'Courier Street', 'house_no' => '8', 'postal_code' => $center->postal_code,
-                'vehicle' => 'Truck', 'plate_number' => $plate, 'status' => 'approved', 'reviewed_at' => now(),
+                'vehicle' => null, 'plate_number' => null, 'status' => 'approved', 'reviewed_at' => now(),
                 'rejection_reason' => null],
         );
         SortingCenterVehicle::query()->updateOrCreate(
             ['sorting_center_id' => $center->id, 'plate_number' => $plate],
-            ['name' => $first.' '.$last.' Linehaul Truck', 'type' => 'Truck', 'make' => 'Isuzu',
+            ['courier_registration_id' => $courier->id, 'name' => $first.' '.$last.' Linehaul Truck', 'type' => 'Truck', 'make' => 'Isuzu',
                 'model' => 'N-Series', 'year' => 2023, 'capacity' => '5 tons',
                 'driver_name' => $first.' '.$last, 'registration_date' => now()->subMonths(6),
                 'availability' => 'Available', 'color' => 'White', 'notes' => 'Ecommerce route demo vehicle'],

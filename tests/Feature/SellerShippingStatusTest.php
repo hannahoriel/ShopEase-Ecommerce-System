@@ -48,9 +48,11 @@ class SellerShippingStatusTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('status', 'in_transit')
-            ->assertJsonPath('shipment.courier', 'Ease Express');
+            ->assertJsonPath('shipment.courier', 'Ease Express')
+            ->assertJsonPath('shipment.shipping_fee', '75.00');
 
         $shipment = Shipment::where('order_id', $order->id)->firstOrFail();
+        $this->assertSame('75.00', $shipment->shipping_fee);
         $this->assertStringStartsWith('SE-', $shipment->tracking_number);
         $this->assertNotNull($shipment->picked_up_at);
         $this->actingAs($sellerUser)
@@ -148,6 +150,7 @@ class SellerShippingStatusTest extends TestCase
             'seller_id' => $seller->id,
             'order_number' => 'SE-TEST-' . $seller->id . '-' . strtoupper($status),
             'total' => 559,
+            'shipping_fee' => 75,
             'status' => $status,
         ]);
     }

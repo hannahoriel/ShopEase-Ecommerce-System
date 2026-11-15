@@ -240,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const url = new URL(checkoutConfig.api.shippingOptionsUrl || '/api/v1/buyer/shipping-options', window.location.origin);
                     url.searchParams.set('province', address.province);
                     url.searchParams.set('municipality', address.municipality);
+                    (selectedCartIds || cartItems.map(item => Number(item.id))).forEach(id => url.searchParams.append('cart_item_ids[]', String(id)));
                     const payload = await checkoutApiFetch(url.toString());
                     shippingOptionsBySeller = Object.fromEntries((payload.data || []).map(group => [String(group.seller_id), group.options || []]));
                 } catch (error) {

@@ -86,6 +86,7 @@ class RiderSecondDeliveryAttemptSeeder extends Seeder
                     'description' => 'Demo item for testing a second failed delivery attempt.',
                     'category' => 'Home',
                     'price' => 950,
+                    'weight_kg' => 1,
                     'stock_quantity' => 9,
                     'status' => 'active',
                     'is_archived' => false,

@@ -17327,6 +17327,9 @@ document.addEventListener(
                                 specificationDisplay,
 
                             weight_kg: formData.get('weight_kg'),
+                            length_cm: formData.get('length_cm') || null,
+                            width_cm: formData.get('width_cm') || null,
+                            height_cm: formData.get('height_cm') || null,
                             description:
                                 formData.get(
                                     'description'

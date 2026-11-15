@@ -51,7 +51,7 @@ class CourierRegistrationSeeder extends Seeder
                         'sex' => 'Male', 'birthday' => '1998-03-15', 'phone' => $phone,
                         'region' => 'CALABARZON (Region IV-A)', 'province' => 'Laguna', 'city' => $city,
                         'barangay' => 'Poblacion', 'street' => 'Rizal Street', 'house_no' => '12',
-                        'postal_code' => '4000', 'vehicle' => 'Truck', 'plate_number' => $plate,
+                        'postal_code' => '4000', 'vehicle' => null, 'plate_number' => null,
                         'status' => $status, 'rejection_reason' => $reason,
                         'reviewed_by' => null, 'reviewed_at' => $status === 'pending' ? null : now()->subDays($daysAgo),
                         'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays($daysAgo),

@@ -21,7 +21,7 @@ class Order extends Model
     {
         static::saving(function (Order $order): void {
             $order->commission_amount = round(
-                (float) $order->total * (CommissionTransaction::DEFAULT_RATE / 100),
+                CommissionTransaction::commissionableAmount($order) * (CommissionTransaction::DEFAULT_RATE / 100),
                 2
             );
         });

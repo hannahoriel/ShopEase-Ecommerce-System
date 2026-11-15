@@ -44,7 +44,49 @@ class SortingCenterFleetController extends Controller
         $center = $this->center($request);
         $archivedIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $center->id)
             ->where('record_type', 'couriers')->pluck('record_id');
-        return response()->json(['data' => $this->couriers($center)->whereNotIn('id', $archivedIds)->latest('reviewed_at')->get()]);
+        $archivedVehicleIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $center->id)
+            ->where('record_type', 'vehicles')->pluck('record_id');
+        $couriers = $this->couriers($center)->with('assignedVehicle')
+            ->whereNotIn('id', $archivedIds)->latest('reviewed_at')->get();
+        $couriers->each(function (CourierRegistration $courier) use ($archivedVehicleIds): void {
+            $vehicle = $courier->assignedVehicle;
+            if ($vehicle && $archivedVehicleIds->contains($vehicle->id)) {
+                $vehicle = null;
+            }
+            $courier->setAttribute('vehicle', $vehicle?->type);
+            $courier->setAttribute('plate_number', $vehicle?->plate_number);
+        });
+        return response()->json(['data' => $couriers]);
+    }
+
+    public function updateCourierVehicle(Request $request, int $courier): JsonResponse
+    {
+        $center = $this->center($request);
+        $registration = $this->couriers($center)->findOrFail($courier);
+        abort_if(SortingCenterFleetArchive::query()->where('sorting_center_id', $center->id)
+            ->where('record_type', 'couriers')->where('record_id', $registration->id)->exists(), 404);
+        $data = $request->validate([
+            'vehicle' => ['required', 'string', 'max:80'],
+            'plate_number' => ['required', 'string', 'max:50'],
+        ]);
+        $vehicle = $registration->assignedVehicle;
+        abort_unless($vehicle && $vehicle->sorting_center_id === $center->id, 409,
+            'Assign a Sorting Center vehicle to this courier before editing its truck details.');
+        abort_if(SortingCenterFleetArchive::query()->where('sorting_center_id', $center->id)
+            ->where('record_type', 'vehicles')->where('record_id', $vehicle->id)->exists(), 409,
+            'Restore the assigned Sorting Center vehicle before editing its truck details.');
+        $vehicle->update([
+            'type' => trim($data['vehicle']),
+            'plate_number' => trim($data['plate_number']),
+        ]);
+        $registration->setAttribute('vehicle', $vehicle->type);
+        $registration->setAttribute('plate_number', $vehicle->plate_number);
+
+        return response()->json([
+            'message' => 'Courier vehicle details updated.',
+            'data' => $registration,
+            'vehicle' => $vehicle->refresh(),
+        ]);
     }
 
     public function indexArchives(Request $request): JsonResponse
@@ -65,14 +107,33 @@ class SortingCenterFleetController extends Controller
     public function storeVehicle(Request $request): JsonResponse
     {
         $center = $this->center($request);
-        $data = $request->validate($this->vehicleRules());
+        $data = $request->validate(array_merge($this->vehicleRules(), [
+            'courier_registration_id' => ['nullable', 'integer', Rule::exists('courier_registrations', 'id')->where('sorting_center_id', $center->id)->where('status', 'approved')],
+        ]));
+        $courierId = $data['courier_registration_id'] ?? null;
+        unset($data['courier_registration_id']);
+
+        if ($courierId) {
+            $courier = $this->couriers($center)->findOrFail($courierId);
+            $data['driver_name'] = trim(implode(' ', array_filter([
+                $courier->first_name,
+                $courier->middle_name,
+                $courier->last_name,
+            ])));
+            $data['courier_registration_id'] = $courier->id;
+        }
+
         $data['sorting_center_id'] = $center->id;
         if (isset($data['or_cr'])) {
             $data['or_cr_path'] = $data['or_cr']->store('sorting-center/vehicles/or-cr', 'public');
             unset($data['or_cr']);
         }
         $data['availability'] ??= 'Available';
-        $vehicle = SortingCenterVehicle::query()->create($data);
+        $vehicle = DB::transaction(function () use ($data, $courierId): SortingCenterVehicle {
+            $vehicle = SortingCenterVehicle::query()->create($data);
+            return $vehicle;
+        });
+
         return response()->json(['message' => 'Vehicle registered.', 'data' => $vehicle], 201);
     }
 
@@ -80,7 +141,19 @@ class SortingCenterFleetController extends Controller
     {
         $center = $this->center($request);
         abort_unless($vehicle->sorting_center_id === $center->id, 404);
-        $data = $request->validate($this->vehicleRules(true));
+        $data = $request->validate(array_merge($this->vehicleRules(true), [
+            'courier_registration_id' => ['nullable', 'integer', Rule::exists('courier_registrations', 'id')->where('sorting_center_id', $center->id)->where('status', 'approved')],
+        ]));
+        $courierId = $data['courier_registration_id'] ?? null;
+        unset($data['courier_registration_id']);
+        $courier = $courierId ? $this->couriers($center)->findOrFail($courierId) : null;
+        if ($courier) {
+            $data['driver_name'] = trim(implode(' ', array_filter([
+                $courier->first_name,
+                $courier->middle_name,
+                $courier->last_name,
+            ])));
+        }
         if (isset($data['or_cr'])) {
             if ($vehicle->or_cr_path) {
                 Storage::disk('public')->delete($vehicle->or_cr_path);
@@ -88,7 +161,16 @@ class SortingCenterFleetController extends Controller
             $data['or_cr_path'] = $data['or_cr']->store('sorting-center/vehicles/or-cr', 'public');
             unset($data['or_cr']);
         }
-        $vehicle->update($data);
+        $hasCourierField = array_key_exists('courier_registration_id', $request->all());
+        if ($hasCourierField) {
+            $data['courier_registration_id'] = $courier?->id;
+            if (! $courier) {
+                $data['driver_name'] = null;
+            }
+        }
+        DB::transaction(function () use ($center, $vehicle, $data, $courier): void {
+            $vehicle->update($data);
+        });
         return response()->json(['message' => 'Vehicle updated.', 'data' => $vehicle->refresh()]);
     }
 

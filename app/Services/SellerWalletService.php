@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\DB;
  */
 class SellerWalletService
 {
-    private const RETURN_SHIPPING_CHARGE = CodSettlementService::LOGISTICS_SHIPPING_FEE;
-
     public function sync(Seller $seller): void
     {
         Order::query()->where('seller_id', $seller->id)
@@ -85,7 +83,8 @@ class SellerWalletService
             }
 
             if ($return->return_type !== 'refund') {
-                $this->entry($seller->id, 'return_shipping', 'order_return', $return->id, -self::RETURN_SHIPPING_CHARGE, $ref, 'Seller-paid return shipping (₱50)', $return->refunded_at);
+                $shippingFee = max(0, (float) ($order->shipping_fee ?: $order->shipment?->shipping_fee ?: 0));
+                $this->entry($seller->id, 'return_shipping', 'order_return', $return->id, -$shippingFee, $ref, 'Seller-paid return shipping (₱'.number_format($shippingFee, 2).')', $return->refunded_at);
             }
         });
     }
@@ -100,7 +99,7 @@ class SellerWalletService
             return;
         }
 
-        $fee = self::RETURN_SHIPPING_CHARGE;
+        $fee = max(0, (float) ($order->shipping_fee ?: $shipment->shipping_fee ?: 0));
         $reference = $order->order_number ?: '#'.$order->id;
 
         $this->entry(

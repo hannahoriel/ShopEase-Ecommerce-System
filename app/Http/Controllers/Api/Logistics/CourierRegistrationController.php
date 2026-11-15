@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Registration;
 use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Rider\Rider;
 use App\Models\User;
 use App\Http\Services\RegistrationService;
@@ -89,6 +90,8 @@ class CourierRegistrationController extends Controller
         $data['drivers_license_path'] = isset($data['drivers_license']) ? $data['drivers_license']->store('courier-registrations/drivers-license', 'public') : null;
         unset($data['or_cr'], $data['drivers_license']);
         unset($data['accept_terms'], $data['acknowledge_privacy']);
+        $data['vehicle'] = null;
+        $data['plate_number'] = null;
         $data['terms_accepted_at'] = now();
         $data['terms_version'] = RegistrationService::TERMS_VERSION;
         $data['terms_accepted_role'] = 'courier';
@@ -186,8 +189,8 @@ class CourierRegistrationController extends Controller
                 'barangay' => $rider->barangay,
                 'street' => $rider->street,
                 'house_no' => $rider->house_number,
-                'vehicle' => $rider->vehicle ? mb_substr($rider->vehicle, 0, 80) : null,
-                'plate_number' => $rider->plate_number,
+                'vehicle' => null,
+                'plate_number' => null,
                 'or_cr_path' => $rider->upload_or_cr,
                 'drivers_license_path' => $rider->upload_id_license,
                 'terms_accepted_at' => $rider->user->terms_accepted_at,
@@ -226,7 +229,7 @@ class CourierRegistrationController extends Controller
     {
         $center = $this->center($request);
         $this->syncLegacyMobileApplications($center);
-        $query = CourierRegistration::query()->where('sorting_center_id', $center->id)->latest('created_at');
+        $query = CourierRegistration::query()->with('assignedVehicle')->where('sorting_center_id', $center->id)->latest('created_at');
         if ($request->filled('status') && $request->string('status')->toString() !== 'all') {
             $query->where('status', $request->string('status')->toString());
         }
@@ -237,14 +240,32 @@ class CourierRegistrationController extends Controller
             $term = '%'.$request->string('search')->toString().'%';
             $query->where(fn ($q) => $q->where('first_name', 'like', $term)->orWhere('middle_name', 'like', $term)
                 ->orWhere('last_name', 'like', $term)->orWhere('email', 'like', $term)
-                ->orWhere('phone', 'like', $term)->orWhere('plate_number', 'like', $term));
+                ->orWhere('phone', 'like', $term)->orWhereHas('assignedVehicle', fn ($vehicle) => $vehicle->where('plate_number', 'like', $term)));
         }
-        return response()->json(['data' => $query->get()]);
+        $registrations = $query->get();
+        $archivedVehicleIds = SortingCenterFleetArchive::query()->where('sorting_center_id', $center->id)
+            ->where('record_type', 'vehicles')->pluck('record_id');
+        $registrations->each(function (CourierRegistration $registration) use ($archivedVehicleIds): void {
+            $vehicle = $registration->assignedVehicle && ! $archivedVehicleIds->contains($registration->assignedVehicle->id)
+                ? $registration->assignedVehicle
+                : null;
+            $registration->setAttribute('vehicle', $vehicle?->type);
+            $registration->setAttribute('plate_number', $vehicle?->plate_number);
+        });
+        return response()->json(['data' => $registrations]);
     }
 
     public function show(Request $request, CourierRegistration $registration): JsonResponse
     {
         abort_unless($registration->sorting_center_id === $this->center($request)->id, 404);
+        $registration->load('assignedVehicle');
+        $vehicle = $registration->assignedVehicle;
+        if ($vehicle && SortingCenterFleetArchive::query()->where('sorting_center_id', $vehicle->sorting_center_id)
+            ->where('record_type', 'vehicles')->where('record_id', $vehicle->id)->exists()) {
+            $vehicle = null;
+        }
+        $registration->setAttribute('vehicle', $vehicle?->type);
+        $registration->setAttribute('plate_number', $vehicle?->plate_number);
         return response()->json(['data' => $registration]);
     }
 
@@ -331,11 +352,11 @@ class CourierRegistrationController extends Controller
                     'barangay' => $locked->barangay ?: '',
                     'street' => $locked->street ?: '',
                     'house_number' => $locked->house_no ?: '',
-                    'vehicle' => $locked->vehicle,
+                    'vehicle' => null,
                     'registration_type' => 'courier',
                     'assignment_region' => $locked->region,
                     'assignment_province' => $locked->province,
-                    'plate_number' => $locked->plate_number,
+                    'plate_number' => null,
                     'courier_company' => $locked->sortingCenter?->logistics?->business_name,
                     'upload_or_cr' => $locked->or_cr_path,
                     'upload_id_license' => $locked->drivers_license_path,

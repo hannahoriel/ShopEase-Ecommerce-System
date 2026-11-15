@@ -6,6 +6,18 @@ document.addEventListener('DOMContentLoaded', function () {
             const config   = configEl ? JSON.parse(configEl.textContent) : {};
             const cartUrl  = config.cartUrl  || '/api/v1/buyer/cart';
             const apiToken = config.apiToken || '';
+            const shippingRates = config.shippingRates || {
+                weightBrackets: [
+                    { max_weight_kg: 3, fee: 50 },
+                    { max_weight_kg: 5, fee: 60 },
+                    { max_weight_kg: 10, fee: 70 },
+                    { max_weight_kg: 15, fee: 80 },
+                    { max_weight_kg: 20, fee: 90 },
+                ],
+                additionalBracketWeightKg: 5,
+                additionalBracketFee: 10,
+                volumetricDivisor: 5000,
+            };
 
             const cartEmptyState =
                 document.getElementById('cartEmptyState');
@@ -138,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 : `<svg viewBox="0 0 180 150"><rect width="180" height="150" rx="14" fill="#E9E8E2"/></svg>`;
                             const optionParts = [item.variation, item.color, item.size].filter(Boolean);
                             return `
-                            <article class="cart-item-row" data-cart-item data-product-url="/buyer/product?id=${encodeURIComponent(item.product.id)}" data-item-id="${item.id}" data-api-item-id="${item.id}" data-price="${item.product.price}">
+                            <article class="cart-item-row" data-cart-item data-product-url="/buyer/product?id=${encodeURIComponent(item.product.id)}" data-item-id="${item.id}" data-api-item-id="${item.id}" data-price="${item.product.price}" data-seller-id="${group.sellerId}" data-weight-kg="${item.product.weight_kg || 1}" data-length-cm="${item.product.length_cm || ''}" data-width-cm="${item.product.width_cm || ''}" data-height-cm="${item.product.height_cm || ''}">
                                 <div class="cart-item-product">
                                     <label class="cart-check-wrap">
                                         <input type="checkbox" class="cart-checkbox item-checkbox" checked>
@@ -215,8 +227,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 return Array.from(document.querySelectorAll('.cart-shop-card'));
             }
 
-            const shippingFee =
-                50;
+            const selectedShippingTotal = rows => {
+                const weights = new Map();
+                rows.forEach(row => {
+                    if (!row.querySelector('.item-checkbox')?.checked) return;
+                    const actualWeight = Math.max(0.001, Number(row.dataset.weightKg || 1));
+                    const dimensions = [Number(row.dataset.lengthCm || 0), Number(row.dataset.widthCm || 0), Number(row.dataset.heightCm || 0)];
+                    const volumetricWeight = dimensions.every(value => value > 0) ? dimensions.reduce((total, value) => total * value, 1) / shippingRates.volumetricDivisor : 0;
+                    const quantity = Number(row.querySelector('.quantity-input')?.value || 1);
+                    const sellerId = row.dataset.sellerId;
+                    weights.set(sellerId, (weights.get(sellerId) || 0) + Math.max(actualWeight, volumetricWeight) * quantity);
+                });
+                return [...weights.values()].reduce((total, weight) => {
+                    const bracket = shippingRates.weightBrackets.find(range => weight <= Number(range.max_weight_kg));
+                    if (bracket) return total + Number(bracket.fee);
+
+                    const lastBracket = shippingRates.weightBrackets[shippingRates.weightBrackets.length - 1];
+                    const extraBracketWeight = Math.max(0.001, Number(shippingRates.additionalBracketWeightKg));
+                    const extraBrackets = Math.ceil((weight - Number(lastBracket.max_weight_kg)) / extraBracketWeight);
+                    return total + Number(lastBracket.fee) + extraBrackets * Number(shippingRates.additionalBracketFee);
+                }, 0);
+            };
 
             const subtotalLabel =
                 document.getElementById('subtotalLabel');
@@ -482,6 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 let selectedCount =
                     0;
+                let selectedShippingFee = 0;
 
                 rows.forEach(row => {
                     const checkbox =
@@ -519,6 +551,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
+                selectedShippingFee = selectedShippingTotal(rows);
+
                 subtotalLabel.textContent =
                     `Subtotal (${selectedCount} ${selectedCount === 1 ? 'item' : 'items'})`;
 
@@ -526,18 +560,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     money(subtotal);
 
                 shippingValue.textContent =
-                    selectedCount > 0
-                        ? money(shippingFee)
-                        : money(0);
+                    money(selectedShippingFee);
 
                 grandTotalValue.textContent =
                     money(
                         subtotal +
-                        (
-                            selectedCount > 0
-                                ? shippingFee
-                                : 0
-                        )
+                        selectedShippingFee
                     );
 
                 const allItemCheckboxes =

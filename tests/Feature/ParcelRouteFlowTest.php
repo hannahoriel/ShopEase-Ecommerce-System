@@ -90,6 +90,11 @@ class ParcelRouteFlowTest extends TestCase
             'courier_name' => 'Luzon Courier', 'vehicle_reference' => 'SC-LAG-001',
             'scheduled_at' => now()->addDay()->toDateTimeString(),
         ])->assertOk();
+        $transfer = LogisticsTransferManifest::query()->where('batch_key', 'laguna-to-cebu')->firstOrFail();
+        $this->assertSame('SC-LAG-001', $transfer->vehicle_reference);
+        $this->assertSame('Truck', $transfer->vehicle_type);
+        $this->assertSame($network['laguna_user']->id, $transfer->assigned_by);
+        $this->assertNotNull($transfer->assigned_at);
         $this->actingAs($network['cebu_user'])->getJson('/api/v1/sorting_center/scanner/queue')
             ->assertOk()
             ->assertJsonPath('parcels.0.tracking', 'SHP-FLOW-0001')
@@ -101,7 +106,6 @@ class ParcelRouteFlowTest extends TestCase
             'action' => 'receive',
         ])->assertStatus(409);
 
-        $transfer = LogisticsTransferManifest::query()->where('batch_key', 'laguna-to-cebu')->firstOrFail();
         $this->actingAs($lagunaCourierUser)->postJson("/api/v1/courier/manifests/{$transfer->id}/departure")
             ->assertOk();
         $this->assertSame($network['cebu']->id, $shipment->fresh()->logistics_branch_id);
@@ -472,11 +476,12 @@ class ParcelRouteFlowTest extends TestCase
         $courier = CourierRegistration::query()->create([
             'sorting_center_id' => $branch->id, 'first_name' => $name, 'last_name' => 'Driver',
             'email' => strtolower(str_replace(' ', '.', $name)).'@example.test', 'phone' => '09170000000',
-            'vehicle' => 'Truck', 'plate_number' => $plate, 'status' => 'approved',
+            'vehicle' => null, 'plate_number' => null, 'status' => 'approved',
         ]);
         $truck = SortingCenterVehicle::query()->create([
-            'sorting_center_id' => $branch->id, 'name' => 'Cargo Truck', 'type' => 'Truck', 'plate_number' => $plate,
-            'availability' => 'Available', 'driver_name' => $name,
+            'sorting_center_id' => $branch->id, 'courier_registration_id' => $courier->id,
+            'name' => 'Cargo Truck', 'type' => 'Truck', 'plate_number' => $plate,
+            'availability' => 'Available', 'driver_name' => $name.' Driver',
         ]);
         return [$courier, $truck];
     }

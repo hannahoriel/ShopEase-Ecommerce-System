@@ -37,6 +37,7 @@ class RiderDeliveryApiTest extends TestCase
         $seller->update(['province' => 'Laguna', 'municipality' => 'Santa Cruz', 'barangay' => 'Bubukal']);
         $buyer = $this->buyer();
         $order = $this->order($seller, $buyer, 'out_for_delivery', $rider, $logistics);
+        $order->update(['shipping_fee' => 80]);
         $product = Product::create([
             'seller_id' => $seller->id,
             'name' => 'Returned product',
@@ -123,7 +124,7 @@ class RiderDeliveryApiTest extends TestCase
         $this->assertDatabaseHas('shipments', ['id' => $shipment->id, 'return_to_seller_status' => 'pending']);
         $this->assertDatabaseHas('commission_transactions', [
             'order_id' => $order->id,
-            'commission_amount' => '55.90',
+            'commission_amount' => '47.90',
             'status' => 'reversed',
         ]);
         $this->assertDatabaseMissing('rider_cod_collections', ['order_id' => $order->id]);
@@ -285,20 +286,20 @@ class RiderDeliveryApiTest extends TestCase
             'entry_type' => 'return_shipping',
             'source_type' => 'failed_delivery',
             'source_id' => $order->id,
-            'amount' => '-50.00',
+            'amount' => '-80.00',
         ]);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock_quantity' => 10]);
 
         $wallet = app(SellerWalletService::class)->summary($seller);
-        $this->assertEquals(-50, $wallet['balance']);
-        $this->assertEquals(50, $wallet['shipping']);
+        $this->assertEquals(-80, $wallet['balance']);
+        $this->assertEquals(80, $wallet['shipping']);
 
         $this->actingAs($logisticsUser)
             ->getJson('/logistics/api/earnings?from='.now()->toDateString().'&to='.now()->toDateString())
             ->assertOk()
-            ->assertJsonPath('summary.gross', 50)
+            ->assertJsonPath('summary.gross', 80)
             ->assertJsonPath('transactions.0.status', 'Seller-paid RTO')
-            ->assertJsonPath('transactions.0.amount', 50);
+            ->assertJsonPath('transactions.0.amount', 80);
     }
 
     public function test_logistics_assigns_a_delivery_and_rider_status_updates_reach_the_buyer_and_seller(): void

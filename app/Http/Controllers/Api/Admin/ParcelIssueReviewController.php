@@ -8,7 +8,6 @@ use App\Models\Logistics\DeliveryHubParcelIssue;
 use App\Models\Logistics\SortingCenterParcelIssue;
 use App\Models\Seller\Seller;
 use App\Services\SellerComplianceService;
-use App\Services\CodSettlementService;
 use App\Services\BuyerWalletService;
 use App\Models\Admin\OrderStatusHistory;
 use App\Models\Buyer\BuyerNotification;
@@ -111,14 +110,15 @@ class ParcelIssueReviewController extends Controller
             }
 
             if ($order && $seller && $data['decision'] === 'seller_fault') {
+                $shippingCharge = max(0, (float) ($order->shipping_fee ?: $shipment?->shipping_fee ?: 0));
                 DB::table('seller_wallet_transactions')->insertOrIgnore([
                     'seller_id' => $seller->id,
                     'entry_type' => 'return_shipping',
                     'source_type' => $ledgerSource,
                     'source_id' => $report->id,
-                    'amount' => '-'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2, '.', ''),
+                    'amount' => '-'.number_format($shippingCharge, 2, '.', ''),
                     'reference' => $order->order_number,
-                    'description' => 'Seller-paid parcel issue shipping charge (₱'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2).')',
+                    'description' => 'Seller-paid parcel issue shipping charge (₱'.number_format($shippingCharge, 2).')',
                     'occurred_at' => now(), 'created_at' => now(), 'updated_at' => now(),
                 ]);
             }
@@ -139,7 +139,9 @@ class ParcelIssueReviewController extends Controller
                 },
                 'compensation' => $settlementAmount,
                 'parcelAmount' => $verifiedProductValue,
-                'shippingCharge' => $data['decision'] === 'seller_fault' ? CodSettlementService::LOGISTICS_SHIPPING_FEE : 0,
+                'shippingCharge' => $data['decision'] === 'seller_fault' && $order
+                    ? max(0, (float) ($order->shipping_fee ?: $shipment?->shipping_fee ?: 0))
+                    : 0,
                 'notes' => trim($data['notes']),
                 'decidedAt' => $report->decided_at?->toIso8601String(),
             ]);
