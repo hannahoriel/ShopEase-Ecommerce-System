@@ -59,12 +59,14 @@ class SearchController extends Controller
             'min_rating' => 'nullable|numeric|min:0|max:5',
             'sort' => 'nullable|in:relevance,latest,top-sales,price-low,price-high',
             'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         $term = trim($input['q'] ?? '');
         $matching = Product::query()
             ->where('products.is_archived', false)
             ->where('products.status', 'active')
+            ->where('products.stock_quantity', '>', 0)
             ->whereHas('seller', fn ($q) => $q->where('registration_status', 'active'));
 
         if ($term !== '') {
@@ -141,7 +143,7 @@ class SearchController extends Controller
                 }
                 $query->orderByDesc('products.created_at');
         }
-        $page = $query->orderByDesc('products.id')->paginate(20);
+        $page = $query->orderByDesc('products.id')->paginate((int) ($input['per_page'] ?? 20));
 
         return response()->json([
             'data' => $page->getCollection()->map(function (Product $product) {
@@ -154,8 +156,15 @@ class SearchController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'price' => (float) $product->price,
-                    'sale_percentage' => (int) $product->sale_percentage,
+                    'original_price' => (float) $product->price,
+                    'sale_percentage' => $product->saleIsActive() ? (int) $product->sale_percentage : null,
+                    'sale_discount_type' => $product->saleIsActive() ? $product->sale_discount_type : null,
+                    'sale_discount_value' => $product->saleIsActive() ? (float) $product->sale_discount_value : null,
+                    'sale_discount_label' => $product->saleDiscountLabel(),
                     'sale_price' => (float) $product->sale_price,
+                    'created_at' => $product->created_at?->toISOString(),
+                    'category' => $product->category,
+                    'description' => $product->description,
                     'image_url' => $photos->first(),
                     'rating_average' => round((float) ($product->product_rating_average ?? 0), 1),
                     'sold_count' => (int) ($product->sold_count ?? 0),

@@ -41,7 +41,17 @@ class AccountController extends Controller
 
         return response()->json([
             'user' => $user->only(['id', 'name', 'email', 'contact_no']),
-            'seller' => $seller->only(['id', 'store_name', 'business_name', 'registration_status']),
+            'seller' => array_merge(
+                $seller->only(['id', 'store_name', 'business_name', 'registration_status']),
+                [
+                    'avatar_url' => $seller->profile_photo_path
+                        ? Storage::disk('public')->url($seller->profile_photo_path)
+                        : ($user->profile_photo_path ? Storage::disk('public')->url($user->profile_photo_path) : null),
+                    'cover_url' => $seller->cover_photo_path
+                        ? Storage::disk('public')->url($seller->cover_photo_path)
+                        : null,
+                ],
+            ),
         ]);
     }
 
@@ -51,17 +61,43 @@ class AccountController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'contact_no' => ['required', 'string', 'max:30'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $seller = Seller::query()->where('user_id', $user->id)->firstOrFail();
+        $oldProfilePhoto = $seller->profile_photo_path;
+        $oldCoverPhoto = $seller->cover_photo_path;
         $user->name = $validated['name'];
         $seller->contact_no = $validated['contact_no'];
+        if ($request->hasFile('profile_photo')) {
+            $seller->profile_photo_path = $request->file('profile_photo')->store("seller-account/{$seller->id}", 'public');
+            $user->profile_photo_path = $seller->profile_photo_path;
+        }
+        if ($request->hasFile('cover_photo')) {
+            $seller->cover_photo_path = $request->file('cover_photo')->store("seller-account/{$seller->id}", 'public');
+        }
         $user->save();
         $seller->save();
+        if ($request->hasFile('profile_photo') && $oldProfilePhoto) {
+            Storage::disk('public')->delete($oldProfilePhoto);
+        }
+        if ($request->hasFile('cover_photo') && $oldCoverPhoto) {
+            Storage::disk('public')->delete($oldCoverPhoto);
+        }
 
         return response()->json([
             'message' => 'Profile updated successfully.',
             'user' => $user->fresh()->only(['id', 'name', 'email', 'contact_no']),
+            'seller' => [
+                'id' => $seller->id,
+                'avatar_url' => $seller->profile_photo_path
+                    ? Storage::disk('public')->url($seller->profile_photo_path)
+                    : null,
+                'cover_url' => $seller->cover_photo_path
+                    ? Storage::disk('public')->url($seller->cover_photo_path)
+                    : null,
+            ],
         ]);
     }
 }
