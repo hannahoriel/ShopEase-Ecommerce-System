@@ -60,6 +60,8 @@ class DeliveryHubRiderRegistrationTest extends TestCase
             'logistics_operation' => 'pickup',
             'password' => 'RiderPassword123!',
             'password_confirmation' => 'RiderPassword123!',
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ])->assertCreated()->assertJsonPath('status', 'pending');
 
         $application = DeliveryHubRiderRegistration::query()->where('user_id', User::query()->where('email', $email)->value('id'))->firstOrFail();
