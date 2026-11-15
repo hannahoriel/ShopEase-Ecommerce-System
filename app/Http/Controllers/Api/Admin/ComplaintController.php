@@ -144,7 +144,14 @@ class ComplaintController extends Controller
                 ->with('order')
                 ->lockForUpdate()
                 ->findOrFail($complaint->id);
-            abort_if($lockedComplaint->seller_at_fault !== null, 409, 'A seller accountability decision has already been recorded.');
+            $hasPriorDecision = $lockedComplaint->updates()
+                ->where('type', 'seller_fault_decision')
+                ->exists();
+            abort_if(
+                $hasPriorDecision && stripos($notes, 'appeal') === false,
+                409,
+                'A seller accountability decision has already been recorded. An appeal must be documented to reverse it.'
+            );
             $seller = Seller::query()
                 ->whereKey($lockedComplaint->order?->seller_id)
                 ->lockForUpdate()
@@ -233,6 +240,7 @@ class ComplaintController extends Controller
             'type' => $complaint->type ?: 'Other',
             'status' => str_replace('_', '-', $complaint->status),
             'sellerAtFault' => $complaint->seller_at_fault,
+            'sellerFaultDecisionFinal' => $complaint->updates->contains('type', 'seller_fault_decision'),
             'sellerFaultNotes' => $complaint->seller_fault_notes,
             'date' => $complaint->created_at?->format('M d, Y') ?? '',
             'time' => $complaint->created_at?->format('g:i A') ?? '',

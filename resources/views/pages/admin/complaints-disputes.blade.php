@@ -896,7 +896,7 @@ document.addEventListener('DOMContentLoaded', () => {
  function sync() {
    const item = getActive();
    const decision = item?.sellerAtFault === true ? 'guilty' : item?.sellerAtFault === false ? 'not-guilty' : '';
-   const decided = item?.sellerAtFault === true || item?.sellerAtFault === false;
+   const decided = item?.sellerFaultDecisionFinal === true;
    [preview, detail].forEach(node => {
      const pill = node.querySelector('[data-cd-outcome]');
      const select = node.querySelector('[data-cd-choice]');
@@ -936,7 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
      const payload=await response.json();
      if(!response.ok)throw new Error(payload.message||'Unable to save the seller accountability decision.');
      const item=records.find(record=>String(record.id)===selection.id);
-     if(item){item.sellerAtFault=payload.data.seller_at_fault;item.sellerFaultNotes=payload.data.seller_fault_notes}
+     if(item){item.sellerAtFault=payload.data.seller_at_fault;item.sellerFaultNotes=payload.data.seller_fault_notes;item.sellerFaultDecisionFinal=true}
      let message=`${selection.id}: ${payload.data.seller_at_fault?'Seller at Fault':'Seller Not at Fault'}. Compliance score: ${Number(payload.data.compliance_score).toFixed(1)}%.`;
      if(payload.data.auto_suspended)message+=' Seller suspended for 3 days.';
      if(payload.data.auto_reactivated)message+=' Automatic suspension lifted.';
