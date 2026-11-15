@@ -541,6 +541,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function syncLocalComplaintStatuses() {
+        const records = safeReadStorage(COMPLAINT_INBOX_KEY, []);
+        if (!Array.isArray(records) || records.length === 0) return;
+
+        const [complaintResult, parcelResult] = await Promise.allSettled([
+            request('/api/v1/admin/complaints'),
+            request('/api/v1/admin/parcel-issues')
+        ]);
+        const complaints = complaintResult.status === 'fulfilled' ? complaintResult.value.data || [] : [];
+        const parcelIssues = parcelResult.status === 'fulfilled' ? parcelResult.value.data || [] : [];
+        const complaintById = new Map(complaints.map(item => [String(item.databaseId), item]));
+        const complaintByReference = new Map(complaints.map(item => [String(item.id).toLowerCase(), item]));
+        const parcelByReference = new Map(parcelIssues.map(item => [String(item.id).toLowerCase(), item]));
+        let changed = false;
+
+        records.forEach(record => {
+            const reference = String(record.complaintId || '').toLowerCase();
+            const complaint = complaintById.get(String(record.complaintDatabaseId)) || complaintByReference.get(reference);
+            const parcelIssue = parcelByReference.get(reference);
+            const current = complaint || parcelIssue;
+            if (current?.status && record.status !== current.status) {
+                record.status = current.status;
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            try { localStorage.setItem(COMPLAINT_INBOX_KEY, JSON.stringify(records)); }
+            catch (_) { /* Keep the loaded conversation usable if storage is unavailable. */ }
+        }
+        mergeLocalComplaintIntake();
+    }
+
     function selectComplaintFromUrl() {
         if (!initialComplaintsTab) return null;
         const matching = conversations.complaints.find(thread => {
@@ -1260,6 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.values(conversations).forEach(items => items.splice(0, items.length));
             data.forEach(thread => conversations[thread.type]?.push(thread));
             mergeLocalComplaintIntake();
+            await syncLocalComplaintStatuses();
             const activeItems = conversations[activeTab];
             const preferred = getThread(preferredId);
             const urlMatch = selectComplaintFromUrl();
