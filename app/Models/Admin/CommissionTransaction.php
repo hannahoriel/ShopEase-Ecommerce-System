@@ -37,6 +37,13 @@ class CommissionTransaction extends Model
         return $this->belongsTo(Seller::class);
     }
 
+    public static function commissionableAmount(Order $order): float
+    {
+        $amount = (float) $order->total - (float) $order->shipping_fee + (float) $order->voucher_discount;
+
+        return round(max(0, $amount), 2);
+    }
+
     public static function syncFromOrder(Order $order): self
     {
         $status = match ($order->status) {
@@ -45,7 +52,7 @@ class CommissionTransaction extends Model
             default => 'pending',
         };
 
-        $amount = (float) $order->total;
+        $amount = self::commissionableAmount($order);
         $commission = round($amount * (self::DEFAULT_RATE / 100), 2);
 
         $earnedAt = $status === 'earned'
@@ -56,7 +63,7 @@ class CommissionTransaction extends Model
             ['order_id' => $order->id],
             [
                 'seller_id' => $order->seller_id,
-                'order_amount' => $order->total,
+                'order_amount' => $amount,
                 'commission_rate' => self::DEFAULT_RATE,
                 'commission_amount' => $commission,
                 'status' => $status,

@@ -107,6 +107,8 @@ class AdminCommissionTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         [$seller, $order] = $this->createOrder('completed', 1000, 100);
         $order->update([
+            'total' => 975,
+            'voucher_type' => 'merchandise',
             'voucher_discount' => 25,
             'voucher_funding_source' => 'platform',
             'voucher_code' => 'SHOP25',

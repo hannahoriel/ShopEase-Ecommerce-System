@@ -777,7 +777,7 @@
 <div id="cdParcelDecisionConfirm" class="cd-review-backdrop" hidden aria-hidden="true">
  <div class="cd-review-dialog" role="dialog" aria-modal="true" aria-labelledby="cdParcelDecisionTitle">
   <h2 id="cdParcelDecisionTitle" class="cd-review-title">Confirm Parcel Accountability Decision</h2>
-  <p class="cd-review-desc">Logistics fault credits verified product value only. Seller fault deducts 0.5 compliance points and charges ₱50 shipping.</p>
+  <p class="cd-review-desc">Logistics fault credits verified product value only. Seller fault deducts 0.5 compliance points and charges the order's shipping fee.</p>
   <div id="cdParcelDecisionSummary" class="cd-review-summary"></div>
   <label for="cdParcelDecisionNotes">Decision explanation</label><textarea id="cdParcelDecisionNotes" maxlength="2000" required placeholder="Summarize evidence and the seller's response..."></textarea>
   <div class="cd-review-actions"><button id="cdParcelDecisionCancel" type="button" class="cd-cancel">Cancel</button><button id="cdParcelDecisionSave" type="button" class="cd-confirm">Confirm Decision</button></div>

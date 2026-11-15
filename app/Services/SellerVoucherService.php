@@ -51,7 +51,7 @@ class SellerVoucherService
             if ((float) $voucher->minimum_spend > 0 && (float) $items->sum(fn ($item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity) < (float) $voucher->minimum_spend) {
                 $fail('This order does not meet the voucher minimum spend.');
             }
-            $shippingFee = \App\Http\Controllers\Api\Buyer\OrderController::SHIPPING_FEE_PER_STORE;
+            $shippingFee = ShippingFeeCalculator::forItems($items);
             $discount = $voucher->discount_type === 'percent'
                 ? min($shippingFee * (float) $voucher->discount_value / 100, (float) $voucher->maximum_discount, $shippingFee)
                 : min((float) $voucher->discount_value, (float) $voucher->maximum_discount, $shippingFee);

@@ -8,6 +8,7 @@ use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\SellerVoucher;
 use App\Services\SellerVoucherService;
+use App\Services\ShippingFeeCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -114,7 +115,7 @@ class VoucherController extends Controller
                 'discount' => $result['discount'],
                 'voucher_type' => $result['voucher']->voucher_type ?? 'merchandise',
                 'funding_source' => $result['voucher']->funding_source ?? ($result['voucher']->seller_id === null ? 'platform' : 'seller'),
-                'shipping_fee' => OrderController::SHIPPING_FEE_PER_STORE,
+                'shipping_fee' => ShippingFeeCalculator::forItems($sellerItems),
             ],
             'message' => 'Voucher applied.',
         ]);

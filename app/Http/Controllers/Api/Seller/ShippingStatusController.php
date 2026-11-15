@@ -68,7 +68,6 @@ class ShippingStatusController extends Controller
             'status' => ['required', Rule::in(array_merge(...array_values(self::TRANSITIONS)))],
             'courier' => ['nullable', 'string', 'max:100'],
             'estimated_delivery' => ['nullable', 'date', 'after_or_equal:today'],
-            'shipping_fee' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -93,14 +92,13 @@ class ShippingStatusController extends Controller
                     'tracking_number' => 'SE-'.Str::upper(Str::random(10)),
                     'courier' => $lockedOrder->logisticsCompany?->business_name ?: ($validated['courier'] ?? 'Ease Express'),
                     'estimated_delivery' => $validated['estimated_delivery'] ?? now()->addDays(3)->toDateString(),
-                    'shipping_fee' => $validated['shipping_fee'] ?? 0,
+                    'shipping_fee' => $lockedOrder->shipping_fee,
                 ]
             );
 
             $shipment->fill(array_filter([
                 'courier' => $lockedOrder->logisticsCompany?->business_name ?: ($validated['courier'] ?? null),
                 'estimated_delivery' => $validated['estimated_delivery'] ?? null,
-                'shipping_fee' => $validated['shipping_fee'] ?? null,
             ], fn ($value) => $value !== null));
 
             if ($newStatus === 'in_transit' && ! $shipment->picked_up_at) {

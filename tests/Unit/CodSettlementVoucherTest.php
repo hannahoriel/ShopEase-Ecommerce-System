@@ -38,7 +38,5 @@ class CodSettlementVoucherTest extends TestCase
         $this->assertSame(180.0, CodSettlementService::sellerAmount($platformOrder, 200, 20, 25));
         // A seller-funded shipping discount is charged to seller proceeds.
         $this->assertSame(155.0, CodSettlementService::sellerAmount($sellerOrder, 200, 20, 25));
-        // Settlement keeps the agreed logistics fee at ₱50 for both platform and seller promos.
-        $this->assertSame(50.0, CodSettlementService::LOGISTICS_SHIPPING_FEE);
     }
 }

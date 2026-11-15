@@ -13,7 +13,6 @@ use Illuminate\Validation\ValidationException;
 class CodSettlementService
 {
     public const COMMISSION_RATE = 10.00;
-    public const LOGISTICS_SHIPPING_FEE = 50.00;
 
     public static function sellerAmount(?Order $order, float $collectedProductAmount, float $commission, float $shippingVoucher): float
     {
@@ -149,10 +148,9 @@ class CodSettlementService
                 $cod = round((float) $collection->amount, 2);
                 $shippingVoucher = $order->voucher_type === 'shipping' ? max(0, (float) $order->voucher_discount) : 0;
                 $buyerShipping = min($cod, max(0, round((float) $order->shipping_fee - $shippingVoucher, 2)));
-                $agreedShipping = min(max(0, round((float) $order->shipping_fee, 2)), self::LOGISTICS_SHIPPING_FEE);
-                $shipping = $order->voucher_type === 'shipping' && $order->voucher_funding_source === 'logistics'
-                    ? max(0, $agreedShipping - $shippingVoucher) : $agreedShipping;
-                $shippingMargin = round(max(0, $buyerShipping - $agreedShipping), 2);
+                $shipping = max(0, round((float) $order->shipping_fee
+                    - ($order->voucher_type === 'shipping' && $order->voucher_funding_source === 'logistics' ? $shippingVoucher : 0), 2));
+                $shippingMargin = 0;
                 $collectedProductAmount = max(0, round($cod - $buyerShipping, 2));
                 $commissionBase = max(0, round($collectedProductAmount + ($order->voucher_type === 'shipping' ? 0 : (float) $order->voucher_discount), 2));
                 $commission = round($commissionBase * self::COMMISSION_RATE / 100, 2);

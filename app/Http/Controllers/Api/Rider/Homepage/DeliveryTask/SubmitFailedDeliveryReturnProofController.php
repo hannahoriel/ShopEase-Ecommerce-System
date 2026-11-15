@@ -11,7 +11,6 @@ use App\Models\Logistics\LogisticsTransferManifest;
 use App\Models\Logistics\LogisticsTransferManifestEvent;
 use App\Models\Rider\DeliveryProof;
 use App\Models\Rider\Rider;
-use App\Services\CodSettlementService;
 use App\Services\OrderInventoryService;
 use App\Services\SellerNotificationService;
 use App\Services\SellerWalletService;
@@ -117,7 +116,7 @@ class SubmitFailedDeliveryReturnProofController extends Controller
                         $seller->user,
                         'order_updates',
                         'Returned parcel received',
-                        'The parcel for order '.$lockedOrder->order_number.' has been returned to your store. Product stock is restored, and the ₱'.number_format(CodSettlementService::LOGISTICS_SHIPPING_FEE, 2).' failed-delivery return shipping fee was recorded in your wallet.',
+                        'The parcel for order '.$lockedOrder->order_number.' has been returned to your store. Product stock is restored, and the ₱'.number_format((float) $lockedOrder->shipping_fee, 2).' failed-delivery return shipping fee was recorded in your wallet.',
                         '/seller/order-status',
                     );
                 }

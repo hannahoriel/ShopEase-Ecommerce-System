@@ -17,6 +17,7 @@ use App\Models\Rider\Rider;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Services\ShippingFeeCalculator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -80,7 +81,7 @@ class BulacanRouteDemoSeeder extends Seeder
             ['seller_id' => $seller->id, 'sku' => 'SE-BULACAN-APPAREL-001'],
             ['name' => 'Bulacan Everyday Blouse', 'description' => 'Demo apparel parcel for the Bulacan to Laguna route.',
                 'category' => "Women's Apparel", 'price' => 899, 'pricing_mode' => 'fixed', 'pricing_source' => 'base',
-                'photos' => [], 'stock_quantity' => 30, 'status' => 'active', 'is_archived' => false, 'archived_by_admin' => false],
+                'photos' => [], 'stock_quantity' => 30, 'weight_kg' => 1, 'status' => 'active', 'is_archived' => false, 'archived_by_admin' => false],
         );
 
         $pickupRider = $this->rider(
@@ -100,12 +101,14 @@ class BulacanRouteDemoSeeder extends Seeder
         $this->courier($manilaCenter, 'courier.manila.bulacan-route@shopease.test', 'Bea', 'Lim', 'TRUCK-MNL-BUL-001', $password);
         $this->courier($lagunaCenter, 'courier.laguna.bulacan-route@shopease.test', 'Dino', 'Ramos', 'TRUCK-LAG-BUL-001', $password);
 
+        $shippingFee = ShippingFeeCalculator::forItems([(object) ['product' => $product, 'quantity' => 1]]);
         $order = Order::query()->updateOrCreate(['order_number' => 'SE-BULACAN-CALAMBA-0001'], [
-            'buyer_id' => $buyerUser->id, 'seller_id' => $seller->id, 'total' => 899,
+            'buyer_id' => $buyerUser->id, 'seller_id' => $seller->id, 'total' => 899 + $shippingFee,
+            'shipping_fee' => $shippingFee,
             'status' => 'to_ship', 'pickup_date' => now()->addDay()->toDateString(), 'pickup_time' => '09:00',
             'delivery_name' => 'Alex Rivera', 'delivery_phone' => '09172220002',
             'delivery_address' => '24 Market Road, Bonifacio, Calamba City, Laguna',
-            'payment_method' => 'Cash on Delivery', 'shipping_fee' => 120,
+            'payment_method' => 'Cash on Delivery',
         ]);
         OrderItem::query()->updateOrCreate(['order_id' => $order->id], [
             'product_id' => $product->id, 'product_name' => $product->name, 'quantity' => 1,
@@ -115,7 +118,7 @@ class BulacanRouteDemoSeeder extends Seeder
             'tracking_number' => 'SE-BULACAN-CALAMBA-0001',
             'scan_token' => hash('sha256', 'SE-BULACAN-CALAMBA-0001'),
             'courier' => 'ShopEase Logistics', 'estimated_delivery' => now()->addDays(4)->toDateString(),
-            'shipping_fee' => 120, 'current_location' => 'Seller pickup · Tuktukan, Guiguinto, Bulacan',
+            'shipping_fee' => $shippingFee, 'current_location' => 'Seller pickup · Tuktukan, Guiguinto, Bulacan',
             'logistics_branch_id' => $bulacanCenter->id, 'logistics_delivery_hub_id' => null,
             'rider_id' => $pickupRider->id,
         ]);

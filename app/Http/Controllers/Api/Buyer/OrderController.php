@@ -24,6 +24,7 @@ use App\Services\OrderInventoryService;
 use App\Services\SellerVoucherService;
 use App\Services\BuyerWalletService;
 use App\Services\CodSettlementService;
+use App\Services\ShippingFeeCalculator;
 use App\Services\LogisticsNotificationService;
 use App\Services\SellerNotificationPreferences;
 use Illuminate\Http\JsonResponse;
@@ -36,8 +37,6 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
 {
-    public const SHIPPING_FEE_PER_STORE = 50.00;
-
     public function __construct(
         private readonly OrderInventoryService $inventory
     ) {}
@@ -306,9 +305,12 @@ class OrderController extends Controller
             'municipality' => ['required', 'string', 'max:150'],
             'seller_ids' => ['sometimes', 'array', 'min:1'],
             'seller_ids.*' => ['required', 'integer', 'distinct', 'exists:sellers,id'],
+            'cart_item_ids' => ['sometimes', 'array'],
+            'cart_item_ids.*' => ['required', 'integer', 'distinct'],
         ]);
         $cartItems = CartItem::query()
             ->where('user_id', $request->user()->id)
+            ->when(isset($validated['cart_item_ids']), fn ($query) => $query->whereIn('id', $validated['cart_item_ids']))
             ->with('product.seller')
             ->get();
 
@@ -323,8 +325,10 @@ class OrderController extends Controller
             ->whereIn('id', $sellerIds)
             ->get();
         $providers = $this->approvedLogisticsProviders();
+        $shippingFees = $cartItems->groupBy(fn (CartItem $item) => $item->product?->seller_id)
+            ->map(fn (Collection $items): float => ShippingFeeCalculator::forItems($items));
         $data = $sellers
-            ->map(function (Seller $seller) use ($providers, $validated): array {
+            ->map(function (Seller $seller) use ($providers, $validated, $shippingFees): array {
                 $options = $providers
                     ->filter(fn (Logistics $provider) => $this->coversLocations(
                         $provider,
@@ -336,7 +340,7 @@ class OrderController extends Controller
                     ->map(fn (Logistics $provider): array => [
                         'id' => $provider->id,
                         'name' => $provider->business_name ?: 'Logistics company',
-                        'shipping_fee' => self::SHIPPING_FEE_PER_STORE,
+                        'shipping_fee' => $shippingFees->get($seller->id, ShippingFeeCalculator::forItems([])),
                     ])
                     ->values();
 
@@ -510,7 +514,7 @@ class OrderController extends Controller
                         ]);
                     }
                     $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity);
-                    $shippingFee = self::SHIPPING_FEE_PER_STORE;
+                    $shippingFee = ShippingFeeCalculator::forItems($sellerItems);
                     $voucherResult = null;
                     if (! empty($validated['voucher_code']) && (int) $sellerId === (int) $voucherSellerId) {
                         $voucherResult = app(SellerVoucherService::class)->evaluate($validated['voucher_code'], $request->user(), (int) $sellerId, $sellerItems, true);

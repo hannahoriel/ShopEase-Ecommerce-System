@@ -113,12 +113,12 @@ class DeliveryHubCodFinanceApiTest extends TestCase
         $this->assertDatabaseHas('cod_settlements', [
             'order_id' => $order->id, 'delivery_hub_id' => $hub->id, 'status' => 'held',
             'logistics_id' => $logistics->id,
-            'shipping_fee' => '50.00', 'platform_shipping_margin' => '8.00',
+            'shipping_fee' => '58.00', 'platform_shipping_margin' => '0.00',
             'commission_amount' => '50.10', 'seller_amount' => '450.90',
         ]);
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'logistics_id' => $logistics->id]);
-        $this->assertDatabaseHas('cod_wallet_accounts', ['owner_key' => 'logistics:'.$logistics->id.':available', 'balance' => '50.00']);
-        $this->assertDatabaseHas('cod_wallet_accounts', ['owner_key' => 'platform:platform:available', 'balance' => '58.10']);
+        $this->assertDatabaseHas('cod_wallet_accounts', ['owner_key' => 'logistics:'.$logistics->id.':available', 'balance' => '58.00']);
+        $this->assertDatabaseHas('cod_wallet_accounts', ['owner_key' => 'platform:platform:available', 'balance' => '50.10']);
         $this->actingAs($hubUser)->postJson("/api/v1/delivery_hub/rider-remittances/{$remittance->id}/distribute")
             ->assertStatus(409);
         $this->assertDatabaseCount('cod_settlements', 1);
