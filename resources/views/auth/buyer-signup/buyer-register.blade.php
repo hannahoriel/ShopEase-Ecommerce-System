@@ -3323,11 +3323,25 @@
                             required
                         >
                         <span>
-                            I agree to the <strong>Terms and Conditions</strong> and acknowledge the <strong>Privacy Policy</strong>.
+                            I have read and agree to the <a href="{{ route('terms-and-conditions', ['role' => 'buyer']) }}" target="_blank" rel="noopener">Buyer Terms and Conditions</a>.
                             <span class="required">*</span>
                         </span>
                     </label>
-                    <div class="field-error" id="termsError">You must agree to the Terms and Conditions and Privacy Policy.</div>
+                    <label class="terms-label" for="privacy_acknowledged">
+                        <input
+                            type="checkbox"
+                            id="privacy_acknowledged"
+                            name="privacy_acknowledged"
+                            value="1"
+                            {{ old('privacy_acknowledged', $buyerData['privacy_acknowledged'] ?? false) ? 'checked' : '' }}
+                            required
+                        >
+                        <span>
+                            I acknowledge that I have read the <a href="{{ route('privacy-policy') }}" target="_blank" rel="noopener">ShopEase Privacy Policy</a>.
+                            <span class="required">*</span>
+                        </span>
+                    </label>
+                    <div class="field-error" id="termsError">You must accept the Terms and Conditions and acknowledge the Privacy Policy.</div>
                 </div>
 
 

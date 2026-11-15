@@ -3350,9 +3350,13 @@
 
                             <!-- TERMS AND PRIVACY POLICY -->
                             <div class="information-item full-width">
-                                <span class="information-label">Terms and Privacy Policy</span>
+                                <span class="information-label">Terms and Conditions</span>
                                 <div class="information-value {{ empty($sellerData['terms'] ?? null) ? 'empty' : '' }}">
                                     {{ !empty($sellerData['terms']) ? 'Accepted' : 'Not accepted' }}
+                                </div>
+                                <span class="information-label">Privacy Policy</span>
+                                <div class="information-value {{ empty($sellerData['privacy_acknowledged'] ?? null) ? 'empty' : '' }}">
+                                    {{ !empty($sellerData['privacy_acknowledged']) ? 'Acknowledged' : 'Not acknowledged' }}
                                 </div>
                             </div>
 

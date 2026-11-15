@@ -484,9 +484,8 @@
                 </p>
 
                 <div class="footer-legal">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Cookie Policy</a>
+                    <a href="{{ route('privacy-policy') }}">Privacy Policy</a>
+                    <a href="{{ route('terms-and-conditions') }}">Terms and Conditions</a>
                 </div>
 
             </div>

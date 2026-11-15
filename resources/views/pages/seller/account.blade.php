@@ -932,7 +932,7 @@
                 <h1 class="sa-page-title">Platform Policies</h1>
                 <p class="sa-intro">Seller guidelines and platform expectations in a readable document format.</p>
                 <article class="sa-policy-document">
-                    <header class="sa-policy-header"><div class="sa-policy-stamp">ShopEase · SELLER DOCUMENT</div><h2>Seller Platform Policies</h2><p>Reference guide for seller account holders</p><div class="sa-policy-rule"></div><p class="sa-policy-note">Illustrative policy summary for UI purposes. Replace this text with your organization's approved and current policies before publishing.</p></header>
+                    <header class="sa-policy-header"><div class="sa-policy-stamp">ShopEase · SELLER DOCUMENT</div><h2>Seller Platform Policies</h2><p>Reference guide for seller account holders</p><div class="sa-policy-rule"></div><p class="sa-policy-note">This account-settings page is a brief summary. Read the full seller Terms and Conditions and Privacy Policy for the complete current rules.</p></header>
                     <nav class="sa-policy-index" aria-label="Document contents"><strong>Contents</strong><a href="#saPolicy1">01. Seller responsibilities</a><a href="#saPolicy2">02. Products & listings</a><a href="#saPolicy3">03. Orders & fulfillment</a><a href="#saPolicy4">04. Customer communication</a><a href="#saPolicy5">05. Privacy & security</a><a href="#saPolicy6">06. Compliance & requests</a></nav>
                     <section id="saPolicy1"><h3>01. Seller responsibilities</h3><p>Keep your shop and contact information accurate. Submit valid supporting documents, follow applicable laws and cooperate with verification or compliance checks.</p></section>
                     <section id="saPolicy2"><h3>02. Products & listings</h3><p>Use accurate product photos, descriptions, categories, prices and available stock. Do not list prohibited, counterfeit or misleading products.</p></section>
@@ -940,7 +940,7 @@
                     <section id="saPolicy4"><h3>04. Customer communication</h3><p>Respond professionally to inquiries, disputes and feedback. Keep communication respectful, factual and focused on resolving buyer concerns.</p></section>
                     <section id="saPolicy5"><h3>05. Privacy & security</h3><p>Protect account credentials and customer information. Do not disclose sensitive buyer details outside authorized order processing and support workflows.</p></section>
                     <section id="saPolicy6"><h3>06. Compliance & requests</h3><p>Changes to registered business categories and verification documents may require administrator review. Existing approved information remains effective until a request is approved.</p></section>
-                    <footer class="sa-policy-footer">ShopEase Seller Guidelines <span>End of document</span></footer>
+                    <footer class="sa-policy-footer">ShopEase Seller Guidelines <span><a href="{{ route('terms-and-conditions', ['role' => 'seller']) }}">Full Seller Terms</a> · <a href="{{ route('privacy-policy') }}">Privacy Policy</a></span></footer>
                 </article>
             </div>
         </div>

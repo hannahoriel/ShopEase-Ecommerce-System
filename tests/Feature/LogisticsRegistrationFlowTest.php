@@ -34,6 +34,9 @@ class LogisticsRegistrationFlowTest extends TestCase
 
         $this->assertSame(User::ROLE_LOGISTICS, $user->role);
         $this->assertSame('pending', $user->registration_status);
+        $this->assertSame('logistics', $user->terms_accepted_role);
+        $this->assertSame(\App\Http\Services\RegistrationService::TERMS_VERSION, $user->terms_version);
+        $this->assertNotNull($user->terms_accepted_at);
         $this->assertDatabaseHas('registrations', [
             'user_id' => $user->id,
             'user_type' => User::ROLE_LOGISTICS,
@@ -271,6 +274,7 @@ class LogisticsRegistrationFlowTest extends TestCase
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ])->assertRedirectToRoute('logistics.register.permits');
 
         $this->post(route('logistics.register.permits.submit'), [

@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Courier Dashboard — ShopEase</title>
     <style>
-        :root{font-family:Arial,sans-serif;color:#211b19;background:#fbf8f6}body{margin:0}header{background:#7b1b1b;color:#fff;padding:18px 5vw;display:flex;justify-content:space-between;align-items:center}header form{margin:0}main{max-width:1050px;margin:30px auto;padding:0 18px}.muted{color:#716966;font-size:14px;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:#fff;border:1px solid #eadfdb;border-radius:12px;padding:18px;margin:14px 0}.metric{font-size:28px;font-weight:700;color:#7b1b1b}.trip h2{font-size:18px;margin:0 0 7px}.trip-top{display:flex;justify-content:space-between;gap:12px}.tag{background:#f4e7e3;border-radius:99px;padding:5px 9px;font-size:12px;text-transform:capitalize;white-space:nowrap}.error{background:#fff0ef;color:#8b2424;padding:12px;border-radius:8px}button{padding:10px 14px;border:0;border-radius:7px;background:#fff;color:#7b1b1b;cursor:pointer}@media(max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        :root{font-family:Arial,sans-serif;color:#211b19;background:#fbf8f6}body{margin:0}header{background:#7b1b1b;color:#fff;padding:18px 5vw;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}header form{margin:0}.policy-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.policy-links a{padding:10px 8px;color:#fff}main{max-width:1050px;margin:30px auto;padding:0 18px}.muted{color:#716966;font-size:14px;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:#fff;border:1px solid #eadfdb;border-radius:12px;padding:18px;margin:14px 0}.metric{font-size:28px;font-weight:700;color:#7b1b1b}.trip h2{font-size:18px;margin:0 0 7px}.trip-top{display:flex;justify-content:space-between;gap:12px}.tag{background:#f4e7e3;border-radius:99px;padding:5px 9px;font-size:12px;text-transform:capitalize;white-space:nowrap}.error{background:#fff0ef;color:#8b2424;padding:12px;border-radius:8px}button{padding:10px 14px;border:0;border-radius:7px;background:#fff;color:#7b1b1b;cursor:pointer}@media(max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){header{padding:14px 16px}.policy-links{width:100%;order:3}main{margin:20px auto;padding:0 12px}.card{padding:14px}}
     </style>
 </head>
 <body>
-    <header><strong>ShopEase · Courier</strong><form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Log out</button></form></header>
+    <header>
+        <strong>ShopEase · Courier</strong>
+        <nav class="policy-links" aria-label="Policies">
+            <a href="{{ route('terms-and-conditions', ['role' => 'courier']) }}">Courier Terms and Conditions</a>
+            <a href="{{ route('privacy-policy') }}">Privacy Policy</a>
+        </nav>
+        <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Log out</button></form>
+    </header>
     <main>
         <h1>Courier Dashboard</h1>
         <p class="muted">View your assigned linehaul trips and parcel manifests.</p>

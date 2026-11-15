@@ -40,6 +40,29 @@ use App\Http\Controllers\Admin\AdminAccountController;
 |--------------------------------------------------------------------------
 */
 
+Route::get('/terms-and-conditions', function (Request $request) {
+    $role = $request->query('role', 'buyer');
+    abort_unless(in_array($role, ['buyer', 'seller', 'logistics', 'rider', 'courier'], true), 404);
+
+    return view('legal.terms-and-conditions', [
+        'termsRole' => $role,
+        'termsRoleLabel' => [
+            'buyer' => 'Buyer',
+            'seller' => 'Seller',
+            'logistics' => 'Logistics Partner',
+            'rider' => 'Rider',
+            'courier' => 'Courier',
+        ][$role],
+        'termsVersion' => \App\Http\Services\RegistrationService::TERMS_VERSION,
+    ]);
+})->name('terms-and-conditions');
+
+Route::get('/privacy-policy', function () {
+    return view('legal.privacy-policy', [
+        'privacyVersion' => \App\Http\Services\RegistrationService::PRIVACY_VERSION,
+    ]);
+})->name('privacy-policy');
+
 Route::get('/', function () {
 
     return view('pages.landing-page');

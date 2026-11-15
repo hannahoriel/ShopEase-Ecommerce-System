@@ -3172,9 +3172,16 @@
                             required
                             style="margin-top:4px;accent-color:#7B1B1B;"
                         >
-                        <span>I agree to the Terms and Conditions and Privacy Policy. <span class="required">*</span></span>
+                        <span>I have read and agree to the <a href="{{ route('terms-and-conditions', ['role' => 'seller']) }}" target="_blank" rel="noopener">Seller Terms and Conditions</a>. <span class="required">*</span></span>
                     </label>
                     @error('terms')
+                        <p class="error-message">{{ $message }}</p>
+                    @enderror
+                    <label for="privacy_acknowledged" style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;cursor:pointer;margin-top:8px;">
+                        <input type="checkbox" id="privacy_acknowledged" name="privacy_acknowledged" value="1" {{ old('privacy_acknowledged', $sellerData['privacy_acknowledged'] ?? false) ? 'checked' : '' }} required style="margin-top:4px;accent-color:#7B1B1B;">
+                        <span>I acknowledge that I have read the <a href="{{ route('privacy-policy') }}" target="_blank" rel="noopener">ShopEase Privacy Policy</a>. <span class="required">*</span></span>
+                    </label>
+                    @error('privacy_acknowledged')
                         <p class="error-message">{{ $message }}</p>
                     @enderror
                 </div>

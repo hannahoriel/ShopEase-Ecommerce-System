@@ -8,6 +8,7 @@ use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Rider\Rider;
 use App\Models\User;
+use App\Http\Services\RegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,8 @@ class CourierRegistrationController extends Controller
             'plate_number' => ['nullable', 'string', 'max:50'],
             'or_cr' => ['prohibited'],
             'drivers_license' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'accept_terms' => ['accepted'],
+            'acknowledge_privacy' => ['accepted'],
         ]);
         $center = LogisticsBranch::query()->whereKey($data['sorting_center_id'])
             ->whereHas('user', fn ($query) => $query->where('role', User::ROLE_SORTING_CENTER))->first();
@@ -85,6 +88,13 @@ class CourierRegistrationController extends Controller
         $data['or_cr_path'] = isset($data['or_cr']) ? $data['or_cr']->store('courier-registrations/or-cr', 'public') : null;
         $data['drivers_license_path'] = isset($data['drivers_license']) ? $data['drivers_license']->store('courier-registrations/drivers-license', 'public') : null;
         unset($data['or_cr'], $data['drivers_license']);
+        unset($data['accept_terms'], $data['acknowledge_privacy']);
+        $data['terms_accepted_at'] = now();
+        $data['terms_version'] = RegistrationService::TERMS_VERSION;
+        $data['terms_accepted_role'] = 'courier';
+        $data['privacy_acknowledged_at'] = now();
+        $data['privacy_version'] = RegistrationService::PRIVACY_VERSION;
+        $data['privacy_acknowledged_role'] = 'courier';
         $data['status'] = 'pending';
         $registration = CourierRegistration::query()->create($data);
 
@@ -180,6 +190,12 @@ class CourierRegistrationController extends Controller
                 'plate_number' => $rider->plate_number,
                 'or_cr_path' => $rider->upload_or_cr,
                 'drivers_license_path' => $rider->upload_id_license,
+                'terms_accepted_at' => $rider->user->terms_accepted_at,
+                'terms_version' => $rider->user->terms_version,
+                'terms_accepted_role' => 'courier',
+                'privacy_acknowledged_at' => $rider->user->privacy_acknowledged_at,
+                'privacy_version' => $rider->user->privacy_version,
+                'privacy_acknowledged_role' => 'courier',
                 'status' => 'pending',
             ];
 
@@ -249,6 +265,16 @@ class CourierRegistrationController extends Controller
                 throw ValidationException::withMessages(['status' => 'Only pending registrations can be reviewed.']);
             }
             if ($data['status'] === 'approved') {
+                if ($locked->terms_version !== RegistrationService::TERMS_VERSION || ! $locked->terms_accepted_at) {
+                    throw ValidationException::withMessages([
+                        'terms' => 'The courier must accept the current Terms and Conditions before this application can be approved.',
+                    ]);
+                }
+                if ($locked->privacy_version !== RegistrationService::PRIVACY_VERSION || ! $locked->privacy_acknowledged_at) {
+                    throw ValidationException::withMessages([
+                        'privacy' => 'The courier must acknowledge the current Privacy Policy before this application can be approved.',
+                    ]);
+                }
                 $email = mb_strtolower(trim($locked->email));
                 $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->lockForUpdate()->first();
                 if ($user && $user->role !== User::ROLE_RIDER) {
@@ -270,9 +296,24 @@ class CourierRegistrationController extends Controller
                         'role' => User::ROLE_RIDER,
                         'registration_status' => 'active',
                         'approved_at' => now(),
+                        'terms_accepted_at' => $locked->terms_accepted_at,
+                        'terms_version' => $locked->terms_version,
+                        'terms_accepted_role' => 'courier',
+                        'privacy_acknowledged_at' => $locked->privacy_acknowledged_at,
+                        'privacy_version' => $locked->privacy_version,
+                        'privacy_acknowledged_role' => 'courier',
                     ]);
                 } else {
-                    $user->update(['registration_status' => 'active', 'approved_at' => now()]);
+                    $user->update([
+                        'registration_status' => 'active',
+                        'approved_at' => now(),
+                        'terms_accepted_at' => $locked->terms_accepted_at,
+                        'terms_version' => $locked->terms_version,
+                        'terms_accepted_role' => 'courier',
+                        'privacy_acknowledged_at' => $locked->privacy_acknowledged_at,
+                        'privacy_version' => $locked->privacy_version,
+                        'privacy_acknowledged_role' => 'courier',
+                    ]);
                 }
 
                 $riderData = [

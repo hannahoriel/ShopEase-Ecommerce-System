@@ -82,6 +82,7 @@ class LogisticsRegistrationController extends Controller
             'subdivision' => ['nullable','string','max:255'],
             'password' => [$request->session()->has('logistics_registration.encrypted_password') ? 'nullable' : 'required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'accept_terms' => ['accepted'],
+            'acknowledge_privacy' => ['accepted'],
         ]);
         // Never put a raw password into a session or file. Encrypt only until
         // Step 3 creates the actual user and securely hashes it using Hash::make.
@@ -346,6 +347,8 @@ class LogisticsRegistrationController extends Controller
             'password_confirmation' => Crypt::decryptString($encryptedPassword),
             'valid_id_path' => $validIdPath,
             'business_permit_path' => $businessPermitPath,
+            'accept_terms' => $company['accept_terms'] ?? null,
+            'acknowledge_privacy' => $company['acknowledge_privacy'] ?? null,
             'registration_details' => [
                 'company' => $company,
                 'documents' => $publicDocuments,
