@@ -117,6 +117,7 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
+                'seller_id' => $order->seller_id,
                 'pickup_address' => collect([
                     $order->seller->house_number,
                     $order->seller->street,
@@ -665,6 +666,7 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'qr_payload' => url('/api/v1/orders/verify/'.rawurlencode($order->order_number)),
                 'shop' => $order->seller->store_name,
+                'seller_id' => $order->seller_id,
                 'total' => (float) $order->total,
                 'shipping_fee' => (float) $order->shipping_fee,
                 'logistics_company' => $order->logisticsCompany?->business_name,
