@@ -166,15 +166,15 @@ class RegistrationService
         }
 
         if ($role === User::ROLE_RIDER) {
-            $profile['vehicle'] = $validated['vehicle'] ?? null;
             $profile['registration_type'] = $validated['registration_type'] ?? 'rider';
+            $profile['vehicle'] = $profile['registration_type'] === 'courier' ? null : ($validated['vehicle'] ?? null);
             if ($profile['registration_type'] === 'courier') {
                 $profile['logistics_branch_id'] = (int) $validated['sorting_center_id'];
             }
             $profile['assignment_region'] = $validated['assignment_region'] ?? null;
             $profile['assignment_province'] = $validated['assignment_province'] ?? null;
             $profile['assignment_barangay'] = $validated['assignment_barangay'] ?? null;
-            $profile['plate_number'] = $validated['plate_number'] ?? null;
+            $profile['plate_number'] = $profile['registration_type'] === 'courier' ? null : ($validated['plate_number'] ?? null);
             $profile['courier_company'] = $validated['courier_company'] ?? null;
             $profile['logistics_operation'] = $validated['logistics_operation'] ?? null;
             $profile['municipal_hub'] = $validated['municipal_hub'] ?? null;

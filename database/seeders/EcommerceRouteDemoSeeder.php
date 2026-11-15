@@ -16,6 +16,7 @@ use App\Models\Rider\Rider;
 use App\Models\Seller\Product;
 use App\Models\Seller\Seller;
 use App\Models\User;
+use App\Http\Services\RegistrationService;
 use App\Services\ShippingFeeCalculator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +37,36 @@ class EcommerceRouteDemoSeeder extends Seeder
         $network = $this->existingNetwork($password);
         $manilaCenter = $this->activeCenter($network, 'Metro Manila')
             ?? $this->center($network, 'Manila Sorting Center', 'Metro Manila', 'Manila', 'Intramuros', '1002', 'center.manila.route@shopease.test', $password);
+        CourierRegistration::query()->updateOrCreate(
+            ['sorting_center_id' => $manilaCenter->id, 'email' => 'andrea.santos.courier@shopease.test'],
+            [
+                'first_name' => 'Andrea',
+                'middle_name' => 'Mae',
+                'last_name' => 'Santos',
+                'sex' => 'Female',
+                'birthday' => '1997-05-18',
+                'phone' => '09170002031',
+                'region' => 'National Capital Region',
+                'province' => 'Metro Manila',
+                'city' => 'Manila',
+                'barangay' => 'Intramuros',
+                'street' => 'Demo Courier Street',
+                'house_no' => '31',
+                'postal_code' => '1002',
+                'vehicle' => null,
+                'plate_number' => null,
+                'terms_accepted_at' => now()->subDay(),
+                'terms_version' => RegistrationService::TERMS_VERSION,
+                'terms_accepted_role' => 'courier',
+                'privacy_acknowledged_at' => now()->subDay(),
+                'privacy_version' => RegistrationService::PRIVACY_VERSION,
+                'privacy_acknowledged_role' => 'courier',
+                'status' => 'pending',
+                'rejection_reason' => null,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+            ],
+        );
         $lagunaCenter = $this->activeCenter($network, 'Laguna')
             ?? $this->center($network, 'Calamba Sorting Center', 'Laguna', 'Calamba City', 'Real', '4027', 'center.laguna.route@shopease.test', $password);
         $manilaHub = $this->hub($manilaCenter, 'Manila Delivery Hub', 'Metro Manila', 'Manila', 'Intramuros', '1002', 'hub.manila.route@shopease.test', $password);
@@ -202,12 +233,12 @@ class EcommerceRouteDemoSeeder extends Seeder
                 'sex' => 'other', 'birthday' => '1992-01-01', 'phone' => '09170001013', 'region' => 'Calabarzon',
                 'province' => $center->province, 'city' => $center->municipality, 'barangay' => $center->barangay,
                 'street' => 'Courier Street', 'house_no' => '8', 'postal_code' => $center->postal_code,
-                'vehicle' => 'Truck', 'plate_number' => $plate, 'status' => 'approved', 'reviewed_at' => now(),
+                'vehicle' => null, 'plate_number' => null, 'status' => 'approved', 'reviewed_at' => now(),
                 'rejection_reason' => null],
         );
         SortingCenterVehicle::query()->updateOrCreate(
             ['sorting_center_id' => $center->id, 'plate_number' => $plate],
-            ['name' => $first.' '.$last.' Linehaul Truck', 'type' => 'Truck', 'make' => 'Isuzu',
+            ['courier_registration_id' => $courier->id, 'name' => $first.' '.$last.' Linehaul Truck', 'type' => 'Truck', 'make' => 'Isuzu',
                 'model' => 'N-Series', 'year' => 2023, 'capacity' => '5 tons',
                 'driver_name' => $first.' '.$last, 'registration_date' => now()->subMonths(6),
                 'availability' => 'Available', 'color' => 'White', 'notes' => 'Ecommerce route demo vehicle'],

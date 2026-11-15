@@ -454,6 +454,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('/fleet/vehicles', [SortingCenterFleetController::class, 'storeVehicle'])->name('sorting_center.api.fleet.vehicles.store');
                     Route::patch('/fleet/vehicles/{vehicle}', [SortingCenterFleetController::class, 'updateVehicle'])->name('sorting_center.api.fleet.vehicles.update');
                     Route::get('/fleet/approved-couriers', [SortingCenterFleetController::class, 'indexCouriers'])->name('sorting_center.api.fleet.couriers.index');
+                    Route::patch('/fleet/couriers/{courier}', [SortingCenterFleetController::class, 'updateCourierVehicle'])->name('sorting_center.api.fleet.couriers.update');
                     Route::get('/fleet/archives', [SortingCenterFleetController::class, 'indexArchives'])->name('sorting_center.api.fleet.archives.index');
                     Route::post('/fleet/{type}/{record}/archive', [SortingCenterFleetController::class, 'archive'])->name('sorting_center.api.fleet.archive');
                     Route::post('/fleet/{type}/{record}/restore', [SortingCenterFleetController::class, 'restore'])->name('sorting_center.api.fleet.restore');

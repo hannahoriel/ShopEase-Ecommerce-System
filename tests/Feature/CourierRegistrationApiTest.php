@@ -97,6 +97,7 @@ class CourierRegistrationApiTest extends TestCase
 
         $this->assertDatabaseHas('courier_registrations', [
             'sorting_center_id' => $branch->id, 'email' => 'alex.garcia@example.test', 'status' => 'pending',
+            'vehicle' => null, 'plate_number' => null,
             'terms_version' => RegistrationService::TERMS_VERSION,
             'terms_accepted_role' => 'courier',
             'privacy_version' => RegistrationService::PRIVACY_VERSION,

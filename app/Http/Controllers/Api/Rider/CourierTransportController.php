@@ -9,6 +9,7 @@ use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Logistics\LogisticsTransferManifest;
 use App\Models\Logistics\LogisticsTransferManifestEvent;
+use App\Models\Logistics\SortingCenterFleetArchive;
 use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\User;
 use App\Notifications\CourierArrivalNotification;
@@ -389,7 +390,7 @@ class CourierTransportController extends Controller
     private function courier(Request $request): CourierRegistration
     {
         $courier = CourierRegistration::query()
-            ->with(['sortingCenter.logistics', 'user'])
+            ->with(['sortingCenter.logistics', 'user', 'assignedVehicle'])
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
         abort_unless($courier->status === 'approved' && $courier->sortingCenter, 403, 'An approved sorting-center assignment is required.');
@@ -406,12 +407,10 @@ class CourierTransportController extends Controller
         ])));
         $firstLastName = trim($courier->first_name.' '.$courier->last_name);
         $nameVariants = array_values(array_unique(array_filter([$fullName, $firstLastName])));
-        $plate = mb_strtolower(trim((string) $courier->plate_number));
-
         return LogisticsTransferManifest::query()
-            ->where(function (Builder $query) use ($courier, $nameVariants, $plate): void {
+            ->where(function (Builder $query) use ($courier, $nameVariants): void {
                 $query->where('courier_registration_id', $courier->id)
-                    ->orWhere(function (Builder $legacy) use ($courier, $nameVariants, $plate): void {
+                    ->orWhere(function (Builder $legacy) use ($courier, $nameVariants): void {
                         $legacy->whereNull('courier_registration_id')
                             ->where(function (Builder $route) use ($courier): void {
                                 $route->where(function (Builder $hubTransfer) use ($courier): void {
@@ -425,9 +424,6 @@ class CourierTransportController extends Controller
                                 });
                             })
                             ->whereIn(DB::raw('LOWER(TRIM(courier_name))'), array_map('mb_strtolower', $nameVariants));
-                        if ($plate !== '') {
-                            $legacy->whereRaw('LOWER(vehicle_reference) LIKE ?', ['%'.$plate.'%']);
-                        }
                     });
             });
     }
@@ -458,6 +454,11 @@ class CourierTransportController extends Controller
     private function profilePayload(CourierRegistration $courier): array
     {
         $center = $courier->sortingCenter;
+        $vehicle = $courier->assignedVehicle;
+        if ($vehicle && SortingCenterFleetArchive::query()->where('sorting_center_id', $center->id)
+            ->where('record_type', 'vehicles')->where('record_id', $vehicle->id)->exists()) {
+            $vehicle = null;
+        }
         return [
             'name' => trim(implode(' ', array_filter([
                 $courier->first_name,
@@ -473,8 +474,8 @@ class CourierTransportController extends Controller
             'sorting_center_id' => $center->id,
             'sorting_center_name' => $center->name,
             'sorting_center_address' => $this->facilityAddress($center->address, $center->municipality, $center->province),
-            'vehicle' => $courier->vehicle,
-            'plate_number' => $courier->plate_number,
+            'vehicle' => $vehicle?->type,
+            'plate_number' => $vehicle?->plate_number,
             'shift' => null,
         ];
     }

@@ -4,6 +4,7 @@ namespace App\Models\Logistics;
 
 use App\Models\Admin\Shipment;
 use App\Models\Admin\OrderReturn;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,13 +14,15 @@ class LogisticsTransferManifest extends Model
 {
     protected $fillable = [
         'batch_key', 'origin_type', 'origin_id', 'destination_type', 'destination_id',
-        'courier_registration_id', 'vehicle_id', 'courier_name', 'vehicle_reference',
+        'courier_registration_id', 'vehicle_id', 'courier_name', 'vehicle_reference', 'vehicle_type',
+        'assigned_by', 'assigned_at',
         'returning_manifest_id', 'order_return_id', 'status', 'scheduled_at', 'loaded_at', 'departed_at',
         'arrival_confirmed_at', 'arrived_at',
     ];
 
     protected $casts = [
         'scheduled_at' => 'datetime',
+        'assigned_at' => 'datetime',
         'loaded_at' => 'datetime',
         'departed_at' => 'datetime',
         'arrival_confirmed_at' => 'datetime',
@@ -52,6 +55,11 @@ class LogisticsTransferManifest extends Model
     public function courierRegistration(): BelongsTo
     {
         return $this->belongsTo(CourierRegistration::class, 'courier_registration_id');
+    }
+
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
     }
 
     public function events(): HasMany

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\SortingCenterVehicle;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -19,9 +20,16 @@ class SortingCenterFleetSeeder extends Seeder
 
         foreach (LogisticsBranch::query()->whereHas('user', fn ($query) => $query->where('role', User::ROLE_SORTING_CENTER))->get() as $center) {
             foreach ($fixtures as [$name, $type, $plate, $make, $model, $year, $capacity, $driver, $availability, $color, $notes]) {
+                $courier = $driver
+                    ? CourierRegistration::query()->where('sorting_center_id', $center->id)->where('status', 'approved')->get()
+                        ->first(fn (CourierRegistration $candidate): bool => trim(implode(' ', array_filter([
+                            $candidate->first_name, $candidate->middle_name, $candidate->last_name,
+                        ]))) === $driver)
+                    : null;
                 SortingCenterVehicle::query()->updateOrCreate(
                     ['sorting_center_id' => $center->id, 'plate_number' => $plate],
                     [
+                        'courier_registration_id' => $courier?->id,
                         'name' => $name, 'type' => $type, 'make' => $make, 'model' => $model,
                         'year' => $year, 'capacity' => $capacity, 'driver_name' => $driver,
                         'registration_date' => now()->subDays(14), 'availability' => $availability,

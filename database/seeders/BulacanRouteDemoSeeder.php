@@ -215,7 +215,7 @@ class BulacanRouteDemoSeeder extends Seeder
     private function courier(LogisticsBranch $center, string $email, string $first, string $last, string $plate, string $password): void
     {
         $user = $this->user($email, $first.' '.$last, User::ROLE_COURIER, $password);
-        CourierRegistration::query()->updateOrCreate(['email' => $email], [
+        $courier = CourierRegistration::query()->updateOrCreate(['email' => $email], [
             'user_id' => $user->id, 'sorting_center_id' => $center->id, 'first_name' => $first, 'last_name' => $last,
             'sex' => 'other', 'birthday' => '1992-01-01', 'phone' => '09176660010',
             'region' => match (mb_strtolower($center->province)) {
@@ -226,11 +226,11 @@ class BulacanRouteDemoSeeder extends Seeder
             },
             'province' => $center->province, 'city' => $center->municipality, 'barangay' => $center->barangay,
             'street' => 'Courier Street', 'house_no' => '8', 'postal_code' => $center->postal_code,
-            'vehicle' => 'Truck', 'plate_number' => $plate, 'status' => 'approved', 'reviewed_at' => now(), 'rejection_reason' => null,
+            'vehicle' => null, 'plate_number' => null, 'status' => 'approved', 'reviewed_at' => now(), 'rejection_reason' => null,
         ]);
         SortingCenterVehicle::query()->updateOrCreate(
             ['sorting_center_id' => $center->id, 'plate_number' => $plate],
-            ['name' => $first.' '.$last.' Linehaul Truck', 'type' => 'Truck', 'make' => 'Isuzu', 'model' => 'N-Series',
+            ['courier_registration_id' => $courier->id, 'name' => $first.' '.$last.' Linehaul Truck', 'type' => 'Truck', 'make' => 'Isuzu', 'model' => 'N-Series',
                 'year' => 2023, 'capacity' => '5 tons', 'driver_name' => $first.' '.$last,
                 'registration_date' => now()->subMonths(6), 'availability' => 'Available', 'color' => 'White',
                 'notes' => 'Bulacan route demo vehicle'],
