@@ -335,6 +335,7 @@ class OrderController extends Controller
                     ->map(fn (Logistics $provider): array => [
                         'id' => $provider->id,
                         'name' => $provider->business_name ?: 'Logistics company',
+                        'shipping_fee' => self::SHIPPING_FEE_PER_STORE,
                     ])
                     ->values();
 

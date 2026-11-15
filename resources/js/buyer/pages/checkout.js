@@ -72,7 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedShippingFee = sellerId => {
                 const options = shippingOptionsBySeller[String(sellerId)] || [];
                 const selected = selectedLogisticsBySeller[String(sellerId)];
-                return shippingOptionsLoaded && selected && options.some(option => String(option.id) === String(selected)) ? 50 : 0;
+                if (!shippingOptionsLoaded || !selected) return 0;
+                const option = options.find(item => String(item.id) === String(selected));
+                return option ? Math.max(0, Number(option.shipping_fee || 0)) : 0;
             };
             const walletTotal = () => cartItems.reduce((sum, item) => sum + Number(item.product.price) * Number(item.quantity), 0)
                 + [...new Set(cartItems.map(item => String(item.product.seller.id)))].reduce((sum, id) => sum + selectedShippingFee(id), 0)
