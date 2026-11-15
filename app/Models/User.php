@@ -39,6 +39,12 @@ class User extends Authenticatable
         'account_action_reason',
         'account_action_details',
         'profile_photo_path',
+        'terms_accepted_at',
+        'terms_version',
+        'terms_accepted_role',
+        'privacy_acknowledged_at',
+        'privacy_version',
+        'privacy_acknowledged_role',
     ];
 
     protected $hidden = [
@@ -52,6 +58,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'approved_at' => 'datetime',
             'suspended_until' => 'datetime',
+            'terms_accepted_at' => 'datetime',
+            'privacy_acknowledged_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',
         ];

@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Rider Deliveries — ShopEase</title>
     <style>
-        :root{font-family:Arial,sans-serif;color:#211b19;background:#fbf8f6}body{margin:0}header{background:#7b1b1b;color:#fff;padding:18px 5vw;display:flex;justify-content:space-between}header a{color:#fff}main{max-width:960px;margin:30px auto;padding:0 18px}.muted{color:#716966;font-size:14px;line-height:1.5}.card{background:#fff;border:1px solid #eadfdb;border-radius:12px;padding:18px;margin:14px 0}.card-top{display:flex;justify-content:space-between;gap:12px}.card h2{font-size:18px;margin:0 0 8px}.details{white-space:pre-line;line-height:1.6;margin:12px 0}.tag{background:#f4e7e3;border-radius:99px;padding:5px 9px;font-size:12px;text-transform:capitalize;white-space:nowrap}button{padding:10px 14px;border:0;border-radius:7px;background:#7b1b1b;color:white;cursor:pointer}button:disabled{opacity:.55}.error{background:#fff0ef;color:#8b2424;padding:12px;border-radius:8px}.success{background:#eef8ef;color:#28632d;padding:12px;border-radius:8px}#message:empty{display:none}
+        :root{font-family:Arial,sans-serif;color:#211b19;background:#fbf8f6}body{margin:0}header{background:#7b1b1b;color:#fff;padding:18px 5vw;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}header a{color:#fff}.policy-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.policy-links a{padding:10px 8px}header form{margin:0}main{max-width:960px;margin:30px auto;padding:0 18px}.muted{color:#716966;font-size:14px;line-height:1.5}.card{background:#fff;border:1px solid #eadfdb;border-radius:12px;padding:18px;margin:14px 0}.card-top{display:flex;justify-content:space-between;gap:12px}.card h2{font-size:18px;margin:0 0 8px}.details{white-space:pre-line;line-height:1.6;margin:12px 0}.tag{background:#f4e7e3;border-radius:99px;padding:5px 9px;font-size:12px;text-transform:capitalize;white-space:nowrap}button{padding:10px 14px;border:0;border-radius:7px;background:#7b1b1b;color:white;cursor:pointer}button:disabled{opacity:.55}.error{background:#fff0ef;color:#8b2424;padding:12px;border-radius:8px}.success{background:#eef8ef;color:#28632d;padding:12px;border-radius:8px}#message:empty{display:none}@media(max-width:520px){header{padding:14px 16px}.policy-links{width:100%;order:3}main{margin:20px auto;padding:0 12px}.card{padding:14px}.card-top{align-items:flex-start}}
     </style>
 </head>
 <body>
-    <header><strong>ShopEase · Rider</strong><form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Log out</button></form></header>
+    <header>
+        <strong>ShopEase · Rider</strong>
+        <nav class="policy-links" aria-label="Policies">
+            <a href="{{ route('terms-and-conditions', ['role' => 'rider']) }}">Rider Terms and Conditions</a>
+            <a href="{{ route('privacy-policy') }}">Privacy Policy</a>
+        </nav>
+        <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Log out</button></form>
+    </header>
     <main>
         <h1>My deliveries</h1>
         <p class="muted">Delivery updates are shared with the buyer and seller as soon as you save them.</p>

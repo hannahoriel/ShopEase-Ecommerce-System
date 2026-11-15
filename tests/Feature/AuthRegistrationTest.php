@@ -35,6 +35,8 @@ class AuthRegistrationTest extends TestCase
             'house_number' => '123',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -42,7 +44,13 @@ class AuthRegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'buyer.reg@example.com',
             'role' => User::ROLE_BUYER,
+            'terms_version' => \App\Http\Services\RegistrationService::TERMS_VERSION,
+            'terms_accepted_role' => User::ROLE_BUYER,
+            'privacy_version' => \App\Http\Services\RegistrationService::PRIVACY_VERSION,
+            'privacy_acknowledged_role' => User::ROLE_BUYER,
         ]);
+        $this->assertNotNull(User::where('email', 'buyer.reg@example.com')->value('terms_accepted_at'));
+        $this->assertNotNull(User::where('email', 'buyer.reg@example.com')->value('privacy_acknowledged_at'));
 
         $this->assertDatabaseHas('buyers', [
             'user_id' => User::where('email', 'buyer.reg@example.com')->value('id'),
@@ -85,6 +93,8 @@ class AuthRegistrationTest extends TestCase
             'line_of_business' => 'Handcrafted Goods',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -124,6 +134,8 @@ class AuthRegistrationTest extends TestCase
             'municipal_hub' => 'Rider Dispatch Depot',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -196,6 +208,8 @@ class AuthRegistrationTest extends TestCase
             'municipal_hub' => $hub->hub_name,
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ])
             ->assertCreated()
             ->assertJsonPath('status', 'pending')
@@ -252,6 +266,8 @@ class AuthRegistrationTest extends TestCase
             'business_name' => 'Flash Express Laguna',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -305,6 +321,105 @@ class AuthRegistrationTest extends TestCase
                 'email' => $role.'.underage@example.com',
             ]);
         }
+    }
+
+    public function test_registration_requires_terms_and_separate_privacy_acknowledgment(): void
+    {
+        $registration = [
+            'role' => User::ROLE_BUYER,
+            'last_name' => 'Buyer',
+            'first_name' => 'NoConsent',
+            'sex' => 'other',
+            'email' => 'no-consent@example.com',
+            'contact_no' => '09171234567',
+            'birthday' => '2000-01-15',
+            'province' => 'Cebu',
+            'municipality' => 'Cebu City',
+            'barangay' => 'Lahug',
+            'street' => 'Main Street',
+            'house_number' => '1',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ];
+
+        $this->from(route('register'))
+            ->post(route('register.attempt'), $registration)
+            ->assertSessionHasErrors('accept_terms');
+
+        $registration['email'] = 'privacy-not-acknowledged@example.com';
+        $registration['accept_terms'] = '1';
+        $this->from(route('register'))
+            ->post(route('register.attempt'), $registration)
+            ->assertSessionHasErrors('acknowledge_privacy');
+
+        $this->assertDatabaseMissing('users', ['email' => 'no-consent@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'privacy-not-acknowledged@example.com']);
+    }
+
+    public function test_terms_and_privacy_pages_show_role_rules_and_privacy_details(): void
+    {
+        $this->get(route('terms-and-conditions', ['role' => 'buyer']))
+            ->assertOk()
+            ->assertSee('Buyer-specific terms')
+            ->assertSee('ShopEase Wallet refunds')
+            ->assertDontSee('Compliance Score')
+            ->assertDontSee('third missed attempt');
+
+        $this->get(route('terms-and-conditions', ['role' => 'seller']))
+            ->assertOk()
+            ->assertSee('Seller-specific terms')
+            ->assertSee('seller-at-fault')
+            ->assertSee('suspended for 3 days')
+            ->assertDontSee('ShopEase Wallet refunds')
+            ->assertDontSee('Courier-specific terms');
+
+        $this->get(route('terms-and-conditions', ['role' => 'logistics']))
+            ->assertOk()
+            ->assertSee('Logistics-specific terms')
+            ->assertDontSee('Compliance Score')
+            ->assertDontSee('third missed attempt');
+
+        $this->get(route('terms-and-conditions', ['role' => 'rider']))
+            ->assertOk()
+            ->assertSee('Rider-specific terms')
+            ->assertSee('₱20.00')
+            ->assertDontSee('Courier-specific terms');
+
+        $this->get(route('terms-and-conditions', ['role' => 'courier']))
+            ->assertOk()
+            ->assertSee('Courier-specific terms')
+            ->assertDontSee('third missed attempt')
+            ->assertDontSee('ShopEase Wallet refunds');
+
+        $this->get(route('privacy-policy'))
+            ->assertOk()
+            ->assertSee('Republic Act No. 10173')
+            ->assertSee('Implementing Rules and Regulations of RA 10173')
+            ->assertSee('Republic Act No. 11967')
+            ->assertSee('location coordinates');
+    }
+
+    public function test_rider_and_courier_dashboards_show_mobile_policy_links_for_their_roles(): void
+    {
+        $rider = User::factory()->create(['role' => User::ROLE_RIDER]);
+
+        $this->actingAs($rider)
+            ->get(route('rider.dashboard'))
+            ->assertOk()
+            ->assertSee('width=device-width,initial-scale=1', false)
+            ->assertSee(route('terms-and-conditions', ['role' => 'rider']))
+            ->assertSee('Rider Terms and Conditions')
+            ->assertSee(route('privacy-policy'));
+
+        $courier = User::factory()->create(['role' => User::ROLE_COURIER]);
+
+        $this->actingAs($courier)
+            ->get(route('courier.dashboard'))
+            ->assertOk()
+            ->assertSee('width=device-width,initial-scale=1', false)
+            ->assertSee(route('terms-and-conditions', ['role' => 'courier']))
+            ->assertSee('Courier Terms and Conditions')
+            ->assertSee(route('privacy-policy'));
     }
 
     public function test_admin_can_view_pending_registrations_page_and_display_data(): void

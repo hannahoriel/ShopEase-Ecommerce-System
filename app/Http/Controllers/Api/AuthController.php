@@ -152,6 +152,12 @@ class AuthController extends Controller
                     'plate_number' => $rider->plate_number,
                     'or_cr_path' => $rider->upload_or_cr,
                     'drivers_license_path' => $rider->upload_id_license,
+                    'terms_accepted_at' => $user->terms_accepted_at,
+                    'terms_version' => $user->terms_version,
+                    'terms_accepted_role' => 'courier',
+                    'privacy_acknowledged_at' => $user->privacy_acknowledged_at,
+                    'privacy_version' => $user->privacy_version,
+                    'privacy_acknowledged_role' => 'courier',
                     'status' => 'pending',
                 ]);
             }

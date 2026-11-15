@@ -895,7 +895,7 @@ body.lg-body #laPage .la-layout > div:not(.la-side)::-webkit-scrollbar-thumb{bac
                 <h1 class="sa-page-title">Platform Policies</h1>
                 <p class="sa-intro">Sorting center guidelines and platform expectations in a readable document format.</p>
                 <article class="sa-policy-document">
-                    <header class="sa-policy-header"><div class="sa-policy-stamp">ShopEase · DELIVERY HUB DOCUMENT</div><h2>Sorting Center Platform Policies</h2><p>Reference guide for logistics partners</p><div class="sa-policy-rule"></div><p class="sa-policy-note">Illustrative policy summary for UI purposes. Replace this text with your organization's approved and current policies before publishing.</p></header>
+                    <header class="sa-policy-header"><div class="sa-policy-stamp">ShopEase · SORTING CENTER DOCUMENT</div><h2>Sorting Center Platform Policies</h2><p>Reference guide for logistics partners</p><div class="sa-policy-rule"></div><p class="sa-policy-note">This account-settings page is a brief summary. Read the full logistics Terms and Conditions and Privacy Policy for the complete current rules.</p></header>
                     <nav class="sa-policy-index" aria-label="Document contents"><strong>Contents</strong><a href="#saPolicy1">01. Sorting center responsibilities</a><a href="#saPolicy2">02. Hubs & service areas</a><a href="#saPolicy3">03. Parcel handling & deliveries</a><a href="#saPolicy4">04. Customer & seller communication</a><a href="#saPolicy5">05. Privacy & security</a><a href="#saPolicy6">06. Compliance & requests</a></nav>
                     <section id="saPolicy1"><h3>01. Sorting center responsibilities</h3><p>Maintain accurate sorting center manager, sorting center address, and authorized delivery coverage.</p></section>
                     <section id="saPolicy2"><h3>02. Hubs & service areas</h3><p>Maintain sorting centers, sorting centers, and service area records accurately and follow safety and operational guidelines.</p></section>
@@ -903,7 +903,7 @@ body.lg-body #laPage .la-layout > div:not(.la-side)::-webkit-scrollbar-thumb{bac
                     <section id="saPolicy4"><h3>04. Customer & seller communication</h3><p>Communicate professionally with buyers, sellers, riders, and ShopEase administrators on shipment and return matters.</p></section>
                     <section id="saPolicy5"><h3>05. Privacy & security</h3><p>Protect account credentials and customer and shipment information. Do not disclose sensitive buyer details outside authorized order processing and support workflows.</p></section>
                     <section id="saPolicy6"><h3>06. Compliance & requests</h3><p>Changes to sorting center details require parent Logistics Company approval; profile and cover photos are exempt.</p></section>
-                    <footer class="sa-policy-footer">ShopEase Sorting Center Guidelines <span>End of document</span></footer>
+                    <footer class="sa-policy-footer">ShopEase Sorting Center Guidelines <span><a href="{{ route('terms-and-conditions', ['role' => 'logistics']) }}">Full Logistics Terms</a> · <a href="{{ route('privacy-policy') }}">Privacy Policy</a></span></footer>
                 </article>
             </div>
 </div></div></main>

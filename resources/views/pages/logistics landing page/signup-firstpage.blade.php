@@ -124,7 +124,12 @@
 </div><small class="client-error" data-error-for="password">{{ $errors->first('password') }}</small></div>
 <div class="form-group logistics-password-field"><label class="form-label" for="password_confirmation">Confirm Password <span class="required">*</span></label><div class="password-input-wrapper"><input type="password" id="password_confirmation" name="password_confirmation" class="form-input" placeholder="{{ $hasSavedRegistrationPassword ? 'Leave blank to keep saved password' : 'Confirm your password' }}" minlength="8" autocomplete="new-password" @if(!$hasSavedRegistrationPassword) required @endif><button type="button" class="password-eye-button" id="passwordConfirmationEyeButton" aria-label="Show password" aria-pressed="false"><img src="{{ asset('icons/login/hide-password.png') }}" alt="Password hidden" id="passwordConfirmationEyeIcon"></button></div><p class="password-match-error" id="passwordConfirmationError" role="alert">Passwords do not match.</p><small class="client-error" data-error-for="password_confirmation">{{ $errors->first('password_confirmation') }}</small></div>
         </div>
-        <div class="excel-terms"><label><input id="accept_terms" name="accept_terms" type="checkbox" value="1" @checked(old('accept_terms', $companyData['accept_terms'] ?? false)) required> I agree to the Terms and Conditions and Privacy Policy. <span class="required">*</span></label><small class="excel-error" id="termsError">{{ $errors->first('accept_terms') }}</small></div><div class="form-actions">
+        <div class="excel-terms">
+          <label><input id="accept_terms" name="accept_terms" type="checkbox" value="1" @checked(old('accept_terms', $companyData['accept_terms'] ?? false)) required> I have read and agree to the <a href="{{ route('terms-and-conditions', ['role' => 'logistics']) }}" target="_blank" rel="noopener">Logistics Partner Terms and Conditions</a>. <span class="required">*</span></label>
+          <small class="excel-error" id="termsError">{{ $errors->first('accept_terms') }}</small>
+          <label><input id="acknowledge_privacy" name="acknowledge_privacy" type="checkbox" value="1" @checked(old('acknowledge_privacy', $companyData['acknowledge_privacy'] ?? false)) required> I acknowledge that I have read the <a href="{{ route('privacy-policy') }}" target="_blank" rel="noopener">ShopEase Privacy Policy</a>. <span class="required">*</span></label>
+          <small class="excel-error">{{ $errors->first('acknowledge_privacy') }}</small>
+        </div><div class="form-actions">
           <span class="step-notice">Step 1 of 3 · Company Details</span>
           <button type="submit" class="next-button" id="nextButton">Continue</button>
         </div>

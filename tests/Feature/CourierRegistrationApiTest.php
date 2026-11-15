@@ -6,6 +6,7 @@ use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\User;
+use App\Http\Services\RegistrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -22,10 +23,14 @@ class CourierRegistrationApiTest extends TestCase
         $application = CourierRegistration::query()->create([
             'sorting_center_id' => $branch->id, 'first_name' => 'Jamie', 'last_name' => 'Reyes',
             'email' => 'jamie@example.test', 'phone' => '09170000001', 'vehicle' => 'Truck', 'plate_number' => 'ABC 1234',
+            'terms_accepted_at' => now(), 'terms_version' => RegistrationService::TERMS_VERSION, 'terms_accepted_role' => 'courier',
+            'privacy_acknowledged_at' => now(), 'privacy_version' => RegistrationService::PRIVACY_VERSION, 'privacy_acknowledged_role' => 'courier',
         ]);
         $otherApplication = CourierRegistration::query()->create([
             'sorting_center_id' => $otherBranch->id, 'first_name' => 'Other', 'last_name' => 'Applicant',
             'email' => 'other@example.test', 'phone' => '09170000002', 'vehicle' => 'Truck', 'plate_number' => 'XYZ 4321',
+            'terms_accepted_at' => now(), 'terms_version' => RegistrationService::TERMS_VERSION, 'terms_accepted_role' => 'courier',
+            'privacy_acknowledged_at' => now(), 'privacy_version' => RegistrationService::PRIVACY_VERSION, 'privacy_acknowledged_role' => 'courier',
         ]);
 
         $this->actingAs($center)->getJson('/api/v1/sorting_center/courier-registrations')
@@ -39,6 +44,13 @@ class CourierRegistrationApiTest extends TestCase
         $this->assertDatabaseHas('courier_registrations', [
             'id' => $application->id, 'status' => 'approved', 'reviewed_by' => $center->id,
         ]);
+        $this->assertDatabaseHas('users', [
+            'email' => 'jamie@example.test',
+            'terms_version' => RegistrationService::TERMS_VERSION,
+            'terms_accepted_role' => 'courier',
+            'privacy_version' => RegistrationService::PRIVACY_VERSION,
+            'privacy_acknowledged_role' => 'courier',
+        ]);
         $this->patchJson('/api/v1/sorting_center/courier-registrations/'.$application->id.'/decision', ['status' => 'rejected', 'reason' => 'No'])
             ->assertUnprocessable();
         $this->patchJson('/api/v1/sorting_center/courier-registrations/'.$otherApplication->id.'/decision', ['status' => 'approved'])
@@ -51,6 +63,7 @@ class CourierRegistrationApiTest extends TestCase
         $application = CourierRegistration::query()->create([
             'sorting_center_id' => $branch->id, 'first_name' => 'Taylor', 'last_name' => 'Santos',
             'email' => 'taylor@example.test', 'phone' => '09170000003', 'vehicle' => 'Truck', 'plate_number' => 'DEF 5678',
+            'terms_accepted_at' => now(), 'terms_version' => RegistrationService::TERMS_VERSION, 'terms_accepted_role' => 'courier',
         ]);
 
         $this->actingAs($center)->patchJson('/api/v1/sorting_center/courier-registrations/'.$application->id.'/decision', ['status' => 'rejected'])
@@ -66,6 +79,10 @@ class CourierRegistrationApiTest extends TestCase
         Storage::fake('public');
 
         $this->postJson('/api/v1/courier-registrations', [
+            'sorting_center_id' => $branch->id,
+        ])->assertUnprocessable()->assertJsonValidationErrors(['accept_terms', 'acknowledge_privacy']);
+
+        $this->postJson('/api/v1/courier-registrations', [
             'sorting_center_id' => $branch->id, 'first_name' => 'Alex', 'middle_name' => 'James',
             'last_name' => 'Garcia', 'sex' => 'Male', 'birthday' => '1998-03-15',
             'email' => 'alex.garcia@example.test', 'phone' => '09170000004',
@@ -73,11 +90,17 @@ class CourierRegistrationApiTest extends TestCase
             'barangay' => 'Poblacion', 'street' => 'Rizal Street', 'house_no' => '12',
             'postal_code' => '4027', 'vehicle' => 'Truck', 'plate_number' => 'ABC 1234',
             'drivers_license' => UploadedFile::fake()->image('drivers-license.jpg'),
+            'accept_terms' => '1',
+            'acknowledge_privacy' => '1',
         ])->assertCreated()->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.email', 'alex.garcia@example.test');
 
         $this->assertDatabaseHas('courier_registrations', [
             'sorting_center_id' => $branch->id, 'email' => 'alex.garcia@example.test', 'status' => 'pending',
+            'terms_version' => RegistrationService::TERMS_VERSION,
+            'terms_accepted_role' => 'courier',
+            'privacy_version' => RegistrationService::PRIVACY_VERSION,
+            'privacy_acknowledged_role' => 'courier',
         ]);
         $this->assertCount(1, Storage::disk('public')->allFiles('courier-registrations/drivers-license'));
     }

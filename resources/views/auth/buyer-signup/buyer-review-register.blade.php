@@ -3247,9 +3247,15 @@
                     </div>
                     <div class="review-section-body">
                         <div class="information-item">
-                            <span class="information-label">Agreement</span>
+                            <span class="information-label">Terms and Conditions</span>
                             <div class="information-value {{ !empty($buyerData['terms'] ?? null) ? '' : 'empty' }}">
                                 {{ !empty($buyerData['terms'] ?? null) ? 'Accepted' : 'Not provided' }}
+                            </div>
+                        </div>
+                        <div class="information-item">
+                            <span class="information-label">Privacy Policy</span>
+                            <div class="information-value {{ !empty($buyerData['privacy_acknowledged'] ?? null) ? '' : 'empty' }}">
+                                {{ !empty($buyerData['privacy_acknowledged'] ?? null) ? 'Acknowledged' : 'Not provided' }}
                             </div>
                         </div>
                     </div>

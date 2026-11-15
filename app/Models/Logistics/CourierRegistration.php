@@ -13,11 +13,18 @@ class CourierRegistration extends Model
         'email', 'phone', 'region', 'province', 'city', 'barangay', 'street', 'house_no',
         'postal_code', 'vehicle', 'plate_number', 'or_cr_path', 'drivers_license_path',
         'status', 'rejection_reason', 'reviewed_by', 'reviewed_at',
+        'terms_accepted_at', 'terms_version', 'terms_accepted_role',
+        'privacy_acknowledged_at', 'privacy_version', 'privacy_acknowledged_role',
     ];
 
     protected function casts(): array
     {
-        return ['birthday' => 'date', 'reviewed_at' => 'datetime'];
+        return [
+            'birthday' => 'date',
+            'reviewed_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
+            'privacy_acknowledged_at' => 'datetime',
+        ];
     }
 
     protected $appends = ['or_cr_url', 'drivers_license_url'];

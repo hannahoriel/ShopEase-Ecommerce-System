@@ -19,6 +19,9 @@ use Illuminate\Validation\ValidationException;
 
 class RegistrationService
 {
+    public const TERMS_VERSION = '2026-11-15-v2';
+    public const PRIVACY_VERSION = '2026-11-15-v1';
+
     /**
      * Validate + register a new user (buyer/seller/logistics/rider),
      * from the multi-purpose registration form. Returns the created User.
@@ -26,6 +29,10 @@ class RegistrationService
     public function register(Request $request): User
     {
         $role = $request->input('role', User::ROLE_BUYER);
+        $request->merge([
+            'accept_terms' => $request->input('accept_terms', $request->input('terms')),
+            'acknowledge_privacy' => $request->input('acknowledge_privacy', $request->input('privacy_acknowledged')),
+        ]);
 
         $rejectedRegistration = Registration::where('email', $request->input('email'))
             ->where('status', 'rejected')
@@ -74,6 +81,8 @@ class RegistrationService
             'street' => ['required', 'string', 'max:255'],
             'house_number' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', ...$this->passwordRules()],
+            'accept_terms' => ['accepted'],
+            'acknowledge_privacy' => ['accepted'],
             'upload_id' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'],
             'upload_id_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'],
         ];
@@ -132,6 +141,18 @@ class RegistrationService
             'role' => $validated['role'],
             'password' => Hash::make($validated['password']),
             'registration_status' => 'pending',
+            'terms_accepted_at' => now(),
+            'terms_version' => self::TERMS_VERSION,
+            'terms_accepted_role' => $role === User::ROLE_RIDER
+                && ($validated['registration_type'] ?? 'rider') === 'courier'
+                    ? 'courier'
+                    : $role,
+            'privacy_acknowledged_at' => now(),
+            'privacy_version' => self::PRIVACY_VERSION,
+            'privacy_acknowledged_role' => $role === User::ROLE_RIDER
+                && ($validated['registration_type'] ?? 'rider') === 'courier'
+                    ? 'courier'
+                    : $role,
         ];
 
         if ($role === User::ROLE_SELLER) {
@@ -349,6 +370,18 @@ class RegistrationService
             'password' => Hash::make($data['password'] ?? Str::random(40)),
             'role' => $role,
             'registration_status' => 'pending',
+            'terms_accepted_at' => now(),
+            'terms_version' => self::TERMS_VERSION,
+            'terms_accepted_role' => $role === User::ROLE_RIDER
+                && ($data['registration_type'] ?? 'rider') === 'courier'
+                    ? 'courier'
+                    : $role,
+            'privacy_acknowledged_at' => now(),
+            'privacy_version' => self::PRIVACY_VERSION,
+            'privacy_acknowledged_role' => $role === User::ROLE_RIDER
+                && ($data['registration_type'] ?? 'rider') === 'courier'
+                    ? 'courier'
+                    : $role,
         ];
 
         if ($existingUser) {
@@ -426,6 +459,8 @@ class RegistrationService
         return array_intersect_key($attributes, array_flip([
             'name', 'email', 'password', 'role', 'email_verified_at',
             'registration_status', 'approved_at', 'rejected_at', 'suspended_until',
+            'terms_accepted_at', 'terms_version', 'terms_accepted_role',
+            'privacy_acknowledged_at', 'privacy_version', 'privacy_acknowledged_role',
         ]));
     }
 
@@ -436,6 +471,8 @@ class RegistrationService
             'house_number' => $data['house_no'] ?? null,
             'valid_id_path' => $data['valid_id'] ?? null,
             'business_permit_path' => $data['business_permit'] ?? null,
+            'accept_terms' => $data['terms'] ?? null,
+            'acknowledge_privacy' => $data['privacy_acknowledged'] ?? null,
         ], $data);
 
         $data['valid_id_path'] = $data['valid_id_path']
@@ -455,7 +492,11 @@ class RegistrationService
     private function registrationValidationRules(): array
     {
         return array_merge(
-            ['birthday' => $this->birthdayValidationRules()],
+            [
+                'birthday' => $this->birthdayValidationRules(),
+                'accept_terms' => ['accepted'],
+                'acknowledge_privacy' => ['accepted'],
+            ],
             $this->passwordValidationRules(),
         );
     }
