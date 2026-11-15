@@ -1,45 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ShopEase {{ $termsRoleLabel }} Terms and Conditions</title>
-    <style>
-        :root{font-family:Arial,sans-serif;color:#292324;background:#faf6f4;line-height:1.65}
-        *{box-sizing:border-box}
-        body{margin:0}
-        header{background:#52070b;color:#fff;padding:28px max(22px,calc((100% - 980px)/2))}
-        header a{color:#fff}
-        main{max-width:980px;margin:30px auto;padding:0 22px 50px}
-        h1,h2,h3{line-height:1.25;color:#651319}
-        h1{color:#fff;margin:0 0 6px}
-        h2{margin-top:34px}
-        h3{margin-top:24px}
-        .version,.notice{font-size:.92rem;color:#65595a}
-        .notice{border-left:4px solid #d47a67;background:#fff;padding:14px 18px;margin:22px 0}
-        nav{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0}
-        nav a{color:#651319;background:#fff;border:1px solid #eadbd7;border-radius:20px;padding:8px 13px;text-decoration:none}
-        nav a.active{background:#651319;color:#fff}
-        section{background:#fff;border:1px solid #eee2df;border-radius:10px;padding:20px 24px;margin:18px 0}
-        li{margin:7px 0}
-        footer{margin-top:30px;font-size:.9rem;color:#65595a}
-        @media(max-width:600px){section{padding:16px}header{padding:22px}}
-    </style>
-</head>
-<body>
-<header>
-    <h1>ShopEase {{ $termsRoleLabel }} Terms and Conditions</h1>
-    <div>General platform terms and role-specific requirements for {{ strtolower($termsRoleLabel) }} accounts</div>
-</header>
-<main>
-    <p class="version">Terms version: {{ $termsVersion }} · Effective November 15, 2026</p>
-    <div class="notice"><strong>For {{ strtolower($termsRoleLabel) }} accounts.</strong> The general platform terms below apply to every account. Only the {{ strtolower($termsRoleLabel) }}-specific terms are shown on this page. Registration remains subject to verification and approval where applicable.</div>
+@extends('legal.layout')
 
-    <section>
+@section('pageTitle', 'ShopEase '.$termsRoleLabel.' Terms and Conditions')
+@section('documentType', 'Terms & Conditions')
+@section('heading', $termsRoleLabel.' Terms and Conditions')
+@section('summary', 'Review the platform rules that apply to every ShopEase account and the additional responsibilities for your account role.')
+@section('documentVersion', $termsVersion)
+@section('documentKey', 'terms')
+@section('legalRole', $legalRole)
+@section('termsUrl', route('terms-and-conditions', ['role' => $termsRole, 'return_to' => $hasRegistrationReturn ? $legalReturnUrl : null]))
+@section('privacyUrl', route('privacy-policy', ['role' => $termsRole, 'return_to' => $hasRegistrationReturn ? $legalReturnUrl : null]))
+
+@section('toc')
+    <a href="#terms-agreement">1. Agreement and eligibility</a>
+    <a href="#terms-orders">2. Orders and payments</a>
+    @if ($termsRole === 'buyer')
+        <a href="#terms-buyer">3. Buyer-specific terms</a>
+    @elseif ($termsRole === 'seller')
+        <a href="#terms-seller">3. Seller-specific terms</a>
+    @elseif ($termsRole === 'logistics')
+        <a href="#terms-logistics">3. Logistics-specific terms</a>
+    @elseif ($termsRole === 'rider')
+        <a href="#terms-rider">3. Rider-specific terms</a>
+    @elseif ($termsRole === 'courier')
+        <a href="#terms-courier">3. Courier-specific terms</a>
+    @endif
+    <a href="#terms-enforcement">4. Complaints and account actions</a>
+    <a href="#terms-rights">5. Legal rights</a>
+@endsection
+
+@section('content')
+    <div class="document-notice"><strong>For {{ strtolower($termsRoleLabel) }} accounts.</strong> The general platform terms below apply to every account. Only the {{ strtolower($termsRoleLabel) }}-specific terms are shown on this page. Registration remains subject to verification and approval where applicable. Check each section after reading; the Terms checkbox is selected when all sections on this page are checked. The Privacy Policy checkbox is tracked separately.</div>
+    <p class="legal-progress" data-legal-progress role="status" aria-live="polite">Mark each section as you read. Your progress is saved in this browser.</p>
+
+    <section id="terms-agreement">
         <h2>1. Agreement, scope, and account eligibility</h2>
         <ul>
             <li>These Terms apply to buyer, seller, logistics partner, rider, and courier accounts and to each person's use of ShopEase websites, applications, APIs, ordering, messaging, wallet, complaint, parcel-tracking, and delivery functions. Role-specific provisions apply in addition to the common terms.</li>
-            <li>At registration, you must separately check the box agreeing to these Terms and the box acknowledging the <a href="{{ route('privacy-policy') }}">Privacy Policy</a>. ShopEase records the date and time, account role, and version of each document accepted. If you do not agree, do not submit the registration. Acknowledgment of the Privacy Policy is notice of data processing; it is not a waiver of privacy rights.</li>
+            <li>At registration, you must separately check the box agreeing to these Terms and the box acknowledging the <a href="@yield('privacyUrl')">Privacy Policy</a>. ShopEase records the date and time, account role, and version of each document accepted. If you do not agree, do not submit the registration. Acknowledgment of the Privacy Policy is notice of data processing; it is not a waiver of privacy rights.</li>
             <li>You must be at least 18, legally able to enter into the applicable agreement, and authorized to act for any business you register. You may not create an account using another person's identity or share an account to bypass verification. A business representative confirms authority to submit its information and documents.</li>
             <li>Provide complete and accurate details and documents requested for your role, including identity, contact, business, address, vehicle, license, permit, and service-area information where applicable. Keep them current and notify ShopEase of material changes. ShopEase may verify submitted information and request clarifications.</li>
             <li>Applications may be marked pending while ShopEase, an administrator, delivery hub, logistics partner, or sorting center reviews them. Submitting an application does not mean it is approved or authorize you to sell, accept orders, handle parcels, or make deliveries. Approval may be limited to a particular role, hub, center, or operating area.</li>
@@ -48,9 +45,10 @@
             <li>Personal information and shipment details are confidential. Access or use them only as necessary to perform your role, keep them secure, do not copy, sell, disclose, or use them for unrelated marketing, and delete or return them when no longer needed unless law or an open dispute requires retention. See the Privacy Policy for how ShopEase processes information.</li>
             <li>ShopEase may change, suspend, or discontinue a feature, and may display delivery estimates that depend on sellers, partners, routes, and conditions outside its control. A displayed estimate is not a guarantee unless a specific commitment is expressly made for the transaction. This does not limit mandatory rights under law.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-agreement', 'message' => 'I have read and agree to Section 1 of these Terms and Conditions.'])
     </section>
 
-    <section>
+    <section id="terms-orders">
         <h2>2. Orders, platform payments, and general account actions</h2>
         <ul>
             <li>ShopEase facilitates transactions between buyers and sellers and coordinates platform and delivery workflows. Unless expressly stated otherwise, the seller remains responsible for its products, product descriptions, fulfillment, and applicable seller obligations; the carrier or logistics provider remains responsible for its assigned transport service.</li>
@@ -58,11 +56,12 @@
             <li>Available payment methods and charges are those shown at checkout or in the relevant account. ShopEase does not promise that a payment, wallet credit, seller balance, or rider earning is withdrawable unless a withdrawal function and its terms are expressly provided.</li>
             <li>Submit complaints and disputes through the available order or support channels, with accurate descriptions, dates, photographs, receipts, messages, and other relevant evidence. ShopEase may ask each side for a response, review available platform records, and decide platform remedies. Platform review does not prevent either party from exercising lawful remedies with a regulator or court.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-orders', 'message' => 'I have read and agree to Section 2 of these Terms and Conditions.'])
     </section>
 
     @if ($termsRole === 'buyer')
     <section id="terms-buyer" class="role-section">
-        <h2>Buyer-specific terms</h2>
+        <h2>3. Buyer-specific terms</h2>
         <ul>
             <li>Keep your account, contact number, and delivery address accurate and accessible. Review seller details, item description, variants, quantity, price, shipping charges, vouchers, and payment method before confirming. You are responsible for checking that your order is correct before submission.</li>
             <li>Orders are subject to product availability, seller acceptance where applicable, payment status, and platform checks. Do not place fake, duplicate, abusive, or knowingly unserviceable orders. For Cash on Delivery (COD), pay the amount shown for the order to the authorized delivery representative upon delivery; do not pay an unrelated person or off-platform account.</li>
@@ -72,12 +71,13 @@
             <li>The wallet-only treatment above applies only where it is lawful for the particular refund and transaction. It does not remove any mandatory right to a cash refund, payment reversal, or other remedy under Philippine consumer or internet-transaction law. If law requires a different refund method, that requirement controls. Ask ShopEase support if the displayed refund method appears inconsistent with your legal rights.</li>
             <li>Use vouchers and promotions only under the eligibility, expiry, order minimum, and other conditions displayed with them. ShopEase may cancel a promotion or correct an erroneous benefit where allowed, after reviewing the transaction.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-buyer', 'message' => 'I have read and agree to Section 3, Buyer-specific terms.'])
     </section>
     @endif
 
     @if ($termsRole === 'seller')
     <section id="terms-seller" class="role-section {{ $termsRole === 'seller' ? 'current' : '' }}">
-        <h2>Seller-specific terms</h2>
+        <h2>3. Seller-specific terms</h2>
         <ul>
             <li>Submit accurate identity, business, permit, tax, and contact information and maintain any licenses required for your business and products. You are responsible for applicable taxes, product safety, consumer disclosures, warranties, and legal compliance.</li>
             <li>List only goods you are authorized to sell. Make product title, photographs, condition, specifications, variations, price, stock, shipping details, origin, and safety/usage information accurate and current. Do not list counterfeit, stolen, recalled, restricted, unsafe, illegal, or materially misrepresented goods. Remove or correct a listing promptly if its information or availability changes.</li>
@@ -89,12 +89,13 @@
             <li><strong>Score-based suspension.</strong> If the calculated score falls below 75%, the seller account is suspended for 3 days. A score of exactly 75% does not trigger this threshold. During suspension, access to seller functions may be restricted; existing orders, buyer safety, records, and legally required payments remain subject to review. After the applicable period, account status may be restored under the system's reactivation rules, subject to any separate restriction or unresolved legal issue.</li>
             <li>Seller wallet and settlement entries are records of amounts earned, adjustments, commissions, refunds, and other configured transactions; an entry is not necessarily a completed bank payout. Review your ledger and contact ShopEase support promptly about an unexplained entry.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-seller', 'message' => 'I have read and agree to Section 3, Seller-specific terms.'])
     </section>
     @endif
 
     @if ($termsRole === 'logistics')
     <section id="terms-logistics" class="role-section {{ $termsRole === 'logistics' ? 'current' : '' }}">
-        <h2>Logistics-specific terms</h2>
+        <h2>3. Logistics-specific terms</h2>
         <ul>
             <li>Maintain accurate company and representative details, service areas, business registrations, permits, required insurance, facilities, equipment, and operational contact information. Submit documents requested during review and promptly report expired permits, operational changes, safety incidents, or a change in authority.</li>
             <li>Use the assigned hub, center, fleet, route, manifest, and parcel-management functions only for authorized operations. Confirm parcel identity, quantity, visible condition, and custody at each handoff; complete required scans and status updates accurately and promptly. Never bypass a scan, alter a manifest, open a parcel without authorization, or mark a parcel transferred or delivered before it is.</li>
@@ -103,12 +104,13 @@
             <li>Reconcile manifests, transfers, COD collections, remittances, rider earnings, and logistics reports using the available records. Report discrepancies; do not divert, retain, or misstate funds or parcels. Any partner fee, service level, deduction, or settlement term not specified here must be agreed in the applicable partner arrangement and remain lawful.</li>
             <li>Follow assigned schedules and provide prompt notice when capacity, staff, vehicle, weather, facility, safety, or technical conditions prevent a planned handoff. Repeated unexcused failures, falsified scans, mishandling, or failure to cooperate with a parcel investigation may result in reassignment, restrictions, suspension, or termination under the administrator-enforcement section.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-logistics', 'message' => 'I have read and agree to Section 3, Logistics-specific terms.'])
     </section>
     @endif
 
     @if ($termsRole === 'rider')
     <section id="terms-rider" class="role-section {{ $termsRole === 'rider' ? 'current' : '' }}">
-        <h2>Rider-specific terms</h2>
+        <h2>3. Rider-specific terms</h2>
         <ul>
             <li>Keep your identity, contact details, vehicle description, plate number, driver's license, and hub assignment accurate and current. Maintain the qualifications and roadworthy vehicle required by law and your logistics partner. Follow traffic laws, safety instructions, and lawful route and parcel-handling procedures.</li>
             <li>Accept and complete only assigned pickup, delivery, and return tasks. Check the order/tracking identity and visible parcel condition, maintain secure custody, use required scans and proof, and report damage, mismatch, access problems, recipient unavailability, emergency, or unsafe conditions promptly. Do not falsely claim pickup, delivery, cash collection, or a failed attempt.</li>
@@ -117,12 +119,13 @@
             <li>The ₱20.00 amount is an earnings-ledger adjustment, not an unrestricted authority to deduct wages. It may be applied only when lawful for the rider's employment/contractor arrangement, consistent with a separate applicable agreement and required labor protections. A database entry or click-to-accept alone does not waive statutory wage rights. ShopEase and its logistics partners must review the legal basis, provide notice and a way to dispute an incorrect assignment or missed-attempt record, and correct an improper entry. Urgent safety incidents, seller unavailability, system faults, reassignment, or other conditions outside a rider's control should be reported promptly for review.</li>
             <li>Rider compensation and remittance depend on the applicable logistics arrangement and posted earning records. Review the earnings ledger and report discrepancies to the responsible logistics partner or ShopEase support. Do not collect unauthorized fees or keep COD/remittance funds beyond the applicable settlement instructions.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-rider', 'message' => 'I have read and agree to Section 3, Rider-specific terms.'])
     </section>
     @endif
 
     @if ($termsRole === 'courier')
     <section id="terms-courier" class="role-section {{ $termsRole === 'courier' ? 'current' : '' }}">
-        <h2>Courier-specific terms</h2>
+        <h2>3. Courier-specific terms</h2>
         <ul>
             <li>Courier applications are subject to sorting-center review. Provide accurate identity, phone, address, vehicle, plate, and driver's-license information and any documents required for the selected transport assignment. Do not begin work until the relevant account and assignment are approved.</li>
             <li>Follow the assigned manifest, route, transport schedule, loading/unloading instructions, vehicle requirements, and sorting-center handoff procedure. Verify parcel counts and condition at acceptance and delivery, scan or reconcile parcels when required, and maintain the chain of custody for the entire assigned leg.</li>
@@ -130,11 +133,12 @@
             <li>Use personal information only as necessary for assigned transport and protect it from unauthorized disclosure. If unable to attend or complete a route, notify the sorting center or logistics partner as early as possible and follow their instructions. Repeated unexcused absences, mishandling, false records, or failure to cooperate may lead to route reassignment or account review.</li>
             <li>These Terms do not create a fixed courier-specific monetary deduction. Any compensation or deduction must be stated in a separate applicable agreement, be accurately documented, and comply with law.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-courier', 'message' => 'I have read and agree to Section 3, Courier-specific terms.'])
     </section>
     @endif
 
-    <section>
-        <h2>3. Complaints, administrator actions, and review</h2>
+    <section id="terms-enforcement">
+        <h2>4. Complaints, administrator actions, and review</h2>
         <ul>
             <li>ShopEase administrators may monitor activity reasonably necessary to operate the service, address safety and fraud risks, investigate complaints, verify accounts, and enforce these Terms and applicable policies. Access to account, order, financial, and delivery records should be limited to authorized operational purposes.</li>
             <li>Where there is a reasonable, documented basis to believe a user has violated these Terms, another published policy, applicable law, or a role obligation—or presents a material safety, fraud, privacy, or operational risk—an administrator may issue a warning, require corrective information, restrict a feature, hold access to a task pending review, suspend an account temporarily, or terminate access for serious or repeated conduct.</li>
@@ -142,18 +146,18 @@
             <li>An account restriction does not automatically erase a user's lawful rights, order/payment obligations, consumer remedies, earned compensation, or privacy rights. Any hold or offset involving money must have a lawful basis and be separately reviewed. Do not use a suspension to retaliate against a good-faith complaint.</li>
             <li>ShopEase may revise these Terms by publishing an updated version and effective date. Material changes will be brought to users' attention. Where renewed acceptance is required, the updated version must be accepted before continued access to affected features. The account records the currently recorded accepted version and timestamp.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-enforcement', 'message' => 'I have read and agree to Section 4 of these Terms and Conditions.'])
     </section>
 
-    <section>
-        <h2>4. Legal rights and governing requirements</h2>
+    <section id="terms-rights">
+        <h2>5. Legal rights and governing requirements</h2>
         <ul>
             <li>These Terms do not exclude or limit any consumer, privacy, labor, electronic-commerce, or other protection that cannot lawfully be excluded or limited. If a provision conflicts with mandatory law, the mandatory requirement controls and the rest of the Terms remain in effect to the extent permitted.</li>
             <li>ShopEase policies are not a substitute for a seller, logistics-partner, rider, or courier service agreement where the parties' relationship requires a separate agreement. Any employment classification, wage, benefit, deduction, tax, insurance, or contractor obligation must be determined under the facts and applicable law, not solely by an account label.</li>
             <li>These Terms and platform disputes are subject to applicable laws of the Philippines. Users may also pursue remedies before the competent regulator, agency, or court as provided by law.</li>
         </ul>
+        @include('legal.partials.section-acknowledgment', ['sectionId' => 'terms-rights', 'message' => 'I have read and agree to Section 5 of these Terms and Conditions.'])
     </section>
 
-    <footer>By accepting, you confirm that you could review the common terms and the section for your account role. For account questions, contact <a href="mailto:support@shopease.com">support@shopease.com</a>. For data handling, see the <a href="{{ route('privacy-policy') }}">Privacy Policy</a>.</footer>
-</main>
-</body>
-</html>
+    <footer class="document-end">By accepting, you confirm that you could review the common terms and the section for your account role. For account questions, contact <a href="mailto:support@shopease.com">support@shopease.com</a>. For data handling, see the <a href="@yield('privacyUrl')">Privacy Policy</a>.</footer>
+@endsection

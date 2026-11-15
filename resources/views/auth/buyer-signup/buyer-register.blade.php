@@ -64,7 +64,7 @@
     >
 
 
-    @vite(['resources/css/app.css'])
+    @vite(['resources/css/app.css', 'resources/js/legal-consent.js'])
 
 
     <style>
@@ -2203,6 +2203,10 @@
 
         <form
             id="buyerRegistrationForm"
+            data-legal-consent-form
+            data-legal-role="buyer"
+            data-terms-version="{{ \App\Http\Services\RegistrationService::TERMS_VERSION }}"
+            data-privacy-version="{{ \App\Http\Services\RegistrationService::PRIVACY_VERSION }}"
             method="POST"
             action="{{ route('buyer.register.submit') }}"
             enctype="multipart/form-data"
@@ -3319,11 +3323,12 @@
                             id="terms"
                             name="terms"
                             value="1"
+                            data-master-consent="terms"
                             {{ old('terms', $buyerData['terms'] ?? false) ? 'checked' : '' }}
                             required
                         >
                         <span>
-                            I have read and agree to the <a href="{{ route('terms-and-conditions', ['role' => 'buyer']) }}" target="_blank" rel="noopener">Buyer Terms and Conditions</a>.
+                            I have read and agree to the <a href="{{ route('terms-and-conditions', ['role' => 'buyer', 'return_to' => request()->getRequestUri()]) }}" target="_blank" rel="noopener">Buyer Terms and Conditions</a>.
                             <span class="required">*</span>
                         </span>
                     </label>
@@ -3333,15 +3338,17 @@
                             id="privacy_acknowledged"
                             name="privacy_acknowledged"
                             value="1"
+                            data-master-consent="privacy"
                             {{ old('privacy_acknowledged', $buyerData['privacy_acknowledged'] ?? false) ? 'checked' : '' }}
                             required
                         >
                         <span>
-                            I acknowledge that I have read the <a href="{{ route('privacy-policy') }}" target="_blank" rel="noopener">ShopEase Privacy Policy</a>.
+                            I acknowledge that I have read the <a href="{{ route('privacy-policy', ['role' => 'buyer', 'return_to' => request()->getRequestUri()]) }}" target="_blank" rel="noopener">ShopEase Privacy Policy</a>.
                             <span class="required">*</span>
                         </span>
                     </label>
                     <div class="field-error" id="termsError">You must accept the Terms and Conditions and acknowledge the Privacy Policy.</div>
+                    <small class="legal-consent-status" data-consent-status role="status" aria-live="polite"></small>
                 </div>
 
 
