@@ -864,9 +864,9 @@ document.addEventListener('DOMContentLoaded', () => {
             refresh();
             return;
         }
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
             input.value = '';
-            toast('Choose a JPG, PNG, or WebP image smaller than 5 MB.');
+            toast('Choose a JPG, PNG, or WebP image smaller than 15 MB.');
             refresh();
             return;
         }

@@ -64,7 +64,7 @@ class ProductReviewController extends Controller
             'rating' => ['required', 'integer', 'between:1,5'],
             'title' => ['nullable', 'string', 'max:120'],
             'body' => ['required', 'string', 'min:2', 'max:2000'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
             'is_anonymous' => ['sometimes', 'boolean'],
         ]);
 

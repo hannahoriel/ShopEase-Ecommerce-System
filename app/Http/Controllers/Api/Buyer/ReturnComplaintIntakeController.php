@@ -22,7 +22,7 @@ class ReturnComplaintIntakeController extends Controller
             'problem_type'=>['required',Rule::in(ReturnComplaintService::PROBLEMS)],
             'reason'=>['required','string','min:10','max:2000'],
             'evidence'=>['required','array','min:1','max:5'],
-            'evidence.*'=>['required','image','mimes:jpg,jpeg,png,webp','max:5120'],
+            'evidence.*'=>['required','image','mimes:jpg,jpeg,png,webp','max:15360'],
             'items'=>['required','array','min:1','max:1'],
             'items.*.order_item_id'=>['required','integer',Rule::exists('order_items','id')->where('order_id',$order->id)],
             'items.*.quantity'=>['required','integer','min:1'],

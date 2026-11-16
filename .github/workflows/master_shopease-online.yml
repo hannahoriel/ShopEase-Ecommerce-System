@@ -77,4 +77,6 @@ jobs:
           app-name: 'shopease-online'
           slot-name: 'Production'
           package: .
-          
+          startup-command: >-
+            cp /home/site/wwwroot/default /etc/nginx/sites-available/default
+            && nginx -t && service nginx reload

@@ -73,7 +73,7 @@ class AccountController extends Controller
             'house_number' => ['nullable', 'string', 'max:100'],
             'building' => ['nullable', 'string', 'max:150'],
             'subdivision' => ['nullable', 'string', 'max:150'],
-            'cover_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
 
         $coverPhoto = $validated['cover_photo'] ?? null;

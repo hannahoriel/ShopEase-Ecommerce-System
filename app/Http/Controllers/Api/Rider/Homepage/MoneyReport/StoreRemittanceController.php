@@ -21,7 +21,7 @@ class StoreRemittanceController extends Controller
             'amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2'],
             'method' => ['required', Rule::in(['gcash', 'hub_turn_in', 'bank_transfer'])],
             'reference_number' => ['nullable', 'string', 'max:120'],
-            'receipt' => ['nullable', 'image', 'max:10240'],
+            'receipt' => ['nullable', 'image', 'max:15360'],
         ]);
         if (in_array($validated['method'], ['gcash', 'bank_transfer'], true)
             && empty($validated['reference_number'])) {

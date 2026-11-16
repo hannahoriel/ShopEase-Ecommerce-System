@@ -5457,7 +5457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!f) return '';
     const ext=f.name.split('.').pop().toLowerCase();
     if (!['jpg','jpeg','png','pdf'].includes(ext)) return 'Accepted file types: JPG, PNG, PDF only.';
-    if (f.size > 5120*1024) return 'File must not exceed 5 MB (5,120 KB).';
+    if (f.size > (/\.pdf$/i.test(f.name) ? 5 : 15) * 1024 * 1024) return 'Images must be 15 MB or smaller and PDFs 5 MB or smaller.';
     return '';
   }
   function messageNode(el) {

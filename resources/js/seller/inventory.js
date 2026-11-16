@@ -13415,8 +13415,8 @@ document.addEventListener(
                     input.addEventListener('change', () => {
                         const file = input.files?.[0];
                         if (!file || !['image/jpeg','image/png','image/webp'].includes(file.type)) return;
-                        if (file.size > 5 * 1024 * 1024) {
-                            window.alert('Choose an image under 5 MB.');
+                        if (file.size > 15 * 1024 * 1024) {
+                            window.alert('Choose an image up to 15 MB.');
                             input.value = '';
                             return;
                         }

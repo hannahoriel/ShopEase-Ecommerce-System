@@ -17,7 +17,7 @@ class ClockInController extends Controller
     {
         $rider = $operations->rider($request->user());
         $validated = $request->validate([
-            'photo' => ['required', 'image', 'max:10240'],
+            'photo' => ['required', 'image', 'max:15360'],
         ]);
         $now = now('Asia/Manila');
         $photoPath = $operations->storePrivatePhoto('rider-attendance', $validated['photo']);

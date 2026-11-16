@@ -619,7 +619,7 @@
 
                                 <p class="platform-banner-help">
                                     Recommended size: 1200 × 628 px (16:9)<br>
-                                    JPG, PNG up to 5MB
+                                    JPG, PNG up to 15MB
                                 </p>
 
                                 <p

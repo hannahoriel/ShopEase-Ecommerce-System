@@ -23,7 +23,7 @@ const sellerAccountPageData = JSON.parse(document.getElementById('sellerAccountP
         const dob = document.getElementById('saDob'), age = document.getElementById('saAge');
         function calculateAge() { if (!dob.value) {age.value='';return;} const d=new Date(dob.value+'T00:00:00'),now=new Date(); if(isNaN(d.getTime())||d>now){age.value='';return;} let years=now.getFullYear()-d.getFullYear(); if(now.getMonth()<d.getMonth()||(now.getMonth()===d.getMonth()&&now.getDate()<d.getDate())) years--;age.value=years>=0?years:''; }
         dob.addEventListener('change',calculateAge);calculateAge();
-        function wireFile(id,imgId,labelId){const input=document.getElementById(id);input.addEventListener('change',()=>{const file=input.files?.[0];if(!file)return;if(file.size>5*1024*1024){window.showAccountFlash('Please choose an image smaller than 5 MB.',true);input.value='';return;}if(!['image/jpeg','image/png','image/webp'].includes(file.type)){window.showAccountFlash('Please choose a JPG, PNG or WebP image.',true);input.value='';return;}if(labelId)document.getElementById(labelId).textContent=file.name;if(imgId){const img=document.getElementById(imgId);if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);img.dataset.objectUrl=URL.createObjectURL(file);img.src=img.dataset.objectUrl;img.style.display='block';if(id==='saAvatarInput')document.getElementById('saAvatarFallback')?.remove();}});}
+        function wireFile(id,imgId,labelId){const input=document.getElementById(id);input.addEventListener('change',()=>{const file=input.files?.[0];if(!file)return;if(file.size>15*1024*1024){window.showAccountFlash('Please choose an image smaller than 15 MB.',true);input.value='';return;}if(!['image/jpeg','image/png','image/webp'].includes(file.type)){window.showAccountFlash('Please choose a JPG, PNG or WebP image.',true);input.value='';return;}if(labelId)document.getElementById(labelId).textContent=file.name;if(imgId){const img=document.getElementById(imgId);if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);img.dataset.objectUrl=URL.createObjectURL(file);img.src=img.dataset.objectUrl;img.style.display='block';if(id==='saAvatarInput')document.getElementById('saAvatarFallback')?.remove();}});}
         wireFile('saCoverInput','saCoverImage');wireFile('saAvatarInput','saAvatarImage');
                  // Registered categories are read-only on the profile. Changes require an admin request.
 
@@ -128,8 +128,8 @@ const sellerAccountPageData = JSON.parse(document.getElementById('sellerAccountP
          docFile.addEventListener('change',()=>{
              if(docObjectUrl){URL.revokeObjectURL(docObjectUrl);docObjectUrl=null;}
              const file=docFile.files?.[0];if(!file){docPreview.style.display='none';return;}
-             if(file.size>5*1024*1024 || !['image/jpeg','image/png','image/webp'].includes(file.type)){
-                 alert('Choose a JPG, PNG or WebP image smaller than 5 MB.');docFile.value='';docPreview.style.display='none';return;
+             if(file.size>15*1024*1024 || !['image/jpeg','image/png','image/webp'].includes(file.type)){
+                 alert('Choose a JPG, PNG or WebP image smaller than 15 MB.');docFile.value='';docPreview.style.display='none';return;
              }
              docObjectUrl=URL.createObjectURL(file);docPreview.src=docObjectUrl;docPreview.style.display='block';
          });

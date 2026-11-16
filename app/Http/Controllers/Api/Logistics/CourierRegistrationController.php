@@ -73,7 +73,7 @@ class CourierRegistrationController extends Controller
             'vehicle' => ['nullable', 'string', 'max:80'],
             'plate_number' => ['nullable', 'string', 'max:50'],
             'or_cr' => ['prohibited'],
-            'drivers_license' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'drivers_license' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(5120)],
             'accept_terms' => ['accepted'],
             'acknowledge_privacy' => ['accepted'],
         ]);

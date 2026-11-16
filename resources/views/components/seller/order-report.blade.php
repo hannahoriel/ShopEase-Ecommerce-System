@@ -21,7 +21,7 @@
             </label>
             <div class="seller-report-previews" data-report-previews></div>
         </div>
-        <small>Up to 5 JPG, PNG, or WebP images, 5 MB each.</small>
+        <small>Up to 5 JPG, PNG, or WebP images, 15 MB each.</small>
         <p class="seller-order-report-error" data-order-report-error role="alert" hidden></p>
         <div class="seller-order-report-actions">
             <button type="button" class="seller-order-report-button" data-order-report-close>Cancel</button>
@@ -103,8 +103,8 @@
         picker.addEventListener('change', () => {
             const files = [...picker.files];
             picker.value = '';
-            if (photos.length + files.length > 5 || files.some(file => file.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
-                error.textContent = 'Attach up to 5 JPG, PNG, or WebP photos, 5 MB each.';
+            if (photos.length + files.length > 5 || files.some(file => file.size > 15 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
+                error.textContent = 'Attach up to 5 JPG, PNG, or WebP photos, 15 MB each.';
                 error.hidden = false;
                 return;
             }

@@ -25,7 +25,7 @@ class OrderComplaintController extends Controller
             'type' => ['required', Rule::in(self::REASONS)],
             'description' => ['required', 'string', 'min:10', 'max:2000'],
             'evidence' => ['required', 'array', 'min:1', 'max:5'],
-            'evidence.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'evidence.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
 
         $order = Order::query()->with('buyer')
