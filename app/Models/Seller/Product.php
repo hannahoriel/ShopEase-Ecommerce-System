@@ -249,9 +249,31 @@ class Product extends Model
 
     public function salePriceForCart(?string $variation, ?string $color, ?string $size): float
     {
+        return $this->salePriceForBase($this->originalPriceForCart($variation, $color, $size));
+    }
+
+    public function originalPriceForCart(?string $variation, ?string $color, ?string $size): float
+    {
         $combination = $this->selectedCombinationForCart($variation, $color, $size);
-        $price = $combination ? (float) $combination->final_price : (float) $this->price;
-        return $this->salePriceForBase($price);
+        if ($combination) {
+            return (float) $combination->final_price;
+        }
+
+        if ($this->pricing_mode === 'varies') {
+            $options = $this->relationLoaded('options') ? $this->getRelation('options') : $this->options()->get();
+            $types = $options->pluck('type')->unique()->values();
+
+            if ($types->count() === 1) {
+                $type = $types->first();
+                $selected = ['variation' => $variation, 'color' => $color, 'size' => $size][$type] ?? null;
+                $option = $options->first(fn (ProductOption $option) => $option->type === $type && $option->name === $selected);
+                if ($option) {
+                    return (float) $option->price;
+                }
+            }
+        }
+
+        return (float) $this->price;
     }
 
     private function optionPayload(string $type): array

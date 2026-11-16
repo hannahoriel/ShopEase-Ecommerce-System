@@ -8831,6 +8831,14 @@
     outline: none !important;
 }
 
+.product-details-description-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #342B28;
+    font-size: 13px;
+    font-weight: 600;
+}
+
 .product-details-inspo-description {
     position: relative !important;
     margin-top: 18px !important;

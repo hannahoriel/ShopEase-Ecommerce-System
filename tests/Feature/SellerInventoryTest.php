@@ -60,6 +60,22 @@ class SellerInventoryTest extends TestCase
             $product = Product::findOrFail($response->json('id'));
             $this->assertNotEmpty($product->options()->where('name', 'First')->first()?->photo);
         }
+        foreach (['variation' => 'variations', 'color' => 'colors', 'size' => 'sizes'] as $type => $source) {
+            $response = $this->postJson('/api/v1/seller/inventory', [
+                ...$base,
+                'pricing_mode' => 'varies',
+                'pricing_source' => $source,
+                $type.'_items' => [
+                    ['name' => 'First', 'price' => 330, 'stock' => 3],
+                    ['name' => 'Second', 'price' => 450, 'stock' => 7],
+                ],
+            ])->assertCreated()->assertJsonPath($source.'.1.price', 450);
+            $product = Product::findOrFail($response->json('id'));
+            $selection = array_fill_keys(['variation', 'color', 'size'], null);
+            $selection[$type] = 'Second';
+            $this->assertSame(450.0, $product->originalPriceForCart(...$selection));
+            $this->assertSame(450.0, $product->salePriceForCart(...$selection));
+        }
         $groups = ['variation_items' => [['name' => 'Classic', 'price' => 0, 'stock' => 90]], 'color_items' => [['name' => 'Black', 'price' => 0, 'stock' => 90]]];
         $this->postJson('/api/v1/seller/inventory', [...$base, ...$groups])->assertUnprocessable()->assertJsonValidationErrors('variant_combinations');
         $this->postJson('/api/v1/seller/inventory', [...$base, ...$groups, 'variant_combinations' => [[

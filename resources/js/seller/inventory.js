@@ -6191,15 +6191,6 @@ document.addEventListener(
                                 ? product.connected_variants
                                 : [];
 
-                    if (productDetailsVariationCount) {
-                        productDetailsVariationCount.textContent =
-                            String(
-                                Array.isArray(product?.variations)
-                                    ? product.variations.length
-                                    : connectedVariants.length
-                            );
-                    }
-
                     const activeGroups =
                         groups.filter(
                             function (group) {
@@ -6211,6 +6202,13 @@ document.addEventListener(
                                 );
                             }
                         );
+
+                    if (productDetailsVariationCount) {
+                        const choiceCount = activeGroups.reduce(
+                            (total, group) => total + product[group.key].length, 0
+                        );
+                        productDetailsVariationCount.textContent = String(choiceCount || connectedVariants.length);
+                    }
 
                     const variationStats =
                         document.createElement(
@@ -6427,11 +6425,18 @@ document.addEventListener(
                                     );
 
                                     if (activeGroups.length === 1 && !connectedVariants.length && resolveProductPricingMode(product) === 'varies') {
+                                        const savedPrice = item.price ?? item.base_price ?? item.basePrice;
+                                        if (savedPrice != null && savedPrice !== '') {
+                                            const displayPrice = document.createElement('span');
+                                            displayPrice.className = 'product-details-view-value';
+                                            displayPrice.textContent = ' · ' + formatMoney(savedPrice);
+                                            display.append(displayPrice);
+                                        }
                                         const price = document.createElement('input');
                                         price.type = 'number';
                                         price.min = '0';
                                         price.step = '0.01';
-                                        price.value = item.price ?? '';
+                                        price.value = savedPrice ?? '';
                                         price.placeholder = 'Item price';
                                         price.setAttribute('aria-label', 'Item price for ' + item.name);
                                         price.className = 'product-details-choice-edit product-details-edit-control';
@@ -11291,14 +11296,15 @@ document.addEventListener(
                    Front-end persistence for the current Inventory UI.
                 ================================================== */
 
-                const createdProductsStorageKey =
-                    'shopease_seller_inventory_created_products_v1';
-
-                const archivedProductsStorageKey =
-                    'shopease_seller_inventory_archived_products_v1';
+                const sellerId = inventoryConfig.sellerId;
+                const createdProductsStorageKey = sellerId
+                    ? `shopease_seller_inventory_created_products_v2:${sellerId}` : null;
+                const archivedProductsStorageKey = sellerId
+                    ? `shopease_seller_inventory_archived_products_v2:${sellerId}` : null;
 
 
                 function loadCreatedProducts() {
+                    if (!createdProductsStorageKey) return [];
 
                     try {
 
@@ -11330,6 +11336,7 @@ document.addEventListener(
                 }
 
                 function loadArchivedProducts() {
+                    if (!archivedProductsStorageKey) return [];
                     try {
                         const stored = JSON.parse(
                             localStorage.getItem(archivedProductsStorageKey) ||
@@ -11346,6 +11353,7 @@ document.addEventListener(
                 let archivedInventoryProducts = loadArchivedProducts();
 
                 function saveArchivedProducts() {
+                    if (!archivedProductsStorageKey) return;
                     try {
                         localStorage.setItem(
                             archivedProductsStorageKey,
@@ -11486,40 +11494,33 @@ document.addEventListener(
                 const serverArchivedProducts = inventoryConfig.archivedProducts
                     .map(normalizePersistedProduct);
 
-                archivedInventoryProducts = [
-                    ...serverArchivedProducts.map(function (serverProduct) {
-                        const localProduct = archivedInventoryProducts.find(function (local) {
-                            return String(local.id) === String(serverProduct.id);
-                        });
-                        if (!localProduct) return serverProduct;
+                archivedInventoryProducts = serverArchivedProducts.map(function (serverProduct) {
+                    const localProduct = archivedInventoryProducts.find(function (local) {
+                        return String(local.id) === String(serverProduct.id);
+                    });
+                    if (!localProduct) return serverProduct;
 
-                        const serverAdmin = serverProduct.archivedByAdmin ||
-                            ['admin', 'administrator'].includes(
-                                String(serverProduct.archiveActor || '').toLowerCase()
-                            );
+                    const serverAdmin = serverProduct.archivedByAdmin ||
+                        ['admin', 'administrator'].includes(
+                            String(serverProduct.archiveActor || '').toLowerCase()
+                        );
 
-                        return {
-                            ...localProduct,
-                            ...serverProduct,
-                            // Real server admin provenance overrides a local seller label.
-                            archivedByAdmin: Boolean(serverAdmin || localProduct.archivedByAdmin),
-                            archivedBySeller: serverAdmin ? false : Boolean(
-                                serverProduct.archivedBySeller || localProduct.archivedBySeller
-                            ),
-                            archiveActor: serverAdmin ? 'admin' : (
-                                serverProduct.archiveActor || localProduct.archiveActor || ''
-                            ),
-                            archiveReason: serverProduct.archiveReason || localProduct.archiveReason || '',
-                            archiveDetails: serverProduct.archiveDetails || localProduct.archiveDetails || '',
-                            archivedAt: serverProduct.archivedAt || localProduct.archivedAt || ''
-                        };
-                    }),
-                    ...archivedInventoryProducts.filter(function (localProduct) {
-                        return !serverArchivedProducts.some(function (serverProduct) {
-                            return String(serverProduct.id) === String(localProduct.id);
-                        });
-                    })
-                ];
+                    return {
+                        ...localProduct,
+                        ...serverProduct,
+                        // Real server admin provenance overrides a local seller label.
+                        archivedByAdmin: Boolean(serverAdmin || localProduct.archivedByAdmin),
+                        archivedBySeller: serverAdmin ? false : Boolean(
+                            serverProduct.archivedBySeller || localProduct.archivedBySeller
+                        ),
+                        archiveActor: serverAdmin ? 'admin' : (
+                            serverProduct.archiveActor || localProduct.archiveActor || ''
+                        ),
+                        archiveReason: serverProduct.archiveReason || localProduct.archiveReason || '',
+                        archiveDetails: serverProduct.archiveDetails || localProduct.archiveDetails || '',
+                        archivedAt: serverProduct.archivedAt || localProduct.archivedAt || ''
+                    };
+                });
 
                 const localCreatedProducts =
                     loadCreatedProducts();
@@ -11603,23 +11604,11 @@ document.addEventListener(
                         }
                     );
 
-                let createdInventoryProducts = [
-                    ...mergedServerCreatedProducts,
-                    ...localCreatedProducts.filter(function (localProduct) {
-                        return !serverCreatedProducts.some(function (serverProduct) {
-                            return String(serverProduct.id) === String(localProduct.id);
-                        }) && !archivedInventoryProducts.some(function (archivedProduct) {
-                            return String(archivedProduct.id) === String(localProduct.id);
-                        });
-                    })
-                ].filter(function (product) {
-                    return !archivedInventoryProducts.some(function (archivedProduct) {
-                        return String(archivedProduct.id) === String(product.id);
-                    });
-                });
+                let createdInventoryProducts = mergedServerCreatedProducts;
 
 
                 function saveCreatedProducts() {
+                    if (!createdProductsStorageKey) return;
 
                     try {
 
@@ -13151,12 +13140,18 @@ document.addEventListener(
                     return [];
                 }
 
+                function getActivePricingGroups() {
+                    return ['variations', 'colors', 'sizes'].filter(
+                        group => getPricingGroupItems(group).length > 0
+                    );
+                }
+
                 function syncVariableProductStock() {
                     if (!createProductStock) {
                         return;
                     }
 
-                    const activeGroups = ['variations', 'colors', 'sizes'].filter(group => getPricingGroupItems(group).length > 0);
+                    const activeGroups = getActivePricingGroups();
                     createProductStock.readOnly = activeGroups.length > 0;
                     createProductStock.required = activeGroups.length === 0;
                     createProductStock.setAttribute('aria-readonly', String(activeGroups.length > 0));
@@ -13266,22 +13261,14 @@ document.addEventListener(
                 }
 
                 function getOptionPriceMeta(group, pricingMode, pricingSource) {
-                    const isPrimary =
-                        pricingMode !== 'varies' ||
-                        pricingSource === group;
+                    const hasSingleChoiceType = getActivePricingGroups().length <= 1;
+                    const isPrimary = pricingMode !== 'varies' || hasSingleChoiceType || pricingSource === group;
 
                     return {
                         isPrimary,
-                        label:
-                            pricingMode === 'fixed'
-                                ? 'Item Price'
-                                : group === 'variations'
-                                ? isPrimary
-                                    ? 'Variation Price'
-                                    : 'Variation Add-on'
-                                : isPrimary
-                                ? 'Item Price'
-                                : 'Additional',
+                        label: hasSingleChoiceType && pricingMode === 'varies'
+                            ? 'Price'
+                            : isPrimary ? 'Item Price' : 'Additional',
                         prefix:
                             isPrimary
                                 ? '₱'
@@ -13465,6 +13452,10 @@ document.addEventListener(
                 }
 
                 function renderAllBuyerOptions() {
+                    variablePricingSetup?.classList.toggle(
+                        'hidden',
+                        productPricingMode?.value !== 'varies' || getActivePricingGroups().length < 2
+                    );
                     renderVariations();
 
                     renderOptionChips(
@@ -13511,11 +13502,6 @@ document.addEventListener(
                     );
 
                     variablePricePanel?.classList.toggle(
-                        'hidden',
-                        !isVariable
-                    );
-
-                    variablePricingSetup?.classList.toggle(
                         'hidden',
                         !isVariable
                     );
@@ -18739,7 +18725,7 @@ document.addEventListener(
 
                 const label =
                     field.querySelector(
-                        'label'
+                        'label, .create-option-price-label'
                     );
 
                 const input =
@@ -18797,15 +18783,14 @@ document.addEventListener(
                 field.dataset.priceKind =
                     'base';
 
-                if (label) {
-                    label.textContent = getActiveGroups().length === 1
-                        ? 'Item Price'
-                        : 'Base Price';
+                // These nodes are inside the observed option rows.
+                const priceLabel = getActiveGroups().length === 1 ? 'Price' : 'Base Price';
+                if (label && label.textContent !== priceLabel) {
+                    label.textContent = priceLabel;
                 }
 
-                if (prefix) {
-                    prefix.textContent =
-                        '₱';
+                if (prefix && prefix.textContent !== '₱') {
+                    prefix.textContent = '₱';
                 }
 
                 if (input) {
