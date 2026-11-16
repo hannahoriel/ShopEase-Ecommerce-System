@@ -237,13 +237,11 @@ class DeliveryHubRiderRegistrationController extends Controller
      */
     private function syncLegacyPendingRiders(LogisticsDeliveryHub $hub): void
     {
-        $province = mb_strtolower(trim((string) $hub->province));
-        $municipality = mb_strtolower(trim((string) $hub->municipality));
-        $hubName = mb_strtolower(trim((string) $hub->hub_name));
+        $normalize = static fn (?string $value): string => mb_strtolower((string) preg_replace('/[^\\pL\\pN]+/u', '', trim((string) $value)));
+        $province = $normalize($hub->province);
+        $municipality = $normalize($hub->municipality);
         $activeHubs = LogisticsDeliveryHub::query()
             ->where('status', 'active')->whereNull('archived_at')
-            ->whereRaw('LOWER(TRIM(province)) = ?', [$province])
-            ->whereRaw('LOWER(TRIM(municipality)) = ?', [$municipality])
             ->whereHas('logisticsBranch', fn (Builder $branch) => $branch
                 ->where('status', 'active')->whereNull('archived_at')
                 ->whereHas('user', fn (Builder $user) => $user
@@ -257,43 +255,57 @@ class DeliveryHubRiderRegistrationController extends Controller
             ->whereHas('user', fn (Builder $user) => $user
                 ->where('role', User::ROLE_DELIVERY_HUB)
                 ->where('registration_status', 'active'))
-            ->get(['id', 'hub_name']);
+            ->get(['id', 'hub_name', 'province', 'municipality'])
+            ->filter(fn (LogisticsDeliveryHub $candidate): bool =>
+                $normalize($candidate->province) === $province
+                && $normalize($candidate->municipality) === $municipality)
+            ->values();
 
         $riders = Rider::query()
             ->with('user')
             ->where('registration_type', 'rider')
             ->where('registration_status', 'pending')
-            ->whereRaw('LOWER(TRIM(province)) = ?', [$province])
-            ->whereRaw('LOWER(TRIM(municipality)) = ?', [$municipality])
             ->whereHas('user', fn (Builder $user) => $user
                 ->where('role', User::ROLE_RIDER)
                 ->where('registration_status', 'pending'))
-            ->whereNotIn('user_id', DeliveryHubRiderRegistration::query()->select('user_id'))
             ->get();
 
         foreach ($riders as $rider) {
-            if (! $rider->user) {
+            if (! $rider->user
+                || $normalize($rider->province) !== $province
+                || $normalize($rider->municipality) !== $municipality) {
                 continue;
             }
 
-            $selectedHub = mb_strtolower(trim((string) $rider->municipal_hub));
-            $matchingHubCount = $activeHubs->filter(fn (LogisticsDeliveryHub $candidate): bool =>
-                mb_strtolower(trim((string) $candidate->hub_name)) === $hubName)->count();
-
-            $selectedHubIsUnique = $selectedHub === $hubName && $matchingHubCount === 1;
+            $selectedHub = $normalize($rider->municipal_hub);
+            $matchingHubs = $activeHubs->filter(fn (LogisticsDeliveryHub $candidate): bool =>
+                $normalize($candidate->hub_name) === $selectedHub);
+            $selectedHubIsUnique = $selectedHub !== '' && $matchingHubs->count() === 1
+                && (int) $matchingHubs->first()->id === (int) $hub->id;
             $singleHubFallback = in_array($selectedHub, ['', $municipality], true)
-                && $activeHubs->count() === 1;
+                && $activeHubs->count() === 1
+                && (int) $activeHubs->first()->id === (int) $hub->id;
             if (! $selectedHubIsUnique && ! $singleHubFallback) {
                 continue;
             }
 
-            DeliveryHubRiderRegistration::query()->firstOrCreate(
-                ['user_id' => $rider->user_id],
-                [
+            $registration = DeliveryHubRiderRegistration::query()
+                ->where('user_id', $rider->user_id)->first();
+            if (! $registration) {
+                DeliveryHubRiderRegistration::query()->create([
+                    'user_id' => $rider->user_id,
                     'logistics_delivery_hub_id' => $hub->id,
                     'status' => 'pending',
-                ],
-            );
+                ]);
+                continue;
+            }
+
+            // Repair an orphaned pending application when its saved hub choice
+            // identifies this hub. Never move an already reviewed application.
+            if ($registration->status === 'pending'
+                && (int) $registration->logistics_delivery_hub_id !== (int) $hub->id) {
+                $registration->forceFill(['logistics_delivery_hub_id' => $hub->id])->save();
+            }
         }
     }
 

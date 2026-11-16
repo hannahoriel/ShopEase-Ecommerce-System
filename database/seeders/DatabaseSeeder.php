@@ -14,9 +14,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Keep local databases focused on real registrations and transactions.
-        // These are the only intentionally seeded operational accounts.
-        $this->call(RiderAccountSeeder::class);
+        // RiderAccountSeeder is a dedicated demo fixture and is intentionally
+        // excluded from the default seed run so real rider registrations stay
+        // separate from seeded operational accounts.
         $this->call(CourierAccountSeeder::class);
         $this->call(EcommerceRouteDemoSeeder::class);
         $this->call(HubPickupAndDeliveryRiderSeeder::class);
