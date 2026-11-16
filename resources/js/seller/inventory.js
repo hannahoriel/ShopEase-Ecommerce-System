@@ -18776,15 +18776,14 @@ document.addEventListener(
                 field.dataset.priceKind =
                     'base';
 
-                if (label) {
-                    label.textContent = getActiveGroups().length === 1
-                        ? 'Price'
-                        : 'Base Price';
+                // These nodes are inside the observed option rows.
+                const priceLabel = getActiveGroups().length === 1 ? 'Price' : 'Base Price';
+                if (label && label.textContent !== priceLabel) {
+                    label.textContent = priceLabel;
                 }
 
-                if (prefix) {
-                    prefix.textContent =
-                        '₱';
+                if (prefix && prefix.textContent !== '₱') {
+                    prefix.textContent = '₱';
                 }
 
                 if (input) {
