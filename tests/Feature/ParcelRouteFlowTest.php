@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderReturn;
 use App\Models\Admin\Shipment;
 use App\Models\Buyer\Buyer;
 use App\Models\Logistics\CourierRegistration;
@@ -170,12 +171,22 @@ class ParcelRouteFlowTest extends TestCase
             'action' => 'receive',
         ])->assertOk();
         $this->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
+            'tracking' => $returnShipment->tracking_number,
+            'action' => 'depart',
+            'batch_key' => 'cebu-return-stage',
+        ])->assertOk();
+        $this->getJson('/api/v1/sorting_center/scanner/queue')
+            ->assertOk()
+            ->assertJsonPath('staged_departures.0.parcels.0.returnToCenterId', (string) $network['laguna']->id)
+            ->assertJsonPath('staged_departures.0.parcels.0.returnManifestId', (string) $returnInbound->id);
+        $this->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
             'tracking' => $returnShipment->tracking_number, 'action' => 'depart', 'batch_key' => 'cebu-return-to-laguna-missing-trip',
             'courier_registration_id' => $network['cebu_courier']->id, 'vehicle_id' => $network['cebu_truck']->id,
         ])->assertUnprocessable();
         $this->postJson('/api/v1/sorting_center/scanner/parcel-scan', [
             'tracking' => $returnShipment->tracking_number, 'action' => 'depart', 'batch_key' => 'cebu-return-to-laguna',
             'returning_manifest_id' => $returnInbound->id,
+            'scheduled_at' => now()->addDay()->toDateTimeString(),
         ])->assertOk();
         $returnTransfer = LogisticsTransferManifest::query()->where('batch_key', 'cebu-return-to-laguna')->firstOrFail();
         $this->actingAs($lagunaCourierUser)
@@ -183,12 +194,15 @@ class ParcelRouteFlowTest extends TestCase
                 'tracking' => $returnShipment->tracking_number,
             ])
             ->assertOk();
+        $this->actingAs($lagunaCourierUser)->getJson("/api/v1/courier/manifests/{$returnTransfer->id}")
+            ->assertOk()->assertJsonPath('data.trip_type', 'RETURN')
+            ->assertJsonPath('data.destination.id', $network['laguna']->id);
         $returnTransferDeparture = $this->actingAs($lagunaCourierUser)
             ->postJson("/api/v1/courier/manifests/{$returnTransfer->id}/departure");
         $this->assertSame(200, $returnTransferDeparture->status(), $returnTransferDeparture->getContent());
         $this->assertSame($returnInbound->id, $returnTransfer->returning_manifest_id);
-        $this->assertSame($network['laguna_courier']->id, $returnTransfer->courier_registration_id);
-        $this->assertSame($network['laguna_truck']->id, $returnTransfer->vehicle_id);
+        $this->assertSame($returnInbound->courier_registration_id, $returnTransfer->courier_registration_id);
+        $this->assertSame($returnInbound->vehicle_id, $returnTransfer->vehicle_id);
         $this->assertSame($network['laguna']->id, $returnShipment->fresh()->logistics_branch_id);
 
         $this->postJson("/api/v1/courier/manifests/{$returnTransfer->id}/arrival")->assertOk();
@@ -220,11 +234,51 @@ class ParcelRouteFlowTest extends TestCase
         $this->actingAs($network['buyer_hub_user'])->getJson('/api/v1/delivery_hub/scanner/queue')
             ->assertOk()->assertJsonPath('parcels.0.tracking', 'SHP-FLOW-0001');
         $this->postJson('/api/v1/delivery_hub/scanner/parcel-scan', ['tracking' => $shipment->tracking_number, 'action' => 'receive'])->assertOk();
+        $this->getJson('/api/v1/delivery_hub/scanner/queue')
+            ->assertOk()
+            ->assertJsonPath('return_trucks.0.id', $buyerTrip->id)
+            ->assertJsonPath('return_trucks.0.origin_id', $network['cebu']->id)
+            ->assertJsonPath('return_trucks.0.destination_id', $network['buyer_hub']->id);
         $this->postJson('/api/v1/delivery_hub/scanner/parcel-scan', ['tracking' => $shipment->tracking_number, 'action' => 'depart'])->assertOk()
             ->assertJsonPath('shipment.order_status', 'out_for_delivery')->assertJsonPath('shipment.rider_id', $network['buyer_delivery_rider']->id);
 
+        $buyerReturn = OrderReturn::query()->create([
+            'order_id' => $order->id,
+            'return_type' => 'return',
+            'status' => 'accepted',
+            'shipping_status' => 'received_at_delivery_hub',
+            'tracking_number' => 'SE-RETURN-FLOW-0001',
+            'return_delivery_hub_id' => $network['buyer_hub']->id,
+            'refund_amount' => 1200,
+        ]);
+        $invalidReturnDispatch = $this->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
+            'tracking' => $buyerReturn->tracking_number,
+            'action' => 'depart',
+            'batch_key' => 'hub-return-cargo-batch',
+            'returning_manifest_id' => $buyerTrip->id,
+            'courier_registration_id' => $network['laguna_courier']->id,
+            'vehicle_id' => $network['laguna_truck']->id,
+            'scheduled_at' => now()->addDay()->toDateTimeString(),
+        ]);
+        $this->assertSame(422, $invalidReturnDispatch->status(), $invalidReturnDispatch->getContent());
+        $returnDispatch = $this->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
+            'tracking' => $buyerReturn->tracking_number,
+            'action' => 'depart',
+            'batch_key' => 'hub-return-cargo-batch',
+            'returning_manifest_id' => $buyerTrip->id,
+            'courier_registration_id' => $network['cebu_courier']->id,
+            'vehicle_id' => $network['cebu_truck']->id,
+            'scheduled_at' => now()->addDay()->toDateTimeString(),
+        ]);
+        $this->assertSame(200, $returnDispatch->status(), $returnDispatch->getContent());
+        $hubReturnManifest = LogisticsTransferManifest::query()->where('order_return_id', $buyerReturn->id)->firstOrFail();
+        $this->assertSame($buyerTrip->id, $hubReturnManifest->returning_manifest_id);
+        $this->assertSame($buyerTrip->courier_registration_id, $hubReturnManifest->courier_registration_id);
+        $this->assertSame($buyerTrip->vehicle_id, $hubReturnManifest->vehicle_id);
+        $this->assertSame('In Service', $network['cebu_truck']->fresh()->availability);
+
         $this->assertSame('out_for_delivery', $order->fresh()->status);
-        $this->assertSame(8, $shipment->scans()->count());
+        $this->assertSame(9, $shipment->scans()->count());
         $this->assertDatabaseHas('order_status_histories', ['order_id' => $order->id, 'to_status' => 'in_transit']);
         $this->assertDatabaseHas('order_status_histories', ['order_id' => $order->id, 'to_status' => 'out_for_delivery']);
     }

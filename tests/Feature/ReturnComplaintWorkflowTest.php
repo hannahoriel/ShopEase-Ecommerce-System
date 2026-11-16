@@ -75,7 +75,7 @@ class ReturnComplaintWorkflowTest extends TestCase
             'phone'=>'09170000006','vehicle'=>'Truck','plate_number'=>$plate,'status'=>'approved',
         ]);
         $truck = SortingCenterVehicle::create([
-            'sorting_center_id'=>$branch->id,'name'=>'Return Truck','type'=>'Truck','plate_number'=>$plate,
+            'sorting_center_id'=>$branch->id,'courier_registration_id'=>$courier->id,'name'=>'Return Truck','type'=>'Truck','plate_number'=>$plate,
             'availability'=>'Available','driver_name'=>$name,
         ]);
         return [$courier, $truck];
@@ -161,11 +161,14 @@ class ReturnComplaintWorkflowTest extends TestCase
         $this->assertSame(200, $hubQueueResponse->status(), $hubQueueResponse->getContent());
         $hubQueue = $hubQueueResponse->json('parcels');
         $this->assertTrue(collect($hubQueue)->contains(fn ($parcel) => ($parcel['return_id'] ?? null) === $return->id && $parcel['status'] === 'received'));
+        [$hubCourier, $hubTruck] = $this->returnFleet($branch, 'Hub Transfer', 'TRUCK-RETURN-1');
         $hubDepart = $this->postJson('/api/v1/delivery_hub/scanner/parcel-scan', [
             'tracking' => $return->fresh()->tracking_number,
             'action' => 'depart',
             'batch_key' => 'return-dispatch-'.$return->id,
             'scheduled_at' => now()->addDay()->toDateTimeString(),
+            'courier_registration_id' => $hubCourier->id,
+            'vehicle_id' => $hubTruck->id,
             'courier_name' => 'Hub Transfer Courier',
             'vehicle_reference' => 'TRUCK-RETURN-1',
         ]);

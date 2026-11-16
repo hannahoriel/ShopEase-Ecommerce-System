@@ -158,6 +158,11 @@ class CourierTransportController extends Controller
                 'Only parcels physically received at the origin sorting center can be loaded.',
             );
 
+            abort_if($shipment->pivot->load_status !== 'loaded'
+                && $manifest->shipments()->wherePivot('load_status', 'loaded')->count() >= 1000,
+                422,
+                'A truck can carry a maximum of 1,000 parcels.');
+
             $shipment->pivot->load_status = 'loaded';
             $shipment->pivot->loaded_at = now();
             $shipment->pivot->loaded_by = $request->user()->id;

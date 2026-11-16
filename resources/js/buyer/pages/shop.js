@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="product-review-meta">
                 <p class="product-rating"><span class="rating-star" aria-hidden="true">★</span><span class="product-rating-number">${Number.isFinite(rating)?rating.toFixed(1):'0.0'}</span></p>
                 <p class="product-shop-name">${escape(shopName)}</p>
+                <p class="product-shop-name">${Number(product.sold_count || 0).toLocaleString()} sold</p>
             </div>
             <div class="product-bottom-row">
                 <span class="product-sale-price"><strong>${money(currentPrice)}</strong>${product.sale_discount_label?`<del>${money(basePrice)}</del><em>${escape(product.sale_discount_label)}</em>`:discount>0?`<del>${money(basePrice)}</del><em>-${discount}%</em>`:''}</span>

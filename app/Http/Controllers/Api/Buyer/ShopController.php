@@ -56,7 +56,7 @@ class ShopController extends Controller
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->withSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
-                'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
+                'order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded'])
             )], 'quantity');
 
         if ($isSuspended) {
@@ -110,6 +110,9 @@ class ShopController extends Controller
             ->with('seller:id,store_name,business_name')
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
+            ->withSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
+                'order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded'])
+            )], 'quantity')
             ->inRandomOrder()
             ->limit(10)
             ->get();

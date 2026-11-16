@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="product-review-meta">
         <p class="product-rating"><span class="rating-star" aria-hidden="true">★</span><span class="product-rating-number">${Number.isFinite(rating) ? rating.toFixed(1) : '0.0'}</span></p>
         <p class="product-shop-name">${escapeHtml(seller)}</p>
+        <p class="product-shop-name">${Number(p.sold_count || 0).toLocaleString()} sold</p>
       </div>
       <div class="product-bottom-row">
         <span class="product-sale-price"><strong>${escapeHtml(money(amount))}</strong>${discount ? `<del>${escapeHtml(money(base))}</del><em>-${discount}%</em>` : ''}</span>
