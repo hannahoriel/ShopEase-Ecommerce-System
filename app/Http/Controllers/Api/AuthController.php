@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AccountLoginEligibility;
 use App\Http\Services\RegistrationService;
 use App\Http\Services\DeliveryHubRiderRegistrationService;
 use App\Models\Admin\Registration;
@@ -35,6 +36,10 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
+        }
+
+        if ($disabledReason = app(AccountLoginEligibility::class)->disabledReason($user)) {
+            throw ValidationException::withMessages(['email' => $disabledReason]);
         }
 
         if ($user->role !== User::ROLE_ADMIN && $user->registration_status === 'rejected') {
