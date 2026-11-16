@@ -108,10 +108,20 @@ document.addEventListener('DOMContentLoaded', function () {
         const activeConnectedVariants = connectedProductVariants
             .map(variant => ({
                 ...variant,
-                choices: variant.choices || {
-                    variations: variant.variations ?? variant.variation,
-                    colors: variant.colors ?? variant.color,
-                    sizes: variant.sizes ?? variant.size,
+                choices: {
+                    ...(variant.choices || {}),
+                    variations: variant.choices?.variations
+                        ?? variant.choices?.variation
+                        ?? variant.variations
+                        ?? variant.variation,
+                    colors: variant.choices?.colors
+                        ?? variant.choices?.color
+                        ?? variant.colors
+                        ?? variant.color,
+                    sizes: variant.choices?.sizes
+                        ?? variant.choices?.size
+                        ?? variant.sizes
+                        ?? variant.size,
                 },
             }));
 
@@ -186,7 +196,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const gallery = [...new Set([selectedPhoto, ...combinationPhotos, ...optionPhotos, ...mainPhotos].filter(Boolean))];
             if (JSON.stringify(gallery) !== JSON.stringify(galleryPhotos)) renderGallery(gallery);
             if (priceEl) {
-                priceEl.innerHTML = salePriceMarkup(selectedVariant?.final_price ?? p.price, p.sale_percentage);
+                const savedVariantPrice = Number(
+                    selectedVariant?.final_price ?? selectedVariant?.finalPrice
+                );
+                const fallbackVariantPrice =
+                    Number(selectedVariant?.base_price ?? p.price) +
+                    Number(selectedVariant?.additional_price ?? selectedVariant?.additionalPrice ?? 0);
+                const selectedPrice = Number.isFinite(savedVariantPrice) && savedVariantPrice > 0
+                    ? savedVariantPrice
+                    : fallbackVariantPrice;
+                priceEl.innerHTML = salePriceMarkup(selectedPrice, p.sale_percentage);
             }
             if (stockLabel) stockLabel.textContent = `${Math.max(0, availableStock)} In Stock`;
             if (qtyInput) {
