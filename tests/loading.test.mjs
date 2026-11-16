@@ -254,6 +254,6 @@ test('product info controls stay quiet while selected product photos show the ba
     control.files = [{ type: 'image/png' }];
     s.documentEvents.change({ target: control, type: 'change' });
     assert.equal(s.classes.has('se-loading-action'), true);
-    s.run(260);
+    s.run(140);
     assert.equal(s.classes.has('se-loading-action'), false);
 });
