@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin\Registration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -124,8 +125,21 @@ class MultiStepRegistrationPersistenceTest extends TestCase
         ]);
     }
 
-    public function test_seller_completion_persists_user_and_seller_profile(): void
+    #[\PHPUnit\Framework\Attributes\TestWith([false])]
+    #[\PHPUnit\Framework\Attributes\TestWith([true])]
+    public function test_seller_completion_persists_user_and_seller_profile(bool $withPreviousRegistration): void
     {
+        $previous = null;
+        if ($withPreviousRegistration) {
+            $previous = Registration::factory()->create([
+                'email' => 'liza.seller@example.com',
+                'user_id' => null,
+                'status' => 'rejected',
+                'rejection_reason' => 'Previous application',
+                'reviewed_at' => now(),
+            ]);
+        }
+
         $response = $this->withSession([
             'seller_registration' => [
                 'last_name' => 'Santos',
@@ -156,6 +170,16 @@ class MultiStepRegistrationPersistenceTest extends TestCase
 
         $response->assertRedirect(route('landing.page'));
         $user = User::where('email', 'liza.seller@example.com')->firstOrFail();
+
+        if ($previous) {
+            $this->assertDatabaseHas('registrations', [
+                'id' => $previous->id,
+                'user_id' => $user->id,
+                'status' => 'pending',
+                'rejection_reason' => null,
+                'reviewed_at' => null,
+            ]);
+        }
 
         $this->assertDatabaseHas('sellers', [
             'user_id' => $user->id,

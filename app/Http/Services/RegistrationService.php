@@ -432,6 +432,24 @@ class RegistrationService
             'status' => 'pending',
         ];
 
+        if (! $registration) {
+            // The account can be deleted while its unique registration email is retained.
+            $registration = Registration::whereNull('user_id')
+                ->where('email', $user->email)
+                ->lockForUpdate()
+                ->first();
+
+            if ($registration) {
+                $attributes += [
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'rejection_reason' => null,
+                    'rejection_details' => null,
+                    'status_token_hash' => null,
+                ];
+            }
+        }
+
         if ($registration) {
             $registration->update($attributes);
         } else {
