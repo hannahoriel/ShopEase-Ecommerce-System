@@ -309,7 +309,7 @@ body.sc-modal-open { overflow: hidden; }
 .decision-submit { min-width: 128px; border: 1px solid var(--accent-border); background: var(--accent-bg); color: var(--accent-text); }
 
 /* ========== FLASH MESSAGE ========== */
-.product-decision-flash { position: fixed; right: 24px; bottom: 24px; z-index: 220; display: flex; align-items: flex-start; gap: 11px; width: min(370px, calc(100vw - 32px)); min-height: 72px; padding: 13px 14px; box-sizing: border-box; background: #fff; border: 1px solid #E7E2DF; border-radius: 14px; box-shadow: 0 14px 34px rgba(42,20,15,.16); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(14px); transition: opacity .2s ease, transform .2s ease, visibility .2s ease; }
+.product-decision-flash { position: fixed; right: 24px; bottom: 24px; z-index: 2100; display: flex; align-items: flex-start; gap: 11px; width: min(370px, calc(100vw - 32px)); min-height: 72px; padding: 13px 14px; box-sizing: border-box; background: #fff; border: 1px solid #E7E2DF; border-radius: 14px; box-shadow: 0 14px 34px rgba(42,20,15,.16); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(14px); transition: opacity .2s ease, transform .2s ease, visibility .2s ease; }
 .product-decision-flash.show { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
 .product-decision-flash.approved { border-color: #BFDDB8; }
 .product-decision-flash.warning { border-color: #F0C776; }
