@@ -1298,6 +1298,7 @@ Route::get('/buyer/register', function () {
 Route::post('/buyer/register', function (
     Request $request
 ) {
+    $request->validate(['last_name' => ['required', 'string', 'max:50']]);
 
     $buyerData =
         session(

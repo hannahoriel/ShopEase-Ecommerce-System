@@ -2849,6 +2849,7 @@
     .se-review-form-note{font-size:12px;color:#A44A19;margin:12px 0;}
 </style>
 
+<link rel="stylesheet" href="{{ asset('css/registration-steps.css') }}">
 </head>
 
 
@@ -4030,7 +4031,8 @@
                 @unless($seSellerFieldsComplete && $seBusinessFieldsComplete && $seDocumentsComplete)
                     <p class="se-review-form-note" role="status">Some required information or documents are missing. Please return to the relevant registration step to complete them before submitting.</p>
                 @endunless
-                <div class="form-actions">
+                <div class="form-actions se-registration-step-actions">
+                    <a href="{{ route('seller.business.register') }}" class="se-registration-back">Back</a>
 
                     <button
                         type="submit"

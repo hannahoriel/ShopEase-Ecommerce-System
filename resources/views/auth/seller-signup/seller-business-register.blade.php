@@ -1322,6 +1322,7 @@
 .se-password-rules span.ok::before{content:'✓ '}
 </style>
 
+<link rel="stylesheet" href="{{ asset('css/registration-steps.css') }}">
 </head>
 
 
@@ -2139,7 +2140,8 @@
                      CONTINUE BUTTON
                 ====================================================== -->
 
-                <div class="form-actions">
+                <div class="form-actions se-registration-step-actions">
+                    <a href="{{ route('seller.register') }}" class="se-registration-back">Back</a>
 
                     <button
                         type="submit"

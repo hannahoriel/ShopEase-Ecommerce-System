@@ -2695,6 +2695,7 @@
 
     </style>
 
+<link rel="stylesheet" href="{{ asset('css/registration-steps.css') }}">
 </head>
 
 
@@ -3528,7 +3529,8 @@
                      CONTINUE / SUBMIT
                 ================================================== -->
 
-                <div class="form-actions">
+                <div class="form-actions se-registration-step-actions">
+                    <a href="{{ route('buyer.register') }}" class="se-registration-back">Back</a>
 
                     <button
                         type="submit"
