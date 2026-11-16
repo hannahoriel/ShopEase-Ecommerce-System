@@ -27,9 +27,9 @@ class DeliveryHubRiderRegistrationController extends Controller
         $province = mb_strtolower(trim($data['province']));
         $hubs = LogisticsDeliveryHub::query()
             ->where('status', 'active')->whereNull('archived_at')
-            ->whereRaw('LOWER(province) = ?', [$province])
+            ->whereRaw('LOWER(TRIM(province)) = ?', [$province])
             ->when(! empty($data['municipality']), fn (Builder $query) => $query
-                ->whereRaw('LOWER(municipality) = ?', [mb_strtolower(trim($data['municipality']))]))
+                ->whereRaw('LOWER(TRIM(municipality)) = ?', [mb_strtolower(trim($data['municipality']))]))
             ->whereHas('logisticsBranch', fn (Builder $branch) => $branch
                 ->where('status', 'active')->whereNull('archived_at')
                 ->whereHas('user', fn (Builder $user) => $user

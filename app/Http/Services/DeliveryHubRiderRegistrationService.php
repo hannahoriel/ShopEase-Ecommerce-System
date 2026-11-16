@@ -21,9 +21,12 @@ class DeliveryHubRiderRegistrationService
         $query = LogisticsDeliveryHub::query()
             ->where('status', 'active')
             ->whereNull('archived_at')
-            ->whereRaw('LOWER(province) = ?', [mb_strtolower($province)])
+            // Hub locations come from logistics_delivery_hubs. Normalize stored
+            // values as well as mobile input so harmless DB whitespace/casing
+            // differences do not route an application away from its hub.
+            ->whereRaw('LOWER(TRIM(province)) = ?', [mb_strtolower($province)])
             ->when($municipality !== '', fn ($hub) => $hub
-                ->whereRaw('LOWER(municipality) = ?', [mb_strtolower($municipality)]))
+                ->whereRaw('LOWER(TRIM(municipality)) = ?', [mb_strtolower($municipality)]))
             ->whereHas('logisticsBranch', fn ($branch) => $branch
                 ->where('status', 'active')->whereNull('archived_at')
                 ->whereHas('user', fn ($user) => $user
@@ -52,8 +55,8 @@ class DeliveryHubRiderRegistrationService
         $preferredHub = trim((string) $request->input('municipal_hub'));
         if ($preferredHub !== '') {
             $query->where(fn ($hub) => $hub
-                ->whereRaw('LOWER(hub_name) = ?', [mb_strtolower($preferredHub)])
-                ->orWhereRaw('LOWER(municipality) = ?', [mb_strtolower($preferredHub)]));
+                ->whereRaw('LOWER(TRIM(hub_name)) = ?', [mb_strtolower($preferredHub)])
+                ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [mb_strtolower($preferredHub)]));
         }
 
         $hubs = $query->orderBy('hub_name')->limit(2)->get();
