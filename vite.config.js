@@ -65,6 +65,7 @@ const input = [
     // LOGISTICS
     'resources/css/logistics/login.css',
     'resources/css/logistics/logistics-landing.css',
+    'resources/css/logistics/logistics-hero.css',
     'resources/css/logistics/reports.css',
     'resources/css/logistics/signup-firstpage.css',
     'resources/css/logistics/signup-review.css',
@@ -129,6 +130,7 @@ const input = [
     // LOGISTICS
     'resources/js/logistics/login.js',
     'resources/js/logistics/logistics-landing.js',
+    'resources/js/logistics/logistics-hero.js',
     'resources/js/logistics/reports.js',
     'resources/js/logistics/signup-firstpage.js',
     'resources/js/logistics/signup-review.js',
