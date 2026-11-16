@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Complaint;
 use App\Models\Seller\Product;
+use App\Models\Seller\Seller;
 use App\Services\SellerComplianceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class SellerPerformanceController extends Controller
 
         $seller = null;
         if (Schema::hasTable('sellers') && Schema::hasColumn('sellers', 'user_id')) {
-            $seller = DB::table('sellers')->where('user_id', $user->id)->first();
+            $seller = Seller::where('user_id', $user->id)->first();
         }
 
         // Keep recorded compliance values authoritative; derive them only when
@@ -55,17 +56,13 @@ class SellerPerformanceController extends Controller
 
         if ($seller) {
             $products = Product::query()->where('seller_id', $seller->id);
-            $reviewCount = (clone $products)->whereIn(DB::raw('LOWER(status)'), ['pending', 'under_review', 'review'])->count();
             $warningCount = (clone $products)->whereRaw('LOWER(status) = ?', ['warning'])->count();
             $activeComplaintCount = collect($complaints)
                 ->filter(fn (array $complaint): bool => in_array($complaint['status'], ['open', 'in-progress'], true))
                 ->count();
-            $atFaultComplaintCount = collect($complaints)
-                ->filter(fn (array $complaint): bool => $complaint['seller_at_fault'] === true)
-                ->count();
 
             if ($score === null) {
-                $score = SellerComplianceService::scoreFromCounts($reviewCount, $atFaultComplaintCount);
+                $score = app(SellerComplianceService::class)->scoreFor($seller);
             }
 
             if ($status === null && $score !== null) {

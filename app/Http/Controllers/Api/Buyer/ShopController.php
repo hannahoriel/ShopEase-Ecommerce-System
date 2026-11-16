@@ -222,12 +222,6 @@ class ShopController extends Controller
             ->whereRaw('LOWER(status) = ?', ['warning'])
             ->count();
         $orderIds = Order::query()->where('seller_id', $seller->id)->pluck('id');
-        $atFaultComplaintCount = $orderIds->isEmpty()
-            ? 0
-            : Complaint::query()
-                ->whereIn('order_id', $orderIds)
-                ->where('seller_at_fault', true)
-                ->count();
         $complaintCount = $orderIds->isEmpty()
             ? 0
             : Complaint::query()
@@ -235,7 +229,7 @@ class ShopController extends Controller
                 ->whereIn('status', ['open', 'in_progress'])
                 ->count();
 
-        $score = SellerComplianceService::scoreFromCounts($reviewCount, $atFaultComplaintCount);
+        $score = app(SellerComplianceService::class)->scoreFor($seller);
 
         if (in_array($seller->registration_status, ['suspended', 'rejected'], true)) {
             return ['score' => $score, 'status' => 'suspended', 'label' => 'Suspended'];
