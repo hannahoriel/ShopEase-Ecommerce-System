@@ -106,18 +106,41 @@ class CourierRegistrationApiTest extends TestCase
         $this->assertCount(1, Storage::disk('public')->allFiles('courier-registrations/drivers-license'));
     }
 
+    public function test_mobile_can_choose_any_active_sorting_center_in_its_assignment_province(): void
+    {
+        [, $branch] = $this->makeCenter('center.location@example.test');
+        $branch->update(['province' => 'Laguna', 'municipality' => 'Calamba', 'status' => 'active']);
+
+        $this->getJson('/api/v1/courier-registrations/centers?province=Laguna')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $branch->id)
+            ->assertJsonPath('data.0.province', 'Laguna');
+
+        $this->getJson('/api/v1/courier-registrations/centers?province=Quezon')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
     private function makeCenter(string $email): array
     {
-        $center = User::query()->create(['name' => 'Test Center', 'email' => $email, 'password' => 'password', 'role' => User::ROLE_SORTING_CENTER]);
-        $companyUser = User::query()->create(['name' => 'Test Logistics', 'email' => 'company+'.uniqid().'@example.test', 'password' => 'password', 'role' => User::ROLE_LOGISTICS]);
+        $center = User::query()->create([
+            'name' => 'Test Center', 'email' => $email, 'password' => 'password',
+            'role' => User::ROLE_SORTING_CENTER, 'registration_status' => 'active',
+        ]);
+        $companyUser = User::query()->create([
+            'name' => 'Test Logistics', 'email' => 'company+'.uniqid().'@example.test', 'password' => 'password',
+            'role' => User::ROLE_LOGISTICS, 'registration_status' => 'active',
+        ]);
         $company = Logistics::query()->create([
             'user_id' => $companyUser->id, 'last_name' => 'Logistics', 'first_name' => 'Demo', 'sex' => 'other',
             'contact_no' => '09170000000', 'birthday' => '1990-01-01', 'age' => 36,
             'province' => 'Laguna', 'municipality' => 'Calamba', 'barangay' => 'Poblacion',
-            'street' => 'Main Street', 'house_number' => '1',
+            'street' => 'Main Street', 'house_number' => '1', 'registration_status' => 'active',
         ]);
         $branch = LogisticsBranch::query()->create([
             'logistics_id' => $company->id, 'user_id' => $center->id, 'name' => 'Test Center', 'address' => 'Calamba, Laguna',
+            'province' => 'Laguna', 'municipality' => 'Calamba', 'status' => 'active',
         ]);
         return [$center, $branch];
     }
