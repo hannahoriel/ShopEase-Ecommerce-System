@@ -21,12 +21,6 @@ use Illuminate\Validation\ValidationException;
 
 class CourierRegistrationController extends Controller
 {
-    // Existing ShopEase Logistics company in this deployment.
-    private const SHOP_EASE_LOGISTICS_ID = 17;
-
-    // Explicitly authorized real sorting centers. Add IDs after verifying ownership.
-    private const REAL_SORTING_CENTER_IDS = [5];
-
     public function centers(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -34,8 +28,6 @@ class CourierRegistrationController extends Controller
         ]);
         $province = mb_strtolower(trim($data['province']));
         $centers = LogisticsBranch::query()
-            ->where('logistics_id', self::SHOP_EASE_LOGISTICS_ID)
-            ->whereIn('id', self::REAL_SORTING_CENTER_IDS)
             ->whereRaw('LOWER(TRIM(province)) = ?', [$province])
             ->where('status', 'active')
             ->whereNull('archived_at')
@@ -87,8 +79,6 @@ class CourierRegistrationController extends Controller
         ]);
         $center = LogisticsBranch::query()
             ->whereKey($data['sorting_center_id'])
-            ->where('logistics_id', self::SHOP_EASE_LOGISTICS_ID)
-            ->whereIn('id', self::REAL_SORTING_CENTER_IDS)
             ->where('status', 'active')
             ->whereNull('archived_at')
             ->whereHas('logistics', fn ($query) => $query
@@ -132,12 +122,8 @@ class CourierRegistrationController extends Controller
 
     public function syncLegacyMobileApplications(LogisticsBranch $center): void
     {
-        // Never import unassigned legacy applications by province or company name.
-        // Only reconcile applications explicitly linked to this real center.
-        if ((int) $center->logistics_id !== self::SHOP_EASE_LOGISTICS_ID
-            || ! in_array((int) $center->id, self::REAL_SORTING_CENTER_IDS, true)) {
-            return;
-        }
+        $center->loadMissing('logistics');
+        $company = trim((string) $center->logistics?->business_name);
 
         $pendingCouriers = Rider::query()
             ->with('user')
@@ -176,6 +162,11 @@ class CourierRegistrationController extends Controller
         $centerCount = LogisticsBranch::query()
             ->whereRaw('LOWER(TRIM(province)) = ?', [mb_strtolower(trim((string) $center->province))])
             ->where('status', 'active')->whereNull('archived_at')
+            ->whereHas('logistics', fn ($query) => $query
+                ->where('registration_status', 'active')
+                ->whereHas('user', fn ($user) => $user
+                    ->where('role', User::ROLE_LOGISTICS)
+                    ->where('registration_status', 'active')))
             ->whereHas('user', fn ($query) => $query
                 ->where('role', User::ROLE_SORTING_CENTER)
                 ->where('registration_status', 'active'))
