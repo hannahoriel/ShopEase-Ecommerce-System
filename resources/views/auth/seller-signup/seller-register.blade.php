@@ -1915,6 +1915,7 @@
 .se-password-rules span.ok::before{content:'✓ '}
 </style>
 
+<script src="{{ asset('js/registration-provinces.js') }}"></script>
 </head>
 
 
@@ -2497,36 +2498,7 @@
                         <div class="address-grid">
 
 
-                            <!-- REGION (required by seller registration test cases) -->
-                            <div class="form-group">
-                                <label class="form-label" for="region">
-                                    Region <span class="required">*</span>
-                                </label>
-                                <select id="region" name="region" class="form-input" required>
-                                    <option value="">Select region</option>
-                                    @foreach ([
-                                        'National Capital Region (NCR)',
-                                        'Cordillera Administrative Region (CAR)',
-                                        'Region I (Ilocos Region)',
-                                        'Region II (Cagayan Valley)',
-                                        'Region III (Central Luzon)',
-                                        'Region IV-A (CALABARZON)',
-                                        'MIMAROPA Region',
-                                        'Region V (Bicol Region)',
-                                        'Region VI (Western Visayas)',
-                                        'Region VII (Central Visayas)',
-                                        'Region VIII (Eastern Visayas)',
-                                        'Region IX (Zamboanga Peninsula)',
-                                        'Region X (Northern Mindanao)',
-                                        'Region XI (Davao Region)',
-                                        'Region XII (SOCCSKSARGEN)',
-                                        'Region XIII (Caraga)',
-                                        'Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)'
-                                    ] as $regionOption)
-                                        <option value="{{ $regionOption }}" {{ old('region', $sellerData['region'] ?? '') === $regionOption ? 'selected' : '' }}>{{ $regionOption }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            <x-shared.registration-region :selected="old('region', $sellerData['region'] ?? '')" />
 
                             <!-- PROVINCE -->
 
@@ -4701,6 +4673,7 @@ document.addEventListener(
         async function loadMunicipalities(
             provinceLocation
         ) {
+            const revision = addressRevision;
 
             const provinceCode =
                 getLocationCode(
@@ -4738,6 +4711,7 @@ document.addEventListener(
                             provinceCode
                         )}/cities${query}`
                     );
+                if (revision !== addressRevision) return;
 
 
                 municipalityControl.setLocations(
@@ -4750,6 +4724,7 @@ document.addEventListener(
             } catch (
                 error
             ) {
+                if (revision !== addressRevision) return;
 
                 console.error(
                     'Municipality loading error:',
@@ -4783,6 +4758,7 @@ document.addEventListener(
         async function loadBarangays(
             municipalityLocation
         ) {
+            const revision = addressRevision;
 
             const municipalityCode =
                 getLocationCode(
@@ -4809,6 +4785,7 @@ document.addEventListener(
                             municipalityCode
                         )}/barangays`
                     );
+                if (revision !== addressRevision) return;
 
 
                 barangayControl.setLocations(
@@ -4818,6 +4795,7 @@ document.addEventListener(
             } catch (
                 error
             ) {
+                if (revision !== addressRevision) return;
 
                 console.error(
                     'Barangay loading error:',
@@ -4909,7 +4887,11 @@ document.addEventListener(
            INITIALIZE / RESTORE SAVED ADDRESS
         ========================================================== */
 
+        const registrationRegion = document.getElementById('region');
+        let addressRevision = 0;
+
         async function initializeLocations() {
+            const revision = ++addressRevision;
 
             const savedProvince =
                 provinceHidden.value.trim();
@@ -4923,6 +4905,9 @@ document.addEventListener(
                 barangayHidden.value.trim();
 
 
+            provinceControl.clear();
+            provinceSearch.disabled = true;
+            provinceSearch.placeholder = 'Select region first';
             disableMunicipality();
 
 
@@ -4937,9 +4922,11 @@ document.addEventListener(
 
 
                 const provinces =
-                    await loadLocations(
-                        'provinces'
-                    );
+                    await window.loadRegistrationProvinces(registrationRegion, loadLocations, savedProvince);
+                if (revision !== addressRevision) return;
+
+                provinceSearch.disabled = provinces.length === 0;
+                provinceSearch.placeholder = provinces.length ? 'Type to search province' : 'Select region first';
 
 
                 provinceControl.setLocations(
@@ -5022,6 +5009,7 @@ document.addEventListener(
                             provinceCode
                         )}/cities${query}`
                     );
+                if (revision !== addressRevision) return;
 
 
                 municipalityControl.setLocations(
@@ -5092,6 +5080,7 @@ document.addEventListener(
                             municipalityCode
                         )}/barangays`
                     );
+                if (revision !== addressRevision) return;
 
 
                 barangayControl.setLocations(
@@ -5145,6 +5134,8 @@ document.addEventListener(
             } catch (
                 error
             ) {
+                if (revision !== addressRevision) return;
+                provinceSearch.placeholder = 'Unable to load provinces';
 
                 console.error(
                     'Location initialization error:',
@@ -5155,6 +5146,13 @@ document.addEventListener(
 
         }
 
+
+        registrationRegion.addEventListener('change', () => {
+            provinceControl.clear();
+            disableMunicipality();
+            disableBarangay();
+            initializeLocations();
+        });
 
         initializeLocations();
 
@@ -5457,7 +5455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!f) return '';
     const ext=f.name.split('.').pop().toLowerCase();
     if (!['jpg','jpeg','png','pdf'].includes(ext)) return 'Accepted file types: JPG, PNG, PDF only.';
-    if (f.size > 5120*1024) return 'File must not exceed 5 MB (5,120 KB).';
+    if (f.size > (/\.pdf$/i.test(f.name) ? 5 : 15) * 1024 * 1024) return 'Images must be 15 MB or smaller and PDFs 5 MB or smaller.';
     return '';
   }
   function messageNode(el) {

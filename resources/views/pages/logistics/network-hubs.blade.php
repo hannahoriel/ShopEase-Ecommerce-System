@@ -1,5 +1,6 @@
 @php($pageName = 'Network Hubs')
 <!DOCTYPE html><html lang="en"><head>
+    @vite('resources/js/shared/flash-timing.js')
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}"><title>Network Hubs — ShopEase</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -253,6 +254,7 @@
 'use strict';
 const $=id=>document.getElementById(id), form=$('hbForm'), modal=$('hbModal');
 function flash(text,type='success',title=''){
+    if (window.deferFlashUntilModalCloses?.(flash, () => flash(text, type, title))) return;
   const stack=$('hbFlashStack');if(!stack)return;
   // Match the Admin Logistics + Seller Order Status flash card component.
   stack.replaceChildren();
@@ -366,7 +368,7 @@ $('lgNotifyButton')?.addEventListener('click',()=>alert('No live notifications y
 $('lgChangeProfilePhoto')?.addEventListener('click',()=>$('lgProfilePhotoInput')?.click());
 $('lgProfilePhotoInput')?.addEventListener('change',async event=>{
  const file=event.target.files?.[0];if(!file)return;
- if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){alert('Choose JPG, PNG or WebP under 5 MB.');event.target.value='';return}
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>15*1024*1024){alert('Choose JPG, PNG or WebP under 15 MB.');event.target.value='';return}
  const data=new FormData();data.append('profile_photo',file);
  try{const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:data});
  const result=await response.json();if(!response.ok)throw Error(result.message||'Unable to update photo.');

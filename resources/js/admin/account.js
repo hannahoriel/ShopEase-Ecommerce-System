@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 /** Admin Account page logic. Source: resources/views/pages/admin/account.blade.php */
 const accountConfig = {};
 document.addEventListener('DOMContentLoaded', () => {
@@ -43,7 +45,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }catch(error){toast(error.message,true);}
   finally{button.disabled=false;dirty();}
  });
- function photo(inputId,imageId){const input=$(inputId),img=$(imageId);input.addEventListener('change',()=>{const f=input.files[0];if(!f){dirty();return;}if(f.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(f.type)){toast('Please choose a JPG, PNG or WebP image under 5 MB.',true);input.value='';dirty();return;}if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);img.dataset.objectUrl=URL.createObjectURL(f);img.src=img.dataset.objectUrl;img.style.display='block';if(imageId==='saAvatarImage')$('saAvatarFallback').hidden=true;dirty();});}
+ function photo(inputId,imageId){const input=$(inputId),img=$(imageId);input.addEventListener('change',()=>{const f=input.files[0];if(!f){dirty();return;}if(f.size>15*1024*1024||!['image/jpeg','image/png','image/webp'].includes(f.type)){toast('Please choose a JPG, PNG or WebP image under 15 MB.',true);input.value='';dirty();return;}if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);img.dataset.objectUrl=URL.createObjectURL(f);img.src=img.dataset.objectUrl;img.style.display='block';if(imageId==='saAvatarImage')$('saAvatarFallback').hidden=true;dirty();});}
  photo('saCoverInput','saCoverImage');photo('saAvatarInput','saAvatarImage');
  const photoPreview=$('aaPhotoPreview'), photoPreviewImg=$('aaPhotoPreviewImage');
  function openPhotoPreview(img,title){if(!img?.src||img.style.display==='none')return;photoPreviewImg.src=img.src;$('aaPhotoPreviewTitle').textContent=title;photoPreview.hidden=false;}
@@ -263,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
  const cross='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
  function dismiss(){clearTimeout(timer);flash.classList.remove('show');}
  window.showAccountFlash=function(text,isError=false,heading){
+     if (deferFlashUntilModalCloses(window.showAccountFlash, () => window.showAccountFlash(text, isError, heading))) return;
    if(!text)return;
    flash.classList.remove('approved','rejected','error');
    flash.classList.add(isError?'error':'approved');
@@ -414,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('aamSelectAll').addEventListener('click',()=>{permissions.forEach(x=>x.checked=true);updatePermissions();messagePermissions.forEach(x=>x.checked=true);});
   $('aamClearAll').addEventListener('click',()=>{permissions.forEach(x=>x.checked=false);updatePermissions();});
   $('aamBirthday').addEventListener('change',()=>{const value=$('aamBirthday').value;const b=value?new Date(value+'T00:00:00'):null;let age='';if(b&&!isNaN(b)&&b<=new Date()){const n=new Date();age=n.getFullYear()-b.getFullYear()-(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate())?1:0);} $('aamAge').value=age;});
-  ['aamProfilePhoto','aamIdPhoto'].forEach(id=>$(id).addEventListener('change',e=>{const file=e.target.files[0];if(file&&(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))){e.target.value='';flash('Please select a JPG, PNG or WebP image under 5 MB.',true);}}));
+  ['aamProfilePhoto','aamIdPhoto'].forEach(id=>$(id).addEventListener('change',e=>{const file=e.target.files[0];if(file&&(file.size>15*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))){e.target.value='';flash('Please select a JPG, PNG or WebP image under 15 MB.',true);}}));
   form.addEventListener('submit',async event=>{
     event.preventDefault();
     const editId = form.dataset.editAdminId;

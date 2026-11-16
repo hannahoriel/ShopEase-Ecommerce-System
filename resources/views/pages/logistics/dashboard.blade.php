@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @vite('resources/js/shared/flash-timing.js')
     <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Logistics Dashboard &#8212; ShopEase</title>
@@ -139,7 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
      $('lgLiveClock').textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(now);
    }
    clock();setInterval(clock,1000);
-   function showToast(message) { const el=$('lgToast');el.textContent=message;el.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.hidden=true,3500); }
+   function showToast(message) {
+       if (window.deferFlashUntilModalCloses?.(showToast, () => showToast(message))) return;
+        const el=$('lgToast');el.textContent=message;el.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.hidden=true,3500); }
    let centers=[];
    function renderFacilities() {
      const rows=centers.flatMap(c=>[
@@ -197,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('lgSidebarToggle').addEventListener('click',()=>{body.classList.toggle('lg-collapsed');$('lgSidebarToggle').setAttribute('aria-expanded',String(!body.classList.contains('lg-collapsed')))});
   $('lgProfileButton').addEventListener('click',()=>{const menu=$('lgProfileMenu');menu.hidden=!menu.hidden;$('lgProfileButton').setAttribute('aria-expanded',String(!menu.hidden))});
   $('lgChangeProfilePhoto').addEventListener('click',()=>$('lgProfilePhotoInput').click());
-  $('lgProfilePhotoInput').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){event.target.value='';window.alert('Choose a JPG, PNG, or WebP under 5 MB.');return;}const data=new FormData();data.append('profile_photo',file);try{const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:data});const result=await response.json();if(!response.ok)throw Error(result.message||'Unable to update profile photo.');const avatar=document.querySelector('#lgProfileButton .account-avatar');let image=avatar?.querySelector('img');if(avatar){if(!image){image=document.createElement('img');avatar.append(image)}image.src=result.profile_photo_url;image.style.cssText='position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover;'}showToast('Profile photo updated.');}catch(error){window.alert(error.message||'Unable to update profile photo.')}finally{event.target.value=''}});
+  $('lgProfilePhotoInput').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>15*1024*1024){event.target.value='';window.alert('Choose a JPG, PNG, or WebP under 15 MB.');return;}const data=new FormData();data.append('profile_photo',file);try{const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:data});const result=await response.json();if(!response.ok)throw Error(result.message||'Unable to update profile photo.');const avatar=document.querySelector('#lgProfileButton .account-avatar');let image=avatar?.querySelector('img');if(avatar){if(!image){image=document.createElement('img');avatar.append(image)}image.src=result.profile_photo_url;image.style.cssText='position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover;'}showToast('Profile photo updated.');}catch(error){window.alert(error.message||'Unable to update profile photo.')}finally{event.target.value=''}});
   document.addEventListener('click',e=>{if(!e.target.closest('.lg-profile-wrap')){$('lgProfileMenu').hidden=true;$('lgProfileButton').setAttribute('aria-expanded','false')}});
   $('lgNotifyButton').addEventListener('click',()=>showToast('No live notifications connected yet.'));
   const announcements=[...document.querySelectorAll('[data-logistics-announcement]')];

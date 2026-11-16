@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../../shared/flash-timing.js';
+
 import '../../shared/complaint-layout.js';
 import {renderReturnSummary, showProposedReturnSolution} from '../../shared/return-summary.js';
 import {renderCategoryPill} from '../../shared/category-pills.js';
@@ -804,6 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalImage = previews.map(x=>({src:x.getAttribute('src'),hidden:x.hidden}));
     const fallback = get('bpAvatarFallback');
     const toast = message => {
+        if (deferFlashUntilModalCloses(toast, () => toast(message))) return;
         const element = get('bpProfileToast');
         element.textContent = message;
         element.hidden = false;
@@ -864,9 +867,9 @@ document.addEventListener('DOMContentLoaded', () => {
             refresh();
             return;
         }
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
             input.value = '';
-            toast('Choose a JPG, PNG, or WebP image smaller than 5 MB.');
+            toast('Choose a JPG, PNG, or WebP image smaller than 15 MB.');
             refresh();
             return;
         }
@@ -1318,7 +1321,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let verificationToken = '';
   let sending = false;
   let noticeTimer = null;
-  function notify(message) { if (!toast) return; toast.textContent = message; toast.hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { toast.hidden = true; }, 4500); }
+  function notify(message) {
+      if (deferFlashUntilModalCloses(notify, () => notify(message))) return;
+       if (!toast) return; toast.textContent = message; toast.hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { toast.hidden = true; }, 4500); }
   function refreshPasswordButton() {changeBtn.disabled = !(current.value.trim() && next.value.length >= 8 && next.value === confirm.value);}
   [current,next,confirm].forEach(input => input?.addEventListener('input',refreshPasswordButton));
   const open = modal => {modal.hidden=false; document.body.classList.add('buyer-security-dialog-open');};

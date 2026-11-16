@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 const userManagementConfigElement =
     document.getElementById('userManagementConfig');
 
@@ -329,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
         umSetModal(umChange, true);
     }
     function umNotify(title, message, isError = false) {
+        if (deferFlashUntilModalCloses(umNotify, () => umNotify(title, message, isError))) return;
         umEl('um-change-flash-title').textContent = title;
         umEl('um-change-flash-text').textContent = message;
         umEl('um-change-flash-icon').textContent = isError ? '!' : '✓';
@@ -1029,6 +1032,7 @@ document.addEventListener('DOMContentLoaded', function () {
         status,
         user
     ) {
+        if (deferFlashUntilModalCloses(showActionFlash, () => showActionFlash(status, user))) return;
         if (
             !actionFlash
         ) {

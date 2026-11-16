@@ -258,7 +258,7 @@
     <textarea id="voRatingReview" maxlength="2000" minlength="2" required rows="4" placeholder="Share your experience with this product..."></textarea>
     <div class="vo-rating-photo-block">
       <label class="vo-rating-label" for="voRatingPhotos">Product photos <span>(optional · one photo)</span></label>
-      <label class="vo-rating-upload" id="voRatingUploadLabel" for="voRatingPhotos"><span aria-hidden="true">＋</span><strong>Add product photos</strong><small>JPG, PNG, WEBP · max 5 MB</small></label>
+      <label class="vo-rating-upload" id="voRatingUploadLabel" for="voRatingPhotos"><span aria-hidden="true">＋</span><strong>Add product photos</strong><small>JPG, PNG, WEBP · max 15 MB</small></label>
       <input id="voRatingPhotos" type="file" accept="image/jpeg,image/png,image/webp" hidden>
       <div id="voRatingPhotoPreviews" class="vo-rating-photo-previews" aria-live="polite"></div>
     </div>

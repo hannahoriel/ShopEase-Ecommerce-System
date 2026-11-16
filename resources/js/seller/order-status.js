@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 import QRCode from 'qrcode';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -33,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Matches the Registrations flash card: icon, title, message and close button.
     let orderFlashTimer = null;
     function showOrderFlash(message, type = 'success', title = '') {
+        if (deferFlashUntilModalCloses(showOrderFlash, () => showOrderFlash(message, type, title))) return;
         if (!flashContainer) return;
         clearTimeout(orderFlashTimer);
         const positive = type !== 'error' && type !== 'rejected';

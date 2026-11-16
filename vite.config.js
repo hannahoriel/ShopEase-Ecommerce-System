@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 // All current, real project assets. Inline <style>/<script> inside Blade files
 // do not need separate Vite entries.
 const input = [
+    'resources/js/shared/flash-timing.js',
     // APP
     'resources/css/app.css',
 

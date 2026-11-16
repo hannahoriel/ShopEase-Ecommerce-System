@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 import '../shared/complaint-layout.js';
 import {renderReturnSummary, showProposedReturnSolution} from '../shared/return-summary.js';
 import {applyCategoryPill} from '../shared/category-pills.js';
@@ -1198,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showStatusFlash(status, complaint) {
+        if (deferFlashUntilModalCloses(showStatusFlash, () => showStatusFlash(status, complaint))) return;
         const config = {
             open: {
                 title: 'Complaint Reopened',

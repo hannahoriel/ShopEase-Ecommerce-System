@@ -168,7 +168,7 @@
            <div class="sa-field half"><label for="aamBirthday">Birthday</label><input type="date" class="sa-control" id="aamBirthday" name="birthday" max="{{ now()->toDateString() }}"></div>
            <div class="sa-field half"><label for="aamSex">Sex</label><select class="sa-control" id="aamSex" name="sex"><option value="">Select sex</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>
            <div class="sa-field half"><label for="aamAge">Age</label><input class="sa-control" id="aamAge" readonly placeholder="Calculated from birthday"></div>
-           <div class="sa-field half"><label for="aamProfilePhoto">Profile Photo</label><input class="sa-control aam-file" type="file" id="aamProfilePhoto" name="profile_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · JPG, PNG, or WebP · Max 5 MB</p></div>
+           <div class="sa-field half"><label for="aamProfilePhoto">Profile Photo</label><input class="sa-control aam-file" type="file" id="aamProfilePhoto" name="profile_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · JPG, PNG, or WebP · Max 15 MB</p></div>
            <div class="sa-field half"><label for="aamIdPhoto">Admin ID Photo</label><input class="sa-control aam-file" type="file" id="aamIdPhoto" name="admin_id_photo" accept="image/png,image/jpeg,image/webp"><p class="sa-request-hint">Optional · Stored for administrator identity records.</p></div>
          </div>
        </section>

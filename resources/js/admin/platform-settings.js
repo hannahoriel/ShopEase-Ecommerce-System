@@ -1168,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ];
 
         const maxSize =
-            5 * 1024 * 1024;
+            15 * 1024 * 1024;
 
         if (
             !validTypes.includes(file.type)
@@ -1183,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', function () {
             file.size > maxSize
         ) {
             bannerFile.textContent =
-                'Image must be 5MB or smaller.';
+                'Image must be 15MB or smaller.';
 
             return;
         }
