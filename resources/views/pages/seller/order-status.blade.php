@@ -449,6 +449,8 @@
             <div class="modal-section modal-footer-section">
                 <button type="button" id="printOrderWaybillButton" class="print-waybill-button" hidden>Print Waybill</button>
 
+                <button type="button" id="rejectOrderButton" class="cancellation-request-reject-button" hidden>Reject Order</button>
+
 
                 <button
                     type="button"
@@ -471,6 +473,27 @@
                 <button type="button" id="orderModalActionButton" class="order-modal-action-button new-action">
                     <span id="orderModalActionLabel">Prepare Order</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rejectOrderModal" class="ui-modal" aria-hidden="true">
+        <div class="reject-cancellation-modal-panel" role="dialog" aria-modal="true" aria-labelledby="rejectOrderTitle">
+            <div class="reject-cancellation-modal-header">
+                <h2 id="rejectOrderTitle">Reject Order</h2>
+                <p>The buyer will be notified and the order will be cancelled. Please provide a reason.</p>
+            </div>
+            <div class="reject-cancellation-modal-body">
+                <label class="reject-order-reason-label" for="rejectOrderReason">Reason <span aria-hidden="true">*</span></label>
+                <div class="reject-details-textarea-wrap">
+                    <textarea id="rejectOrderReason" maxlength="500" placeholder="Explain why you cannot fulfill this order" required></textarea>
+                    <span id="rejectOrderReasonCount">0/500</span>
+                </div>
+                <p id="rejectOrderError" class="reject-cancellation-error" role="alert" hidden></p>
+            </div>
+            <div class="reject-cancellation-modal-footer">
+                <button type="button" id="cancelRejectOrder" class="reject-modal-cancel-button">Go Back</button>
+                <button type="button" id="confirmRejectOrder" class="reject-modal-confirm-button">Reject Order</button>
             </div>
         </div>
     </div>

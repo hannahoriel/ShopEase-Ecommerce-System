@@ -118,6 +118,41 @@ class OrderStatusController extends Controller
         return response()->json($order->fresh(['statusHistory.changedBy:id,role', 'latestCancellationRequest']));
     }
 
+    public function rejectOrder(Request $request, Order $order): JsonResponse
+    {
+        $order = $this->ownedOrder($request->user(), $order);
+        $validated = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+
+        DB::transaction(function () use ($order, $validated, $request): void {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            abort_unless($lockedOrder->seller_id === $this->sellerFor($request->user())->id, 404);
+            abort_unless(in_array($lockedOrder->status, ['pending', 'new'], true), 422, 'Only a new order can be rejected.');
+            abort_if($lockedOrder->latestCancellationRequest()->where('status', 'pending')->exists(), 422, 'Review the pending buyer cancellation request first.');
+
+            $previousStatus = $lockedOrder->status;
+            $reason = trim($validated['reason']);
+            $this->inventory->restoreOrder($lockedOrder);
+            $lockedOrder->update(['status' => 'cancelled']);
+            $lockedOrder->shipment()->update(['rider_id' => null]);
+            OrderStatusHistory::create([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $previousStatus,
+                'to_status' => 'cancelled',
+                'changed_by' => $request->user()->id,
+                'notes' => 'Order rejected by seller. Reason: '.$reason,
+            ]);
+            BuyerNotification::createForOrder(
+                $lockedOrder,
+                'order',
+                'Order rejected by seller',
+                'The seller rejected order '.$lockedOrder->order_number.'. Reason: '.$reason,
+                ['status' => 'cancelled', 'reason' => $reason],
+            );
+        });
+
+        return response()->json($order->fresh(['statusHistory.changedBy:id,role', 'latestCancellationRequest']));
+    }
+
     public function schedule(Request $request, Order $order, SellerPickupAttemptService $pickupAttempts): JsonResponse
     {
         $order = $this->ownedOrder($request->user(), $order);
