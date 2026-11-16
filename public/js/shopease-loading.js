@@ -226,7 +226,7 @@
         if (!Array.from(files || []).some(file => file.type?.startsWith('image/'))) return;
         root.classList.add('se-loading-action');
         clearTimeout(feedbackTimer);
-        feedbackTimer = setTimeout(() => { if (!actions && !leavingByAction) finishActionVisual(); }, 260);
+        feedbackTimer = setTimeout(() => { if (!actions && !leavingByAction) finishActionVisual(); }, event.target.closest('#addProductForm, #addProductModal') ? 140 : 260);
     }
     document.addEventListener('change', productPhotoFeedback, true);
     document.addEventListener('drop', productPhotoFeedback, true);
