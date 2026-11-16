@@ -21,12 +21,14 @@ use App\Notifications\RiderEventNotification;
 use App\Services\LogisticsNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /** Applies QR scans to the parcel's real shipment and order records. */
 class ParcelRouteScanController extends Controller
 {
+    private const MAX_PARCELS_PER_TRUCK = 1000;
     private const FAILED_DELIVERY_RETURN_STATUSES = [
         'return_to_hub',
         'at_delivery_hub',
@@ -102,6 +104,16 @@ class ParcelRouteScanController extends Controller
                     ->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id))
                     ->first()
                 : null;
+            $stagedDraft = $input['action'] === 'depart' && $facility === 'sorting_center' && ! $stagedOutbound
+                ? LogisticsTransferManifest::query()
+                    ->where('origin_type', 'sorting_center')
+                    ->where('origin_id', LogisticsBranch::query()->where('user_id', $request->user()->id)->value('id'))
+                    ->where('status', 'preparing')
+                    ->whereNull('courier_registration_id')
+                    ->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id)
+                        ->where('logistics_transfer_manifest_shipments.load_status', 'pending'))
+                    ->first()
+                : null;
 
             if ($facility === 'delivery_hub') {
                 $hub = LogisticsDeliveryHub::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail();
@@ -134,7 +146,7 @@ class ParcelRouteScanController extends Controller
                 $location = $hub->hub_name.' · '.$hub->municipality.', '.$hub->province;
             } else {
                 $center = LogisticsBranch::query()->where('user_id', $request->user()->id)->whereNull('archived_at')->firstOrFail();
-                if (! $stagedOutbound) {
+                if (! $stagedOutbound && ! $stagedDraft) {
                     $this->scanAtCenter($shipment, $center, $input['action'], $buyerProvince, $buyerCity);
                 }
                 $location = $center->name.' · '.$center->province;
@@ -186,6 +198,7 @@ class ParcelRouteScanController extends Controller
                     ->wherePivotNull('received_at')
                     ->exists()) {
                     $inbound->update(['status' => 'arrived', 'arrived_at' => now()]);
+                    $this->releaseArrivedVehicle($inbound);
                     LogisticsTransferManifestEvent::query()->create([
                         'transfer_manifest_id' => $inbound->id,
                         'actor_user_id' => $request->user()->id,
@@ -215,16 +228,41 @@ class ParcelRouteScanController extends Controller
                     abort_unless($trip->origin_type === $destinationType && (int) $trip->origin_id === (int) $destinationId, 422, 'Return cargo must be routed back to the truck’s originating facility.');
                     $existingReturn = LogisticsTransferManifest::query()->where('returning_manifest_id', $trip->id)->first();
                     abort_if($existingReturn && $existingReturn->batch_key !== $batchKey, 409, 'This truck already has a return cargo assignment.');
-                } else {
-                    if ($facility === 'sorting_center' && $destinationType === 'sorting_center' && $hasCourierAssignment) {
-                        $arrivedTruck = LogisticsTransferManifest::query()
-                            ->where('origin_type', 'sorting_center')->where('origin_id', $destinationId)
-                            ->where('destination_type', 'sorting_center')->where('destination_id', $facilityId)
-                            ->where('status', 'arrived')
-                            ->whereNotIn('id', LogisticsTransferManifest::query()->whereNotNull('returning_manifest_id')->select('returning_manifest_id'))
-                            ->exists();
-                        abort_unless(! $arrivedTruck, 422, 'This sorting-center truck must be assigned return cargo to its origin center.');
+                    if ($facility === 'sorting_center' && $hasCourierAssignment) {
+                        abort_unless($courierId !== null && $vehicleId !== null, 422, 'Select both an approved courier and their registered vehicle.');
+                        $courier = CourierRegistration::query()->where('sorting_center_id', $facilityId)->where('status', 'approved')->lockForUpdate()->find($courierId);
+                        $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $facilityId)->lockForUpdate()->find($vehicleId);
+                        abort_unless($courier && $vehicle, 422, 'Select an approved courier and a Sorting Center vehicle.');
+                        $this->assertCourierVehicleAssignment($courier, $vehicle);
+                        abort_unless(mb_strtolower((string) $vehicle->availability) === 'available'
+                            || LogisticsTransferManifest::query()->where('batch_key', $batchKey)->where('vehicle_id', $vehicle->id)->whereIn('status', ['preparing', 'loaded'])->exists(), 422, 'The assigned truck is not available.');
+                        abort_if(LogisticsTransferManifest::query()
+                            ->whereIn('status', ['preparing', 'loaded'])
+                            ->where(function ($query) use ($batchKey): void {
+                                $query->whereNull('batch_key')->orWhere('batch_key', '!=', $batchKey);
+                            })
+                            ->where(function ($query) use ($courierId, $vehicleId): void {
+                                $query->where('courier_registration_id', $courierId)->orWhere('vehicle_id', $vehicleId);
+                            })
+                            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhereDate('scheduled_at', Carbon::parse($input['scheduled_at'])->toDateString()))
+                            ->exists(), 409, 'This courier or vehicle is already on another active trip.');
                     }
+                    if ($facility === 'delivery_hub' && $destinationType === 'sorting_center') {
+                        abort_unless($courierId !== null && $vehicleId !== null, 422, 'Select an available Sorting Center courier and registered vehicle.');
+                        $courier = CourierRegistration::query()->where('sorting_center_id', $destinationId)->where('status', 'approved')->lockForUpdate()->find($courierId);
+                        $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $destinationId)->lockForUpdate()->find($vehicleId);
+                        abort_unless($courier && $vehicle, 422, 'Select an approved Sorting Center courier and a Sorting Center vehicle.');
+                        $this->assertCourierVehicleAssignment($courier, $vehicle);
+                        abort_unless(mb_strtolower((string) $vehicle->availability) === 'available'
+                            || LogisticsTransferManifest::query()->where('batch_key', $batchKey)->where('vehicle_id', $vehicle->id)->whereIn('status', ['preparing', 'loaded'])->exists(), 422, 'The assigned truck is not available.');
+                        abort_if(LogisticsTransferManifest::query()
+                            ->whereIn('status', ['preparing', 'loaded'])
+                            ->where(fn ($query) => $query->whereNull('batch_key')->orWhere('batch_key', '!=', $batchKey))
+                            ->where(fn ($query) => $query->where('courier_registration_id', $courierId)->orWhere('vehicle_id', $vehicleId))
+                            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhereDate('scheduled_at', Carbon::parse($input['scheduled_at'])->toDateString()))
+                            ->exists(), 409, 'This courier or vehicle is already on another active trip.');
+                    }
+                } else {
                     if ($facility === 'sorting_center') {
                         if ($hasCourierAssignment) {
                             abort_unless($courierId !== null && $vehicleId !== null, 422, 'Select both an approved courier and their registered vehicle.');
@@ -233,7 +271,8 @@ class ParcelRouteScanController extends Controller
                             $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $centerId)->lockForUpdate()->find($vehicleId);
                             abort_unless($courier && $vehicle, 422, 'Select an approved courier and a Sorting Center vehicle.');
                             $this->assertCourierVehicleAssignment($courier, $vehicle);
-                            abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
+                            abort_unless(mb_strtolower((string) $vehicle->availability) === 'available'
+                                || LogisticsTransferManifest::query()->where('batch_key', $batchKey)->where('vehicle_id', $vehicle->id)->whereIn('status', ['preparing', 'loaded'])->exists(), 422, 'The assigned truck is not available.');
                             abort_if(LogisticsTransferManifest::query()
                                 ->whereIn('status', ['preparing', 'loaded'])
                                 ->where(function ($query) use ($batchKey): void {
@@ -243,7 +282,7 @@ class ParcelRouteScanController extends Controller
                                     $query->where('courier_registration_id', $courierId)
                                         ->orWhere('vehicle_id', $vehicleId);
                                 })
-                                ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhere('scheduled_at', $input['scheduled_at']))
+                                ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhereDate('scheduled_at', Carbon::parse($input['scheduled_at'])->toDateString()))
                                 ->exists(), 409, 'This courier or vehicle is already on another active trip.');
                         }
                     } elseif ($facility === 'delivery_hub' && $destinationType === 'sorting_center') {
@@ -263,7 +302,8 @@ class ParcelRouteScanController extends Controller
                             'Select an approved Sorting Center courier and a Sorting Center vehicle.',
                         );
                         $this->assertCourierVehicleAssignment($courier, $vehicle);
-                        abort_unless(mb_strtolower((string) $vehicle->availability) === 'available', 422, 'The assigned truck is not available.');
+                        abort_unless(mb_strtolower((string) $vehicle->availability) === 'available'
+                            || LogisticsTransferManifest::query()->where('batch_key', $batchKey)->where('vehicle_id', $vehicle->id)->whereIn('status', ['preparing', 'loaded'])->exists(), 422, 'The assigned truck is not available.');
                         abort_if(LogisticsTransferManifest::query()
                             ->whereIn('status', ['preparing', 'loaded'])
                             ->where(function ($query) use ($batchKey): void {
@@ -273,7 +313,7 @@ class ParcelRouteScanController extends Controller
                                 $query->where('courier_registration_id', $courierId)
                                     ->orWhere('vehicle_id', $vehicleId);
                             })
-                            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhere('scheduled_at', $input['scheduled_at']))
+                            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhereDate('scheduled_at', Carbon::parse($input['scheduled_at'])->toDateString()))
                             ->exists(), 409, 'This courier or vehicle is already on another active trip.');
                     }
                 }
@@ -282,11 +322,13 @@ class ParcelRouteScanController extends Controller
                     [
                         'origin_type' => $facility, 'origin_id' => $facilityId,
                         'destination_type' => $destinationType, 'destination_id' => $destinationId,
-                        'courier_registration_id' => $trip?->courier_registration_id ?? $input['courier_registration_id'] ?? null,
-                        'vehicle_id' => $trip?->vehicle_id ?? $input['vehicle_id'] ?? null,
-                        'courier_name' => $trip?->courier_name ?? ($courier ? trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name]))) : null),
-                        'vehicle_reference' => $trip?->vehicle_reference ?? $vehicle?->plate_number,
-                        'vehicle_type' => $trip?->vehicle_type ?? $vehicle?->type,
+                        'courier_registration_id' => $courier?->id ?? $input['courier_registration_id'] ?? $trip?->courier_registration_id,
+                        'vehicle_id' => $vehicle?->id ?? $input['vehicle_id'] ?? $trip?->vehicle_id,
+                        'courier_name' => $courier
+                            ? trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name])))
+                            : $trip?->courier_name,
+                        'vehicle_reference' => $vehicle?->plate_number ?? $trip?->vehicle_reference,
+                        'vehicle_type' => $vehicle?->type ?? $trip?->vehicle_type,
                         'assigned_by' => ($courier || $trip) ? $request->user()->id : null,
                         'assigned_at' => ($courier || $trip) ? now() : null,
                         'returning_manifest_id' => $trip?->id,
@@ -310,11 +352,11 @@ class ParcelRouteScanController extends Controller
                     // truck when Confirm Loaded is submitted.
                     $outbound->update(['returning_manifest_id' => $trip->id]);
                 }
-                abort_unless(
-                    (int) $outbound->returning_manifest_id === (int) ($trip?->id),
-                    409,
-                    'This batch is already assigned to another returning truck.',
-                );
+                if (! $trip && $outbound->returning_manifest_id) {
+                    $outbound->update(['returning_manifest_id' => null]);
+                }
+                abort_unless(! $trip || (int) $outbound->returning_manifest_id === (int) $trip->id, 409,
+                    'This batch is already assigned to another returning truck.');
                 if ($requiresCourierDeparture && ! empty($input['courier_registration_id'])) {
                     $outbound->update([
                         'courier_registration_id' => $input['courier_registration_id'],
@@ -328,21 +370,42 @@ class ParcelRouteScanController extends Controller
                         'status' => 'preparing',
                         'loaded_at' => now(),
                     ]);
+                    $vehicle->update(['availability' => 'In Service']);
+                }
+                if ($requiresCourierDeparture && $trip && empty($input['courier_registration_id'])) {
+                    $outbound->update([
+                        'assigned_by' => $request->user()->id,
+                        'assigned_at' => now(),
+                        'scheduled_at' => $input['scheduled_at'],
+                        'status' => 'preparing',
+                        'loaded_at' => now(),
+                    ]);
+                    if ($trip->vehicle_id) {
+                        SortingCenterVehicle::query()->whereKey($trip->vehicle_id)->update(['availability' => 'In Service']);
+                    }
+                }
+                if ($facility === 'delivery_hub' && $destinationType === 'sorting_center' && $vehicle) {
+                    $vehicle->update(['availability' => 'In Service']);
                 }
                 abort_if(
                     LogisticsTransferManifest::query()
                         ->whereIn('status', ['preparing', 'loaded'])
                         ->whereKeyNot($outbound->id)
+                        ->when($stagedDraft, fn ($query) => $query->whereKeyNot($stagedDraft->id))
                         ->whereHas('shipments', fn ($query) => $query->whereKey($shipment->id))
                         ->exists(),
                     409,
                     'This parcel is already assigned to another active transport manifest.',
                 );
+                if ($stagedDraft && $stagedDraft->id !== $outbound->id) {
+                    $stagedDraft->shipments()->detach($shipment->id);
+                }
+                $this->assertTruckParcelCapacity($outbound, $shipment->id, $trip?->id);
                 $outbound->shipments()->syncWithoutDetaching([
                     $shipment->id => [
-                        'load_status' => $requiresCourierDeparture && empty($input['courier_registration_id']) ? 'pending' : 'loaded',
-                        'loaded_at' => $requiresCourierDeparture && empty($input['courier_registration_id']) ? null : now(),
-                        'loaded_by' => $requiresCourierDeparture && empty($input['courier_registration_id']) ? null : $request->user()->id,
+                        'load_status' => $requiresCourierDeparture && empty($input['courier_registration_id']) && ! $trip ? 'pending' : 'loaded',
+                        'loaded_at' => $requiresCourierDeparture && empty($input['courier_registration_id']) && ! $trip ? null : now(),
+                        'loaded_by' => $requiresCourierDeparture && empty($input['courier_registration_id']) && ! $trip ? null : $request->user()->id,
                     ],
                 ]);
                 if (! $requiresCourierDeparture && $outbound->wasRecentlyCreated) {
@@ -563,6 +626,7 @@ class ParcelRouteScanController extends Controller
                     && $manifest->destination_type === 'sorting_center'
                     && (int) $manifest->destination_id === (int) $center->id,
                     409, 'This batch is already assigned to another route.');
+                $this->assertTruckParcelCapacity($manifest, $shipment->id);
                 $manifest->shipments()->syncWithoutDetaching([$shipment->id => [
                     'load_status' => 'loaded',
                     'loaded_at' => now(),
@@ -849,6 +913,7 @@ class ParcelRouteScanController extends Controller
             ->wherePivotNull('received_at')
             ->exists()) {
             $manifest->update(['status' => 'arrived', 'arrived_at' => now()]);
+            $this->releaseArrivedVehicle($manifest);
         }
 
         return $manifest;
@@ -901,8 +966,29 @@ class ParcelRouteScanController extends Controller
             ->where(fn ($query) => $query
                 ->where('courier_registration_id', $courierId)
                 ->orWhere('vehicle_id', $vehicleId))
-            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhere('scheduled_at', $scheduledAt))
+            ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhereDate('scheduled_at', Carbon::parse($scheduledAt)->toDateString()))
             ->exists(), 409, 'This courier or vehicle is already on another active trip.');
+    }
+
+    private function releaseArrivedVehicle(LogisticsTransferManifest $manifest): void
+    {
+        if (! $manifest->vehicle_id) {
+            return;
+        }
+
+        $vehicle = SortingCenterVehicle::query()->find($manifest->vehicle_id);
+        if (! $vehicle || mb_strtolower((string) $vehicle->availability) !== 'in service') {
+            return;
+        }
+
+        $stillAssigned = LogisticsTransferManifest::query()
+            ->where('vehicle_id', $vehicle->id)
+            ->whereIn('status', ['preparing', 'loaded'])
+            ->exists();
+
+        if (! $stillAssigned) {
+            $vehicle->update(['availability' => 'Available']);
+        }
     }
 
     private function returnForScan(string $code): ?OrderReturn
@@ -974,6 +1060,7 @@ class ParcelRouteScanController extends Controller
                     abort_unless($pivot && $pivot->pivot?->received_at === null, 409, 'This return has already been received at the seller delivery hub.');
                     $manifest->shipments()->updateExistingPivot($shipment->id, ['load_status' => 'loaded', 'received_at' => now(), 'received_by' => $request->user()->id]);
                     $manifest->update(['status' => 'arrived', 'arrived_at' => now()]);
+                    $this->releaseArrivedVehicle($manifest);
                     $locked->forceFill(['shipping_status' => 'received_at_seller_delivery_hub'])->save();
                     $shipment->update(['current_location' => $location, 'location_updated_at' => now()]);
                     $shipment->scans()->create(['status' => 'Received at Delivery Hub', 'location' => $location, 'scanned_at' => now()]);
@@ -1010,20 +1097,56 @@ class ParcelRouteScanController extends Controller
                     && (int) $locked->return_delivery_hub_id === (int) $hub->id,
                     409, 'Receive-scan this return at the buyer delivery hub before dispatch.');
                 abort_unless(! empty($input['scheduled_at']), 422, 'Choose a scheduled dispatch date and time.');
-                abort_unless(! empty($input['courier_name']) && ! empty($input['vehicle_reference']), 422,
-                    'Select a transfer courier and vehicle before dispatch.');
-
+                $courierId = (int) ($input['courier_registration_id'] ?? 0);
+                $vehicleId = (int) ($input['vehicle_id'] ?? 0);
+                abort_unless($courierId && $vehicleId, 422,
+                    'Select an available Sorting Center courier and its assigned vehicle before dispatch.');
+                $courier = CourierRegistration::query()->where('sorting_center_id', $destination->id)->where('status', 'approved')->lockForUpdate()->find($courierId);
+                $vehicle = SortingCenterVehicle::query()->where('sorting_center_id', $destination->id)->lockForUpdate()->find($vehicleId);
+                abort_unless($courier && $vehicle, 422, 'Select an approved Sorting Center courier and a Sorting Center vehicle.');
+                $this->assertCourierVehicleAssignment($courier, $vehicle);
                 $dispatchKey = trim((string) ($input['batch_key'] ?? '')) ?: 'buyer-return-dispatch-'.$locked->id;
+                $manifestBatchKey = substr($dispatchKey.'-buyer-return-'.$locked->id, 0, 100);
+                $returningTrip = null;
+                if (! empty($input['returning_manifest_id'])) {
+                    $returningTrip = LogisticsTransferManifest::query()->lockForUpdate()->findOrFail($input['returning_manifest_id']);
+                    abort_unless($returningTrip->status === 'arrived'
+                        && $returningTrip->destination_type === 'delivery_hub'
+                        && (int) $returningTrip->destination_id === (int) $hub->id
+                        && $returningTrip->origin_type === 'sorting_center'
+                        && (int) $returningTrip->origin_id === (int) $destination->id,
+                        422, 'The return cargo must link to an arrived inbound trip from this Sorting Center.');
+                    abort_if(LogisticsTransferManifest::query()->where('returning_manifest_id', $returningTrip->id)
+                        ->where('batch_key', 'not like', $dispatchKey.'-buyer-return-%')->exists(), 409,
+                        'This inbound trip already has a return-cargo dispatch.');
+                }
+                $sameBatchTransport = LogisticsTransferManifest::query()->where('batch_key', 'like', $dispatchKey.'-buyer-return-%')
+                    ->where('vehicle_id', $vehicleId)->whereIn('status', ['preparing', 'loaded'])->exists();
+                abort_unless(mb_strtolower((string) $vehicle->availability) === 'available' || $sameBatchTransport,
+                    422, 'The assigned truck is not available.');
+                abort_if(LogisticsTransferManifest::query()->whereIn('status', ['preparing', 'loaded'])
+                    ->where('batch_key', 'not like', $dispatchKey.'-buyer-return-%')
+                    ->where(fn ($query) => $query->where('courier_registration_id', $courierId)->orWhere('vehicle_id', $vehicleId))
+                    ->where(fn ($query) => $query->whereNull('scheduled_at')->orWhereDate('scheduled_at', Carbon::parse($input['scheduled_at'])->toDateString()))
+                    ->exists(), 409, 'This courier or vehicle is already on another active trip.');
+
                 $manifest = LogisticsTransferManifest::query()->create([
                     'order_return_id' => $locked->id,
-                    'batch_key' => substr($dispatchKey.'-buyer-return-'.$locked->id, 0, 100),
+                    'batch_key' => $manifestBatchKey,
                     'origin_type' => 'delivery_hub', 'origin_id' => $hub->id,
                     'destination_type' => 'sorting_center', 'destination_id' => $destination->id,
-                    'courier_registration_id' => $input['courier_registration_id'] ?? null,
-                    'vehicle_id' => $input['vehicle_id'] ?? null,
-                    'courier_name' => $input['courier_name'], 'vehicle_reference' => $input['vehicle_reference'],
+                    'courier_registration_id' => $courier->id,
+                    'vehicle_id' => $vehicle->id,
+                    'courier_name' => trim(implode(' ', array_filter([$courier->first_name, $courier->middle_name, $courier->last_name]))),
+                    'vehicle_reference' => $vehicle->plate_number,
+                    'vehicle_type' => $vehicle->type,
+                    'assigned_by' => $request->user()->id,
+                    'assigned_at' => now(),
+                    'returning_manifest_id' => $returningTrip?->id,
                     'status' => 'loaded', 'scheduled_at' => $input['scheduled_at'], 'loaded_at' => now(), 'departed_at' => now(),
                 ]);
+                $this->assertTruckParcelCapacity($manifest, $shipment->id, $returningTrip?->id);
+                $vehicle->update(['availability' => 'In Service']);
                 $shipment->update(['logistics_branch_id' => $destination->id, 'logistics_delivery_hub_id' => null,
                     'current_location' => $location, 'location_updated_at' => now()]);
                 $manifest->shipments()->syncWithoutDetaching([$shipment->id => ['load_status' => 'loaded', 'loaded_at' => now(),
@@ -1072,6 +1195,7 @@ class ParcelRouteScanController extends Controller
                     'received_at' => now(), 'received_by' => $request->user()->id,
                 ]);
                 $manifest->update(['status' => 'arrived', 'arrived_at' => now()]);
+                $this->releaseArrivedVehicle($manifest);
                 $sellerReached = $this->same($center->province, $sellerProvince);
                 $returnStatus = $sellerReached ? 'received_at_sorting_center' : 'received_at_intermediate_sorting_center';
                 $locked->forceFill(['shipping_status' => $returnStatus])->save();
@@ -1177,6 +1301,7 @@ class ParcelRouteScanController extends Controller
                 'assigned_at' => now(),
                 'scheduled_at' => $input['scheduled_at'], 'status' => 'loaded', 'loaded_at' => now(), 'departed_at' => now(),
             ]);
+            $this->assertTruckParcelCapacity($outbound, $shipment->id, $returningTrip?->id);
             $outbound->shipments()->syncWithoutDetaching([$shipment->id => [
                 'load_status' => 'loaded', 'loaded_at' => now(), 'loaded_by' => $request->user()->id,
                 'received_at' => null, 'received_by' => null,
@@ -1792,29 +1917,40 @@ class ParcelRouteScanController extends Controller
                                 ? 'failed-delivery-return-'.$shipment->order_id
                                 : 'shipment-'.$shipment->id))->values(),
                         'parcels' => $transfer->shipments->map(function (Shipment $shipment) use ($id, $transfer, $nextStop): array {
-                            $inboundId = $shipment->transferManifests()
+                            $inboundManifest = $shipment->transferManifests()
                                 ->where('destination_type', 'sorting_center')
                                 ->where('destination_id', $id)
                                 ->wherePivotNotNull('received_at')
                                 ->latest('logistics_transfer_manifests.id')
-                                ->value('logistics_transfer_manifests.id');
+                                ->first(['logistics_transfer_manifests.id', 'origin_type', 'origin_id']);
+                            $inboundId = $inboundManifest?->id;
                             $isFailedDeliveryReturn = ! $transfer->order_return_id
                                 && in_array($shipment->return_to_seller_status, self::FAILED_DELIVERY_RETURN_STATUSES, true);
                             $parcelId = $transfer->order_return_id
                                 ? 'return-'.$transfer->order_return_id
                                 : ($isFailedDeliveryReturn ? 'failed-delivery-return-'.$shipment->order_id : 'shipment-'.$shipment->id);
+                            $isLoaded = $shipment->pivot?->load_status === 'loaded';
                             $payload = $transfer->order_return_id && $transfer->orderReturn
-                                ? $this->returnTransferPayload($transfer->orderReturn, $shipment, $transfer, true)
+                                ? $this->returnTransferPayload($transfer->orderReturn, $shipment, $transfer, $isLoaded)
                                 : ($isFailedDeliveryReturn
-                                    ? $this->failedDeliveryReturnPayload($shipment, $parcelId, $transfer->courier_registration_id ? 'loaded' : 'staged', $id, $transfer->id)
-                                    : $this->parcelPayload($shipment, $parcelId, $transfer->courier_registration_id ? 'loaded' : 'staged', $id, $transfer->id));
+                                    ? $this->failedDeliveryReturnPayload($shipment, $parcelId, $isLoaded ? 'loaded' : 'staged', $id, $transfer->id)
+                                    : $this->parcelPayload($shipment, $parcelId, $isLoaded ? 'loaded' : 'staged', $id, $transfer->id));
                             $payload['currentCenterId'] = (string) $id;
-                            $payload['status'] = $transfer->courier_registration_id ? 'loaded' : 'staged';
-                            $payload['nextCenterId'] = $transfer->destination_type === 'sorting_center' && ! $transfer->courier_registration_id
+                            $payload['status'] = $isLoaded ? 'loaded' : 'staged';
+                            $payload['nextCenterId'] = $transfer->destination_type === 'sorting_center' && ! $isLoaded
                                 ? (string) $transfer->destination_id
                                 : null;
-                            $payload['nextStop'] = $transfer->courier_registration_id ? null : $nextStop;
+                            $payload['nextStop'] = $isLoaded ? null : $nextStop;
                             $payload['receivedManifestId'] = $inboundId ? (string) $inboundId : null;
+                            $payload['returnManifestId'] = $inboundId && $inboundManifest->origin_type === 'sorting_center'
+                                ? (string) $inboundId
+                                : null;
+                            $payload['returnToCenterId'] = $inboundManifest?->origin_type === 'sorting_center'
+                                ? (string) $inboundManifest->origin_id
+                                : null;
+                            $payload['returnToCenterName'] = $inboundManifest?->origin_type === 'sorting_center'
+                                ? $this->facilityName('sorting_center', (int) $inboundManifest->origin_id)
+                                : null;
                             $payload['departureBatchKey'] = $transfer->batch_key;
                             $payload['loadedFromId'] = (string) $id;
                             $payload['loadedFromName'] = $this->facilityName('sorting_center', $id);
@@ -1862,18 +1998,22 @@ class ParcelRouteScanController extends Controller
             'staged_departures' => $stagedDepartures,
             'return_trucks' => $transfers->where('status', 'arrived')->filter(fn ($transfer) =>
                 $transfer->origin_type === 'sorting_center'
-                && $transfer->destination_type === 'sorting_center'
+                && $transfer->destination_type === $facility
+                && (int) $transfer->destination_id === (int) $id
                 && ! in_array($transfer->id, $assignedReturnIds, true)
-            )->map(fn ($transfer) => [
+            )->values()->map(fn ($transfer) => [
                 'id' => $transfer->id,
                 'origin_id' => $transfer->origin_id,
                 'origin_type' => $transfer->origin_type,
                 'courier_name' => $transfer->courier_name,
+                'courier_phone' => $transfer->courierRegistration?->phone,
                 'courier_registration_id' => $transfer->courier_registration_id,
                 'vehicle_id' => $transfer->vehicle_id,
                 'vehicle_reference' => $transfer->vehicle_reference,
                 'vehicle_type' => $transfer->vehicle_type,
                 'origin_name' => $this->facilityName($transfer->origin_type, $transfer->origin_id),
+                'destination_type' => $transfer->destination_type,
+                'destination_id' => $transfer->destination_id,
             ])->values(),
             'centers' => $facility === 'sorting_center'
                 ? LogisticsBranch::query()->where('logistics_id', $node->logistics_id)->where('status', 'active')->whereNull('archived_at')
@@ -2345,6 +2485,34 @@ class ParcelRouteScanController extends Controller
             ])
             ->sort(fn (array $left, array $right): int => [$left['load'], $left['rider']->id] <=> [$right['load'], $right['rider']->id])
             ->first()['rider'] ?? null;
+    }
+
+    private function assertTruckParcelCapacity(LogisticsTransferManifest $manifest, int $shipmentId, ?int $returningManifestId = null): void
+    {
+        $buyerReturnBatch = preg_match('/^(.*)-buyer-return-\d+$/', (string) $manifest->batch_key, $matches)
+            ? $matches[1]
+            : null;
+        $loadedParcels = DB::table('logistics_transfer_manifest_shipments as manifest_shipments')
+            ->join('logistics_transfer_manifests as manifests', 'manifests.id', '=', 'manifest_shipments.transfer_manifest_id')
+            ->where('manifest_shipments.load_status', 'loaded')
+            ->when($returningManifestId, fn ($query) => $query->where('manifests.returning_manifest_id', $returningManifestId),
+                fn ($query) => $buyerReturnBatch
+                    ? $query->where('manifests.batch_key', 'like', $buyerReturnBatch.'-buyer-return-%')
+                    : $query->where('manifest_shipments.transfer_manifest_id', $manifest->id))
+            ->count();
+
+        $alreadyLoaded = DB::table('logistics_transfer_manifest_shipments as manifest_shipments')
+            ->join('logistics_transfer_manifests as manifests', 'manifests.id', '=', 'manifest_shipments.transfer_manifest_id')
+            ->where('shipment_id', $shipmentId)
+            ->where('manifest_shipments.load_status', 'loaded')
+            ->when($returningManifestId, fn ($query) => $query->where('manifests.returning_manifest_id', $returningManifestId),
+                fn ($query) => $buyerReturnBatch
+                    ? $query->where('manifests.batch_key', 'like', $buyerReturnBatch.'-buyer-return-%')
+                    : $query->where('manifest_shipments.transfer_manifest_id', $manifest->id))
+            ->exists();
+
+        abort_if(! $alreadyLoaded && $loadedParcels >= self::MAX_PARCELS_PER_TRUCK, 422,
+            'A truck can carry a maximum of 1,000 parcels. The remaining parcels must be assigned to another trip.');
     }
 
     private function same(?string $left, ?string $right): bool
