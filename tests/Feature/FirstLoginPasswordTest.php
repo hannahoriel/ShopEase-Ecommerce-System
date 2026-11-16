@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Logistics\Logistics;
+use App\Models\Logistics\LogisticsBranch;
+use App\Models\Logistics\LogisticsDeliveryHub;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -25,6 +28,51 @@ class FirstLoginPasswordTest extends TestCase
             'password' => $temporary,
             'must_change_password' => true,
         ]);
+
+        if ($role === User::ROLE_DELIVERY_HUB) {
+            $companyUser = User::create([
+                'name' => 'Provisioned Logistics',
+                'email' => 'provisioned-logistics@example.test',
+                'role' => User::ROLE_LOGISTICS,
+                'registration_status' => 'active',
+                'password' => $temporary,
+            ]);
+            $company = Logistics::create([
+                'user_id' => $companyUser->id,
+                'last_name' => 'Logistics', 'first_name' => 'Provisioned', 'sex' => 'other',
+                'contact_no' => '09170000000', 'birthday' => '1990-01-01', 'age' => 36,
+                'province' => 'Laguna', 'municipality' => 'Pila', 'barangay' => 'Poblacion',
+                'street' => 'Main Street', 'house_number' => '1',
+                'business_name' => 'Provisioned Logistics', 'registration_status' => 'active',
+            ]);
+            $centerUser = User::create([
+                'name' => 'Provisioned Sorting Center',
+                'email' => 'provisioned-center@example.test',
+                'role' => User::ROLE_SORTING_CENTER,
+                'registration_status' => 'active',
+                'password' => $temporary,
+            ]);
+            $branch = LogisticsBranch::create([
+                'logistics_id' => $company->id,
+                'user_id' => $centerUser->id,
+                'name' => 'Provisioned Sorting Center',
+                'address' => 'Pila, Laguna',
+                'province' => 'Laguna',
+                'municipality' => 'Pila',
+                'status' => 'active',
+            ]);
+            LogisticsDeliveryHub::create([
+                'logistics_branch_id' => $branch->id,
+                'user_id' => $user->id,
+                'hub_name' => 'Provisioned Delivery Hub',
+                'province' => 'Laguna', 'municipality' => 'Pila', 'barangay' => 'Poblacion',
+                'postal_code' => '4010', 'street' => 'Main Street',
+                'manager_name' => 'Hub Manager', 'manager_email' => $user->email,
+                'manager_phone' => '09170000001', 'login_email' => $user->email,
+                'status' => 'active',
+            ]);
+        }
+
         $credentials = ['email' => $user->email, 'password' => $temporary, 'remember' => '0'];
 
         $this->postJson(route('login.first-password'), [
