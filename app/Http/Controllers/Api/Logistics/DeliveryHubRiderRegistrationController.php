@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Logistics;
 use App\Http\Controllers\Controller;
 use App\Http\Services\DeliveryHubRiderRegistrationService;
 use App\Models\Admin\Registration;
+use App\Models\Logistics\CourierRegistration;
 use App\Models\Logistics\DeliveryHubRiderRegistration;
 use App\Models\Logistics\LogisticsDeliveryHub;
 use App\Models\Rider\Rider;
@@ -263,11 +264,14 @@ class DeliveryHubRiderRegistrationController extends Controller
 
         $riders = Rider::query()
             ->with('user')
-            ->where('registration_type', 'rider')
+            ->where(fn (Builder $query) => $query
+                ->where('registration_type', 'rider')
+                ->orWhereNull('registration_type'))
             ->where('registration_status', 'pending')
             ->whereHas('user', fn (Builder $user) => $user
                 ->where('role', User::ROLE_RIDER)
                 ->where('registration_status', 'pending'))
+            ->whereNotIn('user_id', CourierRegistration::query()->select('user_id'))
             ->get();
 
         foreach ($riders as $rider) {
