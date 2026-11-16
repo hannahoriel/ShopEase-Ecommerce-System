@@ -39,6 +39,7 @@
 #logisticsCompanyForm #passwordConfirmationError:not(.show){display:none!important;}
 #logisticsCompanyForm #password_confirmation.password-mismatch{border:1px solid #d44853!important;box-shadow:0 0 0 2px rgba(212,72,83,.12)!important;}
 </style>
+<script src="{{ asset('js/registration-provinces.js') }}"></script>
 </head>
 <body>
 <div class="registration-page">
@@ -80,25 +81,7 @@
           <h2 class="section-heading">Registered Office Address</h2>
           <p class="section-caption">Enter the address of the company's registered head office.</p>
 <div class="logistics-address-five">
-<div class="form-group"><label class="form-label" for="region">Region <span class="required">*</span></label><select id="region" name="region" class="form-input" required><option value="">Select region</option>
-<option value="National Capital Region (NCR)" @selected(old('region', $companyData['region'] ?? '') === 'National Capital Region (NCR)')>National Capital Region (NCR)</option>
-<option value="Cordillera Administrative Region (CAR)" @selected(old('region', $companyData['region'] ?? '') === 'Cordillera Administrative Region (CAR)')>Cordillera Administrative Region (CAR)</option>
-<option value="Region I (Ilocos Region)" @selected(old('region', $companyData['region'] ?? '') === 'Region I (Ilocos Region)')>Region I (Ilocos Region)</option>
-<option value="Region II (Cagayan Valley)" @selected(old('region', $companyData['region'] ?? '') === 'Region II (Cagayan Valley)')>Region II (Cagayan Valley)</option>
-<option value="Region III (Central Luzon)" @selected(old('region', $companyData['region'] ?? '') === 'Region III (Central Luzon)')>Region III (Central Luzon)</option>
-<option value="Region IV-A (CALABARZON)" @selected(old('region', $companyData['region'] ?? '') === 'Region IV-A (CALABARZON)')>Region IV-A (CALABARZON)</option>
-<option value="MIMAROPA Region" @selected(old('region', $companyData['region'] ?? '') === 'MIMAROPA Region')>MIMAROPA Region</option>
-<option value="Region V (Bicol Region)" @selected(old('region', $companyData['region'] ?? '') === 'Region V (Bicol Region)')>Region V (Bicol Region)</option>
-<option value="Region VI (Western Visayas)" @selected(old('region', $companyData['region'] ?? '') === 'Region VI (Western Visayas)')>Region VI (Western Visayas)</option>
-<option value="Region VII (Central Visayas)" @selected(old('region', $companyData['region'] ?? '') === 'Region VII (Central Visayas)')>Region VII (Central Visayas)</option>
-<option value="Region VIII (Eastern Visayas)" @selected(old('region', $companyData['region'] ?? '') === 'Region VIII (Eastern Visayas)')>Region VIII (Eastern Visayas)</option>
-<option value="Region IX (Zamboanga Peninsula)" @selected(old('region', $companyData['region'] ?? '') === 'Region IX (Zamboanga Peninsula)')>Region IX (Zamboanga Peninsula)</option>
-<option value="Region X (Northern Mindanao)" @selected(old('region', $companyData['region'] ?? '') === 'Region X (Northern Mindanao)')>Region X (Northern Mindanao)</option>
-<option value="Region XI (Davao Region)" @selected(old('region', $companyData['region'] ?? '') === 'Region XI (Davao Region)')>Region XI (Davao Region)</option>
-<option value="Region XII (SOCCSKSARGEN)" @selected(old('region', $companyData['region'] ?? '') === 'Region XII (SOCCSKSARGEN)')>Region XII (SOCCSKSARGEN)</option>
-<option value="Region XIII (Caraga)" @selected(old('region', $companyData['region'] ?? '') === 'Region XIII (Caraga)')>Region XIII (Caraga)</option>
-<option value="Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)" @selected(old('region', $companyData['region'] ?? '') === 'Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)')>Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)</option>
-</select><small class="client-error" data-error-for="region">{{ $errors->first('region') }}</small></div>
+<x-shared.registration-region :selected="old('region', $companyData['region'] ?? '')" />
 <div class="form-group"><label class="form-label" for="provinceSearch">Province <span class="required">*</span></label><div class="lg-location" data-location="province"><input id="provinceSearch" class="form-input lg-location-search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="provinceOptions" placeholder="Type to search province" value="{{ old('province', $companyData['province'] ?? '') }}"><span class="lg-location-arrow" aria-hidden="true"></span><div id="provinceOptions" class="lg-location-options" role="listbox"></div></div><input type="hidden" id="province" name="province" value="{{ old('province', $companyData['province'] ?? '') }}" required><small class="client-error" data-error-for="province">{{ $errors->first('province') }}</small></div>
 <div class="form-group"><label class="form-label" for="citySearch">City / Municipality <span class="required">*</span></label><div class="lg-location" data-location="city"><input id="citySearch" class="form-input lg-location-search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="cityOptions" placeholder="Select province first" disabled value="{{ old('city', $companyData['city'] ?? '') }}"><span class="lg-location-arrow" aria-hidden="true"></span><div id="cityOptions" class="lg-location-options" role="listbox"></div></div><input type="hidden" id="city" name="city" value="{{ old('city', $companyData['city'] ?? '') }}" required><small class="client-error" data-error-for="city">{{ $errors->first('city') }}</small></div>
 <div class="form-group"><label class="form-label" for="barangaySearch">Barangay <span class="required">*</span></label><div class="lg-location" data-location="barangay"><input id="barangaySearch" class="form-input lg-location-search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="barangayOptions" placeholder="Select municipality first" disabled value="{{ old('barangay', $companyData['barangay'] ?? '') }}"><span class="lg-location-arrow" aria-hidden="true"></span><div id="barangayOptions" class="lg-location-options" role="listbox"></div></div><input type="hidden" id="barangay" name="barangay" value="{{ old('barangay', $companyData['barangay'] ?? '') }}" required><small class="client-error" data-error-for="barangay">{{ $errors->first('barangay') }}</small></div>

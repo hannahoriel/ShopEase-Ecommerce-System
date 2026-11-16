@@ -36,16 +36,30 @@
   const reset=(type,placeholder)=>{const c=controls[type];c.items=[];c.chosen=null;c.hidden.value='';c.search.value='';c.search.disabled=true;c.search.placeholder=placeholder;c.close()};
   async function changeProvince(o){reset('city','Loading municipalities...');reset('barangay','Select municipality first');const p=locationCode(o);if(!p)return;try{const suffix=o.isRegion===true?'?is_region=1':'';const items=await load('provinces/'+encodeURIComponent(p)+'/cities'+suffix);if(controls.province.chosen!==o)return;controls.city.items=items;controls.city.search.disabled=false;controls.city.search.placeholder='Type to search municipality'}catch(e){console.error(e);controls.city.search.placeholder='Unable to load municipalities'}}
   async function changeCity(o){reset('barangay','Loading barangays...');const code=locationCode(o);if(!code)return;try{const items=await load('cities/'+encodeURIComponent(code)+'/barangays');if(controls.city.chosen!==o)return;controls.barangay.items=items;controls.barangay.search.disabled=false;controls.barangay.search.placeholder='Type to search barangay'}catch(e){console.error(e);controls.barangay.search.placeholder='Unable to load barangays'}}
+  const region = document.getElementById('region');
+  let addressRevision = 0;
   async function initialize(){
+    const revision = ++addressRevision;
     const saved={province:controls.province.hidden.value,city:controls.city.hidden.value,barangay:controls.barangay.hidden.value};
+    reset('province','Select region first');
     reset('city','Select province first');reset('barangay','Select municipality first');
     const p=controls.province;p.search.placeholder='Loading provinces...';p.search.disabled=true;
     try{
-      p.items=await load('provinces');p.search.disabled=false;p.search.placeholder='Type to search province';
-      if(saved.province){const obj=p.items.find(o=>locationName(o).toLocaleLowerCase()===saved.province.toLocaleLowerCase());if(obj){p.select(obj);await waitUntilEnabled(controls.city);if(saved.city){const city=controls.city.items.find(o=>locationName(o).toLocaleLowerCase()===saved.city.toLocaleLowerCase());if(city){controls.city.select(city);await waitUntilEnabled(controls.barangay);if(saved.barangay){const brgy=controls.barangay.items.find(o=>locationName(o).toLocaleLowerCase()===saved.barangay.toLocaleLowerCase());if(brgy)controls.barangay.select(brgy)}}}}}
-    }catch(e){console.error('ShopEase location lookup:',e);p.search.placeholder='Unable to load provinces';p.search.disabled=false}
+      const items = await window.loadRegistrationProvinces(region, load, saved.province);
+      if (revision !== addressRevision) return;
+      p.items = items;
+      p.search.disabled = items.length === 0;
+      p.search.placeholder = items.length ? 'Type to search province' : 'Select region first';
+      if(saved.province){const obj=p.items.find(o=>locationName(o).toLocaleLowerCase()===saved.province.toLocaleLowerCase());if(obj){p.select(obj);await waitUntilEnabled(controls.city);if(revision!==addressRevision)return;if(saved.city){const city=controls.city.items.find(o=>locationName(o).toLocaleLowerCase()===saved.city.toLocaleLowerCase());if(city){controls.city.select(city);await waitUntilEnabled(controls.barangay);if(revision!==addressRevision)return;if(saved.barangay){const brgy=controls.barangay.items.find(o=>locationName(o).toLocaleLowerCase()===saved.barangay.toLocaleLowerCase());if(brgy)controls.barangay.select(brgy)}}}}}
+    }catch(e){if(revision!==addressRevision)return;console.error('ShopEase location lookup:',e);p.search.placeholder='Unable to load provinces'}
   }
   async function waitUntilEnabled(c){for(let i=0;i<80;i++){if(!c.search.disabled)return;await new Promise(resolve=>setTimeout(resolve,50))}}
+  region.addEventListener('change', () => {
+    reset('province','Select region first');
+    reset('city','Select province first');
+    reset('barangay','Select municipality first');
+    initialize();
+  });
   initialize();
 })();
 
