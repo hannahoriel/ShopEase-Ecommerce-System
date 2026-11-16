@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Http\Services\RegistrationService;
+use App\Services\AccountLoginEligibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,6 +65,10 @@ class AuthController extends Controller
 
         $registrationStatus = $user->registration_status;
 
+        if ($disabledReason = app(AccountLoginEligibility::class)->disabledReason($user)) {
+            throw ValidationException::withMessages(['email' => $disabledReason]);
+        }
+
         if ($user->role !== User::ROLE_ADMIN
             && in_array($registrationStatus, ['pending', 'rejected'], true)) {
             throw ValidationException::withMessages([
@@ -112,7 +117,8 @@ class AuthController extends Controller
             $user = User::query()->lockForUpdate()->find($challenge['user_id']);
             if (! $user?->must_change_password
                 || ! hash_equals($challenge['fingerprint'], hash('sha256', $user->getAuthPassword()))
-                || in_array($user->registration_status, ['pending', 'rejected'], true)) {
+                || in_array($user->registration_status, ['pending', 'rejected'], true)
+                || app(AccountLoginEligibility::class)->disabledReason($user) !== null) {
                 throw ValidationException::withMessages(['password' => 'Log in again to continue.']);
             }
             if (strlen($data['password']) > 72 || Hash::check($data['password'], $user->getAuthPassword())) {
