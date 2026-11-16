@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class DeliveryHubRiderRegistrationTest extends TestCase
@@ -122,6 +123,43 @@ class DeliveryHubRiderRegistrationTest extends TestCase
         $this->patchJson('/api/v1/delivery_hub/rider-registrations/'.$application->id.'/decision', ['status' => 'approved'])
             ->assertNotFound();
         $this->assertDatabaseHas('users', ['id' => $applicant->id, 'registration_status' => 'pending']);
+    }
+
+    public function test_legacy_pending_rider_is_restored_even_when_unlinked_courier_rows_exist(): void
+    {
+        [$hubUser, $hub] = $this->makeHub();
+        $applicant = User::query()->create([
+            'name' => 'Legacy Rider', 'email' => 'legacy.rider@example.test', 'password' => 'password',
+            'role' => User::ROLE_RIDER, 'registration_status' => 'pending',
+        ]);
+        Rider::query()->create([
+            'user_id' => $applicant->id, 'first_name' => 'Legacy', 'last_name' => 'Rider', 'sex' => 'other',
+            'contact_no' => '09170000009', 'birthday' => '1998-01-01', 'age' => 28, 'province' => 'Laguna',
+            'municipality' => 'Pila', 'barangay' => 'Poblacion', 'street' => 'Main', 'house_number' => '1',
+            'vehicle' => 'Motorcycle', 'plate_number' => 'LEG 1234', 'municipal_hub' => $hub->hub_name,
+            'registration_type' => 'rider', 'registration_status' => 'pending',
+        ]);
+        DB::table('courier_registrations')->insert([
+            'sorting_center_id' => $hub->logistics_branch_id,
+            'user_id' => null,
+            'first_name' => 'Old', 'last_name' => 'Courier', 'email' => 'old.courier@example.test',
+            'phone' => '09170000010', 'plate_number' => 'OLD 1234',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($hubUser)->getJson('/api/v1/delivery_hub/rider-registrations')
+            ->assertOk()
+            ->assertJsonPath('data.0.email', $applicant->email)
+            ->assertJsonPath('data.0.status', 'pending');
+        $this->get(route('delivery-hub.rider-registrations'))
+            ->assertOk()
+            ->assertSee($applicant->email);
+
+        $this->assertDatabaseHas('delivery_hub_rider_registrations', [
+            'user_id' => $applicant->id,
+            'logistics_delivery_hub_id' => $hub->id,
+            'status' => 'pending',
+        ]);
     }
 
     public function test_delivery_hub_rejection_requires_a_reason_and_blocks_login(): void

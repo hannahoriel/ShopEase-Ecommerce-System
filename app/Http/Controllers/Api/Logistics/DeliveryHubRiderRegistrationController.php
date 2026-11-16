@@ -271,7 +271,12 @@ class DeliveryHubRiderRegistrationController extends Controller
             ->whereHas('user', fn (Builder $user) => $user
                 ->where('role', User::ROLE_RIDER)
                 ->where('registration_status', 'pending'))
-            ->whereNotIn('user_id', CourierRegistration::query()->select('user_id'))
+            // SQL `NOT IN` returns no matches when the subquery contains NULL.
+            // Older courier rows may not have a linked user, so exclude only
+            // courier registrations that actually identify a user.
+            ->whereNotIn('user_id', CourierRegistration::query()
+                ->whereNotNull('user_id')
+                ->select('user_id'))
             ->get();
 
         foreach ($riders as $rider) {
