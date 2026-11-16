@@ -253,7 +253,7 @@ class SellerComplianceTest extends TestCase
             ->assertJsonPath('summary.under_review', 1)
             ->assertJsonPath('data.0.store_name', 'AnaCart')
             ->assertJsonPath('data.0.compliance', 'under-review')
-            ->assertJsonPath('data.0.compliance_score', 95)
+            ->assertJsonPath('data.0.compliance_score', 100)
             ->assertJsonPath('data.0.complaints_open', 1)
             ->assertJsonPath('data.0.products.0.name', 'Sample Product')
             ->assertJsonPath('data.0.products.0.status', 'pending')
@@ -478,6 +478,9 @@ class SellerComplianceTest extends TestCase
             ->assertJsonPath('data.status', 'archived')
             ->assertJsonPath('data.archived_by_admin', true)
             ->assertJsonPath('data.archive_reason', 'Prohibited product');
+
+        $this->getJson("/api/v1/admin/seller-compliance/{$seller->id}")
+            ->assertOk()->assertJsonPath('data.compliance_score', 99.7);
 
         $this->assertDatabaseHas('products', [
             'id' => $product->id,

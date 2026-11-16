@@ -14,17 +14,19 @@ class SellerComplianceService
     public const SUSPENSION_THRESHOLD = 75.0;
     public const AUTOMATIC_SUSPENSION_DAYS = 3;
 
-    public static function scoreFromCounts(int $reviewCount, int $atFaultComplaintCount): float
+    public static function scoreFromCounts(int $rejectedProductCount, int $atFaultComplaintCount): float
     {
-        return max(0, 100 - ($reviewCount * 5) - ($atFaultComplaintCount * 0.5));
+        return max(0.0, round(100 - ($rejectedProductCount * 0.3) - ($atFaultComplaintCount * 0.5), 1));
     }
 
     public function scoreFor(Seller $seller): float
     {
-        $reviewCount = Product::query()
+        $rejectedProductCount = Product::query()
             ->where('seller_id', $seller->id)
-            ->where('is_archived', false)
-            ->whereRaw('LOWER(status) IN (?, ?, ?)', ['pending', 'under_review', 'review'])
+            ->where('is_archived', true)
+            ->where('archived_by_admin', true)
+            ->whereNotNull('archive_reason')
+            ->whereRaw("TRIM(archive_reason) <> ''")
             ->count();
 
         $atFaultComplaintCount = Complaint::query()
@@ -50,7 +52,7 @@ class SellerComplianceService
                 ->where('orders.seller_id', $seller->id)->where('issues.admin_decision', 'seller_fault')->count();
         }
 
-        return self::scoreFromCounts($reviewCount, $atFaultComplaintCount + $atFaultParcelReports);
+        return self::scoreFromCounts($rejectedProductCount, $atFaultComplaintCount + $atFaultParcelReports);
     }
 
     public function applyAutomaticSuspension(Seller $seller, float $score): array

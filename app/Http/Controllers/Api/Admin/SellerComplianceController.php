@@ -309,18 +309,6 @@ class SellerComplianceController extends Controller
 
             ->groupBy('order_id');
 
-        $atFaultComplaintsByOrder = Complaint::query()
-            ->whereIn(
-                'order_id',
-                $orderIdsBySeller
-                    ->flatten()
-                    ->pluck('id')
-            )
-            ->where('seller_at_fault', true)
-            ->get(['order_id'])
-            ->groupBy('order_id');
-
-
         /*
         |--------------------------------------------------------------------------
         | BUILD SELLER ROWS
@@ -330,8 +318,7 @@ class SellerComplianceController extends Controller
         $rows = $sellers->map(
             function (Seller $seller) use (
                 $orderIdsBySeller,
-                $complaintsByOrder,
-                $atFaultComplaintsByOrder
+                $complaintsByOrder
             ): array {
 
                 $reviewProducts =
@@ -378,17 +365,10 @@ class SellerComplianceController extends Controller
                                 ->count()
                     );
 
-                $atFaultComplaintCount = $orderIds->sum(
-                    fn ($orderId): int => $atFaultComplaintsByOrder
-                        ->get($orderId, collect())
-                        ->count()
-                );
-
                 $compliance =
                     $this->complianceFor(
                         $seller,
                         $reviewProducts->count(),
-                        $atFaultComplaintCount,
                         $warningProducts->count(),
                         $complaintCount
                     );
@@ -754,12 +734,6 @@ class SellerComplianceController extends Controller
 
             ->count();
 
-        $atFaultComplaintCount = Complaint::query()
-            ->whereIn('order_id', $orderIds)
-            ->where('seller_at_fault', true)
-            ->count();
-
-
         $reviewCount =
             $seller->products
                 ->filter(
@@ -785,8 +759,7 @@ class SellerComplianceController extends Controller
                 $this->sellerPayload(
                     $seller,
                     $reviewCount,
-                    $complaintCount,
-                    $atFaultComplaintCount
+                    $complaintCount
                 ),
 
         ]);
@@ -1012,15 +985,13 @@ class SellerComplianceController extends Controller
     private function sellerPayload(
         Seller $seller,
         int $reviewCount,
-        int $complaintCount,
-        int $atFaultComplaintCount
+        int $complaintCount
     ): array {
 
         $compliance =
             $this->complianceFor(
                 $seller,
                 $reviewCount,
-                $atFaultComplaintCount,
                 $seller->products
                     ->filter(
                         fn ($product): bool =>
@@ -1180,12 +1151,11 @@ class SellerComplianceController extends Controller
     private function complianceFor(
         Seller $seller,
         int $reviewCount,
-        int $atFaultComplaintCount,
         int $warningCount = 0,
         int $openComplaintCount = 0
     ): array {
 
-        $score = SellerComplianceService::scoreFromCounts($reviewCount, $atFaultComplaintCount);
+        $score = app(SellerComplianceService::class)->scoreFor($seller);
 
         if (in_array($seller->registration_status, ['suspended', 'rejected'], true)) {
             return ['status' => 'suspended', 'label' => 'Suspended', 'score' => $score];

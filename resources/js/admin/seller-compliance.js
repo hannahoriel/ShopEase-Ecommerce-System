@@ -337,8 +337,8 @@ function initSellerCompliance(cfg) {
         flashEl.classList.remove('show');
     }
 
-    function showFlash(type, value) {
-        if (deferFlashUntilModalCloses(showFlash, () => showFlash(type, value))) return;
+    function showFlash(type, value, showOverModal = false) {
+        if (!showOverModal && deferFlashUntilModalCloses(showFlash, () => showFlash(type, value))) return;
         if (!flashEl) return;
 
         const [title, message] =
@@ -404,17 +404,23 @@ function initSellerCompliance(cfg) {
     }
 
     // Keep category slugs for filtering/CSS, but display human-friendly names.
-    function categoryLabel(value) {
-        const slug = String(value ?? '').trim()
-            .toLowerCase()
+    function categoryKey(value) {
+        const key = String(value ?? '').trim().toLowerCase()
+            .replace(/['’]/g, '')
             .replace(/&/g, 'and')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '');
+        return key === 'automotive-and-motorcycle' ? 'automotive-motorcycle' : key;
+    }
+
+    function categoryLabel(value) {
+        const slug = categoryKey(value);
 
         const special = {
             'womens-apparel': "Women's Apparel",
             'mens-apparel': "Men's Apparel",
             'kids-and-baby': 'Kids & Baby',
+            'automotive-motorcycle': 'Automotive & Motorcycle',
         };
 
         if (special[slug]) return special[slug];
@@ -438,10 +444,7 @@ function initSellerCompliance(cfg) {
         const size = small ? ' category-pill--sm' : '';
         if (!list.length) return `<span class="category-pill${size} category-default">—</span>`;
         return list.map(value => {
-            const key = String(value ?? '').trim().toLowerCase()
-                .replace(/&/g, 'and')
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-|-$/g, '');
+            const key = categoryKey(value);
             return `<span class="category-pill${size} category-${esc(key || 'default')}">${esc(categoryLabel(value))}</span>`;
         }).join('');
     }
@@ -1595,11 +1598,7 @@ function initSellerCompliance(cfg) {
         const categoryBadge = $('.product-details-category-display', modals.product);
         if (categoryBadge) {
             const categoryValue = String(pick(product, 'category', 'category_slug') || '');
-            const categorySlug = categoryValue.toLowerCase()
-                .replace(/&/g, 'and')
-                .replace(/[’']/g, '')
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-|-$/g, '');
+            const categorySlug = categoryKey(categoryValue);
             const knownCategories = new Set([
                 'pet-supplies', 'electronics-and-gadgets', 'womens-apparel',
                 'mens-apparel', 'kids-and-baby', 'home-and-garden',
@@ -1899,7 +1898,8 @@ function initSellerCompliance(cfg) {
 
             showFlash(
                 'approved',
-                state.product.name
+                state.product.name,
+                true
             );
         }
     }
