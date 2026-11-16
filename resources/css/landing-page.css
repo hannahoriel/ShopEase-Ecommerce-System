@@ -4982,3 +4982,132 @@ html, body {max-width:100%;overflow-x:clip;}
 /* Android APK download link: preserve existing .mobile-cta button appearance. */
 a.mobile-cta { text-decoration: none; }
 a.mobile-cta:visited { color: #fff; }
+
+/* ShopEase landing hero */
+#home.se-home-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: clamp(580px, 78vh, 900px);
+    align-items: center;
+    background: #f8eee4;
+    color: #351819;
+}
+#home.se-home-hero .hero-bg-circle { display: none; }
+#home.se-home-hero .hero-copy { z-index: 1; width: min(100%, 540px); }
+#home.se-home-hero .hero-title { color: #351819; }
+#home.se-home-hero .hero-title span { color: #8a2630; }
+#home.se-home-hero .hero-description { color: #5f4743; }
+.se-hero-art { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.se-hero-art::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, #fbf3eb 7%, #fbf3ebf5 32%, transparent 62%);
+}
+#home.se-home-hero .hero-copy > * { animation: se-fashion-enter .85s cubic-bezier(.22, 1, .36, 1) both; }
+#home.se-home-hero .hero-description { animation-delay: .10s; }
+#home.se-home-hero .se-role-intro { animation-delay: .19s; }
+#home.se-home-hero .hero-actions { animation-delay: .28s; }
+
+@keyframes se-fashion-enter {
+    from { opacity: 0; translate: 0 20px; }
+    to { opacity: 1; translate: 0 0; }
+}
+@media (max-width: 850px) {
+    #home.se-home-hero { min-height: 0; gap: 22px; padding: 34px 6% 0; }
+    #home.se-home-hero .hero-copy { margin: 0; }
+    .se-hero-art { position: relative; inset: auto; margin-inline: -7%; aspect-ratio: 1.5; }
+    .se-hero-art::after { background: linear-gradient(#f8eee4, transparent 22%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    #home.se-home-hero .hero-copy > * { animation: none; }
+}
+
+
+
+#home.se-home-hero {
+    --se-scene-time: 3.2s;
+    --se-scene-ease: cubic-bezier(.25,.62,.32,1);
+    background: radial-gradient(ellipse at 70% 32%, #fff9ef, #f1dece 90%);
+}
+#home.se-home-hero .hero-copy { position: relative; z-index: 1; }
+#home .se-hero-art { z-index: 2; overflow: visible; }
+#home .se-hero-art::after { content: none; }
+.se-hero-art img {
+    position: absolute;
+    bottom: 0;
+    object-fit: contain;
+    object-position: bottom;
+    filter: drop-shadow(8px 10px 12px #65483030);
+}
+.se-fashion-pair {
+    right: 2%;
+    width: min(56%, 820px);
+    height: 96%;
+    animation: se-pair-cross var(--se-scene-time) var(--se-scene-ease) both;
+}
+.se-fashion-crossing {
+    right: 44%;
+    width: 27%;
+    height: 75%;
+    opacity: 0;
+    animation: se-model-cross 2.7s ease-in-out .35s both;
+}
+#home.se-home-hero .hero-copy > * { animation: none; }
+#home.se-home-hero .hero-copy {
+    animation: se-copy-reveal var(--se-scene-time) var(--se-scene-ease) both;
+}
+@keyframes se-pair-cross {
+    0% { transform: translate3d(-112vw,0,0); }
+    25% { transform: translate3d(-72vw,-5px,0); }
+    50% { transform: translate3d(-38vw,0,0); }
+    75% { transform: translate3d(-12vw,-5px,0); }
+    100% { transform: translate3d(0,0,0); }
+}
+@keyframes se-model-cross {
+    0% { opacity: 0; transform: translateX(56vw); }
+    18%, 72% { opacity: .94; }
+    100% { opacity: 0; transform: translateX(-58vw); }
+}
+@keyframes se-copy-reveal {
+    0%, 43% { clip-path: inset(-10px 100% -10px -10px); }
+    82%, 100% { clip-path: inset(-10px -10px -10px -10px); }
+}
+#home.se-home-hero:focus-within .hero-copy { animation: none; }
+@media (max-width: 850px) {
+    #home.se-home-hero .hero-copy { animation: none; }
+    #home .se-hero-art { z-index: 0; }
+    .se-fashion-pair { right: 0; width: 100%; }
+    .se-fashion-crossing { width: 44%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #home.se-home-hero .hero-copy, .se-hero-art img { animation: none; }
+}
+
+#home .se-fashion-pair {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+#home .se-fashion-stride {
+    height: 100%;
+    max-width: 100%;
+    aspect-ratio: .75;
+    background-image: var(--stride-sheet);
+    background-size: 400% 100%;
+    background-repeat: no-repeat;
+    filter: drop-shadow(8px 10px 12px #65483030);
+    animation: se-fashion-stride .8s steps(1, end) 4;
+}
+@keyframes se-fashion-stride {
+    0% { background-position: 0 0; }
+    25% { background-position: 33.3333% 0; }
+    50% { background-position: 66.6667% 0; }
+    75% { background-position: 100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #home .se-fashion-pair, #home .se-fashion-stride { animation: none; }
+}

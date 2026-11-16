@@ -18,6 +18,7 @@ const input = [
 
     // LANDING PAGE
     'resources/css/landing-page.css',
+    'resources/css/landing-hero.css',
 
     // ADMIN
     'resources/css/admin/account.css',
@@ -81,6 +82,7 @@ const input = [
 
     // LANDING PAGE
     'resources/js/landing-page.js',
+    'resources/js/landing-hero.js',
 
     // ADMIN
     'resources/js/admin/account.js',

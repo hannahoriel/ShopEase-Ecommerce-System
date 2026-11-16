@@ -11,7 +11,7 @@
     >
 
     <title>
-        ShopEase — Shop Easier, Live Better.
+        ShopEase — Shop Easier, Shop with ease.
     </title>
 
     <link
@@ -31,7 +31,7 @@
     >
 
 
-    @vite(['resources/css/app.css', 'resources/css/landing-page.css', 'resources/js/landing-page.js'])
+    @vite(['resources/css/app.css', 'resources/css/landing-page.css', 'resources/css/landing-hero.css', 'resources/js/landing-page.js', 'resources/js/landing-hero.js'])
 
 
     
@@ -119,433 +119,172 @@
     
 
     <!-- =========================================================
-         HERO
+         HERO  (ShopEase tech-animated first page)
     ========================================================== -->
 
-    <section
-        class="hero"
-        id="home"
-    >
+    <section class="sx-hero" id="home" aria-label="Welcome to ShopEase">
 
+        <!-- ANIMATED BACKGROUND LAYERS -->
+        <canvas class="sx-net" id="sxNet" aria-hidden="true"></canvas>
+        <div class="sx-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="sx-grid" aria-hidden="true"></div>
+        <div class="sx-spot" id="sxSpot" aria-hidden="true"></div>
 
-        <div class="hero-bg-circle one"></div>
+        <div class="sx-inner">
 
-        <div class="hero-bg-circle two"></div>
+            <!-- ================= COPY ================= -->
+            <div class="sx-copy" id="sxCopy">
 
-        <div class="hero-bg-circle three"></div>
+                <div class="sx-chip">
+                    <span class="sx-pulse"></span>
+                    <span class="sx-chip-label">One marketplace. Built for</span>
+                    <span class="sx-rotor" aria-hidden="true">
+                        <span class="sx-rotor-track">
+                            <b>Buyers</b><b>Sellers</b><b>Riders</b><b>Logistics</b><b>Buyers</b>
+                        </span>
+                    </span>
+                </div>
 
+                <h1 class="sx-title" aria-label="Find what you love. Live Better.">
+                    <span class="sx-line" aria-hidden="true"><span class="sx-w" style="--i:0">Find</span> <span class="sx-w" style="--i:1">what</span> <span class="sx-w" style="--i:2">you</span> <span class="sx-w" style="--i:3">love.</span></span>
+                    <span class="sx-line sx-grad" aria-hidden="true"><span class="sx-w" style="--i:4">Live</span> <span class="sx-w" style="--i:5">Better.</span></span>
+                </h1>
 
+                <p class="sx-desc">
+                    Explore everyday finds from local shops, all in one marketplace —
+                    with real-time tracking from checkout to your doorstep.
+                </p>
 
-        <!-- HERO COPY -->
-
-        <div class="hero-copy">
-
-            <h1 class="hero-title">
-
-                Shop Easier,<br>
-
-                <span>
-                    Live Better.
-                </span>
-
-            </h1>
-
-
-            <p class="hero-description">
-
-                Discover products you love, enjoy a smoother
-                shopping experience, and have everything you need
-                just a few clicks away.
-
-            </p>
-
-
-            <div class="se-role-intro">
-                <p class="se-role-intro-caption">One marketplace. Four ways to be part of it.</p>
-                <div class="se-role-links" aria-label="Explore ShopEase opportunities">
-                    <a href="#guestShop" class="se-role-link" data-landing-jump="guestShop">
-                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></span><span>Buyer</span>
+                <div class="sx-actions">
+                    <a href="#guestShop" class="sx-btn sx-btn-primary sx-magnetic" id="startShoppingButton">
+                        <span class="sx-btn-shine" aria-hidden="true"></span>
+                        <span class="sx-btn-text">Start Shopping</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
                     </a>
-                    <a href="#mobileApp" class="se-role-link" data-landing-jump="mobileApp">
-                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9 5 4h14l2 5v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-2-2Z"/><path d="M5 14v6h14v-6M10 20v-5h4v5"/></svg></span><span>Seller</span>
-                    </a>
-                    <a href="#logisticsPartners" class="se-role-link" data-landing-jump="logisticsPartners">
-                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7z"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg></span><span>Logistics</span>
-                    </a>
-                    <a href="#mobileApp" class="se-role-link" data-landing-jump="mobileApp">
-                        <span class="se-role-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="m5 17 4-8h4l3 8h3M8 13h8l-2-4M13 9l2-3h3M7 7h3"/></svg></span><span>Rider</span>
+                    <a href="#whyShopease" class="sx-btn sx-btn-ghost sx-magnetic" data-landing-jump="whyShopease">
+                        <span class="sx-play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg></span>
+                        <span class="sx-btn-text">See how it works</span>
                     </a>
                 </div>
-            </div>
 
-            <div class="hero-actions">
+                <div class="sx-roles">
+                    <p class="sx-roles-caption">One marketplace. Four ways to be part of it.</p>
+                    <div class="sx-roles-links" aria-label="Explore ShopEase opportunities">
+                        <a href="#guestShop" class="sx-role" data-landing-jump="guestShop">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg><span>Buyer</span>
+                        </a>
+                        <a href="#mobileApp" class="sx-role" data-landing-jump="mobileApp">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9 5 4h14l2 5v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-2-2Z"/><path d="M5 14v6h14v-6M10 20v-5h4v5"/></svg><span>Seller</span>
+                        </a>
+                        <a href="#logisticsPartners" class="sx-role" data-landing-jump="logisticsPartners">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7z"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg><span>Logistics</span>
+                        </a>
+                        <a href="#mobileApp" class="sx-role" data-landing-jump="mobileApp">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="m5 17 4-8h4l3 8h3M8 13h8l-2-4M13 9l2-3h3M7 7h3"/></svg><span>Rider</span>
+                        </a>
+                    </div>
+                </div>
 
-
-                <!-- =================================================
-                     START SHOPPING
-                ================================================== -->
-
-                <a
-                    href="#guestShop"
-                    class="hero-primary"
-                    id="startShoppingButton"
-                >
-
-                    Start Shopping
-
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-
-                        <path d="M5 12h14" />
-
-                        <path d="M13 6l6 6-6 6" />
-
-                    </svg>
-
-                </a>
+                <ul class="sx-trust">
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+                        Secure checkout
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                        Real-time tracking
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3Z"/></svg>
+                        Verified sellers
+                    </li>
+                </ul>
 
             </div>
 
-        </div>
-
-
-
-        <!-- HERO VISUAL -->
-
-        <div class="hero-visual">
-
-
-            <div
-                class="visual-card"
-                id="visualCard"
-            >
-
-
-                <div class="visual-circle one"></div>
-
-                <div class="visual-circle two"></div>
-
-
-
-                <!-- BAG -->
-
-                <div class="visual-bag">
-
-                    <img
-                        src="{{ asset('icons/logos/bag.png') }}"
-                        alt="ShopEase Bag"
-                    >
-
-                </div>
-
-
-
-                <!-- BRAND -->
-
-                <div class="visual-brand">
-
-                    <img
-                        src="{{ asset('icons/logos/ShopEase.png') }}"
-                        alt="ShopEase"
-                    >
-
-                </div>
-
-
-
-                <!-- HEADPHONES -->
-
-                <div class="floating-product left">
-
-
-                    <div class="product-photo">
-
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#52070B"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-
-                            <path d="M6 8h12" />
-
-                            <path
-                                d="M8 8
-                                   V6
-                                   a4 4 0 0 1 8 0
-                                   v2"
-                            />
-
-                            <rect
-                                x="5"
-                                y="8"
-                                width="14"
-                                height="11"
-                                rx="2"
-                            />
-
-                        </svg>
-
-                    </div>
-
-
-                    <p class="product-name">
-                        Wireless Headphones
-                    </p>
-
-
-                    <p class="product-price">
-                        ₱1,299
-                    </p>
-
-
-                    <div class="product-stars">
-                        ★★★★★
-                    </div>
-
-                </div>
-
-
-
-                <!-- WATCH -->
-
-                <div class="floating-product watch">
-
-
-                    <div class="product-photo">
-
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#52070B"
-                            stroke-width="1.4"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-
-                            <rect
-                                x="7"
-                                y="5"
-                                width="10"
-                                height="14"
-                                rx="3"
-                            />
-
-                            <path d="M9 2h6" />
-
-                            <path d="M9 22h6" />
-
-                            <path d="M10 9h4" />
-
-                            <path d="M10 12h3" />
-
-                        </svg>
-
-                    </div>
-
-
-                    <p class="product-name">
-                        Smart Watch
-                    </p>
-
-
-                    <p class="product-price">
-                        ₱2,499
-                    </p>
-
-
-                    <div class="product-stars">
-                        ★★★★★
-                    </div>
-
-                </div>
-
-
-
-                <!-- SHOES -->
-
-                <div class="floating-product shoes">
-
-
-                    <div class="product-photo">
-
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#52070B"
-                            stroke-width="1.2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-
-                            <path
-                                d="M4 16
-                                   c3 1 6 1 9-1
-                                   l3 3
-                                   h4
-                                   v2
-                                   H4
-                                   z"
-                            />
-
-                            <path d="M8 10l4 5" />
-
-                            <path d="M11 9l4 4" />
-
-                        </svg>
-
-                    </div>
-
-
-                    <p class="product-name">
-                        Running Shoes
-                    </p>
-
-
-                    <p class="product-price">
-                        ₱1,899
-                    </p>
-
-
-                    <div class="product-stars">
-                        ★★★★★
-                    </div>
-
-                </div>
-
-
-
-                <!-- HAPPY SHOPPERS -->
-
-                <div class="visual-stat">
-
-
-                    <div class="visual-stat-top">
-
-                        <div>
-
-                            <span class="visual-stat-label">
-                                Happy shoppers
-                            </span>
-
-
-                            <div class="visual-stat-value">
-                                10,000+
+            <!-- ================= LIVE MARKETPLACE STAGE ================= -->
+            <div class="sx-stage" id="sxStage" aria-hidden="true">
+                <div class="sx-fit" id="sxFit">
+                    <div class="sx-scene" id="sxScene">
+
+                        <div class="sx-glow"></div>
+                        <div class="sx-orbit o1"><i></i><i></i></div>
+                        <div class="sx-orbit o2"><i></i></div>
+
+                        <!-- MAIN DASHBOARD -->
+                        <div class="sx-card sx-dash">
+                            <div class="sx-dash-top">
+                                <span class="sx-dots"><i></i><i></i><i></i></span>
+                                <span class="sx-dash-title">ShopEase · Live marketplace</span>
+                                <span class="sx-live"><i></i>LIVE</span>
                             </div>
-
+                            <div class="sx-kpi">
+                                <div class="sx-kpi-main">
+                                    <small>Orders today</small>
+                                    <strong id="sxOrders" data-count="1284">0</strong>
+                                    <em>▲ 12.4%</em>
+                                </div>
+                                <div class="sx-bars" id="sxBars"></div>
+                            </div>
+                            <ul class="sx-feed" id="sxFeed"></ul>
                         </div>
 
+                        <!-- PRODUCT CARD -->
+                        <div class="sx-card sx-product" id="sxProduct">
+                            <div class="sx-product-img">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg>
+                                <span class="sx-tag">Hot</span>
+                            </div>
+                            <b>Wireless Headset</b>
+                            <div class="sx-product-row"><span>₱1,899</span><span class="sx-stars">★ 4.8</span></div>
+                            <div class="sx-add" id="sxAdd">
+                                <span class="sx-add-a">Add to cart</span>
+                                <span class="sx-add-b">✓ Added</span>
+                            </div>
+                        </div>
 
-                        <span class="visual-stat-change">
-                            +24%
-                        </span>
+                        <!-- DELIVERY TRACKER -->
+                        <div class="sx-card sx-track">
+                            <div class="sx-track-top">
+                                <span><i class="sx-track-dot"></i>Parcel tracking</span>
+                                <strong id="sxEta">ETA 24 min</strong>
+                            </div>
+                            <svg class="sx-route" viewBox="0 0 240 82" fill="none">
+                                <path id="sxRouteBase" d="M16 50 C 60 50, 66 18, 100 20 S 160 56, 196 34 S 218 22, 226 20" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/>
+                                <path id="sxRouteFill" d="M16 50 C 60 50, 66 18, 100 20 S 160 56, 196 34 S 218 22, 226 20" stroke="url(#sxRouteGrad)" stroke-width="3.4" stroke-linecap="round"/>
+                                <defs><linearGradient id="sxRouteGrad" x1="0" x2="1"><stop offset="0" stop-color="#FF876E"/><stop offset="1" stop-color="#FFD9CC"/></linearGradient></defs>
+                                <g class="sx-node" data-at="0"><circle r="5"/><text y="18">Seller</text></g>
+                                <g class="sx-node" data-at=".36"><circle r="5"/><text y="18">Hub</text></g>
+                                <g class="sx-node" data-at=".72"><circle r="5"/><text y="18">Rider</text></g>
+                                <g class="sx-node" data-at="1"><circle r="5"/><text y="18">You</text></g>
+                                <g id="sxParcel"><circle r="11" class="sx-parcel-halo"/><circle r="6.5" class="sx-parcel-dot"/></g>
+                            </svg>
+                            <div class="sx-status" id="sxStatus">Packed by seller</div>
+                        </div>
+
+                        <!-- TOAST -->
+                        <div class="sx-card sx-toast">
+                            <span class="sx-toast-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span>
+                            <div><b>Order confirmed</b><small>Payment received · #SE-20841</small></div>
+                        </div>
+
+                        <!-- SECURE CHIP -->
+                        <div class="sx-card sx-secure">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+                            Secure checkout
+                        </div>
 
                     </div>
-
-
-                    <div class="visual-stat-line">
-
-                        <div class="visual-stat-progress"></div>
-
-                    </div>
-
                 </div>
-
-
-
-                <!-- HEART -->
-
-                <div class="floating-circle heart-one">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                    >
-
-                        <path
-                            d="M12 21s-7-4.7-9.5-9
-                               C.5 7.7 3 5 6.3 5
-                               c1.8 0 3.5.9 4.7 2.3
-                               C12.5 5.9 14.2 5 16 5
-                               c3.3 0 5.8 2.7 3.8 7
-                               C19 16.3 12 21 12 21z"
-                        />
-
-                    </svg>
-
-                </div>
-
-
-
-                <!-- SECOND HEART -->
-
-                <div class="floating-circle heart-two">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                    >
-
-                        <path
-                            d="M12 21s-7-4.7-9.5-9
-                               C.5 7.7 3 5 6.3 5
-                               c1.8 0 3.5.9 4.7 2.3
-                               C12.5 5.9 14.2 5 16 5
-                               c3.3 0 5.8 2.7 3.8 7
-                               C19 16.3 12 21 12 21z"
-                        />
-
-                    </svg>
-
-                </div>
-
-
-
-                <!-- CART -->
-
-                <div class="floating-circle cart">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-
-                        <path
-                            d="M3 4h2l2.2 11h10.9l2-8H7"
-                        />
-
-                        <circle
-                            cx="10"
-                            cy="19"
-                            r="1.5"
-                        />
-
-                        <circle
-                            cx="17"
-                            cy="19"
-                            r="1.5"
-                        />
-
-                    </svg>
-
-                </div>
-
             </div>
 
         </div>
+
+        <!-- SCROLL CUE -->
+        <a href="#guestShop" class="sx-scroll" data-landing-jump="guestShop" aria-label="Scroll to explore">
+            <span class="sx-mouse"><i></i></span>
+            <span class="sx-scroll-text">Scroll to explore</span>
+        </a>
 
     </section>
 
