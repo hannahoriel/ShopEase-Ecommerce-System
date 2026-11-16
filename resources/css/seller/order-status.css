@@ -1474,6 +1474,18 @@
     background: #F8DBD8;
 }
 
+.reject-order-reason-label {
+    display: block;
+    margin: 0 0 8px;
+    color: #2F2926;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.reject-order-reason-label span { color: #B42318; }
+#rejectOrderReason { min-height: 110px; }
+.reject-modal-confirm-button:disabled { opacity: .55; cursor: wait; }
+
 /* =========================================================
    CANCELLATION HISTORY
 ========================================================= */

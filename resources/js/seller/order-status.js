@@ -856,6 +856,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(
             'orderModalActionLabel'
         );
+    const rejectOrderButton = document.getElementById('rejectOrderButton');
+    const rejectOrderModal = document.getElementById('rejectOrderModal');
+    const rejectOrderReason = document.getElementById('rejectOrderReason');
+    const rejectOrderReasonCount = document.getElementById('rejectOrderReasonCount');
+    const rejectOrderError = document.getElementById('rejectOrderError');
+    const confirmRejectOrderButton = document.getElementById('confirmRejectOrder');
+    const cancelRejectOrderButton = document.getElementById('cancelRejectOrder');
     const printWaybillButton = document.getElementById('printOrderWaybillButton');
 
     const acceptCancellationRequestButton =
@@ -1957,6 +1964,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const isNewOrder =
             status === 'new' || status === 'pending';
+
+        if (rejectOrderButton) rejectOrderButton.hidden = !isNewOrder;
 
         const isCancelled =
             status === 'cancelled';
@@ -3419,6 +3428,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            if (rejectOrderModal?.classList.contains('modal-open')) {
+                closeRejectOrderModal();
+                return;
+            }
+
 
             if (
                 scheduleShipmentModal
@@ -3443,6 +3457,87 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     );
+
+    function closeRejectOrderModal() {
+        rejectOrderModal?.classList.remove('modal-open');
+        rejectOrderModal?.setAttribute('aria-hidden', 'true');
+        if (rejectOrderError) {
+            rejectOrderError.hidden = true;
+            rejectOrderError.textContent = '';
+        }
+    }
+
+    rejectOrderButton?.addEventListener('click', () => {
+        if (!selectedOrderRow) return;
+        if (rejectOrderReason) rejectOrderReason.value = '';
+        if (rejectOrderReasonCount) rejectOrderReasonCount.textContent = '0/500';
+        if (rejectOrderError) rejectOrderError.hidden = true;
+        rejectOrderModal?.classList.add('modal-open');
+        rejectOrderModal?.setAttribute('aria-hidden', 'false');
+        window.setTimeout(() => rejectOrderReason?.focus(), 50);
+    });
+
+    rejectOrderReason?.addEventListener('input', () => {
+        if (rejectOrderReasonCount) rejectOrderReasonCount.textContent = `${rejectOrderReason.value.length}/500`;
+        if (rejectOrderError) rejectOrderError.hidden = true;
+    });
+    cancelRejectOrderButton?.addEventListener('click', closeRejectOrderModal);
+    rejectOrderModal?.addEventListener('click', event => {
+        if (event.target === rejectOrderModal) closeRejectOrderModal();
+    });
+
+    confirmRejectOrderButton?.addEventListener('click', async () => {
+        if (!selectedOrderRow) return;
+        const reason = rejectOrderReason?.value.trim() || '';
+        if (!reason) {
+            if (rejectOrderError) {
+                rejectOrderError.textContent = 'Enter a reason so the buyer understands why the order was rejected.';
+                rejectOrderError.hidden = false;
+            }
+            rejectOrderReason?.focus();
+            return;
+        }
+
+        confirmRejectOrderButton.disabled = true;
+        confirmRejectOrderButton.textContent = 'Rejecting...';
+        try {
+            const response = await fetch(`${config.ordersUrl}/${selectedOrderRow.dataset.orderId}/reject`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${config.apiToken || ''}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ reason: reason.trim() }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.message || `Could not reject order (${response.status}).`);
+
+            selectedOrderRow.dataset.status = 'cancelled';
+            selectedOrderRow.dataset.tab = 'cancelled';
+            const status = selectedOrderRow.querySelector('.order-status');
+            if (status) {
+                status.className = 'order-status cancelled-text';
+                status.innerHTML = '<span class="status-dot cancelled-dot"></span>Cancelled';
+            }
+            activeTab = 'all';
+            tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === 'all'));
+            filterOrders();
+            closeRejectOrderModal();
+            closeOrderDetailsModal();
+            showOrderFlash('Order rejected. The buyer has been notified.', 'rejected', 'Order Rejected');
+        } catch (error) {
+            if (rejectOrderError) {
+                rejectOrderError.textContent = error.message || 'Could not reject the order. Please try again.';
+                rejectOrderError.hidden = false;
+            }
+        } finally {
+            confirmRejectOrderButton.disabled = false;
+            confirmRejectOrderButton.textContent = 'Reject Order';
+        }
+    });
 
     filterOrders();
 });

@@ -1906,6 +1906,9 @@
 
 <style>
 /* ShopEase seller registration: validation feedback only; existing layout unchanged */
+.se-terms-group .terms-label{display:flex;align-items:flex-start;gap:10px;margin:0 0 8px;color:#4a3a3a;font-size:14px;line-height:1.6;cursor:pointer}
+.se-terms-group .terms-label input[type="checkbox"]{width:17px;height:17px;flex:0 0 17px;margin-top:3px;accent-color:#7B1B1B}
+.se-terms-group .terms-label a{color:#7B1B1B;font-weight:600;text-decoration:underline}
 .se-validation-message{display:block;margin:6px 0 0;font:400 11px/1.5 'Poppins',sans-serif;color:#C62828}
 .se-validation-invalid{border-color:#C62828!important;box-shadow:0 0 0 2px rgba(198,40,40,.06)!important}
 .se-password-rules{margin-top:10px;padding:12px 14px;border:1px solid #EEE0DC;border-radius:9px;background:#FFFBFA;font:400 12px/1.8 'Poppins',sans-serif}
@@ -3138,7 +3141,7 @@
                      TERMS AND PRIVACY POLICY
                 ================================================== -->
                 <div class="form-group se-terms-group" style="grid-column: 1 / -1; margin-top: 12px;">
-                    <label for="terms" style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;cursor:pointer;">
+                    <label class="terms-label" for="terms">
                         <input
                             type="checkbox"
                             id="terms"
@@ -3147,15 +3150,14 @@
                             data-master-consent="terms"
                             {{ old('terms', $sellerData['terms'] ?? false) ? 'checked' : '' }}
                             required
-                            style="margin-top:4px;accent-color:#7B1B1B;"
                         >
                         <span>I have read and agree to the <a href="{{ route('terms-and-conditions', ['role' => 'seller', 'return_to' => request()->getRequestUri()]) }}" target="_blank" rel="noopener">Seller Terms and Conditions</a>. <span class="required">*</span></span>
                     </label>
                     @error('terms')
                         <p class="error-message">{{ $message }}</p>
                     @enderror
-                    <label for="privacy_acknowledged" style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;cursor:pointer;margin-top:8px;">
-                        <input type="checkbox" id="privacy_acknowledged" name="privacy_acknowledged" value="1" data-master-consent="privacy" {{ old('privacy_acknowledged', $sellerData['privacy_acknowledged'] ?? false) ? 'checked' : '' }} required style="margin-top:4px;accent-color:#7B1B1B;">
+                    <label class="terms-label privacy-consent-label" for="privacy_acknowledged">
+                        <input type="checkbox" id="privacy_acknowledged" name="privacy_acknowledged" value="1" data-master-consent="privacy" {{ old('privacy_acknowledged', $sellerData['privacy_acknowledged'] ?? false) ? 'checked' : '' }} required>
                         <span>I acknowledge that I have read the <a href="{{ route('privacy-policy', ['role' => 'seller', 'return_to' => request()->getRequestUri()]) }}" target="_blank" rel="noopener">ShopEase Privacy Policy</a>. <span class="required">*</span></span>
                     </label>
                     @error('privacy_acknowledged')
