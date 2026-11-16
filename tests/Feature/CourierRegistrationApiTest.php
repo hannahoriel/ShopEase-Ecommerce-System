@@ -124,13 +124,19 @@ class CourierRegistrationApiTest extends TestCase
 
     private function makeCenter(string $email): array
     {
-        $center = User::query()->create(['name' => 'Test Center', 'email' => $email, 'password' => 'password', 'role' => User::ROLE_SORTING_CENTER]);
-        $companyUser = User::query()->create(['name' => 'Test Logistics', 'email' => 'company+'.uniqid().'@example.test', 'password' => 'password', 'role' => User::ROLE_LOGISTICS]);
+        $center = User::query()->create([
+            'name' => 'Test Center', 'email' => $email, 'password' => 'password',
+            'role' => User::ROLE_SORTING_CENTER, 'registration_status' => 'active',
+        ]);
+        $companyUser = User::query()->create([
+            'name' => 'Test Logistics', 'email' => 'company+'.uniqid().'@example.test', 'password' => 'password',
+            'role' => User::ROLE_LOGISTICS, 'registration_status' => 'active',
+        ]);
         $company = Logistics::query()->create([
             'user_id' => $companyUser->id, 'last_name' => 'Logistics', 'first_name' => 'Demo', 'sex' => 'other',
             'contact_no' => '09170000000', 'birthday' => '1990-01-01', 'age' => 36,
             'province' => 'Laguna', 'municipality' => 'Calamba', 'barangay' => 'Poblacion',
-            'street' => 'Main Street', 'house_number' => '1',
+            'street' => 'Main Street', 'house_number' => '1', 'registration_status' => 'active',
         ]);
         $branch = LogisticsBranch::query()->create([
             'logistics_id' => $company->id, 'user_id' => $center->id, 'name' => 'Test Center', 'address' => 'Calamba, Laguna',
