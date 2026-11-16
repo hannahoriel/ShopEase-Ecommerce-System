@@ -48,7 +48,7 @@ class RegistrationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Registration::pending()->where('user_type', '!=', 'logistics');
+        $query = $this->adminRegistrations(Registration::pending());
         $this->applyFilters($query, $request);
 
         $registrations = $query->orderByDesc('created_at')
@@ -67,7 +67,7 @@ class RegistrationController extends Controller
      */
     public function list(Request $request): JsonResponse
     {
-        $query = Registration::pending()->where('user_type', '!=', 'logistics');
+        $query = $this->adminRegistrations(Registration::pending());
         $this->applyFilters($query, $request);
 
         $registrations = $query->orderByDesc('created_at')
@@ -82,7 +82,7 @@ class RegistrationController extends Controller
     public function approvedArchive(Request $request): JsonResponse
     {
         abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
-        $query = Registration::approved()->where('user_type', '!=', 'logistics');
+        $query = $this->adminRegistrations(Registration::approved());
 
         if ($search = $request->string('search')->trim()->value()) {
             $this->applySearch($query, $search);
@@ -102,7 +102,7 @@ class RegistrationController extends Controller
     public function rejectedArchive(Request $request): JsonResponse
     {
         abort_unless($request->user()?->role === User::ROLE_ADMIN, 403);
-        $query = Registration::rejected()->where('user_type', '!=', 'logistics');
+        $query = $this->adminRegistrations(Registration::rejected());
 
         if ($search = $request->string('search')->trim()->value()) {
             $this->applySearch($query, $search);
@@ -123,6 +123,7 @@ class RegistrationController extends Controller
     {
         abort_unless(request()->user()?->role === User::ROLE_ADMIN, 403);
         abort_unless($registration->status === 'pending', 404);
+        abort_if($this->isRiderRegistration($registration), 404);
 
         return response()->json(array_merge(
             $registration->toArray(),
@@ -142,6 +143,8 @@ class RegistrationController extends Controller
      */
     public function approve(Request $request, Registration $registration): JsonResponse|RedirectResponse
     {
+        abort_if($this->isRiderRegistration($registration), 404);
+
         if ($registration->status !== 'pending') {
             return response()->json([
                 'message' => 'This registration has already been reviewed.',
@@ -194,6 +197,8 @@ class RegistrationController extends Controller
      */
     public function reject(Request $request, Registration $registration): JsonResponse|RedirectResponse
     {
+        abort_if($this->isRiderRegistration($registration), 404);
+
         if ($registration->status !== 'pending') {
             return response()->json([
                 'message' => 'This registration has already been reviewed.',
@@ -261,6 +266,20 @@ class RegistrationController extends Controller
     }
 
     /**
+     * Rider and courier applications are reviewed by logistics facilities,
+     * not Admin. Keep their legacy registration rows out of Admin lists.
+     */
+    private function adminRegistrations($query)
+    {
+        return $query->whereNotIn('user_type', [User::ROLE_LOGISTICS, User::ROLE_RIDER]);
+    }
+
+    private function isRiderRegistration(Registration $registration): bool
+    {
+        return $registration->user_type === User::ROLE_RIDER;
+    }
+
+    /**
      * Apply the search box + user-type filter + date filter to a query.
      */
     private function applyFilters($query, Request $request): void
@@ -300,10 +319,10 @@ class RegistrationController extends Controller
     private function counts(): array
     {
         return [
-            'pending' => Registration::pending()->where('user_type', '!=', 'logistics')->count(),
-            'approved' => Registration::approved()->where('user_type', '!=', 'logistics')->count(),
-            'rejected' => Registration::rejected()->where('user_type', '!=', 'logistics')->count(),
-            'total' => Registration::where('user_type', '!=', 'logistics')->count(),
+            'pending' => $this->adminRegistrations(Registration::pending())->count(),
+            'approved' => $this->adminRegistrations(Registration::approved())->count(),
+            'rejected' => $this->adminRegistrations(Registration::rejected())->count(),
+            'total' => $this->adminRegistrations(Registration::query())->count(),
         ];
     }
 }
