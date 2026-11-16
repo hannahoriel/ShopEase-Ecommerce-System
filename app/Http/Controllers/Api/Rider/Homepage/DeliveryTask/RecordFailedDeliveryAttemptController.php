@@ -31,7 +31,7 @@ class RecordFailedDeliveryAttemptController extends Controller
                 'Buyer refused parcel', 'Other delivery issue',
             ])],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'proof_photo' => ['required', 'image', 'max:10240'],
+            'proof_photo' => ['required', 'image', 'max:15360'],
         ]);
         $photoPath = Storage::disk('local')->putFile('delivery-attempts', $validated['proof_photo']);
         if (! $photoPath) {
@@ -109,7 +109,7 @@ class RecordFailedDeliveryAttemptController extends Controller
         $rider = $deliveries->activeRiderFor($request->user());
         $validated = $request->validate([
             'scanned_code' => ['required', 'string', 'max:2048'],
-            'proof_photo' => ['required', 'image', 'max:10240'],
+            'proof_photo' => ['required', 'image', 'max:15360'],
         ]);
         $path = parse_url(trim($validated['scanned_code']), PHP_URL_PATH);
         $code = is_string($path) && $path !== '' ? rawurldecode(basename($path)) : trim($validated['scanned_code']);

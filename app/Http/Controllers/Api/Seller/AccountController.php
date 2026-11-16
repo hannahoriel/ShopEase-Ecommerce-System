@@ -61,8 +61,8 @@ class AccountController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'contact_no' => ['required', 'string', 'max:30'],
-            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'cover_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
+            'cover_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
 
         $seller = Seller::query()->where('user_id', $user->id)->firstOrFail();

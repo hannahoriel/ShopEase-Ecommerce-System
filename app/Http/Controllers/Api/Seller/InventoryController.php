@@ -148,7 +148,7 @@ class InventoryController extends Controller
             'photos' => ['required_without:product_photos', 'array', 'min:1', 'max:8'],
             'photos.*' => ['required', 'string'],
             'product_photos' => ['required_without:photos', 'array', 'min:1', 'max:8'],
-            'product_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'product_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
             'category_specifications' => ['sometimes', 'array'],
             'category_specifications.*' => ['nullable', 'string', 'max:2000'],
             'variant_combinations' => ['sometimes', 'array', 'max:300'],
@@ -163,7 +163,7 @@ class InventoryController extends Controller
             'variant_combinations.*.stock' => ['required', 'integer', 'min:0'],
             'variant_combinations.*.available' => ['sometimes', 'boolean'],
             'variant_group_photos' => ['sometimes', 'array'],
-            'variant_group_photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'variant_group_photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
             'variant_group_photo_keys' => ['sometimes', 'array'],
             'variant_group_photo_keys.*' => ['nullable', 'string', 'max:1000'],
         ];
@@ -178,7 +178,7 @@ class InventoryController extends Controller
             $rules[$group['input'].'.*.price'] = ['required', 'numeric', 'min:0'];
             $rules[$group['input'].'.*.stock'] = ['required', 'integer', 'min:0'];
             $rules[$group['input'].'.*.price_type'] = ['nullable', Rule::in(['base', 'addon'])];
-            $rules[$group['input'].'.*.photo'] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'];
+            $rules[$group['input'].'.*.photo'] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'];
         }
 
         $validated = $request->validate($rules);
@@ -579,7 +579,7 @@ class InventoryController extends Controller
             'photos' => ['sometimes', 'array', 'min:1', 'max:8'],
             'photos.*' => ['required', 'string'],
             'product_photos' => ['sometimes', 'array', 'min:1', 'max:8'],
-            'product_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'product_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
             'category_specifications' => ['sometimes', 'array'],
             'category_specifications.*' => ['nullable', 'string', 'max:2000'],
             'variant_combinations' => ['sometimes', 'array', 'max:300'],
@@ -594,7 +594,7 @@ class InventoryController extends Controller
             'variant_combinations.*.stock' => ['required', 'integer', 'min:0'],
             'variant_combinations.*.available' => ['sometimes', 'boolean'],
             'variant_group_photos' => ['sometimes', 'array'],
-            'variant_group_photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'variant_group_photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
             'variant_group_photo_keys' => ['sometimes', 'array'],
             'variant_group_photo_keys.*' => ['nullable', 'string', 'max:1000'],
         ];
@@ -606,7 +606,7 @@ class InventoryController extends Controller
             $rules[$group['input'].'.*.price'] = ['required', 'numeric', 'min:0'];
             $rules[$group['input'].'.*.stock'] = ['required', 'integer', 'min:0'];
             $rules[$group['input'].'.*.price_type'] = ['nullable', Rule::in(['base', 'addon'])];
-            $rules[$group['input'].'.*.photo'] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'];
+            $rules[$group['input'].'.*.photo'] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'];
         }
 
         $validated = $request->validate($rules);

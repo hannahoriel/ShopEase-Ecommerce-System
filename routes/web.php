@@ -609,6 +609,13 @@ Route::post(
                 $stepTwoData
             );
 
+        $permitRules = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(5120)];
+        $request->validate([
+            'business_permit' => $permitRules,
+            'business_permits' => ['sometimes', 'array'],
+            'business_permits.*' => $permitRules,
+        ]);
+
         $uploadedPermits = $request->file('business_permits', []);
         if (! is_array($uploadedPermits)) {
             $uploadedPermits = [$uploadedPermits];
@@ -720,6 +727,13 @@ Route::post(
                 $sellerData,
                 $stepTwoData
             );
+
+        $permitRules = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(5120)];
+        $request->validate([
+            'business_permit' => $permitRules,
+            'business_permits' => ['sometimes', 'array'],
+            'business_permits.*' => $permitRules,
+        ]);
 
         $uploadedPermits = $request->file('business_permits', []);
         if (! is_array($uploadedPermits)) {

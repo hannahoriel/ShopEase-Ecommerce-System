@@ -26,7 +26,7 @@ class ProfilePhotoController extends Controller
         abort_unless($user instanceof User, 403);
 
         $validated = $request->validate([
-            'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
 
         $newPath = $validated['profile_photo']->store("profile-photos/{$user->id}", 'public');

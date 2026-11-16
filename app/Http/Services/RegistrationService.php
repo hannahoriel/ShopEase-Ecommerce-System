@@ -83,19 +83,19 @@ class RegistrationService
             'password' => ['required', 'confirmed', ...$this->passwordRules()],
             'accept_terms' => ['accepted'],
             'acknowledge_privacy' => ['accepted'],
-            'upload_id' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'],
-            'upload_id_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'],
+            'upload_id' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(10240)],
+            'upload_id_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(10240)],
         ];
 
         if ($role === User::ROLE_SELLER) {
             $rules['business_name'] = ['required', 'string', 'max:255'];
             $rules['line_of_business'] = ['required', 'string', 'max:255'];
-            $rules['upload_business_permit'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
+            $rules['upload_business_permit'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(10240)];
         }
 
         if ($role === User::ROLE_LOGISTICS) {
             $rules['business_name'] = ['nullable', 'string', 'max:255'];
-            $rules['upload_business_permit'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
+            $rules['upload_business_permit'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(10240)];
         }
 
         if ($role === User::ROLE_RIDER) {
@@ -112,10 +112,10 @@ class RegistrationService
             $rules['municipal_hub'] = ['nullable', 'string', 'max:150'];
             $rules['upload_or_cr'] = $isCourier
                 ? ['prohibited']
-                : ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf'];
+                : ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(10240)];
             if ($isCourier) {
                 $rules['sorting_center_id'] = ['required', 'integer', 'exists:logistics_branches,id'];
-                $rules['upload_id_license'] = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
+                $rules['upload_id_license'] = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(5120)];
             }
         }
 

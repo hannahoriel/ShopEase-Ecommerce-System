@@ -86,7 +86,7 @@ class SubmitDeliveryProofController extends Controller
         $validated = $request->validate([
             'status' => ['required', Rule::in(array_values(self::TRANSITIONS))],
             'scanned_code' => ['required', 'string', 'max:2048'],
-            'proof_photo' => ['required', 'image', 'max:10240'],
+            'proof_photo' => ['required', 'image', 'max:15360'],
             'delivery_method' => ['nullable', Rule::in(['handed_to_buyer', 'left_at_door'])],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);

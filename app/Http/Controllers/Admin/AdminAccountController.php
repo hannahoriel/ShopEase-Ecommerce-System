@@ -159,8 +159,8 @@ class AdminAccountController extends Controller
             'birthday' => ['nullable','date','before_or_equal:today'],
             'sex' => ['nullable',Rule::in(['Male','Female','Prefer not to say'])],
             'contact_number' => ['nullable','regex:/^(9\\d{9}|09\\d{9})$/'],
-            'profile_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
-            'cover_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
+            'profile_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:15360'],
+            'cover_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:15360'],
             // The Super Admin supplies the Admin ID at account creation.
             'admin_id_photo' => ['prohibited'],
         ]);
