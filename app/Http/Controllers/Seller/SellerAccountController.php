@@ -132,8 +132,8 @@ class SellerAccountController extends Controller
             'building' => ['nullable','string','max:150'],
             'subdivision' => ['nullable','string','max:150'],
             
-            'cover_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
-            'profile_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
+            'cover_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:15360'],
+            'profile_photo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:15360'],
         ]);
         if ($request->user()->email !== $request->input('email')) {
             throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email changes require verification. Please keep your current email for now.']);
@@ -303,7 +303,7 @@ class SellerAccountController extends Controller
         $seller=$this->seller($request);
         $data=$request->validate([
             'request_type'=>['required',Rule::in(['replace_valid_id','replace_business_permit','add_business_permit'])],
-            'document'=>['required','image','mimes:jpeg,jpg,png,webp','max:5120'],
+            'document'=>['required','image','mimes:jpeg,jpg,png,webp','max:15360'],
             'reason'=>['required','string','min:10','max:1000'],
         ]);
         $type=$data['request_type'];

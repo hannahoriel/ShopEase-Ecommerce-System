@@ -258,7 +258,7 @@ class OrderController extends Controller
             ])],
             'description' => ['required', 'string', 'min:10', 'max:2000'],
             'evidence' => ['sometimes', 'array', 'max:5'],
-            'evidence.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'evidence.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
 
         $evidencePaths = collect($request->file('evidence', []))

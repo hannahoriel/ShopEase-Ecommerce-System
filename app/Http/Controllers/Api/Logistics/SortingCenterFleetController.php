@@ -187,7 +187,7 @@ class SortingCenterFleetController extends Controller
             'registration_date' => ['nullable', 'date'],
             'availability' => ['nullable', Rule::in(['Available', 'In Service', 'Maintenance', 'Out of Service'])],
             'color' => ['nullable', 'string', 'max:60'], 'notes' => ['nullable', 'string', 'max:2000'],
-            'or_cr' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'or_cr' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', \App\Rules\DocumentUploadSize::limit(5120)],
         ];
     }
 

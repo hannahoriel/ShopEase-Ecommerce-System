@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  byId('lgProfilePhotoInput').addEventListener('change',async e=>{
    e.stopImmediatePropagation();
    const file=e.target.files?.[0];if(!file)return;
-   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){e.target.value='';window.alert('Choose a JPG, PNG, or WebP image under 5 MB.');return;}
+   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>15*1024*1024){e.target.value='';window.alert('Choose a JPG, PNG, or WebP image under 15 MB.');return;}
    const form=new FormData();form.append('profile_photo',file);
    try{
      const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:form});

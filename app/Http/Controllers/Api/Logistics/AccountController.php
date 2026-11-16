@@ -142,7 +142,7 @@ class AccountController extends Controller
     public function uploadCoverPhoto(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'cover_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
         $settings = LogisticsAccountSetting::query()->firstOrNew(['user_id' => $request->user()->id]);
         $oldPath = $settings->cover_photo_path;

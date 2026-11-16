@@ -366,7 +366,7 @@ $('lgNotifyButton')?.addEventListener('click',()=>alert('No live notifications y
 $('lgChangeProfilePhoto')?.addEventListener('click',()=>$('lgProfilePhotoInput')?.click());
 $('lgProfilePhotoInput')?.addEventListener('change',async event=>{
  const file=event.target.files?.[0];if(!file)return;
- if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){alert('Choose JPG, PNG or WebP under 5 MB.');event.target.value='';return}
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>15*1024*1024){alert('Choose JPG, PNG or WebP under 15 MB.');event.target.value='';return}
  const data=new FormData();data.append('profile_photo',file);
  try{const response=await fetch('/api/v1/profile/photo',{method:'PUT',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''},body:data});
  const result=await response.json();if(!response.ok)throw Error(result.message||'Unable to update photo.');

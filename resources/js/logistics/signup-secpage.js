@@ -1,3 +1,10 @@
+const permitSizeError = file => {
+ const isPdf = file.type === 'application/pdf';
+ const maxMb = isPdf ? 10 : 15;
+ if (file.size <= maxMb * 1024 * 1024) return '';
+ return (isPdf ? 'PDFs' : 'Images') + ' must be ' + maxMb + ' MB or smaller.';
+};
+
 (()=>{
  const form=document.getElementById('logisticsPermitsForm');if(!form)return;
  let attempted=false;
@@ -7,7 +14,7 @@
    let msg='';
    if(!file&&!saved)msg='This document is required.';
    if(file&&!['image/jpeg','image/png','application/pdf'].includes(file.type))msg='Please upload a JPG, PNG, or PDF file.';
-   if(file&&file.size>10*1024*1024)msg='The file must be 10 MB or smaller.';
+   if (file && !msg) msg = permitSizeError(file);
    document.getElementById('box_'+input.id)?.classList.toggle('is-invalid',!!msg);
    const error=document.getElementById('error_'+input.id);if(error)error.textContent=msg;
    input.setAttribute('aria-invalid',String(!!msg));
@@ -28,7 +35,6 @@
 
 (() => {
  const form = document.getElementById('logisticsPermitsForm');
- const maxBytes = 10 * 1024 * 1024;
  const accepted = ['image/jpeg', 'image/png', 'application/pdf'];
  const objectUrls = [];
  function setError(input, msg) {
@@ -48,8 +54,8 @@
    preview.style.display = 'none'; preview.removeAttribute('src');
    const saved = document.getElementById('stored_' + input.id);
    if(!file) {text.textContent='Click to upload a document'; box.classList.remove('has-file'); return;}
-   if(!accepted.includes(file.type) || file.size > maxBytes) {
-      setError(input, !accepted.includes(file.type) ? 'Please upload a JPG, PNG, or PDF file.' : 'The file must be 10 MB or smaller.');
+   if(!accepted.includes(file.type) || permitSizeError(file)) {
+      setError(input, !accepted.includes(file.type) ? 'Please upload a JPG, PNG, or PDF file.' : permitSizeError(file));
       return;
    }
    box.classList.add('has-file'); text.textContent = file.name;

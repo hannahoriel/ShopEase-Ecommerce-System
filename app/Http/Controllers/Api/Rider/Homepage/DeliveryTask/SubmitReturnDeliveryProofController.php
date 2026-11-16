@@ -21,7 +21,7 @@ class SubmitReturnDeliveryProofController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(['delivered'])],
             'scanned_code' => ['required', 'string', 'max:2048'],
-            'proof_photo' => ['required', 'image', 'max:10240'],
+            'proof_photo' => ['required', 'image', 'max:15360'],
             'delivery_method' => ['nullable', Rule::in(['handed_to_buyer', 'left_at_door'])],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);

@@ -663,7 +663,7 @@ $('scIssueForm').addEventListener('submit',async e=>{
   if(!['Lost Parcel','Damaged Parcel'].includes(issueType)||cleanDescription.length<1){validation.textContent=!issueType?'Choose an issue type.':'Enter a description for the parcel issue.';validation.hidden=false;(!issueType?$('scIssueType'):description).focus();return;}
   validation.hidden=true;
   const f=$('scIssueEvidence').files?.[0];
-  if(f&&(f.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(f.type))){say('Evidence must be a JPG, PNG or WebP under 5 MB.');return;}
+  if(f&&(f.size>15*1024*1024||!['image/jpeg','image/png','image/webp'].includes(f.type))){say('Evidence must be a JPG, PNG or WebP under 15 MB.');return;}
   const selectedType=issueType;
   if(!['Lost Parcel','Damaged Parcel'].includes(selectedType)){say('Please select Lost Parcel or Damaged Parcel.');return;}
   const parcel=findParcel(activeIssueTracking);

@@ -194,7 +194,7 @@ class PlatformSettingsController extends Controller
             'status' => ['required', Rule::in(['Published', 'Scheduled'])],
             'publish_date' => ['required_if:status,Scheduled', 'nullable', 'date'],
             'publish_time' => ['required_if:status,Scheduled', 'nullable', 'date_format:H:i'],
-            'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+            'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:15360'],
             'remove_banner' => ['sometimes', 'boolean'],
         ]);
     }

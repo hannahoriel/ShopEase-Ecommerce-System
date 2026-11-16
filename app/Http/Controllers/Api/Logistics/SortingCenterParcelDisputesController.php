@@ -40,7 +40,7 @@ class SortingCenterParcelDisputesController extends Controller
             'tracking' => ['required', 'string', 'max:90'],
             'type' => ['required', 'string', Rule::in(['Lost Parcel', 'Damaged Parcel'])],
             'description' => ['required', 'string', 'min:1', 'max:1500'],
-            'evidence' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'evidence' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
         $center = $this->center($request);
         $evidence = $request->file('evidence');

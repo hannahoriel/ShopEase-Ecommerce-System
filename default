@@ -2,6 +2,8 @@ server {
     listen 8080;
     listen [::]:8080;
 
+    client_max_body_size 320m;
+
     root /home/site/wwwroot/public;
 
     index index.php index.html index.htm hostingstart.html;
@@ -16,6 +18,7 @@ server {
         fastcgi_pass 127.0.0.1:9000;
         fastcgi_index index.php;
         include fastcgi.conf;
+        fastcgi_param PHP_VALUE "upload_max_filesize=16M\npost_max_size=320M\nmax_file_uploads=20";
     }
 
     location ~ /\.ht {

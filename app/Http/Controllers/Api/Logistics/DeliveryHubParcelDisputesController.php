@@ -27,7 +27,7 @@ class DeliveryHubParcelDisputesController extends Controller
                 'Pickup Unsuccessful — Customer Cancelled',
             ])],
             'description' => ['required', 'string', 'min:1', 'max:1500'],
-            'evidence' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'evidence' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ]);
 
         $hub = LogisticsDeliveryHub::query()

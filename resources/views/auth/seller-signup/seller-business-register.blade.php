@@ -1715,19 +1715,19 @@
                     <div class="form-group" id="dtiUploadGroup" hidden>
                         <label class="form-label" for="dti_certificate">DTI Certificate <span class="required">*</span></label>
                         <input type="file" id="dti_certificate" name="dti_certificate" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
-                        <small class="field-help">JPG, PNG, or PDF; maximum 5 MB.</small>
+                        <small class="field-help">JPG, PNG, or PDF; up to 15 MB per image and 5 MB per PDF.</small>
                     </div>
 
                     <div class="form-group" id="secUploadGroup" hidden>
                         <label class="form-label" for="sec_certificate">SEC Certificate <span class="required">*</span></label>
                         <input type="file" id="sec_certificate" name="sec_certificate" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
-                        <small class="field-help">JPG, PNG, or PDF; maximum 5 MB.</small>
+                        <small class="field-help">JPG, PNG, or PDF; up to 15 MB per image and 5 MB per PDF.</small>
                     </div>
 
                     <div class="form-group" id="birUploadGroup" hidden>
                         <label class="form-label" for="bir_2303">BIR Form 2303 <span class="required">*</span></label>
                         <input type="file" id="bir_2303" name="bir_2303" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
-                        <small class="field-help">JPG, PNG, or PDF; maximum 5 MB.</small>
+                        <small class="field-help">JPG, PNG, or PDF; up to 15 MB per image and 5 MB per PDF.</small>
                     </div>
 
                     <!-- =================================================
@@ -2253,10 +2253,10 @@ document.addEventListener(
                     const files = Array.from(this.files);
                     const valid = files.filter(file => {
                         const extension = file.name.split('.').pop().toLowerCase();
-                        return ['jpg','jpeg','png','pdf'].includes(extension) && file.size <= 5120 * 1024;
+                        return ['jpg','jpeg','png','pdf'].includes(extension) && file.size <= (extension === 'pdf' ? 5 : 15) * 1024 * 1024;
                     });
                     const invalid = files.filter(file => !valid.includes(file));
-                    permitPlaceholder.innerHTML = `<p class="permit-text permit-selected">${valid.length} permit(s) selected</p><small class="permit-existing">JPG, PNG or PDF, max 5 MB each</small>`;
+                    permitPlaceholder.innerHTML = `<p class="permit-text permit-selected">${valid.length} permit(s) selected</p><small class="permit-existing">JPG, PNG or PDF, up to 15 MB per image and 5 MB per PDF</small>`;
                     const list = document.getElementById('selectedBusinessPermits');
                     if (list) {
                         const preserved = Array.from(list.querySelectorAll('[data-persisted]'));
@@ -2280,11 +2280,11 @@ document.addEventListener(
                         for (const file of invalid) {
                             const item = document.createElement('div');
                             item.className = 'se-permit-list-item se-permit-error';
-                            item.textContent = file.name + ': JPG/PNG/PDF only, max 5 MB each.';
+                            item.textContent = file.name + ': JPG/PNG/PDF only, up to 15 MB per image and 5 MB per PDF.';
                             list.appendChild(item);
                         }
                     }
-                    if (invalid.length) this.setCustomValidity('Remove invalid permit files (JPG, PNG, PDF, max 5 MB each).');
+                    if (invalid.length) this.setCustomValidity('Remove invalid permit files (JPG, PNG, PDF, up to 15 MB per image and 5 MB per PDF).');
                     else this.setCustomValidity('');
 
                 }
@@ -2328,9 +2328,9 @@ document.addEventListener(
                         }
                         const file = input.files[0];
                         const ext = file.name.split('.').pop().toLowerCase();
-                        if (!['jpg','jpeg','png','pdf'].includes(ext) || file.size > 5120 * 1024) {
+                        if (!['jpg','jpeg','png','pdf'].includes(ext) || file.size > (ext === 'pdf' ? 5 : 15) * 1024 * 1024) {
                             event.preventDefault();
-                            alert(label + ' must be JPG, PNG, or PDF and no larger than 5 MB.');
+                            alert(label + ' must be JPG, PNG, or PDF and up to 15 MB per image and 5 MB per PDF.');
                             input.focus();
                             return;
                         }
@@ -2403,7 +2403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!f) return '';
     const ext=f.name.split('.').pop().toLowerCase();
     if (!['jpg','jpeg','png','pdf'].includes(ext)) return 'Accepted file types: JPG, PNG, PDF only.';
-    if (f.size > 5120*1024) return 'File must not exceed 5 MB (5,120 KB).';
+    if (f.size > (/\.pdf$/i.test(f.name) ? 5 : 15) * 1024 * 1024) return 'Images must be 15 MB or smaller and PDFs 5 MB or smaller.';
     return '';
   }
   function messageNode(el) {

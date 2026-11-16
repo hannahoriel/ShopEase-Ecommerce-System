@@ -63,7 +63,7 @@ class SubmitPickupProofController extends Controller
         $validated = $request->validate([
             'status' => ['required', Rule::in(['in_transit'])],
             'scanned_code' => ['required', 'string', 'max:2048'],
-            'proof_photo' => ['required', 'image', 'max:10240'],
+            'proof_photo' => ['required', 'image', 'max:15360'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
