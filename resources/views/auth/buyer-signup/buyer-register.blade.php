@@ -2077,6 +2077,7 @@
 
     </style>
 
+<script src="{{ asset('js/registration-provinces.js') }}"></script>
 </head>
 
 
@@ -2651,6 +2652,8 @@
 
                     <div class="address-grid">
 
+
+                        <x-shared.registration-region :selected="old('region', $buyerData['region'] ?? '')" />
 
                         <!-- PROVINCE -->
 
@@ -4816,6 +4819,7 @@ document.addEventListener(
         async function loadMunicipalities(
             provinceLocation
         ) {
+            const revision = addressRevision;
 
             const provinceCode =
                 getLocationCode(
@@ -4852,6 +4856,7 @@ document.addEventListener(
                             provinceCode
                         )}/cities${query}`
                     );
+                if (revision !== addressRevision) return;
 
 
                 municipalityControl.setLocations(
@@ -4864,6 +4869,7 @@ document.addEventListener(
             } catch (
                 error
             ) {
+                if (revision !== addressRevision) return;
 
                 console.error(
                     'Municipality loading error:',
@@ -4886,6 +4892,7 @@ document.addEventListener(
         async function loadBarangays(
             municipalityLocation
         ) {
+            const revision = addressRevision;
 
             const municipalityCode =
                 getLocationCode(
@@ -4912,6 +4919,7 @@ document.addEventListener(
                             municipalityCode
                         )}/barangays`
                     );
+                if (revision !== addressRevision) return;
 
 
                 barangayControl.setLocations(
@@ -4921,6 +4929,7 @@ document.addEventListener(
             } catch (
                 error
             ) {
+                if (revision !== addressRevision) return;
 
                 console.error(
                     'Barangay loading error:',
@@ -5037,7 +5046,11 @@ document.addEventListener(
            RESTORE SAVED ADDRESS
         ========================================================== */
 
+        const registrationRegion = document.getElementById('region');
+        let addressRevision = 0;
+
         async function initializeLocations() {
+            const revision = ++addressRevision;
 
             const savedProvince =
                 provinceHidden.value.trim();
@@ -5051,6 +5064,9 @@ document.addEventListener(
                 barangayHidden.value.trim();
 
 
+            provinceControl.clear();
+            provinceSearch.disabled = true;
+            provinceSearch.placeholder = 'Select region first';
             disableMunicipality();
 
 
@@ -5065,9 +5081,11 @@ document.addEventListener(
 
 
                 const provinces =
-                    await loadLocations(
-                        'provinces'
-                    );
+                    await window.loadRegistrationProvinces(registrationRegion, loadLocations, savedProvince);
+                if (revision !== addressRevision) return;
+
+                provinceSearch.disabled = provinces.length === 0;
+                provinceSearch.placeholder = provinces.length ? 'Type to search province' : 'Select region first';
 
 
                 provinceControl.setLocations(
@@ -5162,6 +5180,7 @@ document.addEventListener(
                             provinceCode
                         )}/cities${query}`
                     );
+                if (revision !== addressRevision) return;
 
 
                 municipalityControl.setLocations(
@@ -5230,6 +5249,7 @@ document.addEventListener(
                             municipalityCode
                         )}/barangays`
                     );
+                if (revision !== addressRevision) return;
 
 
                 barangayControl.setLocations(
@@ -5271,6 +5291,8 @@ document.addEventListener(
             } catch (
                 error
             ) {
+                if (revision !== addressRevision) return;
+                provinceSearch.placeholder = 'Unable to load provinces';
 
                 console.error(
                     'Location initialization error:',
@@ -5281,6 +5303,13 @@ document.addEventListener(
 
         }
 
+
+        registrationRegion.addEventListener('change', () => {
+            provinceControl.clear();
+            disableMunicipality();
+            disableBarangay();
+            initializeLocations();
+        });
 
         initializeLocations();
 
