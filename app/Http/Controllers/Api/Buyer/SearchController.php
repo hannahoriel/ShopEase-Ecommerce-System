@@ -129,7 +129,7 @@ class SearchController extends Controller
             ->withAvg('reviews as product_rating_average', 'rating')
             ->withCount('reviews as product_rating_count')
             ->withSum(['orderItems as sold_count' => fn ($items) => $items->whereHas(
-                'order', fn ($orders) => $orders->whereIn('status', ['delivered', 'completed'])
+                'order', fn ($orders) => $orders->whereNotIn('status', ['cancelled', 'refunded'])
             )], 'quantity');
 
         switch ($input['sort'] ?? 'relevance') {

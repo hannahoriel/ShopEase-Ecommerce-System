@@ -501,6 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="product-review-meta">
                             <p class="product-rating"><span class="rating-star" aria-hidden="true">★</span><span class="product-rating-number">${Number(product.rating_average || 0).toFixed(1)}</span></p>
                             <p class="product-shop-name">${escapeHtml(product.seller?.store_name || 'ShopEase Seller')}</p>
+                            <p class="product-shop-name">${Number(product.sold_count || 0).toLocaleString()} sold</p>
                         </div>
                         <div class="product-bottom-row">
                             <span class="product-sale-price"><strong>${escapeHtml(formatPrice(salePrice))}</strong>${saleLabel ? `<del>${escapeHtml(formatPrice(originalPrice))}</del><em>${escapeHtml(saleLabel)}</em>` : ''}</span>
