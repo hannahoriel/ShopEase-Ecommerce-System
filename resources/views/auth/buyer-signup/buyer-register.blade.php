@@ -2078,6 +2078,13 @@
     </style>
 
 <script src="{{ asset('js/registration-provinces.js') }}"></script>
+<style>
+.se-password-rules{margin-top:10px;padding:12px 14px;border:1px solid #EEE0DC;border-radius:9px;background:#FFFBFA;font:400 12px/1.8 'Poppins',sans-serif}
+.se-password-rules span{display:block;color:#8A7774}
+.se-password-rules span.ok{color:#25804B}
+.se-password-rules span::before{content:'○ ';font-weight:700}
+.se-password-rules span.ok::before{content:'✓ '}
+</style>
 </head>
 
 
@@ -2233,7 +2240,7 @@
                             class="field-label"
                         >
 
-                            Last Name
+                            Last Name <span class="required">*</span>
 
 
                         </label>
@@ -2247,6 +2254,7 @@
                             placeholder="Enter your last name"
                             value="{{ old('last_name', $buyerData['last_name'] ?? '') }}"
                             autocomplete="family-name"
+                            required
                             minlength="2"
                             maxlength="50"
                             pattern="[A-Za-z .'-]{2,50}"
@@ -2255,10 +2263,10 @@
 
 
                         <div
-                            class="field-error"
+                            class="field-error {{ $errors->has('last_name') ? 'show' : '' }}"
                             id="lastNameError"
                         >
-                            Please enter your last name.
+                            {{ $errors->first('last_name') ?: 'Please enter your last name.' }}
                         </div>
 
                     </div>
@@ -3236,6 +3244,15 @@
 
                     </div>
 
+
+                    <div class="se-password-rules" id="buyer-password-rules">
+                        <strong>Password requirements</strong>
+                        <span data-password-rule="length">At least 8 characters</span>
+                        <span data-password-rule="uppercase">One uppercase letter</span>
+                        <span data-password-rule="lowercase">One lowercase letter</span>
+                        <span data-password-rule="number">One number</span>
+                        <span data-password-rule="special">One special character</span>
+                    </div>
 
                     <small class="field-help">
 
@@ -6059,6 +6076,28 @@ document.addEventListener(
 </script>
 
 
+<script>
+    (() => {
+        const password = document.getElementById('password');
+        const checklist = document.getElementById('buyer-password-rules');
+        function updatePasswordRules() {
+            const value = password.value;
+            const checks = {
+                length: value.length >= 8,
+                uppercase: /[A-Z]/.test(value),
+                lowercase: /[a-z]/.test(value),
+                number: /[0-9]/.test(value),
+                special: /[^A-Za-z0-9]/.test(value),
+            };
+            for (const item of checklist.querySelectorAll('[data-password-rule]')) {
+                item.classList.toggle('ok', checks[item.dataset.passwordRule]);
+            }
+        }
+        password.addEventListener('input', updatePasswordRules);
+        window.addEventListener('pageshow', updatePasswordRules);
+        updatePasswordRules();
+    })();
+</script>
 </body>
 
 </html>

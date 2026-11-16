@@ -182,9 +182,12 @@ body.logistics-route-loading .registration-content{opacity:.48;pointer-events:no
    },
    body: JSON.stringify(payload)
   });
-  const result = await response.json();
+  const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-   const error = new Error(result.message || 'The request could not be completed.');
+   const fallback = response.status === 419
+    ? 'Your session has expired. Refresh the page and try again.'
+    : 'The request could not be completed. Please try again later.';
+   const error = new Error(response.status >= 500 && response.status !== 503 ? fallback : (result.message || fallback));
    error.retryAfter = result.retry_after;
    throw error;
   }

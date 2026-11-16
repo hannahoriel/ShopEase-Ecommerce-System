@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use RuntimeException;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class LogisticsRegistrationController extends Controller
 {
@@ -159,6 +160,14 @@ class LogisticsRegistrationController extends Controller
             ], 422);
         }
 
+        $mailRetryAt = $request->session()->get('logistics_registration.mail_retry_at');
+        if ($mailRetryAt && now()->lt($mailRetryAt)) {
+            return response()->json([
+                'message' => 'Email delivery is temporarily unavailable. Please wait before trying again.',
+                'retry_after' => (int) ceil(now()->diffInSeconds($mailRetryAt)),
+            ], 429);
+        }
+
         $previousVerification = $request->session()->get('logistics_registration.verification');
         if (is_array($previousVerification)
             && !empty($previousVerification['resend_available_at'])
@@ -183,7 +192,24 @@ class LogisticsRegistrationController extends Controller
         }
 
         $code = (string) random_int(100000, 999999);
-        Mail::to($email)->send(new LogisticsVerificationCode($code));
+        try {
+            Mail::to($email)->send(new LogisticsVerificationCode($code));
+        } catch (TransportExceptionInterface $exception) {
+            report($exception);
+            $request->session()->put('logistics_registration.mail_retry_at', now()->addSeconds(60));
+
+            $quotaExceeded = str_contains($exception->getMessage(), '5.4.5')
+                || str_contains(strtolower($exception->getMessage()), 'daily user sending limit exceeded');
+
+            return response()->json([
+                'message' => $quotaExceeded
+                    ? 'Our email service has reached its daily sending limit. No new code was sent. Please try again later; email delivery may take up to 24 hours to resume.'
+                    : 'We could not send your verification code right now. Please try again later.',
+                'retry_after' => 60,
+            ], 503);
+        }
+
+        $request->session()->forget('logistics_registration.mail_retry_at');
 
         $request->session()->put('logistics_registration.verification', [
             'email' => $email,

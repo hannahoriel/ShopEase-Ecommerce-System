@@ -16,6 +16,39 @@ class LogisticsRegistrationFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[\PHPUnit\Framework\Attributes\TestWith(['550-5.4.5 Daily user sending limit exceeded', 'daily sending limit'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['SMTP connection timed out', 'could not send'])]
+    public function test_mail_failure_keeps_registration_unverified_and_allows_retry(string $failure, string $message): void
+    {
+        $mailManager = Mail::getFacadeRoot();
+        $pendingMail = \Mockery::mock(\Illuminate\Mail\PendingMail::class);
+        Mail::shouldReceive('to')->once()->with('company@example.com')->andReturn($pendingMail);
+        $pendingMail->shouldReceive('send')->once()
+            ->andThrow(new \Symfony\Component\Mailer\Exception\TransportException($failure));
+
+        $this->withSession(['logistics_registration.company' => ['company_email' => 'company@example.com']])
+            ->postJson(route('logistics.register.send-code'))
+            ->assertStatus(503)
+            ->assertJsonPath('retry_after', 60)
+            ->assertSessionMissing('logistics_registration.verification')
+            ->assertSessionHas('logistics_registration.company.company_email', 'company@example.com')
+            ->assertSee($message)
+            ->assertDontSee($failure);
+
+        $this->postJson(route('logistics.register.send-code'))->assertTooManyRequests();
+        $this->postJson(route('logistics.register.verify-code'), ['code' => '123456'])
+            ->assertUnprocessable();
+
+        $this->travel(61)->seconds();
+        Mail::swap($mailManager);
+        Mail::fake();
+        $this->postJson(route('logistics.register.send-code'))
+            ->assertOk()
+            ->assertSessionMissing('logistics_registration.mail_retry_at')
+            ->assertSessionHas('logistics_registration.verification.verified', false);
+        Mail::assertSent(LogisticsVerificationCode::class, 1);
+    }
+
     public function test_logistics_registration_creates_an_account_pending_admin_approval(): void
     {
         Storage::fake('local');
