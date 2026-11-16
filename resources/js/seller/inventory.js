@@ -11291,14 +11291,15 @@ document.addEventListener(
                    Front-end persistence for the current Inventory UI.
                 ================================================== */
 
-                const createdProductsStorageKey =
-                    'shopease_seller_inventory_created_products_v1';
-
-                const archivedProductsStorageKey =
-                    'shopease_seller_inventory_archived_products_v1';
+                const sellerId = inventoryConfig.sellerId;
+                const createdProductsStorageKey = sellerId
+                    ? `shopease_seller_inventory_created_products_v2:${sellerId}` : null;
+                const archivedProductsStorageKey = sellerId
+                    ? `shopease_seller_inventory_archived_products_v2:${sellerId}` : null;
 
 
                 function loadCreatedProducts() {
+                    if (!createdProductsStorageKey) return [];
 
                     try {
 
@@ -11330,6 +11331,7 @@ document.addEventListener(
                 }
 
                 function loadArchivedProducts() {
+                    if (!archivedProductsStorageKey) return [];
                     try {
                         const stored = JSON.parse(
                             localStorage.getItem(archivedProductsStorageKey) ||
@@ -11346,6 +11348,7 @@ document.addEventListener(
                 let archivedInventoryProducts = loadArchivedProducts();
 
                 function saveArchivedProducts() {
+                    if (!archivedProductsStorageKey) return;
                     try {
                         localStorage.setItem(
                             archivedProductsStorageKey,
@@ -11486,40 +11489,33 @@ document.addEventListener(
                 const serverArchivedProducts = inventoryConfig.archivedProducts
                     .map(normalizePersistedProduct);
 
-                archivedInventoryProducts = [
-                    ...serverArchivedProducts.map(function (serverProduct) {
-                        const localProduct = archivedInventoryProducts.find(function (local) {
-                            return String(local.id) === String(serverProduct.id);
-                        });
-                        if (!localProduct) return serverProduct;
+                archivedInventoryProducts = serverArchivedProducts.map(function (serverProduct) {
+                    const localProduct = archivedInventoryProducts.find(function (local) {
+                        return String(local.id) === String(serverProduct.id);
+                    });
+                    if (!localProduct) return serverProduct;
 
-                        const serverAdmin = serverProduct.archivedByAdmin ||
-                            ['admin', 'administrator'].includes(
-                                String(serverProduct.archiveActor || '').toLowerCase()
-                            );
+                    const serverAdmin = serverProduct.archivedByAdmin ||
+                        ['admin', 'administrator'].includes(
+                            String(serverProduct.archiveActor || '').toLowerCase()
+                        );
 
-                        return {
-                            ...localProduct,
-                            ...serverProduct,
-                            // Real server admin provenance overrides a local seller label.
-                            archivedByAdmin: Boolean(serverAdmin || localProduct.archivedByAdmin),
-                            archivedBySeller: serverAdmin ? false : Boolean(
-                                serverProduct.archivedBySeller || localProduct.archivedBySeller
-                            ),
-                            archiveActor: serverAdmin ? 'admin' : (
-                                serverProduct.archiveActor || localProduct.archiveActor || ''
-                            ),
-                            archiveReason: serverProduct.archiveReason || localProduct.archiveReason || '',
-                            archiveDetails: serverProduct.archiveDetails || localProduct.archiveDetails || '',
-                            archivedAt: serverProduct.archivedAt || localProduct.archivedAt || ''
-                        };
-                    }),
-                    ...archivedInventoryProducts.filter(function (localProduct) {
-                        return !serverArchivedProducts.some(function (serverProduct) {
-                            return String(serverProduct.id) === String(localProduct.id);
-                        });
-                    })
-                ];
+                    return {
+                        ...localProduct,
+                        ...serverProduct,
+                        // Real server admin provenance overrides a local seller label.
+                        archivedByAdmin: Boolean(serverAdmin || localProduct.archivedByAdmin),
+                        archivedBySeller: serverAdmin ? false : Boolean(
+                            serverProduct.archivedBySeller || localProduct.archivedBySeller
+                        ),
+                        archiveActor: serverAdmin ? 'admin' : (
+                            serverProduct.archiveActor || localProduct.archiveActor || ''
+                        ),
+                        archiveReason: serverProduct.archiveReason || localProduct.archiveReason || '',
+                        archiveDetails: serverProduct.archiveDetails || localProduct.archiveDetails || '',
+                        archivedAt: serverProduct.archivedAt || localProduct.archivedAt || ''
+                    };
+                });
 
                 const localCreatedProducts =
                     loadCreatedProducts();
@@ -11603,23 +11599,11 @@ document.addEventListener(
                         }
                     );
 
-                let createdInventoryProducts = [
-                    ...mergedServerCreatedProducts,
-                    ...localCreatedProducts.filter(function (localProduct) {
-                        return !serverCreatedProducts.some(function (serverProduct) {
-                            return String(serverProduct.id) === String(localProduct.id);
-                        }) && !archivedInventoryProducts.some(function (archivedProduct) {
-                            return String(archivedProduct.id) === String(localProduct.id);
-                        });
-                    })
-                ].filter(function (product) {
-                    return !archivedInventoryProducts.some(function (archivedProduct) {
-                        return String(archivedProduct.id) === String(product.id);
-                    });
-                });
+                let createdInventoryProducts = mergedServerCreatedProducts;
 
 
                 function saveCreatedProducts() {
+                    if (!createdProductsStorageKey) return;
 
                     try {
 

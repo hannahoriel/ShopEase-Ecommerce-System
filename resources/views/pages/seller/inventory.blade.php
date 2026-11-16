@@ -335,6 +335,7 @@
     {{-- Runtime data/config for the extracted inventory JavaScript --}}
     @php
         $sellerInventoryConfig = [
+            'sellerId' => $seller?->id,
             'sellerRegisteredCategories' => array_column($sellerInventoryCategories, 'slug'),
             'sellerShipFromAddress' => $sellerShipFromAddress,
             'inventoryProducts' => $inventoryProducts ?? [],
