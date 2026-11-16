@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 const registrationsConfigElement =
     document.getElementById('registrationsConfig');
 
@@ -2665,6 +2667,7 @@ document.addEventListener('DOMContentLoaded', function () {
         type,
         name
     ) {
+        if (deferFlashUntilModalCloses(showRegistrationFlash, () => showRegistrationFlash(type, name))) return;
 
         if (
             !registrationFlash
@@ -2995,11 +2998,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         .name ||
                     'The applicant';
 
-                showRegistrationFlash(
-                    'rejected',
-                    name
-                );
-
                 confirmRejectRegistration.disabled =
                     true;
 
@@ -3028,9 +3026,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     closeRejectRegistrationModal();
 
+                    showRegistrationFlash(
+                        'rejected',
+                        name
+                    );
+
                 } catch (
                     error
                 ) {
+
+                    closeRegistrationModal(sellerDetailsModal);
+                    closeRegistrationModal(buyerDetailsModal);
+                    closeRejectRegistrationModal();
 
                     showRegistrationFlash(
                         'error',
@@ -3108,11 +3115,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             return;
                         }
 
-                        showRegistrationFlash(
-                            'approved',
-                            name
-                        );
-
                         button.disabled =
                             true;
 
@@ -3131,9 +3133,18 @@ document.addEventListener('DOMContentLoaded', function () {
                                 buyerDetailsModal
                             );
 
+                            showRegistrationFlash(
+                                'approved',
+                                name
+                            );
+
                         } catch (
                             error
                         ) {
+
+                            closeRegistrationModal(sellerDetailsModal);
+                            closeRegistrationModal(buyerDetailsModal);
+                            closeRejectRegistrationModal();
 
                             showRegistrationFlash(
                                 'error',
@@ -3624,6 +3635,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeReview(){review.hidden=true;syncScroll();}
     function closeReject(){reject.hidden=true;syncScroll();}
     function showFlash(title, message, error=false){
+        if (deferFlashUntilModalCloses(showFlash, () => showFlash(title, message, error))) return;
         const box=get('acrFlash');get('acrFlashTitle').textContent=title;get('acrFlashMessage').textContent=message;
         box.classList.toggle('error', error);box.hidden=false;
     }

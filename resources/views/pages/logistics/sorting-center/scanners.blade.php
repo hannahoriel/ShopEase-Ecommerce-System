@@ -15,6 +15,7 @@
 <html lang="en">
 
 <head>
+    @vite('resources/js/shared/flash-timing.js')
 
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -390,7 +391,9 @@ const list=()=>data.parcels.filter(p=>String(p.currentCenterId||'')===String(cur
 
 const findParcel=id=>{const raw=String(id??'').trim();let decoded=raw;try{const url=new URL(raw,window.location.origin);decoded=decodeURIComponent(url.pathname.split('/').filter(Boolean).pop()||raw)}catch{}const needle=norm(decoded);return data.parcels.find(p=>[p.tracking,p.order_number,p.scan_token].some(value=>norm(value)===needle))};
 
-function say(message){$('scToast').textContent=message;$('scToast').hidden=false;clearTimeout(say.timer);say.timer=setTimeout(()=>$('scToast').hidden=true,3500)}
+function say(message){
+    if (window.deferFlashUntilModalCloses?.(say, () => say(message))) return;
+    $('scToast').textContent=message;$('scToast').hidden=false;clearTimeout(say.timer);say.timer=setTimeout(()=>$('scToast').hidden=true,3500)}
 
 function feedback(id,style,title,sub,route){const el=$(id);el.className='sc-feedback '+(style||'');el.innerHTML=`<div><strong>${esc(title)}</strong><small>${esc(sub)}</small>${route?`<div class="sc-route">${esc(route)}</div>`:''}</div>`;}
 

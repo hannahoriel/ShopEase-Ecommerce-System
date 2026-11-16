@@ -10,7 +10,8 @@
     $fleetArchives = $fleetArchives ?? [];
 @endphp
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Vehicles & Drivers — ShopEase Delivery Hub</title>
+<html lang="en"><head>
+    @vite('resources/js/shared/flash-timing.js')<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Vehicles & Drivers — ShopEase Delivery Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--lg-maroon:#7B1B1B;--lg-dark:#52070B;--lg-peach:#FFE6DE;--lg-bg:#FCF8F6;--lg-line:#F0E9E6;--lg-ink:#17120F;--lg-muted:#8C8784}
@@ -93,7 +94,9 @@ let activeTab='vehicles',riderDutyFilter='all',page=1,selected=null;
 const key=(type,id)=>type+':'+String(id);
 const isArchived=(type,id)=>archive.some(a=>a.key===key(type,id));
 const available=type=>(type==='vehicles'?vehicles():riders()).filter(r=>!isArchived(type,r.id));
-function flash(title,msg,error=false){const el=$('vdFlash');el.classList.toggle('error',error);$('vdFlashTitle').textContent=title;$('vdFlashMsg').textContent=msg;$('vdFlashIcon').innerHTML=error?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 5 14 14M19 5 5 19"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>';el.hidden=false;clearTimeout(flash.timer);flash.timer=setTimeout(()=>el.hidden=true,4000)}
+function flash(title,msg,error=false){
+    if (window.deferFlashUntilModalCloses?.(flash, () => flash(title, msg, error))) return;
+    const el=$('vdFlash');el.classList.toggle('error',error);$('vdFlashTitle').textContent=title;$('vdFlashMsg').textContent=msg;$('vdFlashIcon').innerHTML=error?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 5 14 14M19 5 5 19"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>';el.hidden=false;clearTimeout(flash.timer);flash.timer=setTimeout(()=>el.hidden=true,4000)}
 function setModal(id,show){$(id).hidden=!show;document.body.style.overflow=document.querySelector('.cr-modal:not([hidden])')?'hidden':'';}
 function closeAll(){document.querySelectorAll('.cr-modal').forEach(m=>m.hidden=true);document.body.style.overflow='';}
 function draw(){let vs=available('vehicles'),cs=available('riders');$('vdVehiclesCount').textContent=vs.length;$('vdRidersCount').textContent=cs.length;$('vdTrashCount').textContent=archive.length;$('vdTrashCount').hidden=!archive.length;const q=$('vdSearch').value.toLowerCase().trim();$('vdRiderFilters').hidden=activeTab!=='riders';

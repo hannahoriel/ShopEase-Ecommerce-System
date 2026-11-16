@@ -1,5 +1,6 @@
 @php($pageName = 'Messages')
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Sorting Center Messages — ShopEase</title><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"><style>:root{--lg-maroon:#7B1B1B;--lg-dark:#52070B;--lg-peach:#FFE6DE;--lg-bg:#FCF8F6;--lg-line:#F0E9E6;--lg-ink:#17120F;--lg-muted:#8C8784}
+<!DOCTYPE html><html lang="en"><head>
+    @vite('resources/js/shared/flash-timing.js')<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Sorting Center Messages — ShopEase</title><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"><style>:root{--lg-maroon:#7B1B1B;--lg-dark:#52070B;--lg-peach:#FFE6DE;--lg-bg:#FCF8F6;--lg-line:#F0E9E6;--lg-ink:#17120F;--lg-muted:#8C8784}
 *{box-sizing:border-box}body.lg-body{margin:0;background:var(--lg-bg);font-family:Poppins,sans-serif;color:var(--lg-ink)}button,input,select{font-family:inherit}button{cursor:pointer}a{text-decoration:none}body.lg-modal-open{overflow:hidden}
 .lg-sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;z-index:50;background:linear-gradient(155deg,#7B1B1B 0%,#52070B 80%);border-top-right-radius:58px;padding:20px 14px 18px;display:flex;flex-direction:column;transition:width .3s ease;box-shadow:4px 0 18px #52070b12;overflow:hidden;color:white}
 .lg-sidebar-logo{height:74px;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:20px;color:white;white-space:nowrap}.lg-sidebar-logo img{max-width:115px;max-height:53px;object-fit:contain}.lg-sidebar-logo>span{font-size:11px;letter-spacing:1.1px;font-weight:700}.lg-sidebar-logo small{display:block;font-size:8px;font-weight:400;letter-spacing:1.5px;opacity:.65}
@@ -84,7 +85,9 @@ const API_BASE = @json(url('/api/v1/sorting_center/messages'));
  const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s??'').toLowerCase().trim(), initials=s=>String(s||'').split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 let tab='admin',current=null,contacts=[],busy=false;
-const toast=txt=>{ $('lmToast').textContent=txt;$('lmToast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('lmToast').hidden=true,3400); };
+const toast=txt=>{
+    if (window.deferFlashUntilModalCloses?.(toast, () => toast(txt))) return;
+     $('lmToast').textContent=txt;$('lmToast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('lmToast').hidden=true,3400); };
 async function api(url,options={}){const formData=options.body instanceof FormData,headers={Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',...(options.headers||{})};if(!formData)headers['Content-Type']='application/json';const response=await fetch(url,{credentials:'same-origin',...options,headers});const json=await response.json().catch(()=>({}));if(!response.ok)throw new Error(json.message||'Unable to load messages.');return json;}
 function typeOf(c){return c.type==='admin'?'admin':c.type==='logistics'?'logistics':'delivery';}
 function stamp(v){if(!v)return '';const d=new Date(v);return Number.isNaN(d.getTime())?'':new Intl.DateTimeFormat('en-PH',{hour:'numeric',minute:'2-digit',hour12:true}).format(d);}

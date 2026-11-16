@@ -37,6 +37,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @vite('resources/js/shared/flash-timing.js')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -1417,6 +1418,7 @@
  const cross='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
  function dismiss(){clearTimeout(timer);flash.classList.remove('show');}
  window.showAccountFlash=function(text,isError=false,heading){
+     if (window.deferFlashUntilModalCloses?.(window.showAccountFlash, () => window.showAccountFlash(text, isError, heading))) return;
    if(!text)return;
    flash.classList.remove('approved','rejected','error');
    flash.classList.add(isError?'error':'approved');

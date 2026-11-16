@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 /*
  * resources/js/admin/seller-compliance.js
  *
@@ -336,6 +338,7 @@ function initSellerCompliance(cfg) {
     }
 
     function showFlash(type, value) {
+        if (deferFlashUntilModalCloses(showFlash, () => showFlash(type, value))) return;
         if (!flashEl) return;
 
         const [title, message] =

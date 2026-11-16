@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 /* ShopEase Seller Account JS — dynamic Laravel values are supplied by the Blade config. */
 const sellerAccountPageData = JSON.parse(document.getElementById('sellerAccountPageConfig').textContent);
 
@@ -327,6 +329,7 @@ const sellerAccountPageData = JSON.parse(document.getElementById('sellerAccountP
  const cross='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
  function dismiss(){clearTimeout(timer);flash.classList.remove('show');}
  window.showAccountFlash=function(text,isError=false,heading){
+     if (deferFlashUntilModalCloses(window.showAccountFlash, () => window.showAccountFlash(text, isError, heading))) return;
    if(!text)return;
    flash.classList.remove('approved','rejected','error');
    flash.classList.add(isError?'error':'approved');

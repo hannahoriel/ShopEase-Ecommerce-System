@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @vite('resources/js/shared/flash-timing.js')
     <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Logistics Dashboard &#8212; ShopEase</title>
@@ -139,7 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
      $('lgLiveClock').textContent=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(now);
    }
    clock();setInterval(clock,1000);
-   function showToast(message) { const el=$('lgToast');el.textContent=message;el.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.hidden=true,3500); }
+   function showToast(message) {
+       if (window.deferFlashUntilModalCloses?.(showToast, () => showToast(message))) return;
+        const el=$('lgToast');el.textContent=message;el.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.hidden=true,3500); }
    let centers=[];
    function renderFacilities() {
      const rows=centers.flatMap(c=>[

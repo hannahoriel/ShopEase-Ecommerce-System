@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 const logisticsManagementConfigElement =
     document.getElementById('logisticsManagementConfig');
 
@@ -1072,6 +1074,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showLogisticsFlash(type, companyName) {
+        if (deferFlashUntilModalCloses(showLogisticsFlash, () => showLogisticsFlash(type, companyName))) return;
         if (!logisticsFlash) {
             return;
         }

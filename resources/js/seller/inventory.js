@@ -1,3 +1,5 @@
+import { deferFlashUntilModalCloses } from '../shared/flash-timing.js';
+
 /* ShopEase Seller Inventory
  * Interactive behavior extracted from inventory.blade.php.
  */
@@ -150,6 +152,7 @@ document.addEventListener(
                 let inventoryFlashTimer = null;
 
                 function showInventoryFlash(message) {
+                    if (deferFlashUntilModalCloses(showInventoryFlash, () => showInventoryFlash(message))) return;
 
                     if (!inventoryFlashMessage || !inventoryFlashText) {
                         return;
