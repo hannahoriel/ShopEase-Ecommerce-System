@@ -28,11 +28,18 @@ class AccountLoginEligibility
             ->where('user_id', $user->id)
             ->first();
 
-        $branch = $hub?->logisticsBranch;
+        // Some provisioned delivery-hub accounts are created before their
+        // facility profile is attached. Preserve first-login password setup
+        // for those accounts; when a facility exists, its active state and
+        // its parent network determine whether it is disabled.
+        if (! $hub) {
+            return null;
+        }
+
+        $branch = $hub->logisticsBranch;
         $company = $branch?->logistics;
 
-        if (! $hub
-            || $hub->status !== 'active'
+        if ($hub->status !== 'active'
             || $hub->archived_at !== null
             || ! $branch
             || $branch->status !== 'active'
