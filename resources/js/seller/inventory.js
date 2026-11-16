@@ -6191,15 +6191,6 @@ document.addEventListener(
                                 ? product.connected_variants
                                 : [];
 
-                    if (productDetailsVariationCount) {
-                        productDetailsVariationCount.textContent =
-                            String(
-                                Array.isArray(product?.variations)
-                                    ? product.variations.length
-                                    : connectedVariants.length
-                            );
-                    }
-
                     const activeGroups =
                         groups.filter(
                             function (group) {
@@ -6211,6 +6202,13 @@ document.addEventListener(
                                 );
                             }
                         );
+
+                    if (productDetailsVariationCount) {
+                        const choiceCount = activeGroups.reduce(
+                            (total, group) => total + product[group.key].length, 0
+                        );
+                        productDetailsVariationCount.textContent = String(choiceCount || connectedVariants.length);
+                    }
 
                     const variationStats =
                         document.createElement(
@@ -13135,12 +13133,18 @@ document.addEventListener(
                     return [];
                 }
 
+                function getActivePricingGroups() {
+                    return ['variations', 'colors', 'sizes'].filter(
+                        group => getPricingGroupItems(group).length > 0
+                    );
+                }
+
                 function syncVariableProductStock() {
                     if (!createProductStock) {
                         return;
                     }
 
-                    const activeGroups = ['variations', 'colors', 'sizes'].filter(group => getPricingGroupItems(group).length > 0);
+                    const activeGroups = getActivePricingGroups();
                     createProductStock.readOnly = activeGroups.length > 0;
                     createProductStock.required = activeGroups.length === 0;
                     createProductStock.setAttribute('aria-readonly', String(activeGroups.length > 0));
@@ -13250,22 +13254,14 @@ document.addEventListener(
                 }
 
                 function getOptionPriceMeta(group, pricingMode, pricingSource) {
-                    const isPrimary =
-                        pricingMode !== 'varies' ||
-                        pricingSource === group;
+                    const hasSingleChoiceType = getActivePricingGroups().length <= 1;
+                    const isPrimary = pricingMode !== 'varies' || hasSingleChoiceType || pricingSource === group;
 
                     return {
                         isPrimary,
-                        label:
-                            pricingMode === 'fixed'
-                                ? 'Item Price'
-                                : group === 'variations'
-                                ? isPrimary
-                                    ? 'Variation Price'
-                                    : 'Variation Add-on'
-                                : isPrimary
-                                ? 'Item Price'
-                                : 'Additional',
+                        label: hasSingleChoiceType && pricingMode === 'varies'
+                            ? 'Price'
+                            : isPrimary ? 'Item Price' : 'Additional',
                         prefix:
                             isPrimary
                                 ? '₱'
@@ -13449,6 +13445,10 @@ document.addEventListener(
                 }
 
                 function renderAllBuyerOptions() {
+                    variablePricingSetup?.classList.toggle(
+                        'hidden',
+                        productPricingMode?.value !== 'varies' || getActivePricingGroups().length < 2
+                    );
                     renderVariations();
 
                     renderOptionChips(
@@ -13495,11 +13495,6 @@ document.addEventListener(
                     );
 
                     variablePricePanel?.classList.toggle(
-                        'hidden',
-                        !isVariable
-                    );
-
-                    variablePricingSetup?.classList.toggle(
                         'hidden',
                         !isVariable
                     );
@@ -18723,7 +18718,7 @@ document.addEventListener(
 
                 const label =
                     field.querySelector(
-                        'label'
+                        'label, .create-option-price-label'
                     );
 
                 const input =
@@ -18783,7 +18778,7 @@ document.addEventListener(
 
                 if (label) {
                     label.textContent = getActiveGroups().length === 1
-                        ? 'Item Price'
+                        ? 'Price'
                         : 'Base Price';
                 }
 
