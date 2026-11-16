@@ -6425,11 +6425,18 @@ document.addEventListener(
                                     );
 
                                     if (activeGroups.length === 1 && !connectedVariants.length && resolveProductPricingMode(product) === 'varies') {
+                                        const savedPrice = item.price ?? item.base_price ?? item.basePrice;
+                                        if (savedPrice != null && savedPrice !== '') {
+                                            const displayPrice = document.createElement('span');
+                                            displayPrice.className = 'product-details-view-value';
+                                            displayPrice.textContent = ' · ' + formatMoney(savedPrice);
+                                            display.append(displayPrice);
+                                        }
                                         const price = document.createElement('input');
                                         price.type = 'number';
                                         price.min = '0';
                                         price.step = '0.01';
-                                        price.value = item.price ?? '';
+                                        price.value = savedPrice ?? '';
                                         price.placeholder = 'Item price';
                                         price.setAttribute('aria-label', 'Item price for ' + item.name);
                                         price.className = 'product-details-choice-edit product-details-edit-control';

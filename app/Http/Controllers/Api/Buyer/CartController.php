@@ -150,7 +150,7 @@ class CartController extends Controller
     {
         $product = $item->product;
         $photos  = $this->resolvePhotos($product->photos ?? []);
-        $combination = $product->selectedCombinationForCart($item->variation, $item->color, $item->size);
+        $originalPrice = $product->originalPriceForCart($item->variation, $item->color, $item->size);
         $selectedPhoto = $product->selectedImageForCart($item->variation, $item->color, $item->size);
 
         return [
@@ -162,8 +162,8 @@ class CartController extends Controller
             'product'   => [
                 'id'           => $product->id,
                 'name'         => $product->name,
-                'price'        => $product->salePriceForCart($item->variation, $item->color, $item->size),
-                'original_price' => $combination ? (float) $combination->final_price : (float) $product->price,
+                'price'        => $product->salePriceForBase($originalPrice),
+                'original_price' => $originalPrice,
                 'sale_percentage' => $product->sale_percentage,
                 'pricing_mode' => $product->pricing_mode,
                 'stock'        => $product->stock_quantity,

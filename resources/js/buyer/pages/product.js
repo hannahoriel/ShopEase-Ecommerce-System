@@ -140,20 +140,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     options: values.map(name => ({ name, ...(p[key] || []).find(option => String(option.name) === name) })),
                 };
             }));
-            const firstAvailable = activeConnectedVariants.find(variant => variant.available && Number(variant.stock) > 0)
-                || activeConnectedVariants[0];
-            selectedProductOptions = Object.fromEntries(variantGroups.map(group => [
-                group.field,
-                firstAvailable.choices[group.key] == null ? '' : String(firstAvailable.choices[group.key]),
-            ]));
-        } else {
-            selectedProductOptions = Object.fromEntries(variantGroups
-                .filter(group => group.options.length)
-                .map(group => {
-                    const available = group.options.find(option => Number(option.stock) > 0);
-                    return [group.field, String((available || group.options[0]).name)];
-                }));
         }
+        selectedProductOptions = {};
 
         const updateSelectedVariant = () => {
             const matchingVariants = activeConnectedVariants.filter(variant =>
@@ -162,9 +150,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     return !selected || String(variant.choices[group.key] ?? '') === selected;
                 })
             );
-            const selectedVariant = matchingVariants.find(variant =>
-                variant.available && Number(variant.stock) > 0
-            ) || null;
+            const hasCompleteSelection = variantGroups.every(group => !group.options.length || selectedProductOptions[group.field]);
+            const selectedVariant = hasCompleteSelection
+                ? matchingVariants.find(variant => variant.available && Number(variant.stock) > 0)
+                : null;
             const priceEl = document.getElementById('pricePanel');
             const stockLabel = document.getElementById('stockLabel');
             const qtyInput = document.getElementById('productQuantity');
@@ -178,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .filter(option => option.stock !== null && option.stock !== undefined && Number.isFinite(Number(option.stock)))
                 .map(option => Number(option.stock));
             const availableStock = activeConnectedVariants.length
-                ? Number(selectedVariant?.stock || 0)
+                ? Number(hasCompleteSelection ? selectedVariant?.stock ?? 0 : p.stock ?? 0)
                 : optionStocks.length
                     ? Math.min(Number(p.stock ?? Infinity), ...optionStocks)
                     : Number(p.stock || 0);
@@ -195,17 +184,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const optionPhotos = variantGroups.flatMap(group => group.options.map(opt => opt.photo || opt.image_url).filter(Boolean));
             const gallery = [...new Set([selectedPhoto, ...combinationPhotos, ...optionPhotos, ...mainPhotos].filter(Boolean))];
             if (JSON.stringify(gallery) !== JSON.stringify(galleryPhotos)) renderGallery(gallery);
+            const activeGroups = variantGroups.filter(group => group.options.length);
+            const singleOptionPrice = !activeConnectedVariants.length && p.pricing_mode === 'varies' && activeGroups.length === 1
+                ? selectedOptions[0]?.price
+                : undefined;
             if (priceEl) {
-                const savedVariantPrice = Number(
-                    selectedVariant?.final_price ?? selectedVariant?.finalPrice
-                );
-                const fallbackVariantPrice =
-                    Number(selectedVariant?.base_price ?? p.price) +
-                    Number(selectedVariant?.additional_price ?? selectedVariant?.additionalPrice ?? 0);
-                const selectedPrice = Number.isFinite(savedVariantPrice) && savedVariantPrice > 0
-                    ? savedVariantPrice
-                    : fallbackVariantPrice;
-                priceEl.innerHTML = salePriceMarkup(selectedPrice, p.sale_percentage);
+                const savedVariantPrice = Number(selectedVariant?.final_price ?? selectedVariant?.finalPrice);
+                const price = selectedVariant
+                    ? Number.isFinite(savedVariantPrice) && savedVariantPrice > 0
+                        ? savedVariantPrice
+                        : Number(selectedVariant.base_price ?? p.price)
+                            + Number(selectedVariant.additional_price ?? selectedVariant.additionalPrice ?? 0)
+                    : singleOptionPrice ?? p.price;
+                priceEl.innerHTML = salePriceMarkup(price, p.sale_percentage);
             }
             if (stockLabel) stockLabel.textContent = `${Math.max(0, availableStock)} In Stock`;
             if (qtyInput) {
@@ -215,8 +206,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     ? String(Math.min(Number(qtyInput.value || 1), availableStock))
                     : '0';
             }
-            if (addToCart) addToCart.disabled = availableStock <= 0;
-            if (buyNow) buyNow.disabled = availableStock <= 0;
+            if (addToCart) addToCart.disabled = !hasCompleteSelection || availableStock <= 0;
+            if (buyNow) buyNow.disabled = !hasCompleteSelection || availableStock <= 0;
 
             const wrap = document.getElementById('variationsWrap');
             if (!wrap) return;
@@ -298,23 +289,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>`).join('');
             variationsWrap.querySelectorAll('.variation-button').forEach((btn) => {
                 btn.addEventListener('click', function () {
-                    selectedProductOptions[this.dataset.optionType] = this.dataset.optionValue;
-                    const selectedGroup = variantGroups.find(group => group.field === this.dataset.optionType);
-                    const compatibleVariants = activeConnectedVariants.filter(variant =>
-                        variant.available &&
-                        Number(variant.stock) > 0 &&
-                        String(variant.choices[selectedGroup?.key] ?? '') === this.dataset.optionValue
-                    );
-                    if (compatibleVariants.length && !compatibleVariants.some(variant =>
-                        variantGroups.every(group =>
-                            !selectedProductOptions[group.field] ||
-                            String(variant.choices[group.key] ?? '') === selectedProductOptions[group.field]
-                        )
-                    )) {
-                        const nextVariant = compatibleVariants[0];
-                        variantGroups.forEach(group => {
-                            selectedProductOptions[group.field] = String(nextVariant.choices[group.key] ?? '');
-                        });
+                    const { optionType, optionValue } = this.dataset;
+                    if (selectedProductOptions[optionType] === optionValue) {
+                        delete selectedProductOptions[optionType];
+                    } else {
+                        selectedProductOptions[optionType] = optionValue;
                     }
                     updateSelectedVariant();
                 });
