@@ -129,34 +129,34 @@ class CourierRegistrationController extends Controller
             ->get();
 
         $provinceCouriers = (clone $pendingCouriers)
+            ->whereNull('logistics_branch_id')
             ->whereRaw('LOWER(TRIM(assignment_province)) = ?', [mb_strtolower(trim((string) $center->province))]);
 
-        if ($riders->isEmpty() && $company !== '') {
+        if ($company !== '') {
             $centerNames = array_values(array_unique(array_filter([
                 mb_strtolower(trim($company)),
                 mb_strtolower(trim((string) $center->name)),
             ])));
 
-            $riders = (clone $provinceCouriers)
+            $legacyCompanyCouriers = (clone $provinceCouriers)
                 ->where(function ($query) use ($centerNames): void {
                     foreach ($centerNames as $name) {
                         $query->orWhereRaw('LOWER(TRIM(courier_company)) = ?', [$name]);
                     }
                 })
                 ->get();
+            $riders = $riders->concat($legacyCompanyCouriers)->unique('id')->values();
         }
 
-        if ($riders->isEmpty()) {
-            $centerCount = LogisticsBranch::query()
-                ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($center->province))])
-                ->where('status', 'active')->whereNull('archived_at')
-                ->whereHas('user', fn ($query) => $query
-                    ->where('role', User::ROLE_SORTING_CENTER)
-                    ->where('registration_status', 'active'))
-                ->count();
-            if ($centerCount === 1) {
-                $riders = $provinceCouriers->get();
-            }
+        $centerCount = LogisticsBranch::query()
+            ->whereRaw('LOWER(TRIM(province)) = ?', [mb_strtolower(trim((string) $center->province))])
+            ->where('status', 'active')->whereNull('archived_at')
+            ->whereHas('user', fn ($query) => $query
+                ->where('role', User::ROLE_SORTING_CENTER)
+                ->where('registration_status', 'active'))
+            ->count();
+        if ($centerCount === 1) {
+            $riders = $riders->concat($provinceCouriers->get())->unique('id')->values();
         }
 
         foreach ($riders as $rider) {
