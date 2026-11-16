@@ -2389,7 +2389,7 @@
                             </section>
 
                             <div class="product-details-inspo-description">
-                                <label class="product-details-edit-label" for="productDescription">Product Description</label>
+                                <label class="product-details-description-label" for="productDescription">Product Description</label>
                                 <textarea
                                     id="productDescription"
                                     maxlength="2000"
