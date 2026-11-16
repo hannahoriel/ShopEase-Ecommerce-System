@@ -342,6 +342,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/order-complaints', [\App\Http\Controllers\Api\Seller\OrderComplaintController::class, 'store'])->middleware('throttle:10,1')->name('seller.api.order-complaints.store');
             Route::get('/orders/{order}', [OrderStatusController::class, 'show']);
             Route::patch('/orders/{order}/status', [OrderStatusController::class, 'update']);
+            Route::post('/orders/{order}/reject', [OrderStatusController::class, 'rejectOrder']);
             Route::get('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'index'])->name('seller.api.orders.rider-messages.index');
             Route::post('/orders/{order}/rider-messages', [OrderRiderMessagesController::class, 'store'])->name('seller.api.orders.rider-messages.store');
             Route::post('/orders/{order}/schedule', [OrderStatusController::class, 'schedule']);
