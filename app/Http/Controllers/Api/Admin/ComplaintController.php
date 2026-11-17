@@ -255,7 +255,8 @@ class ComplaintController extends Controller
             'returnRequest' => $return ? [
                 ...$return->toArray(),
                 'can_confirm_receipt' => $return->status === 'accepted' && $return->return_type === 'return'
-                    && $return->pickup_date && (! $return->return_delivery_hub_id && ! $order?->shipment?->logistics_delivery_hub_id || $return->shipping_status === 'picked_up'),
+                    && $return->pickup_date && ($return->returned_at || ($return->shipping_status !== 'delivered'
+                        && ! $return->return_delivery_hub_id && ! $order?->shipment?->logistics_delivery_hub_id)),
             ] : null,
             'id' => 'CMP-'.str_pad((string) $complaint->id, 4, '0', STR_PAD_LEFT),
             'party1' => $buyer?->name ?? 'Deleted buyer',

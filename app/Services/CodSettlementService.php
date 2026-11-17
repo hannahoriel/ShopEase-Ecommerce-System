@@ -91,7 +91,7 @@ class CodSettlementService
                     $this->post('delivery_hub', $hubId, 'available', 'return_distribution', 'cod_return_collection',
                         (int) $collection->id, -(float) $collection->amount, (int) $order->id, $locked->id,
                         'Return refund distributed for '.$order->order_number);
-                    if (! $return->returned_at && $return->shipping_status !== 'returned') {
+                    if (! $return->returned_at) {
                         $this->post('delivery_hub', $hubId, 'held', 'return_refund_hold', 'cod_return_collection',
                             (int) $collection->id, (float) $collection->amount, (int) $order->id, $locked->id,
                             'Return refund held until seller confirms receipt for '.$order->order_number);
@@ -232,7 +232,7 @@ class CodSettlementService
     {
         return DB::transaction(function () use ($return): bool {
             $lockedReturn = OrderReturn::query()->with('order.seller')->whereKey($return->id)->lockForUpdate()->firstOrFail();
-            if (! $lockedReturn->returned_at && $lockedReturn->shipping_status !== 'returned') return false;
+            if (! $lockedReturn->returned_at) return false;
             if ($lockedReturn->status === 'refunded') return true;
 
             $collection = DB::table('rider_cod_collections as collections')

@@ -84,7 +84,7 @@
                         Message Admin
                     </button>
                 </section></div>
-        <div class="complaints-modal-footer-grid"><section class="complaints-modal-card complaints-modal-notes-card"><h4 class="complaints-modal-card-title">Status Updates</h4><div id="complaints-modal-notes-list" class="complaints-modal-notes-list"></div></section><div class="sp-modal-bottom-actions"><p>Status updates are managed by ShopEase administration.</p><button id="complaints-modal-done" type="button" class="sp-modal-done">Close</button></div></div>
+        <div class="complaints-modal-footer-grid"><section class="complaints-modal-card complaints-modal-notes-card"><h4 class="complaints-modal-card-title">Status Updates</h4><div id="complaints-modal-notes-list" class="complaints-modal-notes-list"></div></section><div class="sp-modal-bottom-actions"><p id="seller-complaint-receipt-status" role="status">Status updates are managed by ShopEase administration.</p><button id="seller-complaint-confirm-receipt" type="button" class="sp-modal-done" hidden>Confirm Returned Parcel Received</button><button id="complaints-modal-done" type="button" class="sp-modal-done">Close</button></div></div>
       </div>
     </div>
 

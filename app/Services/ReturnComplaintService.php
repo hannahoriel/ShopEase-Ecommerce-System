@@ -65,10 +65,10 @@ class ReturnComplaintService
             if ($action==='received') {
                 if ($return->status==='refunded' && $return->shipping_status==='returned') return $return->fresh(['events','complaint']);
                 abort_unless($return->status==='accepted' && $return->return_type==='return' && $return->pickup_date,409,'This return must be accepted and scheduled before receipt can be confirmed.');
-                if ($return->return_delivery_hub_id || $return->order->shipment?->logistics_delivery_hub_id) {
-                    abort_unless(in_array($return->shipping_status, ['delivered', 'received_at_sorting_center', 'returned'], true),409,'The return must be delivered to the seller before receipt can be confirmed.');
+                if ($return->shipping_status === 'delivered' || $return->return_delivery_hub_id || $return->order->shipment?->logistics_delivery_hub_id) {
+                    abort_unless($return->returned_at, 409, 'Wait for the seller or automatic receipt confirmation before completing the refund.');
                 }
-                $return->forceFill(['shipping_status'=>'returned','returned_at'=>now()])->save();
+                $return->forceFill(['shipping_status'=>'returned','returned_at'=>$return->returned_at ?? now()])->save();
                 $this->log($return,$admin,'returned','Admin confirmed the returned parcel was received.'.($notes?' '.$notes:''));
                 $this->refund($return,$admin);
                 return $return->fresh(['events','complaint']);

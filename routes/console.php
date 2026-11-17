@@ -133,6 +133,18 @@ Artisan::command('orders:auto-confirm-delivered', function () {
 
 Schedule::command('orders:auto-confirm-delivered')->everyMinute()->withoutOverlapping();
 
+Artisan::command('returns:auto-confirm-receipts', function (\App\Services\ReturnReceiptService $receipts): void {
+    \App\Models\Admin\OrderReturn::query()
+        ->where('status', 'accepted')
+        ->where('return_type', 'return')
+        ->whereIn('shipping_status', ['delivered', 'returned'])
+        ->whereNull('returned_at')
+        ->whereHas('events', fn ($query) => $query->where('status', 'delivered')->where('scanned_at', '<=', now()->subHours(72)))
+        ->eachById(fn ($return) => $receipts->confirm($return));
+})->purpose('Confirm seller return receipts 72 hours after delivery');
+
+Schedule::command('returns:auto-confirm-receipts')->everyMinute()->withoutOverlapping();
+
 Artisan::command('cod:settle-eligible-seller-earnings', function (): void {
     $released = app(CodSettlementService::class)->releaseEligibleSellerEarnings();
     $this->info("Released {$released} eligible COD seller settlement(s).");

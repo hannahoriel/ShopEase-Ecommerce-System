@@ -80,3 +80,5 @@ jobs:
           startup-command: >-
             cp /home/site/wwwroot/default /etc/nginx/sites-enabled/default
             && nginx -t && service nginx reload
+            && bash -c 'nohup bash /home/site/wwwroot/scripts/azure-return-receipts.sh
+            >> /home/LogFiles/return-receipts.log 2>&1 < /dev/null &'

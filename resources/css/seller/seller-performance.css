@@ -1575,6 +1575,10 @@
         color .2s;
 }
 
+#seller-complaint-confirm-receipt[hidden] {
+    display: none !important;
+}
+
 .sp-admin-modal-overlay .sp-modal-done:hover {
     background: #F7F7F7 !important;
     border-color: #888888 !important;

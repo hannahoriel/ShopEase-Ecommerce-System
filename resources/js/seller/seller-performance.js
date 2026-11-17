@@ -249,11 +249,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return items.sort((a, b) => Date.parse(b.timestamp || 0) - Date.parse(a.timestamp || 0));
     }
 
+    function renderReceipt(returnRequest) {
+        const button = $('seller-complaint-confirm-receipt');
+        const status = $('seller-complaint-receipt-status');
+        const delivered = returnRequest?.events?.find(event => event.status === 'delivered');
+        const deadline = delivered?.scanned_at ? Date.parse(delivered.scanned_at) + 72 * 60 * 60 * 1000 : null;
+        const awaiting = returnRequest?.return_type === 'return' && returnRequest.status === 'accepted'
+            && ['delivered', 'returned'].includes(returnRequest.shipping_status) && !returnRequest.returned_at;
+        button.hidden = !awaiting || Boolean(deadline && deadline <= Date.now());
+        status.textContent = returnRequest?.returned_at ? 'Receipt confirmed. The refund can now proceed.'
+            : awaiting && deadline && button.hidden ? 'The confirmation window ended. Automatic confirmation is pending.'
+            : awaiting && deadline ? `Confirm by ${dateTime(deadline)}. Receipt is confirmed automatically after 3 days.`
+            : awaiting ? 'Confirm receipt of the returned parcel to continue the refund.'
+            : 'Status updates are managed by ShopEase administration.';
+    }
+
+    $('seller-complaint-confirm-receipt').addEventListener('click', async event => {
+        const complaint = state.selected;
+        const returned = complaint?.returnRequest;
+        if (!returned?.id) return;
+        const button = event.currentTarget;
+        button.disabled = true;
+        try {
+            const response = await fetch(`/api/v1/seller/returns-refunds/${encodeURIComponent(returned.id)}/received`, {
+                method: 'PATCH',
+                headers: {Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''},
+            });
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || 'Unable to confirm receipt.');
+            Object.assign(returned, payload.data);
+            if (state.selected === complaint && !$('complaints-details-modal').hidden) openModal();
+        } catch (error) {
+            if (state.selected === complaint) text('seller-complaint-receipt-status', error.message);
+        } finally {
+            button.disabled = false;
+        }
+    });
+
     function openModal() {
         document.getElementById('sellerComplaintReturnSummary')?.remove();
         const c = state.selected;
         if (!c)
             return;
+        renderReceipt(c.returnRequest);
         const people = roleNames(c);
         text('modal-complaint-id', c.id);
         text('modal-date-filed', dateTime(c.filed_at || c.date));

@@ -27,6 +27,32 @@ class ReturnComplaintWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_seller_return_receipt_auto_confirms_at_72_hours_only_once(): void
+    {
+        $this->freezeTime();
+        [$buyer, , , $order] = $this->fixture();
+        $return = OrderReturn::create([
+            'order_id' => $order->id,
+            'buyer_id' => $buyer->id,
+            'return_type' => 'return',
+            'status' => 'accepted',
+            'shipping_status' => 'delivered',
+            'reason' => 'Damaged item',
+            'refund_amount' => 100,
+            'requested_at' => now()->subDays(4),
+        ]);
+        $return->events()->create(['status' => 'delivered', 'scanned_at' => now()->subHours(72)->addMinute()]);
+
+        $this->artisan('returns:auto-confirm-receipts')->assertSuccessful();
+        $this->assertNull($return->fresh()->returned_at);
+
+        $this->travel(1)->minute();
+        $this->artisan('returns:auto-confirm-receipts')->assertSuccessful();
+        $this->assertSame(now()->timestamp, $return->fresh()->returned_at->timestamp);
+        $this->artisan('returns:auto-confirm-receipts')->assertSuccessful();
+        $this->assertSame(1, $return->events()->where('status', 'seller_receipt_auto_confirmed')->count());
+    }
+
     private function fixture(): array
     {
         Mail::fake();Storage::fake('public');
@@ -278,8 +304,10 @@ class ReturnComplaintWorkflowTest extends TestCase
             'status' => 'delivered', 'scanned_code' => $order->order_number,
             'proof_photo' => UploadedFile::fake()->image('seller-return-delivery.jpg'),
             'delivery_method' => 'handed_to_buyer',
-        ])->assertOk()->assertJsonPath('return_status', 'returned');
-        $this->assertSame('returned', $return->fresh()->shipping_status);
+        ])->assertOk()->assertJsonPath('return_status', 'delivered');
+        $this->assertSame('delivered', $return->fresh()->shipping_status);
+        $this->actingAs($admin)->patchJson($url, ['action'=>'received'])->assertConflict();
+        $this->actingAs($sellerUser)->patchJson('/api/v1/seller/returns-refunds/'.$return->id.'/received')->assertOk();
         $this->actingAs($admin)->patchJson($url, ['action'=>'received'])->assertOk()->assertJsonPath('data.status', 'refunded');
         $this->assertDatabaseHas('rider_cod_collections', [
             'order_return_id' => $return->id,

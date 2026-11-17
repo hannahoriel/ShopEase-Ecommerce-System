@@ -149,12 +149,12 @@ class ReturnsRefundsController extends Controller
             409, 'The delivery hub is holding the rider-collected return funds. The buyer wallet is credited automatically after seller receipt confirmation and hub distribution.');
         $seller = Seller::query()->where('user_id', $request->user()->id)->firstOrFail();
         abort_unless($return->order()->where('seller_id', $seller->id)->exists(), 404);
-        abort_unless($return->return_type === 'refund' || $return->returned_at || $return->shipping_status === 'returned', 409, 'Confirm receipt of the returned parcel before completing its refund.');
+        abort_unless($return->return_type === 'refund' || $return->returned_at, 409, 'Confirm receipt of the returned parcel before completing its refund.');
 
         return DB::transaction(function () use ($return) {
             $locked = OrderReturn::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
             abort_unless($locked->status === 'accepted', 409, 'Only accepted requests can be refunded.');
-            abort_unless($locked->return_type === 'refund' || $locked->returned_at || $locked->shipping_status === 'returned', 409, 'Confirm receipt of the returned parcel before completing its refund.');
+            abort_unless($locked->return_type === 'refund' || $locked->returned_at, 409, 'Confirm receipt of the returned parcel before completing its refund.');
             $paidMerchandise = max(0, round((float) $locked->order->total - (float) $locked->order->shipping_fee, 2));
             $alreadyRefunded = (float) OrderReturn::query()->where('order_id', $locked->order_id)
                 ->whereNotNull('refunded_at')->whereKeyNot($locked->id)->sum('refund_amount');
@@ -194,35 +194,9 @@ class ReturnsRefundsController extends Controller
         $seller = Seller::query()->where('user_id', $request->user()->id)->firstOrFail();
         abort_unless($return->order()->where('seller_id', $seller->id)->exists(), 404);
 
-        return DB::transaction(function () use ($request, $return): \Illuminate\Http\JsonResponse {
-            $locked = OrderReturn::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
-            abort_unless($locked->status === 'accepted' && $locked->return_type === 'return', 409, 'Only an accepted return can be receipt-confirmed.');
-            abort_unless($locked->shipping_status === 'delivered' || $locked->shipping_status === 'returned', 409, 'The rider must mark the return delivered to the seller first.');
+        $confirmed = app(\App\Services\ReturnReceiptService::class)->confirm($return, $request->user()->name);
+        abort_unless($confirmed, 409, 'Only an accepted return delivered to the seller can be receipt-confirmed.');
 
-            if (! $locked->returned_at) {
-                $locked->forceFill(['returned_at' => now()])->save();
-                $locked->events()->create([
-                    'status' => 'seller_confirmed_received',
-                    'location' => 'Receipt confirmed by '.$request->user()->name,
-                    'scanned_at' => now(),
-                ]);
-            }
-
-            $refundReleased = app(CodSettlementService::class)->releaseHeldReturnRefund($locked);
-
-            $confirmed = $locked->fresh(['order.buyer:id,name,email', 'order', 'events']);
-            if (! $refundReleased && $confirmed->order?->buyer) {
-                BuyerNotification::createForBuyer(
-                    $confirmed->order->buyer,
-                    'return_update',
-                    'Returned parcel received',
-                    'The seller confirmed receipt of your returned parcel. Your refund will be credited to your ShopEase Wallet after the delivery hub distributes the held return funds.',
-                    ['return_id' => $confirmed->id, 'status' => $confirmed->status, 'shipping_status' => $confirmed->shipping_status, 'url' => '/buyer/my-purchases?tab=returns'],
-                    $confirmed->order,
-                );
-            }
-
-            return response()->json(['data' => $confirmed]);
-        });
+        return response()->json(['data' => $confirmed]);
     }
 }
