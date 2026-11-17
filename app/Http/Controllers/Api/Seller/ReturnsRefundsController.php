@@ -143,7 +143,6 @@ class ReturnsRefundsController extends Controller
 
     public function completeRefund(Request $request, OrderReturn $return)
     {
-        abort_if($return->complaint_id,403,'Admin controls refund completion for this complaint.');
         abort_if($return->return_type === 'return'
             && DB::table('rider_cod_collections')->where('order_return_id', $return->id)->exists(),
             409, 'The delivery hub is holding the rider-collected return funds. The buyer wallet is credited automatically after seller receipt confirmation and hub distribution.');
@@ -196,7 +195,6 @@ class ReturnsRefundsController extends Controller
 
         return DB::transaction(function () use ($request, $return): \Illuminate\Http\JsonResponse {
             $locked = OrderReturn::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
-            abort_if($locked->complaint_id, 403, 'ShopEase admin controls receipt confirmation and refund for this complaint.');
             abort_unless($locked->status === 'accepted' && $locked->return_type === 'return', 409, 'Only an accepted return can be receipt-confirmed.');
             abort_unless($locked->shipping_status === 'delivered' || $locked->shipping_status === 'returned', 409, 'The rider must mark the return delivered to the seller first.');
 
