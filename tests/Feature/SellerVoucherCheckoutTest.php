@@ -188,7 +188,7 @@ class SellerVoucherCheckoutTest extends TestCase
             'business_name' => 'Checkout Logistics',
             'registration_status' => 'active',
         ]);
-        LogisticsBranch::query()->create([
+        $branch = LogisticsBranch::query()->create([
             'logistics_id' => $logistics->id,
             'name' => 'Calamba Sorting Center',
             'address' => 'Calamba, Laguna',
@@ -196,6 +196,7 @@ class SellerVoucherCheckoutTest extends TestCase
             'municipality' => 'Calamba',
             'status' => 'active',
         ]);
+        \Tests\Support\CheckoutRoute::createHub($branch);
 
         return [
             'delivery_province' => 'Laguna',

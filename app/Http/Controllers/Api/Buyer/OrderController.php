@@ -15,6 +15,7 @@ use App\Models\Buyer\CartItem;
 use App\Models\Seller\Product;
 use App\Models\Seller\ProductReview;
 use App\Models\Seller\Seller;
+use App\Http\Services\RiderOperationsService;
 use App\Models\Logistics\Logistics;
 use App\Models\Logistics\LogisticsBranch;
 use App\Models\Logistics\LogisticsDeliveryHub;
@@ -314,7 +315,7 @@ class OrderController extends Controller
             ->with('product.seller')
             ->get();
 
-        $sellerIds = $cartItems
+        $sellerIds = $cartItems->toBase()
             ->filter(fn (CartItem $item) => $item->product?->seller)
             ->map(fn (CartItem $item) => (int) $item->product->seller_id)
             ->merge(array_map('intval', $validated['seller_ids'] ?? []))
@@ -333,8 +334,8 @@ class OrderController extends Controller
                     ->filter(fn (Logistics $provider) => $this->coversLocations(
                         $provider,
                         [
-                            ['province' => $validated['province'], 'municipality' => $validated['municipality']],
-                            ['province' => $seller->province, 'municipality' => $seller->municipality],
+                            ['province' => $validated['province'], 'municipality' => $validated['municipality'], 'operation' => 'delivery'],
+                            ['province' => $seller->province, 'municipality' => $seller->municipality, 'operation' => 'pickup'],
                         ]
                     ))
                     ->map(fn (Logistics $provider): array => [
@@ -504,13 +505,13 @@ class OrderController extends Controller
                     $logistics = $approvedProviders->first(fn (Logistics $provider) =>
                             (int) $provider->id === (int) $providerSelection['logistics_id']
                             && $this->coversLocations($provider, [
-                                ['province' => $validated['delivery_province'], 'municipality' => $validated['delivery_municipality']],
-                                ['province' => $seller->province, 'municipality' => $seller->municipality],
+                                ['province' => $validated['delivery_province'], 'municipality' => $validated['delivery_municipality'], 'operation' => 'delivery'],
+                                ['province' => $seller->province, 'municipality' => $seller->municipality, 'operation' => 'pickup'],
                             ])
                         );
                     if (! $logistics) {
                         throw ValidationException::withMessages([
-                            'logistics_selections' => ['Choose an approved logistics company with an active hub or sorting center at both delivery locations.'],
+                            'logistics_selections' => ['Choose an approved logistics company with a pickup rider at the seller hub and a delivery rider at the buyer hub.'],
                         ]);
                     }
                     $subtotal = $sellerItems->sum(fn (CartItem $item) => $item->product->salePriceForCart($item->variation, $item->color, $item->size) * $item->quantity);
@@ -563,10 +564,9 @@ class OrderController extends Controller
                             'branch' => $branch,
                             'hub' => $hub,
                         ]))
-                        ->first(fn (array $route): bool => $this->sameLocation(
-                            $route['hub']->province,
-                            $route['hub']->municipality,
-                            ['province' => $seller->province, 'municipality' => $seller->municipality],
+                        ->first(fn (array $route): bool => $this->hubCoversLocation(
+                            $route['hub'],
+                            ['province' => $seller->province, 'municipality' => $seller->municipality, 'operation' => 'pickup'],
                         ));
                     $sellerBranch = $sellerHub['branch'] ?? $logistics->branches->first(fn (LogisticsBranch $branch): bool =>
                         $this->sameLocation($branch->province, $branch->municipality, [
@@ -717,7 +717,10 @@ class OrderController extends Controller
             ->whereHas('user', fn ($query) => $query->where('registration_status', 'active'))
             ->with(['branches' => function ($query): void {
                 $query->where('status', 'active')->whereNull('archived_at')
-                    ->with(['deliveryHubs' => fn ($hubs) => $hubs->where('status', 'active')->whereNull('archived_at')]);
+                    ->with(['deliveryHubs' => fn ($hubs) => $hubs->where('status', 'active')->whereNull('archived_at')
+                        ->with(['riderRegistrations' => fn ($registrations) => $registrations->where('status', 'approved')
+                            ->whereHas('user', fn ($user) => $user->where('role', 'rider')->where('registration_status', 'active'))
+                            ->with('user.riderProfile')])]);
             }])
             ->orderBy('business_name')
             ->get();
@@ -728,13 +731,11 @@ class OrderController extends Controller
         foreach ($locations as $location) {
             if (blank($location['province'] ?? null) || blank($location['municipality'] ?? null)) return false;
 
-            $covered = $provider->branches->contains(function (LogisticsBranch $branch) use ($location): bool {
-                if ($this->sameLocation($branch->province, $branch->municipality, $location)) return true;
-
-                return $branch->deliveryHubs->contains(fn (LogisticsDeliveryHub $hub) =>
-                    $this->sameLocation($hub->province, $hub->municipality, $location)
-                );
-            });
+            $covered = $provider->branches->contains(fn (LogisticsBranch $branch) =>
+                $branch->deliveryHubs->contains(fn (LogisticsDeliveryHub $hub) =>
+                    $this->hubCoversLocation($hub, $location)
+                )
+            );
 
             if (! $covered) return false;
         }
@@ -742,10 +743,35 @@ class OrderController extends Controller
         return true;
     }
 
+    private function hubCoversLocation(LogisticsDeliveryHub $hub, array $location): bool
+    {
+        if (! $this->sameLocation($hub->province, $hub->municipality, $location)) {
+            return false;
+        }
+
+        $operations = app(RiderOperationsService::class);
+
+        return $hub->riderRegistrations->contains(function ($registration) use ($hub, $location, $operations): bool {
+            $rider = $registration->user?->riderProfile;
+
+            return $rider && $rider->registration_status === 'active'
+                && (int) $rider->logistics_branch_id === (int) $hub->logistics_branch_id
+                && $operations->supportsOperation($rider, $location['operation']);
+        });
+    }
+
     private function sameLocation(?string $province, ?string $municipality, array $location): bool
     {
         return $this->normalizeLocation($province) === $this->normalizeLocation($location['province'] ?? null)
-            && $this->normalizeLocation($municipality) === $this->normalizeLocation($location['municipality'] ?? null);
+            && $this->normalizeMunicipality($municipality) === $this->normalizeMunicipality($location['municipality'] ?? null);
+    }
+
+    private function normalizeMunicipality(?string $value): string
+    {
+        $name = trim((string) $value);
+        $name = preg_replace('/^city\s+of\s+|\s+city$/iu', '', $name);
+
+        return $this->normalizeLocation($name);
     }
 
     private function normalizeLocation(?string $value): string

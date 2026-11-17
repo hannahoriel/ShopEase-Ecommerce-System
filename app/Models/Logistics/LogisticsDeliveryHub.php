@@ -5,6 +5,7 @@ namespace App\Models\Logistics;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LogisticsDeliveryHub extends Model
 {
@@ -35,6 +36,11 @@ class LogisticsDeliveryHub extends Model
     public function logisticsBranch(): BelongsTo
     {
         return $this->belongsTo(LogisticsBranch::class);
+    }
+
+    public function riderRegistrations(): HasMany
+    {
+        return $this->hasMany(DeliveryHubRiderRegistration::class, 'logistics_delivery_hub_id');
     }
 
     public function user(): BelongsTo

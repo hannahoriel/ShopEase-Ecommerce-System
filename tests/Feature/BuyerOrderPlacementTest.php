@@ -816,6 +816,21 @@ class BuyerOrderPlacementTest extends TestCase
         return [$seller, $product];
     }
 
+    public function test_checkout_options_match_city_aliases_and_require_rider_coverage(): void
+    {
+        $buyer = User::factory()->create(['role' => User::ROLE_BUYER]);
+        [$seller] = $this->sellerWithProduct('Coverage Store', 'Coverage Item', 100);
+        $shipping = $this->shippingDetails([$seller->id]);
+        $providerId = $shipping['logistics_selections'][0]['logistics_id'];
+        $url = '/api/v1/buyer/shipping-options?province=Laguna&municipality=City%20of%20Calamba&seller_ids[]='.$seller->id;
+
+        $this->actingAs($buyer)->getJson($url)
+            ->assertOk()->assertJsonPath('data.0.options.0.id', $providerId);
+
+        \App\Models\Rider\Rider::query()->update(['logistics_operation' => 'pickup']);
+        $this->getJson($url)->assertOk()->assertJsonPath('data.0.options', []);
+    }
+
     private function shippingDetails(array $sellerIds): array
     {
         $user = User::factory()->create(['role' => User::ROLE_LOGISTICS]);
@@ -826,10 +841,11 @@ class BuyerOrderPlacementTest extends TestCase
             'street' => 'Main', 'house_number' => '1', 'business_name' => 'Test Logistics',
             'registration_status' => 'active',
         ]);
-        \App\Models\Logistics\LogisticsBranch::create([
+        $branch = \App\Models\Logistics\LogisticsBranch::create([
             'logistics_id' => $logistics->id, 'name' => 'Calamba', 'address' => 'Calamba',
             'province' => 'Laguna', 'municipality' => 'Calamba', 'status' => 'active',
         ]);
+        \Tests\Support\CheckoutRoute::createHub($branch);
 
         return [
             'delivery_province' => 'Laguna',

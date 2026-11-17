@@ -124,8 +124,9 @@ class AdminVouchersTest extends TestCase
             'municipality' => 'Calamba','barangay' => 'Real','street' => 'Main','house_number' => '1',
             'business_name' => 'Test Logistics','registration_status' => 'active',
         ]);
-        \App\Models\Logistics\LogisticsBranch::create(['logistics_id' => $logistics->id,'name' => 'Calamba',
+        $branch = \App\Models\Logistics\LogisticsBranch::create(['logistics_id' => $logistics->id,'name' => 'Calamba',
             'address' => 'Calamba','province' => 'Laguna','municipality' => 'Calamba','status' => 'active']);
+        \Tests\Support\CheckoutRoute::createHub($branch);
         $buyer = $this->user(User::ROLE_BUYER);
         foreach ([$first,$second] as $product) CartItem::create(['user_id' => $buyer->id,'product_id' => $product->id,'quantity' => 1]);
         $cartItemIds = CartItem::query()->where('user_id', $buyer->id)->pluck('id')->all();
