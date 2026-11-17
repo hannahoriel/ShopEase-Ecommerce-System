@@ -70,6 +70,10 @@ class ReturnComplaintService
                 }
                 $return->forceFill(['shipping_status'=>'returned','returned_at'=>now()])->save();
                 $this->log($return,$admin,'returned','Admin confirmed the returned parcel was received.'.($notes?' '.$notes:''));
+                $return->loadMissing('order.seller');
+                if ($return->order?->seller) {
+                    app(SellerWalletService::class)->recordReturnShipping($return->order->seller, $return);
+                }
                 $this->refund($return,$admin);
                 return $return->fresh(['events','complaint']);
             }
