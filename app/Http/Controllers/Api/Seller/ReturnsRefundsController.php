@@ -120,7 +120,7 @@ class ReturnsRefundsController extends Controller
             $locked->forceFill([
                 'status' => $data['decision'],
                 'solution' => $data['solution'] ?? $locked->solution,
-                'refund_amount' => $data['refund_amount'] ?? ($data['decision'] === 'accepted' ? $locked->order->total : null),
+                'refund_amount' => $data['refund_amount'] ?? ($data['decision'] === 'accepted' ? $locked->refund_amount : null),
                 'reviewed_by' => $request->user()->id,
                 'reviewed_at' => now(),
             ])->save();
@@ -196,6 +196,7 @@ class ReturnsRefundsController extends Controller
 
         return DB::transaction(function () use ($request, $return): \Illuminate\Http\JsonResponse {
             $locked = OrderReturn::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
+            abort_if($locked->complaint_id, 403, 'ShopEase admin controls receipt confirmation and refund for this complaint.');
             abort_unless($locked->status === 'accepted' && $locked->return_type === 'return', 409, 'Only an accepted return can be receipt-confirmed.');
             abort_unless($locked->shipping_status === 'delivered' || $locked->shipping_status === 'returned', 409, 'The rider must mark the return delivered to the seller first.');
 
@@ -208,10 +209,52 @@ class ReturnsRefundsController extends Controller
                 ]);
             }
 
+            $locked->loadMissing('order.seller');
+            if ($locked->order?->seller) {
+                app(\App\Services\SellerWalletService::class)->recordReturnShipping($locked->order->seller, $locked);
+            }
+
             $refundReleased = app(CodSettlementService::class)->releaseHeldReturnRefund($locked);
 
+            // A seller's return receipt confirmation also completes the buyer
+            // refund when the refund is not waiting on rider COD remittance.
+            if (! $refundReleased && ! DB::table('rider_cod_collections')->where('order_return_id', $locked->id)->exists()) {
+                $locked->loadMissing('order.seller', 'order.buyer');
+                $paidMerchandise = max(0, round((float) $locked->order->total - (float) $locked->order->shipping_fee, 2));
+                $alreadyRefunded = (float) OrderReturn::query()->where('order_id', $locked->order_id)
+                    ->whereNotNull('refunded_at')->whereKeyNot($locked->id)->sum('refund_amount');
+                abort_if((float) $locked->refund_amount <= 0
+                    || round($alreadyRefunded + (float) $locked->refund_amount, 2) > $paidMerchandise,
+                    422, 'Refund exceeds the remaining paid merchandise amount.');
+
+                $locked->forceFill(['status' => 'refunded', 'refunded_at' => now()])->save();
+                app(BuyerWalletService::class)->move(
+                    (int) $locked->order->buyer_id,
+                    'refund_credit',
+                    $locked->refund_amount,
+                    'order_return',
+                    (int) $locked->id,
+                    'Return & Refund for order '.$locked->order->order_number,
+                );
+                app(CodSettlementService::class)->reverseSellerEarningsForRefund($locked);
+                app(\App\Services\SellerWalletService::class)->recordRefund($locked->order->seller, $locked);
+                $locked->events()->create([
+                    'status' => 'refunded',
+                    'location' => 'Seller confirmed returned parcel and completed refund',
+                    'scanned_at' => now(),
+                ]);
+                BuyerNotification::createForBuyer(
+                    $locked->order->buyer,
+                    'refund_update',
+                    'Return refund sent to your wallet',
+                    'The seller confirmed receipt of your returned product. ₱'.number_format((float) $locked->refund_amount, 2).' was credited to your ShopEase Wallet.',
+                    ['return_id' => $locked->id, 'status' => 'refunded', 'url' => '/buyer/my-purchases?tab=returns'],
+                    $locked->order,
+                );
+            }
+
             $confirmed = $locked->fresh(['order.buyer:id,name,email', 'order', 'events']);
-            if (! $refundReleased && $confirmed->order?->buyer) {
+            if (! $refundReleased && DB::table('rider_cod_collections')->where('order_return_id', $locked->id)->exists() && $confirmed->order?->buyer) {
                 BuyerNotification::createForBuyer(
                     $confirmed->order->buyer,
                     'return_update',

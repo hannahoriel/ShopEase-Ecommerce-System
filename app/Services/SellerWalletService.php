@@ -82,10 +82,41 @@ class SellerWalletService
                 $this->entry($seller->id, 'refund', 'order_return', $return->id, -$refund, $ref, 'Completed buyer refund', $return->refunded_at);
             }
 
-            if ($return->return_type !== 'refund') {
-                $shippingFee = max(0, (float) ($order->shipping_fee ?: $order->shipment?->shipping_fee ?: 0));
-                $this->entry($seller->id, 'return_shipping', 'order_return', $return->id, -$shippingFee, $ref, 'Seller-paid return shipping (₱'.number_format($shippingFee, 2).')', $return->refunded_at);
+        });
+
+        $this->recordReturnShipping($seller, $return);
+    }
+
+    public function recordReturnShipping(Seller $seller, OrderReturn $return): void
+    {
+        $order = $return->order;
+        if (! $order || (int) $order->seller_id !== (int) $seller->id
+            || $return->return_type !== 'return'
+            || (! $return->returned_at && $return->shipping_status !== 'returned')) {
+            return;
+        }
+
+        DB::transaction(function () use ($seller, $return, $order): void {
+            $shippingFee = max(0, round((float) ($order->shipping_fee ?: $order->shipment?->shipping_fee ?: 0), 2));
+            if ($shippingFee <= 0) {
+                return;
             }
+
+            $reference = $order->order_number ?: '#'.$order->id;
+            if (! app(CodSettlementService::class)->creditReturnShippingToLogistics($return, $shippingFee)) {
+                return;
+            }
+
+            $this->entry(
+                $seller->id,
+                'return_shipping',
+                'order_return',
+                $return->id,
+                -$shippingFee,
+                $reference,
+                'Seller-paid return shipping (₱'.number_format($shippingFee, 2).')',
+                $return->returned_at ?? now(),
+            );
         });
     }
 

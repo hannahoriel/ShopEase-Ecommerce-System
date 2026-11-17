@@ -276,6 +276,44 @@ class CodSettlementService
         });
     }
 
+    public function creditReturnShippingToLogistics(OrderReturn $return, ?float $shippingFee = null): bool
+    {
+        if ($return->return_type !== 'return'
+            || (! $return->returned_at && $return->shipping_status !== 'returned')) {
+            return false;
+        }
+
+        $return->loadMissing([
+            'order.shipment.logisticsBranch',
+            'order.shipment.deliveryHub.logisticsBranch',
+            'returnDeliveryHub.logisticsBranch',
+        ]);
+        $order = $return->order;
+        if (! $order) return false;
+
+        $logisticsId = $order->logistics_id
+            ?: $order->shipment?->logisticsBranch?->logistics_id
+            ?: $return->returnDeliveryHub?->logisticsBranch?->logistics_id
+            ?: $order->shipment?->deliveryHub?->logisticsBranch?->logistics_id;
+        $fee = max(0, round($shippingFee ?? (float) ($order->shipping_fee ?: $order->shipment?->shipping_fee ?: 0), 2));
+        if (! $logisticsId || $fee <= 0) return false;
+
+        $this->post(
+            'logistics',
+            (int) $logisticsId,
+            'available',
+            'return_shipping_fee',
+            'order_return',
+            (int) $return->id,
+            $fee,
+            (int) $order->id,
+            null,
+            'Return shipping fee for '.$order->order_number,
+        );
+
+        return true;
+    }
+
     public function releaseSellerEarnings(int $orderId): bool
     {
         return DB::transaction(function () use ($orderId): bool {
