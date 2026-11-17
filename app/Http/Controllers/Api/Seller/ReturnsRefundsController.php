@@ -120,7 +120,7 @@ class ReturnsRefundsController extends Controller
             $locked->forceFill([
                 'status' => $data['decision'],
                 'solution' => $data['solution'] ?? $locked->solution,
-                'refund_amount' => $data['refund_amount'] ?? ($data['decision'] === 'accepted' ? $locked->order->total : null),
+                'refund_amount' => $data['refund_amount'] ?? ($data['decision'] === 'accepted' ? $locked->refund_amount : null),
                 'reviewed_by' => $request->user()->id,
                 'reviewed_at' => now(),
             ])->save();
@@ -143,7 +143,6 @@ class ReturnsRefundsController extends Controller
 
     public function completeRefund(Request $request, OrderReturn $return)
     {
-        abort_if($return->complaint_id,403,'Admin controls refund completion for this complaint.');
         abort_if($return->return_type === 'return'
             && DB::table('rider_cod_collections')->where('order_return_id', $return->id)->exists(),
             409, 'The delivery hub is holding the rider-collected return funds. The buyer wallet is credited automatically after seller receipt confirmation and hub distribution.');
