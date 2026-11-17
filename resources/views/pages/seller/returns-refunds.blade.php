@@ -456,19 +456,61 @@ shippingDemo[1].return_items.push({product_name:'Silicone Watch Strap',variation
 const shipment=(Array.isArray(shippingServer)?shippingServer:shippingDemo).map(x=>({...x,order_id:x.order_id||x.order_number||'',shipping_status:norm(x.shipping_status||x.status)}));
 let shipPage=1,shipFilter='all';
 const shippingStatus=x=>({processing:'Processing','in-transit':'In Transit','out-for-delivery':'Out for Delivery',delivered:'Delivered'})[norm(x)]||x;
+const shippingStages=['processing','in-transit','out-for-delivery','delivered'];
+function shippingStage(status){
+ const value=norm(status);
+ if(['delivered','returned'].includes(value))return 'delivered';
+ if(['out-for-delivery','out-for-delivery-to-seller'].includes(value))return 'out-for-delivery';
+ if(['picked-up','received-at-delivery-hub','staged-for-return-dispatch','in-transit',
+     'in-transit-to-sorting-center','received-at-intermediate-sorting-center','received-at-sorting-center',
+     'in-transit-to-seller-delivery-hub','received-at-seller-delivery-hub'].includes(value))return 'in-transit';
+ return 'processing';
+}
 const shippingIcon=(name)=>'/icons/seller/shipping-status/'+name;
-function shipRows(){const q=$('rrShippingSearch').value.trim().toLowerCase();return shipment.filter(x=>(shipFilter==='all'||x.shipping_status===shipFilter)&&(!q||[x.order_id,x.buyer_name,x.tracking_number].join(' ').toLowerCase().includes(q)))}
+function shipRows(){const q=$('rrShippingSearch').value.trim().toLowerCase();return shipment.filter(x=>(shipFilter==='all'||shippingStage(x.shipping_status)===shipFilter)&&(!q||[x.order_id,x.buyer_name,x.tracking_number].join(' ').toLowerCase().includes(q)))}
 function progressHtml(c){
- const stages=['processing','in-transit','out-for-delivery','delivered'];
-  const pos=Math.max(0,stages.indexOf(norm(c.shipping_status)));
- return `<div class="rr-shipping-progress">${stages.map((stage,i)=>{
+ const pos=shippingStages.indexOf(shippingStage(c.shipping_status));
+ return `<div class="rr-shipping-progress">${shippingStages.map((stage,i)=>{
    const icon=i===0?(pos>0?'in-transit-check.png':'processing.png'):i===1?(pos>1?'in-transit-check.png':pos===1?'in-transit-blue.png':'in-transit-gray.png'):i===2?(pos>2?'delivered-check.png':pos===2?'out-for-delivery.png':'out-for-delivery-gray.png'):(pos===3?'delivered-check.png':'delivered-gray.png');
    const stateClass=i<=pos?'is-current':'';
    return `<div class="rr-progress-item ${stateClass}"><img src="${shippingIcon(icon)}" alt=""><small>${esc(shippingStatus(stage))}</small></div>${i<3?`<span class="rr-progress-line ${i<pos?'done':''}"></span>`:''}`;
  }).join('')}</div>`;
 }
+let openShippingOrder, refreshingShipping=false;
+async function refreshShipping(){
+ if(refreshingShipping||document.hidden||$('rrShippingPanel').hidden)return;
+ refreshingShipping=true;
+ try{
+   const response=await fetch(location.pathname,{cache:'no-store',credentials:'same-origin'});
+   if(!response.ok)return;
+   const page=new DOMParser().parseFromString(await response.text(),'text/html');
+   const latest=JSON.parse(page.getElementById('rrShippingData')?.textContent||'null');
+   if(!Array.isArray(latest))return;
+   const byId=new Map(latest.map(row=>[String(row.return_id),row]));
+   let changed=false;
+   for(const row of shipment){
+     const current=byId.get(String(row.return_id));
+     if(!current||norm(current.shipping_status)===row.shipping_status)continue;
+     Object.assign(row,current,{shipping_status:norm(current.shipping_status)});
+     const request=records.find(record=>record.id===String(row.return_id));
+     if(request)Object.assign(request,{shipping_status:current.return_shipping_status,returned_at:current.returned_at});
+     changed=true;
+   }
+   if(changed){
+     renderShip();
+     if(!$('rrShippingModal').hidden)shippingDetails(openShippingOrder);
+   }
+ }catch{
+   // Keep the last visible progress if a refresh fails.
+ }finally{
+   refreshingShipping=false;
+ }
+}
+setInterval(refreshShipping,5000);
+document.addEventListener('visibilitychange',refreshShipping);
+
 function renderShip(){const all=shipRows(),max=Math.max(1,Math.ceil(all.length/6));shipPage=Math.max(1,Math.min(max,shipPage));const visible=all.slice((shipPage-1)*6,shipPage*6);$('rrShippingRows').innerHTML=visible.map(x=>`<tr class="rr-ship-row" data-order="${esc(x.order_id)}" role="button" tabindex="0"><td><div class="rr-order-cell"><div class="rr-product-thumb"><img src="${shippingIcon(x.shipping_status==='delivered'?'delivered.png':'in-transit.png')}" alt=""></div><div><strong>#${esc(x.order_id)}</strong><p>${esc(x.buyer_name)}</p><small>${esc(x.buyer_phone||'—')}</small><p class="rr-date">${esc(dateTime(x.date))}</p></div></div></td><td><span class="rr-chip ${esc(norm(x.shipping_status))}">${esc(shippingStatus(x.shipping_status))}</span><small class="rr-delivery-label">${x.shipping_status==='processing'?'Scheduled Return Pickup':'Estimated Delivery'}</small><strong class="rr-delivery-date">${esc(x.shipping_status==='processing'?dateTime(x.scheduled_return_date):date(x.estimated_delivery))}</strong></td><td>${progressHtml(x)}<small class="rr-tracking">Tracking Number: ${esc(x.tracking_number)}</small></td><td><strong class="rr-courier">${esc(x.courier)}</strong><p class="rr-shipping-price">₱${Number(x.price||0).toLocaleString('en-PH',{minimumFractionDigits:2})}</p><p>Transaction: <b>Refund</b></p><small>Return / Refund</small></td></tr>`).join('')||'<tr><td colspan="4" class="rr-empty">No return shipping records match the filters.</td></tr>';$('rrShippingCount').textContent=`Showing ${visible.length} of ${all.length} orders`;$('rrShipPage').textContent=`${shipPage} / ${max}`;$('rrShipPrev').disabled=shipPage<=1;$('rrShipNext').disabled=shipPage>=max}
-function shippingDetails(order){const c=shipment.find(x=>x.order_id===order);if(!c)return;const report=$('rrShippingModal').querySelector('[data-seller-order-report]');report.dataset.orderNumber=c.order_id||'';report.dataset.buyerName=c.buyer_name||c.buyer?.name||'';report.disabled=!report.dataset.orderNumber;const status=c.shipping_status;const summary=[['Order Number','#'+c.order_id],['Ordered At',dateTime(c.date)],[status==='processing'?'Scheduled Return Pickup':'Estimated Delivery',status==='processing'?dateTime(c.scheduled_return_date):date(c.estimated_delivery)],['Tracking Number',c.tracking_number],['Current Location',c.location||'Not scanned yet'],['Shipping Status',shippingStatus(status)]];$('rrShipSummary').innerHTML=summary.map(([a,b])=>`<div><small>${esc(a)}</small>${a==='Shipping Status'?`<span class="rr-chip ${esc(norm(status))}">${esc(b)}</span>`:`<strong>${esc(b)}</strong>`}</div>`).join('');const field=(name,value)=>`<div class="rr-ship-info-row"><span>${esc(name)}</span><strong>${esc(value||'—')}</strong></div>`;
+function shippingDetails(order){const c=shipment.find(x=>x.order_id===order);if(!c)return;openShippingOrder=order;const report=$('rrShippingModal').querySelector('[data-seller-order-report]');report.dataset.orderNumber=c.order_id||'';report.dataset.buyerName=c.buyer_name||c.buyer?.name||'';report.disabled=!report.dataset.orderNumber;const status=c.shipping_status;const summary=[['Order Number','#'+c.order_id],['Ordered At',dateTime(c.date)],[status==='processing'?'Scheduled Return Pickup':'Estimated Delivery',status==='processing'?dateTime(c.scheduled_return_date):date(c.estimated_delivery)],['Tracking Number',c.tracking_number],['Current Location',c.location||'Not scanned yet'],['Shipping Status',shippingStatus(status)]];$('rrShipSummary').innerHTML=summary.map(([a,b])=>`<div><small>${esc(a)}</small>${a==='Shipping Status'?`<span class="rr-chip ${esc(norm(status))}">${esc(b)}</span>`:`<strong>${esc(b)}</strong>`}</div>`).join('');const field=(name,value)=>`<div class="rr-ship-info-row"><span>${esc(name)}</span><strong>${esc(value||'—')}</strong></div>`;
 $('rrShipCustomer').innerHTML=[field('Name',c.buyer_name||c.buyer?.name),field('Email',c.buyer_email||c.buyer?.email),field('Contact',c.buyer_phone||c.buyer?.phone),field('Pickup Address',c.address||c.buyer_address||c.pickup_address)].join('');
 // Never use shipment/demo seller names or addresses; this page belongs to the logged-in seller.
 const sellerInfo=JSON.parse(document.getElementById('rrAuthenticatedSeller')?.textContent||'{}');
