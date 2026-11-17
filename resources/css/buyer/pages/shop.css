@@ -60,7 +60,7 @@
    ================================================================ */
 .buyer-shop-page { box-sizing: border-box; }
 .buyer-shop-page *, .buyer-shop-page *::before, .buyer-shop-page *::after { box-sizing: border-box; }
-.buyer-shop-page .bs-main { width: 100%; padding: 24px 0 48px; }
+.buyer-shop-page .bs-main { width: 100%; padding: 96px 0 48px; }
 .buyer-shop-page .bs-container {
     width: 100%; max-width: 1450px; margin-inline: auto;
     padding-inline: 28px;
@@ -169,7 +169,7 @@
     .buyer-shop-page .bs-recommendation-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 @media (max-width: 650px) {
-    .buyer-shop-page .bs-main { padding-top: 16px; }
+    .buyer-shop-page .bs-main { padding-top: 84px; }
     .buyer-shop-page .bs-container { padding-inline: 12px; }
     .buyer-shop-page .bs-shop-content { padding: 18px 14px; }
     .buyer-shop-page .bs-category-bar { margin-inline: -14px; padding-inline: 14px; }
