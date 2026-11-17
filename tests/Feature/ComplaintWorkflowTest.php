@@ -102,6 +102,31 @@ class ComplaintWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_seller_reports_record_a_buyer_verdict_and_return_the_guilty_account(): void
+    {
+        [$buyer, $order] = $this->createBuyerOrder();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();
+
+        foreach ([true, false] as $guilty) {
+            $complaint = Complaint::create([
+                'user_id' => $buyer->id,
+                'order_id' => $order->id,
+                'subject' => 'Seller report: Other',
+                'type' => 'Other',
+                'description' => 'A seller reported a buyer issue.',
+                'status' => 'open',
+            ]);
+            $url = "/api/v1/admin/complaints/{$complaint->id}/seller-fault";
+            $this->actingAs($admin)->patchJson($url, ['buyer_at_fault' => $guilty])
+                ->assertOk()
+                ->assertJsonPath('data.buyer_at_fault', $guilty)
+                ->assertJsonPath('data.account_user_id', $guilty ? $buyer->id : null);
+            $this->assertSame('resolved', $complaint->fresh()->status);
+            $this->assertNull($complaint->fresh()->seller_at_fault);
+            $this->patchJson($url, ['buyer_at_fault' => ! $guilty])->assertConflict();
+        }
+    }
+
     public function test_admin_fault_decisions_deduct_half_a_point_and_suspend_below_75_percent(): void
     {
         $admin = User::query()->where('role', User::ROLE_ADMIN)->oldest('id')->firstOrFail();

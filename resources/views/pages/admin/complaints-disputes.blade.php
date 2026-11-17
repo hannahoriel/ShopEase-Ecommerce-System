@@ -889,19 +889,28 @@ document.addEventListener('DOMContentLoaded', () => {
  const apiUrl = config.apiUrl || '/api/v1/admin/complaints';
  const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
  let selection = null;
+ const verdictLabel = (role, guilty) => role === 'Buyer'
+   ? (guilty ? 'Buyer Guilty' : 'Buyer Not Guilty')
+   : (guilty ? 'Seller at Fault' : 'Seller Not at Fault');
  const getActive = () => {
    const id = document.getElementById('detail-id')?.textContent?.trim() || document.getElementById('modal-complaint-id')?.textContent?.trim();
    return records.find(r => String(r.id) === id) || null;
  };
  function sync() {
    const item = getActive();
-   const decision = item?.sellerAtFault === true ? 'guilty' : item?.sellerAtFault === false ? 'not-guilty' : '';
-   const decided = item?.sellerFaultDecisionFinal === true;
+   const role = item?.sellerReported ? 'Buyer' : 'Seller';
+   const fault = item?.sellerReported ? item.buyerAtFault : item?.sellerAtFault;
+   const decision = fault === true ? 'guilty' : fault === false ? 'not-guilty' : '';
+   const decided = item?.sellerReported ? Boolean(decision) : item?.sellerFaultDecisionFinal === true;
    [preview, detail].forEach(node => {
      const pill = node.querySelector('[data-cd-outcome]');
      const select = node.querySelector('[data-cd-choice]');
      pill.className = 'cd-outcome' + (decision ? ' ' + decision : '');
-     pill.textContent = decision === 'guilty' ? 'Seller at Fault' : decision === 'not-guilty' ? 'Seller Not at Fault' : 'Awaiting decision';
+     node.querySelector('.cd-decision-head strong').textContent = `Admin Decision — ${role} Accountability`;
+     select.setAttribute('aria-label', `${role} accountability decision`);
+     select.options[1].textContent = verdictLabel(role, true);
+     select.options[2].textContent = verdictLabel(role, false);
+     pill.textContent = decision ? verdictLabel(role, fault) : 'Awaiting decision';
      select.value = decision;
      select.disabled = !item || decided;
      node.querySelector('[data-cd-review]').disabled = !item || decided;
@@ -913,9 +922,12 @@ document.addEventListener('DOMContentLoaded', () => {
    const item = getActive(); if(!item)return;
    const choice = button.closest('.cd-decision-card').querySelector('[data-cd-choice]').value;
    if(!choice){button.closest('.cd-decision-card').querySelector('[data-cd-choice]').focus();return;}
-   selection = {id:String(item.id),databaseId:item.databaseId,decision:choice};
-   document.getElementById('cdDecisionSummary').textContent = `${item.id} — ${choice==='guilty'?'Seller at Fault':'Seller Not at Fault'}`;
-   document.getElementById('cdDecisionNotes').value = item.sellerFaultNotes || '';
+   const role = item.sellerReported ? 'Buyer' : 'Seller';
+   selection = {id:String(item.id),databaseId:item.databaseId,decision:choice,role};
+   document.getElementById('cdDecisionTitle').textContent = `Confirm ${role} Accountability Decision`;
+   root.querySelector('.cd-review-desc').hidden = role === 'Buyer';
+   document.getElementById('cdDecisionSummary').textContent = `${item.id} — ${verdictLabel(role, choice==='guilty')}`;
+   document.getElementById('cdDecisionNotes').value = role === 'Seller' ? item.sellerFaultNotes || '' : '';
    root.hidden=false;root.setAttribute('aria-hidden','false');
  }));
  const close=()=>{root.hidden=true;root.setAttribute('aria-hidden','true');selection=null};
@@ -924,25 +936,36 @@ document.addEventListener('DOMContentLoaded', () => {
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!root.hidden)close()});
  document.getElementById('cdDecisionSave').addEventListener('click',async()=>{
    if(!selection)return;
+   const decision = selection;
+   const buyerDecision = decision.role === 'Buyer';
    const save=document.getElementById('cdDecisionSave');
    save.disabled=true;
    try {
-     const response=await fetch(`${apiUrl}/${selection.databaseId}/seller-fault`,{
+     const response=await fetch(`${apiUrl}/${decision.databaseId}/seller-fault`,{
        method:'PATCH',
        credentials:'same-origin',
        headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},
-       body:JSON.stringify({seller_at_fault:selection.decision==='guilty',notes:document.getElementById('cdDecisionNotes').value.trim()})
+       body:JSON.stringify({[buyerDecision ? 'buyer_at_fault' : 'seller_at_fault']:decision.decision==='guilty',notes:document.getElementById('cdDecisionNotes').value.trim()})
      });
      const payload=await response.json();
-     if(!response.ok)throw new Error(payload.message||'Unable to save the seller accountability decision.');
-     const item=records.find(record=>String(record.id)===selection.id);
-     if(item){item.sellerAtFault=payload.data.seller_at_fault;item.sellerFaultNotes=payload.data.seller_fault_notes;item.sellerFaultDecisionFinal=true}
-     let message=`${selection.id}: ${payload.data.seller_at_fault?'Seller at Fault':'Seller Not at Fault'}. Compliance score: ${Number(payload.data.compliance_score).toFixed(1)}%.`;
+     if(!response.ok)throw new Error(payload.message||'Unable to save the accountability decision.');
+     const item=records.find(record=>String(record.id)===decision.id);
+     const guilty=buyerDecision ? payload.data.buyer_at_fault : payload.data.seller_at_fault;
+     if(item && buyerDecision)item.buyerAtFault=guilty;
+     if(item && !buyerDecision){item.sellerAtFault=guilty;item.sellerFaultNotes=payload.data.seller_fault_notes;item.sellerFaultDecisionFinal=true}
+     let message=`${decision.id} — ${verdictLabel(decision.role, guilty)}.`;
+     if(!buyerDecision)message+=` Compliance score: ${Number(payload.data.compliance_score).toFixed(1)}%.`;
      if(payload.data.auto_suspended)message+=' Seller suspended for 3 days.';
      if(payload.data.auto_reactivated)message+=' Automatic suspension lifted.';
      close();sync();
+     if(guilty && payload.data.account_user_id){
+       sessionStorage.setItem('complaintDecisionFlash',message);
+       location.assign(`/admin/user-management?user=${encodeURIComponent(payload.data.account_user_id)}`);
+       return;
+     }
      const toast=document.getElementById('cdDecisionToast');toast.textContent=message;toast.hidden=false;
      clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>{toast.hidden=true},6000);
+     if(buyerDecision)setTimeout(()=>location.reload(),1800);
    } catch(error) {
      const toast=document.getElementById('cdDecisionToast');toast.textContent=error.message;toast.hidden=false;
      clearTimeout(window.cdDecisionToastTimer);window.cdDecisionToastTimer=setTimeout(()=>{toast.hidden=true},6000);

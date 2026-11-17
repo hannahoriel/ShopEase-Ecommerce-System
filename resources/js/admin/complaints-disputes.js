@@ -867,7 +867,7 @@ document.addEventListener('DOMContentLoaded', function () {
         detailsModal.querySelector('[data-admin-return-review]')?.remove();
         detailsModal.querySelector('[data-admin-return-decisions]')?.remove();
         const record=complaint.returnRequest;
-        const accountability=document.getElementById('cdDecisionModal');if(accountability)accountability.hidden=!!record||!!complaint.parcelIssue;
+        const accountability=document.getElementById('cdDecisionModal');if(accountability)accountability.hidden=(!complaint.sellerReported && !!record)||!!complaint.parcelIssue;
         if(!record)return;
         const panel=document.createElement('section');panel.dataset.adminReturnReview='';
         panel.className='se-return-summary';
@@ -1039,8 +1039,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         renderComplaintEvidence(complaint);
-        const accountabilityPreview=document.getElementById('cdDecisionPreview');if(accountabilityPreview)accountabilityPreview.hidden=!!complaint.returnRequest;
-        if(accountabilityPreview)accountabilityPreview.hidden=!!complaint.returnRequest||!!complaint.parcelIssue;
+        const accountabilityPreview=document.getElementById('cdDecisionPreview');
+        if(accountabilityPreview)accountabilityPreview.hidden=(!complaint.sellerReported && !!complaint.returnRequest)||!!complaint.parcelIssue;
         const parcelPreview=document.getElementById('cdParcelDecisionPreview');if(parcelPreview)parcelPreview.hidden=!complaint.parcelIssue;
         const parcelModal=document.getElementById('cdParcelDecisionModal');if(parcelModal)parcelModal.hidden=!complaint.parcelIssue;
         const sellerModal=document.getElementById('cdDecisionModal');if(sellerModal)sellerModal.hidden=!!complaint.parcelIssue;

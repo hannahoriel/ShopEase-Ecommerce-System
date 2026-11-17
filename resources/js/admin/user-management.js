@@ -2919,7 +2919,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
     }
 
-    loadUsersFromApi().catch(error => {
+    loadUsersFromApi().then(() => {
+        const userId = new URLSearchParams(location.search).get('user');
+        if (!userId) return;
+
+        const user = users.find(account => String(account.id) === userId);
+        const message = sessionStorage.getItem('complaintDecisionFlash');
+        sessionStorage.removeItem('complaintDecisionFlash');
+        if (message) umNotify('Complaint decision saved', message);
+        if (user) openModal(user);
+    }).catch(error => {
         console.error(error);
         showActionFlash(error.message, true);
     });

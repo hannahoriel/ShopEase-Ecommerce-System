@@ -130,6 +130,35 @@ class ComplaintController extends Controller
         Complaint $complaint,
         SellerComplianceService $compliance
     ): JsonResponse {
+        if ($this->isSellerReport($complaint)) {
+            $data = $request->validate([
+                'buyer_at_fault' => ['required', 'boolean'],
+                'notes' => ['nullable', 'string', 'max:800'],
+            ]);
+            $guilty = (bool) $data['buyer_at_fault'];
+            $buyerId = DB::transaction(function () use ($request, $complaint, $data, $guilty) {
+                $locked = Complaint::query()->lockForUpdate()->findOrFail($complaint->id);
+                $buyer = $locked->order?->buyer;
+                abort_unless($buyer && (int) $buyer->id === (int) $locked->user_id, 422, 'This complaint is not linked to a buyer account.');
+                abort_if($locked->updates()->whereIn('type', ['buyer_guilty', 'buyer_not_guilty'])->exists(), 409, 'A buyer accountability decision has already been recorded.');
+
+                $notes = trim((string) ($data['notes'] ?? ''));
+                $locked->updates()->create([
+                    'user_id' => $request->user()->id,
+                    'type' => $guilty ? 'buyer_guilty' : 'buyer_not_guilty',
+                    'message' => trim(($guilty ? 'Admin decision: Buyer Guilty.' : 'Admin decision: Buyer Not Guilty.').' '.$notes),
+                ]);
+                $locked->update(['status' => 'resolved']);
+
+                return $buyer->id;
+            }, 3);
+
+            return response()->json(['data' => [
+                'buyer_at_fault' => $guilty,
+                'account_user_id' => $guilty ? $buyerId : null,
+            ]]);
+        }
+
         $data = $request->validate([
             'seller_at_fault' => ['required', 'boolean'],
             'notes' => ['nullable', 'string', 'max:800'],
@@ -189,6 +218,7 @@ class ComplaintController extends Controller
             'data' => [
                 'id' => $result['complaint']->id,
                 'seller_at_fault' => $result['complaint']->seller_at_fault,
+                'account_user_id' => $sellerFault ? $result['seller']->user?->id : null,
                 'seller_fault_notes' => $result['complaint']->seller_fault_notes,
                 'update' => [
                     'id' => (string) $result['update']->id,
@@ -204,6 +234,11 @@ class ComplaintController extends Controller
                 'auto_reactivated' => $result['suspension']['reactivated'],
             ],
         ]);
+    }
+
+    private function isSellerReport(Complaint $complaint): bool
+    {
+        return str_starts_with((string) $complaint->subject, 'Seller report: ');
     }
 
     private function serialize(Complaint $complaint): array
@@ -240,6 +275,12 @@ class ComplaintController extends Controller
             'type' => $complaint->type ?: 'Other',
             'status' => str_replace('_', '-', $complaint->status),
             'sellerAtFault' => $complaint->seller_at_fault,
+            'sellerReported' => $this->isSellerReport($complaint),
+            'buyerAtFault' => match ($complaint->updates->first(fn ($update) => in_array($update->type, ['buyer_guilty', 'buyer_not_guilty'], true))?->type) {
+                'buyer_guilty' => true,
+                'buyer_not_guilty' => false,
+                default => null,
+            },
             'sellerFaultDecisionFinal' => $complaint->updates->contains('type', 'seller_fault_decision'),
             'sellerFaultNotes' => $complaint->seller_fault_notes,
             'date' => $complaint->created_at?->format('M d, Y') ?? '',
