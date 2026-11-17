@@ -1152,9 +1152,12 @@
 }
 
 .complaints-modal-party-avatar {
+    position: relative;
     width: 34px;
     height: 34px;
+    flex-shrink: 0;
     border-radius: 50%;
+    overflow: hidden;
     background: #999999;
 }
 
@@ -1489,9 +1492,12 @@
 }
 
 .complaints-modal-note-avatar {
+    position: relative;
     width: 32px;
     height: 32px;
+    flex: 0 0 32px;
     border-radius: 50%;
+    overflow: hidden;
     background: #D96D72;
     color: #FFFFFF;
     display: flex;
